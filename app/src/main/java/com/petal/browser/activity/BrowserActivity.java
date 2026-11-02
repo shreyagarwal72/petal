@@ -763,7 +763,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.profile.PetalProfileManager.INSTANCE.init(this);
             com.petal.browser.wallpaper.PetalWallpaperManager.INSTANCE.init(this);
             com.petal.browser.apk.PetalApkInstallerEngine.checkAndRequestShizuku(this);
-            com.petal.browser.compose.reader.PetalReaderBridge.setReaderEligibilityListener((artUrl, eligible) -> {
+            com.petal.browser.compose.reader.PetalReaderBridge.INSTANCE.setReaderEligibilityListener((artUrl, eligible) -> {
                 setReaderModeEligibleForUrl(artUrl, eligible);
                 return kotlin.Unit.INSTANCE;
             });

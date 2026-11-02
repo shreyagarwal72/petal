@@ -38,6 +38,7 @@ object PetalReaderBridge {
     private val pendingCallbacks = ConcurrentHashMap<String, (ReaderArticleData?) -> Unit>()
     private val eligibleUrls = ConcurrentHashMap<String, Boolean>()
 
+    @JvmStatic
     @Volatile
     var readerEligibilityListener: ((url: String, isEligible: Boolean) -> Unit)? = null
 
