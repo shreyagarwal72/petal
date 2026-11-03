@@ -387,6 +387,14 @@ fun PetalBookmarksScreen(
                                 modifier = Modifier.size(18.dp)
                             )
                         },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            labelColor = MaterialTheme.colorScheme.onSurface,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        border = null,
                         modifier = Modifier.graphicsLayer(scaleX = chipScale, scaleY = chipScale)
                     )
                 }

@@ -369,22 +369,37 @@ fun PetalPasswordsScreen(
                                 text = if (searchQuery.isBlank()) "Saved Logins (${credentials.size})" else "Matches (${groupedLogins.values.flatten().size})"
                             )
 
+                            val sortChipColors = FilterChipDefaults.filterChipColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                labelColor = MaterialTheme.colorScheme.onSurface,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                             // Sort selector pill
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 FilterChip(
                                     selected = selectedSortMode == 0,
                                     onClick = { selectedSortMode = 0 },
-                                    label = { Text("Name", fontSize = 12.sp) }
+                                    label = { Text("Name", fontSize = 12.sp) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = sortChipColors,
+                                    border = null
                                 )
                                 FilterChip(
                                     selected = selectedSortMode == 1,
                                     onClick = { selectedSortMode = 1 },
-                                    label = { Text("Recent", fontSize = 12.sp) }
+                                    label = { Text("Recent", fontSize = 12.sp) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = sortChipColors,
+                                    border = null
                                 )
                                 FilterChip(
                                     selected = selectedSortMode == 2,
                                     onClick = { selectedSortMode = 2 },
-                                    label = { Text("Favorites", fontSize = 12.sp) }
+                                    label = { Text("Favorites", fontSize = 12.sp) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = sortChipColors,
+                                    border = null
                                 )
                             }
                         }
@@ -909,7 +924,15 @@ private fun PasswordEditSheet(
                                     selectedPreset = preset
                                     haptic.playClick(context)
                                 },
-                                label = { Text(preset.name.lowercase().capitalize(), fontSize = 11.sp) }
+                                label = { Text(preset.name.lowercase().capitalize(), fontSize = 11.sp) },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    labelColor = MaterialTheme.colorScheme.onSurface,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                ),
+                                border = null
                             )
                         }
                     }

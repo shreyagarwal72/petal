@@ -366,6 +366,14 @@ fun PetalReaderScreen(
                                                     sp.edit().putString("sp_reader_font", font.name).apply()
                                                 },
                                                 label = { Text(font.title, fontFamily = font.family) },
+                                                shape = RoundedCornerShape(12.dp),
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                    labelColor = MaterialTheme.colorScheme.onSurface,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                                ),
+                                                border = null,
                                                 modifier = Modifier.weight(1f)
                                             )
                                         }

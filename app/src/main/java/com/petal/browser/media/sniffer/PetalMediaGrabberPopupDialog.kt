@@ -652,6 +652,12 @@ fun PetalMediaGrabberPopupDialog(
                                         )
                                     }
 
+                                    val channelChipColors = FilterChipDefaults.filterChipColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        labelColor = MaterialTheme.colorScheme.onSurface,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
                                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                         FilterChip(
                                             selected = updateChannel == YoutubeDL.UpdateChannel.STABLE,
@@ -659,7 +665,10 @@ fun PetalMediaGrabberPopupDialog(
                                                 updateChannel = YoutubeDL.UpdateChannel.STABLE
                                                 PetalYtDlpEngine.setUpdateChannel(context, YoutubeDL.UpdateChannel.STABLE)
                                             },
-                                            label = { Text("Stable") }
+                                            label = { Text("Stable") },
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = channelChipColors,
+                                            border = null
                                         )
                                         FilterChip(
                                             selected = updateChannel == YoutubeDL.UpdateChannel.NIGHTLY,
@@ -667,7 +676,10 @@ fun PetalMediaGrabberPopupDialog(
                                                 updateChannel = YoutubeDL.UpdateChannel.NIGHTLY
                                                 PetalYtDlpEngine.setUpdateChannel(context, YoutubeDL.UpdateChannel.NIGHTLY)
                                             },
-                                            label = { Text("Nightly") }
+                                            label = { Text("Nightly") },
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = channelChipColors,
+                                            border = null
                                         )
                                     }
                                 }

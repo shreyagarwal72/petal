@@ -286,8 +286,8 @@ def audit_containment_and_splash(repo_dir):
                             # Allowed baseline lines:
                             # 1..125: Package & imports
                             # 908..938: petalConnectedShape & PetalConnectedButtonGroup
-                            # 1010..1095: PetalSheet
-                            in_allowed = (1 <= ln <= 125) or (908 <= ln <= 938) or (1010 <= ln <= 1095)
+                            # 1010..1260: PetalSheet, PetalFilterChip, PetalAssistChip, PetalSuggestionChip
+                            in_allowed = (1 <= ln <= 125) or (908 <= ln <= 938) or (1010 <= ln <= 1260)
                             if not in_allowed:
                                 violations.append(Violation(
                                     category="Containment",

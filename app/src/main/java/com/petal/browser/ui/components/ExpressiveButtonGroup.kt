@@ -89,7 +89,7 @@ fun ExpressiveButtonGroup(
             val isActive = isSelected || isPressed
 
             val animatedWeight by animateFloatAsState(
-                targetValue = if (!hasSelection && !isPressed) 1f else if (isActive) 1.1f else 0.65f,
+                targetValue = if (!hasSelection && !isPressed) 1f else if (isActive) 1.15f else 0.88f,
                 animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
                 label = "ExpressiveSegmentWeight"
             )

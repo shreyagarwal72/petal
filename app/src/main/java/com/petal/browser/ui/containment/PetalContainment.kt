@@ -957,8 +957,8 @@ fun PetalConnectedButtonGroup(
 
             val targetWeight = when (currentActiveIndex) {
                 null -> 1f
-                index -> 1.1f
-                else -> 0.65f
+                index -> 1.15f
+                else -> 0.88f
             }
 
             val animatedWeight by animateFloatAsState(
@@ -1126,12 +1126,14 @@ fun PetalFilterChip(
             colors = colors ?: FilterChipDefaults.filterChipColors(
                 containerColor = if (isGlass) {
                     if (isGlassReady) Color.Transparent else petalGroupSurfaceColor()
-                } else MaterialTheme.colorScheme.surfaceContainerLow,
+                } else MaterialTheme.colorScheme.surfaceContainerHigh,
                 selectedContainerColor = if (isGlass) {
                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
                 } else MaterialTheme.colorScheme.primaryContainer,
-                labelColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                iconColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                labelColor = MaterialTheme.colorScheme.onSurface,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                selectedLeadingIconColor = MaterialTheme.colorScheme.primary
             ),
             border = if (isGlass) {
                 BorderStroke(
@@ -1139,7 +1141,7 @@ fun PetalFilterChip(
                     if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                     else Color.White.copy(alpha = 0.18f)
                 )
-            } else (border ?: FilterChipDefaults.filterChipBorder(enabled = enabled, selected = selected))
+            } else border
         )
     }
 }
@@ -1184,12 +1186,12 @@ fun PetalAssistChip(
             colors = colors ?: AssistChipDefaults.assistChipColors(
                 containerColor = if (isGlass) {
                     if (isGlassReady) Color.Transparent else petalGroupSurfaceColor()
-                } else MaterialTheme.colorScheme.surfaceContainerLow,
+                } else MaterialTheme.colorScheme.surfaceContainerHigh,
                 labelColor = MaterialTheme.colorScheme.onSurface
             ),
             border = if (isGlass) {
                 BorderStroke(0.75.dp, Color.White.copy(alpha = 0.18f))
-            } else (border ?: AssistChipDefaults.assistChipBorder(enabled = enabled))
+            } else border
         )
     }
 }
@@ -1234,12 +1236,12 @@ fun PetalSuggestionChip(
             colors = colors ?: SuggestionChipDefaults.suggestionChipColors(
                 containerColor = if (isGlass) {
                     if (isGlassReady) Color.Transparent else petalGroupSurfaceColor()
-                } else MaterialTheme.colorScheme.surfaceContainerLow,
+                } else MaterialTheme.colorScheme.surfaceContainerHigh,
                 labelColor = MaterialTheme.colorScheme.onSurface
             ),
             border = if (isGlass) {
                 BorderStroke(0.75.dp, Color.White.copy(alpha = 0.18f))
-            } else (border ?: SuggestionChipDefaults.suggestionChipBorder(enabled = enabled))
+            } else border
         )
     }
 }

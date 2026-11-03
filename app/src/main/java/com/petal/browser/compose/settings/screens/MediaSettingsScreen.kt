@@ -565,7 +565,13 @@ fun MediaSettingsScreen(
                                                 sp.edit().putString(IslandSettings.KEY_SPEED, animSpeed).apply()
                                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                             },
-                                            label = { Text(animSpeed) }
+                                            label = { Text(animSpeed) },
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = AssistChipDefaults.assistChipColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                labelColor = MaterialTheme.colorScheme.onSurface
+                                            ),
+                                            border = null
                                         )
                                     }
                                 )
@@ -589,7 +595,13 @@ fun MediaSettingsScreen(
                                                 sp.edit().putString(IslandSettings.KEY_BOUNCE, animBounce).apply()
                                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                             },
-                                            label = { Text(animBounce) }
+                                            label = { Text(animBounce) },
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = AssistChipDefaults.assistChipColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                labelColor = MaterialTheme.colorScheme.onSurface
+                                            ),
+                                            border = null
                                         )
                                     }
                                 )

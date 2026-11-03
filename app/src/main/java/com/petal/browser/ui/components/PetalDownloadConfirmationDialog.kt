@@ -18,6 +18,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -137,6 +138,36 @@ fun PetalDownloadConfirmationDialog(
 
             Spacer(modifier = Modifier.height(28.dp))
 
+            val downloadLabel = if (isDuplicate) "Download Again" else "Download"
+
+            if (onExternalDownload != null) {
+                FilledTonalButton(
+                    onClick = onExternalDownload,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.OpenInNew,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.ui_download_with_external_downloader),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -159,61 +190,27 @@ fun PetalDownloadConfirmationDialog(
                     )
                 }
 
-                val downloadLabel = if (isDuplicate) "Download Again" else "Download"
-
-                if (onExternalDownload != null) {
-                    var splitMenuExpanded by remember { mutableStateOf(false) }
-
-                    Box(modifier = Modifier.weight(1.15f)) {
-                        ExpressiveSplitButton(
-                            label = downloadLabel,
-                            onPrimaryClick = onConfirm,
-                            onMenuClick = { splitMenuExpanded = !splitMenuExpanded },
-                            icon = Icons.Rounded.Download,
-                            isMenuExpanded = splitMenuExpanded,
-                            variant = SplitButtonVariant.FILLED,
-                            height = 48.dp
-                        )
-
-                        com.petal.browser.ui.containment.PetalPopupMenu(
-                            expanded = splitMenuExpanded,
-                            onDismissRequest = { splitMenuExpanded = false }
-                        ) {
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = { Text(stringResource(R.string.ui_download_with_external_downloader)) },
-                                onClick = {
-                                    splitMenuExpanded = false
-                                    onExternalDownload()
-                                },
-                                leadingIcon = {
-                                    Icon(Icons.Rounded.OpenInNew, contentDescription = null)
-                                }
-                            )
-                        }
-                    }
-                } else {
-                    Button(
-                        onClick = onConfirm,
-                        shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Download,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = downloadLabel,
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                    }
+                Button(
+                    onClick = onConfirm,
+                    shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier
+                        .weight(1.15f)
+                        .heightIn(min = 48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Download,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = downloadLabel,
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                    )
                 }
             }
         }

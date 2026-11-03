@@ -680,12 +680,21 @@ private fun ArchiveViewerContent(
                                         .horizontalScroll(breadcrumbScroll),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
+                                    val chipColors = FilterChipDefaults.filterChipColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        labelColor = MaterialTheme.colorScheme.onSurface,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
                                     // Root chip
                                     FilterChip(
                                         selected = false,
                                         onClick = { currentPath = "" },
                                         label = { Text(displayName, maxLines = 1) },
-                                        leadingIcon = { Icon(Icons.Rounded.Home, null, Modifier.size(14.dp)) }
+                                        leadingIcon = { Icon(Icons.Rounded.Home, null, Modifier.size(14.dp)) },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = chipColors,
+                                        border = null
                                     )
                                     pathSegments.forEachIndexed { idx, segment ->
                                         Icon(
@@ -700,7 +709,10 @@ private fun ArchiveViewerContent(
                                             onClick = {
                                                 currentPath = pathSegments.take(idx + 1).joinToString("/")
                                             },
-                                            label = { Text(segment, maxLines = 1) }
+                                            label = { Text(segment, maxLines = 1) },
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = chipColors,
+                                            border = null
                                         )
                                     }
                                 }

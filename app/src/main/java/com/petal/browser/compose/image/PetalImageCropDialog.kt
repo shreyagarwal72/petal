@@ -204,11 +204,14 @@ fun PetalImageCropDialog(
                                     }
                                 },
                                 label = { Text(ratio.label) },
+                                shape = RoundedCornerShape(12.dp),
                                 colors = FilterChipDefaults.filterChipColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
                                     selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                    labelColor = Color.White
-                                )
+                                    labelColor = MaterialTheme.colorScheme.onSurface
+                                ),
+                                border = null
                             )
                         }
                     }

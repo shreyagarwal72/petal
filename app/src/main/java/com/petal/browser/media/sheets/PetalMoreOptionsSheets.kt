@@ -217,6 +217,12 @@ fun PetalSleepTimerSheet(
             )
 
             // Preset Grid
+            val timerChipColors = FilterChipDefaults.filterChipColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                labelColor = MaterialTheme.colorScheme.onSurface,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -230,6 +236,9 @@ fun PetalSleepTimerSheet(
                             onDismiss()
                         },
                         label = { Text("${min}m", fontWeight = FontWeight.Bold) },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = timerChipColors,
+                        border = null,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -248,6 +257,9 @@ fun PetalSleepTimerSheet(
                             onDismiss()
                         },
                         label = { Text("${min}m", fontWeight = FontWeight.Bold) },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = timerChipColors,
+                        border = null,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -498,6 +510,12 @@ fun PetalSpeedSelectorSheet(
                 color = audioPalette.onSurface.copy(alpha = 0.08f)
             )
 
+            val speedChipColors = FilterChipDefaults.filterChipColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                labelColor = MaterialTheme.colorScheme.onSurface,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -512,6 +530,9 @@ fun PetalSpeedSelectorSheet(
                             onDismiss()
                         },
                         label = { Text("${speed}x", fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = speedChipColors,
+                        border = null,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -531,6 +552,9 @@ fun PetalSpeedSelectorSheet(
                             onDismiss()
                         },
                         label = { Text("${speed}x", fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = speedChipColors,
+                        border = null,
                         modifier = Modifier.weight(1f)
                     )
                 }

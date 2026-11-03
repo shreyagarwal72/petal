@@ -249,10 +249,9 @@ fun ApiIntegrationsSettingsScreenContent(
                                 Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    stringResource(R.string.ui_get_free_key_2, selectedProvider.displayName),
+                                    "Get API Key",
                                     style = MaterialTheme.typography.labelSmall,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    maxLines = 1
                                 )
                             }
                         } else if (selectedProvider == AiProvider.CUSTOM) {

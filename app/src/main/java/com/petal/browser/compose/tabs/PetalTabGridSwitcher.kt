@@ -1672,58 +1672,7 @@ private fun SwipeToCloseBackground(
 }
 
 @Composable
-private fun RegularTabEmptyIllustration(
-    containerColor: Color,
-    phoneColor: Color
-) {
-    Box(
-        modifier = Modifier.size(90.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        // Back phone / tab outline (offset to bottom-right)
-        Canvas(
-            modifier = Modifier
-                .size(width = 46.dp, height = 66.dp)
-                .offset(x = 8.dp, y = 5.dp)
-        ) {
-            val cornerRadius = CornerRadius(12.dp.toPx())
-            val strokeWidth = 3.dp.toPx()
-            drawRoundRect(
-                color = phoneColor.copy(alpha = 0.55f),
-                size = size,
-                cornerRadius = cornerRadius,
-                style = Stroke(width = strokeWidth)
-            )
-        }
 
-        // Front phone / tab (main device card)
-        Box(
-            modifier = Modifier
-                .offset(x = (-5).dp, y = (-3).dp)
-                .size(width = 44.dp, height = 64.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(containerColor),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            // Speaker / Camera notch at top
-            Box(
-                modifier = Modifier
-                    .padding(top = 5.dp)
-                    .size(width = 12.dp, height = 2.5.dp)
-                    .clip(CircleShape)
-                    .background(phoneColor)
-            )
-            // Screen inner viewport preview
-            Box(
-                modifier = Modifier
-                    .padding(top = 13.dp, start = 5.dp, end = 5.dp, bottom = 6.dp)
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(5.dp))
-                    .background(phoneColor.copy(alpha = 0.2f))
-            )
-        }
-    }
-}
 
 @Composable
 private fun TabManagerEmptyState(
@@ -1775,9 +1724,11 @@ private fun TabManagerEmptyState(
                         modifier = Modifier.size(48.dp)
                     )
                 } else {
-                    RegularTabEmptyIllustration(
-                        containerColor = badgeColor,
-                        phoneColor = MaterialTheme.colorScheme.onPrimary
+                    Icon(
+                        imageVector = Icons.Rounded.Layers,
+                        contentDescription = stringResource(R.string.ui_tab_manager),
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(52.dp)
                     )
                 }
             }

@@ -547,6 +547,15 @@ private fun FilePickerBrowserContent(
                     .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                val chipColors = FilterChipDefaults.filterChipColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    labelColor = MaterialTheme.colorScheme.onSurface,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    selectedLeadingIconColor = MaterialTheme.colorScheme.primary
+                )
+
                 // Downloads Jump
                 val downloads = remember { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) }
                 if (downloads != null && downloads.exists()) {
@@ -559,7 +568,9 @@ private fun FilePickerBrowserContent(
                         },
                         leadingIcon = { Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp)) },
                         label = { Text(stringResource(R.string.file_picker_downloads)) },
-                        shape = RoundedCornerShape(14.dp)
+                        shape = RoundedCornerShape(14.dp),
+                        colors = chipColors,
+                        border = null
                     )
                 }
 
@@ -576,7 +587,9 @@ private fun FilePickerBrowserContent(
                             Icon(icon, null, modifier = Modifier.size(16.dp))
                         },
                         label = { Text(label) },
-                        shape = RoundedCornerShape(14.dp)
+                        shape = RoundedCornerShape(14.dp),
+                        colors = chipColors,
+                        border = null
                     )
                 }
             }

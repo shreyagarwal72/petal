@@ -199,6 +199,14 @@ fun PetalBackStyleSettingsRow(
                             FilterChip(
                                 selected = direction == exitDirection,
                                 onClick = { onExitDirectionChange(direction) },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    labelColor = MaterialTheme.colorScheme.onSurface,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                ),
+                                border = null,
                                 label = {
                                     Text(
                                         stringResource(

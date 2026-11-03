@@ -153,7 +153,13 @@ fun PetalDevConsoleSheet(
                 presetSnippets.forEach { (snippet, label) ->
                     SuggestionChip(
                         onClick = { inputText = snippet },
-                        label = { Text(label, fontSize = 12.sp) }
+                        label = { Text(label, fontSize = 12.sp) },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            labelColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        border = null
                     )
                 }
             }

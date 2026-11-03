@@ -2158,13 +2158,22 @@ private fun PdfEditTopBar(
                         Icon(Icons.Rounded.Close, contentDescription = null)
                     }
 
+                    val annotationChipColors = FilterChipDefaults.filterChipColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         FilterChip(
                             selected = selectedTool == AnnotationTool.PEN,
                             onClick = { onToolChange(AnnotationTool.PEN) },
                             label = { Text(stringResource(R.string.ui_pen)) },
                             leadingIcon = { Icon(Icons.Rounded.Draw, null, Modifier.size(16.dp)) },
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = annotationChipColors,
+                            border = null
                         )
 
                         FilterChip(
@@ -2172,7 +2181,9 @@ private fun PdfEditTopBar(
                             onClick = { onToolChange(AnnotationTool.HIGHLIGHTER) },
                             label = { Text(stringResource(R.string.ui_highlighter)) },
                             leadingIcon = { Icon(Icons.Rounded.Highlight, null, Modifier.size(16.dp)) },
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = annotationChipColors,
+                            border = null
                         )
 
                         FilterChip(
@@ -2180,7 +2191,9 @@ private fun PdfEditTopBar(
                             onClick = { onToolChange(AnnotationTool.TEXT) },
                             label = { Text(stringResource(R.string.ui_text)) },
                             leadingIcon = { Icon(Icons.Rounded.TextFields, null, Modifier.size(16.dp)) },
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = annotationChipColors,
+                            border = null
                         )
 
                         PetalLiquidIconButton(
