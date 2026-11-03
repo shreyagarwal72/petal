@@ -1672,9 +1672,6 @@ private fun SwipeToCloseBackground(
 }
 
 @Composable
-
-
-@Composable
 private fun TabManagerEmptyState(
     accentColor: Color,
     textColor: Color,
@@ -1726,7 +1723,7 @@ private fun TabManagerEmptyState(
                 } else {
                     Icon(
                         imageVector = Icons.Rounded.Layers,
-                        contentDescription = stringResource(R.string.ui_tab_manager),
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(52.dp)
                     )
