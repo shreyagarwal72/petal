@@ -46,6 +46,7 @@ import com.petal.browser.island.*
 import com.petal.browser.compose.downloads.LiveUpdateNotificationManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -439,7 +440,7 @@ fun MediaSettingsScreen(
                                         Text("Horizontal Fine-Tuning", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                         Text("${offsetXDp}dp", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                                     }
-                                    Slider(
+                                    PetalSlider(
                                         value = offsetXDp.toFloat(),
                                         onValueChange = {
                                             offsetXDp = it.toInt()
@@ -461,7 +462,7 @@ fun MediaSettingsScreen(
                                         Text("Vertical Margin Down", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                         Text("${offsetYDp}dp", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                                     }
-                                    Slider(
+                                    PetalSlider(
                                         value = offsetYDp.toFloat(),
                                         onValueChange = {
                                             offsetYDp = it.toInt()
@@ -484,7 +485,7 @@ fun MediaSettingsScreen(
                                             Text("Notch Flare Curvature", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                             Text("${notchFlareDp}dp", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                                         }
-                                        Slider(
+                                        PetalSlider(
                                             value = notchFlareDp.toFloat(),
                                             onValueChange = {
                                                 notchFlareDp = it.toInt()
