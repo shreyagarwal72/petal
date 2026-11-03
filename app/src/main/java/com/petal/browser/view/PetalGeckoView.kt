@@ -2178,6 +2178,45 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun canGoForward(): Boolean = canGoForwardVal
 
+    /**
+     * Let page-owned modal UI (such as HTML `<dialog>`, popups, or modern `CloseWatcher` elements)
+     * consume Back before the browser traverses tab history. Matching Firefox & PetalTabViewController parity.
+     */
+    fun processBackPressed(onUnhandled: () -> Unit) {
+        val engSession = engineSession
+        if (engSession != null) {
+            engSession.processBackPressed { handled ->
+                if (handled) return@processBackPressed
+                if (canGoBackVal) goBack() else onUnhandled()
+            }
+            return
+        }
+
+        try {
+            session.processBackPressed().then(
+                { handled ->
+                    if (handled != null && handled) {
+                        // Consumed by web modal/dialog
+                        org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
+                    } else {
+                        post {
+                            if (canGoBackVal) goBack() else onUnhandled()
+                        }
+                        org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
+                    }
+                },
+                { _ ->
+                    post {
+                        if (canGoBackVal) goBack() else onUnhandled()
+                    }
+                    org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
+                }
+            )
+        } catch (_: Throwable) {
+            if (canGoBackVal) goBack() else onUnhandled()
+        }
+    }
+
     @JvmOverloads
     fun goBack(userInteraction: Boolean = true) {
         if (canGoBackVal) {

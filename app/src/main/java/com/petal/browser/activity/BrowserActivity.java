@@ -1525,19 +1525,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-            if (gv.canGoBack()) {
-                sp.edit().putBoolean("backPressed", true).apply();
-                // NOTE: Do NOT call gv.stopLoading() here — it cancels GeckoView history traversal
-                // on SPAs (React Router, Next.js, etc.) making the back button appear broken. (#25)
-                gv.goBack();
-                updateOmniBox();
-                updateBackCallbackState();
-                return;
-            }
-        } else if (activeGeckoView != null && activeGeckoView.canGoBack()) {
-            sp.edit().putBoolean("backPressed", true).apply();
-            activeGeckoView.stopLoading();
-            activeGeckoView.goBack();
+            if (gv.canGoBack()) sp.edit().putBoolean("backPressed", true).apply();
+            gv.processBackPressed(() -> {
+                runOnUiThread(() -> {
+                    if (currentAlbumController == gv) performPetalTabBackFallback(currentUrl);
+                });
+                return kotlin.Unit.INSTANCE;
+            });
+            updateOmniBox();
+            updateBackCallbackState();
+            return;
+        } else if (activeGeckoView != null) {
+            if (activeGeckoView.canGoBack()) sp.edit().putBoolean("backPressed", true).apply();
+            activeGeckoView.processBackPressed(() -> {
+                runOnUiThread(() -> {
+                    performPetalTabBackFallback(currentUrl);
+                });
+                return kotlin.Unit.INSTANCE;
+            });
             updateOmniBox();
             updateBackCallbackState();
             return;

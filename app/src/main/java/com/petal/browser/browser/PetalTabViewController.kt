@@ -1088,6 +1088,13 @@ class PetalTabViewController private constructor(
         }
     }
 
+    override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean {
+        if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
+            resetGestureExclusionRects()
+        }
+        return super.dispatchTouchEvent(event)
+    }
+
     override fun setDynamicToolbarMaxHeight(height: Int) {
         try {
             engineView.setDynamicToolbarMaxHeight(height)
