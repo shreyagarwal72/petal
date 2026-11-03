@@ -1,6 +1,6 @@
 <div align="center">
 
-<img alt="Petal, a private Material 3 Expressive browser for Android" src="docs/readme/banner.png" width="100%">
+<img alt="Petal, a private Material 3 Expressive browser for Android" src="docs/readme/hero-light.png" width="100%">
 
 <br><br>
 
