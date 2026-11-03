@@ -237,16 +237,28 @@ fun PetalExpressiveTheme(
         androidx.compose.runtime.mutableStateOf(expressiveShapesEnabled)
     }
 
+    var layoutSettingsState by androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf(com.petal.browser.ui.theme.layout.PetalLayoutSettings.fromPreferences(sp))
+    }
+
     androidx.compose.runtime.DisposableEffect(sp) {
-        val hapticListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "sp_touch_haptics") {
                 hapticsEnabled = sp.getBoolean("sp_touch_haptics", true)
             } else if (key == PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED) {
                 expressiveShapesState = sp.getBoolean(PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED, true)
+            } else if (key != null && (key.startsWith("sp_switch_type") ||
+                    key.startsWith("sp_slider_type") ||
+                    key.startsWith("sp_shapes_type") ||
+                    key.startsWith("sp_corners_size") ||
+                    key.startsWith("sp_corners_animation_throttle") ||
+                    key.startsWith("sp_fling_type") ||
+                    key.startsWith("sp_motion_duration_scale"))) {
+                layoutSettingsState = com.petal.browser.ui.theme.layout.PetalLayoutSettings.fromPreferences(sp)
             }
         }
-        sp.registerOnSharedPreferenceChangeListener(hapticListener)
-        onDispose { sp.unregisterOnSharedPreferenceChangeListener(hapticListener) }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
     val effectiveAppFont = remember(fontRevision, appFont) {
@@ -329,14 +341,7 @@ fun PetalExpressiveTheme(
         }
     }
 
-    val layoutSettings = com.petal.browser.ui.theme.layout.PetalLayoutSettings.fromPreferences(sp)
-
-    CompositionLocalProvider(
-        com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper,
-        com.petal.browser.ui.glass.LocalPetalGlassRevision provides glassRevision,
-        LocalPetalBlurEffectEnabled provides blurEffectEnabled,
-        LocalExpressiveShapesEnabled provides expressiveShapesState,
-        com.petal.browser.ui.theme.layout.LocalPetalLayoutSettings provides layoutSettings,
+        com.petal.browser.ui.theme.layout.LocalPetalLayoutSettings provides layoutSettingsState,
         com.petal.browser.haptics.LocalHapticEnabled provides hapticsEnabled,
         com.petal.browser.haptics.LocalVibrationIntensity provides com.petal.browser.haptics.VibrationIntensity.LIGHT,
         androidx.compose.ui.platform.LocalHapticFeedback provides hapticFeedback

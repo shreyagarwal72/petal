@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FastForward
@@ -28,7 +29,9 @@ import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.RoundedCorner
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.ToggleOn
+import androidx.compose.material.icons.rounded.Widgets
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,10 +50,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
+import com.petal.browser.ui.components.EnhancedSliderItem
 import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -63,6 +68,7 @@ import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.glass.rememberGlassSheen
 import com.petal.browser.ui.theme.PetalThemePrefs
+import com.petal.browser.ui.theme.layout.LayoutIcons
 import com.petal.browser.ui.theme.layout.PetalFlingType
 import com.petal.browser.ui.theme.layout.PetalLayoutSettings
 import com.petal.browser.ui.theme.layout.PetalShapeType
@@ -72,14 +78,11 @@ import java.util.Locale
 
 /**
  * ImageToolbox-style Layout Settings & Live Controls Section.
- * Matching the layout in ImageToolbox:
- * - Switch Type (Material You, Compose, Pixel, Fluent, Cupertino, HyperOS, OneUI)
- * - Slider Type (Fancy, Material You, Material, HyperOS)
- * - Shapes Type (Rounded, Cut, Squircle, Smooth, Wavy, Scoop, Notch)
- * - Corners Size (0f..2f slider with live numeric badge)
- * - Corners Animation Throttle (0..500ms slider with ms badge)
- * - Fling Type (Android Native, Smooth, iOS Style, Snappy, Floaty, Reduced Motion)
- * - Motion Duration Scale (0.25x..3x slider with multiplier badge)
+ * Fully aligned with Petal Containment Design System:
+ * - Connected group containment rows (TOP, MIDDLE, BOTTOM)
+ * - EnhancedSliderItems with live numeric pills, icon badges, and reset actions
+ * - Bottom Sheet pickers redesigned with Petal containment items & ImageToolbox icons
+ * - Auto-applied Liquid Glass styling when liquid glass theme is active (NO manual toggle)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -140,7 +143,7 @@ fun PetalLayoutSettingsSection(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            // 1. Switch Type
+            // 1. Switch Type Picker Row
             PetalGroupRow(
                 icon = Icons.Rounded.ToggleOn,
                 title = "Switch Type",
@@ -159,7 +162,7 @@ fun PetalLayoutSettingsSection(
                 onClick = { showSwitchTypeSheet = true }
             )
 
-            // 2. Slider Type
+            // 2. Slider Type Picker Row
             PetalGroupRow(
                 icon = Icons.Rounded.LinearScale,
                 title = "Slider Type",
@@ -178,7 +181,7 @@ fun PetalLayoutSettingsSection(
                 onClick = { showSliderTypeSheet = true }
             )
 
-            // 3. Shapes Type
+            // 3. Shapes Type Picker Row
             PetalGroupRow(
                 icon = Icons.Rounded.RoundedCorner,
                 title = "Shapes Type",
@@ -197,139 +200,42 @@ fun PetalLayoutSettingsSection(
                 onClick = { showShapeTypeSheet = true }
             )
 
-            // 4. Corners Size Slider
-            val cornersCardShape = petalGroupShape(PetalGroupPosition.MIDDLE)
-            Card(
-                shape = cornersCardShape,
-                colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .liquidGlassChrome(shape = cornersCardShape, enabled = isGlass, sheenIntensity = glassSheen)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            PetalGroupIconBadge(
-                                icon = Icons.Rounded.Percent,
-                                container = MaterialTheme.colorScheme.primaryContainer,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                size = 36.dp,
-                                iconSize = 18.dp
-                            )
-                            Text(
-                                text = "Corners Size",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = String.format(Locale.US, "%.1f", cornersSize),
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    PetalSlider(
-                        value = cornersSize,
-                        onValueChange = {
-                            cornersSize = it
-                            sp.edit().putFloat(PetalLayoutSettings.KEY_CORNERS_SIZE, it).apply()
-                            PetalThemePrefs.bump()
-                        },
-                        valueRange = 0f..2f,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+            // 4. Corners Size Slider (EnhancedSliderItem)
+            EnhancedSliderItem(
+                value = cornersSize,
+                title = "Corners Size",
+                icon = Icons.Rounded.Percent,
+                valueText = "${(cornersSize * 100).toInt()}%",
+                defaultValue = 1.0f,
+                valueRange = 0f..2f,
+                steps = 20,
+                position = PetalGroupPosition.MIDDLE,
+                onValueChange = {
+                    cornersSize = it
+                    sp.edit().putFloat(PetalLayoutSettings.KEY_CORNERS_SIZE, it).apply()
+                    PetalThemePrefs.bump()
                 }
-            }
+            )
 
-            // 5. Corners Animation Throttle
-            val throttleCardShape = petalGroupShape(PetalGroupPosition.MIDDLE)
-            Card(
-                shape = throttleCardShape,
-                colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .liquidGlassChrome(shape = throttleCardShape, enabled = isGlass, sheenIntensity = glassSheen)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            PetalGroupIconBadge(
-                                icon = Icons.Rounded.Schedule,
-                                container = MaterialTheme.colorScheme.secondaryContainer,
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                size = 36.dp,
-                                iconSize = 18.dp
-                            )
-                            Text(
-                                text = "Corners Animation Throttle",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "${cornersThrottleMs} ms",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    PetalSlider(
-                        value = cornersThrottleMs.toFloat(),
-                        onValueChange = {
-                            val v = it.toLong()
-                            cornersThrottleMs = v
-                            sp.edit().putLong(PetalLayoutSettings.KEY_CORNERS_THROTTLE, v).apply()
-                            PetalThemePrefs.bump()
-                        },
-                        valueRange = 0f..500f,
-                        steps = 50,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+            // 5. Corners Animation Throttle (EnhancedSliderItem)
+            EnhancedSliderItem(
+                value = cornersThrottleMs.toFloat(),
+                title = "Corners Animation Throttle",
+                icon = Icons.Rounded.Schedule,
+                valueText = "${cornersThrottleMs} ms",
+                defaultValue = 153f,
+                valueRange = 0f..500f,
+                steps = 50,
+                position = PetalGroupPosition.MIDDLE,
+                onValueChange = {
+                    val v = it.toLong()
+                    cornersThrottleMs = v
+                    sp.edit().putLong(PetalLayoutSettings.KEY_CORNERS_THROTTLE, v).apply()
+                    PetalThemePrefs.bump()
                 }
-            }
+            )
 
-            // 6. Fling Type
+            // 6. Fling Type Picker Row
             PetalGroupRow(
                 icon = Icons.Rounded.Speed,
                 title = "Fling Type",
@@ -348,77 +254,28 @@ fun PetalLayoutSettingsSection(
                 onClick = { showFlingTypeSheet = true }
             )
 
-            // 7. Motion Duration Scale
-            val motionCardShape = petalGroupShape(PetalGroupPosition.BOTTOM)
-            Card(
-                shape = motionCardShape,
-                colors = CardDefaults.cardColors(containerColor = petalGroupSurfaceColor()),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .liquidGlassChrome(shape = motionCardShape, enabled = isGlass, sheenIntensity = glassSheen)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            PetalGroupIconBadge(
-                                icon = Icons.Rounded.FastForward,
-                                container = MaterialTheme.colorScheme.primaryContainer,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                size = 36.dp,
-                                iconSize = 18.dp
-                            )
-                            Text(
-                                text = "Motion Duration Scale",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "${String.format(Locale.US, "%.2f", motionDurationScale)}x",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    PetalSlider(
-                        value = motionDurationScale,
-                        onValueChange = {
-                            motionDurationScale = it
-                            sp.edit().putFloat(PetalLayoutSettings.KEY_MOTION_DURATION_SCALE, it).apply()
-                            PetalThemePrefs.bump()
-                        },
-                        valueRange = 0.25f..3.0f,
-                        steps = 11,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+            // 7. Motion Duration Scale (EnhancedSliderItem)
+            EnhancedSliderItem(
+                value = motionDurationScale,
+                title = "Motion Duration Scale",
+                icon = Icons.Rounded.FastForward,
+                valueText = "${String.format(Locale.US, "%.2f", motionDurationScale)}x",
+                defaultValue = 1.0f,
+                valueRange = 0.25f..3.0f,
+                steps = 11,
+                position = PetalGroupPosition.BOTTOM,
+                onValueChange = {
+                    motionDurationScale = it
+                    sp.edit().putFloat(PetalLayoutSettings.KEY_MOTION_DURATION_SCALE, it).apply()
+                    PetalThemePrefs.bump()
                 }
-            }
+            )
         }
     }
 
-    // ── Bottom Sheet Pickers ──
+    // ── Bottom Sheet Pickers in Petal Containment Design ──
 
-    // Switch Type Sheet
+    // 1. Switch Type Sheet
     if (showSwitchTypeSheet) {
         PetalSheet(
             title = "Switch Type",
@@ -429,57 +286,52 @@ fun PetalLayoutSettingsSection(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                PetalSwitchType.entries.forEach { item ->
+                val entries = PetalSwitchType.entries
+                entries.forEachIndexed { index, item ->
                     val isSelected = item == switchType
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                switchType = item
-                                sp.edit().putString(PetalLayoutSettings.KEY_SWITCH_TYPE, item.key).apply()
-                                PetalThemePrefs.bump()
-                                showSwitchTypeSheet = false
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = item.title,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = item.subtitle,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Spacer(Modifier.width(8.dp))
+                    val pos = PetalGroupPosition.byIndex(index, entries.size)
+                    val icon = when (item) {
+                        PetalSwitchType.MATERIAL_YOU -> Icons.Rounded.Android
+                        PetalSwitchType.COMPOSE -> Icons.Rounded.Widgets
+                        PetalSwitchType.PIXEL -> Icons.Rounded.Android
+                        PetalSwitchType.FLUENT -> LayoutIcons.Windows
+                        PetalSwitchType.CUPERTINO -> LayoutIcons.IOS
+                        PetalSwitchType.HYPEROS -> LayoutIcons.HyperOS
+                        PetalSwitchType.ONE_UI -> LayoutIcons.SamsungLetter
+                    }
+
+                    PetalGroupRow(
+                        icon = icon,
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        position = pos,
+                        iconContainer = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                        else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        iconTint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        trailing = {
                             Icon(
                                 imageVector = if (isSelected) Icons.Rounded.RadioButtonChecked else Icons.Rounded.RadioButtonUnchecked,
-                                contentDescription = null,
-                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                contentDescription = if (isSelected) "Selected" else "Unselected",
+                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                modifier = Modifier.size(22.dp)
                             )
+                        },
+                        onClick = {
+                            switchType = item
+                            sp.edit().putString(PetalLayoutSettings.KEY_SWITCH_TYPE, item.key).apply()
+                            PetalThemePrefs.bump()
+                            showSwitchTypeSheet = false
                         }
-                    }
+                    )
                 }
             }
         }
     }
 
-    // Slider Type Sheet
+    // 2. Slider Type Sheet
     if (showSliderTypeSheet) {
         PetalSheet(
             title = "Slider Type",
@@ -490,57 +342,49 @@ fun PetalLayoutSettingsSection(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                PetalSliderType.entries.forEach { item ->
+                val entries = PetalSliderType.entries
+                entries.forEachIndexed { index, item ->
                     val isSelected = item == sliderType
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                sliderType = item
-                                sp.edit().putString(PetalLayoutSettings.KEY_SLIDER_TYPE, item.key).apply()
-                                PetalThemePrefs.bump()
-                                showSliderTypeSheet = false
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = item.title,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = item.subtitle,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Spacer(Modifier.width(8.dp))
+                    val pos = PetalGroupPosition.byIndex(index, entries.size)
+                    val icon = when (item) {
+                        PetalSliderType.FANCY -> Icons.Rounded.Star
+                        PetalSliderType.MATERIAL_YOU -> Icons.Rounded.Android
+                        PetalSliderType.MATERIAL -> Icons.Rounded.LinearScale
+                        PetalSliderType.HYPEROS -> LayoutIcons.HyperOS
+                    }
+
+                    PetalGroupRow(
+                        icon = icon,
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        position = pos,
+                        iconContainer = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
+                        else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        iconTint = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        trailing = {
                             Icon(
                                 imageVector = if (isSelected) Icons.Rounded.RadioButtonChecked else Icons.Rounded.RadioButtonUnchecked,
-                                contentDescription = null,
-                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                contentDescription = if (isSelected) "Selected" else "Unselected",
+                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                modifier = Modifier.size(22.dp)
                             )
+                        },
+                        onClick = {
+                            sliderType = item
+                            sp.edit().putString(PetalLayoutSettings.KEY_SLIDER_TYPE, item.key).apply()
+                            PetalThemePrefs.bump()
+                            showSliderTypeSheet = false
                         }
-                    }
+                    )
                 }
             }
         }
     }
 
-    // Shapes Type Sheet
+    // 3. Shape Type Sheet
     if (showShapeTypeSheet) {
         PetalSheet(
             title = "Shapes Type",
@@ -551,57 +395,43 @@ fun PetalLayoutSettingsSection(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                PetalShapeType.entries.forEach { item ->
+                val entries = PetalShapeType.entries
+                entries.forEachIndexed { index, item ->
                     val isSelected = item == shapeType
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                shapeType = item
-                                sp.edit().putString(PetalLayoutSettings.KEY_SHAPE_TYPE, item.key).apply()
-                                PetalThemePrefs.bump()
-                                showShapeTypeSheet = false
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = item.title,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = item.subtitle,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Spacer(Modifier.width(8.dp))
+                    val pos = PetalGroupPosition.byIndex(index, entries.size)
+
+                    PetalGroupRow(
+                        icon = Icons.Rounded.RoundedCorner,
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        position = pos,
+                        iconContainer = if (isSelected) MaterialTheme.colorScheme.tertiaryContainer
+                        else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        iconTint = if (isSelected) MaterialTheme.colorScheme.onTertiaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        trailing = {
                             Icon(
                                 imageVector = if (isSelected) Icons.Rounded.RadioButtonChecked else Icons.Rounded.RadioButtonUnchecked,
-                                contentDescription = null,
-                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                contentDescription = if (isSelected) "Selected" else "Unselected",
+                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                modifier = Modifier.size(22.dp)
                             )
+                        },
+                        onClick = {
+                            shapeType = item
+                            sp.edit().putString(PetalLayoutSettings.KEY_SHAPE_TYPE, item.key).apply()
+                            PetalThemePrefs.bump()
+                            showShapeTypeSheet = false
                         }
-                    }
+                    )
                 }
             }
         }
     }
 
-    // Fling Type Sheet
+    // 4. Fling Type Sheet
     if (showFlingTypeSheet) {
         PetalSheet(
             title = "Fling Type",
@@ -612,51 +442,37 @@ fun PetalLayoutSettingsSection(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                PetalFlingType.entries.forEach { item ->
+                val entries = PetalFlingType.entries
+                entries.forEachIndexed { index, item ->
                     val isSelected = item == flingType
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                flingType = item
-                                sp.edit().putString(PetalLayoutSettings.KEY_FLING_TYPE, item.key).apply()
-                                PetalThemePrefs.bump()
-                                showFlingTypeSheet = false
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = item.title,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = item.subtitle,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Spacer(Modifier.width(8.dp))
+                    val pos = PetalGroupPosition.byIndex(index, entries.size)
+
+                    PetalGroupRow(
+                        icon = Icons.Rounded.Speed,
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        position = pos,
+                        iconContainer = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                        else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        iconTint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        trailing = {
                             Icon(
                                 imageVector = if (isSelected) Icons.Rounded.RadioButtonChecked else Icons.Rounded.RadioButtonUnchecked,
-                                contentDescription = null,
-                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                contentDescription = if (isSelected) "Selected" else "Unselected",
+                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                modifier = Modifier.size(22.dp)
                             )
+                        },
+                        onClick = {
+                            flingType = item
+                            sp.edit().putString(PetalLayoutSettings.KEY_FLING_TYPE, item.key).apply()
+                            PetalThemePrefs.bump()
+                            showFlingTypeSheet = false
                         }
-                    }
+                    )
                 }
             }
         }
