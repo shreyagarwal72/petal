@@ -78,7 +78,7 @@ object PetalPrivacyHardening {
         val sb = StringBuilder()
         sb.appendLine("// ── Petal Browser Hardened Privacy Profile: ${profile.name} ──")
 
-        // 1. Telemetry & Metrics Severed (Mull / LibreWolf)
+        // 1. Telemetry & Metrics Severed (Mull / IronFox / LibreWolf)
         sb.appendLine("""
             user_pref("toolkit.telemetry.enabled", false);
             user_pref("toolkit.telemetry.unified", false);
@@ -90,9 +90,17 @@ object PetalPrivacyHardening {
             user_pref("datareporting.policy.dataSubmissionEnabled", false);
             user_pref("app.normandy.enabled", false);
             user_pref("app.shield.optoutstudy.enabled", false);
+            // IronFox / Phoenix Mobile Anti-Tracking & Network Partitioning
+            user_pref("privacy.partition.network_state", true);
+            user_pref("privacy.partition.serviceWorkers", true);
+            user_pref("privacy.partition.always_partition_third_party_non_cookie_storage", true);
+            user_pref("privacy.query_stripping.enabled", true);
+            user_pref("privacy.query_stripping.enabled.pbmode", true);
+            user_pref("privacy.fingerprintingProtection", true);
+            user_pref("privacy.fingerprintingProtection.pbmode", true);
         """.trimIndent())
 
-        // 2. WebRTC IP Leak Prevention (Mull / DivestOS)
+        // 2. WebRTC IP Leak Prevention (Mull / IronFox / DivestOS)
         if (webrtcProtect || profile != PrivacyProfile.STANDARD) {
             sb.appendLine("""
                 // WebRTC local and private interface address leak defuser
@@ -102,7 +110,7 @@ object PetalPrivacyHardening {
             """.trimIndent())
         }
 
-        // 3. Hardware & Sensor API Fingerprinting Defuser (Mull / LibreWolf)
+        // 3. Hardware & Sensor API Fingerprinting Defuser (Mull / IronFox / LibreWolf)
         if (profile != PrivacyProfile.STANDARD) {
             sb.appendLine("""
                 // Hardware enumeration defenses
@@ -111,9 +119,14 @@ object PetalPrivacyHardening {
                 user_pref("dom.vr.enabled", false);
                 user_pref("device.sensors.enabled", false);
                 user_pref("beacon.enabled", false);
-                // Referrer Trimming: Trim to origin on cross-origin requests
+                user_pref("dom.vibrator.enabled", false);
+                // Referrer Trimming: Trim to origin on cross-origin requests (IronFox standard)
                 user_pref("network.http.referer.XOriginPolicy", 2);
                 user_pref("network.http.referer.XOriginTrimmingPolicy", 2);
+                // Disable prefetching and speculative connections (stops background tracker pings)
+                user_pref("network.prefetch-next", false);
+                user_pref("network.dns.disablePrefetch", true);
+                user_pref("network.http.speculative-parallel-limit", 0);
             """.trimIndent())
         }
 

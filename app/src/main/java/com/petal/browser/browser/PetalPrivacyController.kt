@@ -15,6 +15,7 @@ object PetalPrivacyController {
 
     enum class EtpMode {
         STANDARD,
+        IRONFOX_HARDENED,
         STRICT,
         CUSTOM
     }
@@ -28,18 +29,20 @@ object PetalPrivacyController {
 
         val level = when (mode) {
             EtpMode.STANDARD -> ContentBlocking.EtpLevel.DEFAULT
+            EtpMode.IRONFOX_HARDENED -> ContentBlocking.EtpLevel.STRICT
             EtpMode.STRICT -> ContentBlocking.EtpLevel.STRICT
             EtpMode.CUSTOM -> ContentBlocking.EtpLevel.DEFAULT
         }
 
         val cookieBehavior = when (mode) {
-            EtpMode.STRICT -> ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
+            EtpMode.IRONFOX_HARDENED, EtpMode.STRICT -> ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
             else -> ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
         }
 
         runtime.settings.contentBlocking.apply {
             setEnhancedTrackingProtectionLevel(level)
             setCookieBehavior(cookieBehavior)
+            setStrictSocialTrackingProtection(mode != EtpMode.STANDARD)
             setAntiTracking(
                 ContentBlocking.AntiTracking.DEFAULT or
                 ContentBlocking.AntiTracking.STP or
