@@ -1,0 +1,7 @@
+Petal Browser v4.6.0 Release:
+- ImageToolbox Tactile Layout & Controls: Complete layout customization suite featuring Switch Type (Material You, Compose, Pixel, Fluent, Cupertino, HyperOS, OneUI), Slider Type (Fancy cookie roller, Material You, Material, HyperOS), Shape Type (Rounded, Cut, Squircle, Smooth, Wavy, Scoop, Notch), dynamic Corners Size, Corners Animation Throttle, Fling Type, and Motion Duration Scale with 100% live reactivity.
+- Liquid Glass Auto-Adaptation: Liquid Glass switch and slider rendering automatically adapts when Liquid Glass theme is enabled, featuring real-time frosted glass refraction, dynamic sheen, and glowing indicators.
+- Material 3 Expressive Vertical Fast-Scrollbar: PixelMusic-grade expressive vertical scrollbar with rolling morphing thumb, fast-scroll letter badges, and haptic detents across Bookmarks, History, Downloads, File Pickers, and Tab Switchers.
+- Media Settings Sliders: Fully upgraded horizontal fine-tuning, vertical margin, and notch flare sliders in Media & Cutout Island settings to expressive PetalSlider with live Liquid Glass support.
+- Mix Palettes Overhaul: Enhanced color harmonization engine with live reactivity and one-tap recipes.
+- Send Tab to Device: Encrypted bi-directional Mozilla Sync tab dispatching across paired desktop and mobile devices.

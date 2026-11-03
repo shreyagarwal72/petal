@@ -1,6 +1,28 @@
-### v4.6.0 — ✨ More Expressive
+### v4.6.0 — ✨ More Expressive & Tactile Layout Controls
 
-> *"The landmark 'More Expressive' release elevates Petal Browser to new heights of Material 3 Expressive design, fluid reactive theming, and Firefox cloud power: introducing a completely overhauled and extended Mix Palettes engine with live reactivity and one-tap harmony recipes, bi-directional Send Tab to Device across all connected Firefox instances, and a robust Reader Mode with Read Aloud text-to-speech."*
+> *"The landmark 'More Expressive' release elevates Petal Browser to new heights of Material 3 Expressive design, fluid reactive theming, and tactile user customization: introducing a comprehensive ImageToolbox-style Layout & Controls suite with live component styling, seamless Liquid Glass auto-adaptation, PixelMusic-grade expressive fast-scrollbars, overhauled Mix Palettes with one-tap harmony recipes, bi-directional Send Tab to Device across all connected Firefox instances, and a robust Reader Mode with Read Aloud text-to-speech."*
+
+#### 🎛️ ImageToolbox-Style Expressive Layout & Controls (`PetalLayoutSettingsSection.kt`, `PetalSwitchType.kt`, `PetalSliderType.kt`, `PetalShapeType.kt`, `PetalFlingType.kt`)
+- **Seamless Live Layout Settings**:
+  - Added dedicated **"Expressive Layout & Controls"** section to Appearance Settings matching ImageToolbox with 100% real-time reactivity (no app restart required).
+  - **Switch Type**: Modal sheet selector supporting **Compose**, **Material You**, **Pixel**, **Fluent**, **Cupertino**, **HyperOS**, and **OneUI** toggle styles.
+  - **Slider Type**: Modal sheet selector featuring **Fancy** (scalloped cookie thumb rolling inside track), **Material You** (pill thumb with dynamic fill), **Material** (rail circle thumb), and **HyperOS** (capsule thumb).
+  - **Shape Type**: Modal sheet offering geometric corner variations: **Rounded**, **Cut**, **Squircle**, **Smooth**, **Wavy**, **Scoop**, and **Notch**.
+  - **Corners Size**: Live slider (`0.0x` to `2.0x`) with live numeric badge scaling UI surface corner radiuses.
+  - **Corners Animation Throttle**: Interactive debounce slider (`0` to `500 ms`) with millisecond badge for tactile touch response calibration.
+  - **Fling Type**: Configurable scroll decay physics (**Android Native**, **Smooth**, **iOS Style**, **Snappy**, **Floaty**, and **Reduced Motion**).
+  - **Motion Duration Scale**: Live transition speed multiplier slider (`0.25x` to `3.0x`) with discrete tick stops.
+- **Liquid Glass Auto-Adaptation**:
+  - Removed manual "Liquid Glass" toggle option from the picker; switches and sliders now automatically adapt to translucent frosted glass refraction, sheen, and glowing indicators whenever the Liquid Glass theme is enabled.
+- **Media Settings Sliders Upgrade (`MediaSettingsScreen.kt`)**:
+  - Replaced all legacy AndroidX `Slider` composables (Horizontal Fine-Tuning, Vertical Margin Down, and Notch Flare Curvature) with `PetalSlider`, bringing full Liquid Glass chrome and tactile rolling cookie thumb physics to media island settings.
+
+#### 📜 PixelMusic-Grade Expressive Vertical Fast-Scrollbar (`PetalExpressiveScrollBar.kt`, `PetalScrollBarMetrics.kt`)
+- **Fluid Morphing Fast-Scrollbar**:
+  - Integrated a vertical scroll indicator with morphing kinetic thumb, track guidance line, and touch drag scaling ported directly from PixelMusic.
+  - **Dynamic Fast-Scroll Alphabet Badge**: Floating expressive badge showing item initials, dates, and categories during high-speed drag scrubbing.
+  - **Haptic Detents**: Gentle tactile tick feedback when scrubbing past section boundaries and initial changes.
+  - **Integrated App-Wide**: Deployed across Bookmarks, History, Downloads, File Pickers, Tab Switcher, and Store subpages.
 
 #### 🎨 Mix Palettes Overhaul & Instant Live Reactivity (`PetalPaletteMix.kt`, `PetalPaletteMixUi.kt`)
 - **Resolved Live Toggle Reactivity**:
