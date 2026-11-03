@@ -341,6 +341,11 @@ fun PetalExpressiveTheme(
         }
     }
 
+    CompositionLocalProvider(
+        com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper,
+        com.petal.browser.ui.glass.LocalPetalGlassRevision provides glassRevision,
+        LocalPetalBlurEffectEnabled provides blurEffectEnabled,
+        LocalExpressiveShapesEnabled provides expressiveShapesState,
         com.petal.browser.ui.theme.layout.LocalPetalLayoutSettings provides layoutSettingsState,
         com.petal.browser.haptics.LocalHapticEnabled provides hapticsEnabled,
         com.petal.browser.haptics.LocalVibrationIntensity provides com.petal.browser.haptics.VibrationIntensity.LIGHT,

@@ -64,6 +64,7 @@ import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.PetalSheet
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.glass.rememberGlassSheen
@@ -291,7 +292,7 @@ fun PetalLayoutSettingsSection(
                 val entries = PetalSwitchType.entries
                 entries.forEachIndexed { index, item ->
                     val isSelected = item == switchType
-                    val pos = PetalGroupPosition.byIndex(index, entries.size)
+                    val pos = petalGroupPositionFor(index, entries.size)
                     val icon = when (item) {
                         PetalSwitchType.MATERIAL_YOU -> Icons.Rounded.Android
                         PetalSwitchType.COMPOSE -> Icons.Rounded.Widgets
@@ -347,7 +348,7 @@ fun PetalLayoutSettingsSection(
                 val entries = PetalSliderType.entries
                 entries.forEachIndexed { index, item ->
                     val isSelected = item == sliderType
-                    val pos = PetalGroupPosition.byIndex(index, entries.size)
+                    val pos = petalGroupPositionFor(index, entries.size)
                     val icon = when (item) {
                         PetalSliderType.FANCY -> Icons.Rounded.Star
                         PetalSliderType.MATERIAL_YOU -> Icons.Rounded.Android
@@ -400,7 +401,7 @@ fun PetalLayoutSettingsSection(
                 val entries = PetalShapeType.entries
                 entries.forEachIndexed { index, item ->
                     val isSelected = item == shapeType
-                    val pos = PetalGroupPosition.byIndex(index, entries.size)
+                    val pos = petalGroupPositionFor(index, entries.size)
 
                     PetalGroupRow(
                         icon = Icons.Rounded.RoundedCorner,
@@ -447,7 +448,7 @@ fun PetalLayoutSettingsSection(
                 val entries = PetalFlingType.entries
                 entries.forEachIndexed { index, item ->
                     val isSelected = item == flingType
-                    val pos = PetalGroupPosition.byIndex(index, entries.size)
+                    val pos = petalGroupPositionFor(index, entries.size)
 
                     PetalGroupRow(
                         icon = Icons.Rounded.Speed,
