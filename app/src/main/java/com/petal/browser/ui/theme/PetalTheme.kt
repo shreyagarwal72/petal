@@ -329,11 +329,14 @@ fun PetalExpressiveTheme(
         }
     }
 
+    val layoutSettings = com.petal.browser.ui.theme.layout.PetalLayoutSettings.fromPreferences(sp)
+
     CompositionLocalProvider(
         com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper,
         com.petal.browser.ui.glass.LocalPetalGlassRevision provides glassRevision,
         LocalPetalBlurEffectEnabled provides blurEffectEnabled,
         LocalExpressiveShapesEnabled provides expressiveShapesState,
+        com.petal.browser.ui.theme.layout.LocalPetalLayoutSettings provides layoutSettings,
         com.petal.browser.haptics.LocalHapticEnabled provides hapticsEnabled,
         com.petal.browser.haptics.LocalVibrationIntensity provides com.petal.browser.haptics.VibrationIntensity.LIGHT,
         androidx.compose.ui.platform.LocalHapticFeedback provides hapticFeedback

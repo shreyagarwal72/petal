@@ -1395,6 +1395,11 @@ fun AppearanceSettingsScreenContent(
                     }
                 }
 
+                // Section 3b: Expressive Layout & Controls (Ported from ImageToolbox)
+                PetalLayoutSettingsSection(
+                    targetHighlightItemId = targetHighlightItemId
+                )
+
                 // Section 4: Display Refresh Rate & Performance
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_display_performance),

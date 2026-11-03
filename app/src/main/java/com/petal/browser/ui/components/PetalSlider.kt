@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialShapes
@@ -33,16 +34,16 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.glass.rememberGlassSheen
+import com.petal.browser.ui.theme.layout.LocalPetalLayoutSettings
+import com.petal.browser.ui.theme.layout.PetalSliderType
 
 private val TrackHeight = 46.dp
 private val ThumbSize = 30.dp
 private val ThumbInset = 8.dp
 
 /**
- * ImageToolbox-style expressive slider: a chunky pill track with a filled
- * section and a scalloped cookie thumb that rides *inside* the pill. The thumb
- * physically rolls — its rotation is derived from the distance travelled, so
- * the scallops turn like a wheel as the value changes.
+ * Expressive slider supporting ImageToolbox slider styles (Fancy, Material You, Material, HyperOS).
+ * ALL variants dynamically support Liquid Glass styling with frosted glass refraction and sheen.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -53,7 +54,6 @@ fun PetalSlider(
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     enabled: Boolean = true,
     onValueChangeFinished: (() -> Unit)? = null,
-    /** Number of discrete stops between the ends (0 = continuous). */
     steps: Int = 0,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -62,6 +62,7 @@ fun PetalSlider(
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = rememberGlassSheen(isGlass)
+    val layoutSettings = LocalPetalLayoutSettings.current
     val trackShape = RoundedCornerShape(50)
 
     Slider(
@@ -73,7 +74,6 @@ fun PetalSlider(
         onValueChangeFinished = onValueChangeFinished,
         interactionSource = interactionSource,
         modifier = modifier.height(TrackHeight),
-        // The track draws the thumb too, so it can be positioned inside the pill
         thumb = {},
         track = { state ->
             val target = (
@@ -81,8 +81,6 @@ fun PetalSlider(
                     (state.valueRange.endInclusive - state.valueRange.start)
                 ).coerceIn(0f, 1f)
 
-            // When actively interacting (dragging/pressing), follow touch 1:1 with zero lag.
-            // When idle (e.g. preset or programmatic update), use snappy spring animation.
             val animatedFraction by animateFloatAsState(
                 targetValue = target,
                 animationSpec = spring(
@@ -114,35 +112,112 @@ fun PetalSlider(
                 val travel = maxWidth - ThumbSize - ThumbInset * 2
                 val thumbStart = ThumbInset + travel * fraction
 
-                // Rolling: one full turn per circumference travelled
-                val circumference = ThumbSize.value * Math.PI.toFloat()
-                val rollDegrees = (travel.value * fraction / circumference) * 360f
+                when (layoutSettings.sliderType) {
+                    PetalSliderType.FANCY -> {
+                        // Rolling 12-sided cookie thumb inside pill track
+                        val circumference = ThumbSize.value * Math.PI.toFloat()
+                        val rollDegrees = (travel.value * fraction / circumference) * 360f
+                        val fillWidth = if (fraction <= 0.001f) 0.dp else thumbStart + ThumbSize + ThumbInset
 
-                // Deep filled section — its rounded cap sits just past the thumb
-                val fillWidth = if (fraction <= 0.001f) 0.dp else thumbStart + ThumbSize + ThumbInset
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(fillWidth)
-                        .clip(RoundedCornerShape(50))
-                        .background(
-                            if (enabled) MaterialTheme.colorScheme.primaryContainer
-                            else MaterialTheme.colorScheme.outlineVariant
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(fillWidth)
+                                .clip(RoundedCornerShape(50))
+                                .background(
+                                    if (enabled) MaterialTheme.colorScheme.primaryContainer
+                                    else MaterialTheme.colorScheme.outlineVariant
+                                )
                         )
-                )
-                // Pale scalloped thumb, rolling as it travels
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .offset(x = thumbStart)
-                        .size(ThumbSize)
-                        .graphicsLayer { rotationZ = rollDegrees }
-                        .clip(MaterialShapes.Cookie12Sided.toShape())
-                        .background(
-                            if (enabled) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.surfaceContainer
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .offset(x = thumbStart)
+                                .size(ThumbSize)
+                                .graphicsLayer { rotationZ = rollDegrees }
+                                .clip(MaterialShapes.Cookie12Sided.toShape())
+                                .background(
+                                    if (enabled) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.surfaceContainer
+                                )
                         )
-                )
+                    }
+                    PetalSliderType.MATERIAL_YOU -> {
+                        // Pill capsule thumb with dynamic fill bar
+                        val fillWidth = if (fraction <= 0.001f) 0.dp else thumbStart + ThumbSize + ThumbInset
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(fillWidth)
+                                .clip(RoundedCornerShape(50))
+                                .background(
+                                    if (enabled) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.outlineVariant
+                                )
+                        )
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .offset(x = thumbStart + 6.dp)
+                                .size(width = 8.dp, height = 24.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(
+                                    if (enabled) MaterialTheme.colorScheme.onPrimary
+                                    else MaterialTheme.colorScheme.surface
+                                )
+                        )
+                    }
+                    PetalSliderType.MATERIAL -> {
+                        // Standard Material 3 circle thumb centered on track rail
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .fillMaxWidth(fraction)
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(
+                                    if (enabled) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.outlineVariant
+                                )
+                        )
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .offset(x = thumbStart)
+                                .size(ThumbSize)
+                                .clip(CircleShape)
+                                .background(
+                                    if (enabled) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.surfaceContainer
+                                )
+                        )
+                    }
+                    PetalSliderType.HYPEROS -> {
+                        // Sleek embedded capsule thumb with thin accent rail
+                        val fillWidth = if (fraction <= 0.001f) 0.dp else thumbStart + ThumbSize + ThumbInset
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(fillWidth)
+                                .clip(RoundedCornerShape(50))
+                                .background(
+                                    if (enabled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                                    else MaterialTheme.colorScheme.outlineVariant
+                                )
+                        )
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .offset(x = thumbStart + 3.dp)
+                                .size(width = 14.dp, height = 26.dp)
+                                .clip(RoundedCornerShape(7.dp))
+                                .background(
+                                    if (enabled) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                        )
+                    }
+                }
             }
         }
     )
