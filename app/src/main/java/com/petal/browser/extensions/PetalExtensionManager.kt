@@ -113,18 +113,256 @@ object PetalExtensionManager {
 
     val catalog: List<CatalogEntry> = listOf(
         CatalogEntry(
-            id = "ublock-origin",
-            name = "uBlock Origin",
-            description = "Efficient, wide-spectrum ad & tracker content blocker. Blocks ads, popups, trackers, and malware sites.",
-            amoSlug = "ublock-origin",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/ublock-origin/"
+            id = "adblock-plus",
+            name = "Adblock Plus",
+            description = "Block annoying video ads, banners, and popups while speeding up web browsing.",
+            amoSlug = "adblock-plus",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/adblock-plus/"
+        ),
+        CatalogEntry(
+            id = "adguard-adblocker",
+            name = "AdGuard AdBlocker",
+            description = "Comprehensive ad and tracking defense with cosmetic element filtering.",
+            amoSlug = "adguard-adblocker",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/adguard-adblocker/"
+        ),
+        CatalogEntry(
+            id = "auto-tab-discard",
+            name = "Auto Tab Discard",
+            description = "Frees up RAM and battery by automatically unloading inactive background tabs.",
+            amoSlug = "auto-tab-discard",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/auto-tab-discard/"
+        ),
+        CatalogEntry(
+            id = "bitwarden-password-manager",
+            name = "Bitwarden Password Manager",
+            description = "Secure open-source password vault with auto-fill support for logins and 2FA.",
+            amoSlug = "bitwarden-password-manager",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/bitwarden-password-manager/"
+        ),
+        CatalogEntry(
+            id = "buster-captcha-solver",
+            name = "Buster: Captcha Solver for Humans",
+            description = "Solves difficult captchas automatically by completing audio challenges using speech recognition.",
+            amoSlug = "buster-captcha-solver",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/buster-captcha-solver/"
+        ),
+        CatalogEntry(
+            id = "canvasblocker",
+            name = "CanvasBlocker",
+            description = "Alters canvas and audio APIs to prevent websites from fingerprinting your device.",
+            amoSlug = "canvasblocker",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/canvasblocker/"
+        ),
+        CatalogEntry(
+            id = "chrome-mask",
+            name = "Chrome Mask",
+            description = "Makes websites see Chrome instead of Firefox, for sites that block or degrade Firefox users.",
+            amoSlug = "chrome-mask",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/chrome-mask/"
+        ),
+        CatalogEntry(
+            id = "clearurls",
+            name = "ClearURLs",
+            description = "Removes tracking parameters and telemetry tokens from URLs to protect your privacy.",
+            amoSlug = "clearurls",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/clearurls/"
+        ),
+        CatalogEntry(
+            id = "consent-o-matic",
+            name = "Consent-O-Matic",
+            description = "Automatically answers GDPR cookie consent forms, rejecting non-essential cookies.",
+            amoSlug = "consent-o-matic",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/consent-o-matic/"
+        ),
+        CatalogEntry(
+            id = "cookie-autodelete",
+            name = "Cookie AutoDelete",
+            description = "Automatically deletes unused cookies and local storage when closing a tab.",
+            amoSlug = "cookie-autodelete",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/cookie-autodelete/"
+        ),
+        CatalogEntry(
+            id = "cookie-quick-manager",
+            name = "Cookie Quick Manager",
+            description = "Advanced cookie manager: view, search, create, edit, backup, and restore cookies.",
+            amoSlug = "cookie-quick-manager",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/cookie-quick-manager/"
+        ),
+        CatalogEntry(
+            id = "cookie-editor",
+            name = "Cookie-Editor",
+            description = "Powerful developer tool to inspect, edit, export, and delete cookies in real-time.",
+            amoSlug = "cookie-editor",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/cookie-editor/"
+        ),
+        CatalogEntry(
+            id = "darkreader",
+            name = "Dark Reader",
+            description = "Dark mode for every website. Invert colors with eye-pleasing high-contrast dark theme presets.",
+            amoSlug = "darkreader",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/darkreader/"
+        ),
+        CatalogEntry(
+            id = "decentraleyes",
+            name = "Decentraleyes",
+            description = "Emulates CDNs locally to prevent Google and Cloudflare from tracking your requests.",
+            amoSlug = "decentraleyes",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/decentraleyes/"
+        ),
+        CatalogEntry(
+            id = "enhancer-for-youtube",
+            name = "Enhancer for YouTube",
+            description = "Custom video player controls, volume boost up to 500%, playback speed, and loop tools.",
+            amoSlug = "enhancer-for-youtube",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/enhancer-for-youtube/"
+        ),
+        CatalogEntry(
+            id = "fastforwardteam",
+            name = "FastForward",
+            description = "Automatically skips annoying countdowns and intermediate link shorteners.",
+            amoSlug = "fastforwardteam",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/fastforwardteam/"
+        ),
+        CatalogEntry(
+            id = "multi-account-containers",
+            name = "Firefox Multi-Account Containers",
+            description = "Keep parts of your online life separated into color-coded isolated containers.",
+            amoSlug = "multi-account-containers",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/multi-account-containers/"
+        ),
+        CatalogEntry(
+            id = "firemonkey",
+            name = "FireMonkey",
+            description = "Lightweight userscript and userstyle manager powered by standard WebExtensions APIs.",
+            amoSlug = "firemonkey",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/firemonkey/"
+        ),
+        CatalogEntry(
+            id = "floccus",
+            name = "Floccus Bookmarks Sync",
+            description = "Sync your bookmarks privately across browsers via Nextcloud, WebDAV, or Google Drive.",
+            amoSlug = "floccus",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/floccus/"
+        ),
+        CatalogEntry(
+            id = "foxyproxy-standard",
+            name = "FoxyProxy Standard",
+            description = "Advanced proxy management tool that automatically switches proxies based on URL patterns.",
+            amoSlug = "foxyproxy-standard",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/foxyproxy-standard/"
+        ),
+        CatalogEntry(
+            id = "ghostery",
+            name = "Ghostery Privacy Ad Blocker",
+            description = "All-in-one privacy protection blocking ads, trackers, and page clutter.",
+            amoSlug = "ghostery",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/ghostery/"
+        ),
+        CatalogEntry(
+            id = "greasemonkey",
+            name = "Greasemonkey",
+            description = "Customize the way a webpage looks and functions with user scripts.",
+            amoSlug = "greasemonkey",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/greasemonkey/"
+        ),
+        CatalogEntry(
+            id = "istilldontcareaboutcookies",
+            name = "I Still Don't Care About Cookies",
+            description = "Automatically dismisses annoying GDPR and cookie consent notices across websites.",
+            amoSlug = "istilldontcareaboutcookies",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/istilldontcareaboutcookies/"
+        ),
+        CatalogEntry(
+            id = "keepassxc-browser",
+            name = "KeePassXC-Browser",
+            description = "Official browser extension connecting Petal to local KeePassXC databases securely.",
+            amoSlug = "keepassxc-browser",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/keepassxc-browser/"
+        ),
+        CatalogEntry(
+            id = "leechblock-ng",
+            name = "LeechBlock NG",
+            description = "Simple yet powerful productivity tool designed to block time-wasting sites on customizable schedules.",
+            amoSlug = "leechblock-ng",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/leechblock-ng/"
+        ),
+        CatalogEntry(
+            id = "localcdn-fork-of-decentraleyes",
+            name = "LocalCDN",
+            description = "Local emulation of content delivery networks to protect from central tracking.",
+            amoSlug = "localcdn-fork-of-decentraleyes",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/localcdn-fork-of-decentraleyes/"
+        ),
+        CatalogEntry(
+            id = "noscript",
+            name = "NoScript Security Suite",
+            description = "Ultimate active content protection: selectively allow JavaScript and scripts only on trusted domains.",
+            amoSlug = "noscript",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/noscript/"
+        ),
+        CatalogEntry(
+            id = "popupoff",
+            name = "PopUpOFF",
+            description = "Smart popup and modal overlay blocker with gentle, moderate, and aggressive modes.",
+            amoSlug = "popupoff",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/popupoff/"
         ),
         CatalogEntry(
             id = "privacy-badger17",
             name = "Privacy Badger",
-            description = "Automatically learns to block invisible tracking scripts as you browse.",
+            description = "EFF's smart tracker blocker that automatically learns to detect and disable third-party tracking.",
             amoSlug = "privacy-badger17",
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/privacy-badger17/"
+        ),
+        CatalogEntry(
+            id = "privacy-possum",
+            name = "Privacy Possum",
+            description = "Defeats browser fingerprinting by corrupting commercial tracking algorithms.",
+            amoSlug = "privacy-possum",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/privacy-possum/"
+        ),
+        CatalogEntry(
+            id = "proton-pass",
+            name = "Proton Pass",
+            description = "End-to-end encrypted password and email alias manager developed by Proton.",
+            amoSlug = "proton-pass",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/proton-pass/"
+        ),
+        CatalogEntry(
+            id = "raindropio",
+            name = "Raindrop.io",
+            description = "All-in-one bookmark manager to save articles, photos, videos, and web pages.",
+            amoSlug = "raindropio",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/raindropio/"
+        ),
+        CatalogEntry(
+            id = "read-aloud",
+            name = "Read Aloud: Text to Speech",
+            description = "Reads articles out loud using natural text-to-speech voices with one click.",
+            amoSlug = "read-aloud",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/read-aloud/"
+        ),
+        CatalogEntry(
+            id = "return-youtube-dislikes",
+            name = "Return YouTube Dislike",
+            description = "Restores dislike counts on YouTube videos using crowd-sourced API data.",
+            amoSlug = "return-youtube-dislikes",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/return-youtube-dislikes/"
+        ),
+        CatalogEntry(
+            id = "search_by_image",
+            name = "Search by Image",
+            description = "Reverse image search helper supporting Google, Bing, Yandex, TinEye, and Baidu.",
+            amoSlug = "search_by_image",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/search_by_image/"
+        ),
+        CatalogEntry(
+            id = "single-file",
+            name = "SingleFile",
+            description = "Save an entire web page including CSS, fonts, and images into a single self-contained HTML file.",
+            amoSlug = "single-file",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/single-file/"
         ),
         CatalogEntry(
             id = "sponsorblock",
@@ -134,88 +372,88 @@ object PetalExtensionManager {
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/sponsorblock/"
         ),
         CatalogEntry(
+            id = "styl-us",
+            name = "Stylus",
+            description = "Redesign websites with custom CSS themes. Install styles from online repositories or write your own.",
+            amoSlug = "styl-us",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/styl-us/"
+        ),
+        CatalogEntry(
+            id = "tabliss",
+            name = "Tabliss - New Tab",
+            description = "A customizable, beautiful new tab page with stunning backgrounds and useful widgets.",
+            amoSlug = "tabliss",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/tabliss/"
+        ),
+        CatalogEntry(
+            id = "tampermonkey",
+            name = "Tampermonkey",
+            description = "The world's most popular userscript manager. Run custom JS scripts across websites effortlessly.",
+            amoSlug = "tampermonkey",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/tampermonkey/"
+        ),
+        CatalogEntry(
+            id = "temporary-containers",
+            name = "Temporary Containers",
+            description = "Open tabs in automatically generated temporary containers that isolate storage.",
+            amoSlug = "temporary-containers",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/temporary-containers/"
+        ),
+        CatalogEntry(
+            id = "tomato-clock",
+            name = "Tomato Clock",
+            description = "A simple Pomodoro-style timer for focus and productivity sessions.",
+            amoSlug = "tomato-clock",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/tomato-clock/"
+        ),
+        CatalogEntry(
             id = "traduzir-paginas-web",
-            name = "Translate Web Pages",
-            description = "Translates entire web pages in real-time using Google Translate or DeepL.",
+            name = "TWP - Translate Web Pages",
+            description = "Translates entire web pages in real-time using Google Translate or DeepL without reloading.",
             amoSlug = "traduzir-paginas-web",
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/traduzir-paginas-web/"
         ),
         CatalogEntry(
-            id = "clearurls",
-            name = "ClearURLs",
-            description = "Removes tracking elements and parameters from URLs to protect your privacy.",
-            amoSlug = "clearurls",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/clearurls/"
+            id = "ublock-origin",
+            name = "uBlock Origin",
+            description = "High-efficiency wide-spectrum content blocker. Blocks ads, trackers, coin miners, and malware sites.",
+            amoSlug = "ublock-origin",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/ublock-origin/"
         ),
         CatalogEntry(
-            id = "violentmonkey",
-            name = "Violentmonkey",
-            description = "Provides userscript support to customize and automate website behavior.",
-            amoSlug = "violentmonkey",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/violentmonkey/"
+            id = "umatrix",
+            name = "uMatrix",
+            description = "Point-and-click matrix-based request firewall to control all connections in real time.",
+            amoSlug = "umatrix",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/umatrix/"
         ),
         CatalogEntry(
-            id = "decentraleyes",
-            name = "Decentraleyes",
-            description = "Emulates CDNs locally to prevent tracking by large content delivery providers.",
-            amoSlug = "decentraleyes",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/decentraleyes/"
+            id = "youtube-recommended-videos",
+            name = "Unhook - Remove YouTube Distractions",
+            description = "Focus mode for YouTube: hides recommendation feed, sidebar comments, and trending distractions.",
+            amoSlug = "youtube-recommended-videos",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/youtube-recommended-videos/"
         ),
         CatalogEntry(
-            id = "bitwarden-password-manager",
-            name = "Bitwarden Password Manager",
-            description = "Secure, open source password manager. Store, generate, and auto-fill logins.",
-            amoSlug = "bitwarden-password-manager",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/bitwarden-password-manager/"
-        ),
-        CatalogEntry(
-            id = "proton-pass",
-            name = "Proton Pass",
-            description = "End-to-end encrypted password manager and email alias generator from Proton.",
-            amoSlug = "proton-pass",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/proton-pass/"
-        ),
-        CatalogEntry(
-            id = "keepassxc-browser",
-            name = "KeePassXC-Browser",
-            description = "Official browser integration for KeePassXC password manager.",
-            amoSlug = "keepassxc-browser",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/keepassxc-browser/"
-        ),
-        CatalogEntry(
-            id = "istilldontcareaboutcookies",
-            name = "I still don't care about cookies",
-            description = "Automatically dismisses cookie consent banners and popups.",
-            amoSlug = "istilldontcareaboutcookies",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/istilldontcareaboutcookies/"
-        ),
-        CatalogEntry(
-            id = "cookie-editor",
-            name = "Cookie-Editor",
-            description = "Create, edit, search, and delete cookies for the current tab.",
-            amoSlug = "cookie-editor",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/cookie-editor/"
-        ),
-        CatalogEntry(
-            id = "adguard-adblocker",
-            name = "AdGuard AdBlocker",
-            description = "Blocks ads and pop-ups on Facebook, YouTube, and every other website.",
-            amoSlug = "adguard-adblocker",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/adguard-adblocker/"
+            id = "user-agent-string-switcher",
+            name = "User-Agent Switcher and Manager",
+            description = "Spoofs browser user agent strings to access desktop sites or alternate browser views easily.",
+            amoSlug = "user-agent-string-switcher",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/user-agent-string-switcher/"
         ),
         CatalogEntry(
             id = "video-background-play-fix",
             name = "Video Background Play Fix",
-            description = "Keeps videos playing in the background by blocking the Page Visibility API.",
+            description = "Prevents YouTube and HTML5 videos from pausing when switching tabs or turning off the screen.",
             amoSlug = "video-background-play-fix",
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/video-background-play-fix/"
         ),
         CatalogEntry(
-            id = "youtube-high-definition",
-            name = "YouTube High Definition",
-            description = "Automatically plays YouTube videos in HD and adds auto-stop and mute features.",
-            amoSlug = "youtube-high-definition",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/youtube-high-definition/"
+            id = "violentmonkey",
+            name = "Violentmonkey",
+            description = "Lightweight open-source userscript runner supporting Tampermonkey and Greasemonkey scripts.",
+            amoSlug = "violentmonkey",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/violentmonkey/"
         ),
         CatalogEntry(
             id = "view-page-archive",
@@ -225,79 +463,15 @@ object PetalExtensionManager {
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/view-page-archive/"
         ),
         CatalogEntry(
-            id = "tomato-clock",
-            name = "Tomato Clock",
-            description = "A simple Pomodoro-style timer for managing focus and productivity sessions.",
-            amoSlug = "tomato-clock",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/tomato-clock/"
-        ),
-        // ── Official Mozilla-recommended extensions added below ───────────
-        CatalogEntry(
-            id = "noscript",
-            name = "NoScript Security Suite",
-            description = "Allow JavaScript, Java, and Flash only from trusted domains. Protects against XSS and other web security exploits.",
-            amoSlug = "noscript",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/noscript/"
-        ),
-        CatalogEntry(
-            id = "search_by_image",
-            name = "Search by Image",
-            description = "Powerful reverse image search tool supporting Google, Bing, Yandex, Baidu, TinEye, and more.",
-            amoSlug = "search_by_image",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/search_by_image/"
-        ),
-        CatalogEntry(
-            id = "read-aloud",
-            name = "Read Aloud: Text to Speech",
-            description = "Read out loud the current web page article with one click. Supports 40+ languages.",
-            amoSlug = "read-aloud",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/read-aloud/"
-        ),
-        CatalogEntry(
-            id = "youtube-recommended-videos",
-            name = "Unhook: Remove YouTube Distractions",
-            description = "Hide YouTube recommended videos, comments, sidebar, homepage, trending, and other distractions.",
-            amoSlug = "youtube-recommended-videos",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/youtube-recommended-videos/"
-        ),
-        CatalogEntry(
-            id = "styl-us",
-            name = "Stylus",
-            description = "Redesign websites with custom CSS themes. Install from online repositories or create your own.",
-            amoSlug = "styl-us",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/styl-us/"
-        ),
-        CatalogEntry(
-            id = "consent-o-matic",
-            name = "Consent-O-Matic",
-            description = "Automatically handles GDPR cookie consent forms by rejecting non-essential cookies.",
-            amoSlug = "consent-o-matic",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/consent-o-matic/"
-        ),
-        CatalogEntry(
-            id = "leechblock-ng",
-            name = "LeechBlock NG",
-            description = "Block time-wasting sites. Specify which sites to block and when — a simple productivity tool.",
-            amoSlug = "leechblock-ng",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/leechblock-ng/"
-        ),
-        CatalogEntry(
-            id = "single-file",
-            name = "SingleFile",
-            description = "Save an entire web page — including images and styling — as a single self-contained HTML file.",
-            amoSlug = "single-file",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/single-file/"
-        ),
-        CatalogEntry(
-            id = "chrome-mask",
-            name = "Chrome Mask",
-            description = "Makes Firefox appear as Chrome to websites that incorrectly block or degrade Firefox users.",
-            amoSlug = "chrome-mask",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/chrome-mask/"
+            id = "youtube-high-definition",
+            name = "YouTube High Definition",
+            description = "Automatically forces YouTube videos to play in the highest resolution available (1080p, 4K).",
+            amoSlug = "youtube-high-definition",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/youtube-high-definition/"
         )
     )
 
-    /** AMO's Android extensions catalog - opened by "Find more extensions". */
+        /** AMO's Android extensions catalog - opened by "Find more extensions". */
     const val amoAndroidBrowseUrl = "https://addons.mozilla.org/en-US/android/"
 
     private val _extensions = MutableStateFlow<List<InstalledExtension>>(emptyList())

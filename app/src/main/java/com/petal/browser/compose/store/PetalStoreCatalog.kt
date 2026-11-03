@@ -60,229 +60,76 @@ object PetalStoreCatalog {
 
     val storeAddons: List<StoreAddon> = listOf(
         StoreAddon(
-            id = "ublock-origin",
-            name = "uBlock Origin",
-            description = "High-efficiency, wide-spectrum content blocker. Blocks ads, trackers, coin miners, and malware sites.",
-            amoSlug = "ublock-origin",
+            id = "adblock-plus",
+            name = "Adblock Plus",
+            description = "Block annoying video ads, banners, and popups while speeding up web browsing.",
+            amoSlug = "adblock-plus",
             category = AddonCategory.BLOCKERS,
-            rating = 4.9f,
-            downloads = "7M+"
-        ),
-        StoreAddon(
-            id = "darkreader",
-            name = "Dark Reader",
-            description = "Dark mode for every website. Invert colors with eye-pleasing high-contrast dark theme presets and brightness controls.",
-            amoSlug = "darkreader",
-            category = AddonCategory.TOOLS,
-            rating = 4.8f,
-            downloads = "5M+"
-        ),
-        StoreAddon(
-            id = "privacy-badger17",
-            name = "Privacy Badger",
-            description = "EFF's smart privacy protector. Automatically learns to block invisible tracking scripts as you browse.",
-            amoSlug = "privacy-badger17",
-            category = AddonCategory.PRIVACY,
-            rating = 4.8f,
-            downloads = "1.5M+"
-        ),
-        StoreAddon(
-            id = "sponsorblock",
-            name = "SponsorBlock for YouTube",
-            description = "Skip YouTube video sponsors, intros, outros, and subscribe reminders automatically using crowd-sourced timestamps.",
-            amoSlug = "sponsorblock",
-            category = AddonCategory.MEDIA,
-            rating = 4.9f,
-            downloads = "500K+"
-        ),
-        StoreAddon(
-            id = "bitwarden-password-manager",
-            name = "Bitwarden Password Manager",
-            description = "Secure open-source password manager vault with auto-fill support for web logins and two-factor codes.",
-            amoSlug = "bitwarden-password-manager",
-            category = AddonCategory.PRIVACY,
-            rating = 4.9f,
-            downloads = "3M+"
-        ),
-        StoreAddon(
-            id = "traduzir-paginas-web",
-            name = "Translate Web Pages (TWP)",
-            description = "Translates entire web pages in real-time using Google Translate or DeepL without reloading.",
-            amoSlug = "traduzir-paginas-web",
-            category = AddonCategory.TOOLS,
-            rating = 4.7f,
-            downloads = "900K+"
-        ),
-        StoreAddon(
-            id = "tampermonkey",
-            name = "Tampermonkey",
-            description = "The world's most popular userscript manager. Run custom JS scripts across your favorite websites effortlessly.",
-            amoSlug = "tampermonkey",
-            category = AddonCategory.TOOLS,
-            rating = 4.7f,
-            downloads = "10M+"
-        ),
-        StoreAddon(
-            id = "clearurls",
-            name = "ClearURLs",
-            description = "Strips tracking parameters and telemetry tokens from URLs to prevent cross-site profiling.",
-            amoSlug = "clearurls",
-            category = AddonCategory.PRIVACY,
-            rating = 4.7f,
-            downloads = "400K+"
-        ),
-        StoreAddon(
-            id = "violentmonkey",
-            name = "Violentmonkey",
-            description = "Lightweight open-source userscript runner supporting Tampermonkey and Greasemonkey scripts seamlessly.",
-            amoSlug = "violentmonkey",
-            category = AddonCategory.TOOLS,
-            rating = 4.8f,
-            downloads = "600K+"
-        ),
-        StoreAddon(
-            id = "decentraleyes",
-            name = "Decentraleyes",
-            description = "Emulates CDN networks locally to prevent large networks (Google, Cloudflare) from tracking your visits.",
-            amoSlug = "decentraleyes",
-            category = AddonCategory.PRIVACY,
-            rating = 4.6f,
-            downloads = "800K+"
-        ),
-        StoreAddon(
-            id = "return-youtube-dislikes",
-            name = "Return YouTube Dislike",
-            description = "Restores the ability to see dislike counts on YouTube videos using crowd-sourced API data.",
-            amoSlug = "return-youtube-dislikes",
-            category = AddonCategory.MEDIA,
-            rating = 4.8f,
-            downloads = "1M+"
-        ),
-        StoreAddon(
-            id = "youtube-recommended-videos",
-            name = "Unhook - Remove YouTube Recommendations",
-            description = "Focus mode for YouTube: hides recommendation feed, sidebar comments, and trending distractions.",
-            amoSlug = "youtube-recommended-videos",
-            category = AddonCategory.MEDIA,
-            rating = 4.9f,
-            downloads = "600K+"
-        ),
-        StoreAddon(
-            id = "cookie-autodelete",
-            name = "Cookie AutoDelete",
-            description = "Automatically deletes unused cookies and local storage when closing a tab to prevent long-term tracking.",
-            amoSlug = "cookie-autodelete",
-            category = AddonCategory.PRIVACY,
-            rating = 4.6f,
-            downloads = "350K+"
-        ),
-        StoreAddon(
-            id = "istilldontcareaboutcookies",
-            name = "I Still Don't Care About Cookies",
-            description = "Dismisses annoying GDPR and cookie consent notices automatically across websites.",
-            amoSlug = "istilldontcareaboutcookies",
-            category = AddonCategory.BLOCKERS,
-            rating = 4.6f,
-            downloads = "450K+"
-        ),
-        StoreAddon(
-            id = "cookie-editor",
-            name = "Cookie-Editor",
-            description = "Powerful developer tool to inspect, edit, export, and delete cookies in real-time.",
-            amoSlug = "cookie-editor",
-            category = AddonCategory.TOOLS,
-            rating = 4.8f,
-            downloads = "800K+"
+            rating = 4.4f,
+            downloads = "2M+"
         ),
         StoreAddon(
             id = "adguard-adblocker",
             name = "AdGuard AdBlocker",
-            description = "Comprehensive ad and tracker blocking extension with cosmetic element filtering.",
+            description = "Comprehensive ad and tracking defense with cosmetic element filtering.",
             amoSlug = "adguard-adblocker",
             category = AddonCategory.BLOCKERS,
-            rating = 4.8f,
-            downloads = "4M+"
-        ),
-        StoreAddon(
-            id = "proton-pass",
-            name = "Proton Pass",
-            description = "End-to-end encrypted password and email alias manager developed by the Proton team.",
-            amoSlug = "proton-pass",
-            category = AddonCategory.PRIVACY,
-            rating = 4.8f,
-            downloads = "200K+"
-        ),
-        StoreAddon(
-            id = "keepassxc-browser",
-            name = "KeePassXC-Browser",
-            description = "Official browser extension connecting Petal to local KeePassXC databases securely.",
-            amoSlug = "keepassxc-browser",
-            category = AddonCategory.PRIVACY,
-            rating = 4.6f,
-            downloads = "350K+"
-        ),
-        StoreAddon(
-            id = "video-background-play-fix",
-            name = "Video Background Play Fix",
-            description = "Prevents YouTube and HTML5 videos from pausing when switching tabs or turning off the screen.",
-            amoSlug = "video-background-play-fix",
-            category = AddonCategory.MEDIA,
             rating = 4.6f,
             downloads = "1M+"
         ),
         StoreAddon(
-            id = "youtube-high-definition",
-            name = "YouTube High Definition",
-            description = "Automatically forces YouTube videos to play in the highest resolution available (1080p, 4K).",
-            amoSlug = "youtube-high-definition",
-            category = AddonCategory.MEDIA,
+            id = "auto-tab-discard",
+            name = "Auto Tab Discard",
+            description = "Frees up RAM and battery by automatically unloading inactive background tabs.",
+            amoSlug = "auto-tab-discard",
+            category = AddonCategory.TOOLS,
             rating = 4.5f,
-            downloads = "300K+"
+            downloads = "100K+"
         ),
         StoreAddon(
-            id = "noscript",
-            name = "NoScript Security Suite",
-            description = "Ultimate active content protection: selectively allow JavaScript, Flash, and plugins only on trusted domains.",
-            amoSlug = "noscript",
+            id = "bitwarden-password-manager",
+            name = "Bitwarden Password Manager",
+            description = "Secure open-source password vault with auto-fill support for logins and 2FA.",
+            amoSlug = "bitwarden-password-manager",
             category = AddonCategory.PRIVACY,
-            rating = 4.5f,
-            downloads = "1.2M+"
-        ),
-        StoreAddon(
-            id = "user-agent-string-switcher",
-            name = "User-Agent Switcher",
-            description = "Spoofs browser user agent strings to access desktop sites or alternate browser views easily.",
-            amoSlug = "user-agent-string-switcher",
-            category = AddonCategory.TOOLS,
             rating = 4.6f,
-            downloads = "500K+"
+            downloads = "1M+"
         ),
         StoreAddon(
-            id = "search_by_image",
-            name = "Search by Image",
-            description = "Reverse image search helper supporting Google, Bing, Yandex, TinEye, and Baidu.",
-            amoSlug = "search_by_image",
+            id = "buster-captcha-solver",
+            name = "Buster: Captcha Solver for Humans",
+            description = "Solves difficult captchas automatically by completing audio challenges using speech recognition.",
+            amoSlug = "buster-captcha-solver",
             category = AddonCategory.TOOLS,
-            rating = 4.7f,
-            downloads = "600K+"
+            rating = 3.8f,
+            downloads = "35K+"
         ),
         StoreAddon(
-            id = "read-aloud",
-            name = "Read Aloud: A Text to Speech Voice Reader",
-            description = "Reads articles out loud using natural text-to-speech voices with one click.",
-            amoSlug = "read-aloud",
-            category = AddonCategory.TOOLS,
+            id = "canvasblocker",
+            name = "CanvasBlocker",
+            description = "Alters canvas and audio APIs to prevent websites from fingerprinting your device.",
+            amoSlug = "canvasblocker",
+            category = AddonCategory.PRIVACY,
             rating = 4.6f,
-            downloads = "400K+"
+            downloads = "38K+"
         ),
         StoreAddon(
-            id = "single-file",
-            name = "SingleFile",
-            description = "Save an entire web page including CSS, fonts, and images into a single self-contained HTML file.",
-            amoSlug = "single-file",
+            id = "chrome-mask",
+            name = "Chrome Mask",
+            description = "Makes websites see Chrome instead of Firefox, for sites that block or degrade Firefox users.",
+            amoSlug = "chrome-mask",
             category = AddonCategory.TOOLS,
-            rating = 4.9f,
-            downloads = "250K+"
+            rating = 4.4f,
+            downloads = "59K+"
+        ),
+        StoreAddon(
+            id = "clearurls",
+            name = "ClearURLs",
+            description = "Removes tracking parameters and telemetry tokens from URLs to protect your privacy.",
+            amoSlug = "clearurls",
+            category = AddonCategory.PRIVACY,
+            rating = 4.2f,
+            downloads = "513K+"
         ),
         StoreAddon(
             id = "consent-o-matic",
@@ -290,8 +137,260 @@ object PetalStoreCatalog {
             description = "Automatically answers GDPR cookie consent forms, rejecting non-essential cookies.",
             amoSlug = "consent-o-matic",
             category = AddonCategory.PRIVACY,
+            rating = 4.3f,
+            downloads = "134K+"
+        ),
+        StoreAddon(
+            id = "cookie-autodelete",
+            name = "Cookie AutoDelete",
+            description = "Automatically deletes unused cookies and local storage when closing a tab.",
+            amoSlug = "cookie-autodelete",
+            category = AddonCategory.PRIVACY,
+            rating = 4.5f,
+            downloads = "156K+"
+        ),
+        StoreAddon(
+            id = "cookie-quick-manager",
+            name = "Cookie Quick Manager",
+            description = "Advanced cookie manager: view, search, create, edit, backup, and restore cookies.",
+            amoSlug = "cookie-quick-manager",
+            category = AddonCategory.PRIVACY,
+            rating = 4.4f,
+            downloads = "46K+"
+        ),
+        StoreAddon(
+            id = "cookie-editor",
+            name = "Cookie-Editor",
+            description = "Powerful developer tool to inspect, edit, export, and delete cookies in real-time.",
+            amoSlug = "cookie-editor",
+            category = AddonCategory.TOOLS,
+            rating = 4.1f,
+            downloads = "134K+"
+        ),
+        StoreAddon(
+            id = "darkreader",
+            name = "Dark Reader",
+            description = "Dark mode for every website. Invert colors with eye-pleasing high-contrast dark theme presets.",
+            amoSlug = "darkreader",
+            category = AddonCategory.TOOLS,
+            rating = 4.5f,
+            downloads = "1M+"
+        ),
+        StoreAddon(
+            id = "decentraleyes",
+            name = "Decentraleyes",
+            description = "Emulates CDNs locally to prevent Google and Cloudflare from tracking your requests.",
+            amoSlug = "decentraleyes",
+            category = AddonCategory.PRIVACY,
+            rating = 4.8f,
+            downloads = "248K+"
+        ),
+        StoreAddon(
+            id = "enhancer-for-youtube",
+            name = "Enhancer for YouTube",
+            description = "Custom video player controls, volume boost up to 500%, playback speed, and loop tools.",
+            amoSlug = "enhancer-for-youtube",
+            category = AddonCategory.MEDIA,
             rating = 4.7f,
-            downloads = "100K+"
+            downloads = "599K+"
+        ),
+        StoreAddon(
+            id = "fastforwardteam",
+            name = "FastForward",
+            description = "Automatically skips annoying countdowns and intermediate link shorteners.",
+            amoSlug = "fastforwardteam",
+            category = AddonCategory.TOOLS,
+            rating = 4.7f,
+            downloads = "32K+"
+        ),
+        StoreAddon(
+            id = "multi-account-containers",
+            name = "Firefox Multi-Account Containers",
+            description = "Keep parts of your online life separated into color-coded isolated containers.",
+            amoSlug = "multi-account-containers",
+            category = AddonCategory.PRIVACY,
+            rating = 4.6f,
+            downloads = "415K+"
+        ),
+        StoreAddon(
+            id = "firemonkey",
+            name = "FireMonkey",
+            description = "Lightweight userscript and userstyle manager powered by standard WebExtensions APIs.",
+            amoSlug = "firemonkey",
+            category = AddonCategory.TOOLS,
+            rating = 4.5f,
+            downloads = "1K+"
+        ),
+        StoreAddon(
+            id = "floccus",
+            name = "Floccus Bookmarks Sync",
+            description = "Sync your bookmarks privately across browsers via Nextcloud, WebDAV, or Google Drive.",
+            amoSlug = "floccus",
+            category = AddonCategory.TOOLS,
+            rating = 4.5f,
+            downloads = "10K+"
+        ),
+        StoreAddon(
+            id = "foxyproxy-standard",
+            name = "FoxyProxy Standard",
+            description = "Advanced proxy management tool that automatically switches proxies based on URL patterns.",
+            amoSlug = "foxyproxy-standard",
+            category = AddonCategory.PRIVACY,
+            rating = 4.0f,
+            downloads = "222K+"
+        ),
+        StoreAddon(
+            id = "ghostery",
+            name = "Ghostery Privacy Ad Blocker",
+            description = "All-in-one privacy protection blocking ads, trackers, and page clutter.",
+            amoSlug = "ghostery",
+            category = AddonCategory.BLOCKERS,
+            rating = 4.4f,
+            downloads = "1M+"
+        ),
+        StoreAddon(
+            id = "greasemonkey",
+            name = "Greasemonkey",
+            description = "Customize the way a webpage looks and functions with user scripts.",
+            amoSlug = "greasemonkey",
+            category = AddonCategory.TOOLS,
+            rating = 4.2f,
+            downloads = "155K+"
+        ),
+        StoreAddon(
+            id = "istilldontcareaboutcookies",
+            name = "I Still Don't Care About Cookies",
+            description = "Automatically dismisses annoying GDPR and cookie consent notices across websites.",
+            amoSlug = "istilldontcareaboutcookies",
+            category = AddonCategory.BLOCKERS,
+            rating = 4.6f,
+            downloads = "114K+"
+        ),
+        StoreAddon(
+            id = "keepassxc-browser",
+            name = "KeePassXC-Browser",
+            description = "Official browser extension connecting Petal to local KeePassXC databases securely.",
+            amoSlug = "keepassxc-browser",
+            category = AddonCategory.PRIVACY,
+            rating = 4.3f,
+            downloads = "147K+"
+        ),
+        StoreAddon(
+            id = "leechblock-ng",
+            name = "LeechBlock NG",
+            description = "Simple yet powerful productivity tool designed to block time-wasting sites on customizable schedules.",
+            amoSlug = "leechblock-ng",
+            category = AddonCategory.TOOLS,
+            rating = 4.8f,
+            downloads = "112K+"
+        ),
+        StoreAddon(
+            id = "localcdn-fork-of-decentraleyes",
+            name = "LocalCDN",
+            description = "Local emulation of content delivery networks to protect from central tracking.",
+            amoSlug = "localcdn-fork-of-decentraleyes",
+            category = AddonCategory.PRIVACY,
+            rating = 4.8f,
+            downloads = "19K+"
+        ),
+        StoreAddon(
+            id = "noscript",
+            name = "NoScript Security Suite",
+            description = "Ultimate active content protection: selectively allow JavaScript and scripts only on trusted domains.",
+            amoSlug = "noscript",
+            category = AddonCategory.PRIVACY,
+            rating = 4.4f,
+            downloads = "240K+"
+        ),
+        StoreAddon(
+            id = "popupoff",
+            name = "PopUpOFF",
+            description = "Smart popup and modal overlay blocker with gentle, moderate, and aggressive modes.",
+            amoSlug = "popupoff",
+            category = AddonCategory.BLOCKERS,
+            rating = 4.3f,
+            downloads = "50K+"
+        ),
+        StoreAddon(
+            id = "privacy-badger17",
+            name = "Privacy Badger",
+            description = "EFF's smart tracker blocker that automatically learns to detect and disable third-party tracking.",
+            amoSlug = "privacy-badger17",
+            category = AddonCategory.PRIVACY,
+            rating = 4.8f,
+            downloads = "1M+"
+        ),
+        StoreAddon(
+            id = "privacy-possum",
+            name = "Privacy Possum",
+            description = "Defeats browser fingerprinting by corrupting commercial tracking algorithms.",
+            amoSlug = "privacy-possum",
+            category = AddonCategory.PRIVACY,
+            rating = 4.4f,
+            downloads = "34K+"
+        ),
+        StoreAddon(
+            id = "proton-pass",
+            name = "Proton Pass",
+            description = "End-to-end encrypted password and email alias manager developed by Proton.",
+            amoSlug = "proton-pass",
+            category = AddonCategory.PRIVACY,
+            rating = 4.8f,
+            downloads = "192K+"
+        ),
+        StoreAddon(
+            id = "raindropio",
+            name = "Raindrop.io",
+            description = "All-in-one bookmark manager to save articles, photos, videos, and web pages.",
+            amoSlug = "raindropio",
+            category = AddonCategory.TOOLS,
+            rating = 4.3f,
+            downloads = "43K+"
+        ),
+        StoreAddon(
+            id = "read-aloud",
+            name = "Read Aloud: Text to Speech",
+            description = "Reads articles out loud using natural text-to-speech voices with one click.",
+            amoSlug = "read-aloud",
+            category = AddonCategory.TOOLS,
+            rating = 3.8f,
+            downloads = "229K+"
+        ),
+        StoreAddon(
+            id = "return-youtube-dislikes",
+            name = "Return YouTube Dislike",
+            description = "Restores dislike counts on YouTube videos using crowd-sourced API data.",
+            amoSlug = "return-youtube-dislikes",
+            category = AddonCategory.MEDIA,
+            rating = 4.5f,
+            downloads = "890K+"
+        ),
+        StoreAddon(
+            id = "search_by_image",
+            name = "Search by Image",
+            description = "Reverse image search helper supporting Google, Bing, Yandex, TinEye, and Baidu.",
+            amoSlug = "search_by_image",
+            category = AddonCategory.TOOLS,
+            rating = 4.6f,
+            downloads = "463K+"
+        ),
+        StoreAddon(
+            id = "single-file",
+            name = "SingleFile",
+            description = "Save an entire web page including CSS, fonts, and images into a single self-contained HTML file.",
+            amoSlug = "single-file",
+            category = AddonCategory.TOOLS,
+            rating = 4.8f,
+            downloads = "92K+"
+        ),
+        StoreAddon(
+            id = "sponsorblock",
+            name = "SponsorBlock for YouTube",
+            description = "Skip YouTube video sponsors, intros, outros, and subscribe reminders automatically.",
+            amoSlug = "sponsorblock",
+            category = AddonCategory.MEDIA,
+            rating = 4.8f,
+            downloads = "816K+"
         ),
         StoreAddon(
             id = "styl-us",
@@ -300,16 +399,34 @@ object PetalStoreCatalog {
             amoSlug = "styl-us",
             category = AddonCategory.TOOLS,
             rating = 4.7f,
-            downloads = "500K+"
+            downloads = "136K+"
         ),
         StoreAddon(
-            id = "view-page-archive",
-            name = "Web Archives",
-            description = "View archived and cached versions of web pages via the Wayback Machine and Archive.is.",
-            amoSlug = "view-page-archive",
+            id = "tabliss",
+            name = "Tabliss - New Tab",
+            description = "A customizable, beautiful new tab page with stunning backgrounds and useful widgets.",
+            amoSlug = "tabliss",
             category = AddonCategory.TOOLS,
             rating = 4.6f,
-            downloads = "100K+"
+            downloads = "75K+"
+        ),
+        StoreAddon(
+            id = "tampermonkey",
+            name = "Tampermonkey",
+            description = "The world's most popular userscript manager. Run custom JS scripts across websites effortlessly.",
+            amoSlug = "tampermonkey",
+            category = AddonCategory.TOOLS,
+            rating = 4.7f,
+            downloads = "825K+"
+        ),
+        StoreAddon(
+            id = "temporary-containers",
+            name = "Temporary Containers",
+            description = "Open tabs in automatically generated temporary containers that isolate storage.",
+            amoSlug = "temporary-containers",
+            category = AddonCategory.PRIVACY,
+            rating = 4.8f,
+            downloads = "13K+"
         ),
         StoreAddon(
             id = "tomato-clock",
@@ -317,26 +434,89 @@ object PetalStoreCatalog {
             description = "A simple Pomodoro-style timer for focus and productivity sessions.",
             amoSlug = "tomato-clock",
             category = AddonCategory.TOOLS,
-            rating = 4.6f,
-            downloads = "100K+"
-        ),
-        StoreAddon(
-            id = "chrome-mask",
-            name = "Chrome Mask",
-            description = "Makes websites see Chrome instead of Firefox, for sites that block or degrade Firefox users.",
-            amoSlug = "chrome-mask",
-            category = AddonCategory.TOOLS,
             rating = 4.5f,
-            downloads = "50K+"
+            downloads = "33K+"
         ),
         StoreAddon(
-            id = "leechblock-ng",
-            name = "LeechBlock NG",
-            description = "Simple yet powerful productivity tool designed to block time-wasting sites on customizable schedules.",
-            amoSlug = "leechblock-ng",
+            id = "traduzir-paginas-web",
+            name = "TWP - Translate Web Pages",
+            description = "Translates entire web pages in real-time using Google Translate or DeepL without reloading.",
+            amoSlug = "traduzir-paginas-web",
             category = AddonCategory.TOOLS,
             rating = 4.7f,
-            downloads = "200K+"
+            downloads = "560K+"
+        ),
+        StoreAddon(
+            id = "ublock-origin",
+            name = "uBlock Origin",
+            description = "High-efficiency wide-spectrum content blocker. Blocks ads, trackers, coin miners, and malware sites.",
+            amoSlug = "ublock-origin",
+            category = AddonCategory.BLOCKERS,
+            rating = 4.8f,
+            downloads = "11M+"
+        ),
+        StoreAddon(
+            id = "umatrix",
+            name = "uMatrix",
+            description = "Point-and-click matrix-based request firewall to control all connections in real time.",
+            amoSlug = "umatrix",
+            category = AddonCategory.PRIVACY,
+            rating = 4.8f,
+            downloads = "14K+"
+        ),
+        StoreAddon(
+            id = "youtube-recommended-videos",
+            name = "Unhook - Remove YouTube Distractions",
+            description = "Focus mode for YouTube: hides recommendation feed, sidebar comments, and trending distractions.",
+            amoSlug = "youtube-recommended-videos",
+            category = AddonCategory.MEDIA,
+            rating = 4.6f,
+            downloads = "169K+"
+        ),
+        StoreAddon(
+            id = "user-agent-string-switcher",
+            name = "User-Agent Switcher and Manager",
+            description = "Spoofs browser user agent strings to access desktop sites or alternate browser views easily.",
+            amoSlug = "user-agent-string-switcher",
+            category = AddonCategory.TOOLS,
+            rating = 4.1f,
+            downloads = "85K+"
+        ),
+        StoreAddon(
+            id = "video-background-play-fix",
+            name = "Video Background Play Fix",
+            description = "Prevents YouTube and HTML5 videos from pausing when switching tabs or turning off the screen.",
+            amoSlug = "video-background-play-fix",
+            category = AddonCategory.MEDIA,
+            rating = 4.5f,
+            downloads = "228K+"
+        ),
+        StoreAddon(
+            id = "violentmonkey",
+            name = "Violentmonkey",
+            description = "Lightweight open-source userscript runner supporting Tampermonkey and Greasemonkey scripts.",
+            amoSlug = "violentmonkey",
+            category = AddonCategory.TOOLS,
+            rating = 4.7f,
+            downloads = "203K+"
+        ),
+        StoreAddon(
+            id = "view-page-archive",
+            name = "Web Archives",
+            description = "View archived and cached versions of web pages via Wayback Machine and Archive.is.",
+            amoSlug = "view-page-archive",
+            category = AddonCategory.TOOLS,
+            rating = 4.7f,
+            downloads = "68K+"
+        ),
+        StoreAddon(
+            id = "youtube-high-definition",
+            name = "YouTube High Definition",
+            description = "Automatically forces YouTube videos to play in the highest resolution available (1080p, 4K).",
+            amoSlug = "youtube-high-definition",
+            category = AddonCategory.MEDIA,
+            rating = 3.8f,
+            downloads = "163K+"
         )
     )
 

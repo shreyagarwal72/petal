@@ -463,14 +463,18 @@ private fun BuiltInExtensionsList(
 ) {
     val context = LocalContext.current
     val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val builtInListState = rememberLazyListState()
 
-    LazyColumn(
-        contentPadding = PaddingValues(
-            start = 16.dp, end = 16.dp, top = 16.dp,
-            bottom = innerPadding.calculateBottomPadding() + 96.dp
-        ),
-        verticalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = builtInListState,
+            contentPadding = PaddingValues(
+                start = 16.dp, end = 16.dp, top = 16.dp,
+                bottom = innerPadding.calculateBottomPadding() + 96.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
         items(PetalBuiltInExtensionManager.builtIns, key = { it.extensionId }) { spec ->
             var isEnabled by remember { mutableStateOf(sp.getBoolean(spec.prefKey, spec.defaultOn)) }
 
@@ -516,6 +520,12 @@ private fun BuiltInExtensionsList(
             )
         }
     }
+
+    PetalExpressiveScrollBar(
+        listState = builtInListState,
+        modifier = Modifier.align(Alignment.CenterEnd)
+    )
+}
 }
 
 @Composable
@@ -531,14 +541,18 @@ private fun FirefoxAddonsList(
 ) {
     val context = LocalContext.current
     val busy by PetalExtensionManager.busy.collectAsState()
+    val addonsListState = rememberLazyListState()
 
-    LazyColumn(
-        contentPadding = PaddingValues(
-            start = 16.dp, end = 16.dp, top = 16.dp,
-            bottom = innerPadding.calculateBottomPadding() + 96.dp
-        ),
-        verticalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = addonsListState,
+            contentPadding = PaddingValues(
+                start = 16.dp, end = 16.dp, top = 16.dp,
+                bottom = innerPadding.calculateBottomPadding() + 96.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
         // Section 1: Installed Extensions
         item {
             PetalSectionLabel("Installed Add-ons (${extensions.size})")
@@ -694,6 +708,12 @@ private fun FirefoxAddonsList(
             )
         }
     }
+
+    PetalExpressiveScrollBar(
+        listState = addonsListState,
+        modifier = Modifier.align(Alignment.CenterEnd)
+    )
+}
 }
 
 @Composable
