@@ -77,7 +77,7 @@ fun ApiIntegrationsSettingsScreenContent(
         Column(modifier = Modifier.fillMaxSize()) {
             ExpressiveHeader(
                 title = "API & Integrations Hub",
-                subtitle = "AndroidX WebKit, Google Credential Manager & Palette APIs",
+                subtitle = "AI Research Engines, API Keys & Local LLM Endpoints",
                 onBack = onNavigateBack
             )
 
