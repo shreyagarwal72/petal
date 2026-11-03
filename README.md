@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-dark.png">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-light.png">
     <img src="docs/readme/hero-light.png" alt="Petal, a private open source browser for Android in Material 3 Expressive" width="100%">
   </picture>
 </p>
