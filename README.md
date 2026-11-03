@@ -1,161 +1,185 @@
 <div align="center">
 
-<img alt="Petal — Material 3 Expressive GeckoView Browser for Android" src="docs/readme/banner.jpg" width="100%">
-
-<br>
-
-**A browser that respects your attention, privacy, and device.**<br>
-Material 3 Expressive, powered by GeckoView 158.<br>
-No telemetry, no tracking, no bloat — built for ultimate speed and aesthetics.
-
-<br>
-
-<a href="https://github.com/shreyagarwal72/petal/releases/latest"><img src="docs/readme/badges/download.svg" height="40" alt="Download APK"></a>
-<img src="docs/readme/badges/android.svg" height="40" alt="Android 8.0+">
-<a href="LICENSE.md"><img src="docs/readme/badges/license.svg" height="40" alt="License GPLv3"></a>
+<img alt="Petal, a private Material 3 Expressive browser for Android" src="docs/readme/banner.png" width="100%">
 
 <br><br>
 
-[Why Petal](#why-another-browser) · [Screenshots](#screenshots) · [Features](#whats-inside) · [Install](#install) · [Build](#build-it-yourself) · [Under the Hood](#under-the-hood) · [License](#license)
+# Petal
+
+**A private, fast Android browser on Firefox's engine, designed with Material 3 Expressive.**
+
+<br>
+
+![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-B81D63?style=flat-square&labelColor=2D1537&logo=android&logoColor=white)
+![GeckoView 158](https://img.shields.io/badge/GeckoView-158-B81D63?style=flat-square&labelColor=2D1537&logo=firefoxbrowser&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-Compose-B81D63?style=flat-square&labelColor=2D1537&logo=kotlin&logoColor=white)
+[![Release](https://img.shields.io/github/v/release/shreyagarwal72/petal?style=flat-square&color=B81D63&labelColor=2D1537)](https://github.com/shreyagarwal72/petal/releases/latest)
+[![Stars](https://img.shields.io/github/stars/shreyagarwal72/petal?style=flat-square&color=B81D63&labelColor=2D1537)](https://github.com/shreyagarwal72/petal/stargazers)
+[![License](https://img.shields.io/badge/License-GPLv3-B81D63?style=flat-square&labelColor=2D1537)](LICENSE.md)
+
+<br>
+
+<a href="https://github.com/shreyagarwal72/petal/releases/latest"><img src="docs/readme/badges/download.svg" height="48" alt="Download the latest APK"></a>
+
+<br><br>
+
+[Features](#features) ·
+[Screenshots](#screenshots) ·
+[Install](#install) ·
+[Permissions](#permissions) ·
+[Build](#build-it-yourself) ·
+[FAQ](FAQs.md)
 
 </div>
 
 <br>
 
-## Why another browser?
+Petal is a free, open-source browser for Android. It runs on Mozilla's GeckoView engine instead of the Chromium WebView, blocks ads and trackers by default, and follows the Material 3 Expressive design language: dynamic colour, springy motion and shapes that morph.
 
-Most browsers on Android are Chromium wrappers loaded with account sign-ins, news feeds, telemetry, and background trackers that drain battery and collect your browsing habits.
+It has no account, no news feed and no built-in analytics.
 
-**Petal** is built differently. Powered by a modern **GeckoView 158** engine, it delivers desktop-grade standards compliance, native ad blocking, and a fluid user experience adhering strictly to **Material 3 Expressive** guidelines. Featuring authentic adaptive morphing surfaces, smooth motion physics, and dynamic color palettes, Petal combines state-of-the-art aesthetics with zero-compromise privacy.
-
----
+<br>
 
 ## Screenshots
 
 <div align="center">
-  <a href="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-1.png"><img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-1.png" width="19%" alt="Petal Screenshot 1" /></a>
-  <a href="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-2.png"><img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-2.png" width="19%" alt="Petal Screenshot 2" /></a>
-  <a href="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-3.png"><img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-3.png" width="19%" alt="Petal Screenshot 3" /></a>
-  <a href="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-4.png"><img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-4.png" width="19%" alt="Petal Screenshot 4" /></a>
-  <a href="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-5.png"><img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-5.png" width="19%" alt="Petal Screenshot 5" /></a>
+  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-1.png" width="19%" alt="Petal screenshot 1">
+  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-2.png" width="19%" alt="Petal screenshot 2">
+  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-3.png" width="19%" alt="Petal screenshot 3">
+  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-4.png" width="19%" alt="Petal screenshot 4">
+  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-5.png" width="19%" alt="Petal screenshot 5">
 </div>
 
----
+<br>
 
-## What's inside
+## Features
 
 <table>
 <tr>
 <td width="50%" valign="top">
-<img src="docs/readme/icons/engine.svg" width="44" height="44" alt="GeckoView 158"><br>
-<b>GeckoView 158 Powerhouse</b><br>
-Runs on Mozilla's GeckoView 158 engine with full multi-process architecture, quantum rendering, and web standards compliance. Independent of the system Chromium WebView.
+<img src="docs/readme/icons/engine.svg" width="44" height="44" alt=""><br>
+<b>Firefox engine</b><br>
+GeckoView 158 with full web standards support. It does not depend on your phone's system WebView.
 </td>
 <td width="50%" valign="top">
-<img src="docs/readme/icons/glass.svg" width="44" height="44" alt="Material 3 Expressive"><br>
-<b>Material 3 Expressive UI</b><br>
-Material 3 Expressive morphing surfaces with dynamic container transforms, adaptive corner smoothing, and expressive shape tokens. Seamlessly adapts to your dynamic color palette.
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-<img src="docs/readme/icons/privacy.svg" width="44" height="44" alt="Total Privacy"><br>
-<b>Zero Telemetry & Strict Isolation</b><br>
-Strict tracking protection enabled by default. No analytics, no diagnostic pings, no proprietary clouds. Your history, tabs, and sessions stay encrypted locally on your device.
-</td>
-<td width="50%" valign="top">
-<img src="docs/readme/icons/adblock.svg" width="44" height="44" alt="Built-in Content Blocker"><br>
-<b>Built-in Ad & Tracker Blocker</b><br>
-Block intrusive ads, banners, crypto miners, and fingerprinting scripts before they even reach your screen. Enjoy blazing fast page loads with lower cellular data consumption.
+<img src="docs/readme/icons/adblock.svg" width="44" height="44" alt=""><br>
+<b>Ad and tracker blocking</b><br>
+Blocks ads, trackers, crypto miners and fingerprinting scripts before they load, so pages are faster and use less data.
 </td>
 </tr>
 <tr>
 <td width="50%" valign="top">
-<img src="docs/readme/icons/ai.svg" width="44" height="44" alt="Inbuilt AI Hub"><br>
-<b>Inbuilt On-Device AI Hub</b><br>
-Chat, summarize web pages, rewrite text, and query content directly inside the browser using your favorite provider (OpenAI, Anthropic, Gemini, Groq, Ollama) or on-device local models.
+<img src="docs/readme/icons/glass.svg" width="44" height="44" alt=""><br>
+<b>Material 3 Expressive</b><br>
+Dynamic colour from your wallpaper, ready-made palettes, true-black AMOLED mode and spring motion with haptic feedback.
 </td>
 <td width="50%" valign="top">
-<img src="docs/readme/icons/download.svg" width="44" height="44" alt="Media Grabber"><br>
-<b>Integrated Media & Download Manager</b><br>
-Sniff and download streaming media, audio, and documents with multi-threaded downloads, resume support, background service persistence, and organized destination folders.
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-<img src="docs/readme/icons/tabs.svg" width="44" height="44" alt="Tab Management"><br>
-<b>Tab Isolation & Visual Switcher</b><br>
-Material 3 Expressive grid and carousel tab switchers, incognito private tabs, session persistence across restarts, and instant tab search with zero memory leaks.
-</td>
-<td width="50%" valign="top">
-<img src="docs/readme/icons/extensions.svg" width="44" height="44" alt="Desktop Web Extensions"><br>
-<b>WebExtension Add-on Ecosystem</b><br>
-Install and run Mozilla add-ons and Firefox extensions natively. Customize your browsing experience with user scripts, password managers, and dark mode enhancers.
+<img src="docs/readme/icons/tabs.svg" width="44" height="44" alt=""><br>
+<b>Tabs that stay organised</b><br>
+Grid tab switcher, tab groups, private tabs, and sessions that survive a restart.
 </td>
 </tr>
 </table>
 
----
+**Browsing**
+- **Collapsing address bar.** It hides while you scroll. Swipe it sideways to switch tabs.
+- **Quick actions.** Long-press the address bar to copy a clean link, paste and go, or bookmark.
+- **Firefox add-ons.** Install WebExtensions from the Mozilla add-ons site.
+- **PDF viewer.** Open PDFs inside the browser.
+
+**Privacy**
+- **Tracking protection on by default.** No cloud account is needed.
+- **Privacy shield.** See what a site is blocking, and change it per site.
+- **Password manager.** Save and fill logins, with biometric unlock.
+- **Site identity switching.** Change how a site sees your browser.
+
+**Tools**
+- **Download manager.** Multi-threaded, resumable downloads that keep running in the background.
+- **Media grabber.** Find and save media on a page.
+- **Built-in player.** Full-screen playback with gesture controls.
+- **Optional AI helper.** Summarise or ask about a page. You bring your own provider key (such as Gemini, OpenAI, Anthropic, Groq or Ollama). Page text is sent to that provider only when you use it.
+- **Widgets.** Home-screen widgets for quick search.
+
+<br>
 
 ## Install
 
-### GitHub Releases (Recommended)
-Grab the latest signed universal or architecture-specific APK directly from GitHub:
+**GitHub Releases (recommended)**
 
-[![Download APK](https://img.shields.io/badge/Download-Latest%20Release-B81D63?style=for-the-badge&logo=android&logoColor=white)](https://github.com/shreyagarwal72/petal/releases/latest)
+Download the latest APK from the [Releases page](https://github.com/shreyagarwal72/petal/releases/latest), open it, and allow installs from your browser or file manager when Android asks. Petal can update itself from GitHub releases.
+
+**With ADB**
 
 ```bash
-# Or install via ADB directly
 adb install -r Petal-release.apk
 ```
 
----
+<br>
+
+## Permissions
+
+Petal asks only when a feature needs it. The main ones:
+
+| Permission | Why it is used |
+| :--- | :--- |
+| Internet and network state | Loading pages and checking your connection. |
+| Camera and microphone | Only when a site asks, and for QR and voice search. |
+| Location | Only when a site asks, and you can say no per site. |
+| Photos, media and storage | Uploading files and saving downloads. |
+| Notifications and foreground service | Download progress and background media playback. |
+| Biometric | Unlocking saved passwords. |
+| Vibrate | Haptic feedback. |
+| Install packages | The built-in updater for GitHub releases. |
+| Draw over other apps (optional) | The floating island on devices without Android 16 Live Updates. Off until you turn it on. |
+
+<br>
 
 ## Build it yourself
 
-Petal uses Gradle and the standard Android toolchain. Java 17+ and the Android SDK (API 34+) are required.
+You need JDK 17 or newer and the Android SDK.
 
 ```bash
-# Clone the repository
 git clone https://github.com/shreyagarwal72/petal.git
 cd petal
 
-# Build a debug APK
+# Debug build
 ./gradlew assembleDebug
 
-# Build an optimized release APK
+# Release build
 ./gradlew assembleRelease
 ```
 
-The compiled APK will be located at:
-`app/build/outputs/apk/release/app-release-unsigned.apk`
+The release APK is written to `app/build/outputs/apk/release/`.
 
----
+<br>
 
-## Under the hood
+## Built with
 
-| Component | Technology / Library |
+| | |
 | :--- | :--- |
-| **Language** | Kotlin 2.0+ & Java 17 |
-| **Engine** | Mozilla GeckoView 158 (arm64-v8a, armeabi-v7a, x86_64) |
-| **UI Framework** | Jetpack Compose + Material 3 Expressive components |
-| **Design System** | Material 3 Expressive shape morphing & dynamic color tokens |
-| **Architecture** | Clean Architecture / MVVM with Kotlin Coroutines & Flows |
-| **Storage & Cache** | Room Database + SQLite, encrypted preferences |
-| **Target Android** | Android 8.0 (API 26) through Android 15 (API 35) |
+| Language | Kotlin |
+| UI | Jetpack Compose, Material 3 Expressive |
+| Engine | Mozilla GeckoView 158 |
+| Architecture | MVVM, Kotlin Coroutines and Flow, Hilt |
+| Privileged actions | Shizuku (optional) |
+| Platform | minSdk 26 (Android 8.0), targetSdk 36 |
 
----
+More detail is in [architecture.md](architecture.md) and [design.md](design.md).
+
+<br>
+
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. Please read the [code of conduct](CODE_OF_CONDUCT.md) first, and open an issue before starting a large change.
+
+## Thanks
+
+- [Mozilla GeckoView](https://mozilla.github.io/geckoview/) for the engine.
+- [Material 3 Expressive](https://m3.material.io/) for the design language.
+- [Shizuku](https://shizuku.rikka.app/) for the optional privileged API.
 
 ## License
 
-Petal is free and open-source software distributed under the terms of the **[GNU General Public License v3.0 (GPL-3.0)](LICENSE.md)**.
+Petal is free software under the [GNU General Public License v3.0](LICENSE.md).
 
-```
-Petal Browser
 Copyright (C) 2024-2026 Vanshu Agarwal and contributors.
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-```
