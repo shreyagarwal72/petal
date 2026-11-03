@@ -121,8 +121,7 @@ private fun SourceRow(label: String, sub: String, selected: Boolean, swatch: @Co
     ) {
         Box(
             Modifier.size(40.dp).clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                .border(if (selected) 2.dp else 0.dp, if (selected) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape),
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             contentAlignment = Alignment.Center
         ) { swatch() }
         Column(Modifier.weight(1f)) {

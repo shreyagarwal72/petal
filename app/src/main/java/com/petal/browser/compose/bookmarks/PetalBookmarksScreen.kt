@@ -327,7 +327,7 @@ fun PetalBookmarksScreen(
                 // Search Filter Bar
                 val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                 val searchShape = RoundedCornerShape(24.dp)
-                OutlinedTextField(
+                TextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     placeholder = { Text(stringResource(R.string.ui_search_bookmarks)) },
@@ -341,11 +341,12 @@ fun PetalBookmarksScreen(
                     },
                     singleLine = true,
                     shape = searchShape,
-                    colors = OutlinedTextFieldDefaults.colors(
+                    colors = TextFieldDefaults.colors(
                         focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                         unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.Transparent
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -684,20 +685,34 @@ fun PetalBookmarksScreen(
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
+                    TextField(
                         value = editTitle,
                         onValueChange = { editTitle = it },
                         label = { Text(stringResource(R.string.ui_title)) },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    OutlinedTextField(
+                    TextField(
                         value = editUrl,
                         onValueChange = { editUrl = it },
                         label = { Text(stringResource(R.string.ui_url)) },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -707,9 +722,10 @@ fun PetalBookmarksScreen(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(
+                    FilledTonalButton(
                         onClick = { editingRecord = null },
                         shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
                         modifier = Modifier.heightIn(min = 48.dp)
                     ) {
                         Text(stringResource(R.string.ui_cancel))
@@ -796,21 +812,35 @@ fun PetalBookmarksScreen(
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
+                    TextField(
                         value = newTitle,
                         onValueChange = { newTitle = it },
                         label = { Text(stringResource(R.string.ui_title)) },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    OutlinedTextField(
+                    TextField(
                         value = newUrl,
                         onValueChange = { newUrl = it },
                         label = { Text(stringResource(R.string.ui_url)) },
                         placeholder = { Text("https://example.com") },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -820,9 +850,10 @@ fun PetalBookmarksScreen(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(
+                    FilledTonalButton(
                         onClick = { showAddDialog = false },
                         shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
                         modifier = Modifier.heightIn(min = 48.dp)
                     ) {
                         Text(stringResource(R.string.ui_cancel))

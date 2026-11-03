@@ -11,7 +11,6 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -66,8 +65,8 @@ fun ExpressiveSplitButton(
     contentColorOverride: Color? = null
 ) {
     val pillRadius = height / 2
-    val innerRadius = 4.dp
-    val pillGap = 3.dp
+    val innerRadius = 6.dp
+    val pillGap = 6.dp
 
     // Morphing corner radius animation
     val animatedMenuInnerCorner by animateDpAsState(
@@ -104,14 +103,14 @@ fun ExpressiveSplitButton(
         SplitButtonVariant.FILLED -> MaterialTheme.colorScheme.primary
         SplitButtonVariant.TONAL -> MaterialTheme.colorScheme.secondaryContainer
         SplitButtonVariant.ELEVATED -> MaterialTheme.colorScheme.surfaceContainerHigh
-        SplitButtonVariant.OUTLINED -> MaterialTheme.colorScheme.surface
+        SplitButtonVariant.OUTLINED -> MaterialTheme.colorScheme.surfaceContainerHighest
     }
 
     val contentColor = contentColorOverride ?: when (variant) {
         SplitButtonVariant.FILLED -> MaterialTheme.colorScheme.onPrimary
         SplitButtonVariant.TONAL -> MaterialTheme.colorScheme.onSecondaryContainer
         SplitButtonVariant.ELEVATED -> MaterialTheme.colorScheme.primary
-        SplitButtonVariant.OUTLINED -> MaterialTheme.colorScheme.primary
+        SplitButtonVariant.OUTLINED -> MaterialTheme.colorScheme.onSurface
     }
 
     val primaryShape = RoundedCornerShape(
@@ -147,7 +146,6 @@ fun ExpressiveSplitButton(
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val effectiveContainer = if (isGlass) petalGroupSurfaceColor() else containerColor
-    val effectiveBorder = if (isGlass || variant != SplitButtonVariant.OUTLINED) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -162,7 +160,6 @@ fun ExpressiveSplitButton(
             color = effectiveContainer,
             tonalElevation = if (isGlass || variant != SplitButtonVariant.ELEVATED) 0.dp else 4.dp,
             shadowElevation = if (isGlass || variant != SplitButtonVariant.ELEVATED) 0.dp else 3.dp,
-            border = effectiveBorder,
             modifier = Modifier
                 .height(height)
                 .graphicsLayer {
@@ -218,7 +215,6 @@ fun ExpressiveSplitButton(
             color = effectiveContainer,
             tonalElevation = if (isGlass || variant != SplitButtonVariant.ELEVATED) 0.dp else 4.dp,
             shadowElevation = if (isGlass || variant != SplitButtonVariant.ELEVATED) 0.dp else 3.dp,
-            border = effectiveBorder,
             modifier = Modifier
                 .height(height)
                 .width((height.value * 0.88f).dp)

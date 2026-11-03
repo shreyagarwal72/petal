@@ -5,7 +5,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -50,7 +49,6 @@ fun ExpressiveQuickActionsPill(
         color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
         shadowElevation = if (isGlass) 0.dp else 8.dp,
         tonalElevation = if (isGlass) 0.dp else 3.dp,
-        border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.22f)) else null,
         modifier = modifier
             .height(56.dp)
             .then(if (isGlass) Modifier.liquidGlassChrome(pillShape, enabled = true, sheenIntensity = sheen) else Modifier)

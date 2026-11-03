@@ -129,7 +129,8 @@ object PetalTabSuspender {
                 try {
                     controller.deactivate()
                     com.petal.browser.extensions.PetalExtensionManager.detachSession(controller.getGeckoSession())
-                    controller.destroy()
+                    // The tab stays open as a placeholder, so its thumbnail must survive.
+                    controller.destroy(keepThumbnail = true)
                 } catch (t: Throwable) {
                     Log.w(TAG, "Error destroying PetalTabViewController during suspension: ${t.message}")
                 }

@@ -3,7 +3,6 @@ package com.petal.browser.compose.flags
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -46,8 +45,8 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -86,7 +85,6 @@ import com.petal.browser.ui.containment.PetalSectionLabel
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalBackdropSource
 import com.petal.browser.ui.containment.rememberPetalBackdrop
-import com.petal.browser.ui.theme.PetalMaterialShapes
 
 /**
  * PetalFlagsHubScreen
@@ -233,7 +231,7 @@ fun PetalFlagsHubScreen(
                     Spacer(Modifier.height(10.dp))
 
                     // Search Bar
-                    OutlinedTextField(
+                    TextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         modifier = Modifier.fillMaxWidth(),
@@ -254,11 +252,11 @@ fun PetalFlagsHubScreen(
                         },
                         shape = RoundedCornerShape(16.dp),
                         singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = Color.Transparent
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent
                         )
                     )
 
@@ -395,15 +393,7 @@ private fun FlagRowItem(
     val haptic = LocalHapticFeedback.current
     val currentState = remember(flag.id) { PetalFlagsStore.getFlagState(context, flag.id) }
 
-    val shapeBadge = remember(flag.category) {
-        when (flag.category) {
-            FlagCategory.PERFORMANCE -> PetalMaterialShapes.Boom.toShape()
-            FlagCategory.PRIVACY -> PetalMaterialShapes.Gem.toShape()
-            FlagCategory.RENDERING -> PetalMaterialShapes.Flower.toShape()
-            FlagCategory.NETWORK -> PetalMaterialShapes.Cookie4Sided.toShape()
-            FlagCategory.EXTENSIONS, FlagCategory.ALL -> PetalMaterialShapes.PuffyDiamond.toShape()
-        }
-    }
+    val shapeBadge = RoundedCornerShape(12.dp)
 
     val iconVector = remember(flag.category) {
         when (flag.category) {

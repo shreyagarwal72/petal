@@ -12,7 +12,6 @@ import androidx.compose.animation.core.spring
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -1033,7 +1032,7 @@ fun CoreTechStackGroup() {
         shape = shape,
         color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = if (isGlass) 0.dp else 1.dp,
-        border = if (!isGlass) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)) else null,
+        border = null,
         modifier = Modifier.fillMaxWidth().liquidGlassChrome(shape, enabled = isGlass)
     ) {
         Column(
@@ -1065,7 +1064,7 @@ private fun M3TechTag(label: String, isGlass: Boolean = false) {
     Surface(
         shape = tagShape,
         color = if (isGlass) MaterialTheme.colorScheme.surface.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = if (!isGlass) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)) else null,
+        border = null,
         modifier = if (isGlass) Modifier.liquidGlassChrome(tagShape, enabled = true, sheenIntensity = 0.40f) else Modifier
     ) {
         Text(
@@ -1092,7 +1091,7 @@ fun MissionMetricsGroup() {
             shape = shape,
             color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
             tonalElevation = if (isGlass) 0.dp else 1.dp,
-            border = if (!isGlass) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)) else null,
+            border = null,
             modifier = Modifier.fillMaxWidth().liquidGlassChrome(shape, enabled = isGlass)
         ) {
             Text(

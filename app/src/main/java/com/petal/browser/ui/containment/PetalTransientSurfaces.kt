@@ -1,6 +1,11 @@
 package com.petal.browser.ui.containment
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.preference.PreferenceManager
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -94,9 +99,9 @@ fun PetalPopupMenu(
     modifier: Modifier = Modifier,
     shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(26.dp),
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    tonalElevation: Dp = 6.dp,
-    shadowElevation: Dp = 8.dp,
-    border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+    tonalElevation: Dp = 0.dp,
+    shadowElevation: Dp = 6.dp,
+    border: BorderStroke? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
@@ -231,38 +236,113 @@ fun PetalPopupMenuItem(
 fun PetalAlertDialog(
     onDismissRequest: () -> Unit,
     title: String,
-    message: String,
-    onConfirm: () -> Unit,
-    modifier: Modifier = Modifier,
-    icon: ImageVector = Icons.Rounded.Info,
-    destructive: Boolean = false,
+    message: String? = null,
     confirmText: String = "OK",
+    onConfirm: () -> Unit,
     dismissText: String? = "Cancel",
+    onDismiss: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = Icons.Rounded.Info,
+    destructive: Boolean = false,
+    content: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     PetalMaterialAlertDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
-        icon = {
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = if (destructive) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
-                contentColor = if (destructive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(56.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(26.dp)) }
+        shape = RoundedCornerShape(28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        icon = icon?.let { ic ->
+            {
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = if (destructive) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = if (destructive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp,
+                    border = null,
+                    modifier = Modifier.size(56.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(ic, contentDescription = null, modifier = Modifier.size(26.dp))
+                    }
+                }
             }
         },
-        title = { Text(title) },
-        text = { Text(message) },
+        title = {
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                        shape = CircleShape
+                    )
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        },
+        text = if (message != null || content != null) {
+            {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (message != null) {
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    content?.invoke(this)
+                }
+            }
+        } else null,
         confirmButton = {
             Button(
                 onClick = onConfirm,
-                colors = if (destructive) ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError) else ButtonDefaults.buttonColors(),
-                modifier = Modifier.heightIn(min = 48.dp),
-            ) { Text(confirmText, fontWeight = FontWeight.Bold) }
+                shape = if (dismissText != null) {
+                    RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp)
+                } else {
+                    RoundedCornerShape(50.dp)
+                },
+                colors = if (destructive) {
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                } else {
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
+            ) {
+                Text(confirmText, fontWeight = FontWeight.SemiBold)
+            }
         },
         dismissButton = dismissText?.let { label ->
-            { TextButton(onClick = onDismissRequest, modifier = Modifier.heightIn(min = 48.dp)) { Text(label) } }
+            {
+                Button(
+                    onClick = { onDismiss?.invoke() ?: onDismissRequest() },
+                    shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                ) {
+                    Text(label, fontWeight = FontWeight.SemiBold)
+                }
+            }
         }
     )
 }
@@ -276,7 +356,7 @@ fun PetalMaterialAlertDialog(
     icon: (@Composable () -> Unit)? = null,
     title: (@Composable () -> Unit)? = null,
     text: (@Composable () -> Unit)? = null,
-    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(32.dp),
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(28.dp),
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     iconContentColor: Color = MaterialTheme.colorScheme.secondary,
     titleContentColor: Color = MaterialTheme.colorScheme.onSurface,
@@ -306,7 +386,7 @@ fun PetalMaterialAlertDialog(
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 tonalElevation = 0.dp,
                 shadowElevation = if (isGlass) 0.dp else 12.dp,
-                border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+                border = null,
             ) {
                 Column(
                     modifier = Modifier
@@ -339,14 +419,17 @@ fun PetalMaterialAlertDialog(
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (dismissButton != null) {
-                            dismissButton()
-                            Spacer(Modifier.width(8.dp))
+                            Box(modifier = Modifier.weight(1f)) {
+                                dismissButton()
+                            }
                         }
-                        confirmButton()
+                        Box(modifier = Modifier.weight(1f)) {
+                            confirmButton()
+                        }
                     }
                 }
             }
@@ -358,7 +441,7 @@ fun PetalMaterialAlertDialog(
 fun PetalDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(32.dp),
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(28.dp),
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
     content: @Composable ColumnScope.() -> Unit,
@@ -394,9 +477,309 @@ fun PetalDialog(
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 tonalElevation = 0.dp,
                 shadowElevation = if (isGlass) 0.dp else 12.dp,
-                border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+                border = null,
             ) {
                 Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
+            }
+        }
+    }
+}
+
+/**
+ * Shape calculation for stacked tonal content blocks within sheets and dialogs.
+ * Following PixelPlayer specifications:
+ * - Single item (count <= 1): 18.dp on all corners
+ * - Top item (index == 0): 18.dp outer (top), 6.dp inner (bottom)
+ * - Bottom item (index == count - 1): 6.dp inner (top), 18.dp outer (bottom)
+ * - Middle item: 6.dp on all corners
+ */
+fun petalStackedBlockShape(index: Int, count: Int): RoundedCornerShape {
+    return when {
+        count <= 1 -> RoundedCornerShape(18.dp)
+        index == 0 -> RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = 6.dp, bottomEnd = 6.dp)
+        index == count - 1 -> RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp, bottomStart = 18.dp, bottomEnd = 18.dp)
+        else -> RoundedCornerShape(6.dp)
+    }
+}
+
+/**
+ * Stacked tonal content block container conforming to PixelPlayer bottom sheet specifications.
+ * Uses position-aware corners, tonal container background, zero border stroke, and 4dp spacing.
+ */
+@Composable
+fun PetalStackedBlock(
+    index: Int,
+    count: Int,
+    modifier: Modifier = Modifier,
+    selected: Boolean = false,
+    containerColor: Color? = null,
+    contentColor: Color? = null,
+    onClick: (() -> Unit)? = null,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val shape = petalStackedBlockShape(index, count)
+    val resolvedContainerColor = containerColor ?: if (selected) {
+        MaterialTheme.colorScheme.secondaryContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHighest
+    }
+    val resolvedContentColor = contentColor ?: if (selected) {
+        MaterialTheme.colorScheme.onSecondaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+
+    Surface(
+        shape = shape,
+        color = resolvedContainerColor,
+        contentColor = resolvedContentColor,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        border = null,
+        modifier = modifier
+            .fillMaxWidth()
+            .then(
+                if (onClick != null) {
+                    Modifier.bouncyClickable(scaleDown = 0.98f, onClick = onClick)
+                } else Modifier
+            )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            content = content
+        )
+    }
+}
+
+/**
+ * Prominent sheet header title badge styled as a pill in surfaceContainerLowest with primary text.
+ * Matches PixelPlayer TimerOptionsBottomSheet / LibrarySortBottomSheet specifications.
+ */
+@Composable
+fun PetalSheetTitleBadge(
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .background(
+                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                shape = CircleShape
+            )
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+/**
+ * Connected asymmetric action button row for bottom sheets and dialogs.
+ * Matches PixelPlayer specifications:
+ * - Dismiss: surfaceContainerHighest fill, 50dp outer / 6dp inner corners
+ * - Confirm: primary fill, 6dp inner / 50dp outer corners
+ * - Spacing: 6.dp gap
+ * - Borders: null (zero outline borders)
+ */
+@Composable
+fun PetalActionRow(
+    confirmText: String,
+    onConfirm: () -> Unit,
+    modifier: Modifier = Modifier,
+    dismissText: String? = null,
+    onDismiss: (() -> Unit)? = null,
+    destructive: Boolean = false,
+    confirmEnabled: Boolean = true,
+    dismissEnabled: Boolean = true,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (dismissText != null && onDismiss != null) {
+            Button(
+                onClick = onDismiss,
+                enabled = dismissEnabled,
+                shape = RoundedCornerShape(
+                    topStart = 50.dp,
+                    bottomStart = 50.dp,
+                    topEnd = 6.dp,
+                    bottomEnd = 6.dp
+                ),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+            ) {
+                Text(dismissText, fontWeight = FontWeight.SemiBold)
+            }
+        }
+        Button(
+            onClick = onConfirm,
+            enabled = confirmEnabled,
+            shape = if (dismissText != null && onDismiss != null) {
+                RoundedCornerShape(
+                    topStart = 6.dp,
+                    bottomStart = 6.dp,
+                    topEnd = 50.dp,
+                    bottomEnd = 50.dp
+                )
+            } else {
+                RoundedCornerShape(50.dp)
+            },
+            colors = if (destructive) {
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                )
+            } else {
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            },
+            modifier = Modifier
+                .weight(1f)
+                .heightIn(min = 48.dp)
+        ) {
+            Text(confirmText, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+/**
+ * Shared Bottom Sheet conforming to PixelPlayer bottom sheet specifications:
+ * - Container: surfaceContainerHigh (or transparent when liquid glass active)
+ * - Shape: RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+ * - Drag handle: standard BottomSheetDefaults.DragHandle()
+ * - Title: optional pill badge in surfaceContainerLowest with primary text
+ * - Content: Column with 18.dp horizontal padding (when modern title/actionContent present)
+ * - Action row: optional connected asymmetric action row with 6dp spacing
+ * - Borders: 0 borders
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PetalSheet(
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+    title: String? = null,
+    titleContent: (@Composable () -> Unit)? = null,
+    actionContent: (@Composable RowScope.() -> Unit)? = null,
+    ownsGlassBackdrop: Boolean = true,
+    containerColor: Color? = null,
+    scrimColor: Color? = null,
+    dragHandle: (@Composable () -> Unit)? = { BottomSheetDefaults.DragHandle() },
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    val dark = MaterialTheme.colorScheme.background.luminance() < .5f
+    val fallbackColor = if (dark) Color(0xE61A1C1E) else Color(0xE6F2F4F7)
+
+    val ownWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+    val activeWallpaper = if (isGlass && ownsGlassBackdrop) ownWallpaper else com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
+
+    val resolvedContainerColor = containerColor ?: if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh
+    val resolvedScrimColor = scrimColor ?: if (isGlass) Color.Black.copy(alpha = 0.14f) else BottomSheetDefaults.ScrimColor
+
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        modifier = modifier,
+        sheetState = sheetState,
+        shape = sheetShape,
+        containerColor = resolvedContainerColor,
+        scrimColor = resolvedScrimColor,
+        dragHandle = null,
+        tonalElevation = 0.dp,
+        contentWindowInsets = { androidx.compose.foundation.layout.WindowInsets(0) },
+    ) {
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val view = androidx.compose.ui.platform.LocalView.current
+        val fallbackStatusTop = WindowInsets.statusBars.getTop(density)
+        val statusTopPx = androidx.compose.runtime.remember(view, fallbackStatusTop) {
+            androidx.core.view.ViewCompat.getRootWindowInsets(view)
+                ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars())?.top
+                ?: fallbackStatusTop
+        }
+        var statusOverlapPx by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+        CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides activeWallpaper) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned {
+                        val top = it.positionInWindow().y
+                        statusOverlapPx = (statusTopPx - top).toInt().coerceIn(0, statusTopPx)
+                    }
+            ) {
+                if (isGlass && containerColor == null) {
+                    if (ownsGlassBackdrop) PetalSheetGlassBackdrop(ownWallpaper, Modifier.matchParentSize())
+                    val ready = activeWallpaper?.ready == true
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .then(if (!ready) Modifier.background(fallbackColor, sheetShape) else Modifier)
+                            .liquidGlassChrome(shape = sheetShape, enabled = true, sheenIntensity = sheen)
+                    )
+                }
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = with(density) { statusOverlapPx.toDp() })
+                        .navigationBarsPadding()
+                ) {
+                    if (dragHandle != null) {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { dragHandle() }
+                    }
+                    if (titleContent != null) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 18.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            titleContent()
+                        }
+                    } else if (title != null) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 18.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            PetalSheetTitleBadge(title = title)
+                        }
+                    }
+                    val hasModernHeaderOrFooter = title != null || titleContent != null || actionContent != null
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .then(if (hasModernHeaderOrFooter) Modifier.padding(horizontal = 18.dp) else Modifier),
+                        content = content
+                    )
+                    if (actionContent != null) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 18.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            content = actionContent
+                        )
+                    }
+                }
             }
         }
     }

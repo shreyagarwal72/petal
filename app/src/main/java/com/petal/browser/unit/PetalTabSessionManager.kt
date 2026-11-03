@@ -78,6 +78,7 @@ object PetalTabSessionManager {
         // Back jump straight to Home after the app was cleared from recents: the restored tab had a
         // brand-new single-entry history.
         val capturedEngineStates = HashMap<String, String>()
+        val capturedNavTrails = HashMap<String, List<String>>()
         for (controller in controllers) {
             if (controller.isIncognito) continue
             val id = when (controller) {
@@ -88,7 +89,10 @@ object PetalTabSessionManager {
             val url = controller.url
             if (url.isNullOrBlank() || isHomeUrl(url)) continue
             when (controller) {
-                is com.petal.browser.browser.PetalTabViewController -> controller.captureEngineState()?.let { capturedEngineStates[id] = it }
+                is com.petal.browser.browser.PetalTabViewController -> {
+                    controller.captureEngineState()?.let { capturedEngineStates[id] = it }
+                    controller.captureNavUrls()?.let { capturedNavTrails[id] = it }
+                }
                 is PetalGeckoView -> controller.captureEngineState()?.let { capturedEngineStates[id] = it }
             }
         }
@@ -167,6 +171,7 @@ object PetalTabSessionManager {
                             // Keep the previously saved file instead of overwriting it with nothing.
                         }
                     }
+                    capturedNavTrails[tabId]?.let { PetalTabStateStore.writeNav(context, tabId, it) }
                     // Placeholder (not yet materialized / suspended) tabs own no live session; their
                     // saved state file is kept as-is and pruned below only if the tab disappears.
 
@@ -194,7 +199,10 @@ object PetalTabSessionManager {
 
                 // Cache hygiene: drop saved history for tabs that were closed so the state directory
                 // never grows beyond the set of currently open tabs.
-                PetalTabStateStore.retainOnly(context, records.map { it.persistentTabId })
+                val liveTabIds = records.map { it.persistentTabId }
+                PetalTabStateStore.retainOnly(context, liveTabIds)
+                // Same for preview thumbnails: stored images never outlive their tab.
+                com.petal.browser.unit.TabThumbnailCache.retainOnly(liveTabIds)
 
                 val json = gson.toJson(records)
 
@@ -385,6 +393,10 @@ object PetalTabSessionManager {
         url: String?
     ): Boolean {
         if (tabId.isNullOrBlank() || url.isNullOrBlank() || isHomeUrl(url)) return false
+        // Always install the URL trail first: it is the Back fallback when Gecko's own history
+        // cannot be restored (and the caller then simply loads [url]).
+        val trail = PetalTabStateStore.readNav(context, tabId)
+        if (trail.size > 1) controller.restoreNavTrail(trail, url)
         val serialized = PetalTabStateStore.read(context, tabId) ?: return false
         return controller.restoreEngineState(serialized, url)
     }

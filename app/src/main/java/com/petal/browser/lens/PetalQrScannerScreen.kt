@@ -25,7 +25,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -394,11 +393,8 @@ fun PetalQrScannerScreen(
                     .fillMaxWidth()
                     .aspectRatio(3f / 4f)
                     .onGloballyPositioned { viewportRect = it.boundsInRoot() }
-                    .border(
-                        1.5.dp,
-                        MaterialTheme.colorScheme.primary.copy(alpha = if (isLiquidGlass) 0.75f else 1f),
-                        viewportShape
-                    ),
+                    .clip(viewportShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = if (isLiquidGlass) 0.08f else 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 if (!hasPermission) {
@@ -462,7 +458,6 @@ fun PetalQrScannerScreen(
             Surface(
                 shape = bottomBarShape,
                 color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
-                border = if (isLiquidGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
@@ -607,7 +602,6 @@ fun PetalQrScannerScreen(
             Surface(
                 shape = dialogShape,
                 color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                border = if (isLiquidGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
                 shadowElevation = if (isLiquidGlass) 0.dp else 12.dp,
                 tonalElevation = 0.dp,
                 modifier = Modifier
@@ -655,7 +649,6 @@ fun PetalQrScannerScreen(
                     Surface(
                         shape = textShape,
                         color = if (isLiquidGlass) Color.Black.copy(alpha = 0.20f) else MaterialTheme.colorScheme.surfaceContainerLow,
-                        border = if (isLiquidGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                         modifier = Modifier
                             .fillMaxWidth()
                             .then(if (isLiquidGlass) Modifier.liquidGlassChrome(textShape, enabled = true, sheenIntensity = 0.3f) else Modifier)
@@ -672,14 +665,18 @@ fun PetalQrScannerScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        OutlinedButton(
+                        FilledTonalButton(
                             onClick = {
                                 detectedValue = null
                                 scanLocked = false
                             },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = com.petal.browser.ui.containment.petalConnectedShape(0, 2),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(stringResource(R.string.ui_scan_again))
@@ -693,7 +690,11 @@ fun PetalQrScannerScreen(
                                     onResult(value)
                                 }
                             },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = com.petal.browser.ui.containment.petalConnectedShape(1, 2),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
                             modifier = Modifier.weight(1.2f)
                         ) {
                             Text(

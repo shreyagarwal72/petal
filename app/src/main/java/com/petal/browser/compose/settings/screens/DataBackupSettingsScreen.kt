@@ -234,12 +234,12 @@ fun DataBackupSettingsScreen(
 
                     Spacer(Modifier.height(4.dp))
 
-                    // Secondary action buttons (Export Passwords & Custom Folder)
+                    // Secondary action buttons (Export Passwords & Custom Folder - connected segmented pair)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        OutlinedButton(
+                        FilledTonalButton(
                             onClick = {
                                 showBackupDialog = false
                                 com.petal.browser.passwords.PetalCredentialVault.init(context)
@@ -252,7 +252,11 @@ fun DataBackupSettingsScreen(
                                 destFile.writeText(json, Charsets.UTF_8)
                                 com.petal.browser.view.PetalToast.show(context, "Exported passwords to Downloads/$fileName")
                             },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
                             modifier = Modifier.weight(1f).height(44.dp)
                         ) {
                             Icon(Icons.Rounded.Key, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -265,12 +269,16 @@ fun DataBackupSettingsScreen(
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                         }
-                        OutlinedButton(
+                        FilledTonalButton(
                             onClick = {
                                 showBackupDialog = false
                                 createBackupLauncher.launch("petal_browser_backup.json")
                             },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
                             modifier = Modifier.weight(1f).height(44.dp)
                         ) {
                             Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -555,9 +563,13 @@ fun DataBackupSettingsScreen(
                                     position = position,
                                     onClick = { showRestoreDialog = true },
                                     trailing = {
-                                        OutlinedButton(
+                                        FilledTonalButton(
                                             onClick = { showRestoreDialog = true },
-                                            shape = RoundedCornerShape(12.dp),
+                                            shape = RoundedCornerShape(50.dp),
+                                            colors = ButtonDefaults.filledTonalButtonColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                contentColor = MaterialTheme.colorScheme.onSurface
+                                            ),
                                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                                         ) {
                                             Text(stringResource(R.string.ui_restore_json))

@@ -94,7 +94,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.media.PetalAudioPalette
-import com.petal.browser.media.PetalCookieShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -404,7 +403,7 @@ fun PetalLyricsSheet(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Artwork Thumbnail
-                    val artShape = if (isPlaying) PetalCookieShape(8, 0.082, 0f) else RoundedCornerShape(12.dp)
+                    val artShape = RoundedCornerShape(12.dp)
                     Surface(
                         shape = artShape,
                         color = audioPalette.surfaceContainerHighest,

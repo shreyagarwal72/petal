@@ -312,18 +312,18 @@ fun SafeLockerScreen(
                         AnimatedVisibility(visible = isSearchActive && isUnlocked) {
                             val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                             val lockerSearchShape = RoundedCornerShape(20.dp)
-                            OutlinedTextField(
+                            TextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
                                 placeholder = { Text(stringResource(R.string.ui_search_encrypted_files)) },
                                 leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                                 singleLine = true,
                                 shape = lockerSearchShape,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                                    unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                                    focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()

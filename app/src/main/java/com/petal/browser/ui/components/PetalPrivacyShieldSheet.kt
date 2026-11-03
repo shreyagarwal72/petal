@@ -60,8 +60,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -322,7 +320,7 @@ object PetalPrivacyShieldSheet {
             contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 2.dp,
             shadowElevation = if (isGlass) 4.dp else 12.dp,
-            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+            border = null,
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .heightIn(max = 560.dp)
@@ -631,16 +629,20 @@ object PetalPrivacyShieldSheet {
                             Text("Zap Element (Interactive Visual Picker)", fontSize = 12.sp)
                         }
 
-                        OutlinedButton(
+                        FilledTonalButton(
                             onClick = { showBlockElementDialog = true },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 14.dp, vertical = 3.dp),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
                         ) {
                             Icon(Icons.Rounded.Block, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Block Page Element (CSS Selector)", fontSize = 12.sp)
+                            Text("Block Page Element (CSS Selector)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
 
@@ -741,45 +743,37 @@ object PetalPrivacyShieldSheet {
                 }
 
                 if (showBlockElementDialog) {
-                    PetalMaterialAlertDialog(
+                    com.petal.browser.ui.containment.PetalAlertDialog(
                         onDismissRequest = { showBlockElementDialog = false },
-                        title = { Text("Block Element on $cleanHost", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
-                        text = {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(
-                                    "Enter a CSS selector (e.g. '.newsletter-modal', '#paywall-banner') to permanently hide it from this domain.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                OutlinedTextField(
-                                    value = customCssSelector,
-                                    onValueChange = { customCssSelector = it },
-                                    placeholder = { Text("e.g. .popup-overlay") },
-                                    singleLine = true,
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                        title = "Block Element on $cleanHost",
+                        message = "Enter a CSS selector (e.g. '.newsletter-modal', '#paywall-banner') to permanently hide it from this domain.",
+                        confirmText = "Block",
+                        onConfirm = {
+                            if (customCssSelector.isNotBlank()) {
+                                PetalElementBlocker.addSelector(activity, cleanHost, customCssSelector.trim())
+                                onReloadRequested()
+                                showBlockElementDialog = false
+                                customCssSelector = ""
                             }
                         },
-                        confirmButton = {
-                            Button(
-                                onClick = {
-                                    if (customCssSelector.isNotBlank()) {
-                                        PetalElementBlocker.addSelector(activity, cleanHost, customCssSelector.trim())
-                                        onReloadRequested()
-                                        showBlockElementDialog = false
-                                        customCssSelector = ""
-                                    }
-                                },
-                                enabled = customCssSelector.isNotBlank()
-                            ) {
-                                Text("Block")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showBlockElementDialog = false }) {
-                                Text("Cancel")
-                            }
+                        dismissText = "Cancel",
+                        onDismiss = { showBlockElementDialog = false },
+                        confirmEnabled = customCssSelector.isNotBlank(),
+                        content = {
+                            TextField(
+                                value = customCssSelector,
+                                onValueChange = { customCssSelector = it },
+                                placeholder = { Text("e.g. .popup-overlay") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = TextFieldDefaults.colors(
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     )
                 }

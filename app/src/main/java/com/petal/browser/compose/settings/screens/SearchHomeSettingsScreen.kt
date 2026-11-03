@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -242,13 +243,19 @@ fun SearchHomeSettingsScreenContent(
                     )
 
                     if (homepageType == "1") {
-                        OutlinedTextField(
+                        TextField(
                             value = customHomepageUrl,
                             onValueChange = onCustomHomepageUrlChange,
                             modifier = Modifier.fillMaxWidth(),
                             label = { Text(stringResource(R.string.ui_enter_homepage_url)) },
                             singleLine = true,
-                            shape = RoundedCornerShape(14.dp)
+                            shape = RoundedCornerShape(14.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            )
                         )
                     }
                     // Background Media Playback & Dark Webpages Group

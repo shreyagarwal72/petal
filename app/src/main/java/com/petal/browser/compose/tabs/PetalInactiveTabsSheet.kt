@@ -2,7 +2,6 @@ package com.petal.browser.compose.tabs
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -141,7 +140,7 @@ fun PetalInactiveTabsSheet(
                     // ── Search Box ──
                     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                     val inactiveSearchShape = RoundedCornerShape(28.dp)
-                    OutlinedTextField(
+                    TextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         placeholder = { Text(stringResource(R.string.ui_search_inactive_tabs)) },
@@ -166,11 +165,12 @@ fun PetalInactiveTabsSheet(
                         },
                         singleLine = true,
                         shape = inactiveSearchShape,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                            unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
-                            focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = Color.Transparent
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -184,14 +184,14 @@ fun PetalInactiveTabsSheet(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             InactiveActionButton(
                                 label = stringResource(R.string.ui_restore_all, inactiveTabs.size),
                                 icon = Icons.Rounded.Unarchive,
                                 container = MaterialTheme.colorScheme.primaryContainer,
                                 content = MaterialTheme.colorScheme.onPrimaryContainer,
-                                shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                                shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
                                 onClick = onRestoreAllTabs,
                                 modifier = Modifier.weight(1f)
                             )
@@ -200,7 +200,7 @@ fun PetalInactiveTabsSheet(
                                 icon = Icons.Rounded.DeleteSweep,
                                 container = MaterialTheme.colorScheme.errorContainer,
                                 content = MaterialTheme.colorScheme.onErrorContainer,
-                                shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 24.dp, bottomEnd = 24.dp),
+                                shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
                                 onClick = onCloseAllInactive,
                                 modifier = Modifier.weight(1f)
                             )

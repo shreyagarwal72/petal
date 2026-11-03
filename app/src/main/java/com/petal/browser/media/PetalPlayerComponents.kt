@@ -20,9 +20,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -121,6 +119,7 @@ import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import racra.compose.smooth_corner_rect_library.AbsoluteSmoothCornerShape
 
 /**
  * Petal Player Component Suite
@@ -225,9 +224,7 @@ fun PetalVerticalSlider(
             .background(Color.White.copy(alpha = 0.08f), trackShape)
             .liquidGlassChrome(trackShape, enabled = true, sheenIntensity = 0.8f)
     } else {
-        Modifier
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f), trackShape)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), trackShape)
+        Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f), trackShape)
     }
 
     Box(
@@ -274,9 +271,7 @@ fun PetalBrightnessHud(
             .background(petalGroupSurfaceColor(), shape)
             .liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.9f)
     } else {
-        Modifier
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f), shape)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), shape)
+        Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f), shape)
     }
 
     Box(
@@ -331,9 +326,7 @@ fun PetalVolumeHud(
             .background(petalGroupSurfaceColor(), shape)
             .liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.9f)
     } else {
-        Modifier
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f), shape)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), shape)
+        Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f), shape)
     }
 
     Box(
@@ -393,9 +386,7 @@ fun PetalSlideToUnlock(
             .background(petalGroupSurfaceColor(), containerShape)
             .liquidGlassChrome(containerShape, enabled = true, sheenIntensity = 0.9f)
     } else {
-        Modifier
-            .background(Color.Black.copy(alpha = 0.75f), containerShape)
-            .border(1.dp, Color.White.copy(alpha = 0.2f), containerShape)
+        Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f), containerShape)
     }
 
     val sliderShape = CircleShape
@@ -497,9 +488,7 @@ fun PetalSpeedCapsule(
             .background(Color.White.copy(alpha = 0.08f), shape)
             .liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.8f)
     } else {
-        Modifier
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f), shape)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), shape)
+        Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f), shape)
     }
 
     Surface(
@@ -656,7 +645,7 @@ fun PetalAnimatedPlaybackControls(
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             fun weightFor(button: PetalPlaybackButtonType): Float = when (lastClicked) {
@@ -671,7 +660,12 @@ fun PetalAnimatedPlaybackControls(
                 animationSpec = pressAnimationSpec,
                 label = "prevWeight",
             )
-            val prevShape = CircleShape
+            val prevShape = RoundedCornerShape(
+                topStart = 50.dp,
+                bottomStart = 50.dp,
+                topEnd = 6.dp,
+                bottomEnd = 6.dp
+            )
             val prevModifier = if (isLiquidGlass) {
                 Modifier
                     .background(colorOtherButtons.copy(alpha = 0.5f), prevShape)
@@ -716,7 +710,16 @@ fun PetalAnimatedPlaybackControls(
                 animationSpec = defaultSpatialDpSpec,
                 label = "playCorner",
             )
-            val playShape = RoundedCornerShape(playCorner)
+            val playShape = AbsoluteSmoothCornerShape(
+                cornerRadiusTL = playCorner,
+                smoothnessAsPercentTR = 60,
+                cornerRadiusBL = playCorner,
+                smoothnessAsPercentTL = 60,
+                cornerRadiusTR = playCorner,
+                smoothnessAsPercentBL = 60,
+                cornerRadiusBR = playCorner,
+                smoothnessAsPercentBR = 60,
+            )
             val playModifier = if (isLiquidGlass) {
                 Modifier
                     .background(colorPlayPause.copy(alpha = 0.9f), playShape)
@@ -759,7 +762,12 @@ fun PetalAnimatedPlaybackControls(
                 animationSpec = pressAnimationSpec,
                 label = "nextWeight",
             )
-            val nextShape = CircleShape
+            val nextShape = RoundedCornerShape(
+                topStart = 6.dp,
+                bottomStart = 6.dp,
+                topEnd = 50.dp,
+                bottomEnd = 50.dp
+            )
             val nextModifier = if (isLiquidGlass) {
                 Modifier
                     .background(colorOtherButtons.copy(alpha = 0.5f), nextShape)
@@ -878,9 +886,7 @@ fun PetalPixelControlButton(
             .background(containerColor.copy(alpha = 0.5f), shape)
             .liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.85f, pressFx = true)
     } else {
-        Modifier
-            .background(containerColor, shape)
-            .border(1.dp, Color.White.copy(alpha = 0.15f), shape)
+        Modifier.background(containerColor, shape)
     }
 
     Box(

@@ -4,11 +4,10 @@ import android.net.Uri
 import android.preference.PreferenceManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import com.petal.browser.ui.containment.petalConnectedShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -380,7 +379,6 @@ private fun RenderUserProfileContent(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
-                            border = BorderStroke(2.dp, MaterialTheme.colorScheme.surfaceContainerLow),
                             modifier = Modifier.size(30.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -463,7 +461,7 @@ private fun RenderUserProfileContent(
                             shape = CircleShape,
                             color = if (profile.avatarType == AvatarType.GALLERY_URI) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = if (profile.avatarType == AvatarType.GALLERY_URI) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
-                            border = if (profile.avatarType == AvatarType.GALLERY_URI) BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                            tonalElevation = if (profile.avatarType == AvatarType.GALLERY_URI) 4.dp else 0.dp,
                             modifier = Modifier
                                 .size(52.dp)
                                 .bouncyClickable { openAvatarMediaPicker() }
@@ -482,8 +480,8 @@ private fun RenderUserProfileContent(
                             val isSelected = profile.avatarType == AvatarType.PRESET && profile.avatarPresetId == presetId
                             Surface(
                                 shape = CircleShape,
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                border = if (isSelected) BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary) else null,
+                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                tonalElevation = if (isSelected) 4.dp else 0.dp,
                                 modifier = Modifier
                                     .size(52.dp)
                                     .bouncyClickable { PetalUserProfileManager.updateAvatarPreset(context, presetId) }
@@ -777,12 +775,19 @@ private fun RenderUserProfileContent(
                     onDismissRequest = { showEditNameDialog = false },
                     title = { Text(stringResource(R.string.ui_edit_user_name), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                     text = {
-                        OutlinedTextField(
+                        TextField(
                             value = nameInput,
                             onValueChange = { if (it.length <= 15) nameInput = it },
                             label = { Text(stringResource(R.string.ui_user_name_max_15_chars)) },
                             singleLine = true,
                             shape = RoundedCornerShape(16.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent
+                            ),
                             modifier = Modifier.fillMaxWidth()
                         )
                     },
@@ -792,21 +797,25 @@ private fun RenderUserProfileContent(
                                 PetalUserProfileManager.updateDisplayName(context, nameInput)
                                 showEditNameDialog = false
                             },
-                            shape = RoundedCornerShape(20.dp),
+                            shape = petalConnectedShape(1, 2),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary
                             ),
-                            modifier = Modifier.bouncyClickable()
+                            modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
                         ) {
                             Text(stringResource(R.string.ui_save), fontWeight = FontWeight.Bold)
                         }
                     },
                     dismissButton = {
-                        TextButton(
+                        FilledTonalButton(
                             onClick = { showEditNameDialog = false },
-                            shape = RoundedCornerShape(20.dp),
-                            modifier = Modifier.bouncyClickable()
+                            shape = petalConnectedShape(0, 2),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
                         ) {
                             Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
                         }
@@ -1123,13 +1132,13 @@ private fun ProfilePictureCropDialog(
                         onCropSuccess(croppedUri)
                     }
                 },
-                shape = RoundedCornerShape(20.dp),
+                shape = petalConnectedShape(1, 2),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
-                modifier = Modifier.bouncyClickable()
+                modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
             ) {
                 Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -1137,10 +1146,14 @@ private fun ProfilePictureCropDialog(
             }
         },
         dismissButton = {
-            TextButton(
+            FilledTonalButton(
                 onClick = onDismiss,
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.bouncyClickable()
+                shape = petalConnectedShape(0, 2),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
             ) {
                 Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
             }

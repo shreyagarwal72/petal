@@ -9,7 +9,6 @@ package com.petal.browser.compose.settings.screens
 
 import android.content.Context
 import androidx.compose.animation.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -99,16 +98,23 @@ fun PetalAdBlockSettingsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    OutlinedTextField(
+                    TextField(
                         value = customListNameInput,
                         onValueChange = { customListNameInput = it },
                         label = { Text("List Name") },
                         placeholder = { Text("My AdBlock Rules") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        )
                     )
-                    OutlinedTextField(
+                    TextField(
                         value = customListUrlInput,
                         onValueChange = {
                             customListUrlInput = it
@@ -120,7 +126,14 @@ fun PetalAdBlockSettingsScreen(
                         isError = customListError != null,
                         supportingText = customListError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        )
                     )
                 }
             },
@@ -166,13 +179,20 @@ fun PetalAdBlockSettingsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    OutlinedTextField(
+                    TextField(
                         value = customRulesText,
                         onValueChange = { customRulesText = it },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(180.dp),
                         shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        ),
                         placeholder = { Text("||example.com/ads/*\n0.0.0.0 tracking.server.com") }
                     )
                 }
@@ -208,13 +228,20 @@ fun PetalAdBlockSettingsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
+                        TextField(
                             value = whitelistDomainInput,
                             onValueChange = { whitelistDomainInput = it },
                             placeholder = { Text("example.com") },
                             singleLine = true,
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent
+                            )
                         )
                         Spacer(Modifier.width(8.dp))
                         Button(
@@ -627,7 +654,7 @@ private fun ShieldModeCard(
             contentColor = scheme.onSurface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = if (selected) BorderStroke(if (isGlass) 1.5.dp else 2.dp, scheme.primary) else null,
+        border = null,
         modifier = Modifier
             .fillMaxWidth()
             .liquidGlassChrome(

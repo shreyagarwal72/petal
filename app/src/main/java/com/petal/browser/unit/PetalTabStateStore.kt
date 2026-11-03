@@ -33,6 +33,8 @@ object PetalTabStateStore {
     private const val DIR_NAME = "petal_tab_state"
     private const val EXT = ".json"
     private const val TMP_EXT = ".tmp"
+    /** Sidecar holding the tab's own URL trail (JSON array) - see PetalTabViewController.trackNavigation. */
+    private const val NAV_EXT = ".nav"
 
     /** Upper bound for one tab's serialized state. Larger states fall back to URL-only restore. */
     private const val MAX_STATE_BYTES = 1024 * 1024
@@ -76,6 +78,49 @@ object PetalTabStateStore {
         }
     }
 
+    private fun navFileName(tabId: String): String? =
+        fileName(tabId)?.removeSuffix(EXT)?.plus(NAV_EXT)
+
+    @JvmStatic
+    fun writeNav(context: Context, tabId: String?, urls: List<String>?) {
+        if (tabId.isNullOrBlank() || urls.isNullOrEmpty()) return
+        val name = navFileName(tabId) ?: return
+        synchronized(lock) {
+            try {
+                val directory = dir(context)
+                if (!directory.exists() && !directory.mkdirs()) return
+                val target = File(directory, name)
+                val tmp = File(directory, name + TMP_EXT)
+                tmp.writeText(org.json.JSONArray(urls).toString(), Charsets.UTF_8)
+                if (!tmp.renameTo(target)) {
+                    target.delete()
+                    if (!tmp.renameTo(target)) tmp.delete()
+                }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to persist nav trail for $tabId: ${t.message}")
+            }
+        }
+    }
+
+    @JvmStatic
+    fun readNav(context: Context, tabId: String?): List<String> {
+        if (tabId.isNullOrBlank()) return emptyList()
+        val name = navFileName(tabId) ?: return emptyList()
+        synchronized(lock) {
+            return try {
+                val file = File(dir(context), name)
+                if (!file.isFile || file.length() <= 0L || file.length() > 256 * 1024L) emptyList()
+                else {
+                    val array = org.json.JSONArray(file.readText(Charsets.UTF_8))
+                    (0 until array.length()).mapNotNull { array.optString(it).takeIf { u -> u.isNotBlank() } }
+                }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to read nav trail for $tabId: ${t.message}")
+                emptyList()
+            }
+        }
+    }
+
     @JvmStatic
     fun read(context: Context, tabId: String?): String? {
         if (tabId.isNullOrBlank()) return null
@@ -102,6 +147,7 @@ object PetalTabStateStore {
         synchronized(lock) {
             try {
                 File(dir(context), name).delete()
+                navFileName(tabId)?.let { File(dir(context), it).delete() }
             } catch (_: Throwable) {
             }
         }
@@ -111,11 +157,12 @@ object PetalTabStateStore {
     @JvmStatic
     fun retainOnly(context: Context, tabIds: Collection<String>) {
         val keep = tabIds.mapNotNull { fileName(it) }.toHashSet()
+        val keepNav = tabIds.mapNotNull { navFileName(it) }.toHashSet()
         synchronized(lock) {
             try {
                 val files = dir(context).listFiles() ?: return
                 for (file in files) {
-                    if (file.name !in keep) file.delete()
+                    if (file.name !in keep && file.name !in keepNav) file.delete()
                 }
             } catch (t: Throwable) {
                 Log.w(TAG, "Failed to prune tab states: ${t.message}")

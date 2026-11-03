@@ -26,12 +26,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalDevNotesSheet(
     domain: String,
@@ -44,42 +46,46 @@ fun PetalDevNotesSheet(
 
     var noteText by remember { mutableStateOf(sp.getString(prefKey, "") ?: "") }
     val clipboardManager = LocalClipboardManager.current
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = sheen) else Modifier),
-        shape = sheetShape,
-        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = if (isGlass) 0.dp else 6.dp,
-        shadowElevation = if (isGlass) 0.dp else 8.dp
+    com.petal.browser.ui.containment.PetalSheet(
+        onDismissRequest = onDismissRequest,
+        title = stringResource(R.string.ui_dev_notes),
+        actionContent = {
+            Button(
+                onClick = {
+                    sp.edit().putString(prefKey, noteText).apply()
+                    onDismissRequest()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
+                shape = RoundedCornerShape(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.ui_save_notes), fontWeight = FontWeight.SemiBold)
+            }
+        }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(top = 16.dp, bottom = 32.dp)
+                .padding(vertical = 8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
-                    Text(
-                        text = stringResource(R.string.ui_dev_notes),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = domain.ifEmpty { "Global Notes" },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    text = domain.ifEmpty { "Global Notes" },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     IconButton(onClick = {
@@ -95,7 +101,7 @@ fun PetalDevNotesSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            OutlinedTextField(
+            TextField(
                 value = noteText,
                 onValueChange = {
                     noteText = it
@@ -115,23 +121,14 @@ fun PetalDevNotesSheet(
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
                     fontFamily = FontFamily.Monospace,
                     fontSize = 13.sp
+                ),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                 )
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    sp.edit().putString(prefKey, noteText).apply()
-                    onDismissRequest()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.ui_save_notes))
-            }
         }
     }
 }

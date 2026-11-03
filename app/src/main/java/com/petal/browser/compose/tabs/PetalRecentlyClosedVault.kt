@@ -7,7 +7,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -748,7 +747,7 @@ private fun VaultSettingsPage(
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                     ) {
-                        OutlinedTextField(
+                        TextField(
                             value = newPasswordInput,
                             onValueChange = { newPasswordInput = it },
                             label = { Text(if (hasPassword) "New passcode (optional)" else "Set a passcode") },
@@ -762,6 +761,13 @@ private fun VaultSettingsPage(
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             shape = RoundedCornerShape(20.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                            ),
                             modifier = Modifier.fillMaxWidth().padding(16.dp)
                         )
                     }
@@ -780,11 +786,15 @@ private fun VaultSettingsPage(
                     .fillMaxWidth()
                     .navigationBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 14.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                OutlinedButton(
+                FilledTonalButton(
                     onClick = onCancel,
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
                     modifier = Modifier.weight(1f).height(52.dp)
                 ) {
                     Text(stringResource(R.string.ui_cancel), maxLines = 1)
@@ -792,7 +802,11 @@ private fun VaultSettingsPage(
                 Button(
                     onClick = { onSave(selectedRetention, selectedLockType, newPasswordInput) },
                     enabled = canSave,
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
                     modifier = Modifier.weight(1f).height(52.dp)
                 ) {
                     Text(stringResource(R.string.ui_save), fontWeight = FontWeight.Bold, maxLines = 1)
@@ -851,7 +865,7 @@ private fun VaultChoiceRow(
                 }
             } else {
                 Box(
-                    Modifier.size(28.dp).border(2.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                    Modifier.size(28.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHighest)
                 )
             }
         }

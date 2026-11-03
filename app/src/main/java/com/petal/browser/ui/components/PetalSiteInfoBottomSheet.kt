@@ -8,7 +8,6 @@ import android.webkit.GeolocationPermissions
 import android.webkit.WebStorage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -161,7 +160,7 @@ fun PetalSiteInfoBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     com.petal.browser.ui.containment.PetalGroupIconBadge(
-                        shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
+                        shape = RoundedCornerShape(12.dp),
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         size = 50.dp,
@@ -228,7 +227,7 @@ fun PetalSiteInfoBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     com.petal.browser.ui.containment.PetalGroupIconBadge(
-                        shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
+                        shape = RoundedCornerShape(12.dp),
                         containerColor = when {
                             isHttps || isInternalPage -> MaterialTheme.colorScheme.primaryContainer
                             isHttp -> MaterialTheme.colorScheme.errorContainer
@@ -317,7 +316,7 @@ fun PetalSiteInfoBottomSheet(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(
-                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape(),
+                            shape = RoundedCornerShape(12.dp),
                             containerColor = if (trackingProtectionEnabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (trackingProtectionEnabled) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                             size = 50.dp,
@@ -458,55 +457,51 @@ fun PetalSiteInfoBottomSheet(
                         Spacer(Modifier.height(6.dp))
                         var showBlockElementDialog by remember { mutableStateOf(false) }
                         var customCssSelector by remember { mutableStateOf("") }
-                        OutlinedButton(
+                        FilledTonalButton(
                             onClick = { showBlockElementDialog = true },
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
                         ) {
                             Icon(Icons.Rounded.Block, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Block Page Element (Cosmetic Filter)", fontSize = 12.sp)
+                            Text("Block Page Element (Cosmetic Filter)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
 
                         if (showBlockElementDialog) {
-                            com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+                            com.petal.browser.ui.containment.PetalAlertDialog(
                                 onDismissRequest = { showBlockElementDialog = false },
-                                title = { Text("Block Element on $domain", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
-                                text = {
-                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text(
-                                            "Enter a CSS selector (e.g. '.newsletter-modal', '#paywall-banner') to permanently hide it from this domain.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        OutlinedTextField(
-                                            value = customCssSelector,
-                                            onValueChange = { customCssSelector = it },
-                                            placeholder = { Text("e.g. .popup-overlay") },
-                                            singleLine = true,
-                                            shape = RoundedCornerShape(10.dp),
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
+                                title = "Block Element on $domain",
+                                message = "Enter a CSS selector (e.g. '.newsletter-modal', '#paywall-banner') to permanently hide it from this domain.",
+                                confirmText = "Block",
+                                onConfirm = {
+                                    if (customCssSelector.isNotBlank()) {
+                                        com.petal.browser.privacy.PetalElementBlocker.addSelector(context, domain, customCssSelector.trim())
+                                        geckoView?.reloadWithoutInit()
+                                        showBlockElementDialog = false
                                     }
                                 },
-                                confirmButton = {
-                                    Button(
-                                        onClick = {
-                                            if (customCssSelector.isNotBlank()) {
-                                                com.petal.browser.privacy.PetalElementBlocker.addSelector(context, domain, customCssSelector.trim())
-                                                geckoView?.reloadWithoutInit()
-                                                showBlockElementDialog = false
-                                            }
-                                        },
-                                        enabled = customCssSelector.isNotBlank()
-                                    ) {
-                                        Text("Block")
-                                    }
-                                },
-                                dismissButton = {
-                                    TextButton(onClick = { showBlockElementDialog = false }) {
-                                        Text("Cancel")
-                                    }
+                                dismissText = "Cancel",
+                                onDismiss = { showBlockElementDialog = false },
+                                confirmEnabled = customCssSelector.isNotBlank(),
+                                content = {
+                                    TextField(
+                                        value = customCssSelector,
+                                        onValueChange = { customCssSelector = it },
+                                        placeholder = { Text("e.g. .popup-overlay") },
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = TextFieldDefaults.colors(
+                                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            unfocusedIndicatorColor = Color.Transparent,
+                                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
                                 }
                             )
                         }
@@ -705,7 +700,7 @@ fun PetalSiteInfoBottomSheet(
                     },
                     leadingIcon = {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(
-                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape(),
+                            shape = RoundedCornerShape(12.dp),
                             containerColor = if (isCameraAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (isCameraAllowed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                             size = 38.dp,
@@ -732,7 +727,7 @@ fun PetalSiteInfoBottomSheet(
                     },
                     leadingIcon = {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(
-                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape(),
+                            shape = RoundedCornerShape(12.dp),
                             containerColor = if (isMicAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (isMicAllowed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                             size = 38.dp,
@@ -763,7 +758,7 @@ fun PetalSiteInfoBottomSheet(
                     },
                     leadingIcon = {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(
-                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
+                            shape = RoundedCornerShape(12.dp),
                             containerColor = if (isLocationAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (isLocationAllowed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                             size = 38.dp,
@@ -791,7 +786,7 @@ fun PetalSiteInfoBottomSheet(
                     },
                     leadingIcon = {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(
-                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBurst.toShape(),
+                            shape = RoundedCornerShape(12.dp),
                             containerColor = if (isNotificationsAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (isNotificationsAllowed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                             size = 38.dp,
@@ -817,7 +812,7 @@ fun PetalSiteInfoBottomSheet(
                     },
                     leadingIcon = {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(
-                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
+                            shape = RoundedCornerShape(12.dp),
                             containerColor = if (isDesktopSite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (isDesktopSite) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                             size = 38.dp,

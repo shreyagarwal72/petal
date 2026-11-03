@@ -122,12 +122,18 @@ fun PetalPasswordTermsDialog(
         // Buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            OutlinedButton(
+            FilledTonalButton(
                 onClick = onDismiss,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp),
+                shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
             ) {
                 Text(stringResource(R.string.ui_decline))
             }
@@ -136,8 +142,14 @@ fun PetalPasswordTermsDialog(
                     PetalPasswordTermsManager.markAccepted(context)
                     onAccept()
                 },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp),
+                shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Text(stringResource(R.string.ui_agree_continue))
             }

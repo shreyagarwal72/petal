@@ -12,7 +12,6 @@ import com.petal.browser.ui.containment.PetalBadgeVariant
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,7 +35,6 @@ import com.petal.browser.compose.settings.viewmodel.PrivacySettingsViewModel
 import androidx.activity.ComponentActivity
 import com.petal.browser.passwords.PetalPasswordsScreen
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -177,80 +175,87 @@ fun PrivacySettingsScreenContent(
     }
 
     if (showWhitelistDialog) {
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        com.petal.browser.ui.containment.PetalAlertDialog(
             onDismissRequest = { showWhitelistDialog = false },
-            title = { Text(stringResource(R.string.ui_adblock_domain_whitelist)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            title = stringResource(R.string.ui_adblock_domain_whitelist),
+            confirmText = stringResource(R.string.ui_done),
+            onConfirm = { showWhitelistDialog = false },
+            dismissText = null,
+            icon = Icons.Rounded.FilterList,
+            content = {
+                Text(
+                    stringResource(R.string.ui_domains_added_here_will_bypass),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    TextField(
+                        value = whitelistDomainInput,
+                        onValueChange = { whitelistDomainInput = it },
+                        placeholder = { Text("example.com") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        )
+                    )
+                    Button(
+                        onClick = {
+                            if (whitelistDomainInput.isNotBlank()) {
+                                PetalAdBlockEngine.addDomainToWhitelist(context, whitelistDomainInput.trim())
+                                whitelistedDomainsState = PetalAdBlockEngine.getWhitelistedDomains()
+                                whitelistDomainInput = ""
+                            }
+                        },
+                        shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp)
+                    ) {
+                        Text(stringResource(R.string.ui_add))
+                    }
+                }
+
+                if (whitelistedDomainsState.isEmpty()) {
                     Text(
-                        stringResource(R.string.ui_domains_added_here_will_bypass),
+                        stringResource(R.string.ui_no_whitelisted_domains),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
-                            value = whitelistDomainInput,
-                            onValueChange = { whitelistDomainInput = it },
-                            placeholder = { Text("example.com") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                if (whitelistDomainInput.isNotBlank()) {
-                                    PetalAdBlockEngine.addDomainToWhitelist(context, whitelistDomainInput.trim())
+                } else {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        whitelistedDomainsState.forEach { domain ->
+                            InputChip(
+                                selected = true,
+                                onClick = {
+                                    PetalAdBlockEngine.removeDomainFromWhitelist(context, domain)
                                     whitelistedDomainsState = PetalAdBlockEngine.getWhitelistedDomains()
-                                    whitelistDomainInput = ""
+                                },
+                                label = { Text(domain) },
+                                trailingIcon = {
+                                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_remove), modifier = Modifier.size(16.dp))
                                 }
-                            }
-                        ) {
-                            Text(stringResource(R.string.ui_add))
+                            )
                         }
                     }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    if (whitelistedDomainsState.isEmpty()) {
-                        Text(
-                            stringResource(R.string.ui_no_whitelisted_domains),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            whitelistedDomainsState.forEach { domain ->
-                                InputChip(
-                                    selected = true,
-                                    onClick = {
-                                        PetalAdBlockEngine.removeDomainFromWhitelist(context, domain)
-                                        whitelistedDomainsState = PetalAdBlockEngine.getWhitelistedDomains()
-                                    },
-                                    label = { Text(domain) },
-                                    trailingIcon = {
-                                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_remove), modifier = Modifier.size(16.dp))
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showWhitelistDialog = false }) {
-                    Text(stringResource(R.string.ui_done))
                 }
             }
         )
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        M3ExpressiveVariableBackground(pageSeed = "privacy_settings")
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface)
+    ) {
 
         Column(modifier = Modifier.fillMaxSize()) {
             ExpressiveHeader(
@@ -547,7 +552,7 @@ fun PrivacySettingsScreenContent(
                     if (privateDnsMode == "CUSTOM") {
                         com.petal.browser.ui.containment.PetalHeroCard {
                             Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                                OutlinedTextField(
+                                TextField(
                                     value = customDohUrl,
                                     onValueChange = onCustomDohUrlChange,
                                     label = { Text(stringResource(R.string.ui_custom_doh_endpoint_url)) },
@@ -555,6 +560,12 @@ fun PrivacySettingsScreenContent(
                                     leadingIcon = { Icon(Icons.Rounded.Dns, contentDescription = null) },
                                     singleLine = true,
                                     shape = RoundedCornerShape(14.dp),
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent
+                                    ),
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
@@ -563,7 +574,7 @@ fun PrivacySettingsScreenContent(
 
                     com.petal.browser.ui.containment.PetalHeroCard {
                         Column(Modifier.fillMaxWidth().padding(14.dp)) {
-                            OutlinedButton(
+                            FilledTonalButton(
                                 onClick = {
                                     val intents = listOf(
                                         Intent("android.settings.PRIVATE_DNS_SETTINGS"),
@@ -581,7 +592,11 @@ fun PrivacySettingsScreenContent(
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(14.dp)
+                                shape = RoundedCornerShape(50.dp),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                )
                             ) {
                                 Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))

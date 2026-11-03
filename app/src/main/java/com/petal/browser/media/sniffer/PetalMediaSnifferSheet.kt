@@ -8,7 +8,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +43,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -57,7 +57,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -76,7 +75,6 @@ import com.petal.browser.ui.components.SplitButtonVariant
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
-import com.petal.browser.ui.theme.PetalMaterialShapes
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -158,7 +156,7 @@ fun PetalMediaSnifferOverlay(
             color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = if (isGlass) 0.dp else 6.dp,
             shadowElevation = if (isGlass) 0.dp else 2.dp,
-            border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+            border = null
         ) {
             Row(
                 Modifier
@@ -170,7 +168,7 @@ fun PetalMediaSnifferOverlay(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(PetalMaterialShapes.Gem.toShape())
+                        .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
@@ -274,7 +272,10 @@ private fun PetalMediaSheet(
     var formatMenuOpen by remember { mutableStateOf(false) }
     var isUpdatingExtractor by remember { mutableStateOf(false) }
 
-    com.petal.browser.ui.containment.PetalSheet(onDismissRequest = onDismiss) {
+    com.petal.browser.ui.containment.PetalSheet(
+        onDismissRequest = onDismiss,
+        title = stringResource(R.string.ui_media_sources)
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -731,10 +732,14 @@ private fun PetalMediaSheet(
                                         )
                                     }
 
-                                    OutlinedButton(
+                                    FilledTonalButton(
                                         onClick = { socialState = SocialState.Idle },
                                         modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(16.dp)
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                        )
                                     ) {
                                         Icon(Icons.Rounded.Refresh, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))

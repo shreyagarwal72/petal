@@ -5,6 +5,10 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -24,7 +28,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Collection;
 
 /**
  * Bounded, asynchronous tab thumbnail storage. Tab IDs are the only cache identity;
@@ -34,9 +40,15 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class TabThumbnailCache {
 
     private static final String TAG = "TabThumbnailCache";
-    private static final int MAX_PREVIEW_DIMENSION = 384;
-    private static final long MAX_DISK_CACHE_BYTES = 48L * 1024L * 1024L;
-    private static final long MAX_DISK_ENTRY_AGE_MS = 30L * 24L * 60L * 60L * 1000L;
+    /** Stored width: large enough to stay sharp on a grid card (~170dp wide at 3x density). */
+    private static final int MAX_PREVIEW_WIDTH = 480;
+    /** Like Firefox/Chrome thumbnails, tall pages are cropped to their top instead of squashed. */
+    private static final float MAX_PREVIEW_ASPECT = 1.7f;
+    private static final int MAX_PREVIEW_HEIGHT = Math.round(MAX_PREVIEW_WIDTH * MAX_PREVIEW_ASPECT);
+    private static final long MAX_DISK_CACHE_BYTES = 64L * 1024L * 1024L;
+    /** The disk directory is only re-scanned every N writes instead of after every single write. */
+    private static final int TRIM_EVERY_N_WRITES = 12;
+    private static final AtomicInteger WRITES_SINCE_TRIM = new AtomicInteger();
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final ExecutorService DISK = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "PetalThumbnailDisk");
@@ -56,7 +68,7 @@ public final class TabThumbnailCache {
 
     static {
         long maxMemoryKb = Math.max(1024L, Runtime.getRuntime().maxMemory() / 1024L);
-        int regularKb = (int) Math.max(2048L, Math.min(maxMemoryKb / 8L, 32L * 1024L));
+        int regularKb = (int) Math.max(2048L, Math.min(maxMemoryKb / 8L, 40L * 1024L));
         int privateKb = (int) Math.max(1024L, Math.min(maxMemoryKb / 16L, 8L * 1024L));
         regularMemoryCache = createMemoryCache(regularKb);
         privateMemoryCache = createMemoryCache(privateKb);
@@ -90,12 +102,7 @@ public final class TabThumbnailCache {
         try {
             appContext.registerComponentCallbacks(new ComponentCallbacks2() {
                 @Override public void onTrimMemory(int level) {
-                    if (level >= TRIM_MEMORY_MODERATE) {
-                        clearMemory();
-                    } else if (level >= TRIM_MEMORY_BACKGROUND) {
-                        regularMemoryCache.trimToSize(regularMemoryCache.size() / 2);
-                        privateMemoryCache.trimToSize(privateMemoryCache.size() / 2);
-                    }
+                    trimMemory(level);
                 }
                 @Override public void onConfigurationChanged(@NonNull Configuration newConfig) {}
                 @Override public void onLowMemory() { clearMemory(); }
@@ -105,6 +112,50 @@ public final class TabThumbnailCache {
         }
         final File initializedDir = dir;
         DISK.execute(() -> trimDiskCache(initializedDir));
+    }
+
+    /**
+     * Tiered trim (Chromium/Fenix style). TRIM_MEMORY_UI_HIDDEN (20) only means the app went to
+     * the background: it must never drop thumbnails, otherwise every app switch loses the
+     * RAM-only incognito previews and forces a disk reload of every regular one.
+     * Private previews have no disk copy, so they are only evicted when the process is about
+     * to be killed.
+     */
+    public static void trimMemory(int level) {
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
+            clearMemory();
+        } else if (level >= ComponentCallbacks2.TRIM_MEMORY_MODERATE) {
+            regularMemoryCache.evictAll();
+            privateMemoryCache.trimToSize(privateMemoryCache.size() / 2);
+        } else if (level >= ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
+            regularMemoryCache.trimToSize(regularMemoryCache.size() / 2);
+        } else if (level == ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL) {
+            regularMemoryCache.trimToSize(regularMemoryCache.size() / 2);
+        }
+    }
+
+    /**
+     * Deletes every stored thumbnail whose tab id is not in [liveTabIds] (closed tabs, crashed
+     * sessions, tabs removed through code paths that never evicted). Mirrors
+     * PetalTabStateStore.retainOnly and is what keeps the directory bounded by the open tabs.
+     */
+    public static void retainOnly(@Nullable Collection<String> liveTabIds) {
+        if (liveTabIds == null) return;
+        final HashSet<String> keep = new HashSet<>();
+        for (String id : liveTabIds) if (!isBlank(id)) keep.add(diskKey(id) + ".thumb");
+        final long generation = GENERATION.get();
+        DISK.execute(() -> {
+            File dir = getDiskCacheDir();
+            if (dir == null || generation != GENERATION.get()) return;
+            File[] files = dir.listFiles();
+            if (files == null) return;
+            for (File file : files) {
+                if (!file.isFile() || keep.contains(file.getName())) continue;
+                // Leave in-flight temp files of live tabs alone; trimDiskCache sweeps stale ones.
+                if (file.getName().endsWith(".tmp")) continue;
+                deleteQuietly(file);
+            }
+        });
     }
 
     private static File getDiskCacheDir() {
@@ -370,30 +421,49 @@ public final class TabThumbnailCache {
         });
     }
 
+    /**
+     * Produces a detached, bounded snapshot: top-aligned crop to MAX_PREVIEW_ASPECT, scaled to
+     * at most MAX_PREVIEW_WIDTH. The result never aliases [source], so callers may recycle it.
+     */
+    @Nullable
     private static Bitmap makeSnapshot(Bitmap source) {
-        Bitmap scaled = null;
+        Bitmap software = null;
         try {
-            scaled = downscaleIfNeeded(source);
-            Bitmap.Config config = scaled.getConfig() == null ? Bitmap.Config.ARGB_8888 : scaled.getConfig();
-            Bitmap copy = scaled.copy(config, false);
-            if (scaled != source && !scaled.isRecycled()) scaled.recycle();
-            return copy;
+            Bitmap from = source;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && source.getConfig() == Bitmap.Config.HARDWARE) {
+                software = source.copy(Bitmap.Config.ARGB_8888, false);
+                if (software == null) return null;
+                from = software;
+            }
+            int width = from.getWidth();
+            int height = from.getHeight();
+            if (width <= 0 || height <= 0) return null;
+            int cropHeight = Math.min(height, Math.round(width * MAX_PREVIEW_ASPECT));
+            float scale = Math.min(1f, MAX_PREVIEW_WIDTH / (float) width);
+            Bitmap.Config config = from.getConfig() == null ? Bitmap.Config.ARGB_8888 : from.getConfig();
+            if (scale >= 1f && cropHeight == height) {
+                return from.copy(config, false);
+            }
+            int outWidth = Math.max(1, Math.round(width * scale));
+            int outHeight = Math.max(1, Math.round(cropHeight * scale));
+            Bitmap out = Bitmap.createBitmap(outWidth, outHeight, config);
+            Canvas canvas = new Canvas(out);
+            Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG | Paint.ANTI_ALIAS_FLAG);
+            canvas.drawBitmap(from, new Rect(0, 0, width, cropHeight), new Rect(0, 0, outWidth, outHeight), paint);
+            return out;
         } catch (Throwable error) {
-            if (scaled != null && scaled != source && !scaled.isRecycled()) scaled.recycle();
             Log.w(TAG, "Could not snapshot tab thumbnail", error);
             return null;
+        } finally {
+            if (software != null && !software.isRecycled()) software.recycle();
         }
     }
 
+    /** Returns [bitmap] itself when it already fits, otherwise a new bounded copy (or [bitmap] on failure). */
     private static Bitmap downscaleIfNeeded(Bitmap bitmap) {
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        int longest = Math.max(width, height);
-        if (longest <= MAX_PREVIEW_DIMENSION) return bitmap;
-        float scale = MAX_PREVIEW_DIMENSION / (float) longest;
-        int newWidth = Math.max(1, Math.round(width * scale));
-        int newHeight = Math.max(1, Math.round(height * scale));
-        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+        if (bitmap.getWidth() <= MAX_PREVIEW_WIDTH && bitmap.getHeight() <= MAX_PREVIEW_HEIGHT) return bitmap;
+        Bitmap fitted = makeSnapshot(bitmap);
+        return fitted == null ? bitmap : fitted;
     }
 
     private static void saveToDisk(String tabId, Bitmap bitmap, long token, long generation) {
@@ -404,9 +474,11 @@ public final class TabThumbnailCache {
         try {
             boolean compressed;
             try (FileOutputStream out = new FileOutputStream(temp)) {
-                Bitmap.CompressFormat format = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R
-                        ? Bitmap.CompressFormat.WEBP_LOSSY : Bitmap.CompressFormat.PNG;
-                compressed = bitmap.compress(format, 84, out);
+                // Lossy WebP at q86 is ~10x smaller than the old PNG fallback on pre-R devices.
+                @SuppressWarnings("deprecation")
+                Bitmap.CompressFormat format = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                        ? Bitmap.CompressFormat.WEBP_LOSSY : Bitmap.CompressFormat.WEBP;
+                compressed = bitmap.compress(format, 86, out);
                 out.flush();
                 out.getFD().sync();
             }
@@ -419,7 +491,10 @@ public final class TabThumbnailCache {
                 if (!temp.renameTo(target)) throw new java.io.IOException("Could not publish thumbnail file");
             }
             if (!isCurrent(tabId, token, generation)) deleteQuietly(target);
-            trimDiskCache(dir);
+            if (WRITES_SINCE_TRIM.incrementAndGet() >= TRIM_EVERY_N_WRITES) {
+                WRITES_SINCE_TRIM.set(0);
+                trimDiskCache(dir);
+            }
         } catch (Exception e) {
             Log.w(TAG, "Failed saving thumbnail for tab", e);
             deleteQuietly(temp);
@@ -455,8 +530,7 @@ public final class TabThumbnailCache {
             }
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inSampleSize = 1;
-            while (Math.max(bounds.outWidth / options.inSampleSize, bounds.outHeight / options.inSampleSize)
-                    > MAX_PREVIEW_DIMENSION * 2) options.inSampleSize *= 2;
+            while (bounds.outWidth / options.inSampleSize > MAX_PREVIEW_WIDTH * 2) options.inSampleSize *= 2;
             options.inPreferredConfig = Bitmap.Config.ARGB_8888;
             Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath(), options);
             if (bitmap == null || bitmap.isRecycled()) {
@@ -485,9 +559,12 @@ public final class TabThumbnailCache {
         long total = 0L;
         java.util.ArrayList<File> retained = new java.util.ArrayList<>();
         for (File file : files) {
-            if (file.getName().endsWith(".tmp") || !file.getName().startsWith("v2_") || now - file.lastModified() > MAX_DISK_ENTRY_AGE_MS) {
+            // Stale temp files (older than a minute) and pre-v2 legacy names are swept. There is
+            // deliberately no age limit: a thumbnail lives exactly as long as its tab (retainOnly).
+            boolean staleTemp = file.getName().endsWith(".tmp") && now - file.lastModified() > 60_000L;
+            if (staleTemp || (!file.getName().endsWith(".tmp") && !file.getName().startsWith("v2_"))) {
                 deleteQuietly(file);
-            } else {
+            } else if (!file.getName().endsWith(".tmp")) {
                 total += file.length();
                 retained.add(file);
             }

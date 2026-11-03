@@ -15,13 +15,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -138,30 +137,26 @@ fun PetalProfileSwitchSheet(
             Spacer(Modifier.height(18.dp))
 
             if (!isCreatingNew) {
-                // Profile List
+                // Profile List with Stacked Tonal Blocks (18dp outer, 6dp inner, 4dp gap)
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(profiles, key = { it.id }) { profile ->
+                    itemsIndexed(profiles, key = { _, it -> it.id }) { index, profile ->
                         val isSelected = profile.id == active.id
                         val profileColor = profile.getComposeColor()
                         val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-                        val profileShape = RoundedCornerShape(16.dp)
+                        val profileShape = com.petal.browser.ui.containment.petalStackedBlockShape(index, profiles.size)
 
                         Surface(
                             shape = profileShape,
                             color = when {
                                 isSelected && isGlass -> profileColor.copy(alpha = 0.22f)
-                                isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                                isSelected -> MaterialTheme.colorScheme.secondaryContainer
                                 isGlass -> petalGroupSurfaceColor()
                                 else -> MaterialTheme.colorScheme.surfaceContainerHighest
                             },
-                            border = when {
-                                isSelected -> BorderStroke(1.5.dp, profileColor)
-                                isGlass -> BorderStroke(0.75.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-                                else -> BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-                            },
+                            border = null,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .then(if (isGlass) Modifier.liquidGlassChrome(profileShape, enabled = true) else Modifier)
@@ -329,8 +324,7 @@ fun PetalProfileSwitchSheet(
                                     .align(Alignment.BottomEnd)
                                     .size(24.dp)
                                     .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary)
-                                    .border(2.dp, MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape),
+                                    .background(MaterialTheme.colorScheme.primary),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -343,14 +337,20 @@ fun PetalProfileSwitchSheet(
                         }
                     }
 
-                    OutlinedTextField(
+                    TextField(
                         value = newProfileName,
                         onValueChange = { newProfileName = it },
                         label = { Text(stringResource(R.string.ui_profile_name)) },
                         placeholder = { Text(stringResource(R.string.ui_e_g_work_school_research)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp)
+                        shape = RoundedCornerShape(14.dp),
+                        colors = TextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        )
                     )
 
                     Text(
@@ -371,11 +371,7 @@ fun PetalProfileSwitchSheet(
                                     .size(36.dp)
                                     .clip(CircleShape)
                                     .background(color)
-                                    .clickable { selectedColorHex = hex }
-                                    .then(
-                                        if (isColorSelected) Modifier.border(2.5.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                                        else Modifier
-                                    ),
+                                    .clickable { selectedColorHex = hex },
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (isColorSelected) {
@@ -387,50 +383,36 @@ fun PetalProfileSwitchSheet(
 
                     Spacer(Modifier.height(8.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = {
+                    com.petal.browser.ui.containment.PetalActionRow(
+                        confirmText = stringResource(R.string.ui_create),
+                        onConfirm = {
+                            if (newProfileName.isNotBlank()) {
+                                val newProfile = PetalProfileManager.createProfile(
+                                    context = context,
+                                    name = newProfileName,
+                                    colorHex = selectedColorHex,
+                                    avatarPresetId = selectedAvatarPreset
+                                )
+                                val avatarUri = pendingCustomAvatarUri
+                                if (avatarUri != null) {
+                                    PetalProfileManager.updateProfile(
+                                        context,
+                                        newProfile.copy(customAvatarUri = avatarUri)
+                                    )
+                                }
                                 isCreatingNew = false
                                 pendingCropImageUri = null
                                 pendingCustomAvatarUri = null
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(stringResource(R.string.ui_cancel))
+                                onDismissRequest()
+                            }
+                        },
+                        dismissText = stringResource(R.string.ui_cancel),
+                        onDismiss = {
+                            isCreatingNew = false
+                            pendingCropImageUri = null
+                            pendingCustomAvatarUri = null
                         }
-
-                        Button(
-                            onClick = {
-                                if (newProfileName.isNotBlank()) {
-                                    val newProfile = PetalProfileManager.createProfile(
-                                        context = context,
-                                        name = newProfileName,
-                                        colorHex = selectedColorHex,
-                                        avatarPresetId = selectedAvatarPreset
-                                    )
-                                    val avatarUri = pendingCustomAvatarUri
-                                    if (avatarUri != null) {
-                                        PetalProfileManager.updateProfile(
-                                            context,
-                                            newProfile.copy(customAvatarUri = avatarUri)
-                                        )
-                                    }
-                                    isCreatingNew = false
-                                    pendingCropImageUri = null
-                                    pendingCustomAvatarUri = null
-                                    onDismissRequest()
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(stringResource(R.string.ui_create))
-                        }
-                    }
+                    )
                 }
             }
         }

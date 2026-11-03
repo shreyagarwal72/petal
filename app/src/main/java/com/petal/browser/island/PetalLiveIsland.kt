@@ -809,7 +809,7 @@ private fun ProgressBadge(
 private fun MediaArt(item: LiveActionItem.Media, palette: IslandPalette, size: Int, corner: Int) {
     val art = item.albumArt
     val artShape: androidx.compose.ui.graphics.Shape = if (item.isPlaying) {
-        PetalCookieShape(sides = 8, curve = 0.08, rotation = 0f)
+        CircleShape
     } else {
         RoundedCornerShape(corner.dp)
     }

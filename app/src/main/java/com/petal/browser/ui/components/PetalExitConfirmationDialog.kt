@@ -10,16 +10,20 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowManager
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.FontWeight
 import com.petal.browser.ui.containment.liquidGlassChrome
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -177,7 +181,7 @@ private fun ExitDialogContent(
         color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = if (isGlass) 0.dp else 6.dp,
         shadowElevation = if (isGlass) 0.dp else 6.dp,
-        border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+        border = null
     ) {
         Column(
             modifier = Modifier.padding(start = 24.dp, top = 22.dp, end = 24.dp, bottom = 18.dp),
@@ -194,11 +198,20 @@ private fun ExitDialogContent(
 
             Spacer(Modifier.height(10.dp))
 
-            Text(
-                text = stringResource(R.string.ui_leave_petal_browser),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                        shape = androidx.compose.foundation.shape.CircleShape
+                    )
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.ui_leave_petal_browser),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
 
             Spacer(Modifier.height(8.dp))
 
@@ -212,29 +225,43 @@ private fun ExitDialogContent(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(
+                Button(
                     onClick = onStay,
-                    modifier = Modifier.semantics { role = Role.Button },
+                    shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .semantics { role = Role.Button },
                 ) {
-                    Text(stringResource(R.string.ui_stay))
+                    Text(
+                        stringResource(R.string.ui_stay),
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
-
-                Spacer(Modifier.width(8.dp))
 
                 Button(
                     onClick = onExit,
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
                         contentColor = MaterialTheme.colorScheme.onError,
                     ),
-                    contentPadding = ButtonDefaults.ContentPadding,
-                    modifier = Modifier.semantics { role = Role.Button },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .semantics { role = Role.Button },
                 ) {
-                    Text(stringResource(R.string.ui_exit))
+                    Text(
+                        stringResource(R.string.ui_exit),
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         }

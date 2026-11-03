@@ -38,6 +38,7 @@ import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import com.petal.browser.ui.containment.PetalSheet
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalConnectedShape
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 /**
@@ -228,14 +229,18 @@ fun PetalApkInstallSheet(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(top = 20.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    OutlinedButton(
+                                    FilledTonalButton(
                                         onClick = onDismiss,
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(48.dp),
-                                        shape = RoundedCornerShape(24.dp)
+                                        shape = petalConnectedShape(0, 2),
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                        )
                                     ) {
                                         Text("Done")
                                     }
@@ -244,7 +249,11 @@ fun PetalApkInstallSheet(
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(48.dp),
-                                        shape = RoundedCornerShape(24.dp)
+                                        shape = petalConnectedShape(1, 2),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary
+                                        )
                                     ) {
                                         Icon(Icons.Rounded.Launch, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Spacer(Modifier.width(8.dp))
@@ -268,24 +277,33 @@ fun PetalApkInstallSheet(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(top = 20.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    OutlinedButton(
+                                    val hasRetry = currentStep.apk != null
+                                    FilledTonalButton(
                                         onClick = onDismiss,
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(48.dp),
-                                        shape = RoundedCornerShape(24.dp)
+                                        shape = if (hasRetry) petalConnectedShape(0, 2) else RoundedCornerShape(50.dp),
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                        )
                                     ) {
                                         Text("Dismiss")
                                     }
-                                    if (currentStep.apk != null) {
+                                    if (hasRetry) {
                                         Button(
                                             onClick = onInstall,
                                             modifier = Modifier
                                                 .weight(1f)
                                                 .height(48.dp),
-                                            shape = RoundedCornerShape(24.dp)
+                                            shape = petalConnectedShape(1, 2),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.primary,
+                                                contentColor = MaterialTheme.colorScheme.onPrimary
+                                            )
                                         ) {
                                             Text("Try again")
                                         }
@@ -401,9 +419,9 @@ private fun ReadyContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            OutlinedButton(
+            FilledTonalButton(
                 onClick = {
                     PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                     onDismiss()
@@ -411,7 +429,11 @@ private fun ReadyContent(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp),
-                shape = RoundedCornerShape(24.dp)
+                shape = petalConnectedShape(0, 2),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
             ) {
                 Text("Cancel", style = MaterialTheme.typography.labelLarge)
             }
@@ -424,7 +446,11 @@ private fun ReadyContent(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp),
-                shape = RoundedCornerShape(24.dp)
+                shape = petalConnectedShape(1, 2),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Icon(Icons.Rounded.InstallMobile, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -724,7 +750,7 @@ private fun BeyondInstallCard(
                         }
 
                         if (opt.id == "installer" && isChecked) {
-                            OutlinedTextField(
+                            TextField(
                                 value = customInstaller,
                                 onValueChange = onCustomInstallerChange,
                                 modifier = Modifier
@@ -734,6 +760,12 @@ private fun BeyondInstallCard(
                                 placeholder = { Text("com.android.vending") },
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedIndicatorColor = Color.Transparent
+                                ),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
                             )
                         }

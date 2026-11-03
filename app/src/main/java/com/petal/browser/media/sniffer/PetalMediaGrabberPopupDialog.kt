@@ -486,7 +486,7 @@ fun PetalMediaGrabberPopupDialog(
                                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            OutlinedButton(
+                                            FilledTonalButton(
                                                 onClick = { formatMenuOpen = true },
                                                 modifier = Modifier.weight(1f),
                                                 shape = RoundedCornerShape(12.dp)
@@ -566,7 +566,7 @@ fun PetalMediaGrabberPopupDialog(
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.error
                                         )
-                                        OutlinedButton(
+                                        FilledTonalButton(
                                             onClick = { socialState = GrabberSocialState.Idle },
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = RoundedCornerShape(12.dp)

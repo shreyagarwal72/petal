@@ -32,10 +32,8 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -308,7 +306,6 @@ private fun SetupBottomBar(
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 3.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -507,10 +504,34 @@ private fun WelcomeStepPage() {
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
             ) {
-                SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.ui_privacy_first)) }, icon = { Icon(Icons.Rounded.Shield, null, modifier = Modifier.size(16.dp)) })
-                SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.ui_material_3_expressive)) }, icon = { Icon(Icons.Rounded.Palette, null, modifier = Modifier.size(16.dp)) })
-                SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.ui_ai_deep_research)) }, icon = { Icon(Icons.Rounded.AutoAwesome, null, modifier = Modifier.size(16.dp)) })
-                SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.ui_fast_mdm_downloads)) }, icon = { Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp)) })
+                SuggestionChip(
+                    onClick = {},
+                    label = { Text(stringResource(R.string.ui_privacy_first)) },
+                    icon = { Icon(Icons.Rounded.Shield, null, modifier = Modifier.size(16.dp)) },
+                    border = null,
+                    colors = SuggestionChipDefaults.suggestionChipColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest)
+                )
+                SuggestionChip(
+                    onClick = {},
+                    label = { Text(stringResource(R.string.ui_material_3_expressive)) },
+                    icon = { Icon(Icons.Rounded.Palette, null, modifier = Modifier.size(16.dp)) },
+                    border = null,
+                    colors = SuggestionChipDefaults.suggestionChipColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest)
+                )
+                SuggestionChip(
+                    onClick = {},
+                    label = { Text(stringResource(R.string.ui_ai_deep_research)) },
+                    icon = { Icon(Icons.Rounded.AutoAwesome, null, modifier = Modifier.size(16.dp)) },
+                    border = null,
+                    colors = SuggestionChipDefaults.suggestionChipColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest)
+                )
+                SuggestionChip(
+                    onClick = {},
+                    label = { Text(stringResource(R.string.ui_fast_mdm_downloads)) },
+                    icon = { Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp)) },
+                    border = null,
+                    colors = SuggestionChipDefaults.suggestionChipColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest)
+                )
             }
         }
     }
@@ -637,13 +658,13 @@ private fun PermissionStatusRow(
         Spacer(Modifier.width(8.dp))
 
         if (isGranted) {
-            FilledTonalButton(onClick = {}, enabled = false, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+            FilledTonalButton(onClick = {}, enabled = false, shape = CircleShape, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)) {
                 Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
                 Text(stringResource(R.string.ui_granted), style = MaterialTheme.typography.labelSmall)
             }
         } else {
-            Button(onClick = onGrant, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+            Button(onClick = onGrant, shape = CircleShape, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)) {
                 Text(stringResource(R.string.ui_grant), style = MaterialTheme.typography.labelSmall)
             }
         }
@@ -729,7 +750,7 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
                     }
                 },
                 enabled = !hasNotification,
-                shape = RoundedCornerShape(16.dp),
+                shape = CircleShape,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
@@ -926,15 +947,20 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
             Text(stringResource(R.string.ui_app_theme_mode), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(12.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                 val themes = listOf(
                     Triple("LIGHT", "Light", Icons.Rounded.LightMode),
                     Triple("DARK", "Dark", Icons.Rounded.DarkMode),
                     Triple("FOLLOW_SYSTEM", "System", Icons.Rounded.Android)
                 )
 
-                themes.forEach { (mode, label, icon) ->
+                themes.forEachIndexed { index, (mode, label, icon) ->
                     val isSelected = selectedTheme == mode
+                    val shape = when (index) {
+                        0 -> RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp)
+                        themes.lastIndex -> RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp)
+                        else -> RoundedCornerShape(6.dp)
+                    }
                     Surface(
                         onClick = {
                             selectedTheme = mode
@@ -946,10 +972,9 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                             }
                             AppCompatDelegate.setDefaultNightMode(nightMode)
                         },
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                        modifier = Modifier.weight(1f).height(44.dp)
+                        shape = shape,
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier.weight(1f).height(48.dp)
                     ) {
                         Row(
                             horizontalArrangement = Arrangement.Center,
@@ -973,8 +998,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                     sp.edit().putBoolean("sp_amoled", newValue).apply()
                 },
                 shape = RoundedCornerShape(16.dp),
-                color = if (isAmoled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
-                border = BorderStroke(if (isAmoled) 2.dp else 1.dp, if (isAmoled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                color = if (isAmoled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -1019,9 +1043,8 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                                 PetalAndroidUtils.setAppLanguage(context, lang.tag)
                             }
                         },
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        shape = RoundedCornerShape(50.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
                         modifier = Modifier.height(38.dp)
                     ) {
                         Row(
@@ -1104,12 +1127,11 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
                             selectedProvider = provider
                             sp.edit().putString("sp_ai_provider", provider).apply()
                         },
-                        shape = RoundedCornerShape(14.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        shape = RoundedCornerShape(50.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
                         modifier = Modifier.height(36.dp)
                     ) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 12.dp)) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 14.dp)) {
                             Text(provider, style = MaterialTheme.typography.labelMedium.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                         }
                     }
@@ -1118,7 +1140,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
 
             Spacer(Modifier.height(14.dp))
 
-            OutlinedTextField(
+            TextField(
                 value = apiKey,
                 onValueChange = { input ->
                     apiKey = input
@@ -1128,6 +1150,12 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
                 placeholder = { Text(stringResource(R.string.ui_paste_your_api_key_here)) },
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -1267,8 +1295,7 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                     fontSelection = "GS_FLEX_PERMANENT"
                     sp.edit().putString("sp_app_font", "PETAL").putString("sp_font_family_option", "GS_FLEX_PERMANENT").apply()
                 },
-                border = BorderStroke(if (isFlexSelected) 2.dp else 1.dp, if (isFlexSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                color = if (isFlexSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
+                color = if (isFlexSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -1289,8 +1316,7 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                     fontSelection = "CUSTOM_STORAGE"
                     sp.edit().putString("sp_app_font", "CUSTOM").putString("sp_font_family_option", "CUSTOM_STORAGE").apply()
                 },
-                border = BorderStroke(if (isCustomSelected) 2.dp else 1.dp, if (isCustomSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                color = if (isCustomSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
+                color = if (isCustomSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -1359,8 +1385,7 @@ private fun AdBlockerStepPage(sp: SharedPreferences) {
                 sp.edit().putBoolean("sp_ad_block", newValue).apply()
             },
             shape = RoundedCornerShape(22.dp),
-            color = if (isAdBlockEnabled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHigh,
-            border = BorderStroke(if (isAdBlockEnabled) 2.dp else 1.dp, if (isAdBlockEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+            color = if (isAdBlockEnabled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(

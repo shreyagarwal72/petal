@@ -174,7 +174,7 @@ fun PetalAppLockScreen(
 
                     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
                     val sheen = rememberGlassSheen(isGlass)
-                    val avatarShape = com.petal.browser.ui.theme.PetalMaterialShapes.Bun.toShape()
+                    val avatarShape = CircleShape
 
                     Surface(
                         shape = avatarShape,
@@ -295,9 +295,13 @@ fun PetalAppLockScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            OutlinedButton(
+                            FilledTonalButton(
                                 onClick = { triggerBiometricUnlock() },
-                                shape = RoundedCornerShape(50),
+                                shape = CircleShape,
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                ),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Icon(Icons.Rounded.Fingerprint, contentDescription = null, modifier = Modifier.size(20.dp))

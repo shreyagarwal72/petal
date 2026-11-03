@@ -9,7 +9,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -447,7 +446,7 @@ fun PetalLensBottomSheet(
                 }
             }
 
-            OutlinedButton(
+            FilledTonalButton(
                 onClick = {
                     PetalHapticEngine.getInstance(context).playClick(context)
                     try { galleryChooserLauncher.launch("image/*") }
@@ -456,12 +455,11 @@ fun PetalLensBottomSheet(
                 modifier = Modifier.fillMaxWidth().then(
                     if (isLiquidGlass) Modifier.liquidGlassChrome(RoundedCornerShape(16.dp), enabled = true) else Modifier
                 ),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else Color.Transparent
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 ),
-                shape = RoundedCornerShape(16.dp),
-                border = if (isLiquidGlass) null
-                    else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))

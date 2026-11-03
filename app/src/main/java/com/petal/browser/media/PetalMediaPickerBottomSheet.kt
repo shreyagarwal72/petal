@@ -14,7 +14,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,7 +50,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -464,7 +463,7 @@ fun PetalMediaPickerBottomSheet(
                             Text(stringResource(R.string.ui_grant_access), fontWeight = FontWeight.Bold)
                         }
 
-                        OutlinedButton(
+                        FilledTonalButton(
                             onClick = {
                                 PetalHapticEngine.getInstance(context).playClick(context)
                                 val mediaType = when (selectedFilter) {
@@ -589,11 +588,6 @@ fun PetalMediaPickerBottomSheet(
                                 .fillMaxWidth()
                                 .aspectRatio(1f)
                                 .clip(RoundedCornerShape(12.dp))
-                                .border(
-                                    width = if (isSelected) 3.dp else 0.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                    shape = RoundedCornerShape(12.dp)
-                                )
                                 .clickable {
                                     PetalHapticEngine.getInstance(context).playClick(context)
                                     if (allowMultiple) {

@@ -8,7 +8,6 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -268,8 +267,8 @@ fun PetalPasswordsScreen(
 
                     // 2. Search & Sort Bar
                     item {
-                        val passSearchShape = RoundedCornerShape(20.dp)
-                        OutlinedTextField(
+                        val passSearchShape = RoundedCornerShape(50.dp)
+                        TextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             placeholder = { Text("Search logins, domains, notes...") },
@@ -285,11 +284,12 @@ fun PetalPasswordsScreen(
                             },
                             singleLine = true,
                             shape = passSearchShape,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                                unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                                focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -687,8 +687,8 @@ private fun PasswordDetailsSheet(
             }
 
             // Breach audit check button
-            val checkBtnShape = RoundedCornerShape(16.dp)
-            OutlinedButton(
+            val checkBtnShape = RoundedCornerShape(50.dp)
+            FilledTonalButton(
                 onClick = {
                     haptic.playClick(context)
                     isCheckingBreach = true
@@ -704,9 +704,13 @@ private fun PasswordDetailsSheet(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = 48.dp)
                     .then(if (isGlass) Modifier.liquidGlassChrome(checkBtnShape, enabled = true, sheenIntensity = 0.4f) else Modifier),
                 shape = checkBtnShape,
-                border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
             ) {
                 if (isCheckingBreach) {
                     PetalContainedLoadingIndicator(size = 16.dp)
@@ -731,26 +735,35 @@ private fun PasswordDetailsSheet(
             // Actions row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                val actionShape = RoundedCornerShape(16.dp)
-                OutlinedButton(
+                FilledTonalButton(
                     onClick = onDelete,
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
                     modifier = Modifier
                         .weight(1f)
-                        .then(if (isGlass) Modifier.liquidGlassChrome(actionShape, enabled = true, sheenIntensity = 0.4f) else Modifier),
-                    shape = actionShape,
-                    border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+                        .heightIn(min = 48.dp)
+                        .then(if (isGlass) Modifier.liquidGlassChrome(petalConnectedShape(0, 2), enabled = true, sheenIntensity = 0.4f) else Modifier),
+                    shape = petalConnectedShape(0, 2)
                 ) {
-                    Text("Delete")
+                    Text("Delete", fontWeight = FontWeight.SemiBold)
                 }
                 Button(
                     onClick = onEdit,
-                    modifier = Modifier.weight(1f),
-                    shape = actionShape
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp),
+                    shape = petalConnectedShape(1, 2)
                 ) {
-                    Text("Edit")
+                    Text("Edit", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -799,14 +812,15 @@ private fun PasswordEditSheet(
             )
 
             val fieldShape = RoundedCornerShape(16.dp)
-            val fieldColors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = if (isGlass) Color.Black.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainer,
-                unfocusedContainerColor = if (isGlass) Color.Black.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainer,
-                focusedBorderColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = if (isGlass) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant
+            val fieldColors = TextFieldDefaults.colors(
+                focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent
             )
 
-            OutlinedTextField(
+            TextField(
                 value = domain,
                 onValueChange = { domain = it },
                 label = { Text("Website Domain (e.g. google.com)") },
@@ -818,7 +832,7 @@ private fun PasswordEditSheet(
                     .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
             )
 
-            OutlinedTextField(
+            TextField(
                 value = username,
                 onValueChange = { username = it },
                 label = { Text("Username or Email") },
@@ -834,7 +848,7 @@ private fun PasswordEditSheet(
                 value = password,
                 onValueChange = { password = it },
                 hintText = "Password",
-                containerColor = if (isGlass) Color.Black.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainerHighest,
+                containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(20.dp), enabled = true, sheenIntensity = 0.45f) else Modifier)
@@ -846,7 +860,7 @@ private fun PasswordEditSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedButton(
+                FilledTonalButton(
                     onClick = {
                         haptic.playClick(context)
                         password = if (selectedPreset == PetalPasswordGenerator.Preset.CUSTOM) {
@@ -858,8 +872,11 @@ private fun PasswordEditSheet(
                             PetalPasswordGenerator.generateByPreset(selectedPreset)
                         }
                     },
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                    shape = RoundedCornerShape(50.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
                 ) {
                     Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
@@ -917,7 +934,7 @@ private fun PasswordEditSheet(
                 }
             }
 
-            OutlinedTextField(
+            TextField(
                 value = notes,
                 onValueChange = { notes = it },
                 label = { Text("Notes (optional)") },
@@ -933,15 +950,21 @@ private fun PasswordEditSheet(
             // Submit Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                val btnShape = RoundedCornerShape(16.dp)
-                OutlinedButton(
+                FilledTonalButton(
                     onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                    shape = btnShape
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp),
+                    shape = petalConnectedShape(0, 2),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
                 ) {
-                    Text("Cancel")
+                    Text("Cancel", fontWeight = FontWeight.SemiBold)
                 }
                 Button(
                     onClick = {
@@ -965,11 +988,17 @@ private fun PasswordEditSheet(
                             onSave(cred)
                         }
                     },
-                    modifier = Modifier.weight(1f),
-                    shape = btnShape,
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp),
+                    shape = petalConnectedShape(1, 2),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
                     enabled = domain.isNotBlank() && password.isNotBlank()
                 ) {
-                    Text("Save")
+                    Text("Save", fontWeight = FontWeight.SemiBold)
                 }
             }
         }

@@ -21,3 +21,6 @@ scratch/
 app/release.keystore
 .gsd/
 brag-output/
+
+__pycache__/
+*.pyc

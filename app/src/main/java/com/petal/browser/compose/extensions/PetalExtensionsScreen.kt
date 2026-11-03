@@ -19,7 +19,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -846,11 +845,19 @@ private fun BuiltInExtensionSettingsDialog(
                         Spacer(Modifier.height(8.dp))
 
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(
+                            TextField(
                                 value = newDomain,
                                 onValueChange = { newDomain = it },
                                 placeholder = { Text("example.com") },
                                 singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent
+                                ),
                                 modifier = Modifier.weight(1f)
                             )
                             Spacer(Modifier.width(8.dp))
@@ -1181,7 +1188,7 @@ private fun AddExtensionSheet(
                     onRequestFileImport()
                 },
                 enabled = !busy,
-                variant = PetalButtonVariant.Outlined,
+                variant = PetalButtonVariant.Tonal,
                 shape = btnShape,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -1234,21 +1241,35 @@ private fun AddExtensionSheet(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            OutlinedTextField(
+                            TextField(
                                 value = userId,
                                 onValueChange = { userId = it },
                                 label = { Text("User ID (e.g. 12345678)") },
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent
+                                ),
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            OutlinedTextField(
+                            TextField(
                                 value = collectionName,
                                 onValueChange = { collectionName = it },
                                 label = { Text("Collection Name (e.g. my-extensions)") },
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent
+                                ),
                                 modifier = Modifier.fillMaxWidth()
                             )
 
@@ -1370,18 +1391,19 @@ private fun AddExtensionSheet(
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
+            TextField(
                 value = manualUrl,
                 onValueChange = { manualUrl = it },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text(stringResource(R.string.ui_https_addons_mozilla_org_addon)) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else Color.Transparent,
-                    unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else Color.Transparent,
-                    focusedBorderColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                    unfocusedBorderColor = if (isGlass) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f) else MaterialTheme.colorScheme.outlineVariant
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                    unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
                 )
             )
             Spacer(Modifier.height(12.dp))
@@ -1898,12 +1920,19 @@ fun PetalExtensionPopupScreen(
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
                         }
-                        OutlinedTextField(
+                        TextField(
                             value = textPromptInput,
                             onValueChange = { textPromptInput = it },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent
+                            ),
                             visualTransformation = if (textPromptIsPassword)
                                 PasswordVisualTransformation()
                             else

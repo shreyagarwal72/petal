@@ -14,10 +14,9 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import com.petal.browser.ui.containment.petalConnectedShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -273,7 +272,7 @@ fun FirefoxAccountSyncScreen(
                                             shape = CircleShape,
                                             color = if (profile.avatarType == AvatarType.GALLERY_URI) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                                             contentColor = if (profile.avatarType == AvatarType.GALLERY_URI) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
-                                            border = if (profile.avatarType == AvatarType.GALLERY_URI) BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                                            tonalElevation = if (profile.avatarType == AvatarType.GALLERY_URI) 4.dp else 0.dp,
                                             modifier = Modifier
                                                 .size(52.dp)
                                                 .bouncyClickable { openAvatarMediaPicker() }
@@ -291,8 +290,8 @@ fun FirefoxAccountSyncScreen(
                                             val isSelected = profile.avatarType == AvatarType.PRESET && profile.avatarPresetId == presetId
                                             Surface(
                                                 shape = CircleShape,
-                                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                                border = if (isSelected) BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary) else null,
+                                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                tonalElevation = if (isSelected) 4.dp else 0.dp,
                                                 modifier = Modifier
                                                     .size(52.dp)
                                                     .bouncyClickable { PetalUserProfileManager.updateAvatarPreset(context, presetId) }
@@ -443,9 +442,10 @@ fun FirefoxAccountSyncScreen(
 
                                             Row(
                                                 modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                OutlinedButton(
+                                                FilledTonalButton(
                                                     onClick = {
                                                         syncManager.syncNow(context, forceRestore = true) { success ->
                                                             coroutineScope.launch {
@@ -456,10 +456,14 @@ fun FirefoxAccountSyncScreen(
                                                         }
                                                     },
                                                     enabled = !isSyncing,
-                                                    shape = RoundedCornerShape(20.dp),
+                                                    shape = petalConnectedShape(0, 2),
+                                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                                    ),
                                                     modifier = Modifier
                                                         .weight(1f)
-                                                        .height(44.dp)
+                                                        .heightIn(min = 48.dp)
                                                         .bouncyClickable()
                                                 ) {
                                                     Icon(
@@ -482,14 +486,14 @@ fun FirefoxAccountSyncScreen(
                                                         }
                                                     },
                                                     enabled = !isSyncing,
-                                                    shape = RoundedCornerShape(20.dp),
+                                                    shape = petalConnectedShape(1, 2),
                                                     colors = ButtonDefaults.buttonColors(
                                                         containerColor = MaterialTheme.colorScheme.primary,
                                                         contentColor = MaterialTheme.colorScheme.onPrimary
                                                     ),
                                                     modifier = Modifier
                                                         .weight(1f)
-                                                        .height(44.dp)
+                                                        .heightIn(min = 48.dp)
                                                         .bouncyClickable()
                                                 ) {
                                                     Icon(
@@ -511,19 +515,22 @@ fun FirefoxAccountSyncScreen(
 
                                         Spacer(Modifier.height(16.dp))
 
-                                        OutlinedButton(
+                                        FilledTonalButton(
                                             onClick = {
                                                 fxaManager.logout()
                                                 coroutineScope.launch {
                                                     snackbarHostState.showSnackbar("Signed out of Firefox Account")
                                                 }
                                             },
-                                            shape = RoundedCornerShape(20.dp),
-                                            colors = ButtonDefaults.outlinedButtonColors(
-                                                contentColor = MaterialTheme.colorScheme.error
+                                            shape = RoundedCornerShape(50.dp),
+                                            colors = ButtonDefaults.filledTonalButtonColors(
+                                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                                contentColor = MaterialTheme.colorScheme.onErrorContainer
                                             ),
-                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
-                                            modifier = Modifier.fillMaxWidth().bouncyClickable()
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .heightIn(min = 48.dp)
+                                                .bouncyClickable()
                                         ) {
                                             Icon(Icons.Rounded.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(8.dp))
@@ -587,12 +594,16 @@ fun FirefoxAccountSyncScreen(
                                             Spacer(Modifier.height(10.dp))
 
                                             // Pair Desktop QR Button
-                                            OutlinedButton(
+                                            FilledTonalButton(
                                                 onClick = { showDesktopPairDialog = true },
-                                                shape = RoundedCornerShape(20.dp),
+                                                shape = RoundedCornerShape(50.dp),
+                                                colors = ButtonDefaults.filledTonalButtonColors(
+                                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                                ),
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .height(48.dp)
+                                                    .heightIn(min = 48.dp)
                                                     .bouncyClickable()
                                             ) {
                                                 Icon(Icons.Rounded.QrCodeScanner, contentDescription = null)
@@ -1054,7 +1065,7 @@ fun FirefoxAccountSyncScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    OutlinedTextField(
+                    TextField(
                         value = desktopPairUrlInput,
                         onValueChange = { desktopPairUrlInput = it },
                         label = { Text(stringResource(R.string.ui_firefox_pairing_url_code)) },
@@ -1062,6 +1073,13 @@ fun FirefoxAccountSyncScreen(
                         singleLine = false,
                         maxLines = 3,
                         shape = RoundedCornerShape(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -1088,17 +1106,25 @@ fun FirefoxAccountSyncScreen(
                             )
                         }
                     },
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.bouncyClickable()
+                    shape = petalConnectedShape(1, 2),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
                 ) {
                     Text(stringResource(R.string.ui_connect), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(
+                FilledTonalButton(
                     onClick = { showDesktopPairDialog = false },
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.bouncyClickable()
+                    shape = petalConnectedShape(0, 2),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
                 ) {
                     Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
                 }
@@ -1120,13 +1146,20 @@ fun FirefoxAccountSyncScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    OutlinedTextField(
+                    TextField(
                         value = directEmailInput,
                         onValueChange = { directEmailInput = it },
                         label = { Text(stringResource(R.string.ui_firefox_account_email)) },
                         placeholder = { Text(stringResource(R.string.ui_you_example_com)) },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -1153,17 +1186,25 @@ fun FirefoxAccountSyncScreen(
                             }
                         }
                     },
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.bouncyClickable()
+                    shape = petalConnectedShape(1, 2),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
                 ) {
                     Text(stringResource(R.string.ui_sign_in_sync), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(
+                FilledTonalButton(
                     onClick = { showDirectEmailDialog = false },
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.bouncyClickable()
+                    shape = petalConnectedShape(0, 2),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
                 ) {
                     Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
                 }
@@ -1177,12 +1218,19 @@ fun FirefoxAccountSyncScreen(
             onDismissRequest = { showEditNameDialog = false },
             title = { Text(stringResource(R.string.ui_edit_user_name), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
             text = {
-                OutlinedTextField(
+                TextField(
                     value = nameInput,
                     onValueChange = { if (it.length <= 15) nameInput = it },
                     label = { Text(stringResource(R.string.ui_user_name_max_15_chars)) },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -1192,17 +1240,25 @@ fun FirefoxAccountSyncScreen(
                         PetalUserProfileManager.updateDisplayName(context, nameInput)
                         showEditNameDialog = false
                     },
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.bouncyClickable()
+                    shape = petalConnectedShape(1, 2),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
                 ) {
                     Text(stringResource(R.string.ui_save), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(
+                FilledTonalButton(
                     onClick = { showEditNameDialog = false },
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.bouncyClickable()
+                    shape = petalConnectedShape(0, 2),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
                 ) {
                     Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
                 }

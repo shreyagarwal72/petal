@@ -9,9 +9,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,7 +38,6 @@ import com.petal.browser.ui.containment.PetalFilterChip
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
-import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.view.PetalToast
 
 /**
@@ -88,7 +85,7 @@ fun PetalResourceSnifferSheet(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val headerBadgeShape = PetalMaterialShapes.Cookie4Sided.toShape()
+                    val headerBadgeShape = CircleShape
                     Box(
                         modifier = Modifier
                             .size(38.dp)
@@ -155,13 +152,7 @@ fun PetalResourceSnifferSheet(
                         resources.count { it.category == category }
                     }
 
-                    val shape = when (category) {
-                        PetalResourceCategory.ALL -> PetalMaterialShapes.Cookie4Sided.toShape()
-                        PetalResourceCategory.VIDEO -> PetalMaterialShapes.Gem.toShape()
-                        PetalResourceCategory.AUDIO -> PetalMaterialShapes.Flower.toShape()
-                        PetalResourceCategory.IMAGE -> PetalMaterialShapes.Boom.toShape()
-                        PetalResourceCategory.DOCUMENT -> PetalMaterialShapes.PuffyDiamond.toShape()
-                    }
+                    val shape = CircleShape
 
                     val icon = when (category) {
                         PetalResourceCategory.ALL -> Icons.Rounded.Category
@@ -277,16 +268,13 @@ fun PetalResourceSnifferSheet(
                 enter = fadeIn() + expandVertically() + slideInVertically { it / 2 },
                 exit = fadeOut() + shrinkVertically() + slideOutVertically { it / 2 }
             ) {
-                val dockShape = RoundedCornerShape(22.dp)
+                val dockShape = RoundedCornerShape(24.dp)
                 Surface(
                     shape = dockShape,
                     color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                     tonalElevation = 0.dp,
                     shadowElevation = if (isGlass) 0.dp else 4.dp,
-                    border = if (isGlass) null else BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                    ),
+                    border = null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -311,7 +299,7 @@ fun PetalResourceSnifferSheet(
                             Box(
                                 modifier = Modifier
                                     .size(28.dp)
-                                    .clip(PetalMaterialShapes.Cookie4Sided.toShape())
+                                    .clip(CircleShape)
                                     .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -389,13 +377,7 @@ private fun SniffedResourceRow(
         PetalResourceCategory.ALL -> Icons.Rounded.Attachment
     }
 
-    val categoryShape = when (resource.category) {
-        PetalResourceCategory.ALL -> PetalMaterialShapes.Cookie4Sided.toShape()
-        PetalResourceCategory.VIDEO -> PetalMaterialShapes.Gem.toShape()
-        PetalResourceCategory.AUDIO -> PetalMaterialShapes.Flower.toShape()
-        PetalResourceCategory.IMAGE -> PetalMaterialShapes.Boom.toShape()
-        PetalResourceCategory.DOCUMENT -> PetalMaterialShapes.PuffyDiamond.toShape()
-    }
+    val categoryShape = CircleShape
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val itemShape = RoundedCornerShape(18.dp)
@@ -411,24 +393,15 @@ private fun SniffedResourceRow(
     Surface(
         shape = itemShape,
         color = if (isGlass) {
-            if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+            if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.40f)
             else petalGroupSurfaceColor()
         } else {
-            if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-            else petalGroupSurfaceColor()
+            if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+            else MaterialTheme.colorScheme.surfaceContainerHigh
         },
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        border = if (isGlass) {
-            if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
-            else null
-        } else {
-            BorderStroke(
-                1.dp,
-                if (isSelected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
-            )
-        },
+        border = null,
         modifier = Modifier
             .fillMaxWidth()
             .scale(scale)

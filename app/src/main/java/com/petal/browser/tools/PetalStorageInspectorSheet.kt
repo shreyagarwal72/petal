@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -204,7 +205,7 @@ fun PetalStorageInspectorSheet(
             Spacer(Modifier.height(10.dp))
 
             // Filter Search Bar
-            OutlinedTextField(
+            TextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 placeholder = { Text("Filter ${selectedType.label}…") },
@@ -216,6 +217,12 @@ fun PetalStorageInspectorSheet(
                 },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -297,7 +304,7 @@ fun PetalStorageInspectorSheet(
             Spacer(Modifier.height(14.dp))
 
             // Purge All For Site Button
-            OutlinedButton(
+            Button(
                 onClick = {
                     PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
                     onExecuteJavascript("""
@@ -316,9 +323,14 @@ fun PetalStorageInspectorSheet(
                         refreshData()
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
+                shape = RoundedCornerShape(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                )
             ) {
                 Icon(Icons.Rounded.DeleteForever, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))

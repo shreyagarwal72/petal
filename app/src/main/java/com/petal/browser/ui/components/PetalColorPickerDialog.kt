@@ -26,10 +26,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
@@ -104,8 +107,9 @@ fun PetalColorPickerDialog(
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(
-            shape = RoundedCornerShape(32.dp),
+            shape = RoundedCornerShape(28.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            border = null,
             modifier = Modifier.padding(16.dp).fillMaxWidth()
         ) {
             Column {
@@ -131,36 +135,58 @@ fun PetalColorPickerDialog(
                             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                                 HueSatWheel(hue, sat, value) { h, s -> hue = h; sat = s }
                             }
-                            LabeledGradientSlider("V", value, 0f..1f,
-                                Brush.horizontalGradient(listOf(Color.Black, Color.hsv(hue, sat, 1f)))) { value = it }
+                            LabeledColorSlider("V", value, 0f..1f) { value = it }
                         }
                         PickerTab.RGB -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             val r = color.red; val g = color.green; val b = color.blue
-                            LabeledGradientSlider("R", r, 0f..1f, Brush.horizontalGradient(listOf(Color(0f, g, b), Color(1f, g, b)))) { setColor(Color(it, g, b)) }
-                            LabeledGradientSlider("G", g, 0f..1f, Brush.horizontalGradient(listOf(Color(r, 0f, b), Color(r, 1f, b)))) { setColor(Color(r, it, b)) }
-                            LabeledGradientSlider("B", b, 0f..1f, Brush.horizontalGradient(listOf(Color(r, g, 0f), Color(r, g, 1f)))) { setColor(Color(r, g, it)) }
+                            LabeledColorSlider("R", r, 0f..1f) { setColor(Color(it, g, b)) }
+                            LabeledColorSlider("G", g, 0f..1f) { setColor(Color(r, it, b)) }
+                            LabeledColorSlider("B", b, 0f..1f) { setColor(Color(r, g, it)) }
                             HexField(color) { setColor(it) }
                         }
                         PickerTab.HSV -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            LabeledGradientSlider("H", hue, 0f..360f,
-                                Brush.horizontalGradient((0..6).map { Color.hsv(it * 60f % 360f, 1f, 1f) }), valueText = "${hue.toInt()}°") { hue = it }
-                            LabeledGradientSlider("S", sat, 0f..1f,
-                                Brush.horizontalGradient(listOf(Color.hsv(hue, 0f, value), Color.hsv(hue, 1f, value)))) { sat = it }
-                            LabeledGradientSlider("V", value, 0f..1f,
-                                Brush.horizontalGradient(listOf(Color.Black, Color.hsv(hue, sat, 1f)))) { value = it }
+                            LabeledColorSlider("H", hue, 0f..360f, valueText = "${hue.toInt()}°") { hue = it }
+                            LabeledColorSlider("S", sat, 0f..1f) { sat = it }
+                            LabeledColorSlider("V", value, 0f..1f) { value = it }
                         }
                         PickerTab.IMAGE -> ImagePickPage { setColor(it) }
                     }
                 }
 
                 Row(
-                    Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 20.dp),
-                    horizontalArrangement = Arrangement.End,
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(onClick = onDismiss, shape = CircleShape) { Text("Cancel") }
-                    Spacer(Modifier.size(8.dp))
-                    Button(onClick = { onConfirm(color) }, shape = CircleShape) { Text("OK") }
+                    Button(
+                        onClick = onDismiss,
+                        shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
+                    ) {
+                        Text("Cancel", fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Button(
+                        onClick = { onConfirm(color) },
+                        shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
+                    ) {
+                        Text("OK", fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
@@ -233,40 +259,45 @@ private fun HueSatWheel(hue: Float, sat: Float, value: Float, onChange: (Float, 
 }
 
 @Composable
-private fun LabeledGradientSlider(
+private fun LabeledColorSlider(
     label: String,
     value: Float,
     range: ClosedFloatingPointRange<Float>,
-    track: Brush,
     valueText: String = "%.2f".format(value / range.endInclusive),
     onChange: (Float) -> Unit
 ) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, Modifier.size(28.dp), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            Box(Modifier.fillMaxWidth().height(14.dp).clip(CircleShape).background(track))
-            Slider(
-                value = value.coerceIn(range.start, range.endInclusive),
-                onValueChange = onChange,
-                valueRange = range,
-                colors = SliderDefaults.colors(
-                    activeTrackColor = Color.Transparent,
-                    inactiveTrackColor = Color.Transparent,
-                    activeTickColor = Color.Transparent,
-                    inactiveTickColor = Color.Transparent,
-                    thumbColor = MaterialTheme.colorScheme.inverseOnSurface
-                )
+        Text(
+            text = label,
+            modifier = Modifier.size(28.dp),
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Slider(
+            value = value.coerceIn(range.start, range.endInclusive),
+            onValueChange = onChange,
+            valueRange = range,
+            modifier = Modifier.weight(1f),
+            colors = SliderDefaults.colors(
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                thumbColor = MaterialTheme.colorScheme.primary
             )
-        }
-        Text(valueText, Modifier.padding(start = 8.dp).size(width = 44.dp, height = 24.dp), textAlign = TextAlign.End,
-            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        )
+        Text(
+            text = valueText,
+            modifier = Modifier.padding(start = 8.dp).size(width = 44.dp, height = 24.dp),
+            textAlign = TextAlign.End,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
 @Composable
 private fun HexField(color: Color, onColor: (Color) -> Unit) {
     var text by remember(color) { mutableStateOf("%06X".format(color.toArgb() and 0xFFFFFF)) }
-    OutlinedTextField(
+    TextField(
         value = text,
         onValueChange = { raw ->
             val clean = raw.removePrefix("#").filter { it.isLetterOrDigit() }.take(6).uppercase()
@@ -277,6 +308,12 @@ private fun HexField(color: Color, onColor: (Color) -> Unit) {
         prefix = { Text("#") },
         singleLine = true,
         shape = RoundedCornerShape(16.dp),
+        colors = TextFieldDefaults.colors(
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+        ),
         modifier = Modifier.fillMaxWidth()
     )
 }
@@ -356,9 +393,9 @@ private fun ImagePickPage(onPicked: (Color) -> Unit) {
                     }
                 }
             }
-            OutlinedButton(
+            FilledTonalButton(
                 onClick = { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                shape = CircleShape,
+                shape = RoundedCornerShape(50.dp),
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) { Text("Another photo") }
         }

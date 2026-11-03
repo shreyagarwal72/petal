@@ -64,7 +64,7 @@ import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.layout.LiquidRippleEffect
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.theme.PetalMaterialShapes
+import com.petal.browser.ui.containment.petalConnectedShape
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -167,11 +167,8 @@ fun PetalBiometricExpressiveSheet(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Expressive Shaped Badge (Sunny shape morphs on success)
-                val badgeShape = remember(isSuccess) {
-                    if (isSuccess) PetalMaterialShapes.Bun.toShape()
-                    else PetalMaterialShapes.Sunny.toShape()
-                }
+                // Standard circular badge
+                val badgeShape = CircleShape
 
                 Surface(
                     shape = badgeShape,
@@ -256,12 +253,16 @@ fun PetalBiometricExpressiveSheet(
                 // Action Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     if (allowPasswordFallback && onUsePassword != null) {
-                        OutlinedButton(
+                        FilledTonalButton(
                             onClick = onUsePassword,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = petalConnectedShape(0, 2),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(Icons.Rounded.Key, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -275,7 +276,11 @@ fun PetalBiometricExpressiveSheet(
                             errorMessage = null
                             authenticate()
                         },
-                        shape = RoundedCornerShape(16.dp),
+                        shape = if (allowPasswordFallback && onUsePassword != null) petalConnectedShape(1, 2) else CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(Icons.Rounded.Fingerprint, contentDescription = null, modifier = Modifier.size(18.dp))

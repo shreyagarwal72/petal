@@ -7,7 +7,6 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -249,8 +248,7 @@ fun PetalFuelTheCodeSheet(
                         )
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = cs.errorContainer.copy(alpha = 0.5f),
-                            border = BorderStroke(1.dp, cs.error.copy(alpha = 0.3f))
+                            color = cs.errorContainer.copy(alpha = 0.5f)
                         ) {
                             Text(
                                 text = integrityReason,

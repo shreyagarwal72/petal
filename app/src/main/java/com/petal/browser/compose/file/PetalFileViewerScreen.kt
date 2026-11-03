@@ -85,7 +85,6 @@ import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.ui.theme.toShape
@@ -1141,7 +1140,7 @@ private fun TextCodeViewerContent(
             ErrorDisplayBox(error = errorMessage ?: "")
         }
         isEditing -> {
-            OutlinedTextField(
+            TextField(
                 value = editableText,
                 onValueChange = { editableText = it },
                 modifier = Modifier
@@ -1154,11 +1153,12 @@ private fun TextCodeViewerContent(
                     lineHeight = 18.sp
                 ),
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
+                colors = TextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
                 )
             )
         }
@@ -1548,7 +1548,7 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         verticalArrangement = Arrangement.Center
     ) {
         PetalGroupIconBadge(
-            shape = PetalMaterialShapes.Cookie9Sided.toShape(),
+            shape = CircleShape,
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             size = 80.dp,
@@ -1605,7 +1605,7 @@ private fun ErrorDisplayBox(error: String) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 PetalGroupIconBadge(
-                    shape = PetalMaterialShapes.SoftBoom.toShape(),
+                    shape = CircleShape,
                     containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
                     contentColor = MaterialTheme.colorScheme.error,
                     size = 72.dp,

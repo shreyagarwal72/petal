@@ -165,7 +165,7 @@ fun PetalDeveloperHeroSection(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     // In glass mode the pill is see-through (the glass panel supplies the tint);
                     // before the backdrop is ready it falls back to a translucent tonal fill.
@@ -181,8 +181,8 @@ fun PetalDeveloperHeroSection(
 
                     // Petal Official Website Pill
                     val webShape = RoundedCornerShape(
-                        topStart = 20.dp,
-                        bottomStart = 20.dp,
+                        topStart = 50.dp,
+                        bottomStart = 50.dp,
                         topEnd = 6.dp,
                         bottomEnd = 6.dp
                     )
@@ -240,8 +240,8 @@ fun PetalDeveloperHeroSection(
                     val tgShape = RoundedCornerShape(
                         topStart = 6.dp,
                         bottomStart = 6.dp,
-                        topEnd = 20.dp,
-                        bottomEnd = 20.dp
+                        topEnd = 50.dp,
+                        bottomEnd = 50.dp
                     )
                     Button(
                         onClick = {
@@ -391,7 +391,7 @@ fun PetalDeveloperHeroSection(
     }
 }
 
-/** Outlined action button that becomes a single-rim glass pill when Liquid Glass is on. */
+/** Tonal action button that becomes a single-rim glass pill when Liquid Glass is on. */
 @Composable
 private fun HeroGlassButton(
     onClick: () -> Unit,
@@ -399,15 +399,13 @@ private fun HeroGlassButton(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit
 ) {
-    val shape = RoundedCornerShape(20.dp)
-    OutlinedButton(
+    val shape = CircleShape
+    FilledTonalButton(
         onClick = onClick,
         shape = shape,
-        // The glass panel already draws its own rim, so the outline would double up.
-        border = if (isGlass) null
-            else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (isGlass) petalGroupSurfaceColor() else Color.Transparent
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+            contentColor = MaterialTheme.colorScheme.onSurface
         ),
         modifier = modifier.then(
             if (isGlass) Modifier.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = 0.5f) else Modifier

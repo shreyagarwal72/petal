@@ -114,7 +114,7 @@ fun PetalShapedPasswordInput(
     Surface(
         shape = inputShape,
         color = if (isGlass) petalGroupSurfaceColor() else containerColor,
-        border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.5.dp, currentBorderColor),
+        border = null,
         tonalElevation = if (isGlass) 0.dp else 2.dp,
         shadowElevation = 0.dp,
         modifier = modifier

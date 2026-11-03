@@ -395,11 +395,6 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                     }
                     .clip(RoundedCornerShape(24.dp))
                     .background(Color.White.copy(alpha = 0.22f))
-                    .border(
-                        width = 2.dp,
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(24.dp)
-                    )
                     .shadow(12.dp, RoundedCornerShape(24.dp)),
                 contentAlignment = Alignment.Center
             ) {

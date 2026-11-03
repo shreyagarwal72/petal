@@ -84,7 +84,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -906,29 +909,99 @@ fun PetalSectionLabel(text: String, modifier: Modifier = Modifier) {
 
 data class PetalConnectedButtonItem(val label: String, val icon: ImageVector? = null, val selected: Boolean = false)
 
-private fun petalConnectedShape(index: Int, count: Int): Shape = when {
-    count <= 1 -> RoundedCornerShape(20.dp)
-    index == 0 -> RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp, topEnd = 4.dp, bottomEnd = 4.dp)
-    index == count - 1 -> RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 20.dp, bottomEnd = 20.dp)
-    else -> RoundedCornerShape(4.dp)
+fun petalConnectedShape(index: Int, count: Int): Shape = when {
+    count <= 1 -> RoundedCornerShape(50.dp)
+    index == 0 -> RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp)
+    index == count - 1 -> RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp)
+    else -> RoundedCornerShape(6.dp)
 }
 
 @Composable
-fun PetalConnectedButtonGroup(items: List<PetalConnectedButtonItem>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+fun PetalConnectedButtonGroup(
+    items: List<PetalConnectedButtonItem>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val haptics = LocalHapticFeedback.current
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy((-1).dp), verticalAlignment = Alignment.CenterVertically) {
+    var pressedIndex by remember { mutableStateOf<Int?>(null) }
+    var clickedIndex by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(clickedIndex) {
+        if (clickedIndex != null) {
+            delay(240L)
+            clickedIndex = null
+        }
+    }
+
+    val currentActiveIndex = pressedIndex ?: clickedIndex
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         items.forEachIndexed { index, item ->
             val selected = item.selected || (selectedIndex >= 0 && index == selectedIndex)
             val shape = petalConnectedShape(index, items.size)
-            Surface(onClick = { haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove); onSelect(index) }, modifier = Modifier.weight(1f),
-                shape = shape, color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+            val interactionSource = remember { MutableInteractionSource() }
+            val isPressed by interactionSource.collectIsPressedAsState()
+
+            LaunchedEffect(isPressed) {
+                if (isPressed) {
+                    pressedIndex = index
+                } else if (pressedIndex == index) {
+                    pressedIndex = null
+                }
+            }
+
+            val targetWeight = when (currentActiveIndex) {
+                null -> 1f
+                index -> 1.1f
+                else -> 0.65f
+            }
+
+            val animatedWeight by animateFloatAsState(
+                targetValue = targetWeight,
+                animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
+                label = "connectedButtonWeight"
+            )
+
+            Surface(
+                onClick = {
+                    clickedIndex = index
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onSelect(index)
+                },
+                modifier = Modifier
+                    .weight(animatedWeight)
+                    .defaultMinSize(minHeight = 48.dp),
+                shape = shape,
+                color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))) {
+                border = null,
+                interactionSource = interactionSource
+            ) {
                 val compact = items.size >= 3
-                Row(Modifier.defaultMinSize(minHeight = 44.dp).padding(horizontal = if (compact) 4.dp else 8.dp, vertical = 10.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    item.icon?.let { Icon(it, null, Modifier.size(if (compact) 16.dp else 18.dp)); Spacer(Modifier.width(if (compact) 4.dp else 6.dp)) }
-                    Text(item.label, style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                Row(
+                    modifier = Modifier
+                        .defaultMinSize(minHeight = 48.dp)
+                        .padding(horizontal = if (compact) 4.dp else 8.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    item.icon?.let {
+                        Icon(it, null, Modifier.size(if (compact) 16.dp else 18.dp))
+                        Spacer(Modifier.width(if (compact) 4.dp else 6.dp))
+                    }
+                    Text(
+                        text = item.label,
+                        style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         }
@@ -1007,86 +1080,7 @@ internal fun PetalSheetGlassBackdrop(
  * The sheet owns a live backdrop so every card inside refracts the app window in real time.
  * Set [ownsGlassBackdrop] = false only if the caller provides its own LocalPetalGlassWallpaper.
  */
-@Composable
-fun PetalSheet(
-    onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier,
-    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-    ownsGlassBackdrop: Boolean = true,
-    containerColor: Color? = null,
-    scrimColor: Color? = null,
-    dragHandle: (@Composable () -> Unit)? = {
-        Box(Modifier.padding(vertical = 12.dp).size(width = 36.dp, height = 4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)))
-    },
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-    val dark = MaterialTheme.colorScheme.background.luminance() < .5f
-    val fallbackColor = if (dark) Color(0xE61A1C1E) else Color(0xE6F2F4F7)
-
-    val ownWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
-    val activeWallpaper = if (isGlass && ownsGlassBackdrop) ownWallpaper else com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
-
-    val resolvedContainerColor = containerColor ?: if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow
-    val resolvedScrimColor = scrimColor ?: if (isGlass) Color.Black.copy(alpha = 0.14f) else BottomSheetDefaults.ScrimColor
-
-    ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
-        modifier = modifier,
-        sheetState = sheetState,
-        shape = sheetShape,
-        containerColor = resolvedContainerColor,
-        scrimColor = resolvedScrimColor,
-        dragHandle = null,
-        contentWindowInsets = { androidx.compose.foundation.layout.WindowInsets(0) },
-    ) {
-        val density = androidx.compose.ui.platform.LocalDensity.current
-        val view = androidx.compose.ui.platform.LocalView.current
-        val fallbackStatusTop = WindowInsets.statusBars.getTop(density)
-        val statusTopPx = androidx.compose.runtime.remember(view, fallbackStatusTop) {
-            androidx.core.view.ViewCompat.getRootWindowInsets(view)
-                ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars())?.top
-                ?: fallbackStatusTop
-        }
-        var statusOverlapPx by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
-        CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides activeWallpaper) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .onGloballyPositioned {
-                        val top = it.positionInWindow().y
-                        statusOverlapPx = (statusTopPx - top).toInt().coerceIn(0, statusTopPx)
-                    }
-            ) {
-                if (isGlass && containerColor == null) {
-                    if (ownsGlassBackdrop) PetalSheetGlassBackdrop(ownWallpaper, Modifier.matchParentSize())
-                    val ready = activeWallpaper?.ready == true
-                    Box(
-                        Modifier
-                            .matchParentSize()
-                            .then(if (!ready) Modifier.background(fallbackColor, sheetShape) else Modifier)
-                            .liquidGlassChrome(shape = sheetShape, enabled = true, sheenIntensity = sheen)
-                    )
-                }
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = with(density) { statusOverlapPx.toDp() })
-                        .navigationBarsPadding()
-                ) {
-                    if (dragHandle != null) {
-                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { dragHandle() }
-                    }
-                    content()
-                }
-            }
-        }
-    }
-}
+// PetalSheet has been relocated to PetalTransientSurfaces.kt as part of the shared transient surfaces unification.
 
 @Composable
 fun PetalFilterChip(

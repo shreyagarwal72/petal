@@ -2,7 +2,6 @@ package com.petal.browser.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,21 +42,14 @@ fun DownloadsEmptyIllustration(
         modifier = Modifier.size(90.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Back tray / disk outline (offset to bottom-right)
-        Canvas(
+        // Back tray / disk tonal surface (offset to bottom-right)
+        Box(
             modifier = Modifier
                 .size(width = 54.dp, height = 54.dp)
                 .offset(x = 6.dp, y = 5.dp)
-        ) {
-            val cornerRadius = CornerRadius(14.dp.toPx())
-            val strokeWidth = 3.dp.toPx()
-            drawRoundRect(
-                color = contentColor.copy(alpha = 0.5f),
-                size = size,
-                cornerRadius = cornerRadius,
-                style = Stroke(width = strokeWidth)
-            )
-        }
+                .clip(RoundedCornerShape(14.dp))
+                .background(contentColor.copy(alpha = 0.20f))
+        )
 
         // Front container card with download arrow
         Box(
@@ -65,8 +57,7 @@ fun DownloadsEmptyIllustration(
                 .offset(x = (-4).dp, y = (-3).dp)
                 .size(width = 52.dp, height = 52.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(containerColor)
-                .border(3.dp, contentColor, RoundedCornerShape(14.dp)),
+                .background(containerColor),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -100,21 +91,14 @@ fun BookmarksEmptyIllustration(
         modifier = Modifier.size(90.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Back bookmark outline (offset to bottom-right)
-        Canvas(
+        // Back bookmark tonal surface (offset to bottom-right)
+        Box(
             modifier = Modifier
                 .size(width = 46.dp, height = 62.dp)
                 .offset(x = 7.dp, y = 5.dp)
-        ) {
-            val cornerRadius = CornerRadius(12.dp.toPx())
-            val strokeWidth = 3.dp.toPx()
-            drawRoundRect(
-                color = contentColor.copy(alpha = 0.5f),
-                size = size,
-                cornerRadius = cornerRadius,
-                style = Stroke(width = strokeWidth)
-            )
-        }
+                .clip(RoundedCornerShape(12.dp))
+                .background(contentColor.copy(alpha = 0.20f))
+        )
 
         // Front bookmark card
         Box(
@@ -122,8 +106,7 @@ fun BookmarksEmptyIllustration(
                 .offset(x = (-5).dp, y = (-3).dp)
                 .size(width = 46.dp, height = 60.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(containerColor)
-                .border(3.dp, contentColor, RoundedCornerShape(12.dp)),
+                .background(containerColor),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -164,21 +147,14 @@ fun HistoryEmptyIllustration(
         modifier = Modifier.size(90.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Back history clock outline (offset to bottom-right)
-        Canvas(
+        // Back history clock tonal surface (offset to bottom-right)
+        Box(
             modifier = Modifier
                 .size(width = 54.dp, height = 54.dp)
                 .offset(x = 6.dp, y = 5.dp)
-        ) {
-            val cornerRadius = CornerRadius(16.dp.toPx())
-            val strokeWidth = 3.dp.toPx()
-            drawRoundRect(
-                color = contentColor.copy(alpha = 0.5f),
-                size = size,
-                cornerRadius = cornerRadius,
-                style = Stroke(width = strokeWidth)
-            )
-        }
+                .clip(RoundedCornerShape(16.dp))
+                .background(contentColor.copy(alpha = 0.20f))
+        )
 
         // Front clock card
         Box(
@@ -186,8 +162,7 @@ fun HistoryEmptyIllustration(
                 .offset(x = (-4).dp, y = (-3).dp)
                 .size(width = 52.dp, height = 52.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(containerColor)
-                .border(3.dp, contentColor, RoundedCornerShape(16.dp)),
+                .background(containerColor),
             contentAlignment = Alignment.Center
         ) {
             Icon(

@@ -69,7 +69,7 @@ fun PetalDownloadConfirmationDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen),
-            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+            border = null
         ) {
             Column(
                 modifier = Modifier
@@ -93,11 +93,20 @@ fun PetalDownloadConfirmationDialog(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(
-                text = if (isDuplicate) "Download File Again?" else "Download File?",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                        shape = androidx.compose.foundation.shape.CircleShape
+                    )
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = if (isDuplicate) "Download File Again?" else "Download File?",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -129,13 +138,19 @@ fun PetalDownloadConfirmationDialog(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedButton(
+                Button(
                     onClick = onDismiss,
-                    shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.ui_cancel),
@@ -143,14 +158,12 @@ fun PetalDownloadConfirmationDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
-
                 val downloadLabel = if (isDuplicate) "Download Again" else "Download"
 
                 if (onExternalDownload != null) {
                     var splitMenuExpanded by remember { mutableStateOf(false) }
 
-                    Box {
+                    Box(modifier = Modifier.weight(1.15f)) {
                         ExpressiveSplitButton(
                             label = downloadLabel,
                             onPrimaryClick = onConfirm,
@@ -158,7 +171,7 @@ fun PetalDownloadConfirmationDialog(
                             icon = Icons.Rounded.Download,
                             isMenuExpanded = splitMenuExpanded,
                             variant = SplitButtonVariant.FILLED,
-                            height = 42.dp
+                            height = 48.dp
                         )
 
                         com.petal.browser.ui.containment.PetalPopupMenu(
@@ -178,22 +191,23 @@ fun PetalDownloadConfirmationDialog(
                         }
                     }
                 } else {
-                    // No external option (e.g. blob: downloads have no URL a downloader could fetch),
-                    // so a menu arrow would be a dead control - show a plain button instead.
                     Button(
                         onClick = onConfirm,
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Download,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = downloadLabel,
                             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
@@ -232,7 +246,7 @@ fun PetalFirstTimeDownloadEngineDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen),
-            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+            border = null
         ) {
             Column(
                 modifier = Modifier
@@ -277,15 +291,16 @@ fun PetalFirstTimeDownloadEngineDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                engineModes.forEach { mode ->
+                engineModes.forEachIndexed { index, mode ->
                     val isSelected = mode.key.equals(selectedKey, ignoreCase = true)
+                    val blockShape = com.petal.browser.ui.containment.petalStackedBlockShape(index, engineModes.size)
                     Surface(
-                        shape = RoundedCornerShape(18.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceContainer,
-                        border = androidx.compose.foundation.BorderStroke(
-                            width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                        ),
+                        shape = blockShape,
+                        color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp,
+                        border = null,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
@@ -344,13 +359,19 @@ fun PetalFirstTimeDownloadEngineDialog(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedButton(
+                Button(
                     onClick = onDismiss,
-                    shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.ui_skip),
@@ -358,19 +379,20 @@ fun PetalFirstTimeDownloadEngineDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
-
                 Button(
                     onClick = {
                         val chosenMode = engineModes.firstOrNull { it.key.equals(selectedKey, ignoreCase = true) }
                             ?: com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM
                         onConfirm(chosenMode)
                     },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.ui_set_as_default),

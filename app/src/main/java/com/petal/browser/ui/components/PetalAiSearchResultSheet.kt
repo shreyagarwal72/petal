@@ -8,7 +8,6 @@ import androidx.activity.ComponentActivity
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -51,7 +50,6 @@ import com.petal.browser.compose.ai.PetalAiSearchManager
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.theme.PetalMaterialShapes
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.containment.PetalGroup
@@ -272,7 +270,7 @@ fun PetalAiSearchResultSheet(
         color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
+        border = null,
         modifier = Modifier
             .fillMaxWidth()
             .liquidGlassChrome(shape = sheetShape, enabled = isGlass, sheenIntensity = 0.65f)
@@ -313,7 +311,7 @@ fun PetalAiSearchResultSheet(
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     PetalGroupIconBadge(
-                        shape = PetalMaterialShapes.Cookie6Sided.toShape(),
+                        shape = RoundedCornerShape(12.dp),
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         size = 48.dp,
@@ -359,7 +357,7 @@ fun PetalAiSearchResultSheet(
             Surface(
                 shape = pillShape,
                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
+                border = null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .liquidGlassChrome(shape = pillShape, enabled = isGlass, sheenIntensity = 0.55f)
@@ -595,7 +593,7 @@ fun PetalAiSearchResultSheet(
                                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                                 ) {
                                     PetalGroupIconBadge(
-                                        shape = PetalMaterialShapes.SoftBoom.toShape(),
+                                        shape = RoundedCornerShape(12.dp),
                                         containerColor = MaterialTheme.colorScheme.error,
                                         contentColor = MaterialTheme.colorScheme.onError,
                                         size = 44.dp,
@@ -666,7 +664,7 @@ fun PetalAiSearchResultSheet(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
                                         PetalGroupIconBadge(
-                                            shape = PetalMaterialShapes.Sunny.toShape(),
+                                            shape = RoundedCornerShape(12.dp),
                                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                             size = 36.dp,
@@ -777,18 +775,16 @@ fun PetalAiSearchResultSheet(
                         data class SamplePrompt(
                             val prompt: String,
                             val executeQuery: String,
-                            val shapeType: com.petal.browser.ui.theme.ExpressiveShapeHolder,
                             val isDev: Boolean = false
                         )
 
                         val samplePrompts = listOf(
-                            SamplePrompt("What are the latest tech news headlines today?", "What are the latest tech news headlines today?", PetalMaterialShapes.Sunny),
-                            SamplePrompt("Explain quantum computing in simple terms", "Explain quantum computing in simple terms", PetalMaterialShapes.Cookie4Sided),
-                            SamplePrompt("Summarize current global weather trends", "Summarize current global weather trends", PetalMaterialShapes.SoftBoom),
+                            SamplePrompt("What are the latest tech news headlines today?", "What are the latest tech news headlines today?"),
+                            SamplePrompt("Explain quantum computing in simple terms", "Explain quantum computing in simple terms"),
+                            SamplePrompt("Summarize current global weather trends", "Summarize current global weather trends"),
                             SamplePrompt(
                                 "What is Nextup Resources?",
                                 "What is Nextup Resources? Summarize the platform and resources at https://nextup-resource.vercel.app",
-                                PetalMaterialShapes.Burst,
                                 isDev = true
                             )
                         )
@@ -807,7 +803,7 @@ fun PetalAiSearchResultSheet(
                                     },
                                     leading = {
                                         PetalGroupIconBadge(
-                                            shape = item.shapeType.toShape(),
+                                            shape = RoundedCornerShape(12.dp),
                                             containerColor = if (item.isDev) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                                             contentColor = if (item.isDev) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
                                             size = 44.dp,

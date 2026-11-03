@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -159,7 +160,7 @@ fun ApiIntegrationsSettingsScreenContent(
                             Text(stringResource(R.string.ui_how_to_connect_a_custom))
                         }
                         Spacer(Modifier.height(4.dp))
-                        OutlinedTextField(
+                        TextField(
                             value = customEndpoint,
                             onValueChange = { newEndpoint ->
                                 customEndpoint = newEndpoint
@@ -171,13 +172,19 @@ fun ApiIntegrationsSettingsScreenContent(
                             singleLine = true,
                             leadingIcon = { Icon(Icons.Rounded.CloudQueue, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                             shape = RoundedCornerShape(16.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
 
                     Spacer(Modifier.height(4.dp))
 
-                    OutlinedTextField(
+                    TextField(
                         value = currentKey,
                         onValueChange = { newKey ->
                             currentKey = newKey
@@ -209,6 +216,12 @@ fun ApiIntegrationsSettingsScreenContent(
                             }
                         },
                         shape = RoundedCornerShape(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -345,7 +358,7 @@ fun ApiIntegrationsSettingsScreenContent(
                     )
 
                     if (selectedProvider == AiProvider.CUSTOM) {
-                        OutlinedTextField(
+                        TextField(
                             value = selectedModel,
                             onValueChange = { newModel ->
                                 selectedModel = newModel
@@ -356,6 +369,12 @@ fun ApiIntegrationsSettingsScreenContent(
                             singleLine = true,
                             leadingIcon = { Icon(Icons.Rounded.Memory, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                             shape = RoundedCornerShape(16.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
                             modifier = Modifier.fillMaxWidth()
                         )
 

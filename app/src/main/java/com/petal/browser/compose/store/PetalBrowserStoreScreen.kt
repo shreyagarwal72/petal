@@ -50,7 +50,6 @@ import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.*
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.theme.PetalMaterialShapes
 import kotlinx.coroutines.launch
 
 /**
@@ -189,7 +188,7 @@ fun PetalBrowserStoreScreen(
                         // Search Bar
                         val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                         val storeSearchShape = RoundedCornerShape(18.dp)
-                        OutlinedTextField(
+                        TextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             placeholder = { Text(stringResource(R.string.ui_store_search_hint)) },
@@ -203,11 +202,12 @@ fun PetalBrowserStoreScreen(
                             },
                             singleLine = true,
                             shape = storeSearchShape,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -389,7 +389,7 @@ private fun StoreExtensionsPage(
                                 variant = PetalBadgeVariant.PRIMARY,
                                 size = 48.dp,
                                 iconSize = 26.dp,
-                                shape = PetalMaterialShapes.Flower.toShape()
+                                shape = RoundedCornerShape(14.dp)
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
@@ -611,7 +611,7 @@ private fun StoreScriptsPage(
                         variant = PetalBadgeVariant.SECONDARY,
                         size = 48.dp,
                         iconSize = 26.dp,
-                        shape = PetalMaterialShapes.Flower.toShape()
+                        shape = RoundedCornerShape(14.dp)
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
@@ -759,7 +759,7 @@ private fun StoreFilterListsPage(
                         variant = PetalBadgeVariant.SURFACE_TONAL,
                         size = 48.dp,
                         iconSize = 26.dp,
-                        shape = PetalMaterialShapes.Cookie6Sided.toShape()
+                        shape = RoundedCornerShape(14.dp)
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(

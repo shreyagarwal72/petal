@@ -194,15 +194,20 @@ object PetalCacheManager {
             }
         }
 
-        // 4. In-memory / HTTP caches
-        try {
-            HttpResponseCache.getInstalled()?.delete()
-        } catch (_: Exception) {}
+        // 4. Legacy HTTP response cache: only when the network cache was requested
+        // (a cookies-only clear used to throw it away as well).
+        if ((flags and Flags.NETWORK_CACHE) != 0L) {
+            try {
+                HttpResponseCache.getInstalled()?.delete()
+            } catch (_: Exception) {}
+        }
 
         // 5. File system temporary directories on background worker
         diskExecutor.execute {
             try {
-                if ((flags and Flags.APP_TEMP_CACHE) != 0L || (flags and Flags.NETWORK_CACHE) != 0L) {
+                // Only an explicit APP_TEMP_CACHE request may touch the app cache directory: it
+                // also holds share/export temp files and in-progress work unrelated to web caches.
+                if ((flags and Flags.APP_TEMP_CACHE) != 0L) {
                     val cacheDir = appContext.cacheDir
                     if (cacheDir != null && cacheDir.isDirectory) {
                         deleteDirContentsExcluding(cacheDir, "gecko", "profile", "cookies.sqlite", "databases")
@@ -275,10 +280,13 @@ object PetalCacheManager {
                 storageController.clearDataFromHost(cleanHost, flags)
 
                 // Also clear base domain if host is a subdomain (e.g., www.example.com -> example.com)
-                val parts = cleanHost.split(".")
-                if (parts.size > 2) {
-                    val baseDomain = parts.takeLast(2).joinToString(".")
-                    storageController.clearDataFromHost(baseDomain, flags)
+                // eTLD+1 via the public suffix list ("a.b.example.co.uk" -> "example.co.uk");
+                // the old "last two labels" shortcut cleared "co.uk" instead.
+                val baseDomain = try {
+                    com.petal.browser.engine.petal.blocking.PetalPublicSuffixRules.registrableDomain(cleanHost)
+                } catch (_: Throwable) { null }
+                if (!baseDomain.isNullOrBlank() && baseDomain != cleanHost) {
+                    storageController.clearDataFromBaseDomain(baseDomain, flags)
                 }
             }
 
@@ -306,10 +314,10 @@ object PetalCacheManager {
         val appContext = context.applicationContext
         try {
             PetalGeckoRuntime.onTrimMemory(appContext, level)
-            if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL ||
-                level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
-                TabThumbnailCache.clearMemory()
-            }
+            // Thumbnails are trimmed in tiers by TabThumbnailCache itself. The old check
+            // (level >= RUNNING_CRITICAL) is true for TRIM_MEMORY_UI_HIDDEN, so every time the
+            // app was backgrounded all previews, including RAM-only incognito ones, were lost.
+            TabThumbnailCache.trimMemory(level)
         } catch (_: Throwable) {}
     }
 

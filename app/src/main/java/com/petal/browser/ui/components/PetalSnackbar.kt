@@ -317,10 +317,7 @@ fun PetalSnackbar(
         tonalElevation = if (isGlass) 0.dp else 6.dp,
         // A shadow under translucent glass shows through as a dark smear.
         shadowElevation = if (isGlass) 0.dp else 8.dp,
-        border = if (isGlass) null else androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-        )
+        border = null
     ) {
         Row(
             modifier = Modifier

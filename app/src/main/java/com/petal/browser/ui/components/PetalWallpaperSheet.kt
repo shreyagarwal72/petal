@@ -889,13 +889,28 @@ fun PetalWallpaperSheet(
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                 applyPreset(preset)
                             }
-                            .border(
-                                width = if (isSelected) 2.5.dp else 0.5.dp,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(16.dp)
-                            )
                     ) {
                         WallpaperThumb(preset)
+
+                        if (isSelected) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .padding(6.dp)
+                                    .size(24.dp)
+                                    .align(Alignment.TopStart)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = "Selected",
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
 
                         if (preset.isVideo) {
                             Surface(

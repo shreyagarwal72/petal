@@ -512,8 +512,7 @@ fun PetalLinkContextMenuSheet(
         color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = if (isGlass) 0.dp else 2.dp,
         shadowElevation = if (isGlass) 0.dp else 12.dp,
-        border = if (isGlass) null
-            else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+        border = null,
         modifier = Modifier
             .fillMaxWidth()
             .then(if (isGlass) Modifier.liquidGlassChrome(menuShape, enabled = true) else Modifier),

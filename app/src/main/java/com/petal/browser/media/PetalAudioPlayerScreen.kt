@@ -34,7 +34,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -86,10 +85,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -499,7 +496,7 @@ fun PetalAudioPlayerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                val pipShape = if (isPlaying) PetalCookieShape(sides = 8, curve = 0.082, rotation = 0f) else RoundedCornerShape(16.dp)
+                val pipShape = RoundedCornerShape(16.dp)
                 Surface(
                     shape = pipShape,
                     modifier = Modifier
@@ -590,17 +587,8 @@ fun PetalAudioPlayerScreen(
 
                     Spacer(modifier = Modifier.weight(0.3f))
 
-                    // ── 2. Album Artwork: PixelPlayer Cookie Silhouette when playing ↔ Squircle when paused ──
-                    val cookieCurve by animateFloatAsState(
-                        targetValue = if (isPlaying) 0.082f else 0.0f,
-                        animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
-                        label = "cookieCurve"
-                    )
-                    val artShape: androidx.compose.ui.graphics.Shape = if (isPlaying) {
-                        PetalCookieShape(sides = 8, curve = cookieCurve.toDouble(), rotation = 0f)
-                    } else {
-                        RoundedCornerShape(32.dp)
-                    }
+                    // ── 2. Album Artwork: PixelPlayer Squircle continuous rounded art (32dp) ──
+                    val artShape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(32.dp)
 
                     if (!isVinylMode) {
                         Surface(
@@ -662,11 +650,6 @@ fun PetalAudioPlayerScreen(
                                 .shadow(24.dp, CircleShape, spotColor = Color.Black.copy(alpha = 0.5f))
                                 .clip(CircleShape)
                                 .background(Color(0xFF161618))
-                                .border(
-                                    width = 6.dp,
-                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-                                    shape = CircleShape
-                                )
                                 .clickable {
                                     isVinylMode = false
                                     PetalHapticEngine.getInstance(context).playClick(context)
@@ -702,8 +685,10 @@ fun PetalAudioPlayerScreen(
                                         modifier = Modifier
                                             .size(70.dp)
                                             .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.primary)
-                                            .border(4.dp, MaterialTheme.colorScheme.surface, CircleShape),
+                                            .background(MaterialTheme.colorScheme.surface)
+                                            .padding(4.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primary),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Icon(
@@ -972,30 +957,16 @@ fun PetalAudioPlayerScreen(
 
                 // ── More Options Modal Bottom Sheet ──
                 if (showMoreBottomSheet) {
-                    ModalBottomSheet(
+                    com.petal.browser.ui.containment.PetalSheet(
                         onDismissRequest = { showMoreBottomSheet = false },
-                        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                        containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier.then(
-                            if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), enabled = true)
-                            else Modifier
-                        )
+                        title = "Track Options"
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 24.dp)
-                                .padding(bottom = 32.dp),
+                                .padding(bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Text(
-                                text = "Track Options",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
                             // Playback Speed Selector
                             Text(
@@ -1038,8 +1009,6 @@ fun PetalAudioPlayerScreen(
                                     }
                                 }
                             }
-
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
                             // Details / Song Info Row
                             Row(

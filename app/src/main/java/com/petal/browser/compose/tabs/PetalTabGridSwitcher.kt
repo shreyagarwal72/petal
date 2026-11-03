@@ -96,7 +96,6 @@ import com.petal.browser.ui.components.PetalExpressiveMenuItem
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.unit.PetalRecentlyClosedManager
@@ -716,7 +715,7 @@ fun PetalTabGridSwitcher(
                     // ── Real-time tab & group search ─────────────
                     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                     val tabSearchShape = RoundedCornerShape(24.dp)
-                    OutlinedTextField(
+                    TextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         placeholder = {
@@ -747,11 +746,12 @@ fun PetalTabGridSwitcher(
                         },
                         singleLine = true,
                         shape = tabSearchShape,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                            unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
-                            focusedBorderColor = if (isGlass) Color.Transparent else accentColor,
-                            unfocusedBorderColor = Color.Transparent
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = if (isGlass) Color.Transparent else accentColor,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -766,8 +766,7 @@ fun PetalTabGridSwitcher(
                         Spacer(Modifier.height(10.dp))
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { isInactiveSheetVisible = true }
@@ -786,8 +785,7 @@ fun PetalTabGridSwitcher(
                                 ) {
                                     Surface(
                                         shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
+                                        color = MaterialTheme.colorScheme.primaryContainer,
                                         modifier = Modifier.size(38.dp)
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
@@ -862,10 +860,6 @@ fun PetalTabGridSwitcher(
                             shape = CircleShape,
                             color = if (isThresholdReached) accentColor else MaterialTheme.colorScheme.surfaceContainerHighest,
                             contentColor = if (isThresholdReached) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                            border = BorderStroke(
-                                1.5.dp,
-                                if (isThresholdReached) accentColor else MaterialTheme.colorScheme.outlineVariant
-                            ),
                             shadowElevation = (lockProgress * 8f).dp,
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
@@ -1548,23 +1542,34 @@ fun PetalTabGridSwitcher(
                         Text(stringResource(R.string.ui_new_group))
                     }
                 } else {
-                    OutlinedTextField(
+                    TextField(
                         value = newGroupNameInput,
                         onValueChange = { newGroupNameInput = it },
                         placeholder = { Text(stringResource(R.string.ui_group_name_optional)) },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = accentColor,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        OutlinedButton(
+                        FilledTonalButton(
                             onClick = { isCreatingNew = false },
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.weight(1f)
+                            shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                         ) {
                             Text(stringResource(R.string.ui_back))
                         }
@@ -1581,9 +1586,12 @@ fun PetalTabGridSwitcher(
                                 showAddToGroupDialog = false
                                 leaveSelectionMode()
                             },
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = accentColor),
-                            modifier = Modifier.weight(1f)
+                            shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = accentColor,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                         ) {
                             Text(stringResource(R.string.ui_create))
                         }
@@ -1694,8 +1702,7 @@ private fun RegularTabEmptyIllustration(
                 .offset(x = (-5).dp, y = (-3).dp)
                 .size(width = 44.dp, height = 64.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(containerColor)
-                .border(3.2.dp, phoneColor, RoundedCornerShape(12.dp)),
+                .background(containerColor),
             contentAlignment = Alignment.TopCenter
         ) {
             // Speaker / Camera notch at top
@@ -1744,7 +1751,7 @@ private fun TabManagerEmptyState(
     ) {
         val badgeColor = if (isIncognito) MaterialTheme.colorScheme.tertiary else accentColor
         Surface(
-            shape = PetalMaterialShapes.Bun.toShape(),
+            shape = CircleShape,
             modifier = Modifier.size(112.dp),
             color = badgeColor,
             tonalElevation = 6.dp
@@ -1884,11 +1891,9 @@ private fun PetalTabCard(
     }
 
     val borderStroke = when {
-        isHoveredForMerge -> BorderStroke(3.dp, MaterialTheme.colorScheme.tertiary)
-        isDragging -> BorderStroke(2.5.dp, accentColor)
-        tab.isSelected -> BorderStroke(2.5.dp, groupColor ?: accentColor)
-        groupColor != null -> BorderStroke(2.dp, groupColor.copy(alpha = 0.8f))
-        else -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+        isHoveredForMerge -> BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        tab.isSelected -> BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        else -> null
     }
 
     PetalHeroCard(
@@ -1924,7 +1929,7 @@ private fun PetalTabCard(
                     }
                 )
             }
-            .border(borderStroke, PetalContainmentShapes.Hero)
+            .then(if (borderStroke != null) Modifier.border(borderStroke, PetalContainmentShapes.Hero) else Modifier)
             .entrance()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -2342,7 +2347,6 @@ private fun PetalTabGroupCard(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(0.72f)
-            .border(BorderStroke(1.5.dp, groupColor.copy(alpha = 0.6f)), PetalContainmentShapes.Hero)
             .bouncyClickable(onClick = onGroupClick)
             .entrance()
     ) {
@@ -2491,10 +2495,18 @@ private fun PetalTabGroupInspectionDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     if (isEditingName) {
-                        OutlinedTextField(
+                        TextField(
                             value = groupNameInput,
                             onValueChange = { groupNameInput = it },
                             singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                focusedIndicatorColor = accentColor,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                            ),
                             trailingIcon = {
                                 IconButton(onClick = {
                                     onRenameGroup(groupNameInput)
@@ -2541,7 +2553,6 @@ private fun PetalTabGroupInspectionDialog(
                         Surface(
                             shape = CircleShape,
                             color = parsedColor,
-                            border = if (isSelectedColor) BorderStroke(2.5.dp, MaterialTheme.colorScheme.onSurface) else null,
                             modifier = Modifier
                                 .size(28.dp)
                                 .clickable {

@@ -6,9 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -116,7 +114,7 @@ fun PetalSummaryBoxDialog(
                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = if (isGlass) 0.dp else 8.dp,
                 shadowElevation = if (isGlass) 0.dp else 12.dp,
-                border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
+                border = null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 4.dp)
@@ -142,7 +140,7 @@ fun PetalSummaryBoxDialog(
                             Surface(
                                 shape = CircleShape,
                                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.primaryContainer,
-                                border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.22f)) else null,
+                                border = null,
                                 modifier = Modifier
                                     .size(40.dp)
                                     .then(if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.5f, pressFx = true) else Modifier)
@@ -246,14 +244,10 @@ fun PetalSummaryBoxDialog(
                                         Spacer(Modifier.width(6.dp))
                                         Text(stringResource(R.string.ui_retry), maxLines = 1)
                                     }
-                                    val cfgShape = RoundedCornerShape(12.dp)
-                                    OutlinedButton(
+                                    FilledTonalButton(
                                         onClick = onOpenSettings,
-                                        shape = cfgShape,
-                                        border = if (isGlass) null
-                                            else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                        shape = RoundedCornerShape(12.dp),
                                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                                        modifier = if (isGlass) Modifier.liquidGlassChrome(cfgShape, enabled = true, sheenIntensity = 0.5f) else Modifier
                                     ) {
                                         Icon(Icons.Rounded.Key, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(Modifier.width(4.dp))
@@ -317,12 +311,11 @@ fun PetalSummaryBoxDialog(
                     }
 
                     // Primary Expressive "Ask Question" Button at last
-                    val askButtonShape = RoundedCornerShape(16.dp)
                     Button(
                         onClick = onAskQuestion,
-                        shape = askButtonShape,
-                        modifier = if (isGlass) Modifier.liquidGlassChrome(askButtonShape, enabled = true, sheenIntensity = 0.65f, pressFx = true) else Modifier,
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+                        shape = RoundedCornerShape(50.dp),
+                        modifier = if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(50.dp), enabled = true, sheenIntensity = 0.65f, pressFx = true) else Modifier,
+                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)
                     ) {
                         Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))

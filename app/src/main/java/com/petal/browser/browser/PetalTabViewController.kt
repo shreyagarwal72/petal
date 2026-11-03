@@ -78,6 +78,77 @@ class PetalTabViewController private constructor(
     // of falling through to Home.
     @Volatile
     private var historyPending = false
+    @Volatile
+    private var historyPendingSince = 0L
+    // Set once the restored session has reported a real (non-blank) location. Until then any
+    // "loading finished" callback belongs to the session's own initial about:blank document.
+    @Volatile
+    private var restoreLocationSeen = false
+
+    // Own URL trail of this tab (final URLs only), persisted next to the Gecko session state.
+    // It is the safety net for Back after a restart: if Gecko cannot restore its history stack
+    // (state missing/corrupt/rejected), Back still walks this trail instead of dropping to Home.
+    private val navUrls = ArrayList<String>()
+    private var navIndex = -1
+    private var navFallbackEligible = false
+
+    /** Pending restored history is only trusted briefly; afterwards the URL trail takes over. */
+    private fun isHistoryPending(): Boolean =
+        historyPending && android.os.SystemClock.uptimeMillis() - historyPendingSince < 4000L
+
+    private fun trackNavigation(url: String) {
+        if (isIncognito() || url.isBlank() || url.equals("about:blank", ignoreCase = true) ||
+            com.petal.browser.unit.PetalBrowserUtils.isHomePage(url)) return
+        if (navIndex in navUrls.indices && navUrls[navIndex] == url) return
+        when {
+            navIndex > 0 && navUrls[navIndex - 1] == url -> navIndex--
+            navIndex >= 0 && navIndex + 1 < navUrls.size && navUrls[navIndex + 1] == url -> navIndex++
+            else -> {
+                while (navUrls.size > navIndex + 1) navUrls.removeAt(navUrls.size - 1)
+                navUrls.add(url)
+                navIndex = navUrls.size - 1
+                while (navUrls.size > 40) { navUrls.removeAt(0); navIndex-- }
+            }
+        }
+        statePersistHandler.removeCallbacks(statePersistRunnable)
+        statePersistHandler.postDelayed(statePersistRunnable, 600L)
+    }
+
+    /** Snapshot of the URL trail (oldest first, current page last) for persistence. */
+    fun captureNavUrls(): List<String>? {
+        if (isIncognito() || navUrls.size < 2) return null
+        return ArrayList(navUrls)
+    }
+
+    /** Re-installs a persisted URL trail. Call right after bindTab, before loading/restoring. */
+    @MainThread
+    fun restoreNavTrail(urls: List<String>, currentUrl: String) {
+        navUrls.clear()
+        navUrls.addAll(urls.filter { it.isNotBlank() }.takeLast(40))
+        if (navUrls.isEmpty() || navUrls.last() != currentUrl) navUrls.add(currentUrl)
+        navIndex = navUrls.size - 1
+        navFallbackEligible = navUrls.size > 1
+    }
+
+    private fun canTrailBack(): Boolean = navFallbackEligible && navIndex > 0
+
+    private fun trailBack() {
+        val target = navUrls.getOrNull(navIndex - 1) ?: return
+        val gs = getGeckoSession() ?: return
+        pendingNavUrl = target
+        pendingNavSince = android.os.SystemClock.uptimeMillis()
+        try {
+            // REPLACE_HISTORY keeps Gecko's own stack at a single entry, so the next Back walks
+            // the trail again instead of bouncing between two Gecko entries.
+            gs.load(
+                org.mozilla.geckoview.GeckoSession.Loader()
+                    .uri(target)
+                    .flags(org.mozilla.geckoview.GeckoSession.LOAD_FLAGS_REPLACE_HISTORY)
+            )
+        } catch (_: Throwable) {
+            observedSession?.loadUrl(target)
+        }
+    }
 
     private val statePersistHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val statePersistRunnable = Runnable { persistEngineStateNow() }
@@ -96,9 +167,13 @@ class PetalTabViewController private constructor(
         val url = pageUrl
         if (url.isBlank() || url.equals("about:blank", ignoreCase = true) ||
             com.petal.browser.unit.PetalBrowserUtils.isHomePage(url)) return
-        val serialized = captureEngineState() ?: return
+        val serialized = captureEngineState()
+        val trail = captureNavUrls()
         val appCtx = appContext
-        STATE_WRITER.execute { com.petal.browser.unit.PetalTabStateStore.write(appCtx, id, serialized) }
+        STATE_WRITER.execute {
+            if (serialized != null) com.petal.browser.unit.PetalTabStateStore.write(appCtx, id, serialized)
+            if (trail != null) com.petal.browser.unit.PetalTabStateStore.writeNav(appCtx, id, trail)
+        }
     }
     private var loading = false
     private var progress = 0
@@ -178,7 +253,11 @@ class PetalTabViewController private constructor(
                 android.util.Log.d("PetalTabNav", "ignoring initial about:blank while loading $pendingNavUrl")
                 return
             }
-            if (!url.equals("about:blank", ignoreCase = true)) pendingNavUrl = null
+            if (!url.equals("about:blank", ignoreCase = true)) {
+                pendingNavUrl = null
+                if (historyPending) restoreLocationSeen = true
+                trackNavigation(url)
+            }
             if (pageUrl != url) {
                 previewRevision++
                 previewRetryCount = 0
@@ -209,9 +288,10 @@ class PetalTabViewController private constructor(
         }
 
         override fun onLoadingStateChange(loading: Boolean) {
-            if (!loading && historyPending && !isStaleInitialBlank(pageUrl) &&
-                !pageUrl.equals("about:blank", ignoreCase = true)) {
-                // Gecko has now reported its real history; trust backAvailable again.
+            // pageUrl is already the restored URL at this point, so isStaleInitialBlank(pageUrl) can
+            // never detect the session's own initial about:blank load finishing. Only a location
+            // reported by the restored session counts as "Gecko has the real history now".
+            if (!loading && historyPending && restoreLocationSeen) {
                 historyPending = false
             }
             if (this@PetalTabViewController.loading != loading && loading) {
@@ -231,6 +311,8 @@ class PetalTabViewController private constructor(
         override fun onNavigationStateChange(canGoBack: Boolean?, canGoForward: Boolean?) {
             canGoBack?.let { backAvailable = it }
             canGoForward?.let { forwardAvailable = it }
+            // Gecko has now spoken about its history, so "pending" no longer applies.
+            if (canGoBack != null && restoreLocationSeen) historyPending = false
             tab?.let {
                 PetalEngineStore.updateNavigationState(
                     appContext,
@@ -425,6 +507,8 @@ class PetalTabViewController private constructor(
         backAvailable = false
         forwardAvailable = false
         historyPending = false
+        restoreLocationSeen = false
+        navUrls.clear(); navIndex = -1; navFallbackEligible = false
         statePersistHandler.removeCallbacks(statePersistRunnable)
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
         engineView.render(session)
@@ -851,9 +935,11 @@ class PetalTabViewController private constructor(
                     userInteraction
                 )
             )
-        } else if (historyPending) {
+        } else if (isHistoryPending()) {
             // Restored history that Gecko has not reported yet: ask the engine directly.
             try { getGeckoSession()?.goBack(userInteraction) } catch (_: Throwable) {}
+        } else if (canTrailBack()) {
+            trailBack()
         }
     }
 
@@ -878,11 +964,11 @@ class PetalTabViewController private constructor(
         if (fullScreenFeature?.onBackPressed() == true) return
         session.processBackPressed { handled ->
             if (handled) return@processBackPressed
-            if (backAvailable || historyPending) goBack() else onUnhandled()
+            if (backAvailable || isHistoryPending() || canTrailBack()) goBack() else onUnhandled()
         }
     }
 
-    fun canGoBack(): Boolean = backAvailable || historyPending
+    fun canGoBack(): Boolean = backAvailable || isHistoryPending() || canTrailBack()
 
     fun canGoForward(): Boolean = forwardAvailable
 
@@ -1132,6 +1218,8 @@ class PetalTabViewController private constructor(
             pendingNavSince = android.os.SystemClock.uptimeMillis()
             gs.restoreState(state)
             latestGeckoState = state
+            restoreLocationSeen = false
+            historyPendingSince = android.os.SystemClock.uptimeMillis()
             historyPending = restoredStateHasHistory(serializedState)
             true
         } catch (t: Throwable) {
@@ -1306,14 +1394,23 @@ class PetalTabViewController private constructor(
 
     override fun isIncognito(): Boolean = tab?.content?.private ?: false
 
-    override fun destroy() {
+    override fun destroy() = destroy(keepThumbnail = false)
+
+    /**
+     * @param keepThumbnail true when the tab itself stays open (memory-saver suspension): the
+     *        placeholder that replaces this controller still needs its preview. Only a real
+     *        close may evict it.
+     */
+    fun destroy(keepThumbnail: Boolean) {
         stopThumbnails()
         val removedTabId = tab?.id
         active = false
-        if (isIncognito()) {
-            removedTabId?.let(TabThumbnailCache::removePrivate)
-        } else {
-            removedTabId?.let(TabThumbnailCache::remove)
+        if (!keepThumbnail) {
+            if (isIncognito()) {
+                removedTabId?.let(TabThumbnailCache::removePrivate)
+            } else {
+                removedTabId?.let(TabThumbnailCache::remove)
+            }
         }
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(getGeckoSession(), null)
         com.petal.browser.extensions.PetalExtensionManager.detachSession(getGeckoSession())

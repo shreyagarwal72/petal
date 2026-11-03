@@ -1,12 +1,11 @@
 package com.petal.browser.ui.components
 
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -43,7 +42,7 @@ import com.petal.browser.R
  * - generous 56dp menu rows and spring/motion supplied by MaterialExpressiveTheme
  */
 object PetalExpressivePopupDefaults {
-    val dialogShape: Shape = RoundedCornerShape(32.dp)
+    val dialogShape: Shape = RoundedCornerShape(28.dp)
     val menuShape: Shape = RoundedCornerShape(24.dp)
     val menuContainerColor: Color
         @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -122,24 +121,46 @@ fun PetalExpressiveAlertDialog(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (dismissText != null) {
-                PetalLiquidButton(
+                Button(
                     onClick = { (onDismiss ?: onDismissRequest)() },
-                    variant = PetalButtonVariant.Text,
-                    modifier = Modifier.heightIn(min = 48.dp)
+                    shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
                 ) {
-                    Text(dismissText)
+                    Text(dismissText, fontWeight = FontWeight.SemiBold)
                 }
-                Spacer(Modifier.width(8.dp))
             }
 
-            PetalLiquidButton(
+            Button(
                 onClick = onConfirm,
-                variant = if (destructive) PetalButtonVariant.Destructive else PetalButtonVariant.Filled,
-                modifier = Modifier.heightIn(min = 48.dp)
+                shape = if (dismissText != null) {
+                    RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp)
+                } else {
+                    RoundedCornerShape(50.dp)
+                },
+                colors = if (destructive) {
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                } else {
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
             ) {
                 Text(confirmText, fontWeight = FontWeight.Bold)
             }
@@ -201,30 +222,49 @@ fun PetalExpressiveTextPromptDialog(
                 )
             }
 
-            OutlinedTextField(
+            TextField(
                 value = textState.value,
                 onValueChange = { textState.value = it },
                 shape = RoundedCornerShape(16.dp),
                 singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(
+                Button(
                     onClick = onDismiss,
-                    modifier = Modifier.heightIn(min = 48.dp)
+                    shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
                 ) {
-                    Text(stringResource(R.string.ui_cancel))
+                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
                 }
-                Spacer(Modifier.width(8.dp))
+
                 Button(
                     onClick = { onConfirm(textState.value) },
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
                 ) {
                     Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
                 }
@@ -438,21 +478,38 @@ fun PetalExpressiveChoiceDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(
+                Button(
                     onClick = onDismiss,
-                    modifier = Modifier.heightIn(min = 44.dp)
+                    shape = if (multiple) {
+                        RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp)
+                    } else {
+                        RoundedCornerShape(50.dp)
+                    },
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
                 ) {
                     Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
                 }
+
                 if (multiple) {
-                    Spacer(Modifier.width(8.dp))
                     Button(
                         onClick = { onConfirm(selected.toList()) },
-                        modifier = Modifier.heightIn(min = 44.dp),
-                        shape = RoundedCornerShape(14.dp)
+                        shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
                     ) {
                         Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
                     }
@@ -519,23 +576,28 @@ fun PetalExpressiveColorDialog(
                 .height(72.dp)
                 .clip(RoundedCornerShape(24.dp))
                 .background(Color(current))
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), RoundedCornerShape(24.dp))
         )
         androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(PetalColorPresets.size) { i ->
                 val c = PetalColorPresets[i]
+                val isSelected = c == current
                 Box(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(androidx.compose.foundation.shape.CircleShape)
                         .background(Color(c))
-                        .border(
-                            if (c == current) 3.dp else 1.dp,
-                            if (c == current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                            androidx.compose.foundation.shape.CircleShape
+                        .clickable { apply(c) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isSelected) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Rounded.Check,
+                            contentDescription = null,
+                            tint = if (Color(c).luminance() > 0.5f) Color.Black else Color.White,
+                            modifier = Modifier.size(20.dp)
                         )
-                        .clickable { apply(c) }
-                )
+                    }
+                }
             }
         }
         listOf(Triple("R", r, 0), Triple("G", g, 1), Triple("B", b, 2)).forEach { (label, value, idx) ->
@@ -553,7 +615,7 @@ fun PetalExpressiveColorDialog(
                 Text(value.toInt().toString(), style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(36.dp))
             }
         }
-        OutlinedTextField(
+        TextField(
             value = hexText,
             onValueChange = { v ->
                 hexText = v
@@ -567,16 +629,46 @@ fun PetalExpressiveColorDialog(
             label = { Text("Hex") },
             singleLine = true,
             shape = RoundedCornerShape(16.dp),
+            colors = TextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+            ),
             modifier = Modifier.fillMaxWidth()
         )
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.ui_cancel)) }
-            Spacer(Modifier.width(8.dp))
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+            ) {
+                Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+            }
+
             Button(
                 onClick = { onConfirm(petalToHex(current)) },
-                modifier = Modifier.heightIn(min = 48.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) { Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold) }
+                shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+            ) {
+                Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -697,17 +789,52 @@ fun PetalExpressiveDateTimeDialog(
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 TimePicker(state = timeState)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 if (hasDate) {
-                    TextButton(onClick = { step = 0 }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Back") }
+                    Button(
+                        onClick = { step = 0 },
+                        shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
+                    ) {
+                        Text("Back", fontWeight = FontWeight.SemiBold)
+                    }
                 }
-                TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.ui_cancel)) }
-                Spacer(Modifier.width(8.dp))
+                Button(
+                    onClick = onDismiss,
+                    shape = if (hasDate) RoundedCornerShape(6.dp) else RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                ) {
+                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                }
                 Button(
                     onClick = { onConfirm(result()) },
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    shape = RoundedCornerShape(16.dp)
-                ) { Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold) }
+                    shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                ) {
+                    Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
@@ -745,42 +872,67 @@ fun PetalExpressiveAuthPromptDialog(
             }
 
             if (!isPasswordOnly) {
-                OutlinedTextField(
+                TextField(
                     value = usernameState.value,
                     onValueChange = { usernameState.value = it },
                     label = { Text(stringResource(R.string.ui_username)) },
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            OutlinedTextField(
+            TextField(
                 value = passwordState.value,
                 onValueChange = { passwordState.value = it },
                 label = { Text(stringResource(R.string.ui_password)) },
                 shape = RoundedCornerShape(16.dp),
                 visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                 singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(
+                Button(
                     onClick = onDismiss,
-                    modifier = Modifier.heightIn(min = 48.dp)
+                    shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
                 ) {
-                    Text(stringResource(R.string.ui_cancel))
+                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
                 }
-                Spacer(Modifier.width(8.dp))
+
                 Button(
                     onClick = { onConfirm(usernameState.value, passwordState.value) },
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
                 ) {
                     Text(stringResource(R.string.ui_sign_in), fontWeight = FontWeight.Bold)
                 }

@@ -26,7 +26,6 @@ package com.petal.browser.ui.components
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -189,7 +188,7 @@ fun PetalCrashRecoveryHost(
             Surface(
                 shape = previewShape,
                 color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLowest,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.25f else 0.45f)),
+                border = null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(if (isGlass) Modifier.liquidGlassChrome(previewShape, enabled = true, sheenIntensity = 0.35f) else Modifier)
@@ -252,26 +251,22 @@ fun PetalCrashRecoveryHost(
                 // Secondary Actions Row: Symmetrical View Log + Dismiss
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    FilledTonalButton(
+                    Button(
                         onClick = {
                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.4f)
                             showFullTraceDialog = true
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp)
-                            .then(
-                                if (isGlass) Modifier.liquidGlassChrome(
-                                    shape = RoundedCornerShape(14.dp),
-                                    enabled = true,
-                                    sheenIntensity = 0.35f,
-                                    pressFx = true
-                               ) else Modifier
-                            ),
-                        shape = RoundedCornerShape(14.dp)
+                            .heightIn(min = 48.dp),
+                        shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
                     ) {
                         Icon(Icons.Rounded.Terminal, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
@@ -283,21 +278,16 @@ fun PetalCrashRecoveryHost(
                         )
                     }
 
-                    OutlinedButton(
+                    Button(
                         onClick = handleDismiss,
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp)
-                            .then(
-                                if (isGlass) Modifier.liquidGlassChrome(
-                                    shape = RoundedCornerShape(14.dp),
-                                    enabled = true,
-                                    sheenIntensity = 0.25f,
-                                    pressFx = true
-                                ) else Modifier
-                            ),
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.3f else 0.7f))
+                            .heightIn(min = 48.dp),
+                        shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
                     ) {
                         Text(
                             text = stringResource(R.string.ui_dismiss),
@@ -374,7 +364,7 @@ fun PetalCrashRecoveryHost(
                     Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = if (isGlass) MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceContainerLowest,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                        border = null,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
@@ -404,9 +394,10 @@ fun PetalCrashRecoveryHost(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedButton(
+                        Button(
                             onClick = {
                                 try {
                                     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -418,16 +409,12 @@ fun PetalCrashRecoveryHost(
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(48.dp)
-                                .then(
-                                    if (isGlass) Modifier.liquidGlassChrome(
-                                        shape = RoundedCornerShape(14.dp),
-                                        enabled = true,
-                                        sheenIntensity = 0.35f,
-                                        pressFx = true
-                                    ) else Modifier
-                                ),
-                            shape = RoundedCornerShape(14.dp)
+                                .heightIn(min = 48.dp),
+                            shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
                         ) {
                             Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
@@ -440,16 +427,12 @@ fun PetalCrashRecoveryHost(
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(48.dp)
-                                .then(
-                                    if (isGlass) Modifier.liquidGlassChrome(
-                                        shape = RoundedCornerShape(14.dp),
-                                        enabled = true,
-                                        sheenIntensity = 0.65f,
-                                        pressFx = true
-                                    ) else Modifier
-                                ),
-                            shape = RoundedCornerShape(14.dp)
+                                .heightIn(min = 48.dp),
+                            shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
                         ) {
                             Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
@@ -527,32 +510,34 @@ fun PetalCrashReportingPicker(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 options.forEachIndexed { index, option ->
                     val isChecked = selectedMode == option
-                    if (isChecked) {
-                        Button(
-                            onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                onModeSelected(option)
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(labels[index], fontWeight = FontWeight.Bold)
+                    val segmentShape = com.petal.browser.ui.containment.petalConnectedShape(index, options.size)
+                    Button(
+                        onClick = {
+                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                            onModeSelected(option)
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 44.dp),
+                        shape = segmentShape,
+                        colors = if (isChecked) {
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
                         }
-                    } else {
-                        OutlinedButton(
-                            onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                onModeSelected(option)
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(labels[index])
-                        }
+                    ) {
+                        Text(labels[index], fontWeight = if (isChecked) FontWeight.Bold else FontWeight.Medium)
                     }
                 }
             }

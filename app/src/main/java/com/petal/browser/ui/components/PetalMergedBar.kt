@@ -1,7 +1,6 @@
 package com.petal.browser.ui.components
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -130,8 +129,6 @@ fun PetalMergedBar(
         else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
-    val topBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-
     val rawStatusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val isImmersive = rawStatusTop == 0.dp
     val statusBarTopInset = if (isPreview || isImmersive) 0.dp else WindowInsets.statusBars.union(WindowInsets.displayCutout)
@@ -157,7 +154,6 @@ fun PetalMergedBar(
 
     val animatedContainerColor = if (isLiquidGlass) Color.Transparent else containerColor.copy(alpha = containerColor.alpha * outerBgAlpha)
     val animatedElevation = (if (isLiquidGlass) 0.dp else if (resolvedIsBottom) 2.dp else 4.dp) * outerBgAlpha
-    val animatedBorder = if (resolvedIsBottom && !isLiquidGlass && outerBgAlpha > 0.05f) BorderStroke(0.65.dp, topBorderColor.copy(alpha = topBorderColor.alpha * outerBgAlpha)) else null
 
     Box(
         modifier = modifier.fillMaxWidth(),
@@ -169,7 +165,6 @@ fun PetalMergedBar(
                 color = animatedContainerColor,
                 tonalElevation = animatedElevation,
                 shadowElevation = animatedElevation,
-                border = animatedBorder,
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(

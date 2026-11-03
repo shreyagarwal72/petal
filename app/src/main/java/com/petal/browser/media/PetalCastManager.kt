@@ -613,7 +613,7 @@ fun PetalCastDeviceSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Open with external apps button
-            OutlinedButton(
+            FilledTonalButton(
                 onClick = {
                     PetalHapticEngine.getInstance(context).playClick(context)
                     onOpenExternal()

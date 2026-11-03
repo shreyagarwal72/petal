@@ -589,7 +589,7 @@ fun PetalOmniboxPage(
                                 .entrance(index = 0),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedTextField(
+                            TextField(
                                 value = queryState,
                                 onValueChange = { queryState = it },
                                 placeholder = {
@@ -721,11 +721,11 @@ fun PetalOmniboxPage(
                                     }
                                 }),
                                 shape = RoundedCornerShape(50),
-                                colors = OutlinedTextFieldDefaults.colors(
+                                colors = TextFieldDefaults.colors(
                                     focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                                     unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    focusedBorderColor = Color.Transparent,
-                                    unfocusedBorderColor = Color.Transparent
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1365,7 +1365,7 @@ fun PetalOmniboxPage(
                 }
             },
             dismissButton = {
-                OutlinedButton(
+                FilledTonalButton(
                     onClick = { suggestionToRemove = null },
                     shape = RoundedCornerShape(12.dp)
                 ) {

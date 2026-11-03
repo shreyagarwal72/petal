@@ -1,7 +1,6 @@
 package com.petal.browser.compose.settings.screens
 
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -626,7 +625,6 @@ fun AddressBarSettingsScreen(
                             Surface(
                                 shape = cardShape,
                                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.25f else 0.45f)),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(cardShape)
@@ -761,7 +759,6 @@ private fun ActionsEditorList(
             Surface(
                 shape = cardShape,
                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.25f else 0.45f)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(

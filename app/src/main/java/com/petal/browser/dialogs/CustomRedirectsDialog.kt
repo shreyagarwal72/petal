@@ -325,30 +325,34 @@ private fun CreateNewRedirectDialog(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                OutlinedTextField(
+                TextField(
                     value = sourceText,
                     onValueChange = { sourceText = it },
                     label = { Text(stringResource(R.string.ui_source_domain_pattern)) },
                     placeholder = { Text(stringResource(R.string.ui_e_g_reddit_com)) },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = Color.Transparent
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                OutlinedTextField(
+                TextField(
                     value = targetText,
                     onValueChange = { targetText = it },
                     label = { Text(stringResource(R.string.ui_target_redirect_frontend)) },
                     placeholder = { Text(stringResource(R.string.ui_e_g_redlib_v82_net)) },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = Color.Transparent
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )

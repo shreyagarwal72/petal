@@ -100,44 +100,23 @@ fun PetalConfirmSheetContent(
 
         Spacer(Modifier.height(8.dp))
 
-        // Action Buttons Row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OutlinedButton(
-                onClick = {
-                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.4f)
-                    onCancel()
-                },
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
-            ) {
-                Text(cancelText)
-            }
-
-            Button(
-                onClick = {
-                    PetalHapticEngine.getInstance(context).play(
-                        if (isDestructive) PetalHapticEngine.Pattern.HEAVY_CLICK else PetalHapticEngine.Pattern.CLICK,
-                        0.8f
-                    )
-                    onConfirm()
-                },
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                    contentColor = if (isDestructive) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary
-                ),
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
-            ) {
-                Text(confirmText, fontWeight = FontWeight.Bold)
-            }
-        }
+        // Action Buttons Row — connected segmented action row (0 borders)
+        com.petal.browser.ui.containment.PetalActionRow(
+            confirmText = confirmText,
+            onConfirm = {
+                PetalHapticEngine.getInstance(context).play(
+                    if (isDestructive) PetalHapticEngine.Pattern.HEAVY_CLICK else PetalHapticEngine.Pattern.CLICK,
+                    0.8f
+                )
+                onConfirm()
+            },
+            dismissText = cancelText,
+            onDismiss = {
+                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.4f)
+                onCancel()
+            },
+            destructive = isDestructive
+        )
 
         Spacer(Modifier.height(12.dp))
     }

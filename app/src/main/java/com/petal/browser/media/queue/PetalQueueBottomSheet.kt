@@ -85,7 +85,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.media.PetalAudioPalette
-import com.petal.browser.media.PetalCookieShape
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -243,7 +242,7 @@ fun PetalQueueBottomSheet(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Track Thumbnail / Animated Equalizer if playing
-                            val shape = if (isCurrent && isPlaying) PetalCookieShape(8, 0.082, 0f) else RoundedCornerShape(10.dp)
+                            val shape = RoundedCornerShape(10.dp)
                             Surface(
                                 shape = shape,
                                 color = audioPalette.surfaceContainerHigh,

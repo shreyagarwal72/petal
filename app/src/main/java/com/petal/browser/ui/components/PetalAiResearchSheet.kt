@@ -11,7 +11,6 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -45,7 +44,6 @@ import com.petal.browser.compose.ai.ResearchMode
 import com.petal.browser.unit.PetalBrowserUtils
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
@@ -56,7 +54,6 @@ import com.petal.browser.ui.containment.PetalSectionLabel
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.PetalStatusHeroCard
 import com.petal.browser.ui.containment.petalGroupShape
-import com.petal.browser.ui.theme.PetalMaterialShapes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,7 +177,7 @@ fun PetalAiResearchSheet(
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     PetalGroupIconBadge(
-                        shape = PetalMaterialShapes.Cookie6Sided.toShape(),
+                        shape = RoundedCornerShape(12.dp),
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         size = 48.dp,
@@ -289,7 +286,7 @@ fun PetalAiResearchSheet(
                         )
 
                         isCustomProvider -> AiFieldRow(position) {
-                            OutlinedTextField(
+                            TextField(
                                 value = selectedModel,
                                 onValueChange = { newModel ->
                                     selectedModel = newModel
@@ -370,7 +367,7 @@ fun PetalAiResearchSheet(
                         PetalGroup(rowCount = keyRows.size) { index, position ->
                             when (keyRows[index]) {
                                 AiKeyRow.ENDPOINT -> AiFieldRow(position) {
-                                    OutlinedTextField(
+                                    TextField(
                                         value = customEndpoint,
                                         onValueChange = { newEp ->
                                             customEndpoint = newEp
@@ -387,7 +384,7 @@ fun PetalAiResearchSheet(
                                 }
 
                                 AiKeyRow.KEY -> AiFieldRow(position) {
-                                    OutlinedTextField(
+                                    TextField(
                                         value = apiKey,
                                         onValueChange = { newKey ->
                                             apiKey = newKey
@@ -485,7 +482,7 @@ fun PetalAiResearchSheet(
                 Surface(
                     shape = askShape,
                     color = if (askGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                    border = if (askGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
+                    border = null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .then(if (askGlass) Modifier.liquidGlassChrome(askShape, enabled = true, sheenIntensity = 0.55f) else Modifier)
@@ -647,7 +644,7 @@ fun PetalAiResearchSheet(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             PetalGroupIconBadge(
-                                shape = PetalMaterialShapes.SoftBoom.toShape(),
+                                shape = RoundedCornerShape(12.dp),
                                 containerColor = MaterialTheme.colorScheme.error,
                                 contentColor = MaterialTheme.colorScheme.onError,
                                 size = 40.dp,
@@ -699,7 +696,7 @@ fun PetalAiResearchSheet(
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     PetalGroupIconBadge(
-                                        shape = PetalMaterialShapes.Sunny.toShape(),
+                                        shape = RoundedCornerShape(12.dp),
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                         size = 36.dp,
@@ -773,10 +770,11 @@ private fun aiFieldColors(): TextFieldColors {
     val glass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     // Opaque field fills sit on top of the glass card and look like a flat dark slab.
     val fill = if (glass) Color.Black.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainerHighest
-    return OutlinedTextFieldDefaults.colors(
+    return TextFieldDefaults.colors(
         focusedContainerColor = fill,
         unfocusedContainerColor = fill,
-        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+        unfocusedIndicatorColor = Color.Transparent,
     )
 }
 

@@ -1,41 +1,47 @@
 package com.petal.browser.ui.components
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 /**
  * Option item model for [PetalChoiceButtonGroup].
@@ -48,42 +54,43 @@ data class PetalButtonGroupItem<T>(
     val enabled: Boolean = true,
 )
 
+private fun petalChoiceShape(index: Int, count: Int): Shape = when {
+    count <= 1 -> RoundedCornerShape(50.dp)
+    index == 0 -> RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp)
+    index == count - 1 -> RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp)
+    else -> RoundedCornerShape(6.dp)
+}
+
 /**
- * Universal pick-one connected toggle button group following Material 3 Expressive guidelines,
- * mirroring the connected button group style in Essentials.
- *
- * Features:
- * - Built as a Row spaced with [ButtonGroupDefaults.ConnectedSpaceBetween].
- * - Uses M3 Expressive [ToggleButton] per option.
- * - Connected shape transitions via [ButtonGroupDefaults.connectedLeadingButtonShapes],
- *   [ButtonGroupDefaults.connectedMiddleButtonShapes], and [ButtonGroupDefaults.connectedTrailingButtonShapes].
- *   The selected button morphs into a full pill shape with spring physics.
- * - Selected container uses primaryContainer / onPrimaryContainer colors.
- * - Unselected container uses near-black dark surface / onSurface colors.
- * - Minimum touch height of 56 dp.
- * - Supports text-only and icon-plus-text options (icon left of label, selected label bold).
- * - Light haptic tick on every selection.
- * - Accessibility semantics role set to [Role.RadioButton].
- * - When items exceed 4 or labels are long, enables smooth horizontal scrolling without text truncation.
+ * Universal pick-one connected toggle button group sharing identical visual styling with
+ * [com.petal.browser.ui.containment.PetalConnectedButtonGroup]:
+ * - 50dp outer / 6dp inner corners
+ * - 6dp horizontal spacing between segments
+ * - Zero BorderStroke / outlines (border = null)
+ * - Theme-driven M3 color tokens (primaryContainer / surfaceContainerHigh)
+ * - 48dp minimum touch target
+ * - Dynamic weight expansion on active selection (1.1f active / 0.65f inactive) when uncrowded
+ * - Smooth horizontal scrolling when crowded
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun <T> PetalChoiceButtonGroup(
     options: List<PetalButtonGroupItem<T>>,
     selected: T,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
-    minHeight: androidx.compose.ui.unit.Dp = 48.dp,
+    minHeight: Dp = 48.dp,
     scrollableIfCrowded: Boolean = true,
 ) {
     if (options.isEmpty()) return
 
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    val resolvedMinHeight = minHeight.coerceAtLeast(48.dp)
     val shouldScroll = scrollableIfCrowded && (options.size > 4 || options.any { it.label.length > 12 })
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val hasSelection = options.any { it.value == selected }
 
-    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-
-    val unselectedContainer = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLowest
+    val unselectedContainer = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh
     val unselectedContent = MaterialTheme.colorScheme.onSurface
     val selectedContainer = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primaryContainer
     val selectedContent = MaterialTheme.colorScheme.onPrimaryContainer
@@ -98,35 +105,37 @@ fun <T> PetalChoiceButtonGroup(
 
     Row(
         modifier = rowModifier,
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val count = options.size
         options.forEachIndexed { index, option ->
             val isChecked = (option.value == selected)
+            val shape = petalChoiceShape(index, count)
+            val interactionSource = remember { MutableInteractionSource() }
+            val isPressed by interactionSource.collectIsPressedAsState()
+            val isActive = isChecked || isPressed
+
+            val animatedWeight by animateFloatAsState(
+                targetValue = if (!hasSelection && !isPressed) 1f else if (isActive) 1.1f else 0.65f,
+                animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
+                label = "ChoiceButtonWeight"
+            )
 
             val baseModifier = if (shouldScroll) {
                 Modifier
-                    .defaultMinSize(minHeight = minHeight)
+                    .defaultMinSize(minHeight = resolvedMinHeight)
                     .semantics { role = Role.RadioButton }
             } else {
                 Modifier
-                    .weight(1f)
-                    .defaultMinSize(minHeight = minHeight)
+                    .weight(animatedWeight)
+                    .defaultMinSize(minHeight = resolvedMinHeight)
                     .semantics { role = Role.RadioButton }
             }
 
-            val shapes = when {
-                count == 1 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                index == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                index == count - 1 -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-            }
-
-            val currentShape = if (isChecked) shapes.checkedShape else shapes.shape
             val buttonModifier = if (isGlass) {
                 baseModifier.liquidGlassChrome(
-                    shape = currentShape,
+                    shape = shape,
                     enabled = true,
                     sheenIntensity = if (isChecked) 0.80f else 0.45f,
                     pressFx = true
@@ -135,50 +144,55 @@ fun <T> PetalChoiceButtonGroup(
                 baseModifier
             }
 
-            ToggleButton(
-                checked = isChecked,
-                onCheckedChange = {
+            Surface(
+                onClick = {
                     try {
                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.4f)
-                    } catch (_: Exception) {}
+                    } catch (_: Exception) {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    }
                     onSelect(option.value)
                 },
                 modifier = buttonModifier,
                 enabled = option.enabled,
-                shapes = shapes,
-                colors = ToggleButtonDefaults.toggleButtonColors(
-                    containerColor = unselectedContainer,
-                    contentColor = unselectedContent,
-                    checkedContainerColor = selectedContainer,
-                    checkedContentColor = selectedContent
-                ),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                shape = shape,
+                color = if (isChecked) selectedContainer else unselectedContainer,
+                contentColor = if (isChecked) selectedContent else unselectedContent,
+                border = null,
+                interactionSource = interactionSource
             ) {
+                val compact = !shouldScroll && count >= 3
                 Row(
+                    modifier = Modifier
+                        .defaultMinSize(minHeight = resolvedMinHeight)
+                        .padding(horizontal = if (compact) 6.dp else 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     if (option.icon != null) {
                         Icon(
                             imageVector = option.icon,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(if (compact) 16.dp else 18.dp)
                         )
+                        Spacer(Modifier.width(if (compact) 4.dp else 6.dp))
                     } else if (option.iconRes != null) {
                         Icon(
                             painter = painterResource(id = option.iconRes),
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(if (compact) 16.dp else 18.dp)
                         )
+                        Spacer(Modifier.width(if (compact) 4.dp else 6.dp))
                     }
 
                     if (option.label.isNotEmpty()) {
                         Text(
                             text = option.label,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = if (isChecked) FontWeight.Bold else FontWeight.Normal,
+                            style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
+                            fontWeight = if (isChecked) FontWeight.Bold else FontWeight.Medium,
                             maxLines = 1,
-                            softWrap = false
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -197,7 +211,7 @@ fun PetalChoiceButtonGroup(
     onSelectIndex: (Int) -> Unit,
     modifier: Modifier = Modifier,
     icons: List<ImageVector?>? = null,
-    minHeight: androidx.compose.ui.unit.Dp = 48.dp,
+    minHeight: Dp = 48.dp,
     scrollableIfCrowded: Boolean = true,
 ) {
     val options = labels.mapIndexed { index, label ->

@@ -12,7 +12,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.horizontalScroll
@@ -27,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -308,13 +308,16 @@ private fun PetalSetupContent(
                             }
 
                             // Secondary "Restore from backup" action (Skips entire setup upon successful restore)
-                            OutlinedButton(
+                            FilledTonalButton(
                                 onClick = { systemRestoreLauncher.launch(arrayOf("application/json", "*/*")) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(52.dp),
                                 shape = RoundedCornerShape(26.dp),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                )
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -436,19 +439,26 @@ private fun PetalSetupContent(
                                             color = MaterialTheme.colorScheme.onErrorContainer
                                         )
                                         Row(
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            OutlinedButton(
+                                            FilledTonalButton(
                                                 onClick = { state.confirmSkip() },
-                                                shape = RoundedCornerShape(18.dp)
+                                                shape = petalConnectedShape(0, 2),
+                                                colors = ButtonDefaults.filledTonalButtonColors(
+                                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                                )
                                             ) {
                                                 Text(stringResource(R.string.petal_setup_continue), maxLines = 1)
                                             }
                                             Button(
                                                 onClick = onFinished,
-                                                shape = RoundedCornerShape(18.dp),
-                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                                                shape = petalConnectedShape(1, 2),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = MaterialTheme.colorScheme.error,
+                                                    contentColor = MaterialTheme.colorScheme.onError
+                                                )
                                             ) {
                                                 Text(stringResource(R.string.petal_setup_skip_anyway), color = MaterialTheme.colorScheme.onError, maxLines = 1)
                                             }
@@ -460,21 +470,29 @@ private fun PetalSetupContent(
                                     Modifier
                                         .fillMaxWidth()
                                         .padding(top = 4.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    OutlinedButton(
+                                    FilledTonalButton(
                                         onClick = { state.previous() },
-                                        shape = RoundedCornerShape(20.dp),
+                                        shape = petalConnectedShape(0, 3),
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                        ),
                                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
                                     ) {
                                         Icon(Icons.Rounded.ArrowBack, null, Modifier.size(16.dp))
                                         Spacer(Modifier.width(6.dp))
                                         Text(stringResource(R.string.petal_setup_back), maxLines = 1)
                                     }
-                                    OutlinedButton(
+                                    FilledTonalButton(
                                         onClick = onFinished,
-                                        shape = RoundedCornerShape(20.dp),
+                                        shape = petalConnectedShape(1, 3),
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                        ),
                                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
                                     ) {
                                         Text(stringResource(R.string.petal_setup_skip), maxLines = 1)
@@ -489,7 +507,7 @@ private fun PetalSetupContent(
                                             }
                                         },
                                         modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(20.dp),
+                                        shape = petalConnectedShape(2, 3),
                                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
                                     ) {
                                         Text(nextLabel, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -620,7 +638,7 @@ private fun HelloStage(
                     )
                     Spacer(Modifier.height(12.dp))
 
-                    OutlinedTextField(
+                    TextField(
                         value = languageSearchQuery,
                         onValueChange = { languageSearchQuery = it },
                         modifier = Modifier.fillMaxWidth(),
@@ -634,7 +652,14 @@ private fun HelloStage(
                             }
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        )
                     )
 
                     Spacer(Modifier.height(12.dp))
@@ -865,10 +890,14 @@ private fun AccessStage(
                             Text(stringResource(R.string.petal_setup_granted), style = MaterialTheme.typography.labelSmall)
                         }
                     } else if (permanentlyDenied) {
-                        OutlinedButton(
+                        FilledTonalButton(
                             onClick = openSettings,
                             shape = RoundedCornerShape(14.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
                         ) {
                             Text(stringResource(R.string.petal_setup_open_settings), style = MaterialTheme.typography.labelSmall)
                         }
@@ -1031,13 +1060,20 @@ private fun MakePetalYoursStage(
         )
 
         AnimatedVisibility(visible = showAi) {
-            OutlinedTextField(
+            TextField(
                 value = aiKey,
                 onValueChange = setAiKey,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text(stringResource(R.string.petal_setup_ai_key)) },
                 shape = RoundedCornerShape(16.dp),
-                singleLine = true
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
+                )
             )
         }
     }

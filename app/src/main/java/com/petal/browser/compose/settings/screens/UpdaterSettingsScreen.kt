@@ -6,7 +6,6 @@ import com.petal.browser.ui.containment.liquidGlassChrome
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -210,7 +209,6 @@ fun UpdaterSettingsScreenContent(
                                         Surface(
                                             shape = RoundedCornerShape(18.dp),
                                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Column(
@@ -272,12 +270,16 @@ fun UpdaterSettingsScreenContent(
                                                     modifier = Modifier.fillMaxWidth(),
                                                     horizontalArrangement = Arrangement.End
                                                 ) {
-                                                    OutlinedButton(
+                                                    FilledTonalButton(
                                                         onClick = {
                                                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                                             PetalUpdateManager.pauseUpdateDownload(context)
                                                         },
-                                                        shape = RoundedCornerShape(12.dp)
+                                                        shape = RoundedCornerShape(50.dp),
+                                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                                        )
                                                     ) {
                                                         Icon(Icons.Rounded.PauseCircle, contentDescription = null, modifier = Modifier.size(16.dp))
                                                         Spacer(Modifier.width(6.dp))
@@ -291,7 +293,6 @@ fun UpdaterSettingsScreenContent(
                                         Surface(
                                             shape = RoundedCornerShape(18.dp),
                                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Column(
@@ -325,18 +326,22 @@ fun UpdaterSettingsScreenContent(
                                                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                                                 PetalUpdateManager.resumeUpdateDownload(context)
                                                             },
-                                                            shape = RoundedCornerShape(12.dp)
+                                                            shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp)
                                                         ) {
                                                             Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
                                                             Spacer(Modifier.width(4.dp))
                                                             Text("Resume")
                                                         }
-                                                        OutlinedButton(
+                                                        FilledTonalButton(
                                                             onClick = {
                                                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                                                 PetalUpdateManager.cancelUpdateDownload(context)
                                                             },
-                                                            shape = RoundedCornerShape(12.dp)
+                                                            shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                                                            colors = ButtonDefaults.filledTonalButtonColors(
+                                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                                contentColor = MaterialTheme.colorScheme.onSurface
+                                                            )
                                                         ) {
                                                             Text("Cancel")
                                                         }
@@ -355,7 +360,6 @@ fun UpdaterSettingsScreenContent(
                                         Surface(
                                             shape = RoundedCornerShape(18.dp),
                                             color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Row(
@@ -453,14 +457,14 @@ fun UpdaterSettingsScreenContent(
                                         },
                                         modifier = Modifier.weight(1f),
                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
-                                        shape = RoundedCornerShape(12.dp)
+                                        shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp)
                                     ) {
                                         Icon(Icons.Rounded.CloudSync, contentDescription = null, modifier = Modifier.size(17.dp))
                                         Spacer(Modifier.width(5.dp))
                                         Text(stringResource(R.string.ui_check_now), fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                                     }
 
-                                    OutlinedButton(
+                                    FilledTonalButton(
                                         onClick = {
                                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                                             var act: Activity? = null
@@ -478,7 +482,11 @@ fun UpdaterSettingsScreenContent(
                                         },
                                         modifier = Modifier.weight(1f),
                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
-                                        shape = RoundedCornerShape(12.dp)
+                                        shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                        )
                                     ) {
                                         Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(17.dp))
                                         Spacer(Modifier.width(5.dp))

@@ -19,7 +19,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -183,7 +182,7 @@ fun PetalPermissionDialog(
     val context = LocalContext.current
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = rememberGlassSheen(isGlass)
-    val shape = RoundedCornerShape(36.dp)
+    val shape = RoundedCornerShape(28.dp)
     val accent = type.accent()
     val scheme = MaterialTheme.colorScheme
 
@@ -220,8 +219,7 @@ fun PetalPermissionDialog(
                 contentColor = scheme.onSurface,
                 tonalElevation = 0.dp,
                 shadowElevation = if (isGlass) 0.dp else 12.dp,
-                border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f))
-                else BorderStroke(1.dp, scheme.outlineVariant.copy(alpha = 0.45f))
+                border = null
             ) {
                 Column(
                     modifier = Modifier
@@ -366,29 +364,54 @@ fun PetalPermissionDialog(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        PermissionActionButton(
-                            text = "Don't allow",
-                            icon = Icons.Rounded.Close,
-                            filled = false,
-                            modifier = Modifier.weight(1f),
+                        Button(
                             onClick = {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                 onDeny(rememberDecision)
-                            }
-                        )
-                        PermissionActionButton(
-                            text = "Allow",
-                            icon = Icons.Rounded.Check,
-                            filled = true,
-                            modifier = Modifier.weight(1f),
+                            },
+                            shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = scheme.surfaceContainerHighest,
+                                contentColor = scheme.onSurface
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 52.dp)
+                        ) {
+                            Icon(Icons.Rounded.Close, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "Don't allow",
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
+                                maxLines = 1
+                            )
+                        }
+
+                        Button(
                             onClick = {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.8f)
                                 onAllow(rememberDecision)
-                            }
-                        )
+                            },
+                            shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = scheme.primary,
+                                contentColor = scheme.onPrimary
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 52.dp)
+                        ) {
+                            Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "Allow",
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
             }

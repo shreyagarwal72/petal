@@ -46,7 +46,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -702,7 +701,7 @@ private fun ZoomableImagePage(
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
+                                shape = CircleShape,
                                 containerColor = Color.White.copy(alpha = 0.12f),
                                 contentColor = Color.White.copy(alpha = 0.7f),
                                 size = 64.dp,
@@ -813,7 +812,7 @@ private fun ImageViewerTopBar(
                 .clip(topShape)
                 .then(
                     if (isGlass) Modifier.liquidGlassChrome(topShape, enabled = true, sheenIntensity = 0.8f, pressFx = false)
-                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), topShape)
+                    else Modifier
                 )
         ) {
             Row(
@@ -1018,7 +1017,7 @@ private fun ImageViewerBottomBar(
                 .clip(bottomShape)
                 .then(
                     if (isGlass) Modifier.liquidGlassChrome(bottomShape, enabled = true, sheenIntensity = 0.8f, pressFx = false)
-                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f), bottomShape)
+                    else Modifier
                 ),
         ) {
             // Horizontal scroll ensures zero clipping or overflowing on any screen width or orientation

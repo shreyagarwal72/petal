@@ -338,13 +338,13 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
     }
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sheetShape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp)
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     Surface(
-        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surface,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = sheetShape,
-        tonalElevation = if (isGlass) 0.dp else 4.dp,
+        tonalElevation = 0.dp,
         shadowElevation = if (isGlass) 0.dp else 8.dp,
-        border = if (isGlass) androidx.compose.foundation.BorderStroke(0.75.dp, androidx.compose.ui.graphics.Color.White.copy(alpha = 0.20f)) else null,
+        border = null,
         modifier = Modifier
             .fillMaxWidth()
             .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = 0.5f) else Modifier)
@@ -477,13 +477,28 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
 
             Spacer(Modifier.height(16.dp))
 
-            PermissionActionButton(
-                text = if (allGranted) "Everything is ready" else "Continue",
-                icon = if (allGranted) Icons.Rounded.CheckCircle else Icons.Rounded.Check,
-                filled = true,
+            Button(
                 onClick = onDone,
-                modifier = Modifier.fillMaxWidth()
-            )
+                shape = RoundedCornerShape(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+            ) {
+                Icon(
+                    imageVector = if (allGranted) Icons.Rounded.CheckCircle else Icons.Rounded.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = if (allGranted) "Everything is ready" else "Continue",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                )
+            }
 
             Spacer(Modifier.height(8.dp))
         }

@@ -16,9 +16,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.toArgb
 import com.petal.browser.ui.theme.trackRevealOrigin
@@ -612,11 +610,6 @@ fun AppearanceSettingsScreenContent(
                                         .size(38.dp)
                                         .clip(CircleShape)
                                         .background(pal.seed)
-                                        .border(
-                                            width = if (isSelected) 3.dp else 0.dp,
-                                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-                                            shape = CircleShape
-                                        )
                                         .clickable {
                                             reveal.reveal {
                                                 androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
@@ -644,11 +637,6 @@ fun AppearanceSettingsScreenContent(
                                     .background(
                                         if (customSelected) Brush.linearGradient(listOf(Color(customSpec.seed), Color(customSpec.seed)))
                                         else Brush.sweepGradient(listOf(Color(0xFFFF5252), Color(0xFFFFEB3B), Color(0xFF69F0AE), Color(0xFF40C4FF), Color(0xFFE040FB), Color(0xFFFF5252)))
-                                    )
-                                    .border(
-                                        width = if (customSelected) 3.dp else 0.dp,
-                                        color = if (customSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-                                        shape = CircleShape
                                     )
                                     .clickable {
                                         if (customSelected) {
@@ -742,7 +730,6 @@ fun AppearanceSettingsScreenContent(
                     Surface(
                         shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.SINGLE),
                         color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -1796,7 +1783,11 @@ fun AppearanceSettingsScreenContent(
                                             Button(
                                                 onClick = { showBgPickerChoice = true },
                                                 modifier = Modifier.weight(1f),
-                                                shape = RoundedCornerShape(16.dp)
+                                                shape = if (liquidGlassBgImageUri.isNotEmpty()) {
+                                                    RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp)
+                                                } else {
+                                                    RoundedCornerShape(50.dp)
+                                                }
                                             ) {
                                                 Icon(Icons.Rounded.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(18.dp))
                                                 Spacer(Modifier.width(6.dp))
@@ -1804,12 +1795,16 @@ fun AppearanceSettingsScreenContent(
                                             }
 
                                             if (liquidGlassBgImageUri.isNotEmpty()) {
-                                                OutlinedButton(
+                                                FilledTonalButton(
                                                     onClick = {
                                                         onLiquidGlassBgImageUriChange("")
                                                         onLiquidGlassBgModeChange("MORPHING")
                                                     },
-                                                    shape = RoundedCornerShape(16.dp)
+                                                    shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                                    )
                                                 ) {
                                                     Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                                                     Spacer(Modifier.width(4.dp))
@@ -2023,7 +2018,7 @@ fun AppearanceSettingsScreenContent(
 
                     val langSearchShape = RoundedCornerShape(16.dp)
                     val isSheetGlass = liquidGlassEnabled && liquidGlassContainments
-                    OutlinedTextField(
+                    TextField(
                         value = languageSearchQuery,
                         onValueChange = { languageSearchQuery = it },
                         modifier = Modifier
@@ -2040,11 +2035,11 @@ fun AppearanceSettingsScreenContent(
                         },
                         singleLine = true,
                         shape = langSearchShape,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = if (isSheetGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                            unfocusedContainerColor = if (isSheetGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                            focusedBorderColor = if (isSheetGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = if (isSheetGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = if (isSheetGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = if (isSheetGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
                         )
                     )
 

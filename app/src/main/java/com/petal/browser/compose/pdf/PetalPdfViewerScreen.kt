@@ -46,7 +46,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -752,7 +751,7 @@ private fun PetalPdfViewerScreenImpl(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                    shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
+                                    shape = CircleShape,
                                     containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
                                     contentColor = MaterialTheme.colorScheme.error,
                                     size = 72.dp,
@@ -893,11 +892,6 @@ private fun PetalPdfViewerScreenImpl(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clip(RoundedCornerShape(if (isCropMarginsEnabled) 0.dp else 12.dp))
-                                            .border(
-                                                width = 1.dp,
-                                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                                shape = RoundedCornerShape(if (isCropMarginsEnabled) 0.dp else 12.dp)
-                                            )
                                     )
                                 }
                             }
@@ -946,11 +940,6 @@ private fun PetalPdfViewerScreenImpl(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clip(RoundedCornerShape(if (isCropMarginsEnabled) 0.dp else 12.dp))
-                                            .border(
-                                                width = 1.dp,
-                                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                                shape = RoundedCornerShape(if (isCropMarginsEnabled) 0.dp else 12.dp)
-                                            )
                                     )
                                 }
                             }
@@ -1297,12 +1286,19 @@ private fun PetalPdfViewerScreenImpl(
                 Text(stringResource(R.string.ui_add_text_note), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             },
             text = {
-                OutlinedTextField(
+                TextField(
                     value = noteInput,
                     onValueChange = { noteInput = it },
                     label = { Text(stringResource(R.string.ui_note_content)) },
                     placeholder = { Text(stringResource(R.string.ui_enter_text_to_add_to)) },
                     shape = RoundedCornerShape(14.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -1332,7 +1328,7 @@ private fun PetalPdfViewerScreenImpl(
             dismissButton = {
                 PetalLiquidButton(
                     onClick = { showAddNoteDialog = false },
-                    variant = PetalButtonVariant.Outlined,
+                    variant = PetalButtonVariant.Tonal,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(stringResource(R.string.ui_cancel))
@@ -1388,11 +1384,18 @@ private fun PetalPdfViewerScreenImpl(
             },
             text = {
                 Column {
-                    OutlinedTextField(
+                    TextField(
                         value = editedText,
                         onValueChange = { editedText = it },
                         label = { Text(stringResource(R.string.ui_line_text)) },
                         shape = RoundedCornerShape(14.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
@@ -1427,7 +1430,7 @@ private fun PetalPdfViewerScreenImpl(
             dismissButton = {
                 PetalLiquidButton(
                     onClick = { selectedTextLine = null },
-                    variant = PetalButtonVariant.Outlined,
+                    variant = PetalButtonVariant.Tonal,
                     enabled = !isSavingTextEdit,
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -1754,11 +1757,6 @@ private fun PdfPageView(
                                     MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
                                     RoundedCornerShape(2.dp)
                                 )
-                                .border(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                    RoundedCornerShape(2.dp)
-                                )
                                 .clickable { onTextLineTap(line) }
                         )
                     }
@@ -1794,7 +1792,7 @@ private fun PdfTextEditTopBar(
             color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
             shadowElevation = if (isGlass) 0.dp else 8.dp,
             tonalElevation = 0.dp,
-            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            border = null,
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (isGlass) Modifier.liquidGlassChrome(topShape, enabled = true) else Modifier)
@@ -2032,10 +2030,7 @@ private fun PdfFindBar(
             color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
             shadowElevation = 0.dp,
             tonalElevation = 0.dp,
-            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-            ),
+            border = null,
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (isGlass) Modifier.liquidGlassChrome(findShape, enabled = true, pressFx = false) else Modifier)
@@ -2053,14 +2048,16 @@ private fun PdfFindBar(
                     modifier = Modifier.padding(start = 6.dp)
                 )
 
-                OutlinedTextField(
+                TextField(
                     value = query,
                     onValueChange = onQueryChange,
                     placeholder = { Text(stringResource(R.string.ui_find_text_or_page), fontSize = 14.sp) },
                     singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
                     ),
                     modifier = Modifier.weight(1f)
                 )
@@ -2142,7 +2139,7 @@ private fun PdfEditTopBar(
             color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
             shadowElevation = 0.dp,
             tonalElevation = 0.dp,
-            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            border = null,
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (isGlass) Modifier.liquidGlassChrome(editShape, enabled = true, pressFx = false) else Modifier)
@@ -2238,19 +2235,22 @@ private fun PdfEditTopBar(
                     )
                     colors.forEach { color ->
                         Box(
+                            contentAlignment = Alignment.Center,
                             modifier = Modifier
                                 .size(24.dp)
                                 .clip(CircleShape)
                                 .background(color)
                                 .clickable { onColorChange(color) }
-                                .then(
-                                    if (selectedColor == color) {
-                                        Modifier.border(2.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                    } else {
-                                        Modifier.border(1.dp, Color.White.copy(alpha = 0.6f), CircleShape)
-                                    }
+                        ) {
+                            if (selectedColor == color) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = if (color == Color.White || color == Color.Yellow) Color.Black else Color.White,
+                                    modifier = Modifier.size(16.dp)
                                 )
-                        )
+                            }
+                        }
                     }
                 }
             }
@@ -2296,7 +2296,7 @@ private fun PdfViewerBottomBar(
             color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.94f),
             shadowElevation = if (isGlass) 0.dp else 6.dp,
             tonalElevation = 0.dp,
-            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+            border = null,
             modifier = Modifier
                 .then(if (isGlass) Modifier.liquidGlassChrome(bottomShape, enabled = true) else Modifier)
         ) {
@@ -2532,7 +2532,7 @@ private fun PdfJumpToPageDialog(
                     Spacer(Modifier.height(8.dp))
                 }
 
-                OutlinedTextField(
+                TextField(
                     value = textInput,
                     onValueChange = { raw ->
                         val filtered = raw.filter { it.isDigit() }
@@ -2550,6 +2550,13 @@ private fun PdfJumpToPageDialog(
                     }),
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -2569,7 +2576,7 @@ private fun PdfJumpToPageDialog(
         dismissButton = {
             PetalLiquidButton(
                 onClick = onDismiss,
-                variant = PetalButtonVariant.Outlined,
+                variant = PetalButtonVariant.Tonal,
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(stringResource(R.string.ui_cancel))
@@ -2682,8 +2689,8 @@ private fun PdfThumbnailItem(
                 .fillMaxWidth()
                 .aspectRatio(0.75f)
                 .then(
-                    if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
-                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                    if (isSelected) Modifier.padding(2.dp)
+                    else Modifier
                 )
         ) {
             if (thumbBitmap != null) {

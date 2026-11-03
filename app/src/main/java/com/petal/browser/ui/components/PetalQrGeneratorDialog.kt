@@ -84,7 +84,7 @@ fun PetalQrGeneratorDialog(
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val dialogShape = RoundedCornerShape(32.dp)
+    val dialogShape = RoundedCornerShape(28.dp)
 
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(
@@ -153,36 +153,30 @@ fun PetalQrGeneratorDialog(
                 Spacer(modifier = Modifier.height(18.dp))
 
                 // The Designed QR Card with soft glow border & white backdrop for maximum scanner readability
-                Box(
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color.White,
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp,
+                    border = null,
                     modifier = Modifier
                         .size(260.dp)
-                        .clip(RoundedCornerShape(26.dp))
-                        .background(Color.White)
-                        .border(
-                            width = 2.dp,
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)
-                                )
-                            ),
-                            shape = RoundedCornerShape(26.dp)
-                        )
-                        .padding(14.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(14.dp)
                 ) {
-                    if (qrBitmap != null) {
-                        Image(
-                            bitmap = qrBitmap.asImageBitmap(),
-                            contentDescription = stringResource(R.string.ui_petal_designed_qr_code),
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(R.string.ui_could_not_generate_qr_code),
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                    Box(contentAlignment = Alignment.Center) {
+                        if (qrBitmap != null) {
+                            Image(
+                                bitmap = qrBitmap.asImageBitmap(),
+                                contentDescription = stringResource(R.string.ui_petal_designed_qr_code),
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(R.string.ui_could_not_generate_qr_code),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     }
                 }
 
@@ -223,7 +217,8 @@ fun PetalQrGeneratorDialog(
                 // Action Buttons: Copy Link, Share QR Image, Share Link
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     FilledTonalButton(
                         onClick = {
@@ -234,13 +229,17 @@ fun PetalQrGeneratorDialog(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp),
-                        shape = RoundedCornerShape(16.dp),
+                            .heightIn(min = 48.dp),
+                        shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
                         Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.ui_copy), style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.ui_copy), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                     }
 
                     FilledTonalButton(
@@ -253,9 +252,9 @@ fun PetalQrGeneratorDialog(
                             }
                         },
                         modifier = Modifier
-                            .weight(1.2f)
-                            .height(46.dp),
-                        shape = RoundedCornerShape(16.dp),
+                            .weight(1.1f)
+                            .heightIn(min = 48.dp),
+                        shape = RoundedCornerShape(6.dp),
                         colors = ButtonDefaults.filledTonalButtonColors(
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -279,13 +278,17 @@ fun PetalQrGeneratorDialog(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp),
-                        shape = RoundedCornerShape(16.dp),
+                            .heightIn(min = 48.dp),
+                        shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
                         Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.ui_link), style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.ui_link), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -372,15 +375,10 @@ private fun generatePetalStyledQrBitmap(
         val cellWidth = dimension.toFloat() / matrixWidth.toFloat()
         val cellHeight = dimension.toFloat() / matrixHeight.toFloat()
 
-        // Petal brand gradient: Deep Teal -> brighter leaf-teal, diagonal across the whole code
-        val deepTeal = android.graphics.Color.rgb(2, 96, 101)
-        val brightTeal = android.graphics.Color.rgb(44, 168, 150)
-        val gradientPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        // Solid brand paint: no decorative gradient
+        val solidPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.rgb(2, 96, 101)
             style = Paint.Style.FILL
-            shader = android.graphics.LinearGradient(
-                0f, 0f, dimension.toFloat(), dimension.toFloat(),
-                deepTeal, brightTeal, android.graphics.Shader.TileMode.CLAMP
-            )
         }
 
         // Finder pattern bounding boxes (module coords): top-left, top-right, bottom-left.
@@ -400,7 +398,7 @@ private fun generatePetalStyledQrBitmap(
             x >= origin.mx && x < origin.mx + finderSize && y >= origin.my && y < origin.my + finderSize
         }
 
-        // 1) Data modules — rounded squircles in the brand gradient, skipping finder zones
+        // 1) Data modules — rounded squircles in solid brand color, skipping finder zones
         val rectF = RectF()
         val cornerRadius = cellWidth * 0.35f
         for (x in 0 until matrixWidth) {
@@ -412,7 +410,7 @@ private fun generatePetalStyledQrBitmap(
                     val right = (x + 1) * cellWidth - cellWidth * 0.08f
                     val bottom = (y + 1) * cellHeight - cellHeight * 0.08f
                     rectF.set(left, top, right, bottom)
-                    canvas.drawRoundRect(rectF, cornerRadius, cornerRadius, gradientPaint)
+                    canvas.drawRoundRect(rectF, cornerRadius, cornerRadius, solidPaint)
                 }
             }
         }
@@ -430,19 +428,19 @@ private fun generatePetalStyledQrBitmap(
             val top = origin.my * cellHeight
             val outerSize = finderSize * cellWidth
 
-            // Outer 7x7 ring (brand gradient)
+            // Outer 7x7 ring
             rectF.set(left, top, left + outerSize, top + outerSize)
-            canvas.drawRoundRect(rectF, outerSize * 0.32f, outerSize * 0.32f, gradientPaint)
+            canvas.drawRoundRect(rectF, outerSize * 0.32f, outerSize * 0.32f, solidPaint)
 
             // Middle 5x5 white gap
             val midInset = cellWidth
             rectF.set(left + midInset, top + midInset, left + outerSize - midInset, top + outerSize - midInset)
             canvas.drawRoundRect(rectF, (outerSize - 2 * midInset) * 0.32f, (outerSize - 2 * midInset) * 0.32f, whitePaint)
 
-            // Inner 3x3 solid "pupil" (brand gradient)
+            // Inner 3x3 solid "pupil"
             val innerInset = cellWidth * 2f
             rectF.set(left + innerInset, top + innerInset, left + outerSize - innerInset, top + outerSize - innerInset)
-            canvas.drawRoundRect(rectF, (outerSize - 2 * innerInset) * 0.32f, (outerSize - 2 * innerInset) * 0.32f, gradientPaint)
+            canvas.drawRoundRect(rectF, (outerSize - 2 * innerInset) * 0.32f, (outerSize - 2 * innerInset) * 0.32f, solidPaint)
         }
 
         bitmap

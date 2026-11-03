@@ -126,7 +126,7 @@ fun SettingsHubScreen(
             ) {
                 val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                 val searchShape = RoundedCornerShape(16.dp)
-                OutlinedTextField(
+                TextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
                     modifier = Modifier
@@ -145,11 +145,11 @@ fun SettingsHubScreen(
                     },
                     singleLine = true,
                     shape = searchShape,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                        focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
                     )
                 )
             }

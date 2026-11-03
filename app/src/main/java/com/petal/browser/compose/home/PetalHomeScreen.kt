@@ -21,10 +21,8 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
@@ -85,6 +83,7 @@ import com.petal.browser.ui.containment.PetalFloatingToolbar
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalConnectedShape
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
@@ -620,7 +619,6 @@ fun PetalHomeScreen(
                                 Surface(
                                     shape = profilePillShape,
                                     color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
-                                    border = if (isGlass) null else BorderStroke(1.dp, currentProfile.getComposeColor().copy(alpha = 0.5f)),
                                     modifier = Modifier
                                         .height(34.dp)
                                         .liquidGlassChrome(shape = profilePillShape, enabled = isGlass)
@@ -1079,11 +1077,6 @@ private fun ShortcutTile(
                 .liquidGlassChrome(shape = tileShape, enabled = isGlass)
                 .clip(tileShape)
                 .background(if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest)
-                .border(
-                    width = 0.75.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.30f else 0.45f),
-                    shape = tileShape
-                )
         ) {
             if (!faviconUrl.isNullOrEmpty() && !isImageError) {
                 // 0-padding full-bleed clipping to the expressive shape
@@ -1145,11 +1138,6 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
                 .liquidGlassChrome(shape = addTileShape, enabled = isGlass)
                 .clip(addTileShape)
                 .background(if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow)
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isGlass) 0.35f else 0.65f),
-                    shape = addTileShape
-                )
         ) {
             Icon(
                 imageVector = Icons.Rounded.Add,
@@ -1172,13 +1160,7 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
 
 @Composable
 private fun homeShortcutShape(index: Int, key: Any? = null): Shape {
-    val enabled = com.petal.browser.ui.theme.LocalExpressiveShapesEnabled.current
-    if (!enabled) return RoundedCornerShape(16.dp)
-    val all = PetalMaterialShapes.allShapes
-    if (all.isEmpty()) return RoundedCornerShape(16.dp)
-    val hash = if (key != null) key.hashCode() xor (index * 31) else (index * 7919)
-    val idx = (hash and 0x7FFFFFFF) % all.size
-    return all[idx].toShape()
+    return RoundedCornerShape(16.dp)
 }
 
 // ── 6. Search Bar ─────────────────────────────────────────────────────────
@@ -1542,7 +1524,7 @@ private fun EditShortcutDialog(
 
     val previewTileShape = remember(selectedShapeName) {
         val matched = PetalMaterialShapes.allShapes.find { it.name.equals(selectedShapeName, ignoreCase = true) }
-        matched?.toShape() ?: PetalMaterialShapes.Flower.toShape()
+        matched?.toShape() ?: RoundedCornerShape(16.dp)
     }
 
     com.petal.browser.ui.containment.PetalMaterialAlertDialog(
@@ -1555,20 +1537,34 @@ private fun EditShortcutDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                OutlinedTextField(
+                TextField(
                     value = nameText,
                     onValueChange = { nameText = it },
                     label = { Text(stringResource(R.string.ui_name)) },
                     singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                OutlinedTextField(
+                TextField(
                     value = urlText,
                     onValueChange = { urlText = it },
                     label = { Text(stringResource(R.string.ui_url)) },
                     singleLine = true,
                     placeholder = { Text("example.com") },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -1601,11 +1597,6 @@ private fun EditShortcutDialog(
                                     else MaterialTheme.colorScheme.surfaceContainerHighest
                                 )
                                 .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.35f, pressFx = true) else Modifier)
-                                .border(
-                                    width = if (isSelected) 2.dp else if (isGlass) 0.dp else 0.5.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                    shape = shape
-                                )
                                 .clickable {
                                     selectedShapeName = shapeHolder.name
                                 }
@@ -1640,11 +1631,6 @@ private fun EditShortcutDialog(
                             .then(if (isGlass) Modifier.liquidGlassChrome(previewTileShape, enabled = true, sheenIntensity = 0.45f) else Modifier.shadow(elevation = 2.dp, shape = previewTileShape))
                             .clip(previewTileShape)
                             .background(if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest)
-                            .border(
-                                width = if (isGlass) 0.dp else 0.75.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-                                shape = previewTileShape
-                            )
                     ) {
                         if (!currentFaviconUrl.isNullOrEmpty() && !isImageError) {
                             // 0-padding full bleed
@@ -1678,64 +1664,132 @@ private fun EditShortcutDialog(
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    val finalUrl = if (urlText.isNotBlank() && !urlText.startsWith("http://") && !urlText.startsWith("https://")) {
-                        "https://$urlText"
-                    } else urlText.ifBlank { "https://google.com" }
+            val onSaveAction = {
+                val finalUrl = if (urlText.isNotBlank() && !urlText.startsWith("http://") && !urlText.startsWith("https://")) {
+                    "https://$urlText"
+                } else urlText.ifBlank { "https://google.com" }
 
-                    val derivedName = if (nameText.isNotBlank()) {
-                        nameText
-                    } else {
-                        try {
-                            Uri.parse(finalUrl).host?.removePrefix("www.")?.substringBefore(".")
-                                ?.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-                                ?: "Shortcut"
-                        } catch (_: Throwable) {
-                            "Shortcut"
-                        }
+                val derivedName = if (nameText.isNotBlank()) {
+                    nameText
+                } else {
+                    try {
+                        Uri.parse(finalUrl).host?.removePrefix("www.")?.substringBefore(".")
+                            ?.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+                            ?: "Shortcut"
+                    } catch (_: Throwable) {
+                        "Shortcut"
                     }
-
-                    val siteId = try {
-                        val host = Uri.parse(finalUrl).host ?: ""
-                        when {
-                            host.contains("youtube") -> "youtube"
-                            host.contains("github") -> "github"
-                            host.contains("wikipedia") -> "wikipedia"
-                            host.contains("duckduckgo") -> "duckduckgo"
-                            host.contains("google") -> "google"
-                            else -> "globe"
-                        }
-                    } catch (_: Throwable) { "globe" }
-
-                    onSave(
-                        PetalShortcut(
-                            label = derivedName,
-                            url = finalUrl,
-                            siteId = siteId,
-                            containerColor = initialColor,
-                            shapeName = selectedShapeName
-                        )
-                    )
                 }
-            ) {
-                Text(stringResource(R.string.ui_save))
+
+                val siteId = try {
+                    val host = Uri.parse(finalUrl).host ?: ""
+                    when {
+                        host.contains("youtube") -> "youtube"
+                        host.contains("github") -> "github"
+                        host.contains("wikipedia") -> "wikipedia"
+                        host.contains("duckduckgo") -> "duckduckgo"
+                        host.contains("google") -> "google"
+                        else -> "globe"
+                    }
+                } catch (_: Throwable) { "globe" }
+
+                onSave(
+                    PetalShortcut(
+                        label = derivedName,
+                        url = finalUrl,
+                        siteId = siteId,
+                        containerColor = initialColor,
+                        shapeName = selectedShapeName
+                    )
+                )
+            }
+
+            if (onDelete != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FilledTonalButton(
+                        onClick = onDelete,
+                        shape = petalConnectedShape(0, 3),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
+                    ) {
+                        Text(stringResource(R.string.ui_delete), maxLines = 1)
+                    }
+                    FilledTonalButton(
+                        onClick = onDismiss,
+                        shape = petalConnectedShape(1, 3),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
+                    ) {
+                        Text(stringResource(R.string.ui_cancel), maxLines = 1)
+                    }
+                    Button(
+                        onClick = onSaveAction,
+                        shape = petalConnectedShape(2, 3),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
+                    ) {
+                        Text(stringResource(R.string.ui_save), maxLines = 1)
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FilledTonalButton(
+                        onClick = onDismiss,
+                        shape = petalConnectedShape(0, 2),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
+                    ) {
+                        Text(stringResource(R.string.ui_cancel), maxLines = 1)
+                    }
+                    Button(
+                        onClick = onSaveAction,
+                        shape = petalConnectedShape(1, 2),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
+                    ) {
+                        Text(stringResource(R.string.ui_save), maxLines = 1)
+                    }
+                }
             }
         },
-        dismissButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (onDelete != null) {
-                    TextButton(
-                        onClick = onDelete,
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text(stringResource(R.string.ui_delete))
-                    }
-                }
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.ui_cancel))
-                }
-            }
-        }
+        dismissButton = null
     )
 }

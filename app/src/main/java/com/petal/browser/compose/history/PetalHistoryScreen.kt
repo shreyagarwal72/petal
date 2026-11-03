@@ -322,7 +322,7 @@ fun PetalHistoryScreen(
 
                 val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                 val searchShape = RoundedCornerShape(16.dp)
-                OutlinedTextField(
+                TextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier
@@ -340,11 +340,12 @@ fun PetalHistoryScreen(
                     },
                     singleLine = true,
                     shape = searchShape,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                        focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
                     )
                 )
 

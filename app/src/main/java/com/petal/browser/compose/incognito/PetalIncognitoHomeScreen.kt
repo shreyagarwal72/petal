@@ -23,7 +23,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -99,18 +98,7 @@ fun PetalIncognitoHomeScreen(
                 ),
                 label = "avatarScale"
             )
-            val auraAlpha by infiniteTransition.animateFloat(
-                initialValue = 0.22f,
-                targetValue = 0.48f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(2600, easing = EaseInOutSine),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "auraAlpha"
-            )
-
             val cookieShape = remember { PetalMaterialShapes.Cookie12Sided.toShape() }
-            val sunnyShape = remember { PetalMaterialShapes.Sunny.toShape() }
 
             Box(
                 modifier = modifier
@@ -169,26 +157,6 @@ fun PetalIncognitoHomeScreen(
                                     .size(108.dp)
                                     .entrance(index = 0)
                             ) {
-                                // Ambient radial glow behind mask
-                                Box(
-                                    modifier = Modifier
-                                        .size(104.dp)
-                                        .graphicsLayer {
-                                            scaleX = avatarScale * 1.12f
-                                            scaleY = avatarScale * 1.12f
-                                            alpha = auraAlpha
-                                        }
-                                        .clip(cookieShape)
-                                        .background(
-                                            Brush.radialGradient(
-                                                colors = listOf(
-                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                                                    Color.Transparent
-                                                )
-                                            )
-                                        )
-                                )
-
                                 // Cookie-12-sided badge with Firefox Private Browsing Mask silhouette
                                 Surface(
                                     shape = cookieShape,
@@ -333,7 +301,7 @@ fun PetalIncognitoHomeScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         PetalGroupIconBadge(
-                                            shape = sunnyShape,
+                                            shape = RoundedCornerShape(14.dp),
                                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                         ) {
@@ -505,26 +473,17 @@ fun PetalIncognitoHomeScreen(
 
                 // ── Learn More Expressive Containment Dialog ──
                 if (showLearnMoreDialog) {
-                    PetalMaterialAlertDialog(
+                    PetalAlertDialog(
                         onDismissRequest = { showLearnMoreDialog = false },
-                        shape = RoundedCornerShape(28.dp),
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_firefox_mask),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(40.dp)
-                            )
+                        title = stringResource(R.string.private_browsing_title),
+                        icon = Icons.Rounded.Security,
+                        confirmText = stringResource(R.string.ui_got_it),
+                        onConfirm = {
+                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                            showLearnMoreDialog = false
                         },
-                        title = {
-                            Text(
-                                text = stringResource(R.string.private_browsing_title),
-                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                                textAlign = TextAlign.Center
-                            )
-                        },
-                        text = {
+                        dismissText = null,
+                        content = {
                             Column(
                                 modifier = Modifier.verticalScroll(rememberScrollState()),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -544,16 +503,6 @@ fun PetalIncognitoHomeScreen(
                                 BulletItem("Closing all private tabs immediately purges cookies, temporary cache files, and private thumbnails.")
                                 BulletItem("Downloads and bookmarks are retained across sessions for your convenience.")
                                 BulletItem("Visited sites, networks, and ISPs can still see your IP address and online requests.")
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
-                                    showLearnMoreDialog = false
-                                }
-                            ) {
-                                Text(stringResource(R.string.ui_got_it), fontWeight = FontWeight.SemiBold)
                             }
                         }
                     )

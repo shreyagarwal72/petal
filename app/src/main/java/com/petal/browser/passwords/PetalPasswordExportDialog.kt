@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -109,32 +110,53 @@ fun PetalPasswordExportDialog(
         }
 
         if (exportEncrypted) {
-            OutlinedTextField(
+            TextField(
                 value = backupPassword,
                 onValueChange = { backupPassword = it },
                 label = { Text("Backup password (min 8 characters)") },
                 singleLine = true,
+                shape = RoundedCornerShape(16.dp),
                 visualTransformation = PasswordVisualTransformation(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
-            OutlinedTextField(
+            Spacer(Modifier.height(8.dp))
+            TextField(
                 value = backupPasswordConfirm,
                 onValueChange = { backupPasswordConfirm = it },
                 label = { Text("Repeat password") },
                 singleLine = true,
+                shape = RoundedCornerShape(16.dp),
                 visualTransformation = PasswordVisualTransformation(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            OutlinedButton(
+            FilledTonalButton(
                 onClick = onDismiss,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp),
+                shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
             ) {
                 Text("Cancel")
             }
@@ -177,8 +199,14 @@ fun PetalPasswordExportDialog(
                         PetalToast.show(activity, "Export failed: ${e.message}")
                     }
                 },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp),
+                shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Icon(
                     if (exportEncrypted) Icons.Rounded.EnhancedEncryption else Icons.Rounded.FileDownload,

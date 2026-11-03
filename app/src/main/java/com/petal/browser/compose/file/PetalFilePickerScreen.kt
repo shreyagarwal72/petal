@@ -304,9 +304,10 @@ private fun StoragePermissionRequestState(
 
         if (onBrowseSystemFallback != null) {
             Spacer(Modifier.height(12.dp))
-            OutlinedButton(
+            FilledTonalButton(
                 onClick = onBrowseSystemFallback,
                 shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
                 modifier = Modifier.fillMaxWidth(0.8f).height(48.dp)
             ) {
                 Text(stringResource(R.string.ui_open_system_file_picker))
@@ -516,16 +517,16 @@ private fun FilePickerBrowserContent(
                     .liquidGlassChrome(shape = pickerSearchShape, enabled = isGlass, sheenIntensity = 0.45f),
                 shape = pickerSearchShape
             ) {
-                OutlinedTextField(
+                TextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     placeholder = { Text(stringResource(R.string.file_picker_search_hint)) },
                     singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
+                    colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )

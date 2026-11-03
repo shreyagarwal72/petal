@@ -20,7 +20,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -537,7 +536,7 @@ fun PetalUpdateSheetContent(
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                        border = null,
                         modifier = Modifier.padding(top = 2.dp)
                     ) {
                         Row(
@@ -597,7 +596,7 @@ fun PetalUpdateSheetContent(
                     Surface(
                         shape = RoundedCornerShape(24.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        border = null,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -664,31 +663,39 @@ fun PetalUpdateSheetContent(
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                OutlinedButton(
+                                Button(
                                     onClick = {
                                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                         PetalUpdateManager.pauseUpdateDownload(context)
                                     },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(16.dp)
+                                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                                    shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                    )
                                 ) {
                                     Icon(Icons.Rounded.PauseCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Pause")
+                                    Text("Pause", fontWeight = FontWeight.SemiBold)
                                 }
-                                FilledTonalButton(
+                                Button(
                                     onClick = {
                                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                         onDismiss()
                                         PetalToast.show(context, "Update downloading in background. You can keep browsing.")
                                     },
-                                    modifier = Modifier.weight(1.2f),
-                                    shape = RoundedCornerShape(16.dp)
+                                    modifier = Modifier.weight(1.2f).heightIn(min = 48.dp),
+                                    shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                    )
                                 ) {
-                                    Text("Keep Browsing")
+                                    Text("Keep Browsing", fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
@@ -698,7 +705,7 @@ fun PetalUpdateSheetContent(
                     Surface(
                         shape = RoundedCornerShape(24.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        border = null,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -744,33 +751,18 @@ fun PetalUpdateSheetContent(
                                 trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f)
                             )
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Button(
-                                    onClick = {
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
-                                        PetalUpdateManager.resumeUpdateDownload(context)
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(16.dp)
-                                ) {
-                                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text("Resume")
+                            com.petal.browser.ui.containment.PetalActionRow(
+                                confirmText = "Resume",
+                                onConfirm = {
+                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                    PetalUpdateManager.resumeUpdateDownload(context)
+                                },
+                                dismissText = "Cancel",
+                                onDismiss = {
+                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                                    PetalUpdateManager.cancelUpdateDownload(context)
                                 }
-                                OutlinedButton(
-                                    onClick = {
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
-                                        PetalUpdateManager.cancelUpdateDownload(context)
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(16.dp)
-                                ) {
-                                    Text("Cancel")
-                                }
-                            }
+                            )
                         }
                     }
                 }
@@ -778,7 +770,7 @@ fun PetalUpdateSheetContent(
                     Surface(
                         shape = RoundedCornerShape(24.dp),
                         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        border = null,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -916,7 +908,7 @@ fun PetalUpdateSheetContent(
             }
 
             if (updateInfo.releaseUrl.isNotBlank()) {
-                OutlinedButton(
+                FilledTonalButton(
                     onClick = {
                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                         try {
@@ -927,13 +919,17 @@ fun PetalUpdateSheetContent(
                         }
                     },
                     shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp)
                 ) {
                     Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.ui_view_release_notes_on_github))
+                    Text(stringResource(R.string.ui_view_release_notes_on_github), fontWeight = FontWeight.SemiBold)
                 }
             }
 
@@ -1001,11 +997,11 @@ fun PetalChangelogHistorySheetContent(
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header Expressive Badge (M3 Expressive Flower Shape)
+            // Header Badge
             Box(
                 modifier = Modifier
                     .size(68.dp)
-                    .clip(PetalMaterialShapes.Flower.toShape())
+                    .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
@@ -1096,10 +1092,7 @@ fun PetalChangelogHistorySheetContent(
                                     Surface(
                                         shape = RoundedCornerShape(50),
                                         color = if (index == 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-                                        border = BorderStroke(
-                                            1.dp,
-                                            if (index == 0) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                                        )
+                                        border = null
                                     ) {
                                         Row(
                                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
@@ -1155,7 +1148,7 @@ fun PetalChangelogHistorySheetContent(
                                     Surface(
                                         shape = RoundedCornerShape(18.dp),
                                         color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                                        border = null,
                                         contentColor = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {

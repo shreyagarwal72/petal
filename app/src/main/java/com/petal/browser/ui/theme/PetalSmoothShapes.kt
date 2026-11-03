@@ -273,21 +273,8 @@ object PetalBrowserShapes {
      * Mirrors Relay's [avatarFor] pattern for device kinds.
      */
     fun iconShapeFor(category: PetalIconCategory): ExpressiveShapeHolder = when (category) {
-        PetalIconCategory.Web           -> PetalMaterialShapes.Cookie6Sided
-        PetalIconCategory.Download      -> PetalMaterialShapes.Square
-        PetalIconCategory.History       -> PetalMaterialShapes.Clover4Leaf
-        PetalIconCategory.Bookmark      -> PetalMaterialShapes.Sunny
-        PetalIconCategory.Settings      -> PetalMaterialShapes.Pentagon
-        PetalIconCategory.Extension     -> PetalMaterialShapes.Gem
-        PetalIconCategory.Media         -> PetalMaterialShapes.Flower
-        PetalIconCategory.Privacy       -> PetalMaterialShapes.Cookie9Sided
-        PetalIconCategory.Appearance    -> PetalMaterialShapes.Sunny
-        PetalIconCategory.Security      -> PetalMaterialShapes.Arch
-        PetalIconCategory.Performance   -> PetalMaterialShapes.Boom
-        PetalIconCategory.Search        -> PetalMaterialShapes.Cookie4Sided
-        PetalIconCategory.Sync          -> PetalMaterialShapes.Clover8Leaf
         PetalIconCategory.Accessibility -> PetalMaterialShapes.Pill
-        PetalIconCategory.Tools         -> PetalMaterialShapes.Diamond
+        else                            -> PetalMaterialShapes.Circle
     }
 
     /**

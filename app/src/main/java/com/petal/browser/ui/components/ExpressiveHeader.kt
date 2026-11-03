@@ -12,14 +12,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,10 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
@@ -72,9 +63,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.petal.browser.ui.containment.liquidGlassChrome
 
 /** Only the bottom corners are rounded (24dp) for a clean Material 3 Expressive header look */
@@ -110,8 +98,6 @@ fun ExpressiveHeader(
     val isZenithTransition = com.petal.browser.predictive.LocalZenithHeaderActive.current
     // Motion comes from the theme's scheme (instant when reduce-motion is on), not hardcoded springs.
     val motion = MaterialTheme.motionScheme
-    val glow = MaterialTheme.colorScheme.primary
-    val secondaryGlow = MaterialTheme.colorScheme.tertiary
 
     Box(modifier.fillMaxWidth().zIndex(1f)) {
         val sharedWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current?.ready == true
@@ -139,7 +125,6 @@ fun ExpressiveHeader(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .then(if (!enableLiquidGlass) Modifier.drawGlowBackground(glow, secondaryGlow) else Modifier)
                     .statusBarsPadding()
                     .padding(horizontal = 20.dp)
                     .padding(top = 4.dp, bottom = 12.dp),
@@ -384,66 +369,6 @@ private fun HeaderTitleBlock(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-    }
-}
-
-/**
- * Paints two soft radial glows whose centers drift side-to-side when foregrounded.
- */
-@Composable
-private fun Modifier.drawGlowBackground(color: Color, secondaryColor: Color): Modifier {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var resumed by remember { mutableStateOf(true) }
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            resumed = event == Lifecycle.Event.ON_RESUME
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-    val drift: Float = if (resumed) {
-        val transition = rememberInfiniteTransition(label = "headerGlowDrift")
-        val animated by transition.animateFloat(
-            initialValue = -1f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 7000, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-            label = "headerGlowDriftX",
-        )
-        animated
-    } else {
-        0f
-    }
-    return this.drawBehind {
-        val cx = size.width / 2f + drift * size.width * 0.30f
-        val cy = size.height * 0.46f
-        val radius = (size.width.coerceAtLeast(size.height) * 1.08f).coerceAtLeast(1f)
-        val secondaryCx = size.width / 2f - drift * size.width * 0.24f
-        val secondaryRadius = (size.width.coerceAtLeast(size.height) * 0.72f).coerceAtLeast(1f)
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    secondaryColor.copy(alpha = 0.13f),
-                    secondaryColor.copy(alpha = 0.045f),
-                    secondaryColor.copy(alpha = 0f),
-                ),
-                center = Offset(secondaryCx, size.height * 0.78f),
-                radius = secondaryRadius,
-            ),
-        )
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    color.copy(alpha = 0.23f),
-                    color.copy(alpha = 0.07f),
-                    color.copy(alpha = 0f),
-                ),
-                center = Offset(cx, cy),
-                radius = radius,
-            ),
-        )
     }
 }
 

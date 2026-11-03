@@ -141,7 +141,7 @@ private fun PetalPagePreviewSheet(
             color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = if (isGlass) 0.dp else 2.dp,
             shadowElevation = if (isGlass) 0.dp else 12.dp,
-            border = if (isGlass) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+            border = null,
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true) else Modifier)

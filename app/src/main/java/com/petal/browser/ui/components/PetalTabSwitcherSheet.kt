@@ -575,7 +575,7 @@ fun PetalTabSwitcherContent(
                 // ── 2. Search Bar: "Search your tabs" ─────────────────────────
                 val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                 val tabSearchPillShape = RoundedCornerShape(50)
-                OutlinedTextField(
+                TextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     placeholder = {
@@ -605,11 +605,11 @@ fun PetalTabSwitcherContent(
                     },
                     singleLine = true,
                     shape = tabSearchPillShape,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                        focusedBorderColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.Transparent
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = Color.Transparent
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -777,7 +777,7 @@ private fun EmptyStateIllustration() {
         Surface(
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-            border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+            border = null,
             modifier = Modifier
                 .size(52.dp, 72.dp)
                 .graphicsLayer {
@@ -791,7 +791,7 @@ private fun EmptyStateIllustration() {
         Surface(
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHighest,
-            border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+            border = null,
             shadowElevation = 6.dp,
             modifier = Modifier
                 .size(52.dp, 72.dp)
@@ -820,9 +820,6 @@ fun TabCard(
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val borderColor = if (tab.isActive) MaterialTheme.colorScheme.primary else Color.Transparent
-    val borderWidth = if (tab.isActive) 2.dp else 0.dp
-
     val context = androidx.compose.ui.platform.LocalContext.current
     com.petal.browser.ui.containment.PetalHeroCard(
         shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
@@ -831,7 +828,12 @@ fun TabCard(
         modifier = modifier
             .fillMaxWidth()
             .height(105.dp)
-            .border(borderWidth, borderColor, com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner)
+            .then(
+                if (tab.isActive) {
+                    // Focus and selection indicator for active tab highlight (authorized R1 exception)
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner)
+                } else Modifier
+            )
             .bouncyClickable { onSelect() }
             .entrance(index = 0)
     ) {
@@ -852,7 +854,7 @@ fun TabCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     com.petal.browser.ui.containment.PetalGroupIconBadge(
-                        shape = com.petal.browser.ui.theme.PetalMaterialShapes.Arch.toShape(),
+                        shape = RoundedCornerShape(12.dp),
                         containerColor = if (tab.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
                         contentColor = if (tab.isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                         size = 28.dp,

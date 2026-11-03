@@ -188,49 +188,78 @@ fun PetalSearchEngineSheetContent(
         var suggestUrl by remember(editing?.index) { mutableStateOf(editing?.suggestUrl ?: "") }
         var error by remember(editing?.index) { mutableStateOf<String?>(null) }
 
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+        com.petal.browser.ui.containment.PetalAlertDialog(
             onDismissRequest = { showAddDialog = false; editingEngine = null },
-            title = { Text(if (editing == null) "Add Search Engine" else "Edit Search Engine") },
-            text = {
+            title = if (editing == null) "Add Search Engine" else "Edit Search Engine",
+            confirmText = if (editing == null) "Add" else "Save",
+            onConfirm = {
+                val normalized = url.trim()
+                val normalizedSuggest = suggestUrl.trim()
+                val validScheme = normalized.startsWith("https://") || normalized.startsWith("http://")
+                val hasToken = normalized.contains("%s") || normalized.contains("{searchTerms}")
+                if (name.trim().isEmpty()) error = "Enter a name."
+                else if (!validScheme) error = "Search URL must start with http:// or https://."
+                else if (!hasToken) error = "Add %s or {searchTerms} to the URL."
+                else {
+                    val id = editing?.index ?: ((customEngines.maxOfOrNull { it.index } ?: (CUSTOM_ID_START - 1)) + 1)
+                    val item = SearchEngineItem(id, name.trim(), "Custom search engine", normalized, true, normalizedSuggest)
+                    customEngines = if (editing == null) customEngines + item else customEngines.map { if (it.index == id) item else it }
+                    saveCustomSearchEngines(context, customEngines)
+                    selectedIndex = id
+                    showAddDialog = false
+                    editingEngine = null
+                }
+            },
+            dismissText = stringResource(R.string.ui_cancel),
+            onDismiss = { showAddDialog = false; editingEngine = null },
+            content = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.ui_name)) }, singleLine = true)
-                    OutlinedTextField(
-                        url, { url = it },
+                    TextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text(stringResource(R.string.ui_name)) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    TextField(
+                        value = url,
+                        onValueChange = { url = it },
                         label = { Text(stringResource(R.string.ui_search_url)) },
                         supportingText = { Text(stringResource(R.string.ui_use_s_or_searchterms_where)) },
-                        singleLine = true
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        ),
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    OutlinedTextField(
-                        suggestUrl, { suggestUrl = it },
+                    TextField(
+                        value = suggestUrl,
+                        onValueChange = { suggestUrl = it },
                         label = { Text(stringResource(R.string.ui_search_suggest_url)) },
                         supportingText = { Text(stringResource(R.string.ui_search_suggest_url_summary)) },
-                        singleLine = true
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        ),
+                        modifier = Modifier.fillMaxWidth()
                     )
                     if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val normalized = url.trim()
-                    val normalizedSuggest = suggestUrl.trim()
-                    val validScheme = normalized.startsWith("https://") || normalized.startsWith("http://")
-                    val hasToken = normalized.contains("%s") || normalized.contains("{searchTerms}")
-                    if (name.trim().isEmpty()) error = "Enter a name."
-                    else if (!validScheme) error = "Search URL must start with http:// or https://."
-                    else if (!hasToken) error = "Add %s or {searchTerms} to the URL."
-                    else {
-                        val id = editing?.index ?: ((customEngines.maxOfOrNull { it.index } ?: (CUSTOM_ID_START - 1)) + 1)
-                        val item = SearchEngineItem(id, name.trim(), "Custom search engine", normalized, true, normalizedSuggest)
-                        customEngines = if (editing == null) customEngines + item else customEngines.map { if (it.index == id) item else it }
-                        saveCustomSearchEngines(context, customEngines)
-                        selectedIndex = id
-                        showAddDialog = false
-                        editingEngine = null
-                    }
-                }) { Text(if (editing == null) "Add" else "Save") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddDialog = false; editingEngine = null }) { Text(stringResource(R.string.ui_cancel)) }
             }
         )
     }
@@ -297,20 +326,26 @@ fun PetalSearchEngineSheetContent(
                 )
             }
 
-            OutlinedButton(
+            FilledTonalButton(
                 onClick = { showAddDialog = true },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
             ) {
-                Icon(Icons.Rounded.Add, null)
+                Icon(Icons.Rounded.Add, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.ui_add_custom_search_engine))
+                Text(stringResource(R.string.ui_add_custom_search_engine), fontWeight = FontWeight.SemiBold)
             }
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onCancel) { Text(stringResource(R.string.ui_cancel)) }
-                Button(onClick = { onConfirm(selectedIndex) }) { Text(stringResource(R.string.ui_use_selected_engine)) }
-            }
+            com.petal.browser.ui.containment.PetalActionRow(
+                confirmText = stringResource(R.string.ui_use_selected_engine),
+                onConfirm = { onConfirm(selectedIndex) },
+                dismissText = stringResource(R.string.ui_cancel),
+                onDismiss = onCancel
+            )
         }
     }
 }

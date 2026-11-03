@@ -4,7 +4,6 @@ import android.view.View
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -78,7 +77,6 @@ fun PetalMinimizedPill(
         else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
-    val outlineColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val pressScale by animateFloatAsState(
@@ -106,7 +104,6 @@ fun PetalMinimizedPill(
             color = containerColor,
             tonalElevation = 0.dp,
             shadowElevation = if (isGlass) 0.dp else 4.dp,
-            border = if (isGlass) null else BorderStroke(1.dp, outlineColor),
             modifier = Modifier
                 .height(40.dp)
                 .wrapContentWidth()

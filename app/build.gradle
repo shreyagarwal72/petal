@@ -179,6 +179,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.11.0'
     implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
     implementation 'androidx.graphics:graphics-shapes:1.0.1'
+    implementation 'com.github.racra:smooth-corner-rect-android-compose:1.0.0'
     implementation 'com.airbnb.android:lottie-compose:6.6.2'
 
     // PDFBox-Android — used only for the "Edit PDF text" feature (real embedded

@@ -1,6 +1,5 @@
 package com.petal.browser.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,7 +20,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.ripple
@@ -118,8 +116,8 @@ fun PetalLiquidButton(
             0.55f
         )
         PetalButtonVariant.Outlined -> Quadruple(
-            if (isGlass) Color.Transparent else Color.Transparent,
-            cs.primary,
+            if (isGlass) petalGroupSurfaceColor() else cs.surfaceContainerHighest,
+            cs.onSurface,
             Color.Unspecified,
             0.45f
         )
@@ -189,13 +187,12 @@ fun PetalLiquidButton(
                 contentPadding = contentPadding,
                 content = content
             )
-            PetalButtonVariant.Outlined -> OutlinedButton(
+            PetalButtonVariant.Outlined -> FilledTonalButton(
                 onClick = handleClick,
                 modifier = modifier.defaultMinSize(minHeight = 40.dp),
                 enabled = enabled,
                 shape = shape,
-                border = BorderStroke(1.dp, cs.outlineVariant),
-                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.Transparent, contentColor = contentColor),
+                colors = ButtonDefaults.filledTonalButtonColors(containerColor = containerColor, contentColor = contentColor),
                 contentPadding = contentPadding,
                 content = content
             )

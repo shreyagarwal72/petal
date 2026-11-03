@@ -304,10 +304,20 @@ fun PetalReaderScreen(
                                     ) {
                                         ReaderTheme.values().forEach { theme ->
                                             val isSelected = selectedTheme == theme
+                                            val itemColor = if (theme == ReaderTheme.SYSTEM) {
+                                                if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest
+                                            } else {
+                                                if (isSelected) theme.surface else theme.bg
+                                            }
+                                            val contentColor = if (theme == ReaderTheme.SYSTEM) {
+                                                if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                            } else {
+                                                theme.text
+                                            }
                                             Surface(
                                                 shape = RoundedCornerShape(14.dp),
-                                                color = if (theme == ReaderTheme.SYSTEM) MaterialTheme.colorScheme.surfaceContainerHighest else theme.bg,
-                                                border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                                                color = itemColor,
+                                                border = null,
                                                 modifier = Modifier
                                                     .weight(1f)
                                                     .height(44.dp)
@@ -317,11 +327,24 @@ fun PetalReaderScreen(
                                                     }
                                             ) {
                                                 Box(contentAlignment = Alignment.Center) {
-                                                    Text(
-                                                        text = theme.title,
-                                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                                        color = if (theme == ReaderTheme.SYSTEM) MaterialTheme.colorScheme.onSurface else theme.text
-                                                    )
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        if (isSelected) {
+                                                            Icon(
+                                                                imageVector = Icons.Rounded.Check,
+                                                                contentDescription = null,
+                                                                tint = contentColor,
+                                                                modifier = Modifier.size(14.dp)
+                                                            )
+                                                        }
+                                                        Text(
+                                                            text = theme.title,
+                                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                            color = contentColor
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }

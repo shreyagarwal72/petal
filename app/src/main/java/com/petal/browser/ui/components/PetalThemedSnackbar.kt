@@ -64,10 +64,7 @@ fun PetalThemedSnackbar(
         contentColor = contentColor,
         tonalElevation = 6.dp,
         shadowElevation = 8.dp,
-        border = androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-        )
+        border = null
     ) {
         Row(
             modifier = Modifier

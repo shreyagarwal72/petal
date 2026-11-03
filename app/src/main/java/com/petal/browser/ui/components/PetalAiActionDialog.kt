@@ -1,6 +1,5 @@
 package com.petal.browser.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -53,7 +52,7 @@ fun PetalAiActionDialog(
                     Surface(
                         shape = CircleShape,
                         color = if (isGlassHeader) petalGroupSurfaceColor() else MaterialTheme.colorScheme.primaryContainer,
-                        border = if (isGlassHeader) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.22f)) else null,
+                        border = null,
                         modifier = Modifier
                             .size(42.dp)
                             .then(if (isGlassHeader) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.5f, pressFx = true) else Modifier)
@@ -67,12 +66,21 @@ fun PetalAiActionDialog(
                             )
                         }
                     }
-                    Column {
-                        Text(
-                            stringResource(R.string.ui_ai_web_research),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                                    shape = CircleShape
+                                )
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                stringResource(R.string.ui_ai_web_research),
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                         Text(
                             stringResource(R.string.ui_choose_ai_action_for_webpage),
                             style = MaterialTheme.typography.bodySmall,
@@ -81,39 +89,43 @@ fun PetalAiActionDialog(
                     }
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    AiActionTile(
+                        title = stringResource(R.string.ui_summarise_this_page),
+                        subtitle = stringResource(R.string.ui_generate_a_concise_executive_summary),
+                        icon = Icons.Rounded.Subject,
+                        index = 0,
+                        count = 3,
+                        onClick = {
+                            onSelectAction("SUMMARIZE", rememberAsDefault)
+                        }
+                    )
 
-                // Option 1: Summarise this page Tile
-                AiActionTile(
-                    title = stringResource(R.string.ui_summarise_this_page),
-                    subtitle = stringResource(R.string.ui_generate_a_concise_executive_summary),
-                    icon = Icons.Rounded.Subject,
-                    onClick = {
-                        onSelectAction("SUMMARIZE", rememberAsDefault)
-                    }
-                )
+                    AiActionTile(
+                        title = stringResource(R.string.ui_ask_a_question),
+                        subtitle = stringResource(R.string.ui_ask_custom_questions_or_query),
+                        icon = Icons.Rounded.HelpOutline,
+                        index = 1,
+                        count = 3,
+                        onClick = {
+                            onSelectAction("ASK_QUESTION", rememberAsDefault)
+                        }
+                    )
 
-                // Option 2: Ask a Question Tile
-                AiActionTile(
-                    title = stringResource(R.string.ui_ask_a_question),
-                    subtitle = stringResource(R.string.ui_ask_custom_questions_or_query),
-                    icon = Icons.Rounded.HelpOutline,
-                    onClick = {
-                        onSelectAction("ASK_QUESTION", rememberAsDefault)
-                    }
-                )
-
-                // Option 3: Petal AI Search Tile
-                AiActionTile(
-                    title = stringResource(R.string.ui_petal_ai_search),
-                    subtitle = stringResource(R.string.ui_real_time_ai_web_search),
-                    icon = Icons.Rounded.Search,
-                    onClick = {
-                        onSelectAction("AI_SEARCH", rememberAsDefault)
-                    }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    AiActionTile(
+                        title = stringResource(R.string.ui_petal_ai_search),
+                        subtitle = stringResource(R.string.ui_real_time_ai_web_search),
+                        icon = Icons.Rounded.Search,
+                        index = 2,
+                        count = 3,
+                        onClick = {
+                            onSelectAction("AI_SEARCH", rememberAsDefault)
+                        }
+                    )
+                }
 
                 // Remember Choice Checkbox Row
                 Row(
@@ -144,16 +156,19 @@ private fun AiActionTile(
     title: String,
     subtitle: String,
     icon: ImageVector,
+    index: Int,
+    count: Int,
     onClick: () -> Unit
 ) {
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val tileShape = RoundedCornerShape(20.dp)
+    val tileShape = com.petal.browser.ui.containment.petalStackedBlockShape(index, count)
     Surface(
         onClick = onClick,
         shape = tileShape,
-        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-        border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
-        tonalElevation = if (isGlass) 0.dp else 2.dp,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+        border = null,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
             .then(if (isGlass) Modifier.liquidGlassChrome(tileShape, enabled = true, sheenIntensity = 0.50f, pressFx = true) else Modifier)
@@ -169,7 +184,7 @@ private fun AiActionTile(
                 shape = CircleShape,
                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.primaryContainer,
                 contentColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
-                border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.22f)) else null,
+                border = null,
                 modifier = Modifier
                     .size(40.dp)
                     .then(if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.45f) else Modifier)

@@ -37,10 +37,8 @@ package com.petal.browser.ui.components
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -67,11 +65,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
 import com.petal.browser.haptics.PetalHapticEngine
-import com.petal.browser.ui.theme.ExpressiveShapeHolder
-import com.petal.browser.ui.theme.LocalExpressiveShapesEnabled
-import com.petal.browser.ui.theme.PetalMaterialShapes
-import com.petal.browser.ui.theme.resolveShape
-import com.petal.browser.ui.theme.toShape
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -103,25 +96,8 @@ enum class QuickToolId(
     SCREENSHOT("screenshot", "Screenshot", Icons.Rounded.Screenshot, "Capture page screenshot", 14),
     TORRENT_MAGNET("torrent_magnet", "Torrents", Icons.Rounded.Download, "Magnet & torrent links", 15);
 
-    val expressiveShape: ExpressiveShapeHolder
-        get() = when (this) {
-            QR_SCANNER     -> PetalMaterialShapes.PixelCircle
-            TRANSLATOR     -> PetalMaterialShapes.Clover4Leaf
-            EDIT_PAGE      -> PetalMaterialShapes.Slanted
-            NETWORK        -> PetalMaterialShapes.Pentagon
-            AUTO_SCROLL    -> PetalMaterialShapes.Arrow
-            QR_SCAN_PAGE   -> PetalMaterialShapes.PixelTriangle
-            QR_GENERATOR   -> PetalMaterialShapes.Sunny
-            DEV_NOTES      -> PetalMaterialShapes.Arch
-            SITE_STYLE     -> PetalMaterialShapes.Flower
-            IMAGE_GRABBER  -> PetalMaterialShapes.Gem
-            INSPECTOR      -> PetalMaterialShapes.Diamond
-            BLOCK_AREA     -> PetalMaterialShapes.Cookie4Sided
-            SPOOF_IDENTITY -> PetalMaterialShapes.Ghostish
-            FORCE_ZOOM     -> PetalMaterialShapes.PuffyDiamond
-            SCREENSHOT     -> PetalMaterialShapes.Fan
-            TORRENT_MAGNET -> PetalMaterialShapes.Boom
-        }
+    val shape: androidx.compose.ui.graphics.Shape
+        get() = RoundedCornerShape(12.dp)
 }
 
 interface PetalQuickToolsActionHandler {
@@ -166,7 +142,7 @@ fun PetalQuickToolsSheet(
             .then(if (isGlass) Modifier.liquidGlassChrome(shape = sheetShape, enabled = true, sheenIntensity = sheen) else Modifier),
         shape = sheetShape,
         color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
-        border = if (isGlass) BorderStroke(0.75.dp, Color.White.copy(alpha = 0.20f)) else null,
+        border = null,
         tonalElevation = if (isGlass) 0.dp else 6.dp
     ) {
         Column(
@@ -217,24 +193,34 @@ fun PetalQuickToolsSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        TextButton(
+                        Button(
                             onClick = {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                 toolsList = QuickToolId.values().toList()
                                 saveOrder(toolsList)
                             },
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                         ) {
-                            Text(stringResource(R.string.ui_reset), style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.ui_reset), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold))
                         }
 
-                        FilledTonalButton(
+                        Button(
                             onClick = {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                 isReorderMode = false
                                 saveOrder(toolsList)
                             },
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                            shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
                         ) {
                             Text(stringResource(R.string.ui_done), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                         }
@@ -316,8 +302,8 @@ private fun ExpressiveQuickToolItem(
         label = "toolScale"
     )
 
-    // Distinct semantic M3 Expressive Shape for this tool (or 16.dp squircle when disabled)
-    val shape: Shape = tool.expressiveShape.resolveShape(RoundedCornerShape(16.dp))
+    // Standard 12.dp rounded squircle for ordinary item rows
+    val shape: Shape = RoundedCornerShape(12.dp)
 
     // Adaptive color pairs based on index
     val (containerColor, iconColor) = when (tool.shapeIndex % 4) {
@@ -341,20 +327,13 @@ private fun ExpressiveQuickToolItem(
         verticalArrangement = Arrangement.Center
     ) {
         val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-        // Expressive Shaped Icon Container
+        // Standard Icon Container (0 borders)
         Box(
             modifier = Modifier
                 .size(56.dp)
                 .clip(shape)
                 .background(if (isGlass) petalGroupSurfaceColor() else containerColor)
-                .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.55f, pressFx = true) else Modifier)
-                .border(
-                    BorderStroke(
-                        width = if (isReorderMode) 1.5.dp else if (isGlass) 0.75.dp else 0.5.dp,
-                        color = if (isReorderMode) MaterialTheme.colorScheme.primary else if (isGlass) Color.White.copy(alpha = 0.22f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                    ),
-                    shape = shape
-                ),
+                .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.55f, pressFx = true) else Modifier),
             contentAlignment = Alignment.Center
         ) {
             Icon(

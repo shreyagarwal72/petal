@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.preference.PreferenceManager
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -118,8 +117,7 @@ fun PetalProfileCard(
                 Surface(
                     shape = CircleShape,
                     color = cs.surfaceContainerHighest.copy(alpha = 0.95f),
-                    contentColor = cs.onSurface,
-                    border = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.4f))
+                    contentColor = cs.onSurface
                 ) {
                     Text(
                         "LV $level",
@@ -139,7 +137,6 @@ fun PetalProfileCard(
                         shape = CircleShape,
                         color = cs.primary,
                         contentColor = cs.onPrimary,
-                        border = BorderStroke(2.dp, cs.surface),
                         modifier = Modifier.size(cameraBadgeSizeDp.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {

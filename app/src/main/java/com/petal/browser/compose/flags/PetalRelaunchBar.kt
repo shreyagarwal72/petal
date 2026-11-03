@@ -84,16 +84,6 @@ fun PetalRelaunchBar(
                         shape = shape,
                         backdrop = backdrop,
                         isDark = MaterialTheme.colorScheme.surface.let { it.red * 0.299 + it.green * 0.587 + it.blue * 0.114 < 0.5 }
-                    )
-                    .border(
-                        width = 1.dp,
-                        brush = Brush.verticalGradient(
-                            listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
-                            )
-                        ),
-                        shape = shape
                     ),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
                 tonalElevation = 6.dp,

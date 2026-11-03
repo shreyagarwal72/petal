@@ -7,7 +7,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -282,7 +281,7 @@ fun PetalVideoPlayerOverlay(
 
         // ── 3.5. 2x Speed Boost HUD Indicator (Soul / YouTube Style) ────────
         if (isLongPressBoostActive) {
-            val boostShape = RoundedCornerShape(24.dp)
+            val boostShape = CircleShape
             Surface(
                 shape = boostShape,
                 color = Color.Black.copy(alpha = 0.75f),
@@ -292,7 +291,7 @@ fun PetalVideoPlayerOverlay(
                     .clip(boostShape)
                     .then(
                         if (isLiquidGlass) Modifier.liquidGlassChrome(boostShape, enabled = true, sheenIntensity = 0.9f, pressFx = true)
-                        else Modifier.border(1.dp, Color.White.copy(alpha = 0.25f), boostShape)
+                        else Modifier
                     )
             ) {
                 Row(
@@ -360,12 +359,10 @@ fun PetalVideoPlayerOverlay(
             val shape = CircleShape
             val hudModifier = if (isLiquidGlass) {
                 Modifier
-                    .background(Color.Black.copy(alpha = 0.55f), shape)
+                    .background(petalGroupSurfaceColor(), shape)
                     .liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.9f)
             } else {
-                Modifier
-                    .background(Color.Black.copy(alpha = 0.85f), shape)
-                    .border(1.dp, Color.White.copy(alpha = 0.2f), shape)
+                Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f), shape)
             }
             Surface(
                 shape = shape,
@@ -611,15 +608,13 @@ fun PetalVideoPlayerOverlay(
                     // Horizontal Speed Quick Selector Bar
                     AnimatedVisibility(visible = showSpeedSelector) {
                         val speeds = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f, 2.5f, 3.0f)
-                        val selectorShape = RoundedCornerShape(20.dp)
+                        val selectorShape = CircleShape
                         val selectorModifier = if (isLiquidGlass) {
                             Modifier
                                 .background(Color.Black.copy(alpha = 0.55f), selectorShape)
                                 .liquidGlassChrome(selectorShape, enabled = true, sheenIntensity = 0.8f)
                         } else {
-                            Modifier
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f), selectorShape)
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), selectorShape)
+                            Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f), selectorShape)
                         }
                         Box(
                             modifier = Modifier
@@ -635,7 +630,7 @@ fun PetalVideoPlayerOverlay(
                             ) {
                                 speeds.forEach { spd ->
                                     val isSelected = currentSpeed == spd
-                                    val pillShape = RoundedCornerShape(12.dp)
+                                    val pillShape = CircleShape
                                     val pillModifier = if (isSelected) {
                                         if (isLiquidGlass) {
                                             Modifier
@@ -685,10 +680,10 @@ fun PetalVideoPlayerOverlay(
                 nextContentDescription = stringResource(R.string.ui_forward_10s),
                 isLiquidGlass = isLiquidGlass,
                 height = 76.dp,
-                colorOtherButtons = if (isLiquidGlass) Color.Black.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f),
+                colorOtherButtons = if (isLiquidGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f),
                 colorPlayPause = MaterialTheme.colorScheme.primary,
                 tintPlayPauseIcon = MaterialTheme.colorScheme.onPrimary,
-                tintOtherIcons = Color.White,
+                tintOtherIcons = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .align(Alignment.Center)
                     .widthIn(max = 320.dp)
@@ -699,7 +694,7 @@ fun PetalVideoPlayerOverlay(
                 val bottomPillShape = RoundedCornerShape(28.dp)
                 Surface(
                     shape = bottomPillShape,
-                    color = if (isLiquidGlass) petalGroupSurfaceColor() else Color.Black.copy(alpha = 0.55f),
+                    color = if (isLiquidGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.75f),
                     shadowElevation = 0.dp,
                     tonalElevation = 0.dp,
                     modifier = Modifier

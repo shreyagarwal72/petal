@@ -40,6 +40,7 @@ fun PetalOptionsSheet(
 ) {
     com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismiss,
+        title = "Browser Options",
     ) {
         Column(
             modifier = Modifier
@@ -47,7 +48,6 @@ fun PetalOptionsSheet(
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            com.petal.browser.ui.containment.PetalSectionLabel("Browser Options", Modifier.entrance(index = 0))
 
             // Top Quick Grid Action Tiles
             Row(

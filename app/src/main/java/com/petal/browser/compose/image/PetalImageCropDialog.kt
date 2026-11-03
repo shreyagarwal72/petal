@@ -10,7 +10,6 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -215,12 +214,16 @@ fun PetalImageCropDialog(
                     }
 
                     // Rotate button
-                    OutlinedButton(
+                    FilledTonalButton(
                         onClick = {
                             rotationAngle = (rotationAngle + 90f) % 360f
                             PetalHapticEngine.getInstance(context).playClick(context)
                         },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                        shape = CircleShape,
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
                     ) {
                         Icon(Icons.Rounded.RotateRight, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
