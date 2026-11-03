@@ -1,232 +1,165 @@
 <div align="center">
 
-<img src="docs/readme/hero-light.png" alt="Petal — a private Material 3 Expressive browser for Android" width="100%">
+<img src="docs/readme/hero-light.png" alt="Petal is a private, fast Android browser built with Material 3 Expressive on Mozilla's GeckoView engine. Blocks ads, trackers, zero telemetry, 100% open source." width="100%">
 
 <br>
 
-# Petal
-
-### Browse freely. Stay private. Feel at home.
-
-A fast, private, open-source Android browser powered by Mozilla GeckoView and crafted with Material 3 Expressive.
-
-<p>
-  <img src="https://img.shields.io/badge/Android-8.0%2B-3D6654?style=for-the-badge&logo=android&logoColor=white&labelColor=18251F" alt="Android 8.0+">
-  <img src="https://img.shields.io/badge/GeckoView-158-3D6654?style=for-the-badge&logo=firefoxbrowser&logoColor=white&labelColor=18251F" alt="GeckoView 158">
-  <img src="https://img.shields.io/badge/Kotlin-Compose-3D6654?style=for-the-badge&logo=kotlin&logoColor=white&labelColor=18251F" alt="Kotlin Compose">
+<p align="center">
+<a href="https://github.com/shreyagarwal72/petal/releases/latest"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-download.svg"><img src="docs/readme/light/btn-download.svg" alt="Download Petal APK" height="50"></picture></a>
+<a href="https://github.com/shreyagarwal72/petal"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-github.svg"><img src="docs/readme/light/btn-github.svg" alt="Petal Source Code" height="50"></picture></a>
+<a href="https://github.com/shreyagarwal72/petal/issues"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-issues.svg"><img src="docs/readme/light/btn-issues.svg" alt="Report an Issue" height="50"></picture></a>
+<a href="#support"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-donate.svg"><img src="docs/readme/light/btn-donate.svg" alt="Support Petal" height="50"></picture></a>
 </p>
-<p>
-  <a href="https://github.com/shreyagarwal72/petal/releases/latest"><img src="https://img.shields.io/github/v/release/shreyagarwal72/petal?style=flat-square&logo=github&color=3D6654&label=Latest%20release" alt="Latest release"></a>
-  <a href="https://github.com/shreyagarwal72/petal/stargazers"><img src="https://img.shields.io/github/stars/shreyagarwal72/petal?style=flat-square&logo=github&color=3D6654" alt="GitHub stars"></a>
-  <img src="https://img.shields.io/badge/Material_3-Expressive-3D6654?style=flat-square&logo=materialdesign&logoColor=white" alt="Material 3 Expressive">
-  <img src="https://img.shields.io/badge/Privacy-First-3D6654?style=flat-square&logo=shieldsdotio&logoColor=white" alt="Privacy first">
-  <img src="https://img.shields.io/badge/License-GPL--3.0-3D6654?style=flat-square" alt="GPL 3.0">
+
+<p align="center">
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-adblock.svg"><img src="docs/readme/light/badge-adblock.svg" alt="Native AdBlock Rust" height="28"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-geckoview.svg"><img src="docs/readme/light/badge-geckoview.svg" alt="GeckoView 158" height="28"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-m3e.svg"><img src="docs/readme/light/badge-m3e.svg" alt="Material 3 Expressive" height="28"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-privacy.svg"><img src="docs/readme/light/badge-privacy.svg" alt="100% Private & No Telemetry" height="28"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-android.svg"><img src="docs/readme/light/badge-android.svg" alt="Android 8.0+" height="28"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-kotlin.svg"><img src="docs/readme/light/badge-kotlin.svg" alt="Kotlin + Compose" height="28"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-addons.svg"><img src="docs/readme/light/badge-addons.svg" alt="Firefox Add-ons" height="28"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-gpl.svg"><img src="docs/readme/light/badge-gpl.svg" alt="GPL-3.0" height="28"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-prs.svg"><img src="docs/readme/light/badge-prs.svg" alt="PRs Welcome" height="28"></picture>
 </p>
+
+</div>
+
+<h3 id="overview"><picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset="docs/readme/dark/hm-overview.svg"><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/h-overview.svg"><source media="(max-width: 640px)" srcset="docs/readme/light/hm-overview.svg"><img src="docs/readme/light/h-overview.svg" alt="Overview: Private, fast and expressively modern" width="100%"></picture></h3>
+
+Petal is a free, open-source Android browser built from the ground up with **Mozilla GeckoView** instead of the stock Chromium WebView. It blocks ads, tracking beacons, and crypto miners before they execute, ensuring blistering speeds and minimal data consumption.
+
+The UI is crafted using **Material 3 Expressive**: shapes morph fluidly on touch, spring physics drive every sheet and gesture, dynamic color extracts harmonious palettes directly from your wallpaper, and a true-black AMOLED mode saves battery. There are zero ads, zero news feeds, and zero embedded tracking analytics.
 
 <br>
 
-<a href="https://github.com/shreyagarwal72/petal/releases/latest">
-  <img src="https://img.shields.io/badge/↓%20DOWNLOAD%20PETAL-Latest%20APK-3D6654?style=for-the-badge&logo=android&logoColor=white&labelColor=18251F" alt="Download Petal">
-</a>
-<a href="https://github.com/shreyagarwal72/petal">
-  <img src="https://img.shields.io/badge/SOURCE%20CODE-GitHub-3D6654?style=for-the-badge&logo=github&logoColor=white&labelColor=18251F" alt="Source code">
-</a>
+<table width="100%"><thead><tr><th align="left" width="28%">Quick Facts</th><th align="left">Details</th></tr></thead><tbody>
+<tr><td><b>App Name</b></td><td>Petal Browser</td></tr>
+<tr><td><b>Platform</b></td><td>Android 8.0 and above (API 26+, target API 36)</td></tr>
+<tr><td><b>Engine</b></td><td>Mozilla GeckoView 158 (Independent Web Standards engine)</td></tr>
+<tr><td><b>Ad Blocking</b></td><td>High-performance native Rust engine (Brave <code>adblock-rust</code>) + Hagezi & uBlock lists</td></tr>
+<tr><td><b>UI System</b></td><td>Jetpack Compose & Material 3 Expressive (Spring physics, Morphing shapes, Dynamic color)</td></tr>
+<tr><td><b>Extensions</b></td><td>Firefox WebExtensions / Add-ons support</td></tr>
+<tr><td><b>Privacy</b></td><td>Zero accounts, biometric password vault, site-by-site shield, local sandboxing</td></tr>
+<tr><td><b>AI Assistant</b></td><td>Optional BYOK (Gemini, OpenAI, Groq, Anthropic, Ollama)</td></tr>
+<tr><td><b>License</b></td><td>GNU GPL v3.0</td></tr>
+</tbody></table>
 
-<br><br>
-
-[Overview](#overview) · [Screenshots](#screenshots) · [Features](#features) · [Privacy](#privacy) · [Install](#get-petal) · [Build](#build-from-source)
-
-</div>
-
----
-
-<h2 id="overview">🌿 Overview</h2>
-
-Petal is a free, open-source browser for Android built around three ideas: **privacy by default, a capable browsing engine, and an expressive interface**.
-
-Unlike browsers that rely on Android System WebView, Petal uses Mozilla's GeckoView engine. Ads, trackers, crypto miners and fingerprinting scripts are blocked before they load. There is no account requirement, news feed or built-in analytics.
-
-The interface follows Material 3 Expressive with dynamic colour, spring motion, morphing shapes and haptic feedback.
-
-<h2 id="screenshots">📱 Screenshots</h2>
-
-<div align="center">
-  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-1.png" width="19%" alt="Petal browser screenshot 1">
-  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-2.png" width="19%" alt="Petal browser screenshot 2">
-  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-3.png" width="19%" alt="Petal browser screenshot 3">
-  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-4.png" width="19%" alt="Petal browser screenshot 4">
-  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-5.png" width="19%" alt="Petal browser screenshot 5">
-</div>
-
-<h2 id="features">✨ Features</h2>
-
-<table width="100%">
-  <tr>
-    <td width="50%" valign="top">
-      <img src="docs/readme/icons/engine.svg" width="42" alt="Engine icon"><br>
-      <strong>Firefox-powered engine</strong><br>
-      GeckoView 158 with modern web standards support. Independent of your phone's System WebView.
-    </td>
-    <td width="50%" valign="top">
-      <img src="docs/readme/icons/adblock.svg" width="42" alt="Ad blocking icon"><br>
-      <strong>Built-in ad & tracker blocking</strong><br>
-      Blocks ads, trackers, crypto miners and fingerprinting scripts before they load.
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <img src="docs/readme/icons/glass.svg" width="42" alt="Design icon"><br>
-      <strong>Material 3 Expressive</strong><br>
-      Dynamic wallpaper colours, ready-made palettes, AMOLED black, spring motion and haptics.
-    </td>
-    <td width="50%" valign="top">
-      <img src="docs/readme/icons/tabs.svg" width="42" alt="Tabs icon"><br>
-      <strong>Flexible tab management</strong><br>
-      Grid tab switcher, tab groups, private tabs and sessions that survive app restarts.
-    </td>
-  </tr>
-</table>
-
-### 🧭 Browsing
-
-- **Collapsing address bar** — gets out of the way as you scroll; swipe it sideways to switch tabs.
-- **Quick address actions** — long-press to copy a clean link, paste and go, or bookmark.
-- **Firefox add-ons** — install supported WebExtensions from Mozilla Add-ons.
-- **Built-in PDF viewer** — read PDFs without leaving the browser.
-
-### 🛡️ Privacy & security
-
-- **Tracking protection enabled by default** — browse without needing a cloud account.
-- **Privacy shield** — inspect blocked requests and adjust protection for individual sites.
-- **Password manager** — save and autofill logins with biometric unlock.
-- **Site identity switching** — change the browser identity presented to a website.
-
-### 🧰 Built-in tools
-
-- **Download manager** — multi-threaded, resumable downloads with background progress.
-- **Media grabber** — detect available media on a page.
-- **Built-in media player** — full-screen playback with gesture controls.
-- **Optional AI helper** — summarise or ask questions about a page using your own provider key. Page text is sent to the selected provider only when you use the feature.
-- **Home-screen widgets** — get to search quickly.
-
-<h2 id="privacy">🔒 Privacy, by design</h2>
-
-Petal does not require an account and has no built-in analytics or news feed. Tracking protection is on by default, and the privacy shield lets you see what is blocked on a site.
-
-The optional AI helper is user-configured. You provide a provider key, and page content is sent to that provider only when you actively use the feature.
-
-<h2 id="get-petal">⬇️ Get Petal</h2>
+<h3 id="get"><picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset="docs/readme/dark/hm-get.svg"><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/h-get.svg"><source media="(max-width: 640px)" srcset="docs/readme/light/hm-get.svg"><img src="docs/readme/light/h-get.svg" alt="Get Petal: Download, source code and releases" width="100%"></picture></h3>
 
 <div align="center">
 
-<a href="https://github.com/shreyagarwal72/petal/releases/latest">
-  <img src="https://img.shields.io/badge/Download%20latest%20APK-GitHub%20Releases-3D6654?style=for-the-badge&logo=github&logoColor=white" alt="Download latest APK">
-</a>
-
-<br><br>
-
-<a href="https://github.com/shreyagarwal72/petal">GitHub</a> ·
-<a href="https://github.com/shreyagarwal72/petal/issues">Report an issue</a> ·
-<a href="https://github.com/shreyagarwal72/petal/stargazers">Star the project</a>
+| Action | Destination |
+| :--- | :--- |
+| **Download APK** | [GitHub Releases](https://github.com/shreyagarwal72/petal/releases/latest) |
+| **Source Code** | [github.com/shreyagarwal72/petal](https://github.com/shreyagarwal72/petal) |
+| **Issue Tracker** | [GitHub Issues](https://github.com/shreyagarwal72/petal/issues) |
+| **Pull Requests** | [GitHub PRs](https://github.com/shreyagarwal72/petal/pulls) |
+| **Documentation** | [architecture.md](architecture.md) · [design.md](design.md) · [FAQs](FAQs.md) |
+| **License** | [GNU GPL-3.0](LICENSE.md) |
 
 </div>
 
-**Install with ADB**
+<div align="center">
+
+<a href="https://github.com/shreyagarwal72/petal/releases/latest"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-download.svg"><img src="docs/readme/light/btn-download.svg" alt="Download APK" height="50"></picture></a>
+<a href="https://github.com/shreyagarwal72/petal"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-github.svg"><img src="docs/readme/light/btn-github.svg" alt="GitHub Repository" height="50"></picture></a>
+<a href="https://github.com/shreyagarwal72/petal/issues"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-issues.svg"><img src="docs/readme/light/btn-issues.svg" alt="Report an Issue" height="50"></picture></a>
+<a href="https://github.com/shreyagarwal72/petal/pulls"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-contribute.svg"><img src="docs/readme/light/btn-contribute.svg" alt="Contribute" height="50"></picture></a>
+
+</div>
+
+<h3 id="screenshots"><picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset="docs/readme/dark/hm-screenshots.svg"><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/h-screenshots.svg"><source media="(max-width: 640px)" srcset="docs/readme/light/hm-screenshots.svg"><img src="docs/readme/light/h-screenshots.svg" alt="Screenshots: Material 3 Expressive UI in Action" width="100%"></picture></h3>
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-1.png" width="19%" alt="Petal browser home screen">
+  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-2.png" width="19%" alt="Petal tab switcher">
+  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-3.png" width="19%" alt="Petal privacy shield">
+  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-4.png" width="19%" alt="Petal AI and reader mode">
+  <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-5.png" width="19%" alt="Petal Material 3 Expressive settings">
+</div>
+
+<h3 id="design"><picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset="docs/readme/dark/hm-design.svg"><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/h-design.svg"><source media="(max-width: 640px)" srcset="docs/readme/light/hm-design.svg"><img src="docs/readme/light/h-design.svg" alt="Design: Material 3 Expressive shapes, springs and motion" width="100%"></picture></h3>
+
+Petal embraces the complete Material 3 Expressive design tokens:
+* **Organic Morphing Containers:** Cards and dialogs morph smoothly between rounded pill states and edge-anchored bottom sheets.
+* **Floating Bottom Pill Bar:** Natural one-handed ergonomics where the collapsible URL bar tucks away on downward scroll and reappears with subtle haptic resistance.
+* **Spring Dynamics & Gesture Curves:** Predictive back gestures, swipe-to-switch tab animations, and bouncy drag physics tuned via custom Jetpack Compose springs.
+* **Dynamic Palette Extraction:** Harmonious UI styling generated dynamically from your Android device wallpaper with pure AMOLED dark accents.
+
+<h3 id="features"><picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset="docs/readme/dark/hm-features.svg"><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/h-features.svg"><source media="(max-width: 640px)" srcset="docs/readme/light/hm-features.svg"><img src="docs/readme/light/h-features.svg" alt="Features: Native adblock, GeckoView engine and smart browsing" width="100%"></picture></h3>
+
+<div align="center">
+
+| | |
+|:---:|:---:|
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/card-engine.svg"><img src="docs/readme/light/card-engine.svg" alt="Mozilla GeckoView Engine" width="430"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/card-adblock.svg"><img src="docs/readme/light/card-adblock.svg" alt="Rust Native Adblock" width="430"></picture> |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/card-privacy.svg"><img src="docs/readme/light/card-privacy.svg" alt="Privacy Shield & Biometrics" width="430"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/card-addons.svg"><img src="docs/readme/light/card-addons.svg" alt="Firefox Addons Support" width="430"></picture> |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/card-ai.svg"><img src="docs/readme/light/card-ai.svg" alt="BYOK AI Web Companion" width="430"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/card-theme.svg"><img src="docs/readme/light/card-theme.svg" alt="Expressive Dynamic Theme" width="430"></picture> |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/card-media.svg"><img src="docs/readme/light/card-media.svg" alt="Media Sniffer & Player" width="430"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/card-tabs.svg"><img src="docs/readme/light/card-tabs.svg" alt="Smart Tabs & Groups" width="430"></picture> |
+
+</div>
+
+<table width="100%"><thead><tr><th align="left" width="28%">Domain</th><th align="left">Capabilities & Architecture</th></tr></thead><tbody>
+<tr><td><b>GeckoView Core</b></td><td>True independence from Android System WebView. Full Gecko 158 web standards, CSS grids, WebAssembly, and modern security patches.</td></tr>
+<tr><td><b>Rust Adblocking</b></td><td>Powered by Brave's <code>adblock-rust</code> compiled via NDK. Real-time cosmetic filtering, network request blocking, and anti-circumvention scriptlets.</td></tr>
+<tr><td><b>Expressive Navigation</b></td><td>Collapsible address bar, bottom controls for one-handed operation, horizontal address bar swipe to change tabs, and responsive grid tab layout.</td></tr>
+<tr><td><b>Integrated Tools</b></td><td>Multi-threaded segmented background download manager, native PDF reader, video floating picture-in-picture (PiP), and media asset grabber.</td></tr>
+<tr><td><b>AI Assistant (BYOK)</b></td><td>Bring Your Own Key integration with Gemini, Groq, OpenAI, Anthropic, and local Ollama instances. Summarize long reads, extract structured tables, or chat with the page.</td></tr>
+<tr><td><b>Privacy & Passwords</b></td><td>Encrypted local SQLite vault protected by Android BiometricPrompt. Per-site privacy controls, cookie sandboxing, and user-agent spoofing.</td></tr>
+<tr><td><b>Live Island</b></td><td>Floating interactive status pill on top of the screen (using Shizuku or system overlays) for downloads and background media.</td></tr>
+</tbody></table>
+
+<h3 id="permissions"><picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset="docs/readme/dark/hm-permissions.svg"><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/h-permissions.svg"><source media="(max-width: 640px)" srcset="docs/readme/light/hm-permissions.svg"><img src="docs/readme/light/h-permissions.svg" alt="Permissions: Transparent and minimal" width="100%"></picture></h3>
+
+Petal requests runtime permissions only at the point of interaction:
+
+| Permission | Purpose |
+| :--- | :--- |
+| `INTERNET` & `ACCESS_NETWORK_STATE` | Loading web pages and detecting network conditions. |
+| `CAMERA` & `RECORD_AUDIO` | Requested only when a web app prompts (e.g. video calls, QR scanning, voice input). |
+| `ACCESS_FINE_LOCATION` | Optional; prompted strictly per-site with granular permission toggles. |
+| `READ_MEDIA_*` & storage | Uploading web files, saving PDF documents, and managing downloads. |
+| `POST_NOTIFICATIONS` & foreground | Foreground services for ongoing downloads and background media playback. |
+| `USE_BIOMETRIC` | Unlocking your local password safe with fingerprint or face ID. |
+| `VIBRATE` | Material 3 Expressive spring motion haptics and touch feedback. |
+| `REQUEST_INSTALL_PACKAGES` | Optional built-in seamless updater for GitHub releases. |
+| `SYSTEM_ALERT_WINDOW` | Optional floating island on devices running Android versions without Live Updates. |
+
+<h3 id="stack"><picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset="docs/readme/dark/hm-stack.svg"><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/h-stack.svg"><source media="(max-width: 640px)" srcset="docs/readme/light/hm-stack.svg"><img src="docs/readme/light/h-stack.svg" alt="Tech Stack: Native Android & Rust architecture" width="100%"></picture></h3>
+
+<table width="100%"><thead><tr><th align="left" width="25%">Layer</th><th align="left" width="35%">Library / Tool</th><th align="left">Role</th></tr></thead><tbody>
+<tr><td><b>Language</b></td><td>Kotlin 2.x · Rust (NDK)</td><td>Expressive, null-safe client layer with bare-metal Rust filtering logic.</td></tr>
+<tr><td><b>UI System</b></td><td>Jetpack Compose · Material 3 Expressive</td><td>Dynamic container transforms, custom spring specs, and expressive motion.</td></tr>
+<tr><td><b>Browser Engine</b></td><td>Mozilla GeckoView 158</td><td>Full independent web rendering engine and extension runtime.</td></tr>
+<tr><td><b>Ad Blocking</b></td><td><code>adblock-rust</code> (NDK JNI)</td><td>High-performance URL rule parsing and sub-millisecond element hiding.</td></tr>
+<tr><td><b>Architecture</b></td><td>MVVM · StateFlow · Flow</td><td>Clean separation of reactive UI state and GeckoView engine events.</td></tr>
+<tr><td><b>Dependency Injection</b></td><td>Dagger Hilt</td><td>Modular singleton and Android lifecycle dependency management.</td></tr>
+<tr><td><b>Storage & Vault</b></td><td>Room SQLite · SQLCipher · BiometricPrompt</td><td>Hardware-backed encrypted vault for credentials, history, and bookmarks.</td></tr>
+<tr><td><b>Privileged APIs</b></td><td>Shizuku API</td><td>Optional elevated system integration for package installs & overlays.</td></tr>
+<tr><td><b>Performance</b></td><td>Baseline Profiles · R8 ProGuard</td><td>Optimized DEX compilation for instant launch times and low RAM usage.</td></tr>
+<tr><td><b>Platform Targets</b></td><td>Min SDK 26 (Android 8.0) · Target SDK 36</td><td>Compatible across legacy Android devices through Android 16+.</td></tr>
+</tbody></table>
+
+<h3 id="build"><picture><source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset="docs/readme/dark/hm-build.svg"><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/h-build.svg"><source media="(max-width: 640px)" srcset="docs/readme/light/hm-build.svg"><img src="docs/readme/light/h-build.svg" alt="Build from source" width="100%"></picture></h3>
+
+**Requirements:**
+* Android Studio Meerkat / Ladybug or newer
+* Android SDK 36+
+* JDK 17 or JDK 21
+* Rust toolchain with `cargo` and `cargo-ndk` (if modifying `native/adblock_rs`)
 
 ```bash
-adb install -r Petal-release.apk
-```
-
-Download the APK from the Releases page, open it, and allow installs from your browser or file manager when Android asks. Petal can update itself from GitHub Releases.
-
-<h2 id="permissions">🔐 Permissions</h2>
-
-Petal requests permissions when a feature needs them.
-
-| Permission | Why it is used |
-|---|---|
-| Internet & network state | Load pages and check connectivity |
-| Camera & microphone | Site requests, QR scanning and voice search |
-| Location | Only when a website requests it; controllable per site |
-| Photos, media & storage | Upload files and save downloads |
-| Notifications & foreground service | Download progress and background media playback |
-| Biometric | Unlock saved passwords |
-| Vibrate | Haptic feedback |
-| Install packages | Built-in GitHub release updater |
-| Draw over other apps *(optional)* | Floating island on devices without Android 16 Live Updates; off by default |
-
-<h2 id="build-from-source">🛠️ Build from source</h2>
-
-**Requirements**
-
-- JDK 17 or newer
-- Android SDK
-
-**Build**
-
-```bash
-git clone https://github.com/shreyagarwal72/petal.git
+# Clone the repository
+git clone [https://github.com/shreyagarwal72/petal.git](https://github.com/shreyagarwal72/petal.git)
 cd petal
 
-# Debug APK
+# Compile debug APK
 ./gradlew assembleDebug
 
-# Release APK
+# Compile production release APK
 ./gradlew assembleRelease
-```
-
-The release APK is generated at:
-
-```text
-app/build/outputs/apk/release/
-```
-
-<h2 id="tech-stack">⚙️ Tech stack</h2>
-
-| Layer | Technology |
-|---|---|
-| Language | Kotlin |
-| UI | Jetpack Compose · Material 3 Expressive |
-| Browser engine | Mozilla GeckoView 158 |
-| Architecture | MVVM · Kotlin Coroutines & Flow · Hilt |
-| Ad blocking | Rust · Brave adblock-rust |
-| Privileged actions | Shizuku *(optional)* |
-| Minimum Android | Android 8.0 · API 26 |
-| Target Android | Android 16 · API 36 |
-
-<h2 id="contributing">🤝 Contributing</h2>
-
-Bug reports, ideas and pull requests are welcome. For large changes, please open an issue before starting work. Read the [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
-
-<h2 id="credits">💚 Credits</h2>
-
-- [Mozilla GeckoView](https://mozilla.github.io/geckoview/) — browser engine.
-- [adblock-rust](https://github.com/brave/adblock-rust) by Brave — ad-blocking engine.
-- [Hagezi](https://github.com/hagezi/dns-blocklists) and [uBlock Origin uAssets](https://github.com/uBlockOrigin/uAssets) — filter lists.
-- [Shizuku](https://github.com/RikkaApps/Shizuku) — optional privileged API.
-- [Material 3 Expressive](https://m3.material.io/) — design system.
-
-<h2 id="license">📄 License</h2>
-
-Petal is free software licensed under the **GNU General Public License v3.0**. See [LICENSE.md](LICENSE.md).
-
-<div align="center">
-
-<br>
-
-**Made with care by Vanshu Agarwal and contributors · NextUp Studio**
-
-<a href="https://github.com/shreyagarwal72/petal">
-  <img src="https://img.shields.io/badge/Explore%20Petal-on%20GitHub-3D6654?style=for-the-badge&logo=github&logoColor=white" alt="Explore Petal on GitHub">
-</a>
-
-</div>
-td>
-    <td><strong>Responsibility</strong></td>
-  </tr>
-  <tr>
-    <td><code>ui/</code></td>
-    <td>Shared components, the containment design, glass effects and the theme</td>
+ent design, glass effects and the theme</td>
   </tr>
   <tr>
     <td><code>compose/</code></td>
