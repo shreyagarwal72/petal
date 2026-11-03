@@ -183,50 +183,68 @@ Petal asks only when a feature is actively invoked:
   </picture>
 </p>
 
-## <img src="docs/readme/shape-6.svg" height="26" align="top"> How the project is structured
+## <img src="docs/readme/shape-6.svg" height="26" align="top"> Architecture & Codebase Mind Map
 
-Petal is a single-app Kotlin project with a native Rust module. A tour of the code lives in [architecture.md](architecture.md), and the visual rules are in [design.md](design.md).
+Petal is a reactive, single-app Android project built on Mozilla GeckoView with a high-performance native Rust core. Explore the architectural mind map and interactive package tree below:
 
-Paths below are inside <code>app/src/main/java/com/petal/browser/</code> unless noted.
+```mermaid
+graph TD
+    classDef core fill:#b81d63,stroke:#ffd9e3,stroke-width:2px,color:#ffffff,font-weight:bold
+    classDef ui fill:#463647,stroke:#cfb8ce,stroke-width:1.5px,color:#fed7ff
+    classDef engine fill:#224466,stroke:#78b3f0,stroke-width:1.5px,color:#e1f0ff
+    classDef sec fill:#2b4c38,stroke:#85d6a4,stroke-width:1.5px,color:#e8f8ee
+    classDef native fill:#5c351f,stroke:#f0a878,stroke-width:1.5px,color:#ffeedd
 
-<table>
-  <tr>
-    <td><strong>Area</strong></td>
-    <td><strong>Responsibility</strong></td>
-  </tr>
-  <tr>
-    <td><code>ui/</code></td>
-    <td>Shared components, the containment design, glass effects and the theme</td>
-  </tr>
-  <tr>
-    <td><code>compose/</code></td>
-    <td>Screens: home, tabs, settings, downloads, PDF viewer, AI and extensions</td>
-  </tr>
-  <tr>
-    <td><code>engine/</code></td>
-    <td>GeckoView integration and the ad-blocking layer</td>
-  </tr>
-  <tr>
-    <td><code>media/</code> <code>download/</code></td>
-    <td>The media player and sniffer, and the download service</td>
-  </tr>
-  <tr>
-    <td><code>passwords/</code> <code>privacy/</code> <code>sync/</code></td>
-    <td>Password storage, the privacy shield and account sync</td>
-  </tr>
-  <tr>
-    <td><code>native/adblock_rs/</code></td>
-    <td>The Rust ad-blocking engine, built on Brave's adblock-rust (repo root)</td>
-  </tr>
-  <tr>
-    <td><code>baselineprofile/</code></td>
-    <td>Startup and scroll performance profile (repo root)</td>
-  </tr>
-  <tr>
-    <td><code>site/</code></td>
-    <td>The project website (repo root)</td>
-  </tr>
-</table>
+    Petal["🌸 Petal Browser"]:::core
+
+    Petal --> UI["🎨 Material 3 Expressive UI<br/><code>com.petal.browser.ui / compose</code>"]:::ui
+    Petal --> Engine["⚡ GeckoView 159 Engine<br/><code>com.petal.browser.engine</code>"]:::engine
+    Petal --> Privacy["🛡️ Privacy & Security Vault<br/><code>passwords / privacy / sync</code>"]:::sec
+    Petal --> Media["🎵 Media & Download Manager<br/><code>media / download</code>"]:::ui
+    Petal --> Rust["🦀 Native Rust Adblock NDK<br/><code>native/adblock_rs</code>"]:::native
+
+    UI --> U1["Morphing Shapes & Spring Curves"]:::ui
+    UI --> U2["Liquid Glass Address Pill"]:::ui
+    UI --> U3["Predictive Back & Depth Blur"]:::ui
+    UI --> U4["60fps Tab Grid Switcher"]:::ui
+
+    Engine --> E1["Firefox WebExtension Runtime"]:::engine
+    Engine --> E2["GeckoSession & Tab History Controller"]:::engine
+    Engine --> E3["Total Cookie Protection & Sandboxing"]:::engine
+
+    Privacy --> P1["BiometricPrompt Password Vault"]:::sec
+    Privacy --> P2["SQLCipher Local Encrypted SQLite"]:::sec
+    Privacy --> P3["Zero Telemetry & Per-Site Shields"]:::sec
+
+    Media --> M1["mpvEx Floating Video PiP"]:::ui
+    Media --> M2["Hi-Res Audio Player & Sniffer"]:::ui
+    Media --> M3["Fetch2 Resumable Multi-thread Downloads"]:::ui
+
+    Rust --> R1["Brave adblock-rust NDK Engine"]:::native
+    Rust --> R2["Sub-millisecond Cosmetic Hiding"]:::native
+    Rust --> R3["HaGeZi PRO & uBlock Network Filters"]:::native
+```
+
+<details>
+<summary><b>📂 Interactive Package Directory Tree (Click to expand)</b></summary>
+<br>
+
+Paths below are inside `app/src/main/java/com/petal/browser/` unless noted:
+
+| Area | Package Path | Architectural Responsibility |
+| :--- | :--- | :--- |
+| **UI Components** | `ui/` | Shared M3E containment, glass effects, dynamic wallpaper palette, and haptics. |
+| **Screens** | `compose/` | Full-screen Compose views: Home, Tab Grid, Settings, Downloads, PDF Viewer, and AI Hub. |
+| **Browser Engine** | `engine/` | Mozilla GeckoView integration, WebExtensions bridge, and navigation event dispatcher. |
+| **Media Player** | `media/` | Native audio/video player with PiP, media sniffer, and playback notification service. |
+| **Downloads** | `download/` | Multi-threaded segmented background download manager with auto-resumption. |
+| **Privacy & Vault** | `passwords/` `privacy/` | Hardware-backed biometric encrypted SQLite vault and per-site tracking defense. |
+| **Account Sync** | `sync/` | Optional end-to-end encrypted Firefox Account sync engine. |
+| **Native Adblock** | `native/adblock_rs/` | JNI bindings and Brave `adblock-rust` compiled via Android NDK (repo root). |
+| **Startup Profile** | `baselineprofile/` | Android Baseline Profile for instant cold starts and smooth 120Hz scrolling. |
+| **Project Site** | `site/` | Fast static documentation, changelog, PRD, and privacy portal. |
+
+</details>
 
 <p align="center">
   <picture>
