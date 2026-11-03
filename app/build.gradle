@@ -265,33 +265,33 @@ dependencies {
     implementation 'io.github.junkfood02.youtubedl-android:ffmpeg:0.18.1'
     implementation 'io.github.junkfood02.youtubedl-android:aria2c:0.18.1'
 
-    // Mozilla GeckoView & Android Components (Release channel 158.0)
-    implementation 'org.mozilla.geckoview:geckoview:158.0.20261007201254'
-    implementation('org.mozilla.components:browser-engine-gecko:158.0') {
+    // Mozilla GeckoView & Android Components (Release channel 159.0.1)
+    implementation 'org.mozilla.geckoview:geckoview:159.0.20261102144711'
+    implementation('org.mozilla.components:browser-engine-gecko:159.0.1') {
         exclude group: 'org.mozilla.geckoview', module: 'geckoview-omni'
     }
-    implementation 'org.mozilla.components:concept-engine:158.0'
-    implementation 'org.mozilla.components:browser-state:158.0'
-    implementation 'org.mozilla.components:browser-session-storage:158.0'
-    implementation 'org.mozilla.components:lib-state:158.0'
-    implementation 'org.mozilla.components:support-base:158.0'
-    implementation 'org.mozilla.components:support-utils:158.0'
+    implementation 'org.mozilla.components:concept-engine:159.0.1'
+    implementation 'org.mozilla.components:browser-state:159.0.1'
+    implementation 'org.mozilla.components:browser-session-storage:159.0.1'
+    implementation 'org.mozilla.components:lib-state:159.0.1'
+    implementation 'org.mozilla.components:support-base:159.0.1'
+    implementation 'org.mozilla.components:support-utils:159.0.1'
 
-    // Android Components Features (158.0)
-    implementation 'org.mozilla.components:feature-readerview:158.0'
-    implementation 'org.mozilla.components:feature-session:158.0'
+    // Android Components Features (159.0.1)
+    implementation 'org.mozilla.components:feature-readerview:159.0.1'
+    implementation 'org.mozilla.components:feature-session:159.0.1'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-    implementation 'org.mozilla.components:feature-findinpage:158.0'
-    implementation 'org.mozilla.components:feature-sitepermissions:158.0'
-    implementation 'org.mozilla.components:feature-prompts:158.0'
-    implementation 'org.mozilla.components:feature-tabs:158.0'
-    implementation 'org.mozilla.components:feature-contextmenu:158.0'
-    implementation 'org.mozilla.components:feature-pwa:158.0'
-    implementation 'org.mozilla.components:feature-downloads:158.0'
-    implementation 'org.mozilla.components:feature-search:158.0'
-    implementation 'org.mozilla.components:feature-webcompat:158.0'
-    implementation 'org.mozilla.components:feature-customtabs:158.0'
-    implementation 'org.mozilla.components:feature-media:158.0'
+    implementation 'org.mozilla.components:feature-findinpage:159.0.1'
+    implementation 'org.mozilla.components:feature-sitepermissions:159.0.1'
+    implementation 'org.mozilla.components:feature-prompts:159.0.1'
+    implementation 'org.mozilla.components:feature-tabs:159.0.1'
+    implementation 'org.mozilla.components:feature-contextmenu:159.0.1'
+    implementation 'org.mozilla.components:feature-pwa:159.0.1'
+    implementation 'org.mozilla.components:feature-downloads:159.0.1'
+    implementation 'org.mozilla.components:feature-search:159.0.1'
+    implementation 'org.mozilla.components:feature-webcompat:159.0.1'
+    implementation 'org.mozilla.components:feature-customtabs:159.0.1'
+    implementation 'org.mozilla.components:feature-media:159.0.1'
 
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.60.1'
