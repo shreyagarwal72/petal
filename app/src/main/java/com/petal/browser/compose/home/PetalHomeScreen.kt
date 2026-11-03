@@ -536,20 +536,36 @@ fun PetalHomeScreen(
 
     val glassWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
     val homeSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val isGlassEnabled = homeSp.getBoolean("sp_liquid_glass_enabled", false)
+    var isGlassEnabled by remember { mutableStateOf(homeSp.getBoolean("sp_liquid_glass_enabled", false)) }
+    var glassBgMode by remember { mutableStateOf(homeSp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE") }
+    var glassImageUri by remember { mutableStateOf(homeSp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()) }
+    var glassBgDim by remember { mutableFloatStateOf(homeSp.getFloat("sp_liquid_glass_bg_dim", 0.35f)) }
+    var glassBgBlur by remember { mutableFloatStateOf(homeSp.getFloat("sp_liquid_glass_bg_blur", 16f)) }
+
+    DisposableEffect(homeSp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                "sp_liquid_glass_enabled" -> isGlassEnabled = homeSp.getBoolean("sp_liquid_glass_enabled", false)
+                "sp_liquid_glass_bg_mode" -> glassBgMode = homeSp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
+                "sp_liquid_glass_bg_image_uri" -> glassImageUri = homeSp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
+                "sp_liquid_glass_bg_dim" -> glassBgDim = homeSp.getFloat("sp_liquid_glass_bg_dim", 0.35f)
+                "sp_liquid_glass_bg_blur" -> glassBgBlur = homeSp.getFloat("sp_liquid_glass_bg_blur", 16f)
+            }
+        }
+        homeSp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { homeSp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
 
     CompositionLocalProvider(
         com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides glassWallpaper
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+            color = if (isGlassEnabled) Color.Transparent else MaterialTheme.colorScheme.background
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // ── Layer 0: OmniBrowser Wallpaper engine OR Living M3 background ───────────
                 val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
-                val glassBgMode = homeSp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
-                val glassImageUri = homeSp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
                 val effectiveWallpaperUri = when {
                     !activeWallpaperUri.isNullOrBlank() -> activeWallpaperUri
                     isGlassEnabled && glassBgMode == "IMAGE" && glassImageUri.isNotBlank() -> glassImageUri
@@ -563,12 +579,12 @@ fun PetalHomeScreen(
                         val effDim = if (!activeWallpaperUri.isNullOrBlank()) {
                             com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim
                         } else {
-                            homeSp.getFloat("sp_liquid_glass_bg_dim", 0.35f)
+                            glassBgDim
                         }
                         val effBlur = if (!activeWallpaperUri.isNullOrBlank()) {
                             com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperBlur
                         } else {
-                            homeSp.getFloat("sp_liquid_glass_bg_blur", 16f)
+                            glassBgBlur
                         }
                         com.petal.browser.wallpaper.PetalGlassAwareWallpaperBackground(
                             wallpaperUri = effectiveWallpaperUri,
