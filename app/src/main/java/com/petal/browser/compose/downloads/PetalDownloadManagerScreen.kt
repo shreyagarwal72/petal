@@ -8,6 +8,8 @@
 
 package com.petal.browser.compose.downloads
 import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.components.PetalExpressiveScrollBar
+import com.petal.browser.ui.components.extractFastScrollGlyph
 
 import com.petal.browser.view.PetalToast;
 import android.os.Environment
@@ -822,6 +824,14 @@ fun PetalDownloadManagerScreen(
                         }
                     }
                 }
+
+                PetalExpressiveScrollBar(
+                    listState = downloadsListState,
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    dragLabelProvider = { index ->
+                        downloadList.getOrNull(index)?.fileName?.let { extractFastScrollGlyph(it) }
+                    }
+                )
             }
         }
     }

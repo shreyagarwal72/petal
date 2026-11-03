@@ -8,6 +8,8 @@
 
 package com.petal.browser.compose.bookmarks
 import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.components.PetalExpressiveScrollBar
+import com.petal.browser.ui.components.extractFastScrollGlyph
 
 import android.content.ClipboardManager
 import android.content.Context
@@ -420,14 +422,15 @@ fun PetalBookmarksScreen(
                     )
                 } else {
                     val bookmarksListState = androidx.compose.foundation.lazy.rememberLazyListState()
-                    LazyColumn(
-                        state = bookmarksListState,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .scrollMotionBlur(bookmarksListState),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        LazyColumn(
+                            state = bookmarksListState,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .scrollMotionBlur(bookmarksListState),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
                         itemsIndexed(filteredBookmarks, key = { _, record -> "${record.url}_${record.iconColor}" }) { index, record ->
                             val faviconUrl = remember(record.url) { getFaviconUrl(record.url) }
                             var isFaviconError by remember(record.url) { mutableStateOf(false) }
@@ -522,6 +525,14 @@ fun PetalBookmarksScreen(
                             )
                         }
                     }
+
+                    PetalExpressiveScrollBar(
+                        listState = bookmarksListState,
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        dragLabelProvider = { index ->
+                            filteredBookmarks.getOrNull(index)?.title?.let { extractFastScrollGlyph(it) }
+                        }
+                    )
                 }
             }
         }

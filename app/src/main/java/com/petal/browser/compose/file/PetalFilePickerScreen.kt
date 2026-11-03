@@ -16,6 +16,8 @@
  */
 
 package com.petal.browser.compose.file
+import com.petal.browser.ui.components.PetalExpressiveScrollBar
+import com.petal.browser.ui.components.extractFastScrollGlyph
 
 import android.Manifest
 import android.content.Context
@@ -727,6 +729,14 @@ private fun FilePickerBrowserContent(
                         )
                     }
                 }
+
+                PetalExpressiveScrollBar(
+                    listState = listState,
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    dragLabelProvider = { index ->
+                        displayedFiles.getOrNull(index)?.name?.let { extractFastScrollGlyph(it) }
+                    }
+                )
             }
         }
 

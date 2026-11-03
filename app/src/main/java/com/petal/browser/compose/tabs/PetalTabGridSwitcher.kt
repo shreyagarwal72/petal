@@ -1,5 +1,6 @@
 package com.petal.browser.compose.tabs
 import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.components.PetalExpressiveScrollBar
 
 import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
@@ -1215,6 +1216,20 @@ fun PetalTabGridSwitcher(
                                     }
                                 }
                             }
+                        }
+                    }
+
+                    if (selectedCategory != TabCategory.GROUPS && categoryTabs.isNotEmpty() && filteredTabs.isNotEmpty()) {
+                        if (displayMode == TabDisplayMode.GRID) {
+                            PetalExpressiveScrollBar(
+                                gridState = gridState,
+                                modifier = Modifier.align(Alignment.CenterEnd)
+                            )
+                        } else {
+                            PetalExpressiveScrollBar(
+                                listState = listState,
+                                modifier = Modifier.align(Alignment.CenterEnd)
+                            )
                         }
                     }
                 }

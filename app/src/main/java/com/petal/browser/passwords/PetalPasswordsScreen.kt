@@ -1,4 +1,6 @@
 package com.petal.browser.passwords
+import com.petal.browser.ui.components.PetalExpressiveScrollBar
+import androidx.compose.foundation.lazy.rememberLazyListState
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -228,14 +230,16 @@ fun PetalPasswordsScreen(
                     onBack = onNavigateBack
                 )
 
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(top = 8.dp, bottom = 48.dp)
-                ) {
+                val passwordsListState = rememberLazyListState()
+                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    LazyColumn(
+                        state = passwordsListState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(top = 8.dp, bottom = 48.dp)
+                    ) {
                     // 1. Vault Security Hero Card
                     item {
                         PetalStatusHeroCard(
@@ -463,6 +467,12 @@ fun PetalPasswordsScreen(
                         }
                     }
                 }
+
+                PetalExpressiveScrollBar(
+                    listState = passwordsListState,
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                )
+            }
             }
         }
     }

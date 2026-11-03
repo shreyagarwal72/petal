@@ -1,4 +1,6 @@
 package com.petal.browser.compose.store
+import com.petal.browser.ui.components.PetalExpressiveScrollBar
+import com.petal.browser.ui.components.extractFastScrollGlyph
 
 import android.content.Context
 import androidx.activity.ComponentActivity
@@ -363,14 +365,17 @@ private fun StoreExtensionsPage(
 
         Spacer(Modifier.height(4.dp))
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 8.dp,
-                bottom = 32.dp
-            ),
+        val extensionsListState = rememberLazyListState()
+        Box(modifier = Modifier.fillMaxSize().weight(1f)) {
+            LazyColumn(
+                state = extensionsListState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 8.dp,
+                    bottom = 32.dp
+                ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Hero Intro Card when browsing all categories without search
@@ -463,6 +468,11 @@ private fun StoreExtensionsPage(
                     }
                 }
             }
+
+            PetalExpressiveScrollBar(
+                listState = extensionsListState,
+                modifier = Modifier.align(Alignment.CenterEnd)
+            )
         }
     }
 }
@@ -587,9 +597,12 @@ private fun StoreScriptsPage(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
+    val scriptsListState = rememberLazyListState()
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = scriptsListState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
             top = 8.dp,
@@ -715,6 +728,11 @@ private fun StoreScriptsPage(
                 }
             }
         }
+
+        PetalExpressiveScrollBar(
+            listState = scriptsListState,
+            modifier = Modifier.align(Alignment.CenterEnd)
+        )
     }
 }
 
@@ -735,9 +753,12 @@ private fun StoreFilterListsPage(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
+    val filterListsState = rememberLazyListState()
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = filterListsState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
             top = 8.dp,
@@ -860,6 +881,11 @@ private fun StoreFilterListsPage(
                 }
             }
         }
+
+        PetalExpressiveScrollBar(
+            listState = filterListsState,
+            modifier = Modifier.align(Alignment.CenterEnd)
+        )
     }
 }
 

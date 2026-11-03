@@ -8,6 +8,8 @@
 
 package com.petal.browser.compose.history
 import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.components.PetalExpressiveScrollBar
+import com.petal.browser.ui.components.extractFastScrollGlyph
 
 import android.content.Context
 import androidx.activity.ComponentActivity
@@ -504,6 +506,18 @@ fun PetalHistoryScreen(
                                 }
                             }
                         }
+
+                        PetalExpressiveScrollBar(
+                            listState = historyListState,
+                            modifier = Modifier.align(Alignment.CenterEnd),
+                            dragLabelProvider = { index ->
+                                when (val item = groupedItems.getOrNull(index)) {
+                                    is HistoryListItem.Header -> item.label.take(2).uppercase()
+                                    is HistoryListItem.Entry -> extractFastScrollGlyph(item.record.title)
+                                    null -> null
+                                }
+                            }
+                        )
                     }
                 }
             }
