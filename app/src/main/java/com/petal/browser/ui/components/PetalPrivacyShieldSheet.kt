@@ -51,9 +51,12 @@ import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material.icons.rounded.WifiProtectedSetup
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import com.petal.browser.ui.containment.PetalFilterChip
 import com.petal.browser.ui.containment.PetalSuggestionChip
 import androidx.compose.material3.HorizontalDivider

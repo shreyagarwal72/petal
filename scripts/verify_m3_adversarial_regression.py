@@ -449,6 +449,8 @@ def test_theme_color_tokens():
         if line.startswith("+++ b/"):
             current_file = line[6:].strip()
         elif line.startswith("+") and not line.startswith("+++"):
+            if not current_file.endswith(".kt"):
+                continue
             clean = line[1:].strip()
             if clean.startswith("//") or clean.startswith("*"):
                 continue

@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -244,6 +246,7 @@ fun PetalAlertDialog(
     modifier: Modifier = Modifier,
     icon: ImageVector? = Icons.Rounded.Info,
     destructive: Boolean = false,
+    confirmEnabled: Boolean = true,
     content: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     PetalMaterialAlertDialog(
@@ -304,6 +307,7 @@ fun PetalAlertDialog(
         confirmButton = {
             Button(
                 onClick = onConfirm,
+                enabled = confirmEnabled,
                 shape = if (dismissText != null) {
                     RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp)
                 } else {
