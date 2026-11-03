@@ -91,7 +91,6 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalGroupListRow
-import com.petal.browser.ui.theme.LocalExpressiveShapesEnabled
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.petalGroupPositionFor
@@ -1401,15 +1400,10 @@ private fun DownloadProgressRing(
         label = "RingProgress"
     )
 
-    val isExpressiveEnabled = LocalExpressiveShapesEnabled.current
-    val avatarShape = remember(item.id, isExpressiveEnabled) {
-        if (!isExpressiveEnabled) {
-            RoundedCornerShape(16.dp)
-        } else {
-            val all = PetalMaterialShapes.allShapes
-            val idx = (item.id.toInt() and 0x7FFFFFFF) % all.size
-            all[idx].toShape()
-        }
+    val avatarShape = remember(item.id) {
+        val all = PetalMaterialShapes.allShapes
+        val idx = (item.id.toInt() and 0x7FFFFFFF) % all.size
+        all[idx].toShape()
     }
 
     val (expressiveBgColor, expressiveIconTint) = getFileTypeContainerColors(item.fileName, isSelected)

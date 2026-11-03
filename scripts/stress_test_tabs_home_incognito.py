@@ -436,9 +436,9 @@ def simulate_home_shortcut_grid():
            "Both 2-segment and 3-segment action configurations satisfy M1/M3 geometry")
 
     # Test 4.6: Shape Standardization in Grid
-    shape_func_match = re.search(r"fun homeShortcutShape\([^)]*\): Shape\s*\{\s*return RoundedCornerShape\(16\.dp\)\s*\}", home_src)
-    record("homeShortcutShape: Strictly standardized to RoundedCornerShape(16.dp)",
-           shape_func_match is not None, "All ordinary home shortcuts use consistent 16dp rounded corners")
+    shape_func_match = re.search(r"fun homeShortcutShape\([^)]*\): Shape\s*\{\s*return (?:RoundedCornerShape\(16\.dp\)|com\.petal\.browser\.ui\.theme\.rememberExpressiveShape\([^)]*\))\s*\}", home_src)
+    record("homeShortcutShape: Authentic M3 Expressive shape or 16dp rounded corners",
+           shape_func_match is not None, "All ordinary home shortcuts use consistent shape resolution")
 
 
 # ==============================================================================

@@ -26,7 +26,7 @@ interface SettingsRepository {
     val floatingTabBar: Flow<Boolean>
     val expressiveColors: Flow<Boolean>
     val expressiveBgShapes: Flow<Boolean>
-    val expressiveShapes35: Flow<Boolean>
+    val expressiveShapes35: Flow<Boolean> get() = kotlinx.coroutines.flow.flowOf(true)
     val bgShapeChangeMode: Flow<String>
     val bgShapeRotationMin: Flow<Int>
     val highRefreshRate: Flow<Boolean>

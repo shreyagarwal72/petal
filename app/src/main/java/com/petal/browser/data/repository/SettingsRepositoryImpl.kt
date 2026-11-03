@@ -125,9 +125,7 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_expressive_bg_shapes", true)
     }
 
-    override val expressiveShapes35: Flow<Boolean> = preferenceFlow(com.petal.browser.ui.theme.PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED) {
-        sp.getBoolean(com.petal.browser.ui.theme.PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED, true)
-    }
+    override val expressiveShapes35: Flow<Boolean> = kotlinx.coroutines.flow.flowOf(true)
 
     override val bgShapeChangeMode: Flow<String> = preferenceFlow("sp_bg_shape_change_mode") {
         sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS"

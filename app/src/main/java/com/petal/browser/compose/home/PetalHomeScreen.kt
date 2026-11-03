@@ -1041,11 +1041,8 @@ private fun ShortcutTile(
     var isImageError by remember(shortcut.url) { mutableStateOf(false) }
 
     val defaultShape = homeShortcutShape(index, shortcut.url.ifBlank { shortcut.label })
-    val isExpressiveEnabled = com.petal.browser.ui.theme.LocalExpressiveShapesEnabled.current
-    val tileShape = remember(shortcut.shapeName, index, isExpressiveEnabled) {
-        if (!isExpressiveEnabled) {
-            RoundedCornerShape(16.dp)
-        } else if (!shortcut.shapeName.isNullOrBlank()) {
+    val tileShape = remember(shortcut.shapeName, index) {
+        if (!shortcut.shapeName.isNullOrBlank()) {
             val matched = PetalMaterialShapes.allShapes.find { it.name.equals(shortcut.shapeName, ignoreCase = true) }
             matched?.toShape() ?: defaultShape
         } else {
@@ -1160,7 +1157,7 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
 
 @Composable
 private fun homeShortcutShape(index: Int, key: Any? = null): Shape {
-    return RoundedCornerShape(16.dp)
+    return com.petal.browser.ui.theme.rememberExpressiveShape(key ?: index)
 }
 
 // ── 6. Search Bar ─────────────────────────────────────────────────────────

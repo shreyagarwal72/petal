@@ -273,18 +273,29 @@ object PetalBrowserShapes {
      * Mirrors Relay's [avatarFor] pattern for device kinds.
      */
     fun iconShapeFor(category: PetalIconCategory): ExpressiveShapeHolder = when (category) {
+        PetalIconCategory.Web           -> PetalMaterialShapes.Cookie6Sided
+        PetalIconCategory.Download      -> PetalMaterialShapes.Square
+        PetalIconCategory.History       -> PetalMaterialShapes.Clover4Leaf
+        PetalIconCategory.Bookmark      -> PetalMaterialShapes.Sunny
+        PetalIconCategory.Settings      -> PetalMaterialShapes.Pentagon
+        PetalIconCategory.Extension     -> PetalMaterialShapes.Gem
+        PetalIconCategory.Media         -> PetalMaterialShapes.Flower
+        PetalIconCategory.Privacy       -> PetalMaterialShapes.Cookie9Sided
+        PetalIconCategory.Appearance    -> PetalMaterialShapes.Sunny
+        PetalIconCategory.Security      -> PetalMaterialShapes.Arch
+        PetalIconCategory.Performance   -> PetalMaterialShapes.Boom
+        PetalIconCategory.Search        -> PetalMaterialShapes.Cookie4Sided
+        PetalIconCategory.Sync          -> PetalMaterialShapes.Clover8Leaf
         PetalIconCategory.Accessibility -> PetalMaterialShapes.Pill
-        else                            -> PetalMaterialShapes.Circle
+        PetalIconCategory.Tools         -> PetalMaterialShapes.Diamond
     }
 
     /**
-     * Resolves the Category [Shape] taking into account [LocalExpressiveShapesEnabled].
-     * Returns [fallback] (default 14.dp rounded corner) when expressive shapes are disabled.
+     * Resolves the Category [Shape] as authentic Material 3 Expressive shapes unconditionally.
      */
     @Composable
     fun iconShapeAsShape(category: PetalIconCategory, fallback: Shape = RoundedCornerShape(14.dp)): Shape {
-        val enabled = LocalExpressiveShapesEnabled.current
-        return if (enabled) iconShapeFor(category).toShape() else fallback
+        return iconShapeFor(category).toShape()
     }
 }
 

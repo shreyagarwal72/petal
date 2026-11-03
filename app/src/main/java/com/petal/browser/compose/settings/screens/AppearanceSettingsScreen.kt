@@ -78,7 +78,6 @@ fun AppearanceSettingsScreen(
     val bgShapeRotationMin by viewModel.bgShapeRotationMin.collectAsStateWithLifecycle()
     val highRefreshRate by viewModel.highRefreshRate.collectAsStateWithLifecycle()
     val customFontName by viewModel.customFontName.collectAsStateWithLifecycle()
-    val expressiveShapes35 by viewModel.expressiveShapes35.collectAsStateWithLifecycle()
     val launchRippleEnabled by viewModel.launchRippleEnabled.collectAsStateWithLifecycle()
     val motionBlurEnabled by viewModel.motionBlurEnabled.collectAsStateWithLifecycle()
     val motionBlurScale by viewModel.motionBlurScale.collectAsStateWithLifecycle()
@@ -122,7 +121,6 @@ fun AppearanceSettingsScreen(
         bgShapeRotationMin = bgShapeRotationMin,
         highRefreshRate = highRefreshRate,
         customFontName = customFontName,
-        expressiveShapes35 = expressiveShapes35,
         launchRippleEnabled = launchRippleEnabled,
         motionBlurEnabled = motionBlurEnabled,
         motionBlurScale = motionBlurScale,
@@ -157,7 +155,6 @@ fun AppearanceSettingsScreen(
         onThemeConfigChange = viewModel::setThemeConfig,
         onFloatingTabBarChange = viewModel::setFloatingTabBar,
         onExpressiveBgShapesChange = viewModel::setExpressiveBgShapes,
-        onExpressiveShapes35Change = viewModel::setExpressiveShapes35,
         onBgShapeChangeModeChange = viewModel::setBgShapeChangeMode,
         onBgShapeRotationMinChange = viewModel::setBgShapeRotationMin,
         onHighRefreshRateChange = viewModel::setHighRefreshRate,
@@ -206,7 +203,6 @@ fun AppearanceSettingsScreenContent(
     bgShapeRotationMin: Int,
     highRefreshRate: Boolean,
     customFontName: String,
-    expressiveShapes35: Boolean = true,
     launchRippleEnabled: Boolean = true,
     motionBlurEnabled: Boolean = false,
     motionBlurScale: Float = 1.0f,
@@ -244,7 +240,6 @@ fun AppearanceSettingsScreenContent(
     onThemeConfigChange: (ThemeConfig) -> Unit,
     onFloatingTabBarChange: (Boolean) -> Unit,
     onExpressiveBgShapesChange: (Boolean) -> Unit,
-    onExpressiveShapes35Change: (Boolean) -> Unit = {},
     onBgShapeChangeModeChange: (String) -> Unit,
     onBgShapeRotationMinChange: (Int) -> Unit,
     onHighRefreshRateChange: (Boolean) -> Unit,
@@ -1317,17 +1312,8 @@ fun AppearanceSettingsScreenContent(
                         subtitle = stringResource(R.string.ui_display_ambient_morphing_background_sh),
                         icon = Icons.Rounded.BubbleChart,
                         checked = expressiveBgShapes,
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        onCheckedChange = onExpressiveBgShapesChange
-                    )
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_m3_expressive_shapes_global),
-                        subtitle = stringResource(R.string.ui_m3_expressive_shapes_global_desc),
-                        icon = Icons.Rounded.Category,
-                        checked = expressiveShapes35,
                         position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
-                        onCheckedChange = onExpressiveShapes35Change
+                        onCheckedChange = onExpressiveBgShapesChange
                     )
 
                     if (expressiveBgShapes) {

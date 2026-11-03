@@ -72,9 +72,6 @@ class AppearanceSettingsViewModel @Inject constructor(
     val expressiveBgShapes: StateFlow<Boolean> = settingsRepository.expressiveBgShapes
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val expressiveShapes35: StateFlow<Boolean> = settingsRepository.expressiveShapes35
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
     val bgShapeChangeMode: StateFlow<String> = settingsRepository.bgShapeChangeMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "ALWAYS")
 
@@ -210,10 +207,6 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setExpressiveBgShapes(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setExpressiveBgShapes(enabled)
-    }
-
-    fun setExpressiveShapes35(enabled: Boolean) = viewModelScope.launch {
-        settingsRepository.setExpressiveShapes35(enabled)
     }
 
     fun setBgShapeChangeMode(mode: String) = viewModelScope.launch {
