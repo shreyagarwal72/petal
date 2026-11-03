@@ -11,10 +11,12 @@
 <br>
 
 <p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.petal.browser"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-playstore.svg"><img src="docs/readme/light/btn-playstore.svg" alt="Google Play Store" height="50"></picture></a>
   <a href="https://github.com/shreyagarwal72/petal/releases/latest"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-download.svg"><img src="docs/readme/light/btn-download.svg" alt="Download APK" height="50"></picture></a>
+  <a href="https://my-petal-browser.vercel.app/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-website.svg"><img src="docs/readme/light/btn-website.svg" alt="Petal Website" height="50"></picture></a>
   <a href="https://github.com/shreyagarwal72/petal"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-github.svg"><img src="docs/readme/light/btn-github.svg" alt="GitHub Source" height="50"></picture></a>
+  <a href="https://t.me/championworkspace"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-telegram.svg"><img src="docs/readme/light/btn-telegram.svg" alt="Telegram Channel" height="50"></picture></a>
   <a href="https://github.com/shreyagarwal72/petal/issues"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-issues.svg"><img src="docs/readme/light/btn-issues.svg" alt="Report an Issue" height="50"></picture></a>
-  <a href="https://t.me/petalbrowser"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-telegram.svg"><img src="docs/readme/light/btn-telegram.svg" alt="Telegram Channel" height="50"></picture></a>
 </p>
 
 <p align="center">
@@ -27,6 +29,8 @@
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-android.svg"><img src="docs/readme/light/badge-android.svg" alt="Android 8.0+" height="28"></picture>
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-kotlin.svg"><img src="docs/readme/light/badge-kotlin.svg" alt="Kotlin Compose" height="28"></picture>
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-gpl.svg"><img src="docs/readme/light/badge-gpl.svg" alt="GPL-3.0" height="28"></picture>
+  <a href="https://play.google.com/store/apps/details?id=com.petal.browser"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-playstore.svg"><img src="docs/readme/light/badge-playstore.svg" alt="Google Play" height="28"></picture></a>
+  <a href="https://my-petal-browser.vercel.app/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-website.svg"><img src="docs/readme/light/badge-website.svg" alt="Petal Web" height="28"></picture></a>
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-prs.svg"><img src="docs/readme/light/badge-prs.svg" alt="PRs Welcome" height="28"></picture>
 </p>
 
