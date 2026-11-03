@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-light.png">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-dark.png">
     <img src="docs/readme/hero-light.png" alt="Petal, a private open source browser for Android in Material 3 Expressive" width="100%">
   </picture>
 </p>
@@ -182,6 +182,157 @@ The design follows the same idea. Petal does not hide settings behind a cloud ac
     <td width="33%" align="center" valign="top"><img src="docs/readme/screenshots/01-home.jpg" alt="Home screen with liquid glass panels" width="100%"><br><sub>Home</sub></td>
     <td width="33%" align="center" valign="top"><img src="docs/readme/screenshots/02-glass.jpg" alt="Liquid glass settings with live preview" width="100%"><br><sub>Tune the glass</sub></td>
     <td width="33%" align="center" valign="top"><img src="docs/readme/screenshots/03-back.jpg" alt="Five back-gesture animation styles" width="100%"><br><sub>Back-gesture styles</sub></td>
+  </tr>
+  <tr>
+    <td width="33%" align="center" valign="top"><img src="docs/readme/screenshots/04-ai.jpg" alt="Petal AI chat and search" width="100%"><br><sub>Petal AI</sub></td>
+    <td width="33%" align="center" valign="top"><img src="docs/readme/screenshots/05-privacy.jpg" alt="Privacy shield with per-site controls" width="100%"><br><sub>Privacy shield</sub></td>
+    <td width="33%" align="center" valign="middle">
+      <strong>Get Petal</strong><br><br>
+      <a href="https://github.com/shreyagarwal72/petal/releases/latest"><img src="https://img.shields.io/badge/Download-APK-B81D63?style=for-the-badge&logo=android&logoColor=white&labelColor=7B2949" alt="Download the APK"></a>
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/divider-dark.svg">
+    <img src="docs/readme/divider-light.svg" alt="" width="100%">
+  </picture>
+</p>
+
+## <img src="docs/readme/shape-5.svg" height="26" align="top"> Install
+
+**From GitHub Releases (recommended).** Download the latest APK from the [Releases page](https://github.com/shreyagarwal72/petal/releases/latest), open it, and allow installs from your browser or file manager when Android asks. After that, Petal can update itself from GitHub releases.
+
+**With ADB:**
+
+```bash
+adb install -r Petal-release.apk
+```
+
+### Permissions
+
+Petal asks only when a feature needs it.
+
+| Permission | Why it is used |
+| :--- | :--- |
+| Internet and network state | Loading pages and checking your connection. |
+| Camera and microphone | Only when a site asks, and for QR and voice search. |
+| Location | Only when a site asks. You can say no per site. |
+| Photos, media and storage | Uploading files and saving downloads. |
+| Notifications and foreground service | Download progress and background media playback. |
+| Biometric | Unlocking saved passwords. |
+| Vibrate | Haptic feedback. |
+| Install packages | The built-in updater for GitHub releases. |
+| Draw over other apps (optional) | The floating island on phones without Android 16 Live Updates. Off until you turn it on. |
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/divider-dark.svg">
+    <img src="docs/readme/divider-light.svg" alt="" width="100%">
+  </picture>
+</p>
+
+## <img src="docs/readme/shape-6.svg" height="26" align="top"> How the project is structured
+
+Petal is a single-app Kotlin project with a native Rust module. A tour of the code lives in [architecture.md](architecture.md), and the visual rules are in [design.md](design.md).
+
+Paths below are inside <code>app/src/main/java/com/petal/browser/</code> unless noted.
+
+<table>
+  <tr>
+    <td><strong>Area</strong></td>
+    <td><strong>Responsibility</strong></td>
+  </tr>
+  <tr>
+    <td><code>ui/</code></td>
+    <td>Shared components, the containment design, glass effects and the theme</td>
+  </tr>
+  <tr>
+    <td><code>compose/</code></td>
+    <td>Screens: home, tabs, settings, downloads, PDF viewer, AI and extensions</td>
+  </tr>
+  <tr>
+    <td><code>engine/</code></td>
+    <td>GeckoView integration and the ad-blocking layer</td>
+  </tr>
+  <tr>
+    <td><code>media/</code> <code>download/</code></td>
+    <td>The media player and sniffer, and the download service</td>
+  </tr>
+  <tr>
+    <td><code>passwords/</code> <code>privacy/</code> <code>sync/</code></td>
+    <td>Password storage, the privacy shield and account sync</td>
+  </tr>
+  <tr>
+    <td><code>native/adblock_rs/</code></td>
+    <td>The Rust ad-blocking engine, built on Brave's adblock-rust (repo root)</td>
+  </tr>
+  <tr>
+    <td><code>baselineprofile/</code></td>
+    <td>Startup and scroll performance profile (repo root)</td>
+  </tr>
+  <tr>
+    <td><code>site/</code></td>
+    <td>The project website (repo root)</td>
+  </tr>
+</table>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/divider-dark.svg">
+    <img src="docs/readme/divider-light.svg" alt="" width="100%">
+  </picture>
+</p>
+
+## <img src="docs/readme/shape-7.svg" height="26" align="top"> Building
+
+You need **JDK 17 or newer** and the Android SDK.
+
+```bash
+git clone https://github.com/shreyagarwal72/petal.git
+cd petal
+
+./gradlew assembleDebug      # debug APK
+./gradlew assembleRelease    # release APK
+```
+
+The release APK is written to `app/build/outputs/apk/release/`. Or open the folder in Android Studio and run the `app` configuration on a device.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/divider-dark.svg">
+    <img src="docs/readme/divider-light.svg" alt="" width="100%">
+  </picture>
+</p>
+
+## <img src="docs/readme/shape-8.svg" height="26" align="top"> Contributing
+
+Bug reports, ideas and pull requests are welcome, especially for browsing reliability, interface polish, privacy and documentation. Read the [code of conduct](CODE_OF_CONDUCT.md) first, and open an issue before starting a large change. For the visual rules, start with [design.md](design.md).
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/divider-dark.svg">
+    <img src="docs/readme/divider-light.svg" alt="" width="100%">
+  </picture>
+</p>
+
+## Credits
+
+- **[Mozilla GeckoView](https://mozilla.github.io/geckoview/)** for the browser engine.
+- **[adblock-rust](https://github.com/brave/adblock-rust)** by Brave (MPL-2.0) for the ad-blocking engine.
+- **[Hagezi](https://github.com/hagezi/dns-blocklists)** and **[uBlock Origin uAssets](https://github.com/uBlockOrigin/uAssets)** for the filter lists. Their licences are in `site/assets/licenses/`.
+- **[Shizuku](https://github.com/RikkaApps/Shizuku)** by RikkaApps for the optional privileged API.
+- **[Material 3 Expressive](https://m3.material.io/)** for the design language.
+
+## License
+
+Petal is free software under the [GNU General Public License v3.0](LICENSE.md).
+
+<p align="center">
+  Made by <strong>Vanshu Agarwal</strong> at NextUp Studio
+</p>
+valign="top"><img src="docs/readme/screenshots/03-back.jpg" alt="Five back-gesture animation styles" width="100%"><br><sub>Back-gesture styles</sub></td>
   </tr>
   <tr>
     <td width="33%" align="center" valign="top"><img src="docs/readme/screenshots/04-ai.jpg" alt="Petal AI chat and search" width="100%"><br><sub>Petal AI</sub></td>
