@@ -11,26 +11,23 @@
 <br>
 
 <p align="center">
-  <a href="https://github.com/shreyagarwal72/petal/releases/latest">
-    <img src="https://img.shields.io/badge/Download_APK-Release-B81D63?style=for-the-badge&logo=android&logoColor=white&labelColor=2D1537" alt="Download APK" height="42">
-  </a>
-  <a href="https://github.com/shreyagarwal72/petal">
-    <img src="https://img.shields.io/badge/Source_Code-GitHub-B81D63?style=for-the-badge&logo=github&logoColor=white&labelColor=2D1537" alt="GitHub Source" height="42">
-  </a>
-  <a href="https://github.com/shreyagarwal72/petal/issues">
-    <img src="https://img.shields.io/badge/Report_Issue-Support-B81D63?style=for-the-badge&logo=github&logoColor=white&labelColor=2D1537" alt="Report an Issue" height="42">
-  </a>
+  <a href="https://github.com/shreyagarwal72/petal/releases/latest"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-download.svg"><img src="docs/readme/light/btn-download.svg" alt="Download APK" height="50"></picture></a>
+  <a href="https://github.com/shreyagarwal72/petal"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-github.svg"><img src="docs/readme/light/btn-github.svg" alt="GitHub Source" height="50"></picture></a>
+  <a href="https://github.com/shreyagarwal72/petal/issues"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-issues.svg"><img src="docs/readme/light/btn-issues.svg" alt="Report an Issue" height="50"></picture></a>
+  <a href="https://t.me/petalbrowser"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/btn-telegram.svg"><img src="docs/readme/light/btn-telegram.svg" alt="Telegram Channel" height="50"></picture></a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Rust_Adblock-Active-B81D63?style=flat-square&labelColor=2D1537&logo=rust&logoColor=white" alt="Rust Adblock">
-  <img src="https://img.shields.io/badge/GeckoView-158-B81D63?style=flat-square&labelColor=2D1537&logo=firefoxbrowser&logoColor=white" alt="GeckoView 158">
-  <img src="https://img.shields.io/badge/Material_3-Expressive-B81D63?style=flat-square&labelColor=2D1537&logo=materialdesign&logoColor=white" alt="M3 Expressive">
-  <img src="https://img.shields.io/badge/Telemetry-0%25_None-B81D63?style=flat-square&labelColor=2D1537" alt="No Telemetry">
-  <img src="https://img.shields.io/badge/Android-8.0%2B-B81D63?style=flat-square&labelColor=2D1537&logo=android&logoColor=white" alt="Android 8.0+">
-  <img src="https://img.shields.io/badge/Kotlin-Compose-B81D63?style=flat-square&labelColor=2D1537&logo=kotlin&logoColor=white" alt="Kotlin Compose">
-  <img src="https://img.shields.io/badge/License-GPL--3.0-B81D63?style=flat-square&labelColor=2D1537" alt="GPL-3.0">
-  <img src="https://img.shields.io/badge/PRs-Welcome-B81D63?style=flat-square&labelColor=2D1537" alt="PRs Welcome">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-gecko.svg"><img src="docs/readme/light/badge-gecko.svg" alt="GeckoView 159" height="28"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-rustadblock.svg"><img src="docs/readme/light/badge-rustadblock.svg" alt="Rust Adblock" height="28"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-m3e.svg"><img src="docs/readme/light/badge-m3e.svg" alt="Material 3 Expressive" height="28"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-adfree.svg"><img src="docs/readme/light/badge-adfree.svg" alt="100% Ad-Free" height="28"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-privacy.svg"><img src="docs/readme/light/badge-privacy.svg" alt="Zero Telemetry" height="28"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-extensions.svg"><img src="docs/readme/light/badge-extensions.svg" alt="Add-ons Ready" height="28"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-android.svg"><img src="docs/readme/light/badge-android.svg" alt="Android 8.0+" height="28"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-kotlin.svg"><img src="docs/readme/light/badge-kotlin.svg" alt="Kotlin Compose" height="28"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-gpl.svg"><img src="docs/readme/light/badge-gpl.svg" alt="GPL-3.0" height="28"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-prs.svg"><img src="docs/readme/light/badge-prs.svg" alt="PRs Welcome" height="28"></picture>
 </p>
 
 <br>
@@ -52,7 +49,7 @@ Petal is a private, open-source browser for Android built from the ground up on 
 <tbody>
 <tr><td><b>App Name</b></td><td>Petal Browser</td></tr>
 <tr><td><b>Platform</b></td><td>Android 8.0 and above (API 26+, target API 36)</td></tr>
-<tr><td><b>Engine</b></td><td>Mozilla GeckoView 158 (Independent standards engine)</td></tr>
+<tr><td><b>Engine</b></td><td>Mozilla GeckoView 159 (Independent standards engine)</td></tr>
 <tr><td><b>Ad Blocking</b></td><td>High-performance native Rust engine (Brave <code>adblock-rust</code>) + uBlock & Hagezi lists</td></tr>
 <tr><td><b>UI System</b></td><td>Jetpack Compose & Material 3 Expressive (Spring physics, morphing shapes, dynamic color)</td></tr>
 <tr><td><b>Extensions</b></td><td>Firefox WebExtensions / Add-ons support</td></tr>
