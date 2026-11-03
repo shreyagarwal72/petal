@@ -93,6 +93,7 @@ class PetalApplication : Application() {
                 // the existing Petal tab/session UI as the source of truth.
                 try {
                     com.petal.browser.engine.gecko.PetalEngineStore.getSessionStorage(this)
+                    com.petal.browser.engine.gecko.PetalEngineStore.getAutoSave(this)
                 } catch (t: Throwable) {
                     Log.w(TAG, "BrowserStore session persistence unavailable; continuing with Petal tabs", t)
                 }

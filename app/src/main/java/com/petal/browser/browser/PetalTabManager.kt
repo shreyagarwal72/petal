@@ -7,6 +7,7 @@ import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.EngineState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.feature.tabs.TabsUseCases
 import java.util.UUID
 
 class PetalTabManager(context: Context) {
@@ -15,9 +16,10 @@ class PetalTabManager(context: Context) {
     private val context: Context = context.applicationContext
 
     private val store: BrowserStore = PetalEngineStore.getStore(this.context)
+    private val tabsUseCases: TabsUseCases = TabsUseCases(store)
 
     /**
-     * Creates and adds a new tab to [BrowserStore].
+     * Creates and adds a new tab to [BrowserStore] using Mozilla Components tab lifecycle.
      */
     fun addTab(
         url: String = "about:blank",
@@ -27,8 +29,6 @@ class PetalTabManager(context: Context) {
     ): TabSessionState {
         val eng = PetalEngineStore.getEngine(context)
         val session = eng.createSession(private = isIncognito)
-        // UUID: millis + url hash collided for same-URL tabs opened in the same millisecond,
-        // and Math.abs(Int.MIN_VALUE) is negative.
         val tabId = "tab_${UUID.randomUUID()}"
 
         val tabState = TabSessionState(
@@ -62,20 +62,31 @@ class PetalTabManager(context: Context) {
      * Removes an existing tab by its unique tab ID.
      */
     fun removeTab(tabId: String) {
-        // Close the engine session explicitly; RemoveTabAction alone leaves the native
-        // Gecko session alive when it was created outside the engine-session middleware.
         val engineSession = store.state.tabs.firstOrNull { it.id == tabId }?.engineState?.engineSession
-        PetalEngineStore.removeTab(context, tabId)
+        tabsUseCases.removeTab(tabId)
         try { engineSession?.close() } catch (_: Throwable) {}
     }
 
     /**
-     * Selects an active tab by its tab ID.
+     * Removes all tabs matching the incognito status, or all normal tabs.
+     */
+    fun removeAllTabs(isIncognito: Boolean) {
+        tabsUseCases.removeTabs(store.state.tabs.filter { it.content.private == isIncognito }.map { it.id })
+    }
+
+    /**
+     * Selects an active tab by its tab ID using Mozilla TabsUseCases.
      */
     fun selectTab(tabId: String) {
-        // Selecting an unknown ID would leave selectedTabId dangling.
         if (store.state.tabs.none { it.id == tabId }) return
-        PetalEngineStore.selectTab(context, tabId)
+        tabsUseCases.selectTab(tabId)
+    }
+
+    /**
+     * Undo tab removal if available.
+     */
+    fun undoTabRemoval() {
+        tabsUseCases.undo()
     }
 
     /**

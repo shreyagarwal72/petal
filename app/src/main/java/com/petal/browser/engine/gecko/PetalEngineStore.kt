@@ -130,6 +130,24 @@ object PetalEngineStore {
 
     @JvmStatic
     @Synchronized
+    fun getAutoSave(context: Context): AutoSave {
+        autoSave?.let { return it }
+
+        val appContext = context.applicationContext
+        val currentStore = getStore(appContext)
+        val currentStorage = getSessionStorage(appContext)
+        val saver = AutoSave(
+            store = currentStore,
+            storage = currentStorage,
+            scope = mainScope
+        )
+        autoSave = saver
+        Log.i(TAG, "Initialized and started Mozilla AutoSave lifecycle")
+        return saver
+    }
+
+    @JvmStatic
+    @Synchronized
     fun getFileUploadsDirCleaner(context: Context): FileUploadsDirCleaner {
         fileUploadsDirCleaner?.let { return it }
         return FileUploadsDirCleaner(
