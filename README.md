@@ -42,7 +42,14 @@ Petal is a private, open-source browser for Android built from the ground up on 
 
 <br>
 
-<h2 id="quick-facts"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/icon-lightning.svg"><img src="docs/readme/light/icon-lightning.svg" width="24" height="24" align="center"></picture> Quick Facts</h2>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/divider-dark.svg">
+    <img src="docs/readme/divider-light.svg" alt="" width="100%">
+  </picture>
+</p>
+
+## <img src="docs/readme/shape-1.svg" height="26" align="top"> Quick Facts
 
 <table width="100%">
 <thead><tr><th align="left" width="28%">Attribute</th><th align="left">Details</th></tr></thead>
@@ -59,9 +66,14 @@ Petal is a private, open-source browser for Android built from the ground up on 
 </tbody>
 </table>
 
-<br>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/divider-dark.svg">
+    <img src="docs/readme/divider-light.svg" alt="" width="100%">
+  </picture>
+</p>
 
-<h2 id="screenshots"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/icon-phone.svg"><img src="docs/readme/light/icon-phone.svg" width="24" height="24" align="center"></picture> Screenshots</h2>
+## <img src="docs/readme/shape-2.svg" height="26" align="top"> Screenshots
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-1.png" width="19%" alt="Petal home">
@@ -71,46 +83,56 @@ Petal is a private, open-source browser for Android built from the ground up on 
   <img src="https://raw.githubusercontent.com/shreyagarwal72/petal-assets/main/screenshots/petal-playstore-5.png" width="19%" alt="Petal settings">
 </div>
 
-<br>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/divider-dark.svg">
+    <img src="docs/readme/divider-light.svg" alt="" width="100%">
+  </picture>
+</p>
 
-<h2 id="features"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/icon-sparkles.svg"><img src="docs/readme/light/icon-sparkles.svg" width="24" height="24" align="center"></picture> Features</h2>
+## <img src="docs/readme/shape-3.svg" height="26" align="top"> Features
 
 <table width="100%">
 <tr>
 <td width="50%" valign="top">
-<h4><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/icon-gecko.svg"><img src="docs/readme/light/icon-gecko.svg" width="20" height="20" align="center"></picture> Firefox GeckoView Engine</h4>
+<h4><img src="docs/readme/shape-4.svg" height="18" align="top"> Firefox GeckoView Engine</h4>
 Independent from Android WebView. Complete Gecko 159 web standards, CSS grids, and extensions runtime.
 </td>
 <td width="50%" valign="top">
-<h4><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/icon-shield.svg"><img src="docs/readme/light/icon-shield.svg" width="20" height="20" align="center"></picture> Native Rust Adblocking</h4>
+<h4><img src="docs/readme/shape-5.svg" height="18" align="top"> Native Rust Adblocking</h4>
 Powered by <code>adblock-rust</code> compiled via NDK. Real-time cosmetic hiding and script blocking before download.
 </td>
 </tr>
 <tr>
 <td width="50%" valign="top">
-<h4><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/icon-palette.svg"><img src="docs/readme/light/icon-palette.svg" width="20" height="20" align="center"></picture> Material 3 Expressive</h4>
+<h4><img src="docs/readme/shape-6.svg" height="18" align="top"> Material 3 Expressive</h4>
 Dynamic color extracted from wallpaper, morphing bottom pill bar, fluid spring curves, and true-black AMOLED mode.
 </td>
 <td width="50%" valign="top">
-<h4><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/icon-lock.svg"><img src="docs/readme/light/icon-lock.svg" width="20" height="20" align="center"></picture> Hardware-Backed Privacy</h4>
+<h4><img src="docs/readme/shape-7.svg" height="18" align="top"> Hardware-Backed Privacy</h4>
 BiometricPrompt-protected password vault, granular per-site tracking shield, and zero background analytics.
 </td>
 </tr>
 <tr>
 <td width="50%" valign="top">
-<h4><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/icon-download.svg"><img src="docs/readme/light/icon-download.svg" width="20" height="20" align="center"></picture> Segmented Downloader</h4>
+<h4><img src="docs/readme/shape-8.svg" height="18" align="top"> Segmented Downloader</h4>
 Multi-threaded background download manager, floating picture-in-picture media player, and native PDF viewer.
 </td>
 <td width="50%" valign="top">
-<h4><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/icon-bot.svg"><img src="docs/readme/light/icon-bot.svg" width="20" height="20" align="center"></picture> Bring-Your-Own-Key AI</h4>
+<h4><img src="docs/readme/shape-9.svg" height="18" align="top"> Bring-Your-Own-Key AI</h4>
 Optional on-device and cloud companion. Connect Gemini, OpenAI, Claude, or local Ollama instances to query pages.
 </td>
 </tr>
 </table>
 
-<br>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/divider-dark.svg">
+    <img src="docs/readme/divider-light.svg" alt="" width="100%">
+  </picture>
+</p>
 
-<h2 id="permissions"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/icon-key.svg"><img src="docs/readme/light/icon-key.svg" width="24" height="24" align="center"></picture> Permissions</h2>
+## <img src="docs/readme/shape-4.svg" height="26" align="top"> Permissions
 
 Petal asks only when a feature is actively invoked:
 
@@ -126,9 +148,14 @@ Petal asks only when a feature is actively invoked:
 | `REQUEST_INSTALL_PACKAGES` | Optional built-in seamless updater for GitHub releases. |
 | `SYSTEM_ALERT_WINDOW` | Optional floating island on devices running versions without Android 16 Live Updates. |
 
-<br>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/divider-dark.svg">
+    <img src="docs/readme/divider-light.svg" alt="" width="100%">
+  </picture>
+</p>
 
-<h2 id="tech-stack"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/icon-layers.svg"><img src="docs/readme/light/icon-layers.svg" width="24" height="24" align="center"></picture> Tech Stack</h2>
+## <img src="docs/readme/shape-5.svg" height="26" align="top"> Tech Stack
 
 <table width="100%">
 <thead><tr><th align="left" width="25%">Layer</th><th align="left" width="35%">Library / Tool</th><th align="left">Role</th></tr></thead>
@@ -145,9 +172,14 @@ Petal asks only when a feature is actively invoked:
 </tbody>
 </table>
 
-<br>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/divider-dark.svg">
+    <img src="docs/readme/divider-light.svg" alt="" width="100%">
+  </picture>
+</p>
 
-<h2 id="build-it-yourself"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/icon-rocket.svg"><img src="docs/readme/light/icon-rocket.svg" width="24" height="24" align="center"></picture> Build it yourself</h2>
+## <img src="docs/readme/shape-6.svg" height="26" align="top"> Build it yourself
 
 **Prerequisites:**
 * Android Studio (Ladybug or newer)
