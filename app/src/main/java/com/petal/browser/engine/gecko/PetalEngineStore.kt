@@ -138,8 +138,9 @@ object PetalEngineStore {
         val currentStorage = getSessionStorage(appContext)
         val saver = AutoSave(
             store = currentStore,
-            storage = currentStorage,
-            scope = mainScope
+            sessionStorage = currentStorage,
+            minimumIntervalMs = 2000L,
+            applicationScope = mainScope
         )
         autoSave = saver
         Log.i(TAG, "Initialized and started Mozilla AutoSave lifecycle")
