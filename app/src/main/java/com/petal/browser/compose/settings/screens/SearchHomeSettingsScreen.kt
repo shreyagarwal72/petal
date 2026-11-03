@@ -213,9 +213,9 @@ fun SearchHomeSettingsScreenContent(
                     }
                 }
 
-                // Homepage & Media Playback Card
+                // Homepage Configuration Card
                 PetalSettingsSection(
-                    title = stringResource(R.string.ui_homepage_media_playback),
+                    title = stringResource(R.string.ui_custom_homepage),
                     iconRes = com.petal.browser.R.drawable.home_filled,
                     cardId = "search_homepage",
                     targetHighlightId = targetHighlightItemId
@@ -257,42 +257,6 @@ fun SearchHomeSettingsScreenContent(
                                 unfocusedIndicatorColor = Color.Transparent
                             )
                         )
-                    }
-                    // Background Media Playback & Dark Webpages Group
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { index, position ->
-                        when (index) {
-                            0 -> {
-                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                    title = stringResource(R.string.ui_background_audio_video_playback),
-                                    subtitle = stringResource(R.string.ui_keep_youtube_web_media_playing),
-                                    icon = Icons.Rounded.PlayCircle,
-                                    checked = backgroundPlay,
-                                    position = position,
-                                    onCheckedChange = onBackgroundPlayChange
-                                )
-                            }
-                            1 -> {
-                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                    title = if (isPipSupported) "Auto Picture-in-Picture (PiP)" else "Auto Picture-in-Picture (Not Supported)",
-                                    subtitle = if (isPipSupported) "Automatically enter floating PiP window when leaving app during video playback" else "Picture-in-Picture mode is not supported on this device",
-                                    icon = Icons.Rounded.PictureInPicture,
-                                    checked = autoPip && isPipSupported,
-                                    enabled = isPipSupported,
-                                    position = position,
-                                    onCheckedChange = onAutoPipChange
-                                )
-                            }
-                            2 -> {
-                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                    title = stringResource(R.string.petal_setup_ext_dark),
-                                    subtitle = stringResource(R.string.petal_setup_ext_dark_reason),
-                                    icon = Icons.Rounded.DarkMode,
-                                    checked = forceDarkMode,
-                                    position = position,
-                                    onCheckedChange = onForceDarkModeChange
-                                )
-                            }
-                        }
                     }
                 }
 
