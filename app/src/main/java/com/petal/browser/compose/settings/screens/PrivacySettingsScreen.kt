@@ -346,7 +346,10 @@ fun PrivacySettingsScreenContent(
                         subtitle = "Firefox dynamic first-party cookie isolation and tracker partitioning",
                         icon = Icons.Rounded.Cookie,
                         checked = totalCookieProtection,
-                        onCheckedChange = onTotalCookieProtectionChange
+                        onCheckedChange = { newValue ->
+                            onTotalCookieProtectionChange(newValue)
+                            onBlockThirdPartyCookiesChange(newValue)
+                        }
                     )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
@@ -355,14 +358,6 @@ fun PrivacySettingsScreenContent(
                         icon = Icons.Rounded.VerifiedUser,
                         checked = cookieBannerAutoReject,
                         onCheckedChange = onCookieBannerAutoRejectChange
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = stringResource(R.string.ui_block_third_party_tracking_cookies),
-                        subtitle = stringResource(R.string.ui_isolate_and_block_cross_site),
-                        icon = Icons.Rounded.Cookie,
-                        checked = blockThirdPartyCookies,
-                        onCheckedChange = onBlockThirdPartyCookiesChange
                     )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,

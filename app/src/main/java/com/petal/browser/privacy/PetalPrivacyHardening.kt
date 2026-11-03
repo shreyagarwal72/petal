@@ -22,7 +22,7 @@ object PetalPrivacyHardening {
 
     const val PREF_PRIVACY_PROFILE = "sp_privacy_profile"
     const val PREF_SECURITY_SLIDER = "sp_security_slider"
-    const val PREF_WEBRTC_LEAK_PROTECT = "sp_webrtc_leak_protect"
+    const val PREF_WEBRTC_LEAK_PROTECT = "sp_webrtc_protection"
     const val PREF_CANVAS_LETTERBOXING = "sp_canvas_letterboxing"
 
     enum class PrivacyProfile {
