@@ -468,11 +468,12 @@ private fun StoreExtensionsPage(
                     }
                 }
             }
+        }
 
-            PetalExpressiveScrollBar(
-                listState = extensionsListState,
-                modifier = Modifier.align(Alignment.CenterEnd)
-            )
+        PetalExpressiveScrollBar(
+            listState = extensionsListState,
+            modifier = Modifier.align(Alignment.CenterEnd)
+        )
         }
     }
 }
@@ -728,6 +729,7 @@ private fun StoreScriptsPage(
                 }
             }
         }
+    }
 
         PetalExpressiveScrollBar(
             listState = scriptsListState,
@@ -881,6 +883,7 @@ private fun StoreFilterListsPage(
                 }
             }
         }
+    }
 
         PetalExpressiveScrollBar(
             listState = filterListsState,

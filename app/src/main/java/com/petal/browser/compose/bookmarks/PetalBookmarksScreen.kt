@@ -536,8 +536,9 @@ fun PetalBookmarksScreen(
                 }
             }
         }
+    }
 
-        // Bookmark Item Options Sheet (Material 3 Expressive)
+    // Bookmark Item Options Sheet (Material 3 Expressive)
         optionsRecord?.let { rec ->
             com.petal.browser.ui.containment.PetalSheet(
                 onDismissRequest = { optionsRecord = null }
