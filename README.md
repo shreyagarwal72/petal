@@ -187,6 +187,14 @@ Petal asks only when a feature is actively invoked:
 
 Petal is a reactive, single-app Android project built on Mozilla GeckoView with a high-performance native Rust core. Explore the architectural mind map and interactive package tree below:
 
+<p align="center">
+  <img src="docs/readme/architecture-mindmap.svg" alt="Petal Browser Architecture Mind Map" width="100%">
+</p>
+
+<details>
+<summary><b>🗺️ View Mermaid Syntax Diagram (Click to expand)</b></summary>
+<br>
+
 ```mermaid
 graph TD
     classDef core fill:#b81d63,stroke:#ffd9e3,stroke-width:2px,color:#ffffff,font-weight:bold
@@ -197,11 +205,11 @@ graph TD
 
     Petal["🌸 Petal Browser"]:::core
 
-    Petal --> UI["🎨 Material 3 Expressive UI<br/><code>com.petal.browser.ui / compose</code>"]:::ui
-    Petal --> Engine["⚡ GeckoView 159 Engine<br/><code>com.petal.browser.engine</code>"]:::engine
-    Petal --> Privacy["🛡️ Privacy & Security Vault<br/><code>passwords / privacy / sync</code>"]:::sec
-    Petal --> Media["🎵 Media & Download Manager<br/><code>media / download</code>"]:::ui
-    Petal --> Rust["🦀 Native Rust Adblock NDK<br/><code>native/adblock_rs</code>"]:::native
+    Petal --> UI["🎨 Material 3 Expressive UI<br/>ui / compose"]:::ui
+    Petal --> Engine["⚡ GeckoView 159 Engine<br/>engine"]:::engine
+    Petal --> Privacy["🛡️ Privacy & Security Vault<br/>passwords / privacy / sync"]:::sec
+    Petal --> Media["🎵 Media & Download Manager<br/>media / download"]:::ui
+    Petal --> Rust["🦀 Native Rust Adblock NDK<br/>native/adblock_rs"]:::native
 
     UI --> U1["Morphing Shapes & Spring Curves"]:::ui
     UI --> U2["Liquid Glass Address Pill"]:::ui
@@ -224,6 +232,8 @@ graph TD
     Rust --> R2["Sub-millisecond Cosmetic Hiding"]:::native
     Rust --> R3["HaGeZi PRO & uBlock Network Filters"]:::native
 ```
+
+</details>
 
 <details>
 <summary><b>📂 Interactive Package Directory Tree (Click to expand)</b></summary>

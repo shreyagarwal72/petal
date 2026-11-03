@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 580" width="100%" height="auto">
+  <defs>
+    <style>
+      .bg { fill: #1c151e; }
+      .title { font-family: system-ui, -apple-system, sans-serif; font-weight: 700; font-size: 15px; fill: #ffffff; }
+      .sub { font-family: system-ui, -apple-system, sans-serif; font-size: 11px; fill: #d8c2d6; }
+      .item { font-family: system-ui, -apple-system, sans-serif; font-size: 12.5px; font-weight: 500; fill: #f3e5f1; }
+      .node-core { fill: #b81d63; stroke: #ffd9e3; stroke-width: 2.5; rx: 28; }
+      .node-ui { fill: #362237; stroke: #7d4f7f; stroke-width: 1.5; rx: 18; }
+      .node-eng { fill: #1b2e44; stroke: #4578ad; stroke-width: 1.5; rx: 18; }
+      .node-sec { fill: #1a3826; stroke: #3f8a5c; stroke-width: 1.5; rx: 18; }
+      .node-med { fill: #3a2720; stroke: #8f5d47; stroke-width: 1.5; rx: 18; }
+      .node-rust { fill: #44201c; stroke: #a34e44; stroke-width: 1.5; rx: 18; }
+      .leaf { fill: #261927; stroke: #4c324e; stroke-width: 1; rx: 10; }
+      .leaf-txt { font-family: system-ui, -apple-system, sans-serif; font-size: 11.5px; fill: #e5cfe3; }
+      .edge { stroke: #6e4d6d; stroke-width: 2; fill: none; stroke-dasharray: 4,4; }
+      .edge-solid { stroke: #995c8e; stroke-width: 2; fill: none; }
+    </style>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="980" height="580" rx="16" fill="#171119" stroke="#332135" stroke-width="1.5"/>
+
+  <!-- Connecting Lines from Center Core -->
+  <path d="M 490 65 L 140 145" class="edge-solid"/>
+  <path d="M 490 65 L 320 145" class="edge-solid"/>
+  <path d="M 490 65 L 500 145" class="edge-solid"/>
+  <path d="M 490 65 L 680 145" class="edge-solid"/>
+  <path d="M 490 65 L 850 145" class="edge-solid"/>
+
+  <!-- Core Center Badge -->
+  <g transform="translate(370, 20)">
+    <rect width="240" height="60" class="node-core"/>
+    <text x="120" y="36" text-anchor="middle" class="title" font-size="18">🌸 Petal Browser</text>
+    <text x="120" y="50" text-anchor="middle" class="sub">GeckoView + Compose M3E</text>
+  </g>
+
+  <!-- Level 1 Columns / Pillars -->
+
+  <!-- Column 1: UI System -->
+  <g transform="translate(45, 145)">
+    <rect width="190" height="58" class="node-ui"/>
+    <text x="95" y="27" text-anchor="middle" class="title" fill="#fed7ff">🎨 M3E UI</text>
+    <text x="95" y="44" text-anchor="middle" class="sub">ui / compose</text>
+
+    <!-- Sub items -->
+    <path d="M 95 58 L 95 380" class="edge"/>
+    <g transform="translate(5, 78)">
+      <rect width="180" height="34" class="leaf"/>
+      <text x="90" y="21" text-anchor="middle" class="leaf-txt">Morphing Shapes &amp; Springs</text>
+    </g>
+    <g transform="translate(5, 120)">
+      <rect width="180" height="34" class="leaf"/>
+      <text x="90" y="21" text-anchor="middle" class="leaf-txt">Liquid Glass Address Pill</text>
+    </g>
+    <g transform="translate(5, 162)">
+      <rect width="180" height="34" class="leaf"/>
+      <text x="90" y="21" text-anchor="middle" class="leaf-txt">Predictive Back &amp; Blur</text>
+    </g>
+    <g transform="translate(5, 204)">
+      <rect width="180" height="34" class="leaf"/>
+      <text x="90" y="21" text-anchor="middle" class="leaf-txt">60fps Tab Grid Switcher</text>
+    </g>
+    <g transform="translate(5, 246)">
+      <rect width="180" height="34" class="leaf"/>
+      <text x="90" y="21" text-anchor="middle" class="leaf-txt">AMOLED Pure Black Theme</text>
+    </g>
+  </g>
+
+  <!-- Column 2: GeckoView Engine -->
+  <g transform="translate(250, 145)">
+    <rect width="180" height="58" class="node-eng"/>
+    <text x="90" y="27" text-anchor="middle" class="title" fill="#a8d4ff">⚡ GeckoView 159</text>
+    <text x="90" y="44" text-anchor="middle" class="sub">engine / session</text>
+
+    <!-- Sub items -->
+    <path d="M 90 58 L 90 340" class="edge"/>
+    <g transform="translate(5, 78)">
+      <rect width="170" height="34" class="leaf"/>
+      <text x="85" y="21" text-anchor="middle" class="leaf-txt">WebExtensions Addons</text>
+    </g>
+    <g transform="translate(5, 120)">
+      <rect width="170" height="34" class="leaf"/>
+      <text x="85" y="21" text-anchor="middle" class="leaf-txt">History &amp; SPA Routing</text>
+    </g>
+    <g transform="translate(5, 162)">
+      <rect width="170" height="34" class="leaf"/>
+      <text x="85" y="21" text-anchor="middle" class="leaf-txt">Total Cookie Protection</text>
+    </g>
+    <g transform="translate(5, 204)">
+      <rect width="170" height="34" class="leaf"/>
+      <text x="85" y="21" text-anchor="middle" class="leaf-txt">Isolated Process Sandbox</text>
+    </g>
+  </g>
+
+  <!-- Column 3: Privacy & Vault -->
+  <g transform="translate(445, 145)">
+    <rect width="180" height="58" class="node-sec"/>
+    <text x="90" y="27" text-anchor="middle" class="title" fill="#a6f3c5">🛡️ Privacy Shield</text>
+    <text x="90" y="44" text-anchor="middle" class="sub">passwords / privacy</text>
+
+    <!-- Sub items -->
+    <path d="M 90 58 L 90 340" class="edge"/>
+    <g transform="translate(5, 78)">
+      <rect width="170" height="34" class="leaf"/>
+      <text x="85" y="21" text-anchor="middle" class="leaf-txt">BiometricPass Vault</text>
+    </g>
+    <g transform="translate(5, 120)">
+      <rect width="170" height="34" class="leaf"/>
+      <text x="85" y="21" text-anchor="middle" class="leaf-txt">SQLCipher Database</text>
+    </g>
+    <g transform="translate(5, 162)">
+      <rect width="170" height="34" class="leaf"/>
+      <text x="85" y="21" text-anchor="middle" class="leaf-txt">Zero Background Analytics</text>
+    </g>
+    <g transform="translate(5, 204)">
+      <rect width="170" height="34" class="leaf"/>
+      <text x="85" y="21" text-anchor="middle" class="leaf-txt">Per-Site Shield Rules</text>
+    </g>
+  </g>
+
+  <!-- Column 4: Media & Downloads -->
+  <g transform="translate(640, 145)">
+    <rect width="180" height="58" class="node-med"/>
+    <text x="90" y="27" text-anchor="middle" class="title" fill="#ffd1b3">🎵 Media Tools</text>
+    <text x="90" y="44" text-anchor="middle" class="sub">media / download</text>
+
+    <!-- Sub items -->
+    <path d="M 90 58 L 90 340" class="edge"/>
+    <g transform="translate(5, 78)">
+      <rect width="170" height="34" class="leaf"/>
+      <text x="85" y="21" text-anchor="middle" class="leaf-txt">mpvEx Video PiP</text>
+    </g>
+    <g transform="translate(5, 120)">
+      <rect width="170" height="34" class="leaf"/>
+      <text x="85" y="21" text-anchor="middle" class="leaf-txt">Hi-Res Audio Sniffer</text>
+    </g>
+    <g transform="translate(5, 162)">
+      <rect width="170" height="34" class="leaf"/>
+      <text x="85" y="21" text-anchor="middle" class="leaf-txt">Fetch2 Segmented DL</text>
+    </g>
+    <g transform="translate(5, 204)">
+      <rect width="170" height="34" class="leaf"/>
+      <text x="85" y="21" text-anchor="middle" class="leaf-txt">Native PDF Document View</text>
+    </g>
+  </g>
+
+  <!-- Column 5: Native Rust Adblock -->
+  <g transform="translate(835, 145)">
+    <rect width="165" height="58" class="node-rust"/>
+    <text x="82" y="27" text-anchor="middle" class="title" fill="#ffb4a8">🦀 Native Rust</text>
+    <text x="82" y="44" text-anchor="middle" class="sub">native/adblock_rs</text>
+
+    <!-- Sub items -->
+    <path d="M 82 58 L 82 340" class="edge"/>
+    <g transform="translate(2, 78)">
+      <rect width="160" height="34" class="leaf"/>
+      <text x="80" y="21" text-anchor="middle" class="leaf-txt">Brave adblock-rust</text>
+    </g>
+    <g transform="translate(2, 120)">
+      <rect width="160" height="34" class="leaf"/>
+      <text x="80" y="21" text-anchor="middle" class="leaf-txt">Sub-ms Cosmetic Hide</text>
+    </g>
+    <g transform="translate(2, 162)">
+      <rect width="160" height="34" class="leaf"/>
+      <text x="80" y="21" text-anchor="middle" class="leaf-txt">HaGeZi PRO Filters</text>
+    </g>
+    <g transform="translate(2, 204)">
+      <rect width="160" height="34" class="leaf"/>
+      <text x="80" y="21" text-anchor="middle" class="leaf-txt">uBlock Scriptlets</text>
+    </g>
+  </g>
+
+  <!-- Footer indicator -->
+  <g transform="translate(390, 520)">
+    <rect width="200" height="32" rx="16" fill="#2d1c2e" stroke="#5d395f" stroke-width="1"/>
+    <text x="100" y="20" text-anchor="middle" class="sub" fill="#eed9ec">⚡ High-Speed Direct Runtime</text>
+  </g>
+</svg>
