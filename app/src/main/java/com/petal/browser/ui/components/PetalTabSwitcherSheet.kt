@@ -220,6 +220,7 @@ object PetalTabSwitcherBridge {
                                 ?: list.find { album ->
                                     val id = when (album) {
                                         is com.petal.browser.view.PetalGeckoView -> album.getTabId()
+                                        is com.petal.browser.browser.PetalTabViewController -> album.getTabId()
                                         is com.petal.browser.browser.PlaceholderAlbumController -> album.getTabId()
                                         else -> null
                                     }
@@ -235,6 +236,7 @@ object PetalTabSwitcherBridge {
                                 ?: list.find { album ->
                                     val id = when (album) {
                                         is com.petal.browser.view.PetalGeckoView -> album.getTabId()
+                                        is com.petal.browser.browser.PetalTabViewController -> album.getTabId()
                                         is com.petal.browser.browser.PlaceholderAlbumController -> album.getTabId()
                                         else -> null
                                     }
