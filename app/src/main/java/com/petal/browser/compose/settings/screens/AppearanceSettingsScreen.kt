@@ -995,8 +995,22 @@ fun AppearanceSettingsScreenContent(
                         selected = appFont,
                         minHeight = 44.dp,
                         onSelect = { font ->
+                            if (font == AppFont.CUSTOM) {
+                                val isUnlocked = com.petal.browser.account.progress.PetalProgressStore.isUnlocked(
+                                    context,
+                                    com.petal.browser.account.progress.PetalUnlockable.CUSTOM_FONT
+                                )
+                                if (!isUnlocked) {
+                                    val req = com.petal.browser.account.progress.PetalProgressStore.getRemainingRequirement(
+                                        context,
+                                        com.petal.browser.account.progress.PetalUnlockable.CUSTOM_FONT
+                                    )
+                                    com.petal.browser.view.PetalToast.show(context, "Custom Font locked! $req")
+                                    return@PetalChoiceButtonGroup
+                                }
+                                showFontPicker = true
+                            }
                             onAppFontChange(font)
-                            if (font == AppFont.CUSTOM) showFontPicker = true
                         }
                     )
 
@@ -1098,6 +1112,20 @@ fun AppearanceSettingsScreenContent(
                                 checked = gsFlexSettings.preset == GSFlexPreset.CUSTOM,
                                 position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
                                 onCheckedChange = { checked ->
+                                    if (checked) {
+                                        val isUnlocked = com.petal.browser.account.progress.PetalProgressStore.isUnlocked(
+                                            context,
+                                            com.petal.browser.account.progress.PetalUnlockable.FONT_VARIABLES
+                                        )
+                                        if (!isUnlocked) {
+                                            val req = com.petal.browser.account.progress.PetalProgressStore.getRemainingRequirement(
+                                                context,
+                                                com.petal.browser.account.progress.PetalUnlockable.FONT_VARIABLES
+                                            )
+                                            com.petal.browser.view.PetalToast.show(context, "Font Variables locked! $req")
+                                            return@PetalSettingsToggleRow
+                                        }
+                                    }
                                     val newPreset = if (checked) GSFlexPreset.CUSTOM else lastNonCustomPreset
                                     onGsFlexPresetChange(newPreset)
                                     // Entering Custom starts from the preset that was active, not stale saved axes.
@@ -1492,7 +1520,23 @@ fun AppearanceSettingsScreenContent(
                             icon = Icons.Rounded.BlurOn,
                             checked = liquidGlassEnabled,
                             position = if (liquidGlassEnabled) com.petal.browser.ui.containment.PetalGroupPosition.TOP else com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
-                            onCheckedChange = onLiquidGlassEnabledChange
+                            onCheckedChange = { checked ->
+                                if (checked) {
+                                    val isUnlocked = com.petal.browser.account.progress.PetalProgressStore.isUnlocked(
+                                        context,
+                                        com.petal.browser.account.progress.PetalUnlockable.LIQUID_GLASS
+                                    )
+                                    if (!isUnlocked) {
+                                        val req = com.petal.browser.account.progress.PetalProgressStore.getRemainingRequirement(
+                                            context,
+                                            com.petal.browser.account.progress.PetalUnlockable.LIQUID_GLASS
+                                        )
+                                        com.petal.browser.view.PetalToast.show(context, "Liquid Glass locked! $req")
+                                        return@PetalSettingsToggleRow
+                                    }
+                                }
+                                onLiquidGlassEnabledChange(checked)
+                            }
                         )
 
                         if (liquidGlassEnabled) {

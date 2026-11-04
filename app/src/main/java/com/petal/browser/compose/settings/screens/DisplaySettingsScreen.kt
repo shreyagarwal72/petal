@@ -266,7 +266,23 @@ fun DisplaySettingsScreenContent(
                         subtitle = stringResource(R.string.ui_apply_dynamic_frosted_glass_fold),
                         icon = Icons.Rounded.Animation,
                         checked = appleDuoEnabled,
-                        onCheckedChange = onAppleDuoEnabledChange
+                        onCheckedChange = { checked ->
+                            if (checked) {
+                                val isUnlocked = com.petal.browser.account.progress.PetalProgressStore.isUnlocked(
+                                    context,
+                                    com.petal.browser.account.progress.PetalUnlockable.APPLE_DUO_EFFECT
+                                )
+                                if (!isUnlocked) {
+                                    val req = com.petal.browser.account.progress.PetalProgressStore.getRemainingRequirement(
+                                        context,
+                                        com.petal.browser.account.progress.PetalUnlockable.APPLE_DUO_EFFECT
+                                    )
+                                    com.petal.browser.view.PetalToast.show(context, "Apple Duo locked! $req")
+                                    return@PetalSettingsToggleRow
+                                }
+                            }
+                            onAppleDuoEnabledChange(checked)
+                        }
                     )
 
                     if (appleDuoEnabled) {

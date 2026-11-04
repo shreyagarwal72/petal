@@ -350,8 +350,213 @@ fun PetalStatTiles(modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PetalRewardsCatalogCard(onOpen: () -> Unit, modifier: Modifier = Modifier) {
+    val ctx = LocalContext.current
+    val cs = MaterialTheme.colorScheme
+    val total = PetalUnlockable.values().size
+    val unlockedCount = PetalUnlockable.values().count { PetalProgressStore.isUnlocked(ctx, it) }
+    val p by animateFloatAsState(unlockedCount / total.toFloat(), MaterialTheme.motionScheme.slowEffectsSpec(), label = "rewardsBar")
+
+    Surface(
+        shape = RoundedCornerShape(32.dp),
+        color = cs.surfaceContainerHigh,
+        modifier = modifier.fillMaxWidth().bouncyClickable { onOpen() }
+    ) {
+        Column(Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("XP Rewards & Unlocks", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                    Text("$unlockedCount of $total features unlocked", style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
+                }
+                Surface(
+                    shape = CircleShape,
+                    color = cs.tertiaryContainer,
+                    contentColor = cs.onTertiaryContainer,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.LockOpen, "View Unlocks")
+                    }
+                }
+            }
+            Spacer(Modifier.height(14.dp))
+            LinearProgressIndicator(
+                progress = { p },
+                modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+                color = cs.tertiary,
+                trackColor = cs.surfaceVariant
+            )
+            Spacer(Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                PetalUnlockable.values().take(5).forEach { u ->
+                    val unlocked = PetalProgressStore.isUnlocked(ctx, u)
+                    Surface(
+                        shape = CircleShape,
+                        color = if (unlocked) cs.primaryContainer else cs.surfaceContainerHighest,
+                        contentColor = if (unlocked) cs.onPrimaryContainer else cs.onSurfaceVariant,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                if (unlocked) unlockableIcon(u.iconName) else Icons.Rounded.Lock,
+                                contentDescription = u.title,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun BadgeChip(b: PetalBadge, size: Dp) {
+    val cs = MaterialTheme.colorScheme
+    val unlocked = PetalProgressStore.isBadgeUnlocked(b.id)
+    Surface(
+        shape = CircleShape,
+        color = if (unlocked) cs.primaryContainer else cs.surfaceContainerHighest,
+        contentColor = if (unlocked) cs.onPrimaryContainer else cs.onSurfaceVariant,
+        modifier = Modifier.size(size)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(if (unlocked) badgeIcon(b.id) else Icons.Rounded.Lock, b.title, Modifier.size(size * 0.5f))
+        }
+    }
+}
+
+private fun unlockableIcon(name: String): ImageVector = when (name) {
+    "BlurOn" -> Icons.Rounded.BlurOn
+    "FontDownload" -> Icons.Rounded.FontDownload
+    "Tune" -> Icons.Rounded.Tune
+    "Movie" -> Icons.Rounded.Movie
+    "ScreenRotation" -> Icons.Rounded.ScreenRotation
+    "AutoAwesome" -> Icons.Rounded.AutoAwesome
+    "Vibration" -> Icons.Rounded.Vibration
+    "AppShortcut" -> Icons.Rounded.AppShortcut
+    else -> Icons.Rounded.Stars
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PetalRewardsSheet(onDismiss: () -> Unit) {
+    val ctx = LocalContext.current
+    val cs = MaterialTheme.colorScheme
+    var focus by remember { mutableStateOf(PetalUnlockable.values().first()) }
+
+    PetalSheet(onDismissRequest = onDismiss) {
+        Column(
+            Modifier
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp)
+        ) {
+            val total = PetalUnlockable.values().size
+            val unlockedCount = PetalUnlockable.values().count { PetalProgressStore.isUnlocked(ctx, it) }
+            Text(
+                "XP Rewards & Features ($unlockedCount/$total)",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+            )
+            Spacer(Modifier.height(12.dp))
+
+            val isUnlocked = PetalProgressStore.isUnlocked(ctx, focus)
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = if (isUnlocked) cs.primaryContainer else cs.secondaryContainer,
+                contentColor = if (isUnlocked) cs.onPrimaryContainer else cs.onSecondaryContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(Modifier.padding(18.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            shape = CircleShape,
+                            color = cs.surface.copy(alpha = 0.5f),
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    if (isUnlocked) unlockableIcon(focus.iconName) else Icons.Rounded.Lock,
+                                    null,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(focus.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            Text(
+                                if (isUnlocked) "Unlocked & Active" else "Locked",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isUnlocked) cs.primary else cs.error
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Text(focus.description, style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(12.dp))
+                    if (!isUnlocked) {
+                        val remaining = PetalProgressStore.getRemainingRequirement(ctx, focus)
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = cs.surface.copy(alpha = 0.6f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                remaining,
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                color = cs.onSurface,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier.heightIn(max = 320.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(PetalUnlockable.values()) { u ->
+                    val unlocked = PetalProgressStore.isUnlocked(ctx, u)
+                    Column(
+                        Modifier.bouncyClickable { focus = u },
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = if (unlocked) cs.primaryContainer else cs.surfaceContainerHighest,
+                            contentColor = if (unlocked) cs.onPrimaryContainer else cs.onSurfaceVariant,
+                            modifier = Modifier.size(60.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    if (unlocked) unlockableIcon(u.iconName) else Icons.Rounded.Lock,
+                                    u.title,
+                                    Modifier.size(28.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            u.title,
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
     val cs = MaterialTheme.colorScheme
     val unlocked = PetalProgressStore.isBadgeUnlocked(b.id)
     Surface(
@@ -636,3 +841,162 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
         )
     }
 }
+
+/**
+ * Dialog for Encrypted `.pt` Backup and Restore with dedicated password protection.
+ */
+@Composable
+fun PetalXpBackupRestoreDialog(
+    onDismiss: () -> Unit,
+    onMessage: (String) -> Unit
+) {
+    val ctx = LocalContext.current
+    var mode by remember { mutableStateOf<String?>(null) } // null = choose, "export" or "restore"
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // SAF Launchers
+    val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val result = PetalXpBackupEngine.exportEncryptedBackup(ctx, uri, password)
+            if (result.isSuccess) {
+                com.petal.browser.view.PetalToast.show(ctx, "Encrypted backup saved (.pt)")
+                onMessage("XP & Achievements backed up successfully!")
+                onDismiss()
+            } else {
+                errorMessage = result.exceptionOrNull()?.message ?: "Export failed"
+            }
+        }
+    }
+
+    val restoreLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val result = PetalXpBackupEngine.restoreEncryptedBackup(ctx, uri, password)
+            if (result.isSuccess) {
+                com.petal.browser.view.PetalToast.show(ctx, "XP & Achievements successfully restored! 🎉")
+                onMessage("Restored successfully from .pt backup!")
+                onDismiss()
+            } else {
+                errorMessage = result.exceptionOrNull()?.message ?: "Restore failed: incorrect password"
+            }
+        }
+    }
+
+    PetalMaterialAlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.EnhancedEncryption, null, tint = MaterialTheme.colorScheme.primary) },
+        title = {
+            Text(
+                when (mode) {
+                    "export" -> "Export Encrypted Backup (.pt)"
+                    "restore" -> "Restore from .pt Backup"
+                    else -> "XP & Rewards Backup"
+                }
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (mode == null) {
+                    Text(
+                        "Safely export or restore your XP, levels, unlocked features, badges, and quest stats using AES-256-GCM encryption with your own dedicated password.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    PetalLiquidButton(
+                        onClick = { mode = "export"; errorMessage = null },
+                        modifier = Modifier.fillMaxWidth(),
+                        variant = PetalButtonVariant.Filled
+                    ) {
+                        Icon(Icons.Rounded.CloudUpload, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Create Encrypted Backup (.pt)")
+                    }
+                    PetalLiquidButton(
+                        onClick = { mode = "restore"; errorMessage = null },
+                        modifier = Modifier.fillMaxWidth(),
+                        variant = PetalButtonVariant.Tonal
+                    ) {
+                        Icon(Icons.Rounded.CloudDownload, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Restore from .pt Backup")
+                    }
+                } else if (mode == "export") {
+                    Text("Enter a dedicated password to encrypt your .pt backup file:", style = MaterialTheme.typography.bodyMedium)
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it; errorMessage = null },
+                        label = { Text("Backup Password") },
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it; errorMessage = null },
+                        label = { Text("Confirm Password") },
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                } else if (mode == "restore") {
+                    Text("Enter the password used when this .pt backup was created:", style = MaterialTheme.typography.bodyMedium)
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it; errorMessage = null },
+                        label = { Text("Password") },
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+
+                if (errorMessage != null) {
+                    Text(errorMessage!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        },
+        confirmButton = {
+            if (mode == "export") {
+                PetalLiquidButton(
+                    onClick = {
+                        if (password.length < 4) {
+                            errorMessage = "Password must be at least 4 characters"
+                        } else if (password != confirmPassword) {
+                            errorMessage = "Passwords do not match"
+                        } else {
+                            val fileName = "petal_xp_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.pt"
+                            exportLauncher.launch(fileName)
+                        }
+                    },
+                    variant = PetalButtonVariant.Filled
+                ) {
+                    Text("Select Destination")
+                }
+            } else if (mode == "restore") {
+                PetalLiquidButton(
+                    onClick = {
+                        if (password.isBlank()) {
+                            errorMessage = "Please enter password"
+                        } else {
+                            restoreLauncher.launch(arrayOf("*/*", "application/octet-stream"))
+                        }
+                    },
+                    variant = PetalButtonVariant.Filled
+                ) {
+                    Text("Select .pt File")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { if (mode != null) mode = null else onDismiss() }) {
+                Text(if (mode != null) "Back" else "Cancel")
+            }
+        }
+    )
+}
+

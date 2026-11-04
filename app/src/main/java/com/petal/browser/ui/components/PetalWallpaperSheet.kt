@@ -619,6 +619,18 @@ fun PetalWallpaperSheet(
         val ext = file.extension.lowercase()
         val isVideoFile = ext in setOf("mp4", "webm", "mkv", "mov", "3gp", "avi", "ts", "flv", "m4v")
         if (isVideoFile) {
+            val isUnlocked = com.petal.browser.account.progress.PetalProgressStore.isUnlocked(
+                context,
+                com.petal.browser.account.progress.PetalUnlockable.LIVE_WALLPAPER
+            )
+            if (!isUnlocked) {
+                val req = com.petal.browser.account.progress.PetalProgressStore.getRemainingRequirement(
+                    context,
+                    com.petal.browser.account.progress.PetalUnlockable.LIVE_WALLPAPER
+                )
+                com.petal.browser.view.PetalToast.show(context, "Live Wallpaper locked! $req")
+                return@handleSelectedFile
+            }
             // Copy video to app local wallpaper cache and apply directly
             scope.launch(Dispatchers.IO) {
                 try {
@@ -654,6 +666,18 @@ fun PetalWallpaperSheet(
         uri?.let { inputUri ->
             val mime = context.contentResolver.getType(inputUri) ?: ""
             if (mime.contains("video", ignoreCase = true)) {
+                val isUnlocked = com.petal.browser.account.progress.PetalProgressStore.isUnlocked(
+                    context,
+                    com.petal.browser.account.progress.PetalUnlockable.LIVE_WALLPAPER
+                )
+                if (!isUnlocked) {
+                    val req = com.petal.browser.account.progress.PetalProgressStore.getRemainingRequirement(
+                        context,
+                        com.petal.browser.account.progress.PetalUnlockable.LIVE_WALLPAPER
+                    )
+                    com.petal.browser.view.PetalToast.show(context, "Live Wallpaper locked! $req")
+                    return@rememberLauncherForActivityResult
+                }
                 scope.launch(Dispatchers.IO) {
                     try {
                         val wallpaperDir = File(context.filesDir, "wallpapers").apply { mkdirs() }
@@ -729,6 +753,18 @@ fun PetalWallpaperSheet(
                 }
             }
         } else {
+            val isUnlocked = com.petal.browser.account.progress.PetalProgressStore.isUnlocked(
+                context,
+                com.petal.browser.account.progress.PetalUnlockable.LIVE_WALLPAPER
+            )
+            if (!isUnlocked) {
+                val req = com.petal.browser.account.progress.PetalProgressStore.getRemainingRequirement(
+                    context,
+                    com.petal.browser.account.progress.PetalUnlockable.LIVE_WALLPAPER
+                )
+                com.petal.browser.view.PetalToast.show(context, "Live Wallpaper locked! $req")
+                return@onSelect
+            }
             // Videos stream: apply now and show the indicator until the first frame is up.
             if (remote) PetalWallpaperManager.markLoading(full)
             PetalWallpaperManager.setWallpaper(context, full, currentDim, currentBlur)

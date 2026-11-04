@@ -129,6 +129,8 @@ fun FirefoxAccountSyncScreen(
     }
 
     var showAvatarPetalPicker by remember { mutableStateOf(false) }
+    var showRewardsSheet by remember { mutableStateOf(false) }
+    var showXpBackupDialog by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -171,6 +173,13 @@ fun FirefoxAccountSyncScreen(
 
     LaunchedEffect(Unit) { com.petal.browser.account.progress.PetalProgressStore.init(context) }
     if (showBadgesSheet) com.petal.browser.account.progress.PetalBadgesSheet(onDismiss = { showBadgesSheet = false })
+    if (showRewardsSheet) com.petal.browser.account.progress.PetalRewardsSheet(onDismiss = { showRewardsSheet = false })
+    if (showXpBackupDialog) {
+        com.petal.browser.account.progress.PetalXpBackupRestoreDialog(
+            onDismiss = { showXpBackupDialog = false },
+            onMessage = { msg -> coroutineScope.launch { snackbarHostState.showSnackbar(msg) } }
+        )
+    }
     com.petal.browser.account.progress.PetalBadgeUnlockHost()
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
@@ -234,6 +243,50 @@ fun FirefoxAccountSyncScreen(
                             com.petal.browser.account.progress.PetalStatTiles()
 
                             com.petal.browser.account.progress.PetalBadgeCollectionCard(onOpen = { showBadgesSheet = true })
+
+                            com.petal.browser.account.progress.PetalRewardsCatalogCard(onOpen = { showRewardsSheet = true })
+
+                            // Encrypted Backup & Restore (.pt) Action Card
+                            Surface(
+                                shape = RoundedCornerShape(24.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                modifier = Modifier.fillMaxWidth().com.petal.browser.ui.components.bouncyClickable { showXpBackupDialog = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(44.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Rounded.EnhancedEncryption, null, modifier = Modifier.size(22.dp))
+                                        }
+                                    }
+                                    Spacer(Modifier.width(14.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(
+                                            "Encrypted Backup & Recovery",
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            "Export & restore XP, levels & stats (.pt)",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Icon(
+                                        Icons.AutoMirrored.Rounded.ArrowForward,
+                                        null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
 
                             com.petal.browser.account.progress.PetalSupportCard(
                                 onMessage = { msg -> coroutineScope.launch { snackbarHostState.showSnackbar(msg) } }

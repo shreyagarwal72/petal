@@ -70,19 +70,92 @@ val PETAL_BADGES: List<PetalBadge> = listOf(
 )
 
 /**
- * Features locked behind a task. Add a new entry here to lock another cosmetic feature.
- * A feature unlocks when ANY path is met: enough ads watched in total, OR a high enough level.
- * Keep core browsing features OUT of this list.
+ * Features locked behind XP levels or supporter quest contributions.
+ * A feature unlocks when ANY path is met: reaching the required level, OR watching enough supporter ads, OR explicit unlock.
+ * Core browsing and privacy capabilities are NEVER locked.
  */
 enum class PetalUnlockable(
     val id: String,
     val title: String,
-    val adsNeeded: Int,
+    val description: String,
     val levelNeeded: Int,
+    val adsNeeded: Int,
     /** Preference key that turns the feature on. It is forced off while the feature is locked. */
     val enabledKey: String,
+    val iconName: String
 ) {
-    LIQUID_GLASS("liquid_glass", "Liquid Glass", adsNeeded = 0, levelNeeded = 0, enabledKey = "sp_liquid_glass_enabled"),
+    LIQUID_GLASS(
+        id = "liquid_glass",
+        title = "Liquid Glass UI",
+        description = "Fluid translucent frosted glass shaders across sheets and navbars",
+        levelNeeded = 2,
+        adsNeeded = 1,
+        enabledKey = "sp_liquid_glass_enabled",
+        iconName = "BlurOn"
+    ),
+    CUSTOM_FONT(
+        id = "custom_font",
+        title = "Custom Font Import",
+        description = "Import and apply custom TTF/OTF typefaces across the browser",
+        levelNeeded = 3,
+        adsNeeded = 2,
+        enabledKey = "sp_custom_font_unlocked",
+        iconName = "FontDownload"
+    ),
+    FONT_VARIABLES(
+        id = "font_variables",
+        title = "Variable Font Axes Tuning",
+        description = "Fine-tune font weight, optical size, grade, slant, and roundness axes",
+        levelNeeded = 4,
+        adsNeeded = 3,
+        enabledKey = "sp_font_variables_unlocked",
+        iconName = "Tune"
+    ),
+    LIVE_WALLPAPER(
+        id = "live_wallpaper",
+        title = "Homescreen Live Wallpaper",
+        description = "Apply looping video and animated wallpapers on the browser home screen",
+        levelNeeded = 5,
+        adsNeeded = 4,
+        enabledKey = "sp_live_wallpaper_unlocked",
+        iconName = "Movie"
+    ),
+    APPLE_DUO_EFFECT(
+        id = "apple_duo",
+        title = "Apple Duo 3D Fold Effect",
+        description = "Gyroscopic sensor-driven 3D screen folding and perspective physics",
+        levelNeeded = 6,
+        adsNeeded = 5,
+        enabledKey = "sp_apple_duo_unlocked",
+        iconName = "ScreenRotation"
+    ),
+    OMNIBOX_GLOW(
+        id = "omnibox_glow",
+        title = "Expressive Omnibox Glow",
+        description = "Ambient iridescent neon particle aura while typing in the address bar",
+        levelNeeded = 7,
+        adsNeeded = 6,
+        enabledKey = "sp_omnibox_glow_unlocked",
+        iconName = "AutoAwesome"
+    ),
+    EXPRESSIVE_HAPTICS(
+        id = "expressive_haptics",
+        title = "Liquid Haptic Profiles",
+        description = "Organic tactile feedback textures and fluid sensory gestures",
+        levelNeeded = 8,
+        adsNeeded = 7,
+        enabledKey = "sp_expressive_haptics_unlocked",
+        iconName = "Vibration"
+    ),
+    DYNAMIC_APP_ICONS(
+        id = "dynamic_app_icons",
+        title = "Prestige App Icons",
+        description = "Exclusive Liquid Glass, Emerald, and Aurora launcher icon designs",
+        levelNeeded = 10,
+        adsNeeded = 8,
+        enabledKey = "sp_dynamic_app_icons_unlocked",
+        iconName = "AppShortcut"
+    )
 }
 
 /**
@@ -221,24 +294,24 @@ object PetalProgressStore {
     }
 
     /** Runs after every XP or counter change, so a level-up unlocks features at once. */
-    private fun refreshUnlocks(ctx: Context) { PetalUnlockable.values().forEach { isUnlocked(ctx, it) } }
-
-    /**
-     * One time: people who already had a locked feature turned on keep it (it was free before).
-     * After that, any locked feature that is still switched on is forced off.
-     */
-    private fun migrateFeatureLocks(ctx: Context) {
-        val p = sp(ctx)
+    private fun refreshUnlocks(ctx: Context) {
         PetalUnlockable.values().forEach { u ->
-            persistUnlock(ctx, u)
+            val unlocked = isUnlocked(ctx, u)
+            if (unlocked) {
+                persistUnlock(ctx, u)
+            }
         }
-        p.edit().putBoolean("sp_liquid_glass_unlocked", true).apply()
+    }
+
+    private fun migrateFeatureLocks(ctx: Context) {
+        // Evaluate unlocked state for all features
+        refreshUnlocks(ctx)
     }
 
     private fun persistUnlock(ctx: Context, u: PetalUnlockable) {
         val e = sp(ctx).edit().putBoolean("pp_unlocked_" + u.id, true)
-        // Older code and the settings screen read this flag for Liquid Glass.
         if (u == PetalUnlockable.LIQUID_GLASS) e.putBoolean("sp_liquid_glass_unlocked", true)
+        e.putBoolean(u.enabledKey + "_unlocked", true)
         e.apply()
     }
 
@@ -266,13 +339,111 @@ object PetalProgressStore {
         }
     }
 
-    /** Ads watched toward this feature, capped at what it needs (for "1 / 3" labels). */
-    fun unlockProgress(ctx: Context, u: PetalUnlockable): Int = 0
+    /** Ads watched toward this feature, capped at what it needs. */
+    fun unlockProgress(ctx: Context, u: PetalUnlockable): Int {
+        init(ctx)
+        val ads = counter(PetalCounter.ADS_WATCHED).toInt()
+        return ads.coerceAtMost(u.adsNeeded)
+    }
 
-    /** The ONE check the rest of the app must use. All features are unlocked by default. */
+    /**
+     * Checks if a cosmetic feature is unlocked:
+     * - Reached target XP level
+     * - OR watched required supporter ads
+     * - OR previously unlocked / restored via encrypted backup
+     */
     fun isUnlocked(ctx: Context, u: PetalUnlockable): Boolean {
-        persistUnlock(ctx, u)
-        return true
+        init(ctx)
+        val p = sp(ctx)
+        if (p.getBoolean("pp_unlocked_" + u.id, false)) return true
+        if (level >= u.levelNeeded) {
+            persistUnlock(ctx, u)
+            return true
+        }
+        val ads = counter(PetalCounter.ADS_WATCHED)
+        if (ads >= u.adsNeeded) {
+            persistUnlock(ctx, u)
+            return true
+        }
+        return false
+    }
+
+    fun getRemainingRequirement(ctx: Context, u: PetalUnlockable): String {
+        init(ctx)
+        val curLevel = level
+        val adsWatched = counter(PetalCounter.ADS_WATCHED)
+        val lvDiff = (u.levelNeeded - curLevel).coerceAtLeast(0)
+        val adDiff = (u.adsNeeded - adsWatched).coerceAtLeast(0)
+        return "Unlock at Level ${u.levelNeeded} ($lvDiff levels to go) or with $adDiff more Fuel the Code support"
+    }
+
+    /** Restores progress, XP, stats, badges, and unlocks from decrypted backup JSON */
+    fun restoreFromBackupJson(ctx: Context, json: org.json.JSONObject) {
+        init(ctx)
+        val p = sp(ctx)
+        val editor = p.edit()
+
+        if (json.has("xp")) {
+            val restoredXp = json.optLong("xp", 0L)
+            xp = restoredXp.coerceAtLeast(0L)
+            editor.putLong(KEY_XP, xp)
+        }
+
+        if (json.has("since")) {
+            since = json.optLong("since", System.currentTimeMillis())
+            editor.putLong(KEY_SINCE, since)
+        }
+
+        // Restore Counters
+        val countersObj = json.optJSONObject("counters")
+        if (countersObj != null) {
+            val updatedCounters = counters.toMutableMap()
+            PetalCounter.values().forEach { counter ->
+                if (countersObj.has(counter.name)) {
+                    val countVal = countersObj.optLong(counter.name, 0L)
+                    updatedCounters[counter.key] = countVal
+                    editor.putLong(counter.key, countVal)
+                }
+            }
+            counters = updatedCounters
+        }
+
+        // Restore Badges
+        val badgesArray = json.optJSONArray("unlocked_badges")
+        if (badgesArray != null) {
+            val badgeList = mutableSetOf<String>()
+            for (i in 0 until badgesArray.length()) {
+                badgeList.add(badgesArray.getString(i))
+            }
+            unlockedBadges = badgeList
+            editor.putString(KEY_BADGES, badgeList.joinToString(","))
+        }
+
+        // Restore Showcase
+        val showcaseArray = json.optJSONArray("showcase")
+        if (showcaseArray != null) {
+            val scList = mutableListOf<String>()
+            for (i in 0 until showcaseArray.length()) {
+                scList.add(showcaseArray.getString(i))
+            }
+            showcase = scList
+            editor.putString(KEY_SHOWCASE, scList.joinToString(","))
+        }
+
+        // Restore Unlocked Features
+        val unlocksArray = json.optJSONArray("unlocked_features")
+        if (unlocksArray != null) {
+            for (i in 0 until unlocksArray.length()) {
+                val unlockId = unlocksArray.getString(i)
+                editor.putBoolean("pp_unlocked_$unlockId", true)
+                if (unlockId == PetalUnlockable.LIQUID_GLASS.id) {
+                    editor.putBoolean("sp_liquid_glass_unlocked", true)
+                }
+            }
+        }
+
+        editor.apply()
+        refreshUnlocks(ctx)
     }
 
     /** Call only after the SDK confirms the ad was fully watched. */
