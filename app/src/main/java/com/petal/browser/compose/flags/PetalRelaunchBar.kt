@@ -37,7 +37,10 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.containment.PetalBackdrop
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.rememberGlassSheen
 
 /**
  * PetalRelaunchBar
@@ -53,6 +56,8 @@ fun PetalRelaunchBar(
     backdrop: PetalBackdrop? = null
 ) {
     val haptic = LocalHapticFeedback.current
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = rememberGlassSheen(isGlass)
     val shape = RoundedCornerShape(22.dp)
 
     AnimatedVisibility(
@@ -79,15 +84,11 @@ fun PetalRelaunchBar(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(shape)
-                    .liquidGlassChrome(
-                        shape = shape,
-                        backdrop = backdrop,
-                        isDark = MaterialTheme.colorScheme.surface.let { it.red * 0.299 + it.green * 0.587 + it.blue * 0.114 < 0.5 }
-                    ),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
-                tonalElevation = 6.dp,
-                shadowElevation = 8.dp
+                    .then(if (isGlass) Modifier.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = sheen) else Modifier),
+                shape = shape,
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = if (isGlass) 0.dp else 6.dp,
+                shadowElevation = if (isGlass) 0.dp else 8.dp
             ) {
                 Row(
                     modifier = Modifier

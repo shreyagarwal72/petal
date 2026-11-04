@@ -55,18 +55,3 @@ fun PetalNowBar(
         )
     }
 }
-
-/**
- * Backward compatibility alias for PetalCutoutIsland.
- */
-@Deprecated(
-    message = "Renamed to PetalNowBar",
-    replaceWith = ReplaceWith("PetalNowBar(modifier, actionListener)")
-)
-@Composable
-fun PetalCutoutIsland(
-    modifier: Modifier = Modifier,
-    actionListener: LiveActionActionListener? = null
-) {
-    PetalNowBar(modifier = modifier, actionListener = actionListener)
-}

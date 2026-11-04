@@ -36,6 +36,12 @@ import com.petal.browser.compose.settings.viewmodel.PrivacySettingsViewModel
 import androidx.activity.ComponentActivity
 import com.petal.browser.passwords.PetalPasswordsScreen
 import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
+import com.petal.browser.ui.glass.captureGlassWallpaper
+import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -158,6 +164,8 @@ fun PrivacySettingsScreenContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val wallpaper = rememberPetalGlassWallpaper()
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     var showPasswordsScreen by remember { mutableStateOf(false) }
     var showAdBlockSettings by remember { mutableStateOf(false) }
     var showWhitelistDialog by remember { mutableStateOf(false) }
@@ -252,13 +260,19 @@ fun PrivacySettingsScreenContent(
         )
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)
-    ) {
+    CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+        ) {
+            M3ExpressiveVariableBackground(
+                pageSeed = "privacy_settings",
+                modifier = Modifier
+                    .matchParentSize()
+                    .captureGlassWallpaper(wallpaper)
+            )
 
-        Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
             ExpressiveHeader(
                 title = "Privacy & Security",
                 subtitle = "AdBlock, HTTPS-only, Private DNS & cookies",
@@ -557,8 +571,8 @@ fun PrivacySettingsScreenContent(
                                     singleLine = true,
                                     shape = RoundedCornerShape(14.dp),
                                     colors = TextFieldDefaults.colors(
-                                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                                         focusedIndicatorColor = Color.Transparent,
                                         unfocusedIndicatorColor = Color.Transparent
                                     ),
@@ -590,7 +604,7 @@ fun PrivacySettingsScreenContent(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(50.dp),
                                 colors = ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                                     contentColor = MaterialTheme.colorScheme.onSurface
                                 )
                             ) {
@@ -617,6 +631,7 @@ fun PrivacySettingsScreenContent(
                     onNavigateBack = { showPasswordsScreen = false }
                 )
             }
+        }
         }
     }
 }

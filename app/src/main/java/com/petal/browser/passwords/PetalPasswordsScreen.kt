@@ -530,7 +530,12 @@ fun PetalPasswordsScreen(
                                             title = domainItem,
                                             subtitle = "Auto-save disabled for this site",
                                             position = position,
-                                            trailingContent = {
+                                            onClick = {
+                                                PetalCredentialVault.removeNeverSaveDomain(context, domainItem)
+                                                reloadData()
+                                                haptic.playClick(context)
+                                            },
+                                            trailing = {
                                                 IconButton(onClick = {
                                                     PetalCredentialVault.removeNeverSaveDomain(context, domainItem)
                                                     reloadData()

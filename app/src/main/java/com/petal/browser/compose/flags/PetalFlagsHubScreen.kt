@@ -81,14 +81,19 @@ import com.petal.browser.flags.PetalFlagsStore
 import com.petal.browser.flags.PetalRestartManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
+import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalSectionLabel
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
-import com.petal.browser.ui.containment.petalBackdropSource
-import com.petal.browser.ui.containment.rememberPetalBackdrop
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
+import com.petal.browser.ui.glass.captureGlassWallpaper
+import com.petal.browser.ui.glass.rememberGlassSheen
+import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 
 /**
  * PetalFlagsHubScreen
@@ -103,7 +108,9 @@ fun PetalFlagsHubScreen(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
-    val backdrop = rememberPetalBackdrop()
+    val wallpaper = rememberPetalGlassWallpaper()
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = rememberGlassSheen(isGlass)
 
     LaunchedEffect(Unit) {
         PetalFlagsStore.initialize(context)
@@ -127,14 +134,21 @@ fun PetalFlagsHubScreen(
         }
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
+    CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
         ) {
+            M3ExpressiveVariableBackground(
+                pageSeed = "petal_flags_hub",
+                modifier = Modifier
+                    .matchParentSize()
+                    .captureGlassWallpaper(wallpaper)
+            )
+
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
             // ── Standard Petal Expressive Header ──
             ExpressiveHeader(
                 title = "Experiments & Flags",
@@ -163,11 +177,14 @@ fun PetalFlagsHubScreen(
                 // Warning Banner with Petal Shape & Styling
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.65f),
+                        containerColor = if (isGlass) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.28f) else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.65f),
                         contentColor = MaterialTheme.colorScheme.onErrorContainer
                     ),
                     shape = RoundedCornerShape(18.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(18.dp), enabled = true, sheenIntensity = 0.4f) else Modifier)
                 ) {
                     Row(
                         modifier = Modifier.padding(14.dp),
@@ -194,7 +211,9 @@ fun PetalFlagsHubScreen(
                 TextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(16.dp), enabled = true, sheenIntensity = 0.35f) else Modifier),
                     placeholder = { Text("Search flags, descriptions, #tags...") },
                     leadingIcon = {
                         Icon(
@@ -213,9 +232,9 @@ fun PetalFlagsHubScreen(
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedIndicatorColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
                         unfocusedIndicatorColor = Color.Transparent
                     )
                 )
@@ -242,12 +261,11 @@ fun PetalFlagsHubScreen(
                 }
             }
 
-            // ── Scrollable Body with Backdrop Sampling ──
+            // ── Scrollable Body with Live Liquid Glass ──
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .petalBackdropSource(backdrop)
             ) {
                 if (selectedTabIndex == 0) {
                     // Experiments View
@@ -271,12 +289,13 @@ fun PetalFlagsHubScreen(
                                     label = { Text(cat.displayName) },
                                     shape = RoundedCornerShape(12.dp),
                                     colors = FilterChipDefaults.filterChipColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        selectedContainerColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f) else MaterialTheme.colorScheme.primaryContainer,
                                         labelColor = MaterialTheme.colorScheme.onSurface,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        selectedLabelColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer
                                     ),
-                                    border = null
+                                    border = null,
+                                    modifier = if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(12.dp), enabled = true, sheenIntensity = 0.3f) else Modifier
                                 )
                             }
                         }
@@ -335,10 +354,10 @@ fun PetalFlagsHubScreen(
             onRelaunch = {
                 PetalRestartManager.restartApp(context)
             },
-            backdrop = backdrop,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
+}
 }
 
 /**
@@ -354,6 +373,8 @@ private fun FlagRowItem(
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val currentState = remember(flag.id) { PetalFlagsStore.getFlagState(context, flag.id) }
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = rememberGlassSheen(isGlass)
 
     val badgeVariant = remember(flag.category) {
         when (flag.category) {
@@ -362,6 +383,17 @@ private fun FlagRowItem(
             FlagCategory.RENDERING -> PetalBadgeVariant.SECONDARY
             FlagCategory.NETWORK -> PetalBadgeVariant.PRIMARY
             FlagCategory.EXTENSIONS, FlagCategory.ALL -> PetalBadgeVariant.SURFACE_TONAL
+        }
+    }
+
+    val iconVector = remember(flag.category) {
+        when (flag.category) {
+            FlagCategory.PERFORMANCE -> Icons.Rounded.Speed
+            FlagCategory.PRIVACY -> Icons.Rounded.Security
+            FlagCategory.RENDERING -> Icons.Rounded.FlashOn
+            FlagCategory.NETWORK -> Icons.Rounded.Language
+            FlagCategory.EXTENSIONS -> Icons.Rounded.Extension
+            FlagCategory.ALL -> Icons.Rounded.Tune
         }
     }
 
@@ -375,9 +407,10 @@ private fun FlagRowItem(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clip(containerShape),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 1.dp
+            .then(if (isGlass) Modifier.liquidGlassChrome(containerShape, enabled = true, sheenIntensity = sheen) else Modifier),
+        shape = containerShape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = if (isGlass) 0.dp else 1.dp
     ) {
         Column(
             modifier = Modifier
@@ -541,12 +574,16 @@ private fun RawPreferencesTab(
                     PetalGroupPosition.SINGLE -> RoundedCornerShape(16.dp)
                 }
 
+                val isRowGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+                val rowSheen = rememberGlassSheen(isRowGlass)
+
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(containerShape),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    tonalElevation = 1.dp
+                        .then(if (isRowGlass) Modifier.liquidGlassChrome(containerShape, enabled = true, sheenIntensity = rowSheen) else Modifier),
+                    shape = containerShape,
+                    color = if (isRowGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                    tonalElevation = if (isRowGlass) 0.dp else 1.dp
                 ) {
                     Row(
                         modifier = Modifier
