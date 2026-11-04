@@ -900,7 +900,7 @@ private fun StoreFilterListsPage(
             listState = filterListsState,
             modifier = Modifier.align(Alignment.CenterEnd),
             dragLabelProvider = { index ->
-                filteredLists.getOrNull(index)?.title?.let {
+                filteredLists.getOrNull(index)?.name?.let {
                     com.petal.browser.ui.components.extractFastScrollGlyph(it)
                 }
             }
