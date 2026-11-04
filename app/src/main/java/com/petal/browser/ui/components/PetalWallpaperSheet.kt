@@ -615,7 +615,7 @@ fun PetalWallpaperSheet(
         return null
     }
 
-    val handleSelectedFile: (File) -> Unit = { file ->
+    val handleSelectedFile: (File) -> Unit = handleSelectedFileBlock@{ file ->
         val ext = file.extension.lowercase()
         val isVideoFile = ext in setOf("mp4", "webm", "mkv", "mov", "3gp", "avi", "ts", "flv", "m4v")
         if (isVideoFile) {
@@ -629,7 +629,7 @@ fun PetalWallpaperSheet(
                     com.petal.browser.account.progress.PetalUnlockable.LIVE_WALLPAPER
                 )
                 com.petal.browser.view.PetalToast.show(context, "Live Wallpaper locked! $req")
-                return@handleSelectedFile
+                return@handleSelectedFileBlock
             }
             // Copy video to app local wallpaper cache and apply directly
             scope.launch(Dispatchers.IO) {
@@ -763,7 +763,7 @@ fun PetalWallpaperSheet(
                     com.petal.browser.account.progress.PetalUnlockable.LIVE_WALLPAPER
                 )
                 com.petal.browser.view.PetalToast.show(context, "Live Wallpaper locked! $req")
-                return@onSelect
+                return
             }
             // Videos stream: apply now and show the indicator until the first frame is up.
             if (remote) PetalWallpaperManager.markLoading(full)

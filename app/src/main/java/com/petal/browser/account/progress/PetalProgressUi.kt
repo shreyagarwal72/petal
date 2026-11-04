@@ -3,6 +3,7 @@ package com.petal.browser.account.progress
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.net.Uri
 import android.preference.PreferenceManager
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
