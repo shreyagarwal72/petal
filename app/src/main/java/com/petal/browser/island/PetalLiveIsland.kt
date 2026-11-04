@@ -58,6 +58,7 @@ import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.MusicNote
@@ -146,7 +147,11 @@ private fun islandPalette(primaryItem: LiveActionItem?): IslandPalette {
         else -> c.surfaceContainerHighest
     }
 
-    val accentColor = audioPalette?.primary ?: c.primary
+    val accentColor = when {
+        primaryItem is LiveActionItem.Achievement -> Color(0xFFFFB74D) // Celebratory Gold
+        audioPalette?.primary != null -> audioPalette.primary
+        else -> c.primary
+    }
     val contentColor = if (isDark) Color(0xFFE6E1E5) else c.onSurface
     val contentMuted = if (isDark) Color(0xFFCAC4D0) else c.onSurfaceVariant
 
@@ -456,6 +461,36 @@ private fun CompactPill(item: LiveActionItem, palette: IslandPalette) {
                     color = palette.accent
                 )
             }
+
+            is LiveActionItem.Achievement -> {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(palette.accent.copy(alpha = 0.25f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Rounded.EmojiEvents,
+                        contentDescription = null,
+                        tint = palette.accent,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Text(
+                    text = item.title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                    modifier = Modifier.widthIn(max = 140.dp),
+                    color = palette.content
+                )
+                Text(
+                    text = if (item.isMilestone) "Milestone" else "Unlocked",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = palette.accent
+                )
+            }
         }
     }
 }
@@ -495,6 +530,9 @@ private fun SatelliteBubble(item: LiveActionItem, palette: IslandPalette, onClic
                         else -> Icons.Rounded.Description
                     }
                     Icon(icon, contentDescription = null, tint = palette.accent, modifier = Modifier.size(20.dp))
+                }
+                is LiveActionItem.Achievement -> {
+                    Icon(Icons.Rounded.EmojiEvents, contentDescription = null, tint = palette.accent, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -718,6 +756,47 @@ private fun ExpandedCard(
                         Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Return to File")
+                    }
+                }
+            }
+
+            is LiveActionItem.Achievement -> {
+                CardHeader(
+                    leading = {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(palette.accent.copy(alpha = 0.25f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Rounded.EmojiEvents, contentDescription = null, tint = palette.accent, modifier = Modifier.size(26.dp))
+                        }
+                    },
+                    title = item.title,
+                    subtitle = if (item.isMilestone) "Quest Milestone Reached" else "Achievement Unlocked",
+                    palette = palette,
+                    onCollapse = onCollapse
+                )
+
+                Text(
+                    text = item.subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = palette.contentMuted
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FilledTonalButton(
+                        onClick = { listener.onOpenProfile(); onCollapse() },
+                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = palette.accent, contentColor = palette.onAccent)
+                    ) {
+                        Icon(Icons.Rounded.EmojiEvents, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("View in Profile")
                     }
                 }
             }

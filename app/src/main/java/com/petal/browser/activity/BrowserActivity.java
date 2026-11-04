@@ -5023,6 +5023,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         public void onOpenBrowser() {
                             // Active in browser
                         }
+
+                        @Override
+                        public void onOpenProfile() {
+                            showAccountSyncScreen();
+                        }
                     }
             );
         }

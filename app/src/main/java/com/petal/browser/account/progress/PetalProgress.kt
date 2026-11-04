@@ -264,8 +264,18 @@ object PetalProgressStore {
 
     fun addXp(ctx: Context, amount: Long) {
         init(ctx)
+        val oldLevel = level
         xp = (xp + amount).coerceAtLeast(0L)
         sp(ctx).edit().putLong(KEY_XP, xp).apply()
+        val newLevel = level
+        if (newLevel > oldLevel) {
+            com.petal.browser.live.PetalLiveActionBus.postAchievement(
+                title = "Level Up! You reached Level $newLevel",
+                subtitle = "Earned ${PetalXp.title(newLevel)} status. Tap to view newly unlocked rewards!",
+                isMilestone = true,
+                level = newLevel
+            )
+        }
         evaluateBadges(ctx)
     }
 
@@ -291,6 +301,18 @@ object PetalProgressStore {
         unlockedBadges = unlockedBadges + fresh
         sp(ctx).edit().putString(KEY_BADGES, unlockedBadges.joinToString(",")).apply()
         newlyUnlocked = newlyUnlocked + fresh
+
+        // Broadcast to Cutout Island for interactive celebratory pill and tap navigation
+        fresh.forEach { badgeId ->
+            val b = PETAL_BADGES.firstOrNull { it.id == badgeId }
+            if (b != null) {
+                com.petal.browser.live.PetalLiveActionBus.postAchievement(
+                    title = "Badge Unlocked: ${b.title}",
+                    subtitle = b.hint,
+                    badgeId = b.id
+                )
+            }
+        }
     }
 
     /** Runs after every XP or counter change, so a level-up unlocks features at once. */
@@ -454,7 +476,20 @@ object PetalProgressStore {
         val stamps = p.getString(KEY_AD_STAMPS, "").orEmpty().split(',').mapNotNull { it.toLongOrNull() }
             .filter { now - it < PetalXp.DAY_MS } + now
         p.edit().putString(KEY_AD_STAMPS, stamps.joinToString(",")).apply()
+        val oldAds = counter(PetalCounter.ADS_WATCHED)
         bump(ctx, PetalCounter.ADS_WATCHED, 1L, xpGain = PetalXp.AD_XP)
+        val newAds = oldAds + 1L
+
+        // Check if a supporter quest milestone was unlocked
+        val hitMilestone = PETAL_SUPPORTER_MILESTONES.firstOrNull { it.level.toLong() == newAds }
+        if (hitMilestone != null) {
+            com.petal.browser.live.PetalLiveActionBus.postAchievement(
+                title = "Milestone: ${hitMilestone.title}",
+                subtitle = hitMilestone.story,
+                isMilestone = true,
+                level = hitMilestone.level
+            )
+        }
         return true
     }
 }

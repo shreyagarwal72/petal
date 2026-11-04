@@ -54,6 +54,15 @@ sealed class LiveActionItem(open val id: String) {
         val progressPercent: Int,
         val statusText: String
     ) : LiveActionItem("task_$taskId")
+
+    data class Achievement(
+        val achievementId: String,
+        val title: String,
+        val subtitle: String,
+        val badgeId: String? = null,
+        val isMilestone: Boolean = false,
+        val level: Int = 0
+    ) : LiveActionItem("ach_${achievementId}")
 }
 
 data class LiveActionBusState(
@@ -72,6 +81,7 @@ interface LiveActionActionListener {
     fun onOpenDownloads()
     fun onOpenBrowser()
     fun onOpenFileViewer() {}
+    fun onOpenProfile() {}
 }
 
 object PetalLiveActionBus {
@@ -172,6 +182,26 @@ object PetalLiveActionBus {
     @JvmStatic
     fun dismissFileViewer() {
         dismiss("file_viewer")
+    }
+
+    @JvmStatic
+    fun postAchievement(
+        title: String,
+        subtitle: String,
+        badgeId: String? = null,
+        isMilestone: Boolean = false,
+        level: Int = 0
+    ) {
+        val uniqueId = "${System.currentTimeMillis()}"
+        val achievement = LiveActionItem.Achievement(
+            achievementId = uniqueId,
+            title = title,
+            subtitle = subtitle,
+            badgeId = badgeId,
+            isMilestone = isMilestone,
+            level = level
+        )
+        promoteOrUpdate(achievement)
     }
 
     @JvmStatic
