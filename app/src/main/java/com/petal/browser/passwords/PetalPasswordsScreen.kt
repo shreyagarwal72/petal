@@ -472,7 +472,7 @@ fun PetalPasswordsScreen(
                     listState = passwordsListState,
                     modifier = Modifier.align(Alignment.CenterEnd),
                     dragLabelProvider = { index ->
-                        credentials.getOrNull(index)?.cleanDomain()?.let {
+                        credentials.getOrNull(index)?.domain?.let {
                             com.petal.browser.ui.components.extractFastScrollGlyph(it)
                         }
                     }
