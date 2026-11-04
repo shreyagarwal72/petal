@@ -3102,8 +3102,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // edge to edge underneath it without reserving dead space (which causes a black
             // box behind the floating navbar). Docked bars keep their padding so page content
             // stays clear of them.
-            boolean isFloatingNav = isFloatingNavStyle && !isBottom
-                    && !com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp);
+            boolean isFloatingMergeBottom = isBottom && isFloatingNavStyle
+                    && com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp);
+            boolean isFloatingNav = (isFloatingNavStyle && !isBottom
+                    && !com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp))
+                    || isFloatingMergeBottom;
             boolean isPillCollapse = com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp);
             int pillHeightPx = (int) PetalAndroidUtils.convertDpToPixel(40f, context);
             com.petal.browser.ui.components.BarInsets.Result insets = com.petal.browser.ui.components.BarInsets.compute(

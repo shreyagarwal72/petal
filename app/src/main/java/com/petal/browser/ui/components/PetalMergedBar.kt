@@ -1,8 +1,15 @@
 package com.petal.browser.ui.components
 
 import android.graphics.Bitmap
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -104,15 +111,24 @@ fun PetalMergedBar(
     val collapsedFraction = if (isPreview) 0f else BarCollapseState.collapsedFraction
     val isFullyCollapsed = isPillCollapse && (collapsedFraction >= 0.95f || BarCollapseState.isCollapsed)
 
+    val isFloatingBar = resolvedIsBottom && sp.getBoolean("sp_floating_tab_bar", true)
+
     val containerShape = if (resolvedIsBottom) {
-        RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+        if (isFloatingBar) {
+            RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp)
+        } else {
+            RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+        }
     } else {
         RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp)
     }
 
     LocalPetalGlassRevision.current
-    val isLiquidGlass = !isPreview && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") && !isIncognito
-    val samplesWallpaper = BarInsets.glassSamplesWallpaper(sp, resolvedIsBottom, sp.getBoolean("sp_floating_tab_bar", true), false)
+    val isGlassEnabledPref = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") ||
+        (resolvedIsBottom && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")) ||
+        (isPreview && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments"))
+    val isLiquidGlass = isGlassEnabledPref && !isIncognito
+    val samplesWallpaper = BarInsets.glassSamplesWallpaper(sp, resolvedIsBottom, isFloatingBar, false)
     val activity = LocalContext.current as? android.app.Activity
     val glassSource = if (isPreview) null else activity?.findViewById<android.view.View>(
         if (samplesWallpaper) com.petal.browser.R.id.glass_wallpaper_backdrop else com.petal.browser.R.id.main_content
@@ -168,14 +184,26 @@ fun PetalMergedBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(
-                        if (resolvedIsBottom) Modifier.padding(horizontal = 0.dp, vertical = 0.dp)
-                        else Modifier.padding(
+                        if (resolvedIsBottom) {
+                            if (isFloatingBar) {
+                                Modifier.padding(
+                                    start = 12.dp,
+                                    end = 12.dp,
+                                    top = 2.dp,
+                                    bottom = if (!isPreview) navBarBottomInset + 8.dp else 4.dp
+                                )
+                            } else {
+                                Modifier.padding(horizontal = 0.dp, vertical = 0.dp)
+                            }
+                        } else {
+                            Modifier.padding(
                                 start = 12.dp,
                                 end = 12.dp,
                                 // The status bar gap sits OUTSIDE the glass, so the glass is just the bar.
                                 top = statusBarTopInset + (if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp),
                                 bottom = if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp
                             )
+                        }
                     )
                     .then(
                         if (isLiquidGlass && outerBgAlpha > 0.05f) Modifier.liquidGlass(containerShape, baseGlassColor, glassBar)
@@ -200,7 +228,7 @@ fun PetalMergedBar(
                         .fillMaxWidth()
                         .padding(
                             top = 2.dp,
-                            bottom = if (resolvedIsBottom && !isPreview) navBarBottomInset + 4.dp else 2.dp
+                            bottom = if (resolvedIsBottom && !isFloatingBar && !isPreview) navBarBottomInset + 4.dp else 2.dp
                         )
                 ) {
                 if (BarPrefs.LAYOUT_STACKED.equals(mergeLayout, ignoreCase = true)) {
@@ -238,6 +266,13 @@ fun PetalMergedBar(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(44.dp)
+                                .then(
+                                    if (isLiquidGlass) {
+                                        Modifier
+                                            .clip(RoundedCornerShape(22.dp))
+                                            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.12f))
+                                    } else Modifier
+                                )
                                 .graphicsLayer {
                                     alpha = sideButtonAlpha
                                     scaleX = sideButtonScale
@@ -254,6 +289,7 @@ fun PetalMergedBar(
                                     canGoBack = canGoBack,
                                     canGoForward = canGoForward,
                                     tabCount = tabCount,
+                                    isLiquidGlass = isLiquidGlass,
                                     onBackClick = onBackClick,
                                     onForwardClick = onForwardClick,
                                     onReloadClick = onReloadClick,
@@ -298,6 +334,7 @@ fun PetalMergedBar(
                                     canGoBack = canGoBack,
                                     canGoForward = canGoForward,
                                     tabCount = tabCount,
+                                    isLiquidGlass = isLiquidGlass,
                                     onBackClick = onBackClick,
                                     onForwardClick = onForwardClick,
                                     onReloadClick = onReloadClick,
@@ -356,6 +393,7 @@ fun PetalMergedBar(
                                     canGoBack = canGoBack,
                                     canGoForward = canGoForward,
                                     tabCount = tabCount,
+                                    isLiquidGlass = isLiquidGlass,
                                     onBackClick = onBackClick,
                                     onForwardClick = onForwardClick,
                                     onReloadClick = onReloadClick,
@@ -412,6 +450,7 @@ private fun BarActionButton(
     canGoBack: Boolean,
     canGoForward: Boolean,
     tabCount: Int,
+    isLiquidGlass: Boolean = false,
     onBackClick: () -> Unit,
     onForwardClick: () -> Unit,
     onReloadClick: () -> Unit,
@@ -427,6 +466,7 @@ private fun BarActionButton(
     onAiResearchClick: () -> Unit,
     onReaderClick: () -> Unit
 ) {
+    val context = LocalContext.current
     val isEnabled = when (action) {
         BarAction.BACK -> isLoading || canGoBack
         BarAction.FORWARD -> canGoForward
@@ -440,6 +480,7 @@ private fun BarActionButton(
     }
 
     val clickHandler: () -> Unit = {
+        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
         when (action) {
             BarAction.TABS -> onTabsClick()
             BarAction.NEW_TAB -> onNewTabClick()
@@ -464,20 +505,44 @@ private fun BarActionButton(
         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     }
 
-    IconButton(
-        onClick = clickHandler,
-        enabled = isEnabled,
-        modifier = Modifier.size(44.dp)
-    ) {
-        if (action == BarAction.TABS) {
-            TabCountBadge(color = tint, count = tabCount, scale = 0.95f)
-        } else {
-            Icon(
-                imageVector = icon,
-                contentDescription = action.label,
-                tint = tint,
-                modifier = Modifier.size(22.dp)
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.88f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "merge_btn_press_scale"
+    )
+
+    Surface(
+        shape = CircleShape,
+        color = if (isLiquidGlass && isPressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else Color.Transparent,
+        modifier = Modifier
+            .size(44.dp)
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
+            .clip(CircleShape)
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = ripple(bounded = true),
+                onClick = clickHandler
             )
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            if (action == BarAction.TABS) {
+                TabCountBadge(color = tint, count = tabCount, scale = 0.95f)
+            } else {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = action.label,
+                    tint = tint,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
         }
     }
 }

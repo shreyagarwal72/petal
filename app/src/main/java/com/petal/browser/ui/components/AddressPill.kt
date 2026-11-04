@@ -17,6 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,8 +28,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -161,19 +164,33 @@ fun AddressPill(
     val urlBoxShape = RoundedCornerShape(20.dp)
     val urlBoxBackground = when {
         inMergedBar -> {
-            if (isLiquidGlass) MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.35f)
+            if (isLiquidGlass) MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.16f)
             else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f)
         }
         isBottom -> {
-            if (isLiquidGlass) MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.35f)
+            if (isLiquidGlass) MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.16f)
             else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f)
         }
         else -> Color.Transparent
     }
 
+    val isDarkLuma = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val glassBorderBrush = if (isLiquidGlass && (inMergedBar || isBottom)) {
+        Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = if (isDarkLuma) 0.35f else 0.55f),
+                Color.White.copy(alpha = if (isDarkLuma) 0.08f else 0.15f)
+            )
+        )
+    } else null
+
     Box(
         modifier = modifier
             .clip(urlBoxShape)
+            .then(
+                if (glassBorderBrush != null) Modifier.border(1.dp, glassBorderBrush, urlBoxShape)
+                else Modifier
+            )
             .background(urlBoxBackground)
             .pointerInput(isSwipeTabsEnabled) {
                 if (!isSwipeTabsEnabled) return@pointerInput

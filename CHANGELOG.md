@@ -2,6 +2,16 @@
 
 > *"The landmark 'More Expressive' release elevates Petal Browser to new heights of Material 3 Expressive design, fluid reactive theming, and tactile user customization: introducing a comprehensive ImageToolbox-style Layout & Controls suite with live component styling, seamless Liquid Glass auto-adaptation, PixelMusic-grade expressive fast-scrollbars, overhauled Mix Palettes with one-tap harmony recipes, bi-directional Send Tab to Device across all connected Firefox instances, and a robust Reader Mode with Read Aloud text-to-speech."*
 
+#### 💎 Live Liquid Glass in Merge Address Bar & UI Build Fixes (`PetalMergedBar.kt`, `AddressPill.kt`, `PetalFlagsHubScreen.kt`)
+- **Live Liquid Glass in Merge Bar**:
+  - Bound Merge Bar to live hardware backdrop refraction and specular chrome with support for both `sp_liquid_glass_address_bar` and `sp_liquid_glass_bottom_nav`.
+  - Added full floating pill support when bottom merged bar is paired with `sp_floating_tab_bar`, allowing webpage content to flow seamlessly underneath the floating glass bar without creating black boxes.
+  - Enhanced `AddressPill` with clear translucent glass fill and beveled top specular edge gradient replacing flat opaque gray washes.
+  - Upgraded `BarActionButton` with tactile bouncy spring scaling, haptic click feedback, and glass touch-target styling.
+- **CI Build Fix**:
+  - Fixed missing `CompositionLocalProvider` import in `PetalFlagsHubScreen.kt` resolving GitHub Actions compilation failure.
+
+
 #### 🎛️ ImageToolbox-Style Expressive Layout & Controls (`PetalLayoutSettingsSection.kt`, `PetalSwitchType.kt`, `PetalSliderType.kt`, `PetalShapeType.kt`, `PetalFlingType.kt`)
 - **Seamless Live Layout Settings**:
   - Added dedicated **"Expressive Layout & Controls"** section to Appearance Settings matching ImageToolbox with 100% real-time reactivity (no app restart required).
