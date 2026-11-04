@@ -24,6 +24,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -227,7 +228,7 @@ fun SafeLockerSheet(
                         .fillMaxWidth()
                         .heightIn(max = 400.dp)
                 ) {
-                    items(lockedFiles, key = { it.id }) { item ->
+                    itemsIndexed(lockedFiles, key = { index, item -> "${item.id}_$index" }) { _, item ->
                         com.petal.browser.ui.containment.PetalHeroCard(
                             shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,

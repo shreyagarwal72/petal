@@ -728,7 +728,7 @@ fun PetalDownloadManagerScreen(
                             }
                         }
 
-                        itemsIndexed(items, key = { _, it -> it.id }) { index, item ->
+                        itemsIndexed(items, key = { index, it -> "${it.id}_$index" }) { index, item ->
                             val isSelected = selectedIds.contains(item.id)
                             val rowPosition = petalGroupPositionFor(index, items.size)
                             val confirmDelete = sharedPreferences.getBoolean("sp_confirm_download_delete", true)

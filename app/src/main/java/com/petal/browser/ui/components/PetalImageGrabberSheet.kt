@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -115,6 +116,7 @@ fun PetalImageGrabberSheet(
                     )
                 }
             } else {
+                val distinctImages = remember(images) { images.distinct() }
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     modifier = Modifier
@@ -123,7 +125,7 @@ fun PetalImageGrabberSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(images, key = { it }) { imageUrl ->
+                    itemsIndexed(distinctImages, key = { index, url -> "${url}_$index" }) { _, imageUrl ->
                         Box(
                             modifier = Modifier
                                 .aspectRatio(1f)

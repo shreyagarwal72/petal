@@ -533,7 +533,7 @@ private fun UnlockedVaultContent(
             verticalArrangement = Arrangement.spacedBy(3.dp),
             modifier = Modifier.fillMaxSize()
         ) {
-            items(records.size, key = { records[it].id }) { index ->
+            items(records.size, key = { "${records[it].id}_$it" }) { index ->
                 val rec = records[index]
                 val timeAgo = remember(rec.closedTimestamp) {
                     val diff = System.currentTimeMillis() - rec.closedTimestamp

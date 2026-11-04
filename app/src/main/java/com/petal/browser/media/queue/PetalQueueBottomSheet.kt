@@ -218,7 +218,7 @@ fun PetalQueueBottomSheet(
                     vertical = 8.dp
                 )
             ) {
-                itemsIndexed(queueManager.queue, key = { _, item -> item.id }) { index, item ->
+                itemsIndexed(queueManager.queue, key = { index, item -> "${item.id}_$index" }) { index, item ->
                     val isCurrent = index == queueManager.currentIndex
 
                     Surface(

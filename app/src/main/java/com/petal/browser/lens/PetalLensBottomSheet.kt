@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -71,7 +72,7 @@ fun PetalLensBottomSheet(
             coroutineScope.launch {
                 isLoading = true
                 val items = withContext(Dispatchers.IO) {
-                    PetalMediaPickerManager.queryMedia(context, MediaFilterType.PHOTOS)
+                    PetalMediaPickerManager.queryMedia(context, MediaFilterType.PHOTOS).distinctBy { it.uri.toString() }
                 }
                 mediaItems = items
                 isLoading = false
@@ -793,7 +794,7 @@ fun PetalLensBottomSheet(
                         .fillMaxWidth()
                         .height(240.dp)
                 ) {
-                    items(mediaItems, key = { it.id }) { item ->
+                    itemsIndexed(mediaItems, key = { index, item -> "${item.uri}_$index" }) { _, item ->
                         Surface(
                             shape = RoundedCornerShape(14.dp),
                             color = MaterialTheme.colorScheme.surfaceContainerHighest,

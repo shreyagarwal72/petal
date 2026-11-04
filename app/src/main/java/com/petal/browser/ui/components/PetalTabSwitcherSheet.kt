@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -668,11 +669,11 @@ fun PetalTabSwitcherContent(
                             .fillMaxWidth()
                             .heightIn(max = 440.dp)
                     ) {
-                        items(
+                        itemsIndexed(
                             filteredTabs,
-                            key = { it.album.hashCode() },
-                            contentType = { "tab_card" }
-                        ) { tab ->
+                            key = { index, it -> "${it.album.hashCode()}_$index" },
+                            contentType = { _, _ -> "tab_card" }
+                        ) { _, tab ->
                             TabCard(
                                 tab = tab,
                                 modifier = Modifier.animateItem(),

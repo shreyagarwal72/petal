@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -264,7 +265,7 @@ fun PetalInactiveTabsSheet(
                                 .fillMaxWidth()
                                 .weight(1f)
                         ) {
-                            items(filteredTabs, key = { it.id }) { tab ->
+                            itemsIndexed(filteredTabs, key = { index, tab -> "${tab.id}_$index" }) { _, tab ->
                                 InactiveTabGridCard(
                                     tab = tab,
                                     onRestore = { onRestoreTab(tab) },
@@ -281,7 +282,7 @@ fun PetalInactiveTabsSheet(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
-                            itemsIndexed(filteredTabs, key = { _, tab -> tab.id }) { index, tab ->
+                            itemsIndexed(filteredTabs, key = { index, tab -> "${tab.id}_$index" }) { index, tab ->
                                 InactiveTabListItem(
                                     tab = tab,
                                     position = petalGroupPositionFor(index, filteredTabs.size),

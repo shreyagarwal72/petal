@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -142,7 +143,7 @@ fun PetalMediaPickerBottomSheet(
         if (hasPermission) {
             isLoading = true
             coroutineScope.launch(Dispatchers.IO) {
-                val items = PetalMediaPickerManager.queryMedia(context, selectedFilter)
+                val items = PetalMediaPickerManager.queryMedia(context, selectedFilter).distinctBy { it.uri.toString() }
                 withContext(Dispatchers.Main) {
                     mediaItems = items
                     isLoading = false
@@ -581,7 +582,7 @@ fun PetalMediaPickerBottomSheet(
                         .fillMaxWidth()
                         .height(340.dp)
                 ) {
-                    items(mediaItems, key = { it.id }) { item ->
+                    itemsIndexed(mediaItems, key = { index, item -> "${item.uri}_$index" }) { _, item ->
                         val isSelected = selectedUris.contains(item.uri)
 
                         Surface(

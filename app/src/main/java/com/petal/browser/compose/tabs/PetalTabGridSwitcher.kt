@@ -434,6 +434,7 @@ fun PetalTabGridSwitcher(
                 tab.url.contains(searchQuery, ignoreCase = true) ||
                 tab.groupTitle?.contains(searchQuery, ignoreCase = true) == true
         }
+        .distinctBy { it.id }
 
     val filteredGroups = tabGroups.filter { group ->
         if (searchQuery.isBlank()) true
@@ -444,7 +445,7 @@ fun PetalTabGridSwitcher(
                     t != null && (t.title.contains(searchQuery, ignoreCase = true) || t.url.contains(searchQuery, ignoreCase = true))
                 }
         }
-    }
+    }.distinctBy { it.id }
 
 
     var hasScrolledToSelected by remember { mutableStateOf(false) }
@@ -1509,7 +1510,7 @@ fun PetalTabGridSwitcher(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.heightIn(max = 220.dp)
                     ) {
-                        items(tabGroups, key = { it.id }) { group ->
+                        items(tabGroups.distinctBy { it.id }, key = { it.id }) { group ->
                             val gColor = group.parseColor()
                             PetalGroupListRow(
                                 position = PetalGroupPosition.SINGLE,
@@ -2543,7 +2544,7 @@ private fun PetalTabGroupInspectionDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    items(tabs, key = { it.id }) { tab ->
+                    items(tabs.distinctBy { it.id }, key = { it.id }) { tab ->
                         PetalGroupListRow(
                             position = PetalGroupPosition.SINGLE,
                             onClick = { onTabSelect(tab) },
