@@ -107,8 +107,6 @@ fun M3Slider(
                 } else Modifier
             ),
         colors = colors,
-        onValueChange = onValueChange,
-        onValueChangeFinished = onValueChangeFinished,
     )
 }
 
@@ -185,7 +183,5 @@ fun M3RangeSlider(
                 } else Modifier
             ),
         colors = colors,
-        onValueChange = onValueChange,
-        onValueChangeFinished = onValueChangeFinished,
     )
 }

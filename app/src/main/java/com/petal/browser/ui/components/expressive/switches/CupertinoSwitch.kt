@@ -479,7 +479,6 @@ object CupertinoSwitchDefaults {
     )
 
     @Composable
-    @ReadOnlyComposable
     fun transparentColors() = colors(
         thumbColor = Color.Transparent,
         disabledThumbColor = Color.Transparent,
