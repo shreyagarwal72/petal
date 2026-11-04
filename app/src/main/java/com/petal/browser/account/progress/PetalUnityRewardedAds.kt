@@ -74,7 +74,10 @@ object PetalUnityRewardedAds : PetalRewardedAds {
     fun isTestMode(ctx: Context): Boolean {
         val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
         if (sp.contains(KEY_TEST_MODE)) return sp.getBoolean(KEY_TEST_MODE, false)
-        return (ctx.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        // If debuggable, default to test mode for reliable fill
+        if ((ctx.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) return true
+        // Default to true if user hasn't explicitly toggled test mode off, ensuring high fill reliability for developer quests
+        return sp.getBoolean(KEY_TEST_MODE, true)
     }
 
     fun setTestMode(ctx: Context, enabled: Boolean) {

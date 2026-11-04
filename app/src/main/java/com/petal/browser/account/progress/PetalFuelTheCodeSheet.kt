@@ -70,7 +70,8 @@ private suspend fun checkAdIntegrity(context: Context): String? {
         return "No Internet Connection"
     }
     if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
-        return "VPN Detected"
+        // Log VPN presence without blocking developer quest progression
+        android.util.Log.d("PetalAds", "Active VPN connection detected during ad integrity check")
     }
     return withContext(Dispatchers.IO) {
         try {

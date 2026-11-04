@@ -27,7 +27,12 @@ import kotlinx.coroutines.launch
  * Initializes predictive junctions and Gecko runtime during early app process launch.
  */
 @HiltAndroidApp
-class PetalApplication : Application() {
+class PetalApplication : Application(), androidx.work.Configuration.Provider {
+
+    override val workManagerConfiguration: androidx.work.Configuration
+        get() = androidx.work.Configuration.Builder()
+            .setMinimumLoggingLevel(android.util.Log.WARN)
+            .build()
 
     private var lastNightModeBits: Int = 0
     private var startedActivityCount: Int = 0
