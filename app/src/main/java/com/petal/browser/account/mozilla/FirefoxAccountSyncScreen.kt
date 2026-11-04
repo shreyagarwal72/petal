@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -250,7 +251,7 @@ fun FirefoxAccountSyncScreen(
                             Surface(
                                 shape = RoundedCornerShape(24.dp),
                                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                modifier = Modifier.fillMaxWidth().com.petal.browser.ui.components.bouncyClickable { showXpBackupDialog = true }
+                                modifier = Modifier.fillMaxWidth().bouncyClickable { showXpBackupDialog = true }
                             ) {
                                 Row(
                                     modifier = Modifier.padding(16.dp),

@@ -557,19 +557,6 @@ fun PetalRewardsSheet(onDismiss: () -> Unit) {
         }
     }
 }
-    val cs = MaterialTheme.colorScheme
-    val unlocked = PetalProgressStore.isBadgeUnlocked(b.id)
-    Surface(
-        shape = CircleShape,
-        color = if (unlocked) cs.primaryContainer else cs.surfaceContainerHighest,
-        contentColor = if (unlocked) cs.onPrimaryContainer else cs.onSurfaceVariant,
-        modifier = Modifier.size(size)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(if (unlocked) badgeIcon(b.id) else Icons.Rounded.Lock, b.title, Modifier.size(size * 0.5f))
-        }
-    }
-}
 
 @Composable
 fun PetalBadgeCollectionCard(onOpen: () -> Unit, modifier: Modifier = Modifier) {
