@@ -615,26 +615,148 @@ class PetalGeckoView @JvmOverloads constructor(
                     session: GeckoSession,
                     request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSaveOption>
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                    // Save / update the credential in Petal's vault, then dismiss the prompt
-                    // (we don't surface Gecko's own save UI – the system autofill Save dialog does that).
-                    try {
-                        val option = request.options.firstOrNull() ?: return GeckoResult.fromValue(request.dismiss())
-                        val delegate = com.petal.browser.passwords.PetalAutofillGeckoDelegate(context)
-                        delegate.onLoginSave(option.value)
-                    } catch (t: Throwable) {
-                        android.util.Log.w("PetalGeckoView", "onLoginSave error: ${t.message}")
+                    val geckoResult = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val act = activityProvider()
+                    val option = request.options.firstOrNull()
+                    if (option == null || act !is androidx.activity.ComponentActivity) {
+                        return GeckoResult.fromValue(request.dismiss())
                     }
-                    return GeckoResult.fromValue(request.dismiss())
+
+                    val login = option.value
+                    val username = login.username.orEmpty()
+                    val password = login.password.orEmpty()
+                    val origin = login.origin.orEmpty()
+                    val domain = origin.ifBlank { login.formActionOrigin.orEmpty() }
+
+                    if (password.isBlank() || domain.isBlank()) {
+                        return GeckoResult.fromValue(request.dismiss())
+                    }
+
+                    com.petal.browser.passwords.PetalCredentialVault.init(context)
+                    if (com.petal.browser.passwords.PetalCredentialVault.isNeverSave(context, domain)) {
+                        return GeckoResult.fromValue(request.dismiss())
+                    }
+
+                    val existing = com.petal.browser.passwords.PetalCredentialVault.findByDomainAndUsername(domain, username)
+
+                    act.runOnUiThread {
+                        when {
+                            existing == null -> {
+                                // New login: show Material 3 Expressive Save Password Sheet
+                                com.petal.browser.passwords.PetalSavePasswordSheet.show(
+                                    activity = act,
+                                    domain = domain,
+                                    initialUsername = username,
+                                    initialPassword = password,
+                                    onSave = { finalUser, finalPass ->
+                                        com.petal.browser.passwords.PetalCredentialVault.save(
+                                            com.petal.browser.passwords.PetalCredential(
+                                                id = login.guid ?: java.util.UUID.randomUUID().toString(),
+                                                domain = domain,
+                                                originUrl = origin.ifBlank { "https://$domain" },
+                                                username = finalUser,
+                                                password = finalPass
+                                            )
+                                        )
+                                        geckoResult.complete(request.confirm(option))
+                                    },
+                                    onNeverSave = {
+                                        com.petal.browser.passwords.PetalCredentialVault.addNeverSaveDomain(context, domain)
+                                        geckoResult.complete(request.dismiss())
+                                    },
+                                    onDismiss = {
+                                        geckoResult.complete(request.dismiss())
+                                    }
+                                )
+                            }
+                            existing.password != password -> {
+                                // Password changed: show Update Password Sheet
+                                com.petal.browser.passwords.PetalUpdatePasswordSheet.show(
+                                    activity = act,
+                                    domain = domain,
+                                    username = username,
+                                    newPassword = password,
+                                    onUpdate = { newPass ->
+                                        com.petal.browser.passwords.PetalCredentialVault.updatePassword(existing.id, newPass)
+                                        geckoResult.complete(request.confirm(option))
+                                    },
+                                    onDismiss = {
+                                        geckoResult.complete(request.dismiss())
+                                    }
+                                )
+                            }
+                            else -> {
+                                // Already up to date: mark last used
+                                com.petal.browser.passwords.PetalCredentialVault.markUsed(existing.id)
+                                geckoResult.complete(request.dismiss())
+                            }
+                        }
+                    }
+                    return geckoResult
                 }
 
                 override fun onLoginSelect(
                     session: GeckoSession,
                     request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSelectOption>
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                    // GeckoView asks which saved login to fill. Select the first match.
-                    val option = request.options.firstOrNull()
-                        ?: return GeckoResult.fromValue(request.dismiss())
-                    return GeckoResult.fromValue(request.confirm(option))
+                    val geckoResult = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val act = activityProvider()
+                    val options = request.options
+
+                    if (options.isEmpty()) {
+                        return GeckoResult.fromValue(request.dismiss())
+                    }
+
+                    if (options.size == 1 || act !is androidx.activity.ComponentActivity) {
+                        // Single match: auto-fill directly
+                        val option = options.first()
+                        val login = option.value
+                        login.guid?.let { com.petal.browser.passwords.PetalCredentialVault.markUsed(it) }
+                        return GeckoResult.fromValue(request.confirm(option))
+                    }
+
+                    // Multi-account selection: show Account Picker Sheet
+                    val credentials = options.map { opt ->
+                        val l = opt.value
+                        com.petal.browser.passwords.PetalCredential(
+                            id = l.guid ?: java.util.UUID.randomUUID().toString(),
+                            domain = l.origin.orEmpty(),
+                            originUrl = l.origin.orEmpty(),
+                            username = l.username.orEmpty(),
+                            password = l.password.orEmpty()
+                        )
+                    }
+
+                    act.runOnUiThread {
+                        com.petal.browser.passwords.PetalAccountPickerSheet.show(
+                            activity = act,
+                            domain = options.first().value.origin.orEmpty(),
+                            accounts = credentials,
+                            onAccountSelected = { selected ->
+                                val matchOpt = options.firstOrNull { it.value.guid == selected.id || it.value.username == selected.username }
+                                    ?: options.first()
+                                selected.id.let { com.petal.browser.passwords.PetalCredentialVault.markUsed(it) }
+                                geckoResult.complete(request.confirm(matchOpt))
+                            },
+                            onSuggestPassword = {
+                                val generated = com.petal.browser.passwords.PetalPasswordGenerator.generate()
+                                val clipboard = act.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                                clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("Password", generated))
+                                com.petal.browser.view.PetalToast.show(act, "Strong password copied to clipboard")
+                                geckoResult.complete(request.dismiss())
+                            },
+                            onManagePasswords = {
+                                if (act is com.petal.browser.activity.BrowserActivity) {
+                                    act.openSettingsScreen()
+                                }
+                                geckoResult.complete(request.dismiss())
+                            },
+                            onDismiss = {
+                                geckoResult.complete(request.dismiss())
+                            }
+                        )
+                    }
+                    return geckoResult
                 }
 
                 override fun onFilePrompt(

@@ -30,9 +30,18 @@ data class PetalCredential(
     @SerializedName("updatedAt")
     val updatedAt: Long = System.currentTimeMillis(),
 
+    @SerializedName("lastUsedAt")
+    val lastUsedAt: Long = System.currentTimeMillis(),
+
     @SerializedName("notes")
     val notes: String = "",
 
     @SerializedName("isFavorite")
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+
+    @SerializedName("formActionOrigin")
+    val formActionOrigin: String? = null,
+
+    @SerializedName("isCompromised")
+    val isCompromised: Boolean = false
 )

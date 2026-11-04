@@ -100,8 +100,9 @@ object PetalCredentialVault {
             return
         }
 
+        val atomicFile = androidx.core.util.AtomicFile(file)
         try {
-            FileInputStream(file).use { fis ->
+            atomicFile.openRead().use { fis ->
                 val iv = ByteArray(GCM_IV_LENGTH)
                 val bytesRead = fis.read(iv)
                 if (bytesRead < GCM_IV_LENGTH) {
@@ -163,21 +164,26 @@ object PetalCredentialVault {
             Log.w(TAG, "Vault could not be read this session; refusing to overwrite it.")
             return
         }
+        val atomicFile = androidx.core.util.AtomicFile(file)
+        var fos: FileOutputStream? = null
         try {
             val cipher = Cipher.getInstance(TRANSFORMATION)
             cipher.init(Cipher.ENCRYPT_MODE, getSecretKey())
             val iv = cipher.iv
 
-            FileOutputStream(file).use { fos ->
-                fos.write(iv)
-                CipherOutputStream(fos, cipher).use { cos ->
-                    val json = gson.toJson(credentials)
-                    cos.write(json.toByteArray(Charsets.UTF_8))
-                    cos.flush()
-                }
+            fos = atomicFile.startWrite()
+            fos.write(iv)
+            CipherOutputStream(fos, cipher).use { cos ->
+                val json = gson.toJson(credentials)
+                cos.write(json.toByteArray(Charsets.UTF_8))
+                cos.flush()
             }
+            atomicFile.finishWrite(fos)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to encrypt and persist credentials vault", e)
+            if (fos != null) {
+                atomicFile.failWrite(fos)
+            }
         }
     }
 
@@ -246,7 +252,7 @@ object PetalCredentialVault {
         } else {
             // Check if exact same domain and username already exists, update if so
             val existingIndex = credentials.indexOfFirst {
-                it.domain.equals(credential.domain, ignoreCase = true) &&
+                cleanDomain(it.domain).equals(cleanDomain(credential.domain), ignoreCase = true) &&
                 it.username.equals(credential.username, ignoreCase = true)
             }
             if (existingIndex >= 0) {
@@ -257,6 +263,47 @@ object PetalCredentialVault {
         }
         persistVault()
     }
+
+    @Synchronized
+    fun markUsed(id: String) {
+        val index = credentials.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            val curr = credentials[index]
+            credentials[index] = curr.copy(lastUsedAt = System.currentTimeMillis())
+            persistVault()
+        }
+    }
+
+    @Synchronized
+    fun updatePassword(id: String, newPassword: String) {
+        val index = credentials.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            val curr = credentials[index]
+            credentials[index] = curr.copy(
+                password = newPassword,
+                updatedAt = System.currentTimeMillis(),
+                lastUsedAt = System.currentTimeMillis()
+            )
+            persistVault()
+        }
+    }
+
+    @Synchronized
+    fun findByDomainAndUsername(domain: String, username: String): PetalCredential? {
+        val clean = cleanDomain(domain)
+        return credentials.firstOrNull {
+            cleanDomain(it.domain).equals(clean, ignoreCase = true) &&
+            it.username.equals(username, ignoreCase = true)
+        }
+    }
+
+    fun cleanDomain(raw: String): String =
+        raw.trim().lowercase()
+            .removePrefix("https://")
+            .removePrefix("http://")
+            .removePrefix("www.")
+            .substringBefore('/')
+            .substringBefore(':')
 
     @Synchronized
     fun delete(id: String) {

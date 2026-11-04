@@ -1,6 +1,8 @@
 package com.petal.browser.passwords
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import androidx.compose.foundation.lazy.rememberLazyListState
+import com.petal.browser.ui.components.PetalChoiceButtonGroup
+import com.petal.browser.ui.components.PetalButtonGroupItem
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -72,6 +74,10 @@ fun PetalPasswordsScreen(
     var neverSaveDomains by remember { mutableStateOf(emptySet<String>()) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedSortMode by remember { mutableIntStateOf(0) } // 0: Domain, 1: Recently Updated, 2: Favorites
+    var selectedMainTab by remember { mutableIntStateOf(0) } // 0: Logins, 1: Never-Saved, 2: Security & Generator
+    var genPreset by remember { mutableStateOf(PetalPasswordGenerator.Preset.BALANCED) }
+    var genLength by remember { mutableFloatStateOf(16f) }
+    var generatedPassword by remember { mutableStateOf(PetalPasswordGenerator.generateByPreset(PetalPasswordGenerator.Preset.BALANCED)) }
 
     var showTermsDialog by remember { mutableStateOf(false) }
     var showImportSheet by remember { mutableStateOf(false) }
@@ -269,200 +275,347 @@ fun PetalPasswordsScreen(
                         )
                     }
 
-                    // 2. Search & Sort Bar
+                    // 1.5. PixelMusic Inspired Material 3 Expressive Segmented Tab Bar
                     item {
-                        val passSearchShape = RoundedCornerShape(50.dp)
-                        TextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            placeholder = { Text("Search logins, domains, notes...") },
-                            leadingIcon = {
-                                Icon(Icons.Rounded.Search, contentDescription = null)
+                        val mainTabs = listOf(
+                            PetalButtonGroupItem(value = 0, label = "Logins (${credentials.size})"),
+                            PetalButtonGroupItem(value = 1, label = "Never-Save (${neverSaveDomains.size})"),
+                            PetalButtonGroupItem(value = 2, label = "Generator & Audit")
+                        )
+                        PetalChoiceButtonGroup(
+                            options = mainTabs,
+                            selected = selectedMainTab,
+                            onSelect = { tab ->
+                                haptic.playClick(context)
+                                selectedMainTab = tab
                             },
-                            trailingIcon = {
-                                if (searchQuery.isNotEmpty()) {
-                                    IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(Icons.Rounded.Clear, contentDescription = "Clear")
-                                    }
-                                }
-                            },
-                            singleLine = true,
-                            shape = passSearchShape,
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                disabledIndicatorColor = Color.Transparent
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .liquidGlassChrome(shape = passSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
 
-                    // 3. Vault Quick Actions & Settings
-                    item {
-                        PetalSettingsSection(
-                            title = "Vault Management",
-                            icon = Icons.Rounded.ManageAccounts
-                        ) {
-                            PetalGroup(rowCount = 4) { index, position ->
-                                when (index) {
-                                    0 -> PetalGroupRow(
-                                        icon = Icons.Rounded.AddCircle,
-                                        title = "Add New Login",
-                                        subtitle = "Save a website username and password",
-                                        position = position,
-                                        iconContainer = MaterialTheme.colorScheme.primaryContainer,
-                                        iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        onClick = {
-                                            haptic.playClick(context)
-                                            isAddingNew = true
+                    if (selectedMainTab == 0) {
+                        // 2. Search & Sort Bar
+                        item {
+                            val passSearchShape = RoundedCornerShape(50.dp)
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = { Text("Search logins, domains, notes...") },
+                                leadingIcon = {
+                                    Icon(Icons.Rounded.Search, contentDescription = null)
+                                },
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchQuery = "" }) {
+                                            Icon(Icons.Rounded.Clear, contentDescription = "Clear")
                                         }
+                                    }
+                                },
+                                singleLine = true,
+                                shape = passSearchShape,
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .liquidGlassChrome(shape = passSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
+                            )
+                        }
+
+                        // 3. Vault Quick Actions & Settings
+                        item {
+                            PetalSettingsSection(
+                                title = "Vault Management",
+                                icon = Icons.Rounded.ManageAccounts
+                            ) {
+                                PetalGroup(rowCount = 4) { index, position ->
+                                    when (index) {
+                                        0 -> PetalGroupRow(
+                                            icon = Icons.Rounded.AddCircle,
+                                            title = "Add New Login",
+                                            subtitle = "Save a website username and password",
+                                            position = position,
+                                            iconContainer = MaterialTheme.colorScheme.primaryContainer,
+                                            iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            onClick = {
+                                                haptic.playClick(context)
+                                                isAddingNew = true
+                                            }
+                                        )
+                                        1 -> PetalGroupRow(
+                                            icon = Icons.Rounded.Block,
+                                            title = "Never-Saved Sites",
+                                            subtitle = "${neverSaveDomains.size} websites ignored",
+                                            position = position,
+                                            iconContainer = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            onClick = {
+                                                haptic.playClick(context)
+                                                selectedMainTab = 1
+                                            }
+                                        )
+                                        2 -> PetalGroupRow(
+                                            icon = Icons.Rounded.FileDownload,
+                                            title = "Import Passwords",
+                                            subtitle = "Chrome, Brave, Firefox, Bitwarden, 1Password",
+                                            position = position,
+                                            iconContainer = MaterialTheme.colorScheme.secondaryContainer,
+                                            iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            onClick = {
+                                                haptic.playClick(context)
+                                                showImportSheet = true
+                                            }
+                                        )
+                                        3 -> PetalGroupRow(
+                                            icon = Icons.Rounded.FileUpload,
+                                            title = "Export Vault Backup",
+                                            subtitle = "Password-encrypted (.petal) or CSV/JSON",
+                                            position = position,
+                                            iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
+                                            iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                            onClick = {
+                                                haptic.playClick(context)
+                                                showExportDialog = true
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // 4. Grouped Passwords List (Brave Browser Hierarchy)
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                PetalSectionLabel(
+                                    text = if (searchQuery.isBlank()) "Saved Logins (${credentials.size})" else "Matches (${groupedLogins.values.flatten().size})"
+                                )
+
+                                val sortChipColors = FilterChipDefaults.filterChipColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    labelColor = MaterialTheme.colorScheme.onSurface,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                // Sort selector pill
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    FilterChip(
+                                        selected = selectedSortMode == 0,
+                                        onClick = { selectedSortMode = 0 },
+                                        label = { Text("Name", fontSize = 12.sp) },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = sortChipColors,
+                                        border = null
                                     )
-                                    1 -> PetalGroupRow(
-                                        icon = Icons.Rounded.Block,
-                                        title = "Never-Saved Sites",
-                                        subtitle = "${neverSaveDomains.size} websites ignored",
-                                        position = position,
-                                        iconContainer = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                        iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        onClick = {
-                                            haptic.playClick(context)
-                                            showNeverSaveSheet = true
+                                    FilterChip(
+                                        selected = selectedSortMode == 1,
+                                        onClick = { selectedSortMode = 1 },
+                                        label = { Text("Recent", fontSize = 12.sp) },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = sortChipColors,
+                                        border = null
+                                    )
+                                    FilterChip(
+                                        selected = selectedSortMode == 2,
+                                        onClick = { selectedSortMode = 2 },
+                                        label = { Text("Favorites", fontSize = 12.sp) },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = sortChipColors,
+                                        border = null
+                                    )
+                                }
+                            }
+                        }
+
+                        if (groupedLogins.isEmpty()) {
+                            item {
+                                PetalHeroCard(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(28.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            modifier = Modifier.size(56.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    Icons.Rounded.Lock,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(28.dp)
+                                                )
+                                            }
                                         }
-                                    )
-                                    2 -> PetalGroupRow(
-                                        icon = Icons.Rounded.FileDownload,
-                                        title = "Import Passwords",
-                                        subtitle = "Chrome, Brave, Firefox, Bitwarden, 1Password",
-                                        position = position,
-                                        iconContainer = MaterialTheme.colorScheme.secondaryContainer,
-                                        iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        onClick = {
+                                        Text(
+                                            text = if (searchQuery.isBlank()) "No Passwords Stored" else "No Matches Found",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = if (searchQuery.isBlank())
+                                                "Logins saved in Petal or imported from Chrome, Brave, Firefox, or Bitwarden will appear here."
+                                            else "Try searching for a different domain, username, or note.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            // Display each primary domain group
+                            groupedLogins.forEach { (primaryDomain, groupItems) ->
+                                item(key = primaryDomain) {
+                                    DomainCredentialGroup(
+                                        primaryDomain = primaryDomain,
+                                        credentials = groupItems,
+                                        onSelect = { cred -> selectedCredentialForDetails = cred },
+                                        onToggleFavorite = { cred ->
+                                            PetalCredentialVault.toggleFavorite(cred.id)
+                                            reloadData()
                                             haptic.playClick(context)
-                                            showImportSheet = true
-                                        }
-                                    )
-                                    3 -> PetalGroupRow(
-                                        icon = Icons.Rounded.FileUpload,
-                                        title = "Export Vault Backup",
-                                        subtitle = "Password-encrypted (.petal) or CSV/JSON",
-                                        position = position,
-                                        iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
-                                        iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                        onClick = {
-                                            haptic.playClick(context)
-                                            showExportDialog = true
                                         }
                                     )
                                 }
                             }
                         }
-                    }
-
-                    // 4. Grouped Passwords List (Brave Browser Hierarchy)
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            PetalSectionLabel(
-                                text = if (searchQuery.isBlank()) "Saved Logins (${credentials.size})" else "Matches (${groupedLogins.values.flatten().size})"
-                            )
-
-                            val sortChipColors = FilterChipDefaults.filterChipColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                labelColor = MaterialTheme.colorScheme.onSurface,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            // Sort selector pill
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                FilterChip(
-                                    selected = selectedSortMode == 0,
-                                    onClick = { selectedSortMode = 0 },
-                                    label = { Text("Name", fontSize = 12.sp) },
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = sortChipColors,
-                                    border = null
-                                )
-                                FilterChip(
-                                    selected = selectedSortMode == 1,
-                                    onClick = { selectedSortMode = 1 },
-                                    label = { Text("Recent", fontSize = 12.sp) },
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = sortChipColors,
-                                    border = null
-                                )
-                                FilterChip(
-                                    selected = selectedSortMode == 2,
-                                    onClick = { selectedSortMode = 2 },
-                                    label = { Text("Favorites", fontSize = 12.sp) },
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = sortChipColors,
-                                    border = null
-                                )
-                            }
-                        }
-                    }
-
-                    if (groupedLogins.isEmpty()) {
+                    } else if (selectedMainTab == 1) {
+                        // ── TAB 1: Never-Saved Sites ──
                         item {
-                            PetalHeroCard(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(28.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                        modifier = Modifier.size(56.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
+                            PetalSettingsSection(
+                                title = "Ignored Websites (${neverSaveDomains.size})",
+                                icon = Icons.Rounded.Block
+                            ) {
+                                if (neverSaveDomains.isEmpty()) {
+                                    PetalHeroCard(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
                                             Icon(
-                                                Icons.Rounded.Lock,
+                                                Icons.Rounded.CheckCircle,
                                                 contentDescription = null,
                                                 tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(28.dp)
+                                                modifier = Modifier.size(36.dp)
+                                            )
+                                            Text(
+                                                "No Ignored Websites",
+                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                            )
+                                            Text(
+                                                "Websites where you choose 'Never for this site' when prompted will appear here.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }
-                                    Text(
-                                        text = if (searchQuery.isBlank()) "No Passwords Stored" else "No Matches Found",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = if (searchQuery.isBlank())
-                                            "Logins saved in Petal or imported from Chrome, Brave, Firefox, or Bitwarden will appear here."
-                                        else "Try searching for a different domain, username, or note.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                } else {
+                                    PetalGroup(rowCount = neverSaveDomains.size) { index, position ->
+                                        val domainItem = neverSaveDomains.toList()[index]
+                                        PetalGroupRow(
+                                            icon = Icons.Rounded.Public,
+                                            title = domainItem,
+                                            subtitle = "Auto-save disabled for this site",
+                                            position = position,
+                                            trailingContent = {
+                                                IconButton(onClick = {
+                                                    PetalCredentialVault.removeNeverSaveDomain(context, domainItem)
+                                                    reloadData()
+                                                    haptic.playClick(context)
+                                                }) {
+                                                    Icon(
+                                                        Icons.Rounded.Delete,
+                                                        contentDescription = "Remove",
+                                                        tint = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
                     } else {
-                        // Display each primary domain group
-                        groupedLogins.forEach { (primaryDomain, groupItems) ->
-                            item(key = primaryDomain) {
-                                DomainCredentialGroup(
-                                    primaryDomain = primaryDomain,
-                                    credentials = groupItems,
-                                    onSelect = { cred -> selectedCredentialForDetails = cred },
-                                    onToggleFavorite = { cred ->
-                                        PetalCredentialVault.toggleFavorite(cred.id)
-                                        reloadData()
-                                        haptic.playClick(context)
+                        // ── TAB 2: Generator & Security ──
+                        item {
+                            PetalSettingsSection(
+                                title = "Password Generator",
+                                icon = Icons.Rounded.Key
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                                    ) {
+                                        Surface(
+                                            shape = RoundedCornerShape(14.dp),
+                                            color = MaterialTheme.colorScheme.surface,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = generatedPassword,
+                                                    style = MaterialTheme.typography.titleMedium.copy(
+                                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                                        fontWeight = FontWeight.Bold
+                                                    ),
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                IconButton(onClick = {
+                                                    haptic.playClick(context)
+                                                    generatedPassword = PetalPasswordGenerator.generateByPreset(genPreset)
+                                                }) {
+                                                    Icon(Icons.Rounded.Refresh, contentDescription = "Regenerate")
+                                                }
+                                                IconButton(onClick = {
+                                                    haptic.playClick(context)
+                                                    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                                                    cm?.setPrimaryClip(ClipData.newPlainText("Password", generatedPassword))
+                                                    PetalToast.show(context, "Copied to clipboard")
+                                                }) {
+                                                    Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy")
+                                                }
+                                            }
+                                        }
+
+                                        val presetItems = listOf(
+                                            PetalButtonGroupItem(value = PetalPasswordGenerator.Preset.BALANCED, label = "Balanced (16)"),
+                                            PetalButtonGroupItem(value = PetalPasswordGenerator.Preset.HIGH_ENTROPY, label = "High Security (24)"),
+                                            PetalButtonGroupItem(value = PetalPasswordGenerator.Preset.PIN, label = "PIN (6)")
+                                        )
+                                        PetalChoiceButtonGroup(
+                                            options = presetItems,
+                                            selected = genPreset,
+                                            onSelect = { p ->
+                                                haptic.playClick(context)
+                                                genPreset = p
+                                                generatedPassword = PetalPasswordGenerator.generateByPreset(p)
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
                                     }
-                                )
+                                }
                             }
                         }
                     }
