@@ -527,7 +527,7 @@ private fun BuiltInExtensionsList(
         listState = builtInListState,
         modifier = Modifier.align(Alignment.CenterEnd),
         dragLabelProvider = { index ->
-            PetalBuiltInExtensionManager.builtIns.getOrNull(index)?.title?.let {
+            PetalBuiltInExtensionManager.builtIns.getOrNull(index)?.label?.let {
                 com.petal.browser.ui.components.extractFastScrollGlyph(it)
             }
         }
