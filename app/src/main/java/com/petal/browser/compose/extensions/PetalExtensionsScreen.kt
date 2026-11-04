@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -68,6 +69,7 @@ import com.petal.browser.engine.gecko.PetalGeckoRuntime
 import com.petal.browser.extensions.PetalBuiltInExtensionManager
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
