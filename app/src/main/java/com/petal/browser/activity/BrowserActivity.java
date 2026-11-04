@@ -3097,18 +3097,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // mirrored edge rows inside GlassBackdrop, so the wallpaper backdrop is never shown.
             View glassBackdropView = findViewById(R.id.glass_wallpaper_backdrop);
             if (glassBackdropView != null) glassBackdropView.setVisibility(GONE);
-            // A floating glass nav lets the page run edge to edge underneath it, so its glass shows
-            // the real, live page. Docked bars keep their padding (the page stays clear of them).
-            boolean floatingNavGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
-                    && sp.getBoolean("sp_liquid_glass_bottom_nav", true)
-                    && isFloatingNavStyle && !isBottom
+            // A floating nav bar (Material 3 Expressive or Liquid Glass) lets the page run
+            // edge to edge underneath it without reserving dead space (which causes a black
+            // box behind the floating navbar). Docked bars keep their padding so page content
+            // stays clear of them.
+            boolean isFloatingNav = isFloatingNavStyle && !isBottom
                     && !com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp);
             boolean isPillCollapse = com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp);
             int pillHeightPx = (int) PetalAndroidUtils.convertDpToPixel(40f, context);
             com.petal.browser.ui.components.BarInsets.Result insets = com.petal.browser.ui.components.BarInsets.compute(
                     isBottom, reserveBarSpace, addressHeight, bottomNavHeight, gap, resolvedStatusBarGap,
                     legacyUnder && liquidGlassTopOn,
-                    (legacyUnder && liquidGlassOn) || floatingNavGlass,
+                    (legacyUnder && liquidGlassOn) || isFloatingNav,
                     isPillCollapse, pillHeightPx, navigationBarBottomInset, isImmersive);
             int topInset = insets.getTop();
             int bottomInset = insets.getBottom();
