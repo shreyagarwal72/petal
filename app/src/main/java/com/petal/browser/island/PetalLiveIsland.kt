@@ -562,20 +562,22 @@ private fun ExpandedCard(
                     leading = {
                         ProgressBadge(
                             progress = item.progressPercent / 100f,
-                            indeterminate = item.isIndeterminate && !item.isPaused,
-                            icon = Icons.Rounded.Download,
+                            indeterminate = item.isIndeterminate && !item.isPaused && !item.isCompleted,
+                            icon = if (item.isCompleted) Icons.Rounded.Download else Icons.Rounded.Download,
                             palette = palette,
                             size = 44
                         )
                     },
                     title = item.fileName,
                     subtitle = when {
+                        item.isCompleted -> "Download Complete"
                         item.isPaused -> "Paused"
                         item.isIndeterminate -> "Downloading…"
                         else -> "${item.speedFormatted} • ${item.progressPercent}%"
                     },
                     palette = palette,
-                    onCollapse = onCollapse
+                    onCollapse = onCollapse,
+                    onDismiss = { listener.onDismiss(item.id); onCollapse() }
                 )
 
                 PetalWavyProgressBar(
@@ -810,7 +812,8 @@ private fun CardHeader(
     title: String,
     subtitle: String,
     palette: IslandPalette,
-    onCollapse: () -> Unit
+    onCollapse: () -> Unit,
+    onDismiss: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -834,11 +837,18 @@ private fun CardHeader(
                 color = palette.contentMuted
             )
         }
+        if (onDismiss != null) {
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.size(36.dp),
+                colors = IconButtonDefaults.iconButtonColors(contentColor = palette.contentMuted)
+            ) { Icon(Icons.Rounded.Close, contentDescription = "Close", modifier = Modifier.size(20.dp)) }
+        }
         IconButton(
             onClick = onCollapse,
             modifier = Modifier.size(36.dp),
             colors = IconButtonDefaults.iconButtonColors(contentColor = palette.contentMuted)
-        ) { Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "Collapse") }
+        ) { Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "Collapse", modifier = Modifier.size(20.dp)) }
     }
 }
 

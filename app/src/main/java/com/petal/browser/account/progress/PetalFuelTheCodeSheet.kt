@@ -292,7 +292,9 @@ fun PetalFuelTheCodeSheet(
                                 text = "Fuel the Code",
                                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
                                 textAlign = TextAlign.Center,
-                                color = cs.onSurface
+                                color = cs.onSurface,
+                                maxLines = 1,
+                                softWrap = false
                             )
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
@@ -302,6 +304,8 @@ fun PetalFuelTheCodeSheet(
                                     text = "BETA",
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                     color = cs.onTertiaryContainer,
+                                    maxLines = 1,
+                                    softWrap = false,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                 )
                             }
@@ -432,7 +436,9 @@ fun PetalFuelTheCodeSheet(
                             Text(
                                 text = "Fuel the Code",
                                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
-                                color = cs.onSurface
+                                color = cs.onSurface,
+                                maxLines = 1,
+                                softWrap = false
                             )
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
@@ -442,6 +448,8 @@ fun PetalFuelTheCodeSheet(
                                     text = "BETA",
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                     color = cs.onTertiaryContainer,
+                                    maxLines = 1,
+                                    softWrap = false,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                 )
                             }

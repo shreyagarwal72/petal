@@ -687,8 +687,8 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
 
     Surface(
         shape = shape,
-        color = if (isGlass) petalGroupSurfaceColor() else cs.tertiaryContainer,
-        contentColor = if (isGlass) cs.onSurface else cs.onTertiaryContainer,
+        color = if (isGlass) petalGroupSurfaceColor() else cs.surfaceContainerHigh,
+        contentColor = cs.onSurface,
         modifier = modifier
             .fillMaxWidth()
             .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true) else Modifier)
@@ -698,8 +698,15 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                 }
             }
     ) {
-        Column(Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     modifier = Modifier
                         .size(48.dp)
@@ -715,15 +722,20 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                     )
                 }
                 Spacer(Modifier.width(14.dp))
-                Column(Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier.weight(1f, fill = true)
+                ) {
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
                             text = "Fuel the Code",
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = cs.onSurface
+                            color = cs.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Surface(
                             shape = RoundedCornerShape(6.dp),
@@ -733,20 +745,26 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                                 text = "BETA",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = cs.onSecondaryContainer,
+                                maxLines = 1,
+                                softWrap = false,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     }
+                    Spacer(Modifier.height(2.dp))
                     Text(
                         text = "$rankLabel · In Active Development",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = cs.onSurfaceVariant
+                        color = cs.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 if (consent) {
+                    Spacer(Modifier.width(8.dp))
                     Surface(
                         shape = CircleShape,
-                        color = cs.surface.copy(alpha = 0.6f),
+                        color = cs.surfaceContainerHighest,
                         modifier = Modifier.size(36.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -810,12 +828,18 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                         text = nextMilestone?.let { "$adsWatched fueled · ${it.level - adsWatched} more to ${it.title}" }
                             ?: "$adsWatched fueled · all supporter ranks unlocked",
                         style = MaterialTheme.typography.labelMedium,
-                        color = cs.onSurfaceVariant
+                        color = cs.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
+                    Spacer(Modifier.width(8.dp))
                     Text(
                         text = "Tap to open",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = cs.primary
+                        color = cs.primary,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }

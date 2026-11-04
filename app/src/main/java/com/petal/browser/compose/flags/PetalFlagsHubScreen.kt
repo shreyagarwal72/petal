@@ -79,6 +79,10 @@ import com.petal.browser.flags.PetalFlagDefinition
 import com.petal.browser.flags.PetalFlagsRegistry
 import com.petal.browser.flags.PetalFlagsStore
 import com.petal.browser.flags.PetalRestartManager
+import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.HeaderActionIcon
+import com.petal.browser.ui.containment.PetalBadgeVariant
+import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalSectionLabel
@@ -129,157 +133,112 @@ fun PetalFlagsHubScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
+            modifier = Modifier.fillMaxSize()
         ) {
-            // ── Top Glass Header ──
-            Surface(
+            // ── Standard Petal Expressive Header ──
+            ExpressiveHeader(
+                title = "Experiments & Flags",
+                subtitle = "about:config • petal://flags",
+                onBack = onDismiss,
+                actions = {
+                    if (modifiedCount > 0) {
+                        HeaderActionIcon(
+                            icon = Icons.Rounded.RestartAlt,
+                            contentDescription = "Reset All",
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                PetalFlagsStore.resetAll(context)
+                            }
+                        )
+                    }
+                }
+            )
+
+            // ── Warning Banner & Search Controls ──
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .liquidGlassChrome(
-                        shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
-                        backdrop = backdrop,
-                        isDark = MaterialTheme.colorScheme.surface.let { it.red * 0.299 + it.green * 0.587 + it.blue * 0.114 < 0.5 }
-                    ),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-                tonalElevation = 2.dp
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                // Warning Banner with Petal Shape & Styling
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.65f),
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = onDismiss) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                    contentDescription = "Back",
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            Spacer(Modifier.width(4.dp))
-                            Column {
-                                Text(
-                                    text = "Experiments & Flags",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "about:config • petal://flags",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontFamily = FontFamily.Monospace
-                                )
-                            }
-                        }
-
-                        if (modifiedCount > 0) {
-                            TextButton(
-                                onClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    PetalFlagsStore.resetAll(context)
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.RestartAlt,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text("Reset All", fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    // Warning Banner
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.65f),
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer
-                        ),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Warning,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            Text(
-                                text = "WARNING: Experimental features ahead! Modifying these internal GeckoView preferences may affect stability, security, or performance.",
-                                style = MaterialTheme.typography.bodySmall,
-                                lineHeight = 16.sp
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(10.dp))
-
-                    // Search Bar
-                    TextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Search flags, descriptions, #tags...") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.Search,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Rounded.Clear, contentDescription = "Clear")
-                                }
-                            }
-                        },
-                        shape = RoundedCornerShape(16.dp),
-                        singleLine = true,
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = Color.Transparent
+                        Icon(
+                            imageVector = Icons.Rounded.Warning,
+                            contentDescription = null,
+                            modifier = Modifier.size(22.dp),
+                            tint = MaterialTheme.colorScheme.error
                         )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = "WARNING: Experimental features ahead! Modifying these internal GeckoView preferences may affect stability, security, or performance.",
+                            style = MaterialTheme.typography.bodySmall,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                // Search Bar with Petal styling
+                TextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search flags, descriptions, #tags...") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Rounded.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = Color.Transparent
                     )
+                )
 
-                    Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
 
-                    // Mode Tabs
-                    PrimaryTabRow(
-                        selectedTabIndex = selectedTabIndex,
-                        containerColor = Color.Transparent,
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        divider = {}
-                    ) {
-                        Tab(
-                            selected = selectedTabIndex == 0,
-                            onClick = { selectedTabIndex = 0 },
-                            text = { Text("Experiments (${PetalFlagsRegistry.flags.size})", fontWeight = FontWeight.SemiBold) }
-                        )
-                        Tab(
-                            selected = selectedTabIndex == 1,
-                            onClick = { selectedTabIndex = 1 },
-                            text = { Text("All Preferences (Raw)", fontWeight = FontWeight.SemiBold) }
-                        )
-                    }
+                // Mode Tabs
+                PrimaryTabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    divider = {}
+                ) {
+                    Tab(
+                        selected = selectedTabIndex == 0,
+                        onClick = { selectedTabIndex = 0 },
+                        text = { Text("Experiments (${PetalFlagsRegistry.flags.size})", fontWeight = FontWeight.SemiBold) }
+                    )
+                    Tab(
+                        selected = selectedTabIndex == 1,
+                        onClick = { selectedTabIndex = 1 },
+                        text = { Text("All Preferences (Raw)", fontWeight = FontWeight.SemiBold) }
+                    )
                 }
             }
 
@@ -396,15 +355,13 @@ private fun FlagRowItem(
     val haptic = LocalHapticFeedback.current
     val currentState = remember(flag.id) { PetalFlagsStore.getFlagState(context, flag.id) }
 
-    val shapeBadge = RoundedCornerShape(12.dp)
-
-    val iconVector = remember(flag.category) {
+    val badgeVariant = remember(flag.category) {
         when (flag.category) {
-            FlagCategory.PERFORMANCE -> Icons.Rounded.Speed
-            FlagCategory.PRIVACY -> Icons.Rounded.Security
-            FlagCategory.RENDERING -> Icons.Rounded.FlashOn
-            FlagCategory.NETWORK -> Icons.Rounded.Language
-            FlagCategory.EXTENSIONS, FlagCategory.ALL -> Icons.Rounded.Extension
+            FlagCategory.PERFORMANCE -> PetalBadgeVariant.PRIMARY
+            FlagCategory.PRIVACY -> PetalBadgeVariant.TERTIARY
+            FlagCategory.RENDERING -> PetalBadgeVariant.SECONDARY
+            FlagCategory.NETWORK -> PetalBadgeVariant.PRIMARY
+            FlagCategory.EXTENSIONS, FlagCategory.ALL -> PetalBadgeVariant.SURFACE_TONAL
         }
     }
 
@@ -431,35 +388,14 @@ private fun FlagRowItem(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
-                // Expressive Shape Badge
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(shapeBadge)
-                        .background(
-                            when (flag.category) {
-                                FlagCategory.PERFORMANCE -> MaterialTheme.colorScheme.primaryContainer
-                                FlagCategory.PRIVACY -> MaterialTheme.colorScheme.tertiaryContainer
-                                FlagCategory.RENDERING -> MaterialTheme.colorScheme.secondaryContainer
-                                FlagCategory.NETWORK -> MaterialTheme.colorScheme.primaryContainer
-                                FlagCategory.EXTENSIONS, FlagCategory.ALL -> MaterialTheme.colorScheme.surfaceContainerHighest
-                            }
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = iconVector,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = when (flag.category) {
-                            FlagCategory.PERFORMANCE -> MaterialTheme.colorScheme.primary
-                            FlagCategory.PRIVACY -> MaterialTheme.colorScheme.tertiary
-                            FlagCategory.RENDERING -> MaterialTheme.colorScheme.secondary
-                            FlagCategory.NETWORK -> MaterialTheme.colorScheme.primary
-                            FlagCategory.EXTENSIONS, FlagCategory.ALL -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                }
+                // Real Petal Containment Icon Badge
+                PetalGroupIconBadge(
+                    icon = iconVector,
+                    variant = badgeVariant,
+                    size = 40.dp,
+                    iconSize = 22.dp,
+                    shape = RoundedCornerShape(12.dp)
+                )
 
                 Spacer(Modifier.width(12.dp))
 
@@ -503,10 +439,10 @@ private fun FlagRowItem(
                                     when (state) {
                                         FlagState.ENABLED -> MaterialTheme.colorScheme.primary
                                         FlagState.DISABLED -> MaterialTheme.colorScheme.error
-                                        FlagState.DEFAULT -> MaterialTheme.colorScheme.surfaceContainerHighest
+                                        FlagState.DEFAULT -> MaterialTheme.colorScheme.primaryContainer
                                     }
                                 } else {
-                                    MaterialTheme.colorScheme.surfaceContainerHigh
+                                    MaterialTheme.colorScheme.surfaceContainerHighest
                                 }
                             )
 
@@ -515,7 +451,7 @@ private fun FlagRowItem(
                                     when (state) {
                                         FlagState.ENABLED -> MaterialTheme.colorScheme.onPrimary
                                         FlagState.DISABLED -> MaterialTheme.colorScheme.onError
-                                        FlagState.DEFAULT -> MaterialTheme.colorScheme.onSurface
+                                        FlagState.DEFAULT -> MaterialTheme.colorScheme.onPrimaryContainer
                                     }
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
@@ -524,19 +460,19 @@ private fun FlagRowItem(
 
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(RoundedCornerShape(12.dp))
                                     .background(chipColor)
                                     .clickable {
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         onStateChanged(state)
                                     }
-                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                    .padding(horizontal = 14.dp, vertical = 7.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = state.label,
                                     style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     color = textColor
                                 )
                             }

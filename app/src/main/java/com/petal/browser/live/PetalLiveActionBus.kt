@@ -29,7 +29,8 @@ sealed class LiveActionItem(open val id: String) {
         val totalBytes: Long,
         val etaSeconds: Long,
         val isPaused: Boolean,
-        val isIndeterminate: Boolean
+        val isIndeterminate: Boolean,
+        val isCompleted: Boolean = false
     ) : LiveActionItem("dl_$downloadId")
 
     data class Media(
@@ -82,6 +83,9 @@ interface LiveActionActionListener {
     fun onOpenBrowser()
     fun onOpenFileViewer() {}
     fun onOpenProfile() {}
+    fun onDismiss(id: String) {
+        PetalLiveActionBus.dismiss(id)
+    }
 }
 
 object PetalLiveActionBus {
@@ -109,8 +113,31 @@ object PetalLiveActionBus {
         val isCompleted = item.status == DownloadStatus.STATUS_SUCCESSFUL
         val isFailed = item.status == DownloadStatus.STATUS_FAILED
 
-        if (isCompleted || isFailed) {
+        if (isFailed) {
             dismiss("dl_${item.id}")
+            return
+        }
+
+        if (isCompleted) {
+            val completedAction = LiveActionItem.Download(
+                downloadId = item.id,
+                fileName = item.fileName,
+                progressPercent = 100,
+                speedBytesPerSec = 0L,
+                speedFormatted = "Complete",
+                bytesDownloaded = if (item.totalSize > 0) item.totalSize else item.bytesDownloaded,
+                totalBytes = item.totalSize,
+                etaSeconds = 0L,
+                isPaused = false,
+                isIndeterminate = false,
+                isCompleted = true
+            )
+            promoteOrUpdate(completedAction)
+            // Auto dismiss after 5 seconds
+            scope.launch {
+                delay(5_000L)
+                dismiss("dl_${item.id}")
+            }
             return
         }
 
@@ -129,7 +156,8 @@ object PetalLiveActionBus {
             totalBytes = item.totalSize,
             etaSeconds = item.etaSeconds,
             isPaused = isPaused,
-            isIndeterminate = isIndeterminate
+            isIndeterminate = isIndeterminate,
+            isCompleted = false
         )
 
         promoteOrUpdate(downloadAction)
@@ -202,6 +230,11 @@ object PetalLiveActionBus {
             level = level
         )
         promoteOrUpdate(achievement)
+        // Auto-dismiss transient achievement from cutout island after 8 seconds
+        scope.launch {
+            delay(8_000L)
+            dismiss(achievement.id)
+        }
     }
 
     @JvmStatic

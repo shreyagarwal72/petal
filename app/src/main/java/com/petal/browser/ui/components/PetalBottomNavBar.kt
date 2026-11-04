@@ -418,7 +418,7 @@ fun PetalBottomNavBar(
                         modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->
                             val iconScale by animateFloatAsState(
-                                targetValue = if (isSelected) 1.15f else 1.0f,
+                                targetValue = if (isSelected) 1.05f else 1.0f,
                                 animationSpec = spring(dampingRatio = 0.62f, stiffness = 380f),
                                 label = "tabs_expressive_scale"
                             )
@@ -688,7 +688,7 @@ private fun ExpressiveNavTabItem(
         label = "expressive_indicator_width_$index"
     )
 
-    val activeIndicatorHeight = 28.dp
+    val activeIndicatorHeight = 32.dp
 
     val activeIndicatorColor = if (isLiquidGlass) {
         MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
