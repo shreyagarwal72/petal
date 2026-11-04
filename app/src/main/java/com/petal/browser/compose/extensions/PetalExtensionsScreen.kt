@@ -525,7 +525,12 @@ private fun BuiltInExtensionsList(
 
     PetalExpressiveScrollBar(
         listState = builtInListState,
-        modifier = Modifier.align(Alignment.CenterEnd)
+        modifier = Modifier.align(Alignment.CenterEnd),
+        dragLabelProvider = { index ->
+            PetalBuiltInExtensionManager.builtIns.getOrNull(index)?.title?.let {
+                com.petal.browser.ui.components.extractFastScrollGlyph(it)
+            }
+        }
     )
 }
 }
@@ -713,7 +718,24 @@ private fun FirefoxAddonsList(
 
     PetalExpressiveScrollBar(
         listState = addonsListState,
-        modifier = Modifier.align(Alignment.CenterEnd)
+        modifier = Modifier.align(Alignment.CenterEnd),
+        dragLabelProvider = { index ->
+            val installedCount = if (extensions.isEmpty()) 2 else (extensions.size + 1)
+            if (index < installedCount) {
+                // Header or installed extension
+                if (index == 0) null
+                else if (extensions.isEmpty()) null
+                else extensions.getOrNull(index - 1)?.name?.let { com.petal.browser.ui.components.extractFastScrollGlyph(it) }
+            } else if (index == installedCount) {
+                // Recommended header
+                null
+            } else {
+                val catalogIndex = index - installedCount - 1
+                PetalExtensionManager.catalog.getOrNull(catalogIndex)?.name?.let {
+                    com.petal.browser.ui.components.extractFastScrollGlyph(it)
+                }
+            }
+        }
     )
 }
 }

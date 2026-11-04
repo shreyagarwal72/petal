@@ -473,7 +473,12 @@ private fun StoreExtensionsPage(
 
         PetalExpressiveScrollBar(
             listState = extensionsListState,
-            modifier = Modifier.align(Alignment.CenterEnd)
+            modifier = Modifier.align(Alignment.CenterEnd),
+            dragLabelProvider = { index ->
+                filteredAddons.getOrNull(index)?.name?.let {
+                    com.petal.browser.ui.components.extractFastScrollGlyph(it)
+                }
+            }
         )
         }
     }
@@ -734,7 +739,12 @@ private fun StoreScriptsPage(
 
         PetalExpressiveScrollBar(
             listState = scriptsListState,
-            modifier = Modifier.align(Alignment.CenterEnd)
+            modifier = Modifier.align(Alignment.CenterEnd),
+            dragLabelProvider = { index ->
+                filteredScripts.getOrNull(index)?.name?.let {
+                    com.petal.browser.ui.components.extractFastScrollGlyph(it)
+                }
+            }
         )
     }
 }
@@ -888,7 +898,12 @@ private fun StoreFilterListsPage(
 
         PetalExpressiveScrollBar(
             listState = filterListsState,
-            modifier = Modifier.align(Alignment.CenterEnd)
+            modifier = Modifier.align(Alignment.CenterEnd),
+            dragLabelProvider = { index ->
+                filteredLists.getOrNull(index)?.title?.let {
+                    com.petal.browser.ui.components.extractFastScrollGlyph(it)
+                }
+            }
         )
     }
 }

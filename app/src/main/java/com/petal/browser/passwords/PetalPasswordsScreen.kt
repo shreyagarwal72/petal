@@ -470,7 +470,12 @@ fun PetalPasswordsScreen(
 
                 PetalExpressiveScrollBar(
                     listState = passwordsListState,
-                    modifier = Modifier.align(Alignment.CenterEnd)
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    dragLabelProvider = { index ->
+                        credentials.getOrNull(index)?.cleanDomain()?.let {
+                            com.petal.browser.ui.components.extractFastScrollGlyph(it)
+                        }
+                    }
                 )
             }
             }
