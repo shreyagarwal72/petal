@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.petal.browser.ui.theme.layout.cornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -304,7 +305,7 @@ fun petalGroupSurfaceColor(): Color {
  * Radii are clamped at 0 so a spring overshoot can never produce a negative corner.
  */
 @Composable
-fun rememberPetalGroupShape(position: PetalGroupPosition): RoundedCornerShape {
+fun rememberPetalGroupShape(position: PetalGroupPosition): androidx.compose.foundation.shape.CornerBasedShape {
     val target = petalGroupShape(position)
     val density = androidx.compose.ui.platform.LocalDensity.current
     val spec = androidx.compose.material3.MaterialTheme.motionScheme.fastSpatialSpec<androidx.compose.ui.unit.Dp>()
@@ -314,19 +315,29 @@ fun rememberPetalGroupShape(position: PetalGroupPosition): RoundedCornerShape {
     val topEnd by androidx.compose.animation.core.animateDpAsState(corner(target.topEnd), spec, label = "groupTopEnd")
     val bottomEnd by androidx.compose.animation.core.animateDpAsState(corner(target.bottomEnd), spec, label = "groupBottomEnd")
     val bottomStart by androidx.compose.animation.core.animateDpAsState(corner(target.bottomStart), spec, label = "groupBottomStart")
-    return RoundedCornerShape(
+    // Radii already include the live corner multiplier (see petalGroupShape), so draw them 1:1.
+    return com.petal.browser.ui.theme.layout.PetalLayoutState.settings.shapeType.cornerShape(
         topStart = topStart.coerceAtLeast(0.dp),
         topEnd = topEnd.coerceAtLeast(0.dp),
         bottomEnd = bottomEnd.coerceAtLeast(0.dp),
         bottomStart = bottomStart.coerceAtLeast(0.dp),
+        multiplier = 1f,
     )
 }
 
-fun petalGroupShape(position: PetalGroupPosition): RoundedCornerShape = when (position) {
-    PetalGroupPosition.SINGLE -> RoundedCornerShape(28.dp)
-    PetalGroupPosition.TOP -> RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 6.dp, bottomEnd = 6.dp)
-    PetalGroupPosition.MIDDLE -> RoundedCornerShape(6.dp)
-    PetalGroupPosition.BOTTOM -> RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp, bottomStart = 28.dp, bottomEnd = 28.dp)
+/**
+ * Corner radii for a row at [position] in a group, drawn in the user's chosen shape style and scaled by
+ * the live corner size. Reads snapshot state, so every caller recomposes when the style/size changes.
+ */
+fun petalGroupShape(position: PetalGroupPosition): androidx.compose.foundation.shape.CornerBasedShape {
+    val type = com.petal.browser.ui.theme.layout.PetalLayoutState.settings.shapeType
+    val m = com.petal.browser.ui.theme.layout.PetalLayoutState.displayCorners
+    return when (position) {
+        PetalGroupPosition.SINGLE -> type.cornerShape(28.dp, multiplier = m)
+        PetalGroupPosition.TOP -> type.cornerShape(28.dp, 28.dp, 6.dp, 6.dp, m)
+        PetalGroupPosition.MIDDLE -> type.cornerShape(6.dp, multiplier = m)
+        PetalGroupPosition.BOTTOM -> type.cornerShape(6.dp, 6.dp, 28.dp, 28.dp, m)
+    }
 }
 
 fun petalGroupPositionFor(index: Int, count: Int): PetalGroupPosition = when {

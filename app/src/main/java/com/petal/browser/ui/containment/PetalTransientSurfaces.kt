@@ -688,7 +688,10 @@ fun PetalSheet(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    val sheetShape = com.petal.browser.ui.theme.layout.PetalLayoutState.settings.shapeType.cornerShape(
+        topStart = 28.dp, topEnd = 28.dp, bottomEnd = 0.dp, bottomStart = 0.dp,
+        multiplier = com.petal.browser.ui.theme.layout.PetalLayoutState.displayCorners
+    )
     val dark = MaterialTheme.colorScheme.background.luminance() < .5f
     val fallbackColor = if (dark) Color(0xE61A1C1E) else Color(0xE6F2F4F7)
 

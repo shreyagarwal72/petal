@@ -1,64 +1,47 @@
 package com.petal.browser.ui.components
 
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SliderColors
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.components.expressive.sliders.FancySlider
+import com.petal.browser.ui.components.expressive.sliders.HyperOSSlider
+import com.petal.browser.ui.components.expressive.sliders.M2Slider
+import com.petal.browser.ui.components.expressive.sliders.M3Slider
+import com.petal.browser.ui.components.expressive.sliders.fancyThumbShape
+import com.petal.browser.ui.components.expressive.support.LocalSettingsState
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
-import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.glass.rememberGlassSheen
-import com.petal.browser.ui.theme.layout.LocalPetalLayoutSettings
-import com.petal.browser.ui.theme.layout.MaterialStarShape
 import com.petal.browser.ui.theme.layout.PetalSliderType
-import kotlin.math.roundToInt
+import com.petal.browser.ui.theme.layout.pillShape
 
 /**
- * Expressive slider faithful to ImageToolbox's slider system.
- * Supports FancySlider (with continuous track & rotating star thumb),
- * HyperOSSlider (with 30dp embedded pill track), M3Slider, and M2Slider.
- * ALL variants dynamically support live Liquid Glass styling when active.
+ * Petal's slider. Draws the style the user picked ([PetalSliderType]) with the real ImageToolbox
+ * implementations, live: change the choice and every slider on screen restyles immediately.
+ * When Liquid Glass is active every slider is automatically seated in a live glass track.
+ *
+ * [drawContainer] adds ImageToolbox's own tonal container; leave it off inside Petal rows/cards,
+ * which already provide the containment surface.
  */
 @Composable
 fun PetalSlider(
@@ -69,430 +52,115 @@ fun PetalSlider(
     enabled: Boolean = true,
     onValueChangeFinished: (() -> Unit)? = null,
     steps: Int = 0,
+    drawContainer: Boolean = false,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    typeOverride: PetalSliderType? = null,
+    glassOverride: Boolean? = null,
 ) {
-    val layoutSettings = LocalPetalLayoutSettings.current
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val settings = LocalSettingsState.current
+    val sliderType = typeOverride ?: settings.sliderType
+    val isGlass = glassOverride ?: isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = rememberGlassSheen(isGlass)
+    val scheme = MaterialTheme.colorScheme
+    val haptics = LocalHapticFeedback.current
 
-    when (layoutSettings.sliderType) {
-        PetalSliderType.FANCY -> {
-            ImageToolboxFancySlider(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = modifier,
-                valueRange = valueRange,
+    val colors: SliderColors = when (sliderType) {
+        PetalSliderType.FANCY -> SliderDefaults.colors(
+            activeTickColor = scheme.inverseSurface,
+            inactiveTickColor = scheme.surface,
+            activeTrackColor = scheme.primaryContainer,
+            inactiveTrackColor = if (isGlass) Color.White.copy(alpha = 0.16f)
+            else SwitchDefaults.colors().disabledCheckedTrackColor,
+            disabledThumbColor = SliderDefaults.colors().disabledThumbColor,
+            disabledActiveTrackColor = SliderDefaults.colors().disabledActiveTrackColor,
+            thumbColor = scheme.onPrimaryContainer
+        )
+        else -> SliderDefaults.colors()
+    }
+
+    // Tick haptics for stepped sliders, like ImageToolbox.
+    if (steps != 0) {
+        var compositions by remember { mutableIntStateOf(0) }
+        val updated by rememberUpdatedState(value)
+        LaunchedEffect(updated) {
+            if (compositions > 0) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            compositions++
+        }
+    }
+
+    // Ease programmatic changes, but follow the finger exactly while it is down.
+    val dragging by interactionSource.collectIsDraggedAsState()
+    val pressing by interactionSource.collectIsPressedAsState()
+    val eased by animateFloatAsState(value, tween(100), label = "sliderValue")
+    val shown = if (dragging || pressing) value else eased
+
+    val body: @Composable (Modifier) -> Unit = { mod ->
+        when (sliderType) {
+            PetalSliderType.FANCY -> FancySlider(
+                value = shown,
                 enabled = enabled,
+                colors = colors,
+                interactionSource = interactionSource,
+                thumbShape = fancyThumbShape(),
+                modifier = mod,
+                onValueChange = onValueChange,
                 onValueChangeFinished = onValueChangeFinished,
+                valueRange = valueRange,
                 steps = steps,
-                isGlass = isGlass,
-                sheen = sheen
+                drawContainer = drawContainer
             )
-        }
-        PetalSliderType.HYPEROS -> {
-            ImageToolboxHyperOSSlider(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = modifier,
-                valueRange = valueRange,
+            PetalSliderType.MATERIAL_YOU -> M3Slider(
+                value = shown,
                 enabled = enabled,
+                colors = colors,
+                interactionSource = interactionSource,
+                modifier = mod,
+                onValueChange = onValueChange,
                 onValueChangeFinished = onValueChangeFinished,
-                isGlass = isGlass,
-                sheen = sheen
+                valueRange = valueRange,
+                steps = steps,
+                drawContainer = drawContainer
             )
-        }
-        PetalSliderType.MATERIAL_YOU -> {
-            ImageToolboxM3Slider(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = modifier,
-                valueRange = valueRange,
+            PetalSliderType.MATERIAL -> M2Slider(
+                value = shown,
                 enabled = enabled,
+                colors = colors,
+                interactionSource = interactionSource,
+                modifier = mod,
+                onValueChange = onValueChange,
                 onValueChangeFinished = onValueChangeFinished,
-                isPillThumb = true,
-                isGlass = isGlass,
-                sheen = sheen
+                valueRange = valueRange,
+                steps = steps,
+                drawContainer = drawContainer
             )
-        }
-        PetalSliderType.MATERIAL -> {
-            ImageToolboxM3Slider(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = modifier,
-                valueRange = valueRange,
+            PetalSliderType.HYPEROS -> HyperOSSlider(
+                value = shown,
                 enabled = enabled,
+                colors = colors,
+                interactionSource = interactionSource,
+                modifier = mod,
+                onValueChange = onValueChange,
                 onValueChangeFinished = onValueChangeFinished,
-                isPillThumb = false,
-                isGlass = isGlass,
-                sheen = sheen
+                valueRange = valueRange,
+                steps = steps,
+                drawContainer = drawContainer
             )
         }
     }
-}
 
-/**
- * ImageToolbox FancySlider faithful implementation:
- * - Rotating MaterialStarShape thumb (1080 deg * fraction)
- * - Continuous canvas track segments with circular caps
- * - Liquid Glass auto-chroming when active
- */
-@Composable
-private fun ImageToolboxFancySlider(
-    value: Float,
-    onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    enabled: Boolean = true,
-    onValueChangeFinished: (() -> Unit)? = null,
-    steps: Int = 0,
-    isGlass: Boolean = false,
-    sheen: Float = 0f
-) {
-    val rangeSpan = (valueRange.endInclusive - valueRange.start).coerceAtLeast(0.0001f)
-    val fraction = ((value - valueRange.start) / rangeSpan).coerceIn(0f, 1f)
-
-    val thumbShape = MaterialStarShape
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val trackBgColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest
-    val activeTrackColor = if (enabled) primaryColor else MaterialTheme.colorScheme.outlineVariant
-
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .then(
-                if (isGlass) Modifier.liquidGlassChrome(
-                    RoundedCornerShape(22.dp),
-                    enabled = true,
-                    sheenIntensity = sheen * 0.7f,
-                    pressFx = false
-                ) else Modifier
-            ),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        val totalWidth = maxWidth
-        val thumbSize = 28.dp
-        val horizontalPadding = 14.dp
-        val travel = totalWidth - horizontalPadding * 2
-
-        fun updateFromX(xPx: Float, density: Float) {
-            val padPx = horizontalPadding.value * density
-            val travelPx = travel.value * density
-            val newFraction = ((xPx - padPx) / travelPx).coerceIn(0f, 1f)
-            val stepFraction = if (steps > 0) {
-                (newFraction * (steps + 1)).roundToInt().toFloat() / (steps + 1)
-            } else newFraction
-            val newValue = valueRange.start + stepFraction * rangeSpan
-            onValueChange(newValue)
-        }
-
-        val gestureModifier = if (enabled) {
-            Modifier.pointerInput(totalWidth, valueRange, steps) {
-                detectTapGestures(
-                    onPress = { offset ->
-                        updateFromX(offset.x, density)
-                        tryAwaitRelease()
-                        onValueChangeFinished?.invoke()
-                    }
-                )
-            }.pointerInput(totalWidth, valueRange, steps) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        updateFromX(offset.x, density)
-                    },
-                    onDrag = { change, _ ->
-                        change.consume()
-                        updateFromX(change.position.x, density)
-                    },
-                    onDragEnd = { onValueChangeFinished?.invoke() },
-                    onDragCancel = { onValueChangeFinished?.invoke() }
-                )
-            }
-        } else Modifier
-
+    if (isGlass) {
+        val shape = settings.shapeType.pillShape()
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(gestureModifier)
+            modifier = modifier.liquidGlassChrome(
+                shape = shape,
+                enabled = true,
+                sheenIntensity = sheen * 0.75f,
+                pressFx = false
+            )
         ) {
-            // Track canvas
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(34.dp)
-                    .align(Alignment.Center)
-                    .padding(horizontal = horizontalPadding)
-            ) {
-                val trackHeight = 16.dp.toPx()
-                val radius = trackHeight / 2f
-                val y = size.height / 2f
-                val activeEnd = size.width * fraction
-
-                // Inactive track pill
-                drawRoundRect(
-                    color = trackBgColor,
-                    topLeft = Offset(0f, y - radius),
-                    size = Size(size.width, trackHeight),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius)
-                )
-
-                // Active track pill
-                if (fraction > 0.001f) {
-                    drawRoundRect(
-                        color = activeTrackColor,
-                        topLeft = Offset(0f, y - radius),
-                        size = Size(activeEnd, trackHeight),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius)
-                    )
-                }
-
-                // Ticks
-                if (steps > 0) {
-                    val tickColor = if (enabled) Color.White.copy(alpha = 0.5f) else Color.Transparent
-                    for (i in 1..steps) {
-                        val tickFraction = i.toFloat() / (steps + 1)
-                        drawCircle(
-                            color = tickColor,
-                            radius = 2.dp.toPx(),
-                            center = Offset(size.width * tickFraction, y)
-                        )
-                    }
-                }
-            }
-
-            // Rolling thumb
-            val thumbStart = horizontalPadding + travel * fraction - (thumbSize / 2f)
-            Box(
-                modifier = Modifier
-                    .offset(x = thumbStart.coerceAtLeast(0.dp))
-                    .size(thumbSize)
-                    .align(Alignment.CenterStart)
-                    .rotate(1080f * fraction)
-                    .clip(thumbShape)
-                    .background(if (enabled) primaryColor else MaterialTheme.colorScheme.outlineVariant)
-                    .then(
-                        if (isGlass) Modifier.liquidGlassChrome(
-                            thumbShape,
-                            enabled = true,
-                            sheenIntensity = 0.85f,
-                            pressFx = false
-                        ) else Modifier
-                    )
-            )
+            body(Modifier.padding(horizontal = 4.dp))
         }
-    }
-}
-
-/**
- * ImageToolbox HyperOSSlider faithful implementation:
- * - 30dp embedded pill track with smooth inside capsule thumb
- * - High contrast visual styling
- */
-@Composable
-private fun ImageToolboxHyperOSSlider(
-    value: Float,
-    onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    enabled: Boolean = true,
-    onValueChangeFinished: (() -> Unit)? = null,
-    isGlass: Boolean = false,
-    sheen: Float = 0f
-) {
-    val rangeSpan = (valueRange.endInclusive - valueRange.start).coerceAtLeast(0.0001f)
-    val fraction = ((value - valueRange.start) / rangeSpan).coerceIn(0f, 1f)
-
-    val shape = RoundedCornerShape(15.dp)
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val trackBgColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest
-
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(38.dp)
-            .clip(shape)
-            .then(
-                if (isGlass) Modifier.liquidGlassChrome(
-                    shape,
-                    enabled = true,
-                    sheenIntensity = sheen * 0.75f,
-                    pressFx = false
-                ) else Modifier
-            ),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        val totalWidth = maxWidth
-        val thumbWidth = 14.dp
-        val thumbHeight = 24.dp
-        val padding = 3.dp
-        val travel = totalWidth - padding * 2 - thumbWidth
-
-        fun updateFromX(xPx: Float, density: Float) {
-            val padPx = padding.value * density
-            val travelPx = travel.value * density
-            val newFraction = ((xPx - padPx) / travelPx).coerceIn(0f, 1f)
-            val newValue = valueRange.start + newFraction * rangeSpan
-            onValueChange(newValue)
-        }
-
-        val gestureModifier = if (enabled) {
-            Modifier.pointerInput(totalWidth, valueRange) {
-                detectTapGestures(
-                    onPress = { offset ->
-                        updateFromX(offset.x, density)
-                        tryAwaitRelease()
-                        onValueChangeFinished?.invoke()
-                    }
-                )
-            }.pointerInput(totalWidth, valueRange) {
-                detectDragGestures(
-                    onDragStart = { offset -> updateFromX(offset.x, density) },
-                    onDrag = { change, _ ->
-                        change.consume()
-                        updateFromX(change.position.x, density)
-                    },
-                    onDragEnd = { onValueChangeFinished?.invoke() },
-                    onDragCancel = { onValueChangeFinished?.invoke() }
-                )
-            }
-        } else Modifier
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(trackBgColor)
-                .then(gestureModifier)
-        ) {
-            // Fill track
-            val fillWidth = padding * 2 + travel * fraction + thumbWidth
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(fillWidth)
-                    .clip(shape)
-                    .background(
-                        if (enabled) primaryColor.copy(alpha = 0.35f)
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-                    )
-            )
-
-            // Embedded thumb capsule
-            val thumbStart = padding + travel * fraction
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .offset(x = thumbStart)
-                    .size(width = thumbWidth, height = thumbHeight)
-                    .clip(RoundedCornerShape(7.dp))
-                    .background(if (enabled) primaryColor else MaterialTheme.colorScheme.outlineVariant)
-            )
-        }
-    }
-}
-
-/**
- * ImageToolbox M3Slider / M2Slider faithful implementation:
- * - Sleek horizontal rail with centered round or pill thumb
- */
-@Composable
-private fun ImageToolboxM3Slider(
-    value: Float,
-    onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    enabled: Boolean = true,
-    onValueChangeFinished: (() -> Unit)? = null,
-    isPillThumb: Boolean = false,
-    isGlass: Boolean = false,
-    sheen: Float = 0f
-) {
-    val rangeSpan = (valueRange.endInclusive - valueRange.start).coerceAtLeast(0.0001f)
-    val fraction = ((value - valueRange.start) / rangeSpan).coerceIn(0f, 1f)
-
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val trackBgColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest
-
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(36.dp)
-            .then(
-                if (isGlass) Modifier.liquidGlassChrome(
-                    RoundedCornerShape(18.dp),
-                    enabled = true,
-                    sheenIntensity = sheen * 0.65f,
-                    pressFx = false
-                ) else Modifier
-            ),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        val totalWidth = maxWidth
-        val thumbSize = if (isPillThumb) 22.dp else 20.dp
-        val travel = totalWidth - thumbSize
-
-        fun updateFromX(xPx: Float, density: Float) {
-            val travelPx = travel.value * density
-            val newFraction = (xPx / travelPx).coerceIn(0f, 1f)
-            val newValue = valueRange.start + newFraction * rangeSpan
-            onValueChange(newValue)
-        }
-
-        val gestureModifier = if (enabled) {
-            Modifier.pointerInput(totalWidth, valueRange) {
-                detectTapGestures(
-                    onPress = { offset ->
-                        updateFromX(offset.x, density)
-                        tryAwaitRelease()
-                        onValueChangeFinished?.invoke()
-                    }
-                )
-            }.pointerInput(totalWidth, valueRange) {
-                detectDragGestures(
-                    onDragStart = { offset -> updateFromX(offset.x, density) },
-                    onDrag = { change, _ ->
-                        change.consume()
-                        updateFromX(change.position.x, density)
-                    },
-                    onDragEnd = { onValueChangeFinished?.invoke() },
-                    onDragCancel = { onValueChangeFinished?.invoke() }
-                )
-            }
-        } else Modifier
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(gestureModifier),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            // Rail
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(if (isPillThumb) 16.dp else 6.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(trackBgColor)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .fillMaxWidth(fraction)
-                        .clip(RoundedCornerShape(50))
-                        .background(if (enabled) primaryColor else MaterialTheme.colorScheme.outlineVariant)
-                )
-            }
-
-            // Thumb
-            val thumbStart = travel * fraction
-            Box(
-                modifier = Modifier
-                    .offset(x = thumbStart)
-                    .size(
-                        width = if (isPillThumb) 8.dp else thumbSize,
-                        height = if (isPillThumb) 24.dp else thumbSize
-                    )
-                    .clip(if (isPillThumb) RoundedCornerShape(4.dp) else CircleShape)
-                    .background(if (enabled) primaryColor else MaterialTheme.colorScheme.outlineVariant)
-            )
-        }
+    } else {
+        body(modifier)
     }
 }

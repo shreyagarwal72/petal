@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.petal.browser.ui.theme.layout.cornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -237,9 +238,9 @@ fun PetalExpressiveTheme(
         androidx.compose.runtime.mutableStateOf(expressiveShapesEnabled)
     }
 
-    var layoutSettingsState by androidx.compose.runtime.remember {
-        androidx.compose.runtime.mutableStateOf(com.petal.browser.ui.theme.layout.PetalLayoutSettings.fromPreferences(sp))
-    }
+    // Single live source of truth for switch/slider/shape/corner/fling/motion settings.
+    com.petal.browser.ui.theme.layout.PetalLayoutState.install(androidx.compose.ui.platform.LocalContext.current)
+    val layoutSettingsState = com.petal.browser.ui.theme.layout.PetalLayoutState.settings
 
     androidx.compose.runtime.DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -247,14 +248,6 @@ fun PetalExpressiveTheme(
                 hapticsEnabled = sp.getBoolean("sp_touch_haptics", true)
             } else if (key == PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED) {
                 expressiveShapesState = sp.getBoolean(PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED, true)
-            } else if (key != null && (key.startsWith("sp_switch_type") ||
-                    key.startsWith("sp_slider_type") ||
-                    key.startsWith("sp_shapes_type") ||
-                    key.startsWith("sp_corners_size") ||
-                    key.startsWith("sp_corners_animation_throttle") ||
-                    key.startsWith("sp_fling_type") ||
-                    key.startsWith("sp_motion_duration_scale"))) {
-                layoutSettingsState = com.petal.browser.ui.theme.layout.PetalLayoutSettings.fromPreferences(sp)
             }
         }
         sp.registerOnSharedPreferenceChangeListener(listener)
@@ -321,24 +314,33 @@ fun PetalExpressiveTheme(
     }
 
     val reduceMotion = com.petal.browser.ui.components.rememberReduceMotion()
-    val expressiveShapes = remember(expressiveShapesState) {
+    // Corner size eases towards its target over the user's "Corners Animation Throttle" so shapes
+    // morph smoothly instead of snapping (and recomposition stays bounded while dragging the slider).
+    val animatedCorners by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = layoutSettingsState.cornersSize,
+        animationSpec = androidx.compose.animation.core.tween(layoutSettingsState.cornersThrottleMs.toInt()),
+        label = "layoutCorners"
+    )
+    androidx.compose.runtime.SideEffect {
+        com.petal.browser.ui.theme.layout.PetalLayoutState.displayCorners = animatedCorners
+        com.petal.browser.ui.containment.PetalMotion.timeScale = layoutSettingsState.motionDurationScale
+    }
+    val expressiveShapes = remember(expressiveShapesState, layoutSettingsState.shapeType, animatedCorners) {
+        val type = layoutSettingsState.shapeType
+        fun c(dp: Int) = type.cornerShape(dp.dp, multiplier = animatedCorners)
         if (expressiveShapesState) {
-            Shapes(
-                extraSmall = RoundedCornerShape(8.dp),
-                small = RoundedCornerShape(12.dp),
-                medium = RoundedCornerShape(16.dp),
-                large = RoundedCornerShape(24.dp),
-                extraLarge = RoundedCornerShape(32.dp),
-            )
+            Shapes(extraSmall = c(8), small = c(12), medium = c(16), large = c(24), extraLarge = c(32))
         } else {
-            Shapes(
-                extraSmall = RoundedCornerShape(4.dp),
-                small = RoundedCornerShape(8.dp),
-                medium = RoundedCornerShape(12.dp),
-                large = RoundedCornerShape(16.dp),
-                extraLarge = RoundedCornerShape(28.dp),
-            )
+            Shapes(extraSmall = c(4), small = c(8), medium = c(12), large = c(16), extraLarge = c(28))
         }
+    }
+
+    val baseMotion = if (reduceMotion) com.petal.browser.ui.components.PetalInstantMotionScheme
+    else androidx.compose.material3.MotionScheme.expressive()
+    val motion = remember(baseMotion, layoutSettingsState.motionDurationScale, reduceMotion) {
+        val scale = layoutSettingsState.motionDurationScale
+        if (reduceMotion || scale == 1f) baseMotion
+        else com.petal.browser.ui.theme.layout.ScaledMotionScheme(baseMotion, scale)
     }
 
     CompositionLocalProvider(
@@ -354,7 +356,7 @@ fun PetalExpressiveTheme(
         androidx.compose.material3.MaterialExpressiveTheme(
             colorScheme = colorScheme,
             shapes = expressiveShapes,
-            motionScheme = if (reduceMotion) com.petal.browser.ui.components.PetalInstantMotionScheme else androidx.compose.material3.MotionScheme.expressive(),
+            motionScheme = motion,
             typography = effectiveTypography,
             content = { com.petal.browser.ui.selection.PetalTextToolbarProvider(content) }
         )

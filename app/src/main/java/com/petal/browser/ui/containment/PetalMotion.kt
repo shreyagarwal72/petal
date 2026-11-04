@@ -24,25 +24,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 
 object PetalMotion {
+    /** Live "Motion Duration Scale" (set by the theme). 2.0 = twice as slow, 0.5 = twice as fast. */
+    @Volatile
+    var timeScale: Float = 1f
+
+    private val s: Float get() = timeScale.coerceIn(0.25f, 3f)
+    private fun st(stiffness: Float) = stiffness / (s * s)
+
     const val Quick = 160
     const val Standard = 300
     const val Emphasized = 440
 
-    fun <T> spatialFast() = spring<T>(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)
-    fun <T> spatialDefault() = spring<T>(dampingRatio = 0.65f, stiffness = Spring.StiffnessLow)
-    fun <T> spatialSlow() = spring<T>(dampingRatio = 0.7f, stiffness = Spring.StiffnessVeryLow)
-    fun <T> effectsFast() = spring<T>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
-    fun <T> effectsDefault() = spring<T>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow)
-    fun <T> effectsSlow() = spring<T>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessVeryLow)
+    fun <T> spatialFast() = spring<T>(dampingRatio = 0.5f, stiffness = st(Spring.StiffnessMediumLow))
+    fun <T> spatialDefault() = spring<T>(dampingRatio = 0.65f, stiffness = st(Spring.StiffnessLow))
+    fun <T> spatialSlow() = spring<T>(dampingRatio = 0.7f, stiffness = st(Spring.StiffnessVeryLow))
+    fun <T> effectsFast() = spring<T>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = st(Spring.StiffnessMedium))
+    fun <T> effectsDefault() = spring<T>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = st(Spring.StiffnessLow))
+    fun <T> effectsSlow() = spring<T>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = st(Spring.StiffnessVeryLow))
 
     fun forwardEnter(): EnterTransition = fadeIn(effectsDefault()) + slideInHorizontally(spatialDefault()) { it / 10 } + scaleIn(spatialFast(), initialScale = 0.96f)
     fun forwardExit(): ExitTransition = fadeOut(effectsFast()) + scaleOut(effectsDefault(), targetScale = 0.985f)
     fun backEnter(): EnterTransition = fadeIn(effectsDefault()) + slideInHorizontally(spatialDefault()) { -it / 12 } + scaleIn(spatialFast(), initialScale = 0.96f)
     fun backExit(): ExitTransition = fadeOut(effectsFast()) + slideOutHorizontally(spatialDefault()) { it / 12 } + scaleOut(effectsDefault(), targetScale = 0.985f)
 
-    fun quickTween() = tween<Float>(Quick, easing = FastOutSlowInEasing)
-    fun standardTween() = tween<Float>(Standard, easing = FastOutSlowInEasing)
-    fun emphasizedTween() = tween<Float>(Emphasized, easing = FastOutSlowInEasing)
+    fun quickTween() = tween<Float>((Quick * s).toInt(), easing = FastOutSlowInEasing)
+    fun standardTween() = tween<Float>((Standard * s).toInt(), easing = FastOutSlowInEasing)
+    fun emphasizedTween() = tween<Float>((Emphasized * s).toInt(), easing = FastOutSlowInEasing)
 }
 
 @Composable

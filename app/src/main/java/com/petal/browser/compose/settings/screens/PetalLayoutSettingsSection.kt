@@ -1,14 +1,26 @@
 package com.petal.browser.compose.settings.screens
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -17,465 +29,614 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Android
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Air
+import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.Gesture
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.LinearScale
-import androidx.compose.material.icons.rounded.Percent
-import androidx.compose.material.icons.rounded.RadioButtonChecked
-import androidx.compose.material.icons.rounded.RadioButtonUnchecked
-import androidx.compose.material.icons.rounded.RoundedCorner
-import androidx.compose.material.icons.rounded.Schedule
-import androidx.compose.material.icons.rounded.Speed
-import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material.icons.rounded.ToggleOn
-import androidx.compose.material.icons.rounded.Widgets
+import androidx.compose.material.icons.rounded.Waves
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.preference.PreferenceManager
 import com.petal.browser.ui.components.EnhancedSliderItem
 import com.petal.browser.ui.components.PetalSlider
+import com.petal.browser.ui.components.PetalSwitch
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalGroupRow
 import com.petal.browser.ui.containment.PetalSettingsSection
+import com.petal.browser.ui.containment.PetalSettingsToggleRow
 import com.petal.browser.ui.containment.PetalSheet
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupPositionFor
-import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.rememberPetalGroupPressScale
+import com.petal.browser.ui.containment.rememberPetalGroupShape
 import com.petal.browser.ui.glass.rememberGlassSheen
-import com.petal.browser.ui.theme.PetalThemePrefs
-import com.petal.browser.ui.theme.layout.LayoutIcons
+import com.petal.browser.ui.icons.imagetoolbox.Android
+import com.petal.browser.ui.icons.imagetoolbox.Animation
+import com.petal.browser.ui.icons.imagetoolbox.AutoAwesome
+import com.petal.browser.ui.icons.imagetoolbox.Cube
+import com.petal.browser.ui.icons.imagetoolbox.HyperOS
+import com.petal.browser.ui.icons.imagetoolbox.IOS
+import com.petal.browser.ui.icons.imagetoolbox.ImageToolboxIcons
+import com.petal.browser.ui.icons.imagetoolbox.MaterialDesign
+import com.petal.browser.ui.icons.imagetoolbox.MiniEdit
+import com.petal.browser.ui.icons.imagetoolbox.Percent
+import com.petal.browser.ui.icons.imagetoolbox.RadioButtonChecked
+import com.petal.browser.ui.icons.imagetoolbox.RadioButtonUnchecked
+import com.petal.browser.ui.icons.imagetoolbox.RoundedCorner
+import com.petal.browser.ui.icons.imagetoolbox.SamsungLetter
+import com.petal.browser.ui.icons.imagetoolbox.Slider
+import com.petal.browser.ui.icons.imagetoolbox.Timelapse
+import com.petal.browser.ui.icons.imagetoolbox.ToggleOff
+import com.petal.browser.ui.icons.imagetoolbox.ToggleOn
+import com.petal.browser.ui.icons.imagetoolbox.Windows
 import com.petal.browser.ui.theme.layout.PetalFlingType
-import com.petal.browser.ui.theme.layout.PetalLayoutSettings
+import com.petal.browser.ui.theme.layout.PetalLayoutState
 import com.petal.browser.ui.theme.layout.PetalShapeType
 import com.petal.browser.ui.theme.layout.PetalSliderType
 import com.petal.browser.ui.theme.layout.PetalSwitchType
+import com.petal.browser.ui.theme.layout.cornerShape
+import com.petal.browser.ui.theme.layout.petalFlingBehavior
+import com.petal.browser.ui.theme.layout.rememberPetalLayoutSettings
+import kotlinx.coroutines.delay
 import java.util.Locale
 
 /**
- * ImageToolbox-style Layout Settings & Live Controls Section.
- * Fully aligned with Petal Containment Design System:
- * - Connected group containment rows (TOP, MIDDLE, BOTTOM)
- * - EnhancedSliderItems with live numeric pills, icon badges, and reset actions
- * - Bottom Sheet pickers redesigned with Petal containment items & ImageToolbox icons
- * - Auto-applied Liquid Glass styling when liquid glass theme is active (NO manual toggle)
+ * Expressive Layout & Controls (ImageToolbox-style).
+ *
+ * Everything here is live: picking a switch / slider / shape / fling style, or moving a slider,
+ * restyles the whole app on the spot - the picker sheets stay open so you can try each option and
+ * see it applied behind the sheet. Liquid Glass needs no switch type: while it is active every
+ * switch automatically becomes the glass toggle.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalLayoutSettingsSection(
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-
-    // Live preference states
-    var switchType by remember {
-        mutableStateOf(PetalSwitchType.fromKey(sp.getString(PetalLayoutSettings.KEY_SWITCH_TYPE, PetalSwitchType.COMPOSE.key)))
-    }
-    var sliderType by remember {
-        mutableStateOf(PetalSliderType.fromKey(sp.getString(PetalLayoutSettings.KEY_SLIDER_TYPE, PetalSliderType.FANCY.key)))
-    }
-    var shapeType by remember {
-        mutableStateOf(PetalShapeType.fromKey(sp.getString(PetalLayoutSettings.KEY_SHAPE_TYPE, PetalShapeType.ROUNDED.key)))
-    }
-    var cornersSize by remember {
-        mutableFloatStateOf(sp.getFloat(PetalLayoutSettings.KEY_CORNERS_SIZE, 1.0f))
-    }
-    var cornersThrottleMs by remember {
-        mutableLongStateOf(sp.getLong(PetalLayoutSettings.KEY_CORNERS_THROTTLE, 153L))
-    }
-    var flingType by remember {
-        mutableStateOf(PetalFlingType.fromKey(sp.getString(PetalLayoutSettings.KEY_FLING_TYPE, PetalFlingType.DEFAULT.key)))
-    }
-    var motionDurationScale by remember {
-        mutableFloatStateOf(sp.getFloat(PetalLayoutSettings.KEY_MOTION_DURATION_SCALE, 1.0f))
-    }
-
-    // Modal Sheet states
-    var showSwitchTypeSheet by remember { mutableStateOf(false) }
-    var showSliderTypeSheet by remember { mutableStateOf(false) }
-    var showShapeTypeSheet by remember { mutableStateOf(false) }
-    var showFlingTypeSheet by remember { mutableStateOf(false) }
-
+    val settings = rememberPetalLayoutSettings()
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val glassSheen = rememberGlassSheen(isGlass)
+
+    var sheet by rememberSaveable { mutableStateOf<String?>(null) }
+    val total = 9
+    fun pos(i: Int) = petalGroupPositionFor(i, total)
 
     PetalSettingsSection(
         title = "Expressive Layout & Controls",
         icon = Icons.Rounded.Gesture,
         cardId = "appearance_layout_controls",
-        targetHighlightId = targetHighlightItemId
+        targetHighlightId = targetHighlightItemId,
+        modifier = modifier
     ) {
         Text(
-            text = "Tactile control physics, shapes, and component styles ported from ImageToolbox",
+            text = "Switch, slider and shape styles from ImageToolbox - changes apply instantly across Petal.",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 6.dp)
         )
 
-        Spacer(Modifier.height(4.dp))
+        PetalGroupRow(
+            icon = ImageToolboxIcons.Outlined.ToggleOn,
+            title = "Switch Type",
+            subtitle = if (isGlass) "Liquid Glass toggle (automatic while glass is on)" else settings.switchType.title,
+            position = pos(0),
+            iconContainer = MaterialTheme.colorScheme.primaryContainer,
+            iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+            trailing = { EditGlyph() },
+            onClick = { sheet = SHEET_SWITCH }
+        )
+        PetalGroupRow(
+            icon = ImageToolboxIcons.Rounded.Slider,
+            title = "Slider Type",
+            subtitle = settings.sliderType.title,
+            position = pos(1),
+            iconContainer = MaterialTheme.colorScheme.secondaryContainer,
+            iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+            trailing = { EditGlyph() },
+            onClick = { sheet = SHEET_SLIDER }
+        )
+        PetalGroupRow(
+            icon = ImageToolboxIcons.Rounded.RoundedCorner,
+            title = "Shapes Type",
+            subtitle = settings.shapeType.title,
+            position = pos(2),
+            iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
+            iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+            trailing = { EditGlyph() },
+            onClick = { sheet = SHEET_SHAPE }
+        )
 
+        EnhancedSliderItem(
+            value = settings.cornersSize,
+            title = "Corners Size",
+            icon = ImageToolboxIcons.Rounded.Percent,
+            valueText = String.format(Locale.US, "%.2f", settings.cornersSize),
+            defaultValue = 1f,
+            valueRange = 0f..2f,
+            position = pos(3),
+            onValueChange = { v -> PetalLayoutState.update(context) { it.copy(cornersSize = v) } }
+        )
+        EnhancedSliderItem(
+            value = settings.cornersThrottleMs.toFloat(),
+            title = "Corners Animation Throttle",
+            icon = ImageToolboxIcons.Outlined.Timelapse,
+            valueText = "${settings.cornersThrottleMs} ms",
+            defaultValue = 153f,
+            valueRange = 0f..500f,
+            steps = 49,
+            position = pos(4),
+            onValueChange = { v -> PetalLayoutState.update(context) { it.copy(cornersThrottleMs = v.toLong()) } }
+        )
+
+        PetalGroupRow(
+            icon = ImageToolboxIcons.Rounded.Animation,
+            title = "Fling Type",
+            subtitle = settings.flingType.title,
+            position = pos(5),
+            iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
+            iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+            trailing = { EditGlyph() },
+            onClick = { sheet = SHEET_FLING }
+        )
+
+        EnhancedSliderItem(
+            value = settings.motionDurationScale,
+            title = "Motion Duration Scale",
+            icon = Icons.Rounded.FastForward,
+            valueText = String.format(Locale.US, "%.2fx", settings.motionDurationScale),
+            defaultValue = 1f,
+            valueRange = 0.25f..3f,
+            steps = 10,
+            position = pos(6),
+            onValueChange = { v -> PetalLayoutState.update(context) { it.copy(motionDurationScale = v) } }
+        )
+
+        PetalSettingsToggleRow(
+            title = "Switch Shadows",
+            subtitle = "Soft shadow under switch thumbs",
+            icon = Icons.Rounded.Layers,
+            checked = settings.drawSwitchShadows,
+            position = pos(7),
+            onCheckedChange = { v -> PetalLayoutState.update(context) { it.copy(drawSwitchShadows = v) } }
+        )
+        PetalSettingsToggleRow(
+            title = "Slider Shadows",
+            subtitle = "Soft shadow under slider thumbs",
+            icon = Icons.Rounded.LinearScale,
+            checked = settings.drawSliderShadows,
+            position = pos(8),
+            onCheckedChange = { v -> PetalLayoutState.update(context) { it.copy(drawSliderShadows = v) } }
+        )
+    }
+
+    // ── Pickers ── selection applies immediately; the sheet stays open to compare styles.
+
+    if (sheet == SHEET_SWITCH) {
+        ChoiceSheet(
+            title = "Switch Type",
+            headerIcon = ImageToolboxIcons.Outlined.ToggleOff,
+            items = PetalSwitchType.entries,
+            selected = settings.switchType,
+            banner = if (isGlass) "Liquid Glass is on, so every switch is the glass toggle automatically. " +
+                "Your choice below applies as soon as Liquid Glass is off." else null,
+            onSelect = { t -> PetalLayoutState.update(context) { it.copy(switchType = t) } },
+            onDismiss = { sheet = null }
+        ) { item, selected, position, onClick ->
+            val demo = rememberDemoToggle()
+            ChoiceCard(
+                selected = selected,
+                title = item.title,
+                subtitle = item.subtitle,
+                icon = item.icon(),
+                position = position,
+                onClick = onClick,
+                trailingPreview = {
+                    // Always shows the real style (glassOverride = false) even while glass is active.
+                    PetalSwitch(
+                        checked = demo.value,
+                        onCheckedChange = { demo.value = it },
+                        thumbIcon = Icons.Rounded.Info,
+                        typeOverride = item,
+                        glassOverride = false
+                    )
+                }
+            )
+        }
+    }
+
+    if (sheet == SHEET_SLIDER) {
+        ChoiceSheet(
+            title = "Slider Type",
+            headerIcon = ImageToolboxIcons.Rounded.Slider,
+            items = PetalSliderType.entries,
+            selected = settings.sliderType,
+            banner = null,
+            onSelect = { t -> PetalLayoutState.update(context) { it.copy(sliderType = t) } },
+            onDismiss = { sheet = null }
+        ) { item, selected, position, onClick ->
+            ChoiceCard(
+                selected = selected,
+                title = item.title,
+                subtitle = item.subtitle,
+                icon = item.icon(),
+                position = position,
+                onClick = onClick,
+                bottomPreview = { SliderDemo(item) }
+            )
+        }
+    }
+
+    if (sheet == SHEET_SHAPE) {
+        ChoiceSheet(
+            title = "Shapes Type",
+            headerIcon = ImageToolboxIcons.Rounded.RoundedCorner,
+            items = PetalShapeType.entries,
+            selected = settings.shapeType,
+            banner = null,
+            onSelect = { t -> PetalLayoutState.update(context) { it.copy(shapeType = t) } },
+            onDismiss = { sheet = null }
+        ) { item, selected, position, onClick ->
+            ChoiceCard(
+                selected = selected,
+                title = item.title,
+                subtitle = item.subtitle,
+                icon = ImageToolboxIcons.Rounded.RoundedCorner,
+                position = position,
+                onClick = onClick,
+                trailingPreview = {
+                    Box(
+                        Modifier
+                            .size(44.dp)
+                            .clip(item.cornerShape(16.dp, multiplier = settings.cornersSize.coerceAtLeast(0.4f)))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+                            )
+                    )
+                }
+            )
+        }
+    }
+
+    if (sheet == SHEET_FLING) {
+        ChoiceSheet(
+            title = "Fling Type",
+            headerIcon = ImageToolboxIcons.Rounded.Animation,
+            items = PetalFlingType.entries,
+            selected = settings.flingType,
+            banner = null,
+            onSelect = { t -> PetalLayoutState.update(context) { it.copy(flingType = t) } },
+            onDismiss = { sheet = null }
+        ) { item, selected, position, onClick ->
+            ChoiceCard(
+                selected = selected,
+                title = item.title,
+                subtitle = item.subtitle,
+                icon = item.icon(),
+                position = position,
+                onClick = onClick,
+                trailingPreview = { FlingDemo(item) }
+            )
+        }
+    }
+}
+
+private const val SHEET_SWITCH = "switch"
+private const val SHEET_SLIDER = "slider"
+private const val SHEET_SHAPE = "shape"
+private const val SHEET_FLING = "fling"
+
+// ── Icons (ImageToolbox) ─────────────────────────────────────────────────────────────────────
+
+private fun PetalSwitchType.icon(): ImageVector = when (this) {
+    PetalSwitchType.MATERIAL_YOU -> ImageToolboxIcons.Outlined.MaterialDesign
+    PetalSwitchType.COMPOSE -> ImageToolboxIcons.Outlined.Cube
+    PetalSwitchType.PIXEL -> ImageToolboxIcons.Rounded.Android
+    PetalSwitchType.FLUENT -> ImageToolboxIcons.Rounded.Windows
+    PetalSwitchType.CUPERTINO -> ImageToolboxIcons.Rounded.IOS
+    PetalSwitchType.HYPEROS -> ImageToolboxIcons.Outlined.HyperOS
+    PetalSwitchType.ONE_UI -> ImageToolboxIcons.Outlined.SamsungLetter
+}
+
+private fun PetalSliderType.icon(): ImageVector = when (this) {
+    PetalSliderType.FANCY -> ImageToolboxIcons.Rounded.AutoAwesome
+    PetalSliderType.MATERIAL_YOU -> ImageToolboxIcons.Outlined.MaterialDesign
+    PetalSliderType.MATERIAL -> ImageToolboxIcons.Rounded.Android
+    PetalSliderType.HYPEROS -> ImageToolboxIcons.Outlined.HyperOS
+}
+
+private fun PetalFlingType.icon(): ImageVector = when (this) {
+    PetalFlingType.DEFAULT -> ImageToolboxIcons.Rounded.Android
+    PetalFlingType.SMOOTH -> Icons.Rounded.Waves
+    PetalFlingType.IOS_STYLE -> ImageToolboxIcons.Rounded.IOS
+    PetalFlingType.SNAPPY -> Icons.Rounded.Bolt
+    PetalFlingType.FLOATY -> Icons.Rounded.Air
+    PetalFlingType.REDUCED_MOTION -> Icons.Rounded.Block
+}
+
+@Composable
+private fun EditGlyph() {
+    Icon(
+        imageVector = ImageToolboxIcons.Rounded.MiniEdit,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.size(20.dp)
+    )
+}
+
+// ── Picker sheet ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun <T> ChoiceSheet(
+    title: String,
+    headerIcon: ImageVector,
+    items: List<T>,
+    selected: T,
+    banner: String?,
+    onSelect: (T) -> Unit,
+    onDismiss: () -> Unit,
+    row: @Composable (item: T, selected: Boolean, position: PetalGroupPosition, onClick: () -> Unit) -> Unit,
+) {
+    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.6f).dp
+    PetalSheet(
+        onDismissRequest = onDismiss,
+        titleContent = { SheetTitle(title, headerIcon) },
+        actionContent = { CloseButton(onDismiss) }
+    ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = maxHeight)
+                .verticalScroll(rememberScrollState(), flingBehavior = petalFlingBehavior())
+                .padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            // 1. Switch Type Picker Row
-            PetalGroupRow(
-                icon = Icons.Rounded.ToggleOn,
-                title = "Switch Type",
-                subtitle = if (isGlass) "Auto (Liquid Glass Active)" else switchType.title,
-                position = PetalGroupPosition.TOP,
-                iconContainer = MaterialTheme.colorScheme.primaryContainer,
-                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                trailing = {
-                    Icon(
-                        imageVector = Icons.Rounded.Edit,
-                        contentDescription = "Edit Switch Type",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                },
-                onClick = { showSwitchTypeSheet = true }
-            )
-
-            // 2. Slider Type Picker Row
-            PetalGroupRow(
-                icon = Icons.Rounded.LinearScale,
-                title = "Slider Type",
-                subtitle = sliderType.title,
-                position = PetalGroupPosition.MIDDLE,
-                iconContainer = MaterialTheme.colorScheme.secondaryContainer,
-                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                trailing = {
-                    Icon(
-                        imageVector = Icons.Rounded.Edit,
-                        contentDescription = "Edit Slider Type",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                },
-                onClick = { showSliderTypeSheet = true }
-            )
-
-            // 3. Shapes Type Picker Row
-            PetalGroupRow(
-                icon = Icons.Rounded.RoundedCorner,
-                title = "Shapes Type",
-                subtitle = shapeType.title,
-                position = PetalGroupPosition.MIDDLE,
-                iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
-                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                trailing = {
-                    Icon(
-                        imageVector = Icons.Rounded.Edit,
-                        contentDescription = "Edit Shapes Type",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                },
-                onClick = { showShapeTypeSheet = true }
-            )
-
-            // 4. Corners Size Slider (EnhancedSliderItem)
-            EnhancedSliderItem(
-                value = cornersSize,
-                title = "Corners Size",
-                icon = Icons.Rounded.Percent,
-                valueText = "${(cornersSize * 100).toInt()}%",
-                defaultValue = 1.0f,
-                valueRange = 0f..2f,
-                steps = 20,
-                position = PetalGroupPosition.MIDDLE,
-                onValueChange = {
-                    cornersSize = it
-                    sp.edit().putFloat(PetalLayoutSettings.KEY_CORNERS_SIZE, it).apply()
-                    PetalThemePrefs.bump()
-                }
-            )
-
-            // 5. Corners Animation Throttle (EnhancedSliderItem)
-            EnhancedSliderItem(
-                value = cornersThrottleMs.toFloat(),
-                title = "Corners Animation Throttle",
-                icon = Icons.Rounded.Schedule,
-                valueText = "${cornersThrottleMs} ms",
-                defaultValue = 153f,
-                valueRange = 0f..500f,
-                steps = 50,
-                position = PetalGroupPosition.MIDDLE,
-                onValueChange = {
-                    val v = it.toLong()
-                    cornersThrottleMs = v
-                    sp.edit().putLong(PetalLayoutSettings.KEY_CORNERS_THROTTLE, v).apply()
-                    PetalThemePrefs.bump()
-                }
-            )
-
-            // 6. Fling Type Picker Row
-            PetalGroupRow(
-                icon = Icons.Rounded.Speed,
-                title = "Fling Type",
-                subtitle = flingType.title,
-                position = PetalGroupPosition.MIDDLE,
-                iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
-                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                trailing = {
-                    Icon(
-                        imageVector = Icons.Rounded.Edit,
-                        contentDescription = "Edit Fling Type",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                },
-                onClick = { showFlingTypeSheet = true }
-            )
-
-            // 7. Motion Duration Scale (EnhancedSliderItem)
-            EnhancedSliderItem(
-                value = motionDurationScale,
-                title = "Motion Duration Scale",
-                icon = Icons.Rounded.FastForward,
-                valueText = "${String.format(Locale.US, "%.2f", motionDurationScale)}x",
-                defaultValue = 1.0f,
-                valueRange = 0.25f..3.0f,
-                steps = 11,
-                position = PetalGroupPosition.BOTTOM,
-                onValueChange = {
-                    motionDurationScale = it
-                    sp.edit().putFloat(PetalLayoutSettings.KEY_MOTION_DURATION_SCALE, it).apply()
-                    PetalThemePrefs.bump()
-                }
-            )
-        }
-    }
-
-    // ── Bottom Sheet Pickers in Petal Containment Design ──
-
-    // 1. Switch Type Sheet
-    if (showSwitchTypeSheet) {
-        PetalSheet(
-            title = "Switch Type",
-            onDismissRequest = { showSwitchTypeSheet = false }
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                val entries = PetalSwitchType.entries
-                entries.forEachIndexed { index, item ->
-                    val isSelected = item == switchType
-                    val pos = petalGroupPositionFor(index, entries.size)
-                    val icon = when (item) {
-                        PetalSwitchType.MATERIAL_YOU -> Icons.Rounded.Android
-                        PetalSwitchType.COMPOSE -> Icons.Rounded.Widgets
-                        PetalSwitchType.PIXEL -> Icons.Rounded.Android
-                        PetalSwitchType.FLUENT -> LayoutIcons.Windows
-                        PetalSwitchType.CUPERTINO -> LayoutIcons.IOS
-                        PetalSwitchType.HYPEROS -> LayoutIcons.HyperOS
-                        PetalSwitchType.ONE_UI -> LayoutIcons.SamsungLetter
-                    }
-
-                    PetalGroupRow(
-                        icon = icon,
-                        title = item.title,
-                        subtitle = item.subtitle,
-                        position = pos,
-                        iconContainer = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        iconTint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        trailing = {
-                            Icon(
-                                imageVector = if (isSelected) Icons.Rounded.RadioButtonChecked else Icons.Rounded.RadioButtonUnchecked,
-                                contentDescription = if (isSelected) "Selected" else "Unselected",
-                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        },
-                        onClick = {
-                            switchType = item
-                            sp.edit().putString(PetalLayoutSettings.KEY_SWITCH_TYPE, item.key).apply()
-                            PetalThemePrefs.bump()
-                            showSwitchTypeSheet = false
-                        }
-                    )
-                }
+            if (banner != null) {
+                Text(
+                    text = banner,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                )
+            }
+            items.forEachIndexed { index, item ->
+                row(item, item == selected, petalGroupPositionFor(index, items.size)) { onSelect(item) }
             }
         }
     }
+}
 
-    // 2. Slider Type Sheet
-    if (showSliderTypeSheet) {
-        PetalSheet(
-            title = "Slider Type",
-            onDismissRequest = { showSliderTypeSheet = false }
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                val entries = PetalSliderType.entries
-                entries.forEachIndexed { index, item ->
-                    val isSelected = item == sliderType
-                    val pos = petalGroupPositionFor(index, entries.size)
-                    val icon = when (item) {
-                        PetalSliderType.FANCY -> Icons.Rounded.Star
-                        PetalSliderType.MATERIAL_YOU -> Icons.Rounded.Android
-                        PetalSliderType.MATERIAL -> Icons.Rounded.LinearScale
-                        PetalSliderType.HYPEROS -> LayoutIcons.HyperOS
-                    }
+@Composable
+private fun SheetTitle(title: String, icon: ImageVector) {
+    Row(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
 
-                    PetalGroupRow(
-                        icon = icon,
-                        title = item.title,
-                        subtitle = item.subtitle,
-                        position = pos,
-                        iconContainer = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        iconTint = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        trailing = {
-                            Icon(
-                                imageVector = if (isSelected) Icons.Rounded.RadioButtonChecked else Icons.Rounded.RadioButtonUnchecked,
-                                contentDescription = if (isSelected) "Selected" else "Unselected",
-                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        },
-                        onClick = {
-                            sliderType = item
-                            sp.edit().putString(PetalLayoutSettings.KEY_SLIDER_TYPE, item.key).apply()
-                            PetalThemePrefs.bump()
-                            showSliderTypeSheet = false
-                        }
+@Composable
+private fun RowScope.CloseButton(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(50.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        ),
+        modifier = Modifier
+            .weight(1f)
+            .heightIn(min = 48.dp)
+    ) {
+        Text("Close", fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** One selectable option: Petal containment surface, live glass, spring press, animated selection. */
+@Composable
+private fun ChoiceCard(
+    selected: Boolean,
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    position: PetalGroupPosition,
+    onClick: () -> Unit,
+    trailingPreview: (@Composable () -> Unit)? = null,
+    bottomPreview: (@Composable () -> Unit)? = null,
+) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = rememberGlassSheen(isGlass)
+    val scheme = MaterialTheme.colorScheme
+    val shape = rememberPetalGroupShape(position)
+    val source = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val pressScale = rememberPetalGroupPressScale(source)
+    val surface = petalGroupSurfaceColor()
+
+    val container by animateColorAsState(
+        targetValue = if (selected) scheme.secondaryContainer.copy(alpha = if (isGlass) 0.55f else 1f) else surface,
+        animationSpec = tween(220),
+        label = "choiceContainer"
+    )
+    val outline by animateColorAsState(
+        targetValue = if (selected) scheme.onSecondaryContainer.copy(alpha = 0.45f) else Color.Transparent,
+        animationSpec = tween(220),
+        label = "choiceOutline"
+    )
+
+    Card(
+        onClick = onClick,
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = container),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        interactionSource = source,
+        modifier = Modifier
+            .fillMaxWidth()
+            .scale(pressScale)
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true)
+            .border(1.5.dp, outline, shape)
+    ) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PetalGroupIconBadge(
+                    icon = icon,
+                    container = if (selected) scheme.primary else scheme.secondaryContainer,
+                    tint = if (selected) scheme.onPrimary else scheme.onSecondaryContainer,
+                    size = 40.dp,
+                    iconSize = 22.dp
+                )
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = scheme.onSurface
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant
                     )
                 }
+                if (trailingPreview != null) {
+                    Spacer(Modifier.width(10.dp))
+                    trailingPreview()
+                }
+                Spacer(Modifier.width(8.dp))
+                Crossfade(targetState = selected, label = "choiceRadio") { on ->
+                    Icon(
+                        imageVector = if (on) ImageToolboxIcons.Rounded.RadioButtonChecked
+                        else ImageToolboxIcons.Rounded.RadioButtonUnchecked,
+                        contentDescription = if (on) "Selected" else "Not selected",
+                        tint = if (on) scheme.primary else scheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+            if (bottomPreview != null) {
+                Spacer(Modifier.height(8.dp))
+                bottomPreview()
             }
         }
     }
+}
 
-    // 3. Shape Type Sheet
-    if (showShapeTypeSheet) {
-        PetalSheet(
-            title = "Shapes Type",
-            onDismissRequest = { showShapeTypeSheet = false }
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                val entries = PetalShapeType.entries
-                entries.forEachIndexed { index, item ->
-                    val isSelected = item == shapeType
-                    val pos = petalGroupPositionFor(index, entries.size)
+// ── Live previews ────────────────────────────────────────────────────────────────────────────
 
-                    PetalGroupRow(
-                        icon = Icons.Rounded.RoundedCorner,
-                        title = item.title,
-                        subtitle = item.subtitle,
-                        position = pos,
-                        iconContainer = if (isSelected) MaterialTheme.colorScheme.tertiaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        iconTint = if (isSelected) MaterialTheme.colorScheme.onTertiaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        trailing = {
-                            Icon(
-                                imageVector = if (isSelected) Icons.Rounded.RadioButtonChecked else Icons.Rounded.RadioButtonUnchecked,
-                                contentDescription = if (isSelected) "Selected" else "Unselected",
-                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        },
-                        onClick = {
-                            shapeType = item
-                            sp.edit().putString(PetalLayoutSettings.KEY_SHAPE_TYPE, item.key).apply()
-                            PetalThemePrefs.bump()
-                            showShapeTypeSheet = false
-                        }
-                    )
-                }
-            }
+/** Flips by itself so each switch style shows its animation; any tap on it also flips it. */
+@Composable
+private fun rememberDemoToggle(): androidx.compose.runtime.MutableState<Boolean> {
+    val state = remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1900)
+            state.value = !state.value
         }
     }
+    return state
+}
 
-    // 4. Fling Type Sheet
-    if (showFlingTypeSheet) {
-        PetalSheet(
-            title = "Fling Type",
-            onDismissRequest = { showFlingTypeSheet = false }
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                val entries = PetalFlingType.entries
-                entries.forEachIndexed { index, item ->
-                    val isSelected = item == flingType
-                    val pos = petalGroupPositionFor(index, entries.size)
+@Composable
+private fun SliderDemo(type: PetalSliderType) {
+    val transition = rememberInfiniteTransition(label = "sliderDemo")
+    val auto by transition.animateFloat(
+        initialValue = 0.15f,
+        targetValue = 0.85f,
+        animationSpec = infiniteRepeatable(tween(2600), RepeatMode.Reverse),
+        label = "sliderDemoValue"
+    )
+    var user by remember { mutableStateOf<Float?>(null) }
+    PetalSlider(
+        value = user ?: auto,
+        onValueChange = { user = it },
+        valueRange = 0f..1f,
+        typeOverride = type,
+        glassOverride = false,
+        modifier = Modifier.fillMaxWidth()
+    )
+}
 
-                    PetalGroupRow(
-                        icon = Icons.Rounded.Speed,
-                        title = item.title,
-                        subtitle = item.subtitle,
-                        position = pos,
-                        iconContainer = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        iconTint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        trailing = {
-                            Icon(
-                                imageVector = if (isSelected) Icons.Rounded.RadioButtonChecked else Icons.Rounded.RadioButtonUnchecked,
-                                contentDescription = if (isSelected) "Selected" else "Unselected",
-                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        },
-                        onClick = {
-                            flingType = item
-                            sp.edit().putString(PetalLayoutSettings.KEY_FLING_TYPE, item.key).apply()
-                            PetalThemePrefs.bump()
-                            showFlingTypeSheet = false
-                        }
-                    )
-                }
+@Composable
+private fun FlingDemo(type: PetalFlingType) {
+    val (duration, overshoot) = when (type) {
+        PetalFlingType.DEFAULT -> 900 to false
+        PetalFlingType.SMOOTH -> 1150 to false
+        PetalFlingType.IOS_STYLE -> 1300 to true
+        PetalFlingType.SNAPPY -> 520 to false
+        PetalFlingType.FLOATY -> 1700 to false
+        PetalFlingType.REDUCED_MOTION -> 140 to false
+    }
+    val decel = CubicBezierEasing(0.1f, 0.9f, 0.2f, 1f)
+    val transition = rememberInfiniteTransition(label = "flingDemo")
+    val x by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            keyframes {
+                durationMillis = duration + 800
+                0f at 0
+                if (overshoot) 1.12f at (duration * 0.65f).toInt() using decel
+                1f at duration using decel
+                1f at duration + 800
             }
-        }
+        ),
+        label = "flingDemoX"
+    )
+    val track = 52.dp
+    val dot = 12.dp
+    Box(modifier = Modifier.size(width = track, height = dot)) {
+        Box(
+            Modifier
+                .align(Alignment.Center)
+                .size(width = track, height = 4.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.outlineVariant)
+        )
+        Box(
+            Modifier
+                .offset(x = (track - dot) * x.coerceIn(0f, 1.2f))
+                .size(dot)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary)
+        )
     }
 }
