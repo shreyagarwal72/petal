@@ -4979,9 +4979,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         androidx.compose.ui.platform.ComposeView nowBarCompose = findViewById(R.id.petal_nowbar_compose);
-        if (nowBarCompose == null) {
-            nowBarCompose = findViewById(R.id.petal_custom_island_compose);
-        }
         if (nowBarCompose != null) {
             com.petal.browser.island.PetalNowBarBridge.attachNowBar(
                     this,
