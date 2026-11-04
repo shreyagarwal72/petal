@@ -448,7 +448,6 @@ object CupertinoSwitchDefaults {
     internal val Shape: CornerBasedShape @Composable get() = ShapeDefaults.circle
 
     @Composable
-    @ReadOnlyComposable
     fun colors(
         thumbColor: Color = if (LocalSettingsState.current.isNightMode) {
             MaterialTheme.colorScheme.onSurface
