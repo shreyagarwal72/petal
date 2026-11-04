@@ -29,8 +29,8 @@ import kotlinx.coroutines.launch
 @HiltAndroidApp
 class PetalApplication : Application(), androidx.work.Configuration.Provider {
 
-    override val workManagerConfiguration: androidx.work.Configuration
-        get() = androidx.work.Configuration.Builder()
+    override fun getWorkManagerConfiguration(): androidx.work.Configuration =
+        androidx.work.Configuration.Builder()
             .setMinimumLoggingLevel(android.util.Log.WARN)
             .build()
 
