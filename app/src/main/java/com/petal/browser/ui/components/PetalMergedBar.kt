@@ -261,6 +261,17 @@ fun PetalMergedBar(
                             modifier = Modifier.fillMaxWidth()
                         )
 
+                        // Material 3 Expressive Progress Bar (relocated to blue arrow position: directly between AddressPill and Action Buttons)
+                        if (isLoading && progress > 0f) {
+                            Material3ExpressiveProgressIndicator(
+                                progress = progress,
+                                visible = isLoading,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+
                         val allActions = (leadingActions + trailingActions).distinct().take(BarPrefs.MAX_MERGE_ACTIONS_TOTAL)
                         Row(
                             modifier = Modifier

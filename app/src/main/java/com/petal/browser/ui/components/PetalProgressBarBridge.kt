@@ -10,17 +10,20 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -135,11 +138,13 @@ object PetalProgressBarBridge {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun PetalWebProgressIndicator(
+fun Material3ExpressiveProgressIndicator(
     progress: Float,
-    visible: Boolean
+    visible: Boolean,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+    trackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
@@ -148,7 +153,7 @@ fun PetalWebProgressIndicator(
         } else {
             tween(durationMillis = 300, easing = FastOutSlowInEasing)
         },
-        label = "petalWebProgress",
+        label = "m3eProgress"
     )
 
     AnimatedVisibility(
@@ -156,19 +161,81 @@ fun PetalWebProgressIndicator(
         enter = fadeIn(animationSpec = tween(durationMillis = 150, easing = LinearOutSlowInEasing)),
         exit = fadeOut(animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
+        Canvas(
+            modifier = modifier
+                .height(4.dp)
                 .semantics { progressBarRangeInfo = ProgressBarRangeInfo(animatedProgress, 0f..1f) }
         ) {
-            LinearWavyProgressIndicator(
-                progress = { animatedProgress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
+            val h = size.height
+            val w = size.width
+            val cornerRadius = CornerRadius(h / 2f, h / 2f)
+            val stopDotRadius = h / 2f
+            val gapPx = 4.dp.toPx()
+            val stopDotSize = h
+            val stopDotX = w - stopDotRadius
+
+            // Complete bar when progress is done
+            if (animatedProgress >= 0.999f) {
+                drawRoundRect(
+                    color = color,
+                    topLeft = Offset(0f, 0f),
+                    size = Size(w, h),
+                    cornerRadius = cornerRadius
+                )
+                return@Canvas
+            }
+
+            // 1. Draw M3 Expressive circular stop indicator dot at the end
+            drawCircle(
+                color = trackColor,
+                radius = stopDotRadius,
+                center = Offset(stopDotX, h / 2f)
             )
+
+            // Available span for active progress and track
+            val trackEndX = (w - stopDotSize - gapPx).coerceAtLeast(0f)
+            val activeW = (trackEndX * animatedProgress).coerceIn(0f, trackEndX)
+
+            // 2. Draw active progress rounded bar
+            if (activeW > 0f) {
+                val activeCapW = activeW.coerceAtLeast(h)
+                drawRoundRect(
+                    color = color,
+                    topLeft = Offset(0f, 0f),
+                    size = Size(activeCapW.coerceAtMost(trackEndX), h),
+                    cornerRadius = cornerRadius
+                )
+            }
+
+            // 3. Draw inactive track bar with 4dp gap before it
+            val trackStartX = (activeW + gapPx).coerceAtMost(trackEndX)
+            val trackW = trackEndX - trackStartX
+            if (trackW > h) {
+                drawRoundRect(
+                    color = trackColor,
+                    topLeft = Offset(trackStartX, 0f),
+                    size = Size(trackW, h),
+                    cornerRadius = cornerRadius
+                )
+            }
         }
+    }
+}
+
+@Composable
+fun PetalWebProgressIndicator(
+    progress: Float,
+    visible: Boolean
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(4.dp)
+    ) {
+        Material3ExpressiveProgressIndicator(
+            progress = progress,
+            visible = visible,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }

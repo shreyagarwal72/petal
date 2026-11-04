@@ -3077,6 +3077,31 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addressBar.setLayoutParams(addrParams);
             }
 
+            if (progressBarCompose != null && progressBarCompose.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                RelativeLayout.LayoutParams progParams = (RelativeLayout.LayoutParams) progressBarCompose.getLayoutParams();
+                progParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+                progParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                progParams.removeRule(RelativeLayout.ABOVE);
+                progParams.removeRule(RelativeLayout.BELOW);
+                boolean isMerge = com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp);
+                if (isMerge) {
+                    progressBarCompose.setVisibility(GONE);
+                } else {
+                    boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
+                    int hMargin = isFloating ? (int) PetalAndroidUtils.convertDpToPixel(16f, context) : 0;
+                    progParams.leftMargin = hMargin;
+                    progParams.rightMargin = hMargin;
+                    if (isBottom) {
+                        progParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                        progParams.bottomMargin = bottomNavHeight + addressHeight;
+                    } else {
+                        progParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                        progParams.bottomMargin = 0;
+                    }
+                    progressBarCompose.setLayoutParams(progParams);
+                }
+            }
+
             boolean isImmersive = (sp != null && sp.getBoolean("sp_immersive_fullscreen", false)) || isCustomFullscreenState;
             int resolvedStatusBarGap = isImmersive ? 0 : (statusBarTopInset > 0 ? statusBarTopInset : PetalAndroidUtils.getStatusBarHeight(this));
             // For bottom address bar (Firefox style):
@@ -3567,21 +3592,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         );
 
         if (progressBarCompose != null) {
-            // Keep the ComposeView itself permanently VISIBLE and let its internal
-            // AnimatedVisibility state (below) control what's actually drawn. This
-            // used to call setVisibility(GONE) here, which - once set - a ComposeView
-            // never composes again, so the very next real page load had nothing left
-            // to make visible and the progress bar stayed missing for the rest of the
-            // session (root cause of the "progress bar is missing" bug).
-            if (progressBarCompose.getVisibility() != VISIBLE) {
-                progressBarCompose.setVisibility(VISIBLE);
-            }
-            if (!refreshState.isRefreshing() && !isInternalPage) {
-                com.petal.browser.ui.components.PetalProgressBarBridge.updateProgress(progressBarCompose, progress);
-                com.petal.browser.compose.home.PetalAddressBarBridge.updateProgressValue(progress);
-            } else {
+            boolean isMerge = com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp);
+            if (isMerge) {
+                // In merge address bar mode, the M3 Expressive progress bar is directly
+                // contained inside the merged bar (between AddressPill and action buttons in stacked
+                // mode, or embedded in AddressPill in single-row mode). Hide the standalone overlay
+                // to prevent detached full-screen lines outside the card.
                 com.petal.browser.ui.components.PetalProgressBarBridge.hide(progressBarCompose);
-                com.petal.browser.compose.home.PetalAddressBarBridge.updateProgressValue(100);
+                if (!refreshState.isRefreshing() && !isInternalPage) {
+                    com.petal.browser.compose.home.PetalAddressBarBridge.updateProgressValue(progress);
+                } else {
+                    com.petal.browser.compose.home.PetalAddressBarBridge.updateProgressValue(100);
+                }
+            } else {
+                if (progressBarCompose.getVisibility() != VISIBLE) {
+                    progressBarCompose.setVisibility(VISIBLE);
+                }
+                if (!refreshState.isRefreshing() && !isInternalPage) {
+                    com.petal.browser.ui.components.PetalProgressBarBridge.updateProgress(progressBarCompose, progress);
+                    com.petal.browser.compose.home.PetalAddressBarBridge.updateProgressValue(progress);
+                } else {
+                    com.petal.browser.ui.components.PetalProgressBarBridge.hide(progressBarCompose);
+                    com.petal.browser.compose.home.PetalAddressBarBridge.updateProgressValue(100);
+                }
             }
         }
 

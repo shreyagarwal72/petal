@@ -2,6 +2,14 @@
 
 > *"The landmark 'More Expressive' release elevates Petal Browser to new heights of Material 3 Expressive design, fluid reactive theming, and tactile user customization: introducing a comprehensive ImageToolbox-style Layout & Controls suite with live component styling, seamless Liquid Glass auto-adaptation, PixelMusic-grade expressive fast-scrollbars, overhauled Mix Palettes with one-tap harmony recipes, bi-directional Send Tab to Device across all connected Firefox instances, and a robust Reader Mode with Read Aloud text-to-speech."*
 
+#### 🎨 Official Material 3 Expressive Progress Bar & Merged Stack Relocation (`PetalProgressBarBridge.kt`, `PetalMergedBar.kt`, `AddressPill.kt`, `BrowserActivity.java`)
+- **Official Material 3 Expressive Design**:
+  - Completely redesigned website loading linear progress bar to match official Google Material 3 Expressive specifications with 4dp height, rounded capsule active bar, dynamic 4dp gap, rounded track, and a 4dp circular stop indicator dot at the terminus.
+- **Relocated in Merged Address Bar Stack Group**:
+  - Relocated the progress bar in bottom stacked merged bar mode from the detached full-screen line down into the merged card directly between the `AddressPill` and the action buttons row, perfectly matching the pill's width and shape.
+- **Dynamic Layout & Size Matching**:
+  - Synchronized progress bar positioning and horizontal margins across all navigation modes (Top Docked, Top Floating, Bottom Docked, Bottom Floating, Merged Single Row, Merged Stacked) so the progress bar seamlessly tracks the address bar width rather than stretching disconnected across the screen.
+
 #### 🛡️ Zero Duplicate Key Safety in Bottom Sheet Lazy Layouts (`PetalMediaPickerBottomSheet.kt`, `PetalLensBottomSheet.kt`, `PetalImageGrabberSheet.kt`, `PetalInactiveTabsSheet.kt`)
 - **Resolved Fatal `IllegalArgumentException: Key was already used`**:
   - Eliminated duplicate key crashes across Bottom Sheet lazy layouts when querying Android `MediaStore` (where images and videos or different storage volumes share identical numeric `_ID` primary keys like `10974`).

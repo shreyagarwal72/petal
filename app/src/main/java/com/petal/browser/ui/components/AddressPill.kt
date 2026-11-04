@@ -419,16 +419,19 @@ fun AddressPill(
                 }
             }
 
-            // Subtle integrated loading progress line
-            if (isLoading && progress > 0f && progress < 1f) {
-                LinearProgressIndicator(
-                    progress = { progress },
+            // Material 3 Expressive integrated loading progress line
+            val isStackedMerged = inMergedBar && BarPrefs.LAYOUT_STACKED.equals(
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                    .getString("sp_merge_address_bar_layout", BarPrefs.LAYOUT_STACKED),
+                ignoreCase = true
+            )
+            if (!isStackedMerged && isLoading && progress > 0f && progress < 1f) {
+                Material3ExpressiveProgressIndicator(
+                    progress = progress,
+                    visible = isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(2.dp)
-                        .clip(RoundedCornerShape(1.dp)),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = Color.Transparent
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
                 )
             }
         }
