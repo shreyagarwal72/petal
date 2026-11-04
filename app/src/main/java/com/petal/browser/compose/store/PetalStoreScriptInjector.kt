@@ -21,31 +21,49 @@ object PetalStoreScriptInjector {
     private const val TAG = "PetalStoreScripts"
 
     /** Builds the injection payload for [pageUrl], or null when no enabled script applies. */
-    fun buildPayload(context: Context, pageUrl: String): String? {
+    fun buildPayload(context: Context, pageUrl: String, stage: String = "document-idle"): String? {
         if (!pageUrl.startsWith("http://", ignoreCase = true) &&
             !pageUrl.startsWith("https://", ignoreCase = true)
         ) return null
 
-        val scripts = PetalStoreCatalog.enabledScriptsFor(context.applicationContext, pageUrl)
-        if (scripts.isEmpty()) return null
+        val storeScripts = if (stage == "document-idle") {
+            PetalStoreCatalog.enabledScriptsFor(context.applicationContext, pageUrl)
+        } else {
+            emptyList()
+        }
+        val customScripts = PetalUserScriptEngine.getActiveScriptsForUrl(context.applicationContext, pageUrl, stage)
+
+        if (storeScripts.isEmpty() && customScripts.isEmpty()) return null
 
         val body = StringBuilder()
         body.append("var r=window.__petalStoreScripts=window.__petalStoreScripts||{};\n")
-        for (script in scripts) {
+        // Standard Greasemonkey/Violentmonkey Polyfill: GM_addStyle, GM_log, unsafeWindow
+        body.append("window.unsafeWindow=window.unsafeWindow||window;\n")
+        body.append("if(!window.GM_addStyle){window.GM_addStyle=function(css){var s=document.createElement('style');s.textContent=css;(document.head||document.documentElement).appendChild(s);return s;};}\n")
+        body.append("if(!window.GM_log){window.GM_log=console.log.bind(console);}\n")
+
+        for (script in storeScripts) {
             val id = script.id.replace("'", "")
-            // The guard keeps a second onPageStop for the same document from stacking timers.
             body.append("if(!r['").append(id).append("']){r['").append(id).append("']=1;try{\n")
             body.append(script.scriptContent)
-            body.append("\n}catch(e){}}\n")
+            body.append("\n}catch(e){console.warn('Script error', e);}}\n")
         }
+
+        for ((idx, scriptText) in customScripts.withIndex()) {
+            val id = "custom_" + stage + "_" + idx
+            body.append("if(!r['").append(id).append("']){r['").append(id).append("']=1;try{\n")
+            body.append(scriptText)
+            body.append("\n}catch(e){console.warn('UserScript error', e);}}\n")
+        }
+
         return "void((function(){" + body + "})());"
     }
 
-    /** Injects every enabled, matching store script into [session]. Safe to call on any page. */
-    fun inject(session: GeckoSession, context: Context, pageUrl: String?) {
+    /** Injects every enabled, matching store and user script into [session] at [stage]. Safe to call on any page. */
+    fun inject(session: GeckoSession, context: Context, pageUrl: String?, stage: String = "document-idle") {
         if (pageUrl.isNullOrBlank()) return
         try {
-            val payload = buildPayload(context, pageUrl) ?: return
+            val payload = buildPayload(context, pageUrl, stage) ?: return
             session.loadUri("javascript:" + Uri.encode(payload))
         } catch (t: Throwable) {
             Log.w(TAG, "Store script injection failed for $pageUrl: ${t.message}")

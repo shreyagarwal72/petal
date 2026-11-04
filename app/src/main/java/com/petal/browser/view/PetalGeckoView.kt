@@ -154,6 +154,28 @@ class PetalGeckoView @JvmOverloads constructor(
                 }
                 return
             }
+
+            // Universal UserScript detection (.user.js) from GreasyFork, OpenUserJS, GitHub, etc.
+            val isUserScript = parsed?.path?.endsWith(".user.js", ignoreCase = true) == true ||
+                response.headers["content-type"]?.contains("application/x-javascript", ignoreCase = true) == true && responseUrl.contains(".user.js", ignoreCase = true)
+            if (isUserScript) {
+                Thread {
+                    try {
+                        val body = response.body?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                        if (!body.isNullOrBlank()) {
+                            val meta = com.petal.browser.compose.store.PetalUserScriptEngine.installScript(activity, body)
+                            activity.runOnUiThread {
+                                com.petal.browser.view.PetalToast.show(activity, "Installed UserScript: ${meta.name}")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        activity.runOnUiThread {
+                            com.petal.browser.view.PetalToast.show(activity, "Failed to install UserScript: ${e.message}")
+                        }
+                    }
+                }.start()
+                return
+            }
             val headers = response.headers
             val contentDisposition = headers?.entries?.firstOrNull {
                 it.key.equals("Content-Disposition", ignoreCase = true)
@@ -981,6 +1003,10 @@ class PetalGeckoView @JvmOverloads constructor(
                             evaluateJavascript(uboPayload)
                         } catch (_: Throwable) {}
                     }
+                    // Inject document-start UserScripts
+                    try {
+                        com.petal.browser.compose.store.PetalStoreScriptInjector.inject(session, context, url, "document-start")
+                    } catch (_: Throwable) {}
                 }
 
                 if (engineSession != null) {
@@ -1046,7 +1072,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 pwaManager?.detectPwaManifest()
                 injectClientPrivacyProtections()
                 if (success) {
-                    com.petal.browser.compose.store.PetalStoreScriptInjector.inject(session, context, currentUrl)
+                    com.petal.browser.compose.store.PetalStoreScriptInjector.inject(session, context, currentUrl, "document-idle")
                     injectTorraysAutoSearch(currentUrl)
                 }
             }
@@ -1242,6 +1268,30 @@ class PetalGeckoView @JvmOverloads constructor(
                             }
                         }
                     } catch (_: Throwable) {}
+                    return GeckoResult.fromValue(AllowOrDeny.DENY)
+                }
+
+                // Universal Adblock Filter List Subscription Link handler (abp:subscribe?location=...&title=...)
+                if (uri.startsWith("abp:subscribe", ignoreCase = true)) {
+                    try {
+                        val parsedUri = android.net.Uri.parse(uri)
+                        val location = parsedUri.getQueryParameter("location")
+                        val title = parsedUri.getQueryParameter("title") ?: "Custom Filter List"
+                        if (!location.isNullOrBlank()) {
+                            val result = com.petal.browser.browser.PetalFilterSubscriptionManager.addCustomSubscription(context, title, location)
+                            post {
+                                if (result.isSuccess) {
+                                    com.petal.browser.view.PetalToast.show(context, "Subscribed to filter list: $title")
+                                } else {
+                                    com.petal.browser.view.PetalToast.show(context, "Subscription failed: ${result.exceptionOrNull()?.message}")
+                                }
+                            }
+                        }
+                    } catch (e: Throwable) {
+                        post {
+                            com.petal.browser.view.PetalToast.show(context, "Failed to subscribe to filter list: ${e.message}")
+                        }
+                    }
                     return GeckoResult.fromValue(AllowOrDeny.DENY)
                 }
 
