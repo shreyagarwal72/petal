@@ -158,9 +158,9 @@
         android:layout_alignParentBottom="true"
         android:elevation="40dp" />
 
-    <!-- Material 3 Expressive Dynamic Cutout Island (Android 16 Live Actions & Non-Supported Fallback Island) -->
+    <!-- Material 3 Expressive Petal NowBar (Android 16 Live Actions & Dynamic Island) -->
     <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/petal_custom_island_compose"
+        android:id="@+id/petal_nowbar_compose"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"

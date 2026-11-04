@@ -4975,11 +4975,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.ui.components.PetalSnackbarDispatcher.INSTANCE.attachComposeView(this, snackbarCompose);
         }
 
-        androidx.compose.ui.platform.ComposeView customIslandCompose = findViewById(R.id.petal_custom_island_compose);
-        if (customIslandCompose != null) {
-            com.petal.browser.island.PetalCutoutIslandBridge.attachIsland(
+        androidx.compose.ui.platform.ComposeView nowBarCompose = findViewById(R.id.petal_nowbar_compose);
+        if (nowBarCompose == null) {
+            nowBarCompose = findViewById(R.id.petal_custom_island_compose);
+        }
+        if (nowBarCompose != null) {
+            com.petal.browser.island.PetalNowBarBridge.attachNowBar(
                     this,
-                    customIslandCompose,
+                    nowBarCompose,
                     new com.petal.browser.live.LiveActionActionListener() {
                         @Override
                         public void onDownloadTogglePause(long downloadId) {
@@ -5028,6 +5031,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         @Override
                         public void onOpenProfile() {
                             showAccountSyncScreen();
+                        }
+
+                        @Override
+                        public void onOpenPasswords() {
+                            openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.PRIVACY);
+                        }
+
+                        @Override
+                        public void onCopyText(String text, String label) {
+                            try {
+                                android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+                                if (cm != null) {
+                                    cm.setPrimaryClip(android.content.ClipData.newPlainText(label, text));
+                                    com.petal.browser.view.PetalToast.show(BrowserActivity.this, label + " copied to clipboard");
+                                }
+                            } catch (Throwable t) {
+                                android.util.Log.w("BrowserActivity", "Failed to copy text", t);
+                            }
                         }
                     }
             );

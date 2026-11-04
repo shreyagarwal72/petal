@@ -127,7 +127,7 @@ interface SettingsRepository {
     val autoPreviewDownloadedImages: Flow<Boolean>
     val liveUpdates: Flow<Boolean>
 
-    // Expressive Cutout Island & Live Actions Settings
+    // Petal NowBar & Live Actions Settings
     val islandMode: Flow<String>
     val islandAnimationStyle: Flow<String>
     val islandAnimationSpeed: Flow<String>

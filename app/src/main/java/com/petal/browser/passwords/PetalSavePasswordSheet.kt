@@ -2,14 +2,15 @@ package com.petal.browser.passwords
 
 import android.app.Dialog
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,7 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -34,13 +39,16 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.island.CutoutMetrics
+import com.petal.browser.live.PetalLiveActionBus
 import com.petal.browser.ui.glass.*
+import kotlinx.coroutines.delay
 
 /**
  * PetalSavePasswordSheet
  *
  * Material 3 Expressive interactive bottom sheet for in-browser password saving,
- * inspired by Google Chrome, Mozilla Firefox, and PixelMusic's tactile M3 design.
+ * featuring seamless morphing transitions directly into Petal NowBar with spring physics.
  */
 object PetalSavePasswordSheet {
 
@@ -67,16 +75,15 @@ object PetalSavePasswordSheet {
                                 domain = domain,
                                 initialUsername = initialUsername,
                                 initialPassword = initialPassword,
-                                onSave = { u, p ->
-                                    onSave(u, p)
-                                    dialog.dismiss()
-                                },
+                                onSave = onSave,
                                 onNever = {
                                     onNeverSave()
                                     dialog.dismiss()
                                 },
                                 onDismiss = {
                                     onDismiss()
+                                },
+                                onExitAnimationFinished = {
                                     dialog.dismiss()
                                 }
                             )
@@ -87,9 +94,10 @@ object PetalSavePasswordSheet {
                 dialog.window?.let { win ->
                     win.setLayout(
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
                     )
-                    win.setGravity(android.view.Gravity.BOTTOM)
+                    win.clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                    win.setWindowAnimations(0)
                 }
                 dialog.show()
             } catch (t: Throwable) {
@@ -106,7 +114,8 @@ private fun SavePasswordSheetContent(
     initialPassword: String,
     onSave: (String, String) -> Unit,
     onNever: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onExitAnimationFinished: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val haptic = remember { PetalHapticEngine.getInstance(context) }
@@ -123,212 +132,342 @@ private fun SavePasswordSheetContent(
             .substringBefore(':')
     }
 
+    var isMorphing by remember { mutableStateOf(false) }
+    var isClosing by remember { mutableStateOf(false) }
+
+    val view = LocalView.current
+    val density = LocalDensity.current
+    val configuration = LocalConfiguration.current
+    val screenHeightDp = configuration.screenHeightDp.dp
+    val cutoutOffsetXDp = remember(view) {
+        CutoutMetrics.cutoutHorizontalOffsetDp(view)
+    }
+
+    // Scrim fade animation
+    val scrimAlpha by animateFloatAsState(
+        targetValue = if (isMorphing || isClosing) 0f else 0.52f,
+        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
+        label = "scrimAlpha"
+    )
+
+    // Morph animations towards Petal NowBar coordinates
+    val scale by animateFloatAsState(
+        targetValue = if (isMorphing) 0.16f else if (isClosing) 0.92f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "scale"
+    )
+
+    val targetTranslationY = with(density) { (-screenHeightDp + 52.dp).toPx() }
+    val translationY by animateFloatAsState(
+        targetValue = if (isMorphing) targetTranslationY else if (isClosing) with(density) { 320.dp.toPx() } else 0f,
+        animationSpec = spring(
+            dampingRatio = 0.85f,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "transY"
+    )
+
+    val targetTranslationX = with(density) { cutoutOffsetXDp.dp.toPx() }
+    val translationX by animateFloatAsState(
+        targetValue = if (isMorphing) targetTranslationX else 0f,
+        animationSpec = spring(
+            dampingRatio = 0.85f,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "transX"
+    )
+
+    val alpha by animateFloatAsState(
+        targetValue = if (isMorphing) 0f else if (isClosing) 0f else 1f,
+        animationSpec = tween(durationMillis = 320, delayMillis = 40),
+        label = "alpha"
+    )
+
+    val cornerRadius by animateDpAsState(
+        targetValue = if (isMorphing) 50.dp else 32.dp,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "corner"
+    )
+
+    LaunchedEffect(isMorphing) {
+        if (isMorphing) {
+            delay(320L)
+            onSave(username, password)
+            onExitAnimationFinished()
+        }
+    }
+
+    LaunchedEffect(isClosing) {
+        if (isClosing) {
+            delay(280L)
+            onExitAnimationFinished()
+        }
+    }
+
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = rememberGlassSheen(isGlass)
-    val sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+    val sheetShape = RoundedCornerShape(
+        topStart = cornerRadius,
+        topEnd = cornerRadius,
+        bottomStart = if (isMorphing) cornerRadius else 0.dp,
+        bottomEnd = if (isMorphing) cornerRadius else 0.dp
+    )
 
-    PetalGlassContainer(
-        modifier = Modifier.fillMaxWidth(),
-        enabled = isGlass,
-        live = true
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter
     ) {
-        Surface(
-            shape = sheetShape,
-            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
-            shadowElevation = if (isGlass) 0.dp else 16.dp,
+        // Scrim backdrop
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = scrimAlpha))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    if (!isMorphing && !isClosing) {
+                        isClosing = true
+                        onDismiss()
+                    }
+                }
+        )
+
+        // Morphing Sheet Container
+        PetalGlassContainer(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .liquidGlassChrome(shape = sheetShape, enabled = isGlass, sheenIntensity = sheen)
+                .graphicsLayer {
+                    this.scaleX = scale
+                    this.scaleY = scale
+                    this.translationX = translationX
+                    this.translationY = translationY
+                    this.alpha = alpha
+                },
+            enabled = isGlass,
+            live = true
         ) {
-            Column(
+            Surface(
+                shape = sheetShape,
+                color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 6.dp,
+                shadowElevation = if (isGlass) 0.dp else 16.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .navigationBarsPadding()
+                    .liquidGlassChrome(shape = sheetShape, enabled = isGlass, sheenIntensity = sheen)
             ) {
-                // Drag Handle
-                Box(
+                Column(
                     modifier = Modifier
-                        .size(width = 36.dp, height = 4.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                )
-
-                Spacer(modifier = Modifier.height(18.dp))
-
-                // Header with expressive key icon badge
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(48.dp)
+                    // Drag Handle
+                    Box(
+                        modifier = Modifier
+                            .size(width = 36.dp, height = 4.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                    )
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    // Header with expressive key icon badge
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Key,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(26.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Save password?",
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = cleanDomain,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                if (!isMorphing && !isClosing) {
+                                    isClosing = true
+                                    onDismiss()
+                                }
+                            }
+                        ) {
                             Icon(
-                                imageVector = Icons.Rounded.Key,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(26.dp)
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Close",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Save password?",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = cleanDomain,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = "Close",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Editable Fields Container (PixelMusic / M3 Containment)
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    // Editable Fields Container (PixelMusic / M3 Containment)
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Username field
-                        OutlinedTextField(
-                            value = username,
-                            onValueChange = { username = it },
-                            label = { Text("Username or Email") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Rounded.Person,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            },
-                            singleLine = true,
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                            )
-                        )
-
-                        // Password field
-                        OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            label = { Text("Password") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Rounded.Lock,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            },
-                            trailingIcon = {
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            // Username field
+                            OutlinedTextField(
+                                value = username,
+                                onValueChange = { username = it },
+                                label = { Text("Username or Email") },
+                                leadingIcon = {
                                     Icon(
-                                        imageVector = if (passwordVisible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                                        contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        imageVector = Icons.Rounded.Person,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
+                                },
+                                singleLine = true,
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                )
+                            )
+
+                            // Password field
+                            OutlinedTextField(
+                                value = password,
+                                onValueChange = { password = it },
+                                label = { Text("Password") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Lock,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                },
+                                trailingIcon = {
+                                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                        Icon(
+                                            imageVector = if (passwordVisible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
+                                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
+                                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                singleLine = true,
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Action Buttons (PixelMusic inspired tactile expressive layout)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Secondary action: "Never for this site"
+                        OutlinedButton(
+                            onClick = {
+                                if (!isMorphing && !isClosing) {
+                                    haptic.playClick(context)
+                                    onNever()
                                 }
                             },
-                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            singleLine = true,
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                            enabled = !isMorphing && !isClosing,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Block,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
                             )
-                        )
-                    }
-                }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Never",
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1
+                            )
+                        }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Action Buttons (PixelMusic inspired tactile expressive layout)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Secondary action: "Never for this site"
-                    OutlinedButton(
-                        onClick = {
-                            haptic.playClick(context)
-                            onNever()
-                        },
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(50.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Block,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Never",
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1
-                        )
-                    }
-
-                    // Primary action: "Save"
-                    Button(
-                        onClick = {
-                            haptic.playClick(context)
-                            onSave(username, password)
-                        },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(50.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Save",
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1
-                        )
+                        // Primary action: "Save" with seamless morph handoff to Petal NowBar
+                        Button(
+                            onClick = {
+                                if (!isMorphing && !isClosing) {
+                                    haptic.playHeavyClick(context)
+                                    // Fluid spatial handoff: dispatch live event directly to Petal NowBar
+                                    PetalLiveActionBus.postCredentialSaved(
+                                        domain = cleanDomain,
+                                        username = username,
+                                        password = password,
+                                        isUpdate = false
+                                    )
+                                    isMorphing = true
+                                }
+                            },
+                            enabled = !isMorphing && !isClosing,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Save",
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
             }

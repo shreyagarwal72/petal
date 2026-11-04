@@ -2,7 +2,7 @@
  * PetalLiveIsland.kt
  * ──────────────────────────────────────────────────────────────────────────
  * The Material 3 Expressive "live update" island. One composable, used in two places:
- *   • inside Petal (PetalCutoutIsland)
+ *   • inside Petal (PetalNowBar)
  *   • over other apps (PetalLiveOverlayController) for devices without Android 16 Live Updates,
  *     or alongside them when the user picks "Always show island".
  *
@@ -111,6 +111,12 @@ import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Key
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
 import com.petal.browser.media.PetalAudioColorEngine
 import com.petal.browser.media.PetalCookieShape
 import kotlinx.coroutines.delay
@@ -149,6 +155,7 @@ private fun islandPalette(primaryItem: LiveActionItem?): IslandPalette {
 
     val accentColor = when {
         primaryItem is LiveActionItem.Achievement -> Color(0xFFFFB74D) // Celebratory Gold
+        primaryItem is LiveActionItem.Credential -> Color(0xFF00E676) // Security Emerald
         audioPalette?.primary != null -> audioPalette.primary
         else -> c.primary
     }
@@ -491,6 +498,36 @@ private fun CompactPill(item: LiveActionItem, palette: IslandPalette) {
                     color = palette.accent
                 )
             }
+
+            is LiveActionItem.Credential -> {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(palette.accent.copy(alpha = 0.25f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Rounded.Lock,
+                        contentDescription = null,
+                        tint = palette.accent,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Text(
+                    text = item.domain,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                    modifier = Modifier.widthIn(max = 140.dp),
+                    color = palette.content
+                )
+                Text(
+                    text = if (item.isUpdate) "Updated ✓" else "Saved ✓",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = palette.accent
+                )
+            }
         }
     }
 }
@@ -533,6 +570,9 @@ private fun SatelliteBubble(item: LiveActionItem, palette: IslandPalette, onClic
                 }
                 is LiveActionItem.Achievement -> {
                     Icon(Icons.Rounded.EmojiEvents, contentDescription = null, tint = palette.accent, modifier = Modifier.size(20.dp))
+                }
+                is LiveActionItem.Credential -> {
+                    Icon(Icons.Rounded.Lock, contentDescription = null, tint = palette.accent, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -799,6 +839,119 @@ private fun ExpandedCard(
                         Icon(Icons.Rounded.EmojiEvents, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("View in Profile")
+                    }
+                }
+            }
+
+            is LiveActionItem.Credential -> {
+                var passwordVisible by remember { mutableStateOf(false) }
+
+                CardHeader(
+                    leading = {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(palette.accent.copy(alpha = 0.25f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Rounded.Lock, contentDescription = null, tint = palette.accent, modifier = Modifier.size(24.dp))
+                        }
+                    },
+                    title = if (item.isUpdate) "Password Updated" else "Password Saved",
+                    subtitle = "${item.domain} • Keystore AES-256",
+                    palette = palette,
+                    onCollapse = onCollapse
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = palette.content.copy(alpha = 0.06f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Rounded.Person, contentDescription = null, tint = palette.accent, modifier = Modifier.size(16.dp))
+                            Text(
+                                text = item.username.ifBlank { "User" },
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                color = palette.content
+                            )
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Rounded.Key, contentDescription = null, tint = palette.accent, modifier = Modifier.size(16.dp))
+                                Text(
+                                    text = if (passwordVisible) item.password else "••••••••••••",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = palette.content
+                                )
+                            }
+                            IconButton(
+                                onClick = { passwordVisible = !passwordVisible },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
+                                    contentDescription = "Toggle password visibility",
+                                    tint = palette.contentMuted,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            listener.onCopyText(item.password, "Password")
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = palette.content)
+                    ) {
+                        Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Copy", maxLines = 1)
+                    }
+
+                    FilledTonalButton(
+                        onClick = {
+                            listener.onOpenPasswords()
+                            onCollapse()
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = palette.accent,
+                            contentColor = palette.onAccent
+                        )
+                    ) {
+                        Icon(Icons.Rounded.Lock, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Vault", maxLines = 1)
                     }
                 }
             }

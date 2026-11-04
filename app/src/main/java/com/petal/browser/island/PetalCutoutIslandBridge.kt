@@ -1,16 +1,16 @@
 package com.petal.browser.island
 
-import android.app.Activity
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.lifecycle.setViewTreeViewModelStoreOwner
-import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.live.LiveActionActionListener
-import com.petal.browser.live.PetalLiveActionBus
-import com.petal.browser.ui.theme.PetalExpressiveTheme
 
+/**
+ * Backward-compatibility wrapper. The primary implementation is now in [PetalNowBarBridge].
+ */
+@Deprecated(
+    message = "Renamed to PetalNowBarBridge",
+    replaceWith = ReplaceWith("PetalNowBarBridge")
+)
 object PetalCutoutIslandBridge {
 
     @JvmStatic
@@ -19,19 +19,6 @@ object PetalCutoutIslandBridge {
         composeView: ComposeView,
         listener: LiveActionActionListener? = null
     ) {
-        if (listener != null) {
-            PetalLiveActionBus.setActionListener(listener)
-        }
-
-        composeView.setViewTreeLifecycleOwner(activity)
-        composeView.setViewTreeViewModelStoreOwner(activity)
-        composeView.setViewTreeSavedStateRegistryOwner(activity)
-        composeView.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-
-        composeView.setContent {
-            PetalExpressiveTheme {
-                PetalCutoutIsland(actionListener = listener)
-            }
-        }
+        PetalNowBarBridge.attachNowBar(activity, composeView, listener)
     }
 }

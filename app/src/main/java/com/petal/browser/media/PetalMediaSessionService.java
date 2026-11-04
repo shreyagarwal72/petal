@@ -243,7 +243,7 @@ public class PetalMediaSessionService extends Service {
         updateMetadata();
         updatePlaybackState(playing, positionMs);
 
-        // Update unified PetalLiveActionBus for Android 16 and Custom Cutout Island
+        // Update unified PetalLiveActionBus for Android 16 and Petal NowBar
         PetalLiveActionBus.updateMedia(
                 this.currentTitle,
                 this.currentArtist,

@@ -1,7 +1,7 @@
 /*
  * PetalBurnProtection.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Automatic built-in AMOLED / OLED burn-in protection for Petal Cutout Island.
+ * Automatic built-in AMOLED / OLED burn-in protection for Petal NowBar.
  *
  * Implements:
  * 1. Automatic hardware display detection (HDR / OLED characteristics + AMOLED settings)

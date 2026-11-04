@@ -476,10 +476,10 @@ object PetalSettingsSearchIndex {
         ),
         SettingsSearchItem(
             id = "media_cutout_island",
-            title = "Expressive Cutout Island & Live Updates",
-            subtitle = "Display media playback, downloads, and file viewer status around hardware camera cutout with AMOLED protection",
+            title = "Petal NowBar & Live Actions",
+            subtitle = "Display media playback, downloads, password alerts, and file viewer status around hardware camera cutout with AMOLED protection",
             category = SettingsCategory.MEDIA,
-            keywords = listOf("island", "cutout", "camera cutout", "punch hole", "notch", "live updates", "amoled", "burn protection", "dynamic island")
+            keywords = listOf("nowbar", "petal nowbar", "island", "cutout", "camera cutout", "punch hole", "notch", "live updates", "amoled", "burn protection", "dynamic island", "password")
         )
     )
 

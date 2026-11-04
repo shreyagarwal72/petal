@@ -118,8 +118,8 @@ fun MediaSettingsScreen(
 
         Column(modifier = Modifier.fillMaxSize()) {
             ExpressiveHeader(
-                title = "Media & Cutout Island",
-                subtitle = "Video player, media sniffer, live actions & cutout island",
+                title = "Media & Petal NowBar",
+                subtitle = "Video player, media sniffer, live actions & Petal NowBar",
                 onBack = onNavigateBack
             )
 
@@ -255,9 +255,9 @@ fun MediaSettingsScreen(
                     )
                 }
 
-                // ── Section 2: EXPRESSIVE CUTOUT ISLAND & LIVE ACTIONS ──────────────
+                // ── Section 2: PETAL NOWBAR & LIVE ACTIONS ──────────────
                 PetalSettingsSection(
-                    title = "Expressive Cutout Island & Live Updates",
+                    title = "Petal NowBar & Live Actions",
                     icon = Icons.Rounded.DynamicFeed,
                     cardId = "live_actions_cutout_island",
                     targetHighlightId = targetHighlightItemId
@@ -266,7 +266,7 @@ fun MediaSettingsScreen(
                     PetalGroup(rowCount = 1) { _, rowPosition ->
                         PetalSettingsToggleRow(
                             title = stringResource(R.string.ui_live_updates_alerts),
-                            subtitle = "Promoted status bar chip on Android 16 & expressive dynamic island on non-supported devices",
+                            subtitle = "Promoted status bar chip on Android 16 & Petal NowBar on non-supported devices",
                             icon = Icons.Rounded.NotificationsActive,
                             checked = liveUpdates && notificationsAllowed,
                             position = rowPosition,
@@ -360,7 +360,7 @@ fun MediaSettingsScreen(
 
                         // ── Placement & Geometry Calibration ──
                         Text(
-                            text = "Cutout Alignment & Placement",
+                            text = "NowBar Alignment & Placement",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,

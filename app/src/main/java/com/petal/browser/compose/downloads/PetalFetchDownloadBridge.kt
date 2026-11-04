@@ -545,7 +545,7 @@ object PetalFetchDownloadBridge {
             )
         _downloadItems.value = items
 
-        // Forward to Petal Live Actions & Custom Cutout Island Hub
+        // Forward to Petal Live Actions & Petal NowBar Hub
         try {
             val active = items.firstOrNull {
                 it.status == DownloadStatus.STATUS_RUNNING || it.status == DownloadStatus.STATUS_PAUSED

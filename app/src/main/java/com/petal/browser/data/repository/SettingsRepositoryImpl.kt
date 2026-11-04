@@ -489,7 +489,7 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_live_updates", true)
     }
 
-    // ── Expressive Cutout Island & Live Actions ──────────────────────────────
+    // ── Petal NowBar & Live Actions ──────────────────────────────
     override val islandMode: Flow<String> = preferenceFlow("sp_island_mode") {
         sp.getString("sp_island_mode", "AUTO") ?: "AUTO"
     }

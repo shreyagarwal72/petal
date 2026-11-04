@@ -302,7 +302,7 @@ object PetalProgressStore {
         sp(ctx).edit().putString(KEY_BADGES, unlockedBadges.joinToString(",")).apply()
         newlyUnlocked = newlyUnlocked + fresh
 
-        // Broadcast to Cutout Island for interactive celebratory pill and tap navigation
+        // Broadcast to Petal NowBar for interactive celebratory pill and tap navigation
         fresh.forEach { badgeId ->
             val b = PETAL_BADGES.firstOrNull { it.id == badgeId }
             if (b != null) {

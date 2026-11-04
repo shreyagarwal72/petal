@@ -4,7 +4,7 @@
  * Unified State & Event Hub for Petal Live Actions.
  * Drives both:
  * 1. Android 16 Native Live Actions (Rich Ongoing Notifications / Status Bar Chips)
- * 2. Expressive Custom Cutout Island (In-App and Overlay for non-supported devices)
+ * 2. Expressive Petal NowBar (In-App and Overlay for non-supported devices)
  */
 
 package com.petal.browser.live
@@ -12,10 +12,15 @@ package com.petal.browser.live
 import android.graphics.Bitmap
 import com.petal.browser.compose.downloads.DownloadItem
 import com.petal.browser.compose.downloads.DownloadStatus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 sealed class LiveActionItem(open val id: String) {
@@ -64,6 +69,14 @@ sealed class LiveActionItem(open val id: String) {
         val isMilestone: Boolean = false,
         val level: Int = 0
     ) : LiveActionItem("ach_${achievementId}")
+
+    data class Credential(
+        val domain: String,
+        val username: String,
+        val password: String,
+        val isUpdate: Boolean = false,
+        val timestamp: Long = System.currentTimeMillis()
+    ) : LiveActionItem("pwd_${domain}_$timestamp")
 }
 
 data class LiveActionBusState(
@@ -83,6 +96,8 @@ interface LiveActionActionListener {
     fun onOpenBrowser()
     fun onOpenFileViewer() {}
     fun onOpenProfile() {}
+    fun onOpenPasswords() {}
+    fun onCopyText(text: String, label: String = "Text") {}
     fun onDismiss(id: String) {
         PetalLiveActionBus.dismiss(id)
     }
@@ -90,6 +105,7 @@ interface LiveActionActionListener {
 
 object PetalLiveActionBus {
 
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val _state = MutableStateFlow(LiveActionBusState())
     @get:JvmStatic
     val state: StateFlow<LiveActionBusState> = _state.asStateFlow()
@@ -230,10 +246,31 @@ object PetalLiveActionBus {
             level = level
         )
         promoteOrUpdate(achievement)
-        // Auto-dismiss transient achievement from cutout island after 8 seconds
+        // Auto-dismiss transient achievement from Petal NowBar after 8 seconds
         scope.launch {
             delay(8_000L)
             dismiss(achievement.id)
+        }
+    }
+
+    @JvmStatic
+    fun postCredentialSaved(
+        domain: String,
+        username: String,
+        password: String,
+        isUpdate: Boolean = false
+    ) {
+        val cred = LiveActionItem.Credential(
+            domain = domain,
+            username = username,
+            password = password,
+            isUpdate = isUpdate
+        )
+        promoteOrUpdate(cred)
+        // Auto-dismiss credential alert from Petal NowBar after 6 seconds
+        scope.launch {
+            delay(6_000L)
+            dismiss(cred.id)
         }
     }
 
