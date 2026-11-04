@@ -101,6 +101,12 @@ android {
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
+
+            // Official Android Native Crash Support
+            // Enables Google Play Console / Android Vitals to symbolicate native crash stack traces (DWARF + symbol tables)
+            ndk {
+                debugSymbolLevel 'FULL'
+            }
         }
         debug {
             signingConfig signingConfigs.debug
