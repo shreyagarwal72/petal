@@ -33,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -103,7 +104,20 @@ fun PetalQrScannerScreen(
         } catch (_: Exception) {}
     }
 
-    fun processChosenImageUri(uri: android.net.Uri) {
+    var selectedGalleryUri by rememberSaveable { mutableStateOf<String?>(null) }
+    var showScanProviderDialog by rememberSaveable { mutableStateOf(false) }
+    var fallbackLensPromptUri by rememberSaveable { mutableStateOf<String?>(null) }
+
+    fun dispatchImageToLens(uri: android.net.Uri) {
+        try {
+            PetalLensManager.launchLensForImageUri(context, uri)
+            onDismiss()
+        } catch (_: Throwable) {
+            PetalToast.show(context, "Unable to launch Google Lens", Toast.LENGTH_SHORT)
+        }
+    }
+
+    fun decodeQrFromImageUri(uri: android.net.Uri) {
         isDecodingGallery = true
         coroutineScope.launch(Dispatchers.IO) {
             try {
@@ -116,7 +130,7 @@ fun PetalQrScannerScreen(
                         vibrateSuccess()
                         detectedValue = decoded
                     } else {
-                        PetalToast.show(context, "No QR code or barcode found in photo", Toast.LENGTH_SHORT)
+                        fallbackLensPromptUri = uri.toString()
                     }
                 }
             } catch (_: Throwable) {
@@ -128,16 +142,63 @@ fun PetalQrScannerScreen(
         }
     }
 
+    fun handleSelectedImage(uri: android.net.Uri) {
+        val provider = PetalLensManager.snapProvider(context)
+        when (provider) {
+            PetalLensManager.SnapProvider.GOOGLE_LENS -> {
+                dispatchImageToLens(uri)
+            }
+            PetalLensManager.SnapProvider.PETAL_SCANNER -> {
+                decodeQrFromImageUri(uri)
+            }
+            PetalLensManager.SnapProvider.ASK -> {
+                selectedGalleryUri = uri.toString()
+                showScanProviderDialog = true
+            }
+        }
+    }
+
     val galleryPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: android.net.Uri? ->
-        if (uri != null) processChosenImageUri(uri)
+        if (uri != null) handleSelectedImage(uri)
     }
 
     val galleryChooserFallbackLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: android.net.Uri? ->
-        if (uri != null) processChosenImageUri(uri)
+        if (uri != null) handleSelectedImage(uri)
+    }
+
+    val galleryIntentFallbackLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = result.data?.data
+        if (uri != null) handleSelectedImage(uri)
+    }
+
+    fun launchSafePhotoPicker() {
+        try {
+            galleryPickerLauncher.launch(
+                androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        } catch (_: Throwable) {
+            try {
+                galleryChooserFallbackLauncher.launch("image/*")
+            } catch (_: Throwable) {
+                try {
+                    val pickIntent = android.content.Intent(
+                        android.content.Intent.ACTION_PICK,
+                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    ).apply {
+                        type = "image/*"
+                    }
+                    galleryIntentFallbackLauncher.launch(pickIntent)
+                } catch (_: Throwable) {
+                    PetalToast.show(context, "Unable to launch photo picker", Toast.LENGTH_SHORT)
+                }
+            }
+        }
     }
 
     DisposableEffect(Unit) {
@@ -354,17 +415,7 @@ fun PetalQrScannerScreen(
                         .then(if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
                         .bouncyClickable(enabled = !isDecodingGallery) {
                             PetalHapticEngine.getInstance(context).playClick(context)
-                            try {
-                                galleryPickerLauncher.launch(
-                                    androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                )
-                            } catch (_: Throwable) {
-                                try {
-                                    galleryChooserFallbackLauncher.launch("image/*")
-                                } catch (_: Throwable) {
-                                    PetalToast.show(context, "Unable to launch photo picker", Toast.LENGTH_SHORT)
-                                }
-                            }
+                            launchSafePhotoPicker()
                         }
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -706,6 +757,235 @@ fun PetalQrScannerScreen(
                 }
             }
         }
+    }
+
+    if (showScanProviderDialog && selectedGalleryUri != null) {
+        val targetUri = remember(selectedGalleryUri) { android.net.Uri.parse(selectedGalleryUri) }
+        var rememberChoice by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = {
+                showScanProviderDialog = false
+                selectedGalleryUri = null
+            },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.ui_choose_scanner_for_image),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(R.string.ui_choose_scanner_for_image_desc),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+
+                    // Option 1: Google Lens
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .bouncyClickable {
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                                if (rememberChoice) {
+                                    PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.GOOGLE_LENS)
+                                }
+                                showScanProviderDialog = false
+                                selectedGalleryUri = null
+                                dispatchImageToLens(targetUri)
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Search,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.ui_search_with_google_lens),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = stringResource(R.string.ui_google_lens),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    // Option 2: Petal QR Scanner
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .bouncyClickable {
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                                if (rememberChoice) {
+                                    PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.PETAL_SCANNER)
+                                }
+                                showScanProviderDialog = false
+                                selectedGalleryUri = null
+                                decodeQrFromImageUri(targetUri)
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.QrCodeScanner,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.ui_scan_with_petal_qr),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = stringResource(R.string.ui_petal_qr_scanner),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    // Remember choice toggle
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                                rememberChoice = !rememberChoice
+                            }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Checkbox(
+                            checked = rememberChoice,
+                            onCheckedChange = { rememberChoice = it }
+                        )
+                        Text(
+                            text = stringResource(R.string.ui_remember_choice),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showScanProviderDialog = false
+                        selectedGalleryUri = null
+                    }
+                ) {
+                    Text(stringResource(R.string.app_cancel))
+                }
+            }
+        )
+    }
+
+    if (fallbackLensPromptUri != null) {
+        val targetUri = remember(fallbackLensPromptUri) { android.net.Uri.parse(fallbackLensPromptUri) }
+        AlertDialog(
+            onDismissRequest = { fallbackLensPromptUri = null },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.ui_google_lens),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.ui_no_qr_found_lens_prompt),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val uriToDispatch = targetUri
+                        fallbackLensPromptUri = null
+                        dispatchImageToLens(uriToDispatch)
+                    },
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(stringResource(R.string.ui_search_with_google_lens))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { fallbackLensPromptUri = null }) {
+                    Text(stringResource(R.string.app_cancel))
+                }
+            }
+        )
     }
     }
 }

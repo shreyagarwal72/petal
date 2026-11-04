@@ -296,6 +296,12 @@
     <string name="ui_scan_again">Scan Again</string>
     <string name="ui_choose_snap_photo_scanner">Choose Snap Photo scanner</string>
     <string name="ui_choose_what_should_process_the">Choose what should process the photo. You can change this later in Miscellaneous settings.</string>
+    <string name="ui_choose_scanner_for_image">Choose Scanner for Image</string>
+    <string name="ui_choose_scanner_for_image_desc">Select whether to search this image using Google Lens or scan for QR / barcodes using Petal Scanner.</string>
+    <string name="ui_search_with_google_lens">Search with Google Lens</string>
+    <string name="ui_scan_with_petal_qr">Scan QR / Barcode</string>
+    <string name="ui_no_qr_found_lens_prompt">No QR code found. Search with Google Lens?</string>
+    <string name="ui_remember_choice">Remember choice</string>
     <string name="ui_google_lens">Google Lens</string>
     <string name="ui_ask_every_time">Ask every time</string>
     <string name="ui_select_a_photo_or_snap">Select a photo or snap a new one to search</string>

@@ -85,13 +85,23 @@ fun PetalLensBottomSheet(
         refreshGallery()
     }
 
+    var pendingImageUriForProviderChooser by rememberSaveable { mutableStateOf<String?>(null) }
+
     fun openImageWithSelectedScanner(uri: Uri) {
-        if (PetalLensManager.snapProvider(context) == PetalLensManager.SnapProvider.PETAL_SCANNER) {
-            PetalImageScannerBridge.show(context, uri.toString())
-        } else {
-            PetalLensManager.launchLensForImageUri(context, uri)
+        val provider = PetalLensManager.snapProvider(context)
+        when (provider) {
+            PetalLensManager.SnapProvider.PETAL_SCANNER -> {
+                PetalImageScannerBridge.show(context, uri.toString())
+                onDismissRequest()
+            }
+            PetalLensManager.SnapProvider.GOOGLE_LENS -> {
+                PetalLensManager.launchLensForImageUri(context, uri)
+                onDismissRequest()
+            }
+            PetalLensManager.SnapProvider.ASK -> {
+                pendingImageUriForProviderChooser = uri.toString()
+            }
         }
-        onDismissRequest()
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -108,6 +118,36 @@ fun PetalLensBottomSheet(
         if (uri != null) {
             runCatching { openImageWithSelectedScanner(uri) }
                 .onFailure { PetalLensManager.launchGoogleLensApp(context) }
+        }
+    }
+    val galleryIntentFallbackLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = result.data?.data
+        if (uri != null) {
+            runCatching { openImageWithSelectedScanner(uri) }
+                .onFailure { PetalLensManager.launchGoogleLensApp(context) }
+        }
+    }
+
+    fun launchSafeGalleryPicker() {
+        try {
+            galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        } catch (_: Throwable) {
+            try {
+                galleryChooserLauncher.launch("image/*")
+            } catch (_: Throwable) {
+                try {
+                    val pickIntent = android.content.Intent(
+                        android.content.Intent.ACTION_PICK,
+                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    ).apply { type = "image/*" }
+                    galleryIntentFallbackLauncher.launch(pickIntent)
+                } catch (_: Throwable) {
+                    PetalLensManager.launchGoogleLensApp(context)
+                    onDismissRequest()
+                }
+            }
         }
     }
 
@@ -207,6 +247,180 @@ fun PetalLensBottomSheet(
                         showSnapProviderChooser = false
                         beginSnap()
                     }) { Text(stringResource(R.string.ui_ask_every_time)) }
+                }
+            }
+        )
+    }
+
+    if (pendingImageUriForProviderChooser != null) {
+        val targetUri = remember(pendingImageUriForProviderChooser) { Uri.parse(pendingImageUriForProviderChooser) }
+        var rememberChoice by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { pendingImageUriForProviderChooser = null },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.ui_choose_scanner_for_image),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(R.string.ui_choose_scanner_for_image_desc),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+
+                    // Option 1: Google Lens
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                                if (rememberChoice) {
+                                    PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.GOOGLE_LENS)
+                                }
+                                val uriToDispatch = targetUri
+                                pendingImageUriForProviderChooser = null
+                                PetalLensManager.launchLensForImageUri(context, uriToDispatch)
+                                onDismissRequest()
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Search,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.ui_search_with_google_lens),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = stringResource(R.string.ui_google_lens),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    // Option 2: Petal QR Scanner
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                                if (rememberChoice) {
+                                    PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.PETAL_SCANNER)
+                                }
+                                val uriToDispatch = targetUri
+                                pendingImageUriForProviderChooser = null
+                                PetalImageScannerBridge.show(context, uriToDispatch.toString())
+                                onDismissRequest()
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.QrCodeScanner,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.ui_scan_with_petal_qr),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = stringResource(R.string.ui_petal_qr_scanner),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    // Remember choice toggle
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                                rememberChoice = !rememberChoice
+                            }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Checkbox(
+                            checked = rememberChoice,
+                            onCheckedChange = { rememberChoice = it }
+                        )
+                        Text(
+                            text = stringResource(R.string.ui_remember_choice),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { pendingImageUriForProviderChooser = null }) {
+                    Text(stringResource(R.string.app_cancel))
                 }
             }
         )
@@ -399,12 +613,7 @@ fun PetalLensBottomSheet(
                 com.petal.browser.ui.containment.PetalActionCard(
                     onClick = {
                         PetalHapticEngine.getInstance(context).playClick(context)
-                        try {
-                            galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        } catch (e: Exception) {
-                            PetalLensManager.launchGoogleLensApp(context)
-                            onDismissRequest()
-                        }
+                        launchSafeGalleryPicker()
                     },
                     shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
                     containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -556,12 +765,7 @@ fun PetalLensBottomSheet(
                         Button(
                             onClick = {
                                 PetalHapticEngine.getInstance(context).playClick(context)
-                                try {
-                                    galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                                } catch (e: Exception) {
-                                    PetalLensManager.launchGoogleLensApp(context)
-                                    onDismissRequest()
-                                }
+                                launchSafeGalleryPicker()
                             },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth()
