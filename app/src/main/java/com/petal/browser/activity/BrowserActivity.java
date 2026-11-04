@@ -451,6 +451,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             return ((com.petal.browser.view.PetalGeckoView) currentAlbumController).canGoBack();
         }
+        if (activeGeckoView != null) {
+            return activeGeckoView.canGoBack();
+        }
         return false;
     }
 
@@ -1382,26 +1385,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     /**
      * Disposes the composition of a ComposeView that was just removed from contentFrame.
-     * Posted so it never runs re-entrantly inside the Compose callback that triggered the
-     * removal, and skipped if the same view was re-attached in the meantime (a re-attached
-     * ComposeView would simply rebuild its composition on the next measure anyway).
+     * Called synchronously from OnHierarchyChangeListener so the overlay's BackHandler
+     * is unregistered in the same message-pump pass as its removal, preventing stale
+     * back callbacks from swallowing the very next back gesture on the web surface.
+     * The parent-not-null guard keeps it safe if the view was re-attached immediately.
      * Retained tab surfaces (PetalGeckoView) are not ComposeViews and are unaffected.
      */
     private void disposeRemovedComposeOverlay(View child) {
         if (!(child instanceof androidx.compose.ui.platform.ComposeView)) return;
         final androidx.compose.ui.platform.ComposeView composeView = (androidx.compose.ui.platform.ComposeView) child;
-        Runnable dispose = () -> {
-            if (composeView.getParent() != null) return;
-            try {
-                composeView.disposeComposition();
-            } catch (Throwable t) {
-                Log.w(TAG, "Failed to dispose removed Compose overlay", t);
-            }
-        };
-        if (contentFrame != null) {
-            contentFrame.post(dispose);
-        } else {
-            new Handler(android.os.Looper.getMainLooper()).post(dispose);
+        // Dispose synchronously: calling disposeComposition() while still inside
+        // ViewGroup.removeView() is safe – Compose checks for re-entrance internally.
+        // A synchronous dispose is required so the overlay's OnBackPressedCallback is
+        // unregistered before Android can dispatch the next back gesture to this activity.
+        if (composeView.getParent() != null) return;
+        try {
+            composeView.disposeComposition();
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed to dispose removed Compose overlay", t);
         }
     }
 

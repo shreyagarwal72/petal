@@ -577,6 +577,43 @@ class PetalTabViewController private constructor(
                             tab?.let { browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, newUrl)) }
                             publishState()
                         }
+                    },
+                    onCanGoBackChanged = { canBack ->
+                        post {
+                            backAvailable = canBack
+                            tab?.let {
+                                PetalEngineStore.updateNavigationState(
+                                    appContext,
+                                    it.id,
+                                    backAvailable,
+                                    forwardAvailable
+                                )
+                            }
+                            val act = resolveActivity(context)
+                            if (act is com.petal.browser.activity.BrowserActivity) {
+                                act.updateBackCallbackState()
+                                act.updateOmniBox()
+                            }
+                            publishState()
+                        }
+                    },
+                    onCanGoForwardChanged = { canFwd ->
+                        post {
+                            forwardAvailable = canFwd
+                            tab?.let {
+                                PetalEngineStore.updateNavigationState(
+                                    appContext,
+                                    it.id,
+                                    backAvailable,
+                                    forwardAvailable
+                                )
+                            }
+                            val act = resolveActivity(context)
+                            if (act is com.petal.browser.activity.BrowserActivity) {
+                                act.updateOmniBox()
+                            }
+                            publishState()
+                        }
                     }
                 ) { uri ->
                     val act = resolveActivity(context)
@@ -927,25 +964,42 @@ class PetalTabViewController private constructor(
     }
 
     fun goBack(userInteraction: Boolean = true) {
-        val current = tab ?: return
-        if (backAvailable) {
-            browserStore.dispatch(
-                mozilla.components.browser.state.action.EngineAction.GoBackAction(
-                    current.id,
-                    userInteraction
+        val gs = getGeckoSession()
+        if (backAvailable || isHistoryPending()) {
+            try {
+                if (gs != null) {
+                    gs.goBack(userInteraction)
+                    return
+                }
+            } catch (_: Throwable) {}
+
+            val current = tab
+            if (current != null) {
+                browserStore.dispatch(
+                    mozilla.components.browser.state.action.EngineAction.GoBackAction(
+                        current.id,
+                        userInteraction
+                    )
                 )
-            )
-        } else if (isHistoryPending()) {
-            // Restored history that Gecko has not reported yet: ask the engine directly.
-            try { getGeckoSession()?.goBack(userInteraction) } catch (_: Throwable) {}
-        } else if (canTrailBack()) {
+                return
+            }
+        }
+        if (canTrailBack()) {
             trailBack()
         }
     }
 
     fun goForward(userInteraction: Boolean = true) {
-        val current = tab ?: return
+        val gs = getGeckoSession()
         if (forwardAvailable) {
+            try {
+                if (gs != null) {
+                    gs.goForward(userInteraction)
+                    return
+                }
+            } catch (_: Throwable) {}
+
+            val current = tab ?: return
             browserStore.dispatch(
                 mozilla.components.browser.state.action.EngineAction.GoForwardAction(
                     current.id,
@@ -958,13 +1012,18 @@ class PetalTabViewController private constructor(
     /** Let page-owned modal UI consume Back before the browser traverses tab history. */
     fun processBackPressed(onUnhandled: () -> Unit) {
         val session = observedSession ?: run {
-            onUnhandled()
+            // Engine session not yet bound (e.g. still restoring after process kill).
+            // If a nav trail exists, navigate within it rather than triggering the
+            // home-fallback. This matches Firefox's isHistoryPending() handling.
+            if (canTrailBack()) goBack() else onUnhandled()
             return
         }
         if (fullScreenFeature?.onBackPressed() == true) return
         session.processBackPressed { handled ->
             if (handled) return@processBackPressed
-            if (backAvailable || isHistoryPending() || canTrailBack()) goBack() else onUnhandled()
+            post {
+                if (backAvailable || isHistoryPending() || canTrailBack()) goBack() else onUnhandled()
+            }
         }
     }
 
@@ -1763,17 +1822,23 @@ private class ExternalSchemeNavigationDelegate(
     private var currentUrlSupplier: () -> String,
     private var isIncognitoSupplier: () -> Boolean,
     private val onLocationChanged: (String) -> Unit,
+    private var onCanGoBackChanged: ((Boolean) -> Unit)? = null,
+    private var onCanGoForwardChanged: ((Boolean) -> Unit)? = null,
     private val handleExternal: (String) -> Boolean
 ) : org.mozilla.geckoview.GeckoSession.NavigationDelegate {
 
     fun updateDependencies(
         newContext: android.content.Context,
         newUrlSupplier: () -> String,
-        newIncognitoSupplier: () -> Boolean
+        newIncognitoSupplier: () -> Boolean,
+        newOnCanGoBack: ((Boolean) -> Unit)? = null,
+        newOnCanGoForward: ((Boolean) -> Unit)? = null
     ) {
         context = newContext
         currentUrlSupplier = newUrlSupplier
         isIncognitoSupplier = newIncognitoSupplier
+        if (newOnCanGoBack != null) onCanGoBackChanged = newOnCanGoBack
+        if (newOnCanGoForward != null) onCanGoForwardChanged = newOnCanGoForward
     }
 
     override fun onLocationChange(
@@ -1810,6 +1875,9 @@ private class ExternalSchemeNavigationDelegate(
     override fun onCanGoBack(session: org.mozilla.geckoview.GeckoSession, canGoBack: Boolean) {
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onCanGoBack=$canGoBack")
         try {
+            onCanGoBackChanged?.invoke(canGoBack)
+        } catch (_: Throwable) {}
+        try {
             engine.onCanGoBack(session, canGoBack)
         } catch (t: Throwable) {
             android.util.Log.w("PetalTabNav", "Error forwarding onCanGoBack: ${t.message}")
@@ -1818,6 +1886,9 @@ private class ExternalSchemeNavigationDelegate(
 
     override fun onCanGoForward(session: org.mozilla.geckoview.GeckoSession, canGoForward: Boolean) {
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onCanGoForward=$canGoForward")
+        try {
+            onCanGoForwardChanged?.invoke(canGoForward)
+        } catch (_: Throwable) {}
         try {
             engine.onCanGoForward(session, canGoForward)
         } catch (t: Throwable) {

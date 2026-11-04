@@ -2275,6 +2275,13 @@ class PetalGeckoView @JvmOverloads constructor(
             } catch (t: Throwable) {
                 engineSession?.goBack(userInteraction = userInteraction)
             }
+        } else {
+            // canGoBackVal can be transiently false during session restore before
+            // Gecko's onCanGoBack() callback fires (the historyPending window).
+            // Ask the engine session directly as a fallback so we don't silently
+            // drop a back gesture when history exists but hasn't been reported yet.
+            // This mirrors PetalTabViewController's isHistoryPending() path.
+            try { engineSession?.goBack(userInteraction = userInteraction) } catch (_: Throwable) {}
         }
     }
 
