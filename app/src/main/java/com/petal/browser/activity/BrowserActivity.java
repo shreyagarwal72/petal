@@ -334,6 +334,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         return false;
     }
+
+    public static boolean shouldSkipLaunchSplash(Intent intent) {
+        if (intent == null) return false;
+        if (intent.getBooleanExtra("open_downloads", false)) return true;
+        String action = intent.getAction();
+        if (action == null || action.isEmpty()) return false;
+        if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_LENS.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SNAP_CAMERA.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_BOOKMARKS.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_DOWNLOADS.equals(action)) {
+            return true;
+        }
+        return false;
+    }
     /**
      * A widget action (ACTION_OPEN_SEARCH / _AI_SEARCH / _VOICE) waiting to run once the
      * window has genuine input focus. See {@link #runOrDeferPendingWidgetAction()}.
@@ -661,10 +678,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } catch (RuntimeException ignored) {
             iconView = null;
         }
-        final boolean fireRipple = splashRipplePending && !isFinishing() && !isDestroyed();
-        splashRipplePending = false;
+        final boolean toComposeSplash = splashHandsOffToComposeSplash;
+        splashHandsOffToComposeSplash = false;
 
+        final boolean fireRipple = !toComposeSplash && splashRipplePending && !isFinishing() && !isDestroyed();
         if (fireRipple) {
+            splashRipplePending = false;
             View decor = getWindow().getDecorView();
             if (iconView != null && iconView.getWidth() > 0) {
                 int[] loc = new int[2];
@@ -676,9 +695,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 com.petal.browser.ui.layout.LiquidRippleEffect.trigger(decor);
             }
         }
-
-        final boolean toComposeSplash = splashHandsOffToComposeSplash;
-        splashHandsOffToComposeSplash = false;
         final long duration = toComposeSplash ? 380L : 320L;
         final PathInterpolator emphasizedAccelerate = new PathInterpolator(0.3f, 0f, 0.8f, 0.15f);
         final PathInterpolator emphasizedDecelerate = new PathInterpolator(0.05f, 0.7f, 0.1f, 1f);
@@ -777,22 +793,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // The launch ripple radiates from the icon's centre on a fresh launch (same conditions as the
         // fallback below, which is skipped once this is armed). A timed fallback covers launches where no
         // splash is shown.
-        final boolean coldInternalLaunch = savedInstanceState == null
+        final boolean coldLaunch = savedInstanceState == null
                 && !sp.getBoolean("sp_app_lock_enabled", false)
-                && !isExternalOrWidgetLaunch(getIntent());
-        splashHandsOffToComposeSplash = coldInternalLaunch
+                && !shouldSkipLaunchSplash(getIntent());
+        splashHandsOffToComposeSplash = coldLaunch
                 && com.petal.browser.compose.splash.PetalSplashState.shouldPlayLaunchSplash(sp);
         // Keep the bottom nav bar hidden from the very first frame while the launch splash plays.
         com.petal.browser.compose.splash.PetalSplashState.splashActive.setValue(splashHandsOffToComposeSplash);
-        if (coldInternalLaunch && sp.getBoolean("sp_launch_ripple_enabled", true)) {
-            launchRippleTriggered = true;
+        if (coldLaunch && sp.getBoolean("sp_launch_ripple_enabled", true) && !isExternalOrWidgetLaunch(getIntent())) {
             splashRipplePending = true;
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                if (splashRipplePending && !isFinishing() && !isDestroyed()) {
+                if (splashRipplePending && !isFinishing() && !isDestroyed() && !com.petal.browser.compose.splash.PetalSplashState.splashActive.getValue()) {
                     splashRipplePending = false;
+                    launchRippleTriggered = true;
                     com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
                 }
-            }, 2500L);
+            }, 3000L);
         }
         splashScreen.setOnExitAnimationListener(this::playSplashExit);
 
@@ -874,8 +890,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         public void run() {
                             // Success: user authenticated
                             isAppLockLocked = false;
-                            launchRippleTriggered = true;
-                            com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
+                            if (savedInstanceState == null
+                                    && !shouldSkipLaunchSplash(getIntent())
+                                    && com.petal.browser.compose.splash.PetalSplashState.shouldPlayLaunchSplash(sp)) {
+                                com.petal.browser.compose.splash.PetalSplashOverlay.show(BrowserActivity.this, BrowserActivity.this::onAppLaunchSplashFinished);
+                            } else {
+                                launchRippleTriggered = true;
+                                com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
+                            }
                             runOrDeferPendingWidgetAction();
                         }
                     },
@@ -895,8 +917,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         public void run() {
                             // Success: password unlocked
                             isAppLockLocked = false;
-                            launchRippleTriggered = true;
-                            com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
+                            if (savedInstanceState == null
+                                    && !shouldSkipLaunchSplash(getIntent())
+                                    && com.petal.browser.compose.splash.PetalSplashState.shouldPlayLaunchSplash(sp)) {
+                                com.petal.browser.compose.splash.PetalSplashOverlay.show(BrowserActivity.this, BrowserActivity.this::onAppLaunchSplashFinished);
+                            } else {
+                                launchRippleTriggered = true;
+                                com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
+                            }
                             runOrDeferPendingWidgetAction();
                         }
                     },
@@ -1001,6 +1029,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         getOnBackPressedDispatcher().addCallback(this, browserBackCallback);
         setContentView(R.layout.activity_main);
         contentFrame = findViewById(R.id.main_content);
+        if (splashHandsOffToComposeSplash) {
+            com.petal.browser.compose.splash.PetalSplashOverlay.show(this, this::onAppLaunchSplashFinished);
+        }
         com.petal.browser.predictive.PetalLiveUnderlay.attach(liveUnderlayHost);
         // Root cause of "back gesture does nothing on every website":
         // every Compose overlay (omnibox, settings, history, tab switcher, ...) is mounted in
@@ -1105,7 +1136,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // Launch ripple effect: if enabled in settings, app lock is NOT enabled, and this is a normal app launch
         // (not launched via notification, widget, or external URL view), trigger the fluid ripple animation.
         boolean launchRipplePref = sp.getBoolean("sp_launch_ripple_enabled", true);
-        if (launchRipplePref && !sp.getBoolean("sp_app_lock_enabled", false) && !isExternalOrWidgetLaunch(getIntent()) && !launchRippleTriggered) {
+        if (launchRipplePref && !sp.getBoolean("sp_app_lock_enabled", false)
+                && !isExternalOrWidgetLaunch(getIntent()) && !launchRippleTriggered
+                && !com.petal.browser.compose.splash.PetalSplashState.splashActive.getValue()) {
             launchRippleTriggered = true;
             getWindow().getDecorView().post(() -> {
                 com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
@@ -1116,18 +1149,30 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         updateBackCallbackState();
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        if (petalBrowserFeatures == null) {
-            petalBrowserFeatures = new com.petal.browser.browser.PetalBrowserFeatures(this);
-        }
-        petalBrowserFeatures.start();
-        try {
-            com.petal.browser.account.PetalUserProfileManager.INSTANCE.init(this);
-            com.petal.browser.account.mozilla.FxAccountManager.Companion.getInstance().initialize(this);
-        } catch (Exception e) {
-            e.printStackTrace();
+    public void onAppLaunchSplashFinished() {
+        runOnUiThread(() -> {
+            if (isFinishing() || isDestroyed()) return;
+
+            updateAddressBar();
+            applyAddressBarPosition();
+            applyBottomBarVisibilityForSurface();
+
+            if ((splashRipplePending || (!launchRippleTriggered && sp != null && sp.getBoolean("sp_launch_ripple_enabled", true)))
+                    && !isExternalOrWidgetLaunch(getIntent())) {
+                splashRipplePending = false;
+                launchRippleTriggered = true;
+                getWindow().getDecorView().post(() -> {
+                    com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
+                });
+            }
+
+            checkStartupDialogs();
+        });
+    }
+
+    private void checkStartupDialogs() {
+        if (com.petal.browser.compose.splash.PetalSplashState.splashActive.getValue()) {
+            return;
         }
         try {
             com.petal.browser.ui.components.PetalCrashReportingBridge.showCrashRecoveryPromptIfNeeded(this);
@@ -1161,6 +1206,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         com.petal.browser.setup.PetalSetupBridge.showSetup(this));
             }
         }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (petalBrowserFeatures == null) {
+            petalBrowserFeatures = new com.petal.browser.browser.PetalBrowserFeatures(this);
+        }
+        petalBrowserFeatures.start();
+        try {
+            com.petal.browser.account.PetalUserProfileManager.INSTANCE.init(this);
+            com.petal.browser.account.mozilla.FxAccountManager.Companion.getInstance().initialize(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        checkStartupDialogs();
     }
 
     private static final int VOICE_SEARCH_REQUEST_CODE = 1002;
@@ -1278,6 +1339,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onDestroy() {
+        com.petal.browser.compose.splash.PetalSplashOverlay.dismiss(this, null);
         try {
             if (sp != null) sp.unregisterOnSharedPreferenceChangeListener(toolbarPrefsListener);
         } catch (Throwable ignored) {}
@@ -2892,7 +2954,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (container == null) return;
 
         if (inPip || pwa || isOverlayScreenShowing || isCustomFullscreenState || videoOverlayBridge != null || customView != null
-                || com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp)) {
+                || com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp)
+                || com.petal.browser.compose.splash.PetalSplashState.splashActive.getValue()) {
             container.setVisibility(GONE);
             if (compose != null) compose.setVisibility(GONE);
             return;
@@ -4096,7 +4159,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         boolean isNonWebSurface = !isActualWebPage(currentUrl) || isPetalHomeSurfaceShowing || isHomePage(currentUrl)
                 || isOverlayScreenShowing || hasNonTabTopContent()
-                || isCustomFullscreenState || videoOverlayBridge != null || customView != null;
+                || isCustomFullscreenState || videoOverlayBridge != null || customView != null
+                || com.petal.browser.compose.splash.PetalSplashState.splashActive.getValue();
         if (isNonWebSurface) {
             composeAddressBar.setVisibility(GONE);
             return;
@@ -4393,6 +4457,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void animateAddressBarCollapse(boolean collapse) {
+        if (com.petal.browser.compose.splash.PetalSplashState.splashActive.getValue()) {
+            return;
+        }
         String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
         View fab_bubble = findViewById(R.id.fab_bubble);
         if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
@@ -5117,6 +5184,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         contentFrame.setPullDistanceDp(80f);
         contentFrame.setEdgeThresholdDp(120f);
         contentFrame.setCanPull(() -> {
+            if (com.petal.browser.compose.splash.PetalSplashState.splashActive.getValue()) {
+                return false;
+            }
             // Strictly exclusive to websites: never allow on home, settings, history, or internal surfaces
             if (isPetalHomeSurfaceShowing || isOverlayScreenShowing || hasNonTabTopContent()) {
                 return false;

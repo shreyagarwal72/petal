@@ -527,6 +527,8 @@ fun AppearanceSettingsScreenContent(
                     var appLaunchAnim by remember {
                         mutableStateOf(PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_app_launch_animation", true))
                     }
+                    var showSplashPreview by remember { mutableStateOf(false) }
+
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
                         title = "Quantum Web Launch Animation",
@@ -540,6 +542,44 @@ fun AppearanceSettingsScreenContent(
                                 .apply()
                         }
                     )
+
+                    if (appLaunchAnim) {
+                        Spacer(Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            FilledTonalButton(
+                                onClick = { showSplashPreview = true },
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.PlayArrow,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text("Preview Animation")
+                            }
+                        }
+                    }
+
+                    if (showSplashPreview) {
+                        androidx.compose.ui.window.Dialog(
+                            onDismissRequest = { showSplashPreview = false },
+                            properties = androidx.compose.ui.window.DialogProperties(
+                                usePlatformDefaultWidth = false,
+                                decorFitsSystemWindows = false
+                            )
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                com.petal.browser.compose.splash.PetalSplashScreen(
+                                    onSplashComplete = { showSplashPreview = false },
+                                    durationMs = 2200L
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(Modifier.height(8.dp))
 

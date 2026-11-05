@@ -2,6 +2,23 @@
 
 > *"The landmark 'More Expressive' release elevates Petal Browser to new heights of Material 3 Expressive design, fluid reactive theming, and tactile user customization: introducing a comprehensive ImageToolbox-style Layout & Controls suite with live component styling, seamless Liquid Glass auto-adaptation, PixelMusic-grade expressive fast-scrollbars, overhauled Mix Palettes with one-tap harmony recipes, bi-directional Send Tab to Device across all connected Firefox instances, and a robust Reader Mode with Read Aloud text-to-speech."*
 
+#### 🌌 App-Level Quantum Web Launch Animation Architecture (`PetalSplashOverlay.kt`, `BrowserActivity.java`, `PetalHomeScreen.kt`, `AppearanceSettingsScreen.kt`)
+- **Universal Cold-Start Coverage**:
+  - Re-architected the "Quantum Web Launch Animation" (`sp_app_launch_animation`) from a local `PetalHomeScreen.kt` composition into a universal app-level overlay in `BrowserActivity` via `PetalSplashOverlay.kt`.
+  - The animation now plays on cold start across all launch surfaces — whether the app starts on Petal Home, rehydrates existing restored website tabs, or launches directly from external web links (`ACTION_VIEW`).
+  - Mounted before tab restoration and intent dispatch with full-screen `translationZ = 2000f` and `elevation = 2000f`, rendering smoothly over GeckoView `SurfaceView` and `TextureView` without delaying or blocking background page rehydration.
+- **Surface & Dialog Coordination**:
+  - Maintained `PetalSplashState.splashActive` gating across the browser: keeps address bar, bottom navigation, pull-to-refresh, bar collapse animations, and startup dialogs (`PetalSetupBridge`, `PetalCrashReportingBridge`, and What's New update dialogs) completely hidden and deferred until the splash animation cleanly dissolves.
+  - Deferral of `LiquidRippleEffect` ensures the liquid launch wave radiates only after the Quantum Web splash finishes rather than colliding with the entrance animation.
+  - Integrated with biometric and PIN app lock (`sp_app_lock_enabled`): securely unlocks first, then smoothly plays the launch animation into the browser.
+- **Activity Recreation & Gesture Integrity**:
+  - Preserved `PetalSplashState.hasShownThisSession` so orientation changes, theme toggles, and returning from recents never replay the animation.
+  - Attached non-blocking back dispatcher interceptor and full-screen touch sink to consume back gestures and accidental taps during playback without risk of getting stuck on mid-flight recreation.
+  - Added 3.5s safety timeout fallback ensuring the overlay view is always cleanly dismissed and disposed under any circumstance.
+- **Live Preview in Appearance Settings**:
+  - Added interactive "Preview Animation" action button and full-screen preview dialog inside Appearance Settings (`AppearanceSettingsScreen.kt`), allowing users to test and experience the Quantum Web icon stream on demand.
+  - Removed duplicate copy from `PetalHomeScreen.kt`, preventing double-playback or conflicting lifecycle state.
+
 #### 🚀 Web Page Scroll Stabilization, Dynamic Toolbar Decoupling & Touch Integrity (`BrowserActivity.java`, `PetalTabViewController.kt`, `PullToRefreshFrameLayout.java`, `GeckoGlassBackend.kt`, `PetalGeckoView.kt`)
 - **Firefox/Fenix Dynamic Toolbar Decoupling & Fixed Viewport Layout**:
   - Eliminated viewport reflows and layout shifting during scroll by stopping `animateContentPadding` during active scrolls; `main_content` maintains a stable layout size.
