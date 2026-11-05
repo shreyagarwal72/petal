@@ -1,0 +1,39 @@
+Categories:
+  - Internet
+License: GPL-3.0-only
+AuthorName: Shrey Agarwal
+AuthorEmail: hereyourchampion@gmail.com
+WebSite: https://github.com/shreyagarwal72/petal
+SourceCode: https://github.com/shreyagarwal72/petal
+IssueTracker: https://github.com/shreyagarwal72/petal/issues
+Changelog: https://github.com/shreyagarwal72/petal/releases
+
+AutoName: Petal Browser
+Summary: Fast, private Android web browser on GeckoView with Material 3 Expressive UI
+Description: |-
+  Petal is a modern, privacy-focused Android web browser powered by Mozilla's GeckoView engine and crafted with Jetpack Compose and Material 3 Expressive.
+
+  Key Features:
+  * Mozilla GeckoView Web Engine: Independent, standards-compliant web rendering without Google Chromium monoculture. Full support for desktop and mobile web extensions including uBlock Origin, Dark Reader, and Privacy Badger.
+  * Built-in Rust Adblocker & Anti-Tracking: Native high-performance content blocking with EasyList, AdGuard, and tracking protection rules built in. Block intrusive ads, tracking scripts, cryptominers, and cookie banners without external add-ons.
+  * Material 3 Expressive Design: Fluid spring physics, liquid glass navigation, dynamic color palette tinting, customizable corner radius shapes, and 60fps gesture animations.
+  * Predictive Back Navigation: Native Android predictive back gesture support with real-time underlay preview, background depth blur, and symmetrical container morph transitions.
+  * Zero Telemetry & Private Vault: No user tracking, no phone-home analytics, and no mandatory cloud accounts. Includes an encrypted biometric vault for recently closed tabs and downloaded media.
+  * Inbuilt Download Manager: Multi-threaded downloading, background pause/resume, file category sorting, and in-app media viewing.
+  * 100% Free and Open Source: Licensed under GNU General Public License v3.0 (GPL-3.0). Free to inspect, audit, and contribute.
+
+RepoType: git
+Repo: https://github.com/shreyagarwal72/petal.git
+
+Builds:
+  - versionName: 4.6.0
+    versionCode: 460
+    commit: v4.6.0
+    subdir: app
+    gradle:
+      - assembleGithubRelease
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 4.6.0
+CurrentVersionCode: 460

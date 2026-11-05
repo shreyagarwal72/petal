@@ -1,0 +1,17 @@
+Petal is a modern, privacy-focused Android web browser powered by Mozilla's GeckoView engine and crafted with Jetpack Compose and Material 3 Expressive.
+
+<b>Key Features:</b>
+
+• <b>Mozilla GeckoView Web Engine:</b> Independent, standards-compliant web rendering without Google Chromium monoculture. Full support for desktop and mobile web extensions including uBlock Origin, Dark Reader, and Privacy Badger.
+
+• <b>Built-in Rust Adblocker & Anti-Tracking:</b> Native high-performance content blocking with EasyList, AdGuard, and tracking protection rules built in. Block intrusive ads, tracking scripts, cryptominers, and cookie banners without external add-ons.
+
+• <b>Material 3 Expressive Design:</b> Fluid spring physics, liquid glass navigation, dynamic color palette tinting, customizable corner radius shapes, and 60fps gesture animations.
+
+• <b>Predictive Back Navigation:</b> Native Android predictive back gesture support with real-time underlay preview, background depth blur, and symmetrical container morph transitions.
+
+• <b>Zero Telemetry & Private Vault:</b> No user tracking, no phone-home analytics, and no mandatory cloud accounts. Includes an encrypted biometric vault for recently closed tabs and downloaded media.
+
+• <b>Inbuilt Download Manager:</b> Multi-threaded downloading, background pause/resume, file category sorting, and in-app media viewing.
+
+• <b>100% Free and Open Source:</b> Licensed under GNU General Public License v3.0 (GPL-3.0). Free to inspect, audit, and contribute.
