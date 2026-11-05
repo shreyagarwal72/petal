@@ -1771,34 +1771,35 @@ class PetalGeckoView @JvmOverloads constructor(
                         val act = getHostActivity() ?: return@postFrameCallback
                         val bAct = act as? com.petal.browser.activity.BrowserActivity
                         if (bAct != null && bAct.isBarAnimationRunning()) return@postFrameCallback
-                    val density = context.resources.displayMetrics.density
-                    val hideAfterPx = 24f * density
-                    val showAfterPx = 16f * density
-                    val deltaY = latestY - lastAddressBarScrollY
-                    lastAddressBarScrollY = latestY
-                    onScrollChangeListener?.onScrollPositionChanged(latestY, height)
-                    if (latestY <= 2) {
-                        // At the top of the page: bars are always shown.
-                        scrollRun = 0
-                        onScrollChangeListener?.onScrollUp()
-                    } else if (deltaY != 0) {
-                        if ((deltaY > 0) != (scrollRun > 0)) scrollRun = 0
-                        scrollRun += deltaY
-                        if (scrollRun > hideAfterPx) {
-                            scrollRun = 0
-                            onScrollChangeListener?.onScrollDown()
-                        } else if (scrollRun < -showAfterPx) {
+                        val density = context.resources.displayMetrics.density
+                        val hideAfterPx = 24f * density
+                        val showAfterPx = 16f * density
+                        val deltaY = latestY - lastAddressBarScrollY
+                        lastAddressBarScrollY = latestY
+                        onScrollChangeListener?.onScrollPositionChanged(latestY, height)
+                        if (latestY <= 2) {
+                            // At the top of the page: bars are always shown.
                             scrollRun = 0
                             onScrollChangeListener?.onScrollUp()
+                        } else if (deltaY != 0) {
+                            if ((deltaY > 0) != (scrollRun > 0)) scrollRun = 0
+                            scrollRun += deltaY
+                            if (scrollRun > hideAfterPx) {
+                                scrollRun = 0
+                                onScrollChangeListener?.onScrollDown()
+                            } else if (scrollRun < -showAfterPx) {
+                                scrollRun = 0
+                                onScrollChangeListener?.onScrollUp()
+                            }
                         }
-                    }
 
-                    // Tactile haptics: only check when enabled, with spaced interval
-                    if (com.petal.browser.haptics.PetalHapticEngine.isScrollHapticsEnabled(context)) {
-                        if (Math.abs(latestY - lastScrollHapticY) > 64) {
-                            lastScrollHapticY = latestY
-                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                                .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.40f, 50L)
+                        // Tactile haptics: only check when enabled, with spaced interval
+                        if (com.petal.browser.haptics.PetalHapticEngine.isScrollHapticsEnabled(context)) {
+                            if (Math.abs(latestY - lastScrollHapticY) > 64) {
+                                lastScrollHapticY = latestY
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                                    .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.40f, 50L)
+                            }
                         }
                     }
                 }
