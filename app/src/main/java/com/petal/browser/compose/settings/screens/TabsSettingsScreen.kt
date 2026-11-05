@@ -18,10 +18,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
+import com.petal.browser.browser.PetalSessionRestoreManager
 import com.petal.browser.compose.tabs.PetalInactiveTabManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.unit.PetalTabSessionManager
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -44,7 +44,7 @@ fun TabsSettingsScreen(
         mutableStateOf(sp.getString(PetalInactiveTabManager.PREF_INACTIVE_DAYS_THRESHOLD, "21") ?: "21")
     }
     var restoreTabsOnStart by remember {
-        mutableStateOf(sp.getBoolean(PetalTabSessionManager.PREF_RESTORE_TABS, true))
+        mutableStateOf(sp.getBoolean(PetalSessionRestoreManager.PREF_RESTORE_TABS, true))
     }
     var confirmTabClose by remember {
         mutableStateOf(sp.getBoolean("sp_close_tab_confirm", false))
@@ -134,7 +134,7 @@ fun TabsSettingsScreen(
                                     position = position,
                                     onCheckedChange = {
                                         restoreTabsOnStart = it
-                                        sp.edit().putBoolean(PetalTabSessionManager.PREF_RESTORE_TABS, it).apply()
+                                        sp.edit().putBoolean(PetalSessionRestoreManager.PREF_RESTORE_TABS, it).apply()
                                     }
                                 )
                             }

@@ -110,8 +110,6 @@ class PetalTabViewController private constructor(
                 while (navUrls.size > 40) { navUrls.removeAt(0); navIndex-- }
             }
         }
-        statePersistHandler.removeCallbacks(statePersistRunnable)
-        statePersistHandler.postDelayed(statePersistRunnable, 600L)
     }
 
     /** Snapshot of the URL trail (oldest first, current page last) for persistence. */
@@ -150,30 +148,8 @@ class PetalTabViewController private constructor(
         }
     }
 
-    private val statePersistHandler = android.os.Handler(android.os.Looper.getMainLooper())
-    private val statePersistRunnable = Runnable { persistEngineStateNow() }
-
     private fun onGeckoStateChanged(state: org.mozilla.geckoview.GeckoSession.SessionState) {
         latestGeckoState = state
-        if (isIncognito()) return
-        // Debounced: Gecko reports state very often; one write shortly after navigation settles is enough.
-        statePersistHandler.removeCallbacks(statePersistRunnable)
-        statePersistHandler.postDelayed(statePersistRunnable, 1500L)
-    }
-
-    private fun persistEngineStateNow() {
-        val id = boundTabId ?: return
-        if (isIncognito()) return
-        val url = pageUrl
-        if (url.isBlank() || url.equals("about:blank", ignoreCase = true) ||
-            com.petal.browser.unit.PetalBrowserUtils.isHomePage(url)) return
-        val serialized = captureEngineState()
-        val trail = captureNavUrls()
-        val appCtx = appContext
-        STATE_WRITER.execute {
-            if (serialized != null) com.petal.browser.unit.PetalTabStateStore.write(appCtx, id, serialized)
-            if (trail != null) com.petal.browser.unit.PetalTabStateStore.writeNav(appCtx, id, trail)
-        }
     }
     private var loading = false
     private var progress = 0
@@ -509,7 +485,6 @@ class PetalTabViewController private constructor(
         historyPending = false
         restoreLocationSeen = false
         navUrls.clear(); navIndex = -1; navFallbackEligible = false
-        statePersistHandler.removeCallbacks(statePersistRunnable)
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
         engineView.render(session)
         if (isHostedByBrowserActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
@@ -624,8 +599,7 @@ class PetalTabViewController private constructor(
             }
 
             // Progress Delegate: keep Mozilla's engine delegate (page start/stop, progress, security)
-            // and additionally capture GeckoSession.SessionState so the tab's back/forward history can
-            // be persisted and restored after the app process is killed. See PetalTabStateStore.
+            // and additionally capture GeckoSession.SessionState so the tab's back/forward history is tracked.
             val engineProgress = gs.progressDelegate
             if (engineProgress is SessionStateCapturingProgressDelegate) {
                 engineProgress.onState = { state -> onGeckoStateChanged(state) }
@@ -2159,8 +2133,3 @@ private class SessionStateCapturingProgressDelegate(
         onState(sessionState)
     }
 }
-
-
-/** Single background thread for tab-state file writes, so history saving never blocks the UI. */
-private val STATE_WRITER: java.util.concurrent.ExecutorService =
-    java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "PetalTabStateWriter").apply { isDaemon = true } }

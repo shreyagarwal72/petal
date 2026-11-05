@@ -1092,18 +1092,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         // Update check disabled
 
-        // Tab Session Restoration & Rehydration
-        boolean tabsRestored = com.petal.browser.unit.PetalTabSessionManager.restoreSession(this);
-        // Keep Android Components' restore lifecycle in sync with Petal's richer
-        // tab/session restoration. Individual Gecko sessions are registered in
-        // BrowserStore as tabs are materialized; this action closes the restore
-        // phase for middleware and SessionStorage observers.
-        com.petal.browser.engine.gecko.PetalEngineStore.markRestoreComplete(this);
-
-        // If still no open tab, open default page
-        if (!tabsRestored && BrowserContainer.size() < 1) {
-            addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
-        }
+        // Tab Session Restoration & Rehydration via Mozilla Android Components
+        boolean tabsRestored = com.petal.browser.browser.PetalSessionRestoreManager.restoreSession(this);
+        rebuildTabsFromBrowserStore(tabsRestored);
 
         // Now that activeGeckoView and currentAlbumController are fully initialized,
         // dispatch any incoming intent (e.g. ACTION_VIEW from an external link).
@@ -1303,8 +1294,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (notificationManager != null) {
                 notificationManager.cancel(1);
             }
-            com.petal.browser.unit.PetalTabSessionManager.releaseEngineTabs(this);
-            com.petal.browser.unit.PetalTabSessionManager.suspendSaving();
             BrowserContainer.clear();
             if (sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
                 PetalBrowserUtils.clearOnExit(this);
@@ -2291,7 +2280,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     : "tab_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode());
 
             kotlin.Pair<mozilla.components.browser.state.state.TabSessionState, mozilla.components.concept.engine.EngineSession> sessionPair =
-                com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+                com.petal.browser.engine.gecko.PetalEngineStore.materializeTabSession(
                     this,
                     effectiveId,
                     targetUrl != null ? targetUrl : "about:blank",
@@ -2311,16 +2300,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             BrowserContainer.replace(slot, materialized);
             controller = materialized;
-            // Restore the tab's saved Gecko session state (back/forward history) when it is simply
-            // being brought back as-is. An explicit overrideUrl is a new navigation, so it loads normally.
-            boolean historyRestored = false;
-            if (overrideUrl == null && !placeholder.isIncognito()
-                    && targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
-                historyRestored = com.petal.browser.unit.PetalTabSessionManager.restorePersistedHistory(
-                        this, materialized, effectiveId, targetUrl);
-            }
-            if (historyRestored) {
-                // History restored into the session; no extra load (it would add a duplicate entry).
+
+            boolean hasEngineHistory = sessionPair.getFirst().getEngineState().getEngineSessionState() != null;
+            if (overrideUrl != null && !overrideUrl.isEmpty() && !isHomePage(overrideUrl)) {
+                materialized.loadUrl(overrideUrl);
+            } else if (hasEngineHistory) {
+                // Engine session state (back/forward history stack) restored; no extra load
             } else if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
                 materialized.loadUrl(targetUrl);
             } else {
@@ -5317,7 +5302,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                     BrowserContainer.clear();
                     com.petal.browser.unit.TabThumbnailCache.clear();
-                    com.petal.browser.unit.PetalTabSessionManager.clearSession(BrowserActivity.this);
+                    com.petal.browser.browser.PetalSessionRestoreManager.clearSession(BrowserActivity.this);
                     addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
                             return kotlin.Unit.INSTANCE;
                 },
@@ -7264,16 +7249,113 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void saveOpenedTabs() {
-        com.petal.browser.unit.PetalTabSessionManager.saveSession(this, currentAlbumController);
+        // Obsolete: Mozilla AutoSave automatically persists BrowserStore to disk
     }
 
     public synchronized AlbumController restoreTab(String title, String url, int index, boolean isIncognito, String groupId, String groupTitle, String groupColorHex, boolean keepOverviewOpen) {
-        AlbumController controller = com.petal.browser.unit.PetalTabSessionManager.restoreTabSilently(
+        AlbumController controller = com.petal.browser.browser.PetalSessionRestoreManager.restoreTabSilently(
             this, title, url, index, isIncognito, groupId, groupTitle, groupColorHex, keepOverviewOpen
         );
         updateOmniBox();
         updatePersistentBottomNav();
         return controller;
+    }
+
+    private void rebuildTabsFromBrowserStore(boolean tabsRestored) {
+        mozilla.components.browser.state.store.BrowserStore store =
+                com.petal.browser.engine.gecko.PetalEngineStore.getStore(this);
+        java.util.List<mozilla.components.browser.state.state.TabSessionState> tabs =
+                store.getState().getTabs();
+
+        if (tabs == null || tabs.isEmpty()) {
+            if (BrowserContainer.size() < 1) {
+                addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
+            }
+            return;
+        }
+
+        // Avoid duplicate additions if BrowserContainer is already populated (e.g. Activity recreation)
+        if (BrowserContainer.size() > 0) {
+            return;
+        }
+
+        String selectedTabId = store.getState().getSelectedTabId();
+        if (selectedTabId == null && !tabs.isEmpty()) {
+            selectedTabId = tabs.get(0).getId();
+        }
+
+        AlbumController activeController = null;
+
+        for (mozilla.components.browser.state.state.TabSessionState tabState : tabs) {
+            String tabId = tabState.getId();
+            String title = tabState.getContent().getTitle();
+            String url = tabState.getContent().getUrl();
+            boolean isIncognito = tabState.getContent().getPrivate();
+
+            com.petal.browser.browser.PetalTabMetadata meta =
+                    com.petal.browser.browser.PetalTabMetadataStore.get(this, tabId);
+            String effectiveTitle = (meta != null && meta.getCustomTitle() != null && !meta.getCustomTitle().isEmpty())
+                    ? meta.getCustomTitle()
+                    : (title != null && !title.isEmpty() ? title : getString(R.string.app_name));
+            String groupId = meta != null ? meta.getTabGroupId() : null;
+            String groupTitle = meta != null ? meta.getTabGroupTitle() : null;
+
+            if (tabId.equals(selectedTabId)) {
+                kotlin.Pair<mozilla.components.browser.state.state.TabSessionState, mozilla.components.concept.engine.EngineSession> sessionPair =
+                        com.petal.browser.engine.gecko.PetalEngineStore.materializeTabSession(
+                                this,
+                                tabId,
+                                url != null ? url : "about:blank",
+                                effectiveTitle,
+                                isIncognito,
+                                true
+                        );
+
+                com.petal.browser.browser.PetalTabViewController activeView =
+                        new com.petal.browser.browser.PetalTabViewController(this);
+                activeView.bindTab(sessionPair.getFirst());
+                activeView.attachLifecycle(this);
+                observePetalTabSurface(activeView);
+                if (groupId != null && !groupId.isEmpty()) {
+                    activeView.setTabGroupId(groupId);
+                    activeView.setTabGroupTitle(groupTitle);
+                }
+
+                boolean hasEngineHistory = sessionPair.getFirst().getEngineState().getEngineSessionState() != null;
+                if (!hasEngineHistory && url != null && !url.isEmpty() && !com.petal.browser.browser.PetalSessionRestoreManager.INSTANCE.isHomeUrl(url)) {
+                    activeView.loadUrl(url);
+                }
+
+                BrowserContainer.add(activeView);
+                activeController = activeView;
+            } else {
+                com.petal.browser.browser.PlaceholderAlbumController placeholder =
+                        new com.petal.browser.browser.PlaceholderAlbumController(
+                                this,
+                                effectiveTitle,
+                                url != null ? url : "about:blank",
+                                null,
+                                tabId,
+                                groupId,
+                                groupTitle,
+                                isIncognito
+                        );
+                BrowserContainer.add(placeholder);
+            }
+        }
+
+        if (activeController != null) {
+            activeController.activate();
+            showAlbum(activeController);
+        } else if (BrowserContainer.size() > 0) {
+            showAlbum(BrowserContainer.get(0));
+        }
+
+        java.util.List<String> activeIds = new java.util.ArrayList<>();
+        for (mozilla.components.browser.state.state.TabSessionState t : tabs) {
+            activeIds.add(t.getId());
+        }
+        com.petal.browser.browser.PetalTabMetadataStore.prune(this, activeIds);
     }
 
     public synchronized void addAlbum(String title, final String url, final boolean foreground) {

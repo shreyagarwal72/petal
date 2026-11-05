@@ -179,7 +179,8 @@ object PetalEngineStore {
     }
 
     /**
-     * Creates an [mozilla.components.concept.engine.EngineSession] and registers it as a [mozilla.components.browser.state.state.TabSessionState] in [BrowserStore].
+     * Creates an [mozilla.components.concept.engine.EngineSession] and registers it as a [mozilla.components.browser.state.state.TabSessionState] in [BrowserStore],
+     * linking the session so [mozilla.components.browser.state.engine.EngineMiddleware] actively tracks its state.
      */
     @JvmStatic
     fun createTabSession(
@@ -192,12 +193,6 @@ object PetalEngineStore {
     ): Pair<mozilla.components.browser.state.state.TabSessionState, mozilla.components.concept.engine.EngineSession> {
         val eng = getEngine(context)
         val st = getStore(context)
-        // The BrowserStore outlives BrowserActivity. A restored tab reuses its persisted id, so a stale
-        // entry left by the previous activity instance would collide with (and shadow) the new session,
-        // leaving the restored tab bound to a dead engine session / blank page.
-        if (st.state.tabs.any { it.id == tabId }) {
-            st.dispatch(mozilla.components.browser.state.action.TabListAction.RemoveTabAction(tabId))
-        }
         val session = eng.createSession(private = isIncognito)
 
         val tabState = mozilla.components.browser.state.state.TabSessionState(
@@ -213,7 +208,77 @@ object PetalEngineStore {
         )
 
         st.dispatch(mozilla.components.browser.state.action.TabListAction.AddTabAction(tabState, select = select))
+        st.dispatch(
+            mozilla.components.browser.state.action.EngineAction.LinkEngineSessionAction(
+                tabId = tabId,
+                engineSession = session,
+                skipLoading = false
+            )
+        )
         return Pair(tabState, session)
+    }
+
+    /**
+     * Prepares or retrieves an [EngineSession] for the specified tab, linking it to [BrowserStore].
+     * If the tab was restored lazily and has a serialized engineSessionState, it is restored
+     * into the engine session with back/forward history intact.
+     */
+    @JvmStatic
+    fun materializeTabSession(
+        context: Context,
+        tabId: String,
+        fallbackUrl: String = "about:blank",
+        fallbackTitle: String = "",
+        isIncognito: Boolean = false,
+        select: Boolean = true
+    ): Pair<mozilla.components.browser.state.state.TabSessionState, mozilla.components.concept.engine.EngineSession> {
+        val st = getStore(context)
+        val eng = getEngine(context)
+
+        val existingTab = st.state.tabs.firstOrNull { it.id == tabId }
+        if (existingTab != null) {
+            val existingSession = existingTab.engineState.engineSession
+            val session = if (existingSession != null) {
+                existingSession
+            } else {
+                val newSession = eng.createSession(private = existingTab.content.private)
+                val state = existingTab.engineState.engineSessionState
+                val skipLoading = if (state != null) {
+                    try {
+                        newSession.restoreState(state)
+                        true
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Failed to restore engine session state: ${t.message}")
+                        false
+                    }
+                } else {
+                    false
+                }
+                st.dispatch(
+                    mozilla.components.browser.state.action.EngineAction.LinkEngineSessionAction(
+                        tabId = tabId,
+                        engineSession = newSession,
+                        skipLoading = skipLoading
+                    )
+                )
+                newSession
+            }
+            if (select) {
+                st.dispatch(mozilla.components.browser.state.action.TabListAction.SelectTabAction(tabId))
+            }
+            val updatedTab = st.state.tabs.firstOrNull { it.id == tabId } ?: existingTab
+            return Pair(updatedTab, session)
+        }
+
+        // Tab is not in store: create brand new tab
+        return createTabSession(
+            context = context,
+            tabId = tabId,
+            url = fallbackUrl,
+            title = fallbackTitle,
+            isIncognito = isIncognito,
+            select = select
+        )
     }
 
     /** Registers the prepared EngineSession supplied by an Android Components window request. */
@@ -236,8 +301,16 @@ object PetalEngineStore {
             ),
             engineState = mozilla.components.browser.state.state.EngineState(engineSession = session)
         )
-        getStore(context).dispatch(
+        val st = getStore(context)
+        st.dispatch(
             mozilla.components.browser.state.action.TabListAction.AddTabAction(tabState, select)
+        )
+        st.dispatch(
+            mozilla.components.browser.state.action.EngineAction.LinkEngineSessionAction(
+                tabId = tabId,
+                engineSession = session,
+                skipLoading = true
+            )
         )
         return tabState
     }
@@ -250,6 +323,7 @@ object PetalEngineStore {
         getStore(context).dispatch(
             mozilla.components.browser.state.action.TabListAction.RemoveTabAction(tabId)
         )
+        com.petal.browser.browser.PetalTabMetadataStore.remove(context, tabId)
     }
 
     @JvmStatic

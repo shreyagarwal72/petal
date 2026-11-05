@@ -136,8 +136,8 @@ public final class TabThumbnailCache {
 
     /**
      * Deletes every stored thumbnail whose tab id is not in [liveTabIds] (closed tabs, crashed
-     * sessions, tabs removed through code paths that never evicted). Mirrors
-     * PetalTabStateStore.retainOnly and is what keeps the directory bounded by the open tabs.
+     * sessions, tabs removed through code paths that never evicted).
+     * Keeps the directory bounded by the open tabs.
      */
     public static void retainOnly(@Nullable Collection<String> liveTabIds) {
         if (liveTabIds == null) return;

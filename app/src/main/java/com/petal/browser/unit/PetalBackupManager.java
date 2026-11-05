@@ -428,14 +428,7 @@ public class PetalBackupManager {
 
             if (backupTabSessions) {
                 try {
-                    HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
-                    action.open(false);
-                    String sessionJson = action.getSessionStateJson();
-                    action.close();
-                    if (sessionJson == null || sessionJson.trim().isEmpty()) {
-                        sessionJson = PreferenceManager.getDefaultSharedPreferences(context)
-                                .getString(com.petal.browser.unit.PetalTabSessionManager.PREF_SESSION_JSON, null);
-                    }
+                    String sessionJson = com.petal.browser.browser.PetalSessionRestoreManager.exportSessionForBackup(context);
                     if (sessionJson != null && !sessionJson.trim().isEmpty()) {
                         backupJson.put("tab_sessions", sessionJson);
                     }
@@ -792,15 +785,7 @@ public class PetalBackupManager {
                             sessionJson = (String) sessionObj;
                         }
                         if (sessionJson != null && !sessionJson.trim().isEmpty()) {
-                            HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
-                            action.open(true);
-                            action.saveSessionStateJson(sessionJson);
-                            action.close();
-
-                            PreferenceManager.getDefaultSharedPreferences(context).edit()
-                                    .putString(com.petal.browser.unit.PetalTabSessionManager.PREF_SESSION_JSON, sessionJson)
-                                    .putBoolean(com.petal.browser.unit.PetalTabSessionManager.PREF_RESTORE_ON_RESTART, true)
-                                    .apply();
+                            com.petal.browser.browser.PetalSessionRestoreManager.importSessionFromBackup(context, sessionJson);
                         }
                     } catch (Exception e) {
                         Log.e("Petal", "Error restoring tab session", e);
@@ -1037,15 +1022,7 @@ public class PetalBackupManager {
                             sessionJson = (String) sessionObj;
                         }
                         if (sessionJson != null && !sessionJson.trim().isEmpty()) {
-                            HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
-                            action.open(true);
-                            action.saveSessionStateJson(sessionJson);
-                            action.close();
-
-                            PreferenceManager.getDefaultSharedPreferences(context).edit()
-                                    .putString(com.petal.browser.unit.PetalTabSessionManager.PREF_SESSION_JSON, sessionJson)
-                                    .putBoolean(com.petal.browser.unit.PetalTabSessionManager.PREF_RESTORE_ON_RESTART, true)
-                                    .apply();
+                            com.petal.browser.browser.PetalSessionRestoreManager.importSessionFromBackup(context, sessionJson);
                         }
                     } catch (Exception e) {
                         Log.e("Petal", "Error restoring tab session", e);
@@ -1174,7 +1151,7 @@ public class PetalBackupManager {
                 List<Record> bookmarks = action.listBookmark(context, false, 0);
                 List<Record> history = action.listHistory(context);
                 List<Record> startSites = action.listStartSites();
-                String sessionJson = action.getSessionStateJson();
+                String sessionJson = com.petal.browser.browser.PetalSessionRestoreManager.exportSessionForBackup(context);
                 List<String> domains = action.listDomains(HistoryBookmarkContract.TABLE_STANDARD);
                 List<String> trusted = action.listDomains(HistoryBookmarkContract.TABLE_TRUSTED);
                 List<String> protect = action.listDomains(HistoryBookmarkContract.TABLE_PROTECTED);

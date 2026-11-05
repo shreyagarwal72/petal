@@ -978,8 +978,7 @@ class PetalGeckoView @JvmOverloads constructor(
     /**
      * The last real (non-blank, non-home) URL that was explicitly requested via [loadUrl].
      * Unlike [currentUrl], this is never reset to "about:blank" — it preserves the original
-     * intent even while the engine is still loading. Used by [PetalTabSessionManager] to
-     * recover the correct URL instead of persisting a transient "about:blank".
+     * intent even while the engine is still loading.
      */
     @JvmField var persistentUrl: String = ""
     private var currentTitle: String = "Petal Start"

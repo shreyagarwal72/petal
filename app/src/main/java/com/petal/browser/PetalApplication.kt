@@ -99,8 +99,10 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
                 try {
                     com.petal.browser.engine.gecko.PetalEngineStore.getSessionStorage(this)
                     com.petal.browser.engine.gecko.PetalEngineStore.getAutoSave(this)
+                        .whenGoingToBackground()
+                        .whenSessionsChange()
                 } catch (t: Throwable) {
-                    Log.w(TAG, "BrowserStore session persistence unavailable; continuing with Petal tabs", t)
+                    Log.w(TAG, "BrowserStore session persistence unavailable", t)
                 }
                 com.petal.browser.media.sniffer.PetalMediaGrabberInstaller.install(this)
             }

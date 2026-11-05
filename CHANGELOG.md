@@ -2,16 +2,18 @@
 
 > *"The landmark 'More Expressive' release elevates Petal Browser to new heights of Material 3 Expressive design, fluid reactive theming, and tactile user customization: introducing a comprehensive ImageToolbox-style Layout & Controls suite with live component styling, seamless Liquid Glass auto-adaptation, PixelMusic-grade expressive fast-scrollbars, overhauled Mix Palettes with one-tap harmony recipes, bi-directional Send Tab to Device across all connected Firefox instances, and a robust Reader Mode with Read Aloud text-to-speech."*
 
-#### 🛡️ Tab Session Resilience & Gecko Engine Tab De-collision (`PetalTabSessionManager.kt`, `PetalEngineStore.kt`, `BrowserActivity.java`)
-- **Restoration Gate & Save Suspension**:
-  - Implemented `@Volatile restoreFinished` gating in `PetalTabSessionManager` to prevent early progress or title callbacks during `onCreate` from wiping or overwriting the saved session before tabs are restored.
-  - Added `suspendSaving()` in `BrowserActivity.onDestroy()` to ensure destroyed activity instances never inadvertently flush empty or half-restored states to disk.
-- **Gecko BrowserStore Stale Tab Eviction**:
-  - Automatically evict collided tab entries in `PetalEngineStore.createSession` when restoring tabs, preventing stale engine sessions from outliving the activity and shadowing restored tabs into blank screens.
-  - Added `releaseEngineTabs()` in `BrowserActivity.onDestroy()` and `PetalEngineStore.removeTabs()` to cleanly drop activity tab sessions from the process-wide `BrowserStore`.
-- **Session Backup & Transient State Guard**:
-  - Prevented transient empty container states from clearing persisted tabs unless an explicit clear action is triggered.
-  - Introduced `PREF_SESSION_JSON_BACKUP` safety persistence to preserve session records across unexpected restoration failures.
+#### 🦊 Firefox/Fenix Mozilla Android Components Session Architecture Migration (`BrowserStore`, `AutoSave`, `SessionStorage`)
+- **BrowserStore as Single Source of Truth**:
+  - Replaced legacy custom tab session persistence and restore systems (`PetalTabSessionManager` and `PetalTabStateStore`) with the standard Firefox/Fenix architecture powered by Mozilla Android Components 159.
+  - Eliminated temporary patches (restoreFinished save gate, suspendSaving, PREF_SESSION_JSON_BACKUP fallback, releaseEngineTabs, and createTabSession stale ID collision removals).
+- **Process-Level AutoSave Gating**:
+  - Bound Mozilla `AutoSave` directly to the application lifecycle with `whenGoingToBackground()` and `whenSessionsChange()`, ensuring all atomic persistence to `mozilla_components_session_storage_gecko.json` is handled automatically without manual save triggers.
+- **EngineSession Linking & Back/Forward Navigation Integrity**:
+  - Linked all active and restored engine sessions to `BrowserStore` via `EngineAction.LinkEngineSessionAction` so `LinkingMiddleware` actively tracks and synchronizes `EngineSessionState`, preserving full back/forward history stacks, scroll offsets, and form state across restarts.
+  - Suspended background tabs preserve full engine state via `EngineAction.SuspendEngineSessionAction` and rehydrate lazily with `materializeTabSession()`.
+- **Sidecar Metadata Store & One-Time Legacy Migration**:
+  - Introduced `PetalTabMetadataStore` sidecar to preserve tab group IDs, titles, colors, and custom titles keyed by tab ID, automatically pruned to existing tabs.
+  - Built-in one-time migration seamlessly converts legacy JSON, SQLite session rows, and `petal_tab_state` files into Mozilla SessionStorage, followed by a clean wipe of legacy data.
 
 #### 🎨 Official Material 3 Expressive Progress Bar & Merged Stack Relocation (`PetalProgressBarBridge.kt`, `PetalMergedBar.kt`, `AddressPill.kt`, `BrowserActivity.java`)
 - **Official Material 3 Expressive Design**:

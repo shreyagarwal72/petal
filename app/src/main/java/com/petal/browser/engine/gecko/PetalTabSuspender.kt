@@ -82,15 +82,6 @@ object PetalTabSuspender {
                 isIncognito = controller.isIncognito()
 
                 try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
-                // Persist engine back/forward state before releasing the view (matches official Firefox session suspension)
-                try {
-                    controller.captureEngineState()?.let { state ->
-                        if (!isIncognito && url.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(url)) {
-                            com.petal.browser.unit.PetalTabStateStore.write(context, tabId, state)
-                        }
-                    }
-                } catch (_: Throwable) {}
-
                 try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
 
                 try {
@@ -115,15 +106,6 @@ object PetalTabSuspender {
                 isIncognito = controller.isIncognito()
 
                 try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
-                // Persist engine back/forward state before releasing the view
-                try {
-                    controller.captureEngineState()?.let { state ->
-                        if (!isIncognito && url.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(url)) {
-                            com.petal.browser.unit.PetalTabStateStore.write(context, tabId, state)
-                        }
-                    }
-                } catch (_: Throwable) {}
-
                 try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
 
                 try {
