@@ -158,8 +158,8 @@ fun Material3ExpressiveProgressIndicator(
 
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(animationSpec = tween(durationMillis = 150, easing = LinearOutSlowInEasing)),
-        exit = fadeOut(animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)),
+        enter = fadeIn(animationSpec = PetalSpring.progressFade()),
+        exit = fadeOut(animationSpec = PetalSpring.progressFade()),
     ) {
         Canvas(
             modifier = modifier

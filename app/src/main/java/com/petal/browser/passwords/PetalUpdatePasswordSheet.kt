@@ -8,6 +8,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -137,49 +138,40 @@ private fun UpdatePasswordSheetContent(
     // Scrim fade animation
     val scrimAlpha by animateFloatAsState(
         targetValue = if (isMorphing || isClosing) 0f else 0.52f,
-        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
+        animationSpec = PetalSpring.fadeIn(),
         label = "scrimAlpha"
     )
 
     // Morph animations towards Petal NowBar coordinates
     val scale by animateFloatAsState(
         targetValue = if (isMorphing) 0.16f else if (isClosing) 0.92f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        animationSpec = PetalSpring.containerMorph(),
         label = "scale"
     )
 
     val targetTranslationY = with(density) { (-screenHeightDp + 52.dp).toPx() }
     val translationY by animateFloatAsState(
         targetValue = if (isMorphing) targetTranslationY else if (isClosing) with(density) { 320.dp.toPx() } else 0f,
-        animationSpec = spring(
-            dampingRatio = 0.85f,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        animationSpec = PetalSpring.containerMorph(),
         label = "transY"
     )
 
     val targetTranslationX = with(density) { cutoutOffsetXDp.dp.toPx() }
     val translationX by animateFloatAsState(
         targetValue = if (isMorphing) targetTranslationX else 0f,
-        animationSpec = spring(
-            dampingRatio = 0.85f,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        animationSpec = PetalSpring.containerMorph(),
         label = "transX"
     )
 
     val alpha by animateFloatAsState(
         targetValue = if (isMorphing) 0f else if (isClosing) 0f else 1f,
-        animationSpec = tween(durationMillis = 320, delayMillis = 40),
+        animationSpec = PetalSpring.fadeOut(),
         label = "alpha"
     )
 
     val cornerRadius by animateDpAsState(
         targetValue = if (isMorphing) 50.dp else 32.dp,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        animationSpec = PetalSpring.containerMorph(),
         label = "corner"
     )
 

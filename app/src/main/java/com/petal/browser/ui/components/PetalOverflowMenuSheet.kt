@@ -366,7 +366,12 @@ fun PetalOverflowMenuSheet(
     var isVisible by remember { mutableStateOf(false) }
     var isDismissing by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { isVisible = true }
+    LaunchedEffect(Unit) {
+        com.petal.browser.motion.MotionGate.withMotion("overflow_menu_open") {
+            isVisible = true
+            kotlinx.coroutines.delay(250)
+        }
+    }
 
     val handleDismiss = {
         if (!isDismissing) {
@@ -381,7 +386,9 @@ fun PetalOverflowMenuSheet(
 
     LaunchedEffect(isDismissing) {
         if (isDismissing) {
-            kotlinx.coroutines.delay(180)
+            com.petal.browser.motion.MotionGate.withMotion("overflow_menu_close") {
+                kotlinx.coroutines.delay(180)
+            }
             onDismissRequest()
         }
     }
@@ -389,15 +396,9 @@ fun PetalOverflowMenuSheet(
     val scale by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0.12f,
         animationSpec = if (isVisible) {
-            spring(
-                dampingRatio = 0.74f,
-                stiffness = 400f
-            )
+            PetalSpring.menuPop()
         } else {
-            spring(
-                dampingRatio = 0.88f,
-                stiffness = 460f
-            )
+            PetalSpring.exit()
         },
         label = "MenuExpandScale"
     )
@@ -405,15 +406,9 @@ fun PetalOverflowMenuSheet(
     val translationY by animateFloatAsState(
         targetValue = if (isVisible) 0f else 32f,
         animationSpec = if (isVisible) {
-            spring(
-                dampingRatio = 0.74f,
-                stiffness = 400f
-            )
+            PetalSpring.menuPop()
         } else {
-            spring(
-                dampingRatio = 0.88f,
-                stiffness = 460f
-            )
+            PetalSpring.exit()
         },
         label = "MenuSlideY"
     )
@@ -421,15 +416,9 @@ fun PetalOverflowMenuSheet(
     val translationX by animateFloatAsState(
         targetValue = if (isVisible) 0f else 8f,
         animationSpec = if (isVisible) {
-            spring(
-                dampingRatio = 0.74f,
-                stiffness = 400f
-            )
+            PetalSpring.menuPop()
         } else {
-            spring(
-                dampingRatio = 0.88f,
-                stiffness = 460f
-            )
+            PetalSpring.exit()
         },
         label = "MenuSlideX"
     )

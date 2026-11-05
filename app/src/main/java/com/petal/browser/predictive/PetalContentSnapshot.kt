@@ -120,12 +120,22 @@ object PetalContentSnapshot {
 
     @JvmStatic
     fun capture(rootView: View): Bitmap {
+        val existing = com.petal.browser.motion.MotionGate.getTransitionSnapshot()
+        if (existing != null && !existing.isRecycled) {
+            _current = existing
+            return existing
+        }
+
         val now = SystemClock.uptimeMillis()
         val pre = preview
         preview = null
         val result = if (pre != null && !pre.isRecycled && now - previewAt <= PREVIEW_MAX_AGE_MS) pre else grab(rootView)
         _current = result
         currentAt = now
+
+        if (com.petal.browser.motion.MotionGate.isRunning) {
+            com.petal.browser.motion.MotionGate.acquireTransitionSnapshot { result }
+        }
         return result
     }
 
@@ -150,6 +160,7 @@ object PetalContentSnapshot {
 
     @JvmStatic
     fun clear() {
+        if (com.petal.browser.motion.MotionGate.isRunning) return
         // The overlay being replaced is disposed after the new one has already captured; wiping
         // here would hand the new screen a null underlay (black predictive-back background).
         if (SystemClock.uptimeMillis() - currentAt < CLEAR_GRACE_MS) return

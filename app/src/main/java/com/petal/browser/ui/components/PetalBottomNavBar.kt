@@ -139,7 +139,7 @@ fun PetalBottomNavBar(
     // Whole-bar entrance: slides up and fades in with a soft spring when first shown
     val entrance = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        entrance.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = 260f))
+        entrance.animateTo(1f, PetalSpring.enter())
     }
     val entranceOffsetPx = with(LocalDensity.current) { 32.dp.toPx() }
 
@@ -165,23 +165,25 @@ fun PetalBottomNavBar(
         if (barShown && searchLaunch.value > 0f) {
             searchLaunch.snapTo(0f)
             entrance.snapTo(0f)
-            entrance.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = 260f))
+            entrance.animateTo(1f, PetalSpring.enter())
         }
     }
     // Bounds of the tapped search control (separate glass button, else the whole nav bar), so the
     // omnibox page grows out of it.
     val searchButtonBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
+    val newTabButtonBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
+    val tabsButtonBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
     val navBarBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
     val launchSearch: () -> Unit = {
         if (searchLaunch.value == 0f) {
             PetalOmniboxOrigin.mark(searchButtonBounds[0] ?: navBarBounds[0], -1f)
             scope.launch {
-                searchLaunch.animateTo(1f, tween(durationMillis = 150, easing = FastOutSlowInEasing))
+                searchLaunch.animateTo(1f, PetalSpring.exit())
                 onSearchClick()
                 // If the host did not hide the bar, do not leave it faded out.
                 delay(700L)
                 if (hostView.isShown && searchLaunch.value > 0f) {
-                    searchLaunch.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 300f))
+                    searchLaunch.animateTo(0f, PetalSpring.enter())
                 }
             }
         }
@@ -192,10 +194,7 @@ fun PetalBottomNavBar(
         badgeScale.snapTo(1.35f)
         badgeScale.animateTo(
             1f,
-            spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMedium
-            )
+            PetalSpring.press()
         )
     }
 
@@ -341,7 +340,7 @@ fun PetalBottomNavBar(
                         icon = { isSelected, tint ->
                             val iconScale by animateFloatAsState(
                                 targetValue = if (isSelected) 1.18f else 1.0f,
-                                animationSpec = spring(dampingRatio = 0.62f, stiffness = 380f),
+                                animationSpec = PetalSpring.spatial(),
                                 label = "home_expressive_scale"
                             )
                             Crossfade(
@@ -371,16 +370,18 @@ fun PetalBottomNavBar(
                         label = newTabLabel,
                         index = 1,
                         isLiquidGlass = isLiquidGlass,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .onGloballyPositioned { newTabButtonBounds[0] = it.boundsInWindow() },
                         icon = { isSelected, tint ->
                             val rotationAngle by animateFloatAsState(
                                 targetValue = if (isSelected) 90f else 0f,
-                                animationSpec = spring(dampingRatio = 0.65f, stiffness = 420f),
+                                animationSpec = PetalSpring.spatial(),
                                 label = "add_expressive_rotation"
                             )
                             val iconScale by animateFloatAsState(
                                 targetValue = if (isSelected) 1.18f else 1.0f,
-                                animationSpec = spring(dampingRatio = 0.62f, stiffness = 380f),
+                                animationSpec = PetalSpring.spatial(),
                                 label = "add_expressive_scale"
                             )
                             Icon(
@@ -396,7 +397,12 @@ fun PetalBottomNavBar(
                                     }
                             )
                         },
-                        onClick = onNewTabClick
+                        onClick = {
+                            val bounds = newTabButtonBounds[0] ?: navBarBounds[0]
+                            val rad = if (bounds != null) bounds.height / 2f else 24f
+                            PetalNewTabOrigin.mark(bounds, rad)
+                            onNewTabClick()
+                        }
                     )
 
                     if (centerSearch) {
@@ -424,11 +430,13 @@ fun PetalBottomNavBar(
                         badgeText = if (tabCount > 99) "99+" else tabCount.toString(),
                         index = 2,
                         isLiquidGlass = isLiquidGlass,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .onGloballyPositioned { tabsButtonBounds[0] = it.boundsInWindow() },
                         icon = { isSelected, tint ->
                             val iconScale by animateFloatAsState(
                                 targetValue = if (isSelected) 1.05f else 1.0f,
-                                animationSpec = spring(dampingRatio = 0.62f, stiffness = 380f),
+                                animationSpec = PetalSpring.spatial(),
                                 label = "tabs_expressive_scale"
                             )
                             TabCountBadge(
@@ -437,7 +445,12 @@ fun PetalBottomNavBar(
                                 scale = badgeScale.value * iconScale
                             )
                         },
-                        onClick = onTabsClick
+                        onClick = {
+                            val bounds = tabsButtonBounds[0] ?: navBarBounds[0]
+                            val rad = if (bounds != null) bounds.height / 2f else 24f
+                            PetalNewTabOrigin.mark(bounds, rad)
+                            onTabsClick()
+                        }
                     )
 
                     ExpressiveNavTabItem(
@@ -449,12 +462,12 @@ fun PetalBottomNavBar(
                         icon = { isSelected, tint ->
                             val rotationAngle by animateFloatAsState(
                                 targetValue = if (isSelected) 180f else 0f,
-                                animationSpec = spring(dampingRatio = 0.68f, stiffness = 400f),
+                                animationSpec = PetalSpring.spatial(),
                                 label = "menu_expressive_rotation"
                             )
                             val iconScale by animateFloatAsState(
                                 targetValue = if (isSelected) 1.18f else 1.0f,
-                                animationSpec = spring(dampingRatio = 0.62f, stiffness = 380f),
+                                animationSpec = PetalSpring.spatial(),
                                 label = "menu_expressive_scale"
                             )
                             Icon(
@@ -494,29 +507,20 @@ private fun FloatingNavTabItem(
     // Bouncy touch feedback press scale
     val pressScale by animateFloatAsState(
         targetValue = if (isPressed) 0.90f else 1.0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
+        animationSpec = PetalSpring.press(),
         label = "press_scale_$index"
     )
 
     val labelWidth by animateDpAsState(
         targetValue = if (selected) 72.dp else 0.dp,
-        animationSpec = spring(
-            dampingRatio = 0.76f,
-            stiffness = 360f
-        ),
+        animationSpec = PetalSpring.spatial(),
         label = "nav_label_$index"
     )
 
     // Label fades/slides in slightly after the pill starts expanding
     val labelAlpha by animateFloatAsState(
         targetValue = if (selected) 1f else 0f,
-        animationSpec = tween(
-            durationMillis = if (selected) 220 else 90,
-            delayMillis = if (selected) 90 else 0
-        ),
+        animationSpec = if (selected) PetalSpring.fadeIn() else PetalSpring.fadeOut(),
         label = "nav_label_alpha_$index"
     )
 
@@ -524,7 +528,7 @@ private fun FloatingNavTabItem(
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         delay(index * 55L)
-        enter.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 320f))
+        enter.animateTo(1f, PetalSpring.enter())
     }
 
     val activeContainerColor = MaterialTheme.colorScheme.primaryContainer
@@ -533,13 +537,13 @@ private fun FloatingNavTabItem(
 
     val currentContentColor by animateColorAsState(
         targetValue = if (selected) activeContentColor else inactiveContentColor,
-        animationSpec = spring(dampingRatio = 0.85f, stiffness = 400f),
+        animationSpec = PetalSpring.spatial(),
         label = "nav_color_$index"
     )
 
     val currentBgColor by animateColorAsState(
         targetValue = if (selected) activeContainerColor else Color.Transparent,
-        animationSpec = spring(dampingRatio = 0.85f, stiffness = 400f),
+        animationSpec = PetalSpring.spatial(),
         label = "nav_bg_$index"
     )
 
@@ -618,9 +622,9 @@ internal fun TabCountBadge(color: Color, count: Int, scale: Float = 1f) {
             targetState = count,
             transitionSpec = {
                 val up = targetState > initialState
-                (slideInVertically(spring(dampingRatio = 0.75f, stiffness = 500f)) { if (up) it else -it } + fadeIn(tween(120)))
+                (slideInVertically(PetalSpring.spatial()) { if (up) it else -it } + fadeIn(PetalSpring.fadeIn()))
                     .togetherWith(
-                        slideOutVertically(spring(dampingRatio = 0.75f, stiffness = 500f)) { if (up) -it else it } + fadeOut(tween(90))
+                        slideOutVertically(PetalSpring.spatial()) { if (up) -it else it } + fadeOut(PetalSpring.fadeOut())
                     )
                     .using(SizeTransform(clip = true))
             },
@@ -665,35 +669,26 @@ private fun ExpressiveNavTabItem(
     // Tactile squash-and-stretch micro-interaction when pressed
     val pressScaleX by animateFloatAsState(
         targetValue = if (isPressed) 0.92f else 1.0f,
-        animationSpec = spring(
-            dampingRatio = 0.60f,
-            stiffness = Spring.StiffnessMedium
-        ),
+        animationSpec = PetalSpring.press(),
         label = "expressive_press_scale_x_$index"
     )
     val pressScaleY by animateFloatAsState(
         targetValue = if (isPressed) 0.90f else 1.0f,
-        animationSpec = spring(
-            dampingRatio = 0.60f,
-            stiffness = Spring.StiffnessMedium
-        ),
+        animationSpec = PetalSpring.press(),
         label = "expressive_press_scale_y_$index"
     )
 
     // Active pill background color & indicator lift
     val activeLiftY by animateDpAsState(
         targetValue = if (selected) (-1).dp else 0.dp,
-        animationSpec = spring(dampingRatio = 0.70f, stiffness = 400f),
+        animationSpec = PetalSpring.spatial(),
         label = "expressive_lift_$index"
     )
 
     // Fluid indicator pill geometry: expands from 40dp to 58dp on selection
     val activeIndicatorWidth by animateDpAsState(
         targetValue = if (selected) 58.dp else 40.dp,
-        animationSpec = spring(
-            dampingRatio = 0.72f,
-            stiffness = 380f
-        ),
+        animationSpec = PetalSpring.spatial(),
         label = "expressive_indicator_width_$index"
     )
 
@@ -706,19 +701,19 @@ private fun ExpressiveNavTabItem(
     }
     val indicatorBgColor by animateColorAsState(
         targetValue = if (selected) activeIndicatorColor else Color.Transparent,
-        animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f),
+        animationSpec = PetalSpring.spatial(),
         label = "expressive_indicator_bg_$index"
     )
 
     val contentTint by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = spring(dampingRatio = 0.85f, stiffness = 400f),
+        animationSpec = PetalSpring.spatial(),
         label = "expressive_content_tint_$index"
     )
 
     val labelColor by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = spring(dampingRatio = 0.85f, stiffness = 400f),
+        animationSpec = PetalSpring.spatial(),
         label = "expressive_label_color_$index"
     )
 
@@ -728,7 +723,7 @@ private fun ExpressiveNavTabItem(
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         delay(index * 55L)
-        enter.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 320f))
+        enter.animateTo(1f, PetalSpring.enter())
     }
 
     val indicatorShape = RoundedCornerShape(14.dp)

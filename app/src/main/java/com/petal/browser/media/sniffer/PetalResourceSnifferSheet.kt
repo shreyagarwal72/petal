@@ -9,6 +9,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -383,10 +384,7 @@ private fun SniffedResourceRow(
     val itemShape = RoundedCornerShape(18.dp)
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 0.98f else 1.0f,
-        animationSpec = spring(
-            dampingRatio = 0.75f,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        animationSpec = PetalSpring.spatial(),
         label = "item_scale"
     )
 

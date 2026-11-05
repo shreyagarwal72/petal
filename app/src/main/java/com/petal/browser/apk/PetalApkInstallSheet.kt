@@ -6,6 +6,7 @@ import android.content.Context
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -80,11 +81,11 @@ fun PetalApkInstallSheet(
                 AnimatedContent(
                     targetState = step,
                     transitionSpec = {
-                        (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                                scaleIn(initialScale = 0.95f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)))
+                        (fadeIn(animationSpec = PetalSpring.fadeThroughIn()) +
+                                scaleIn(initialScale = 0.95f, animationSpec = PetalSpring.spatial()))
                             .togetherWith(
-                                fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                                        scaleOut(targetScale = 0.95f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                                fadeOut(animationSpec = PetalSpring.fadeThroughOut()) +
+                                        scaleOut(targetScale = 0.95f, animationSpec = PetalSpring.exit())
                             )
                     },
                     label = "ApkStepTransition"

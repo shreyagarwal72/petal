@@ -532,7 +532,7 @@ fun PetalTabSwitcherContent(
                     // Far Right: Three-dot overflow menu button
                     val switcherMenuRotation by animateFloatAsState(
                         targetValue = if (showOverflowMenu) 180f else 0f,
-                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                        animationSpec = PetalSpring.spatial(),
                         label = "tab_switcher_overflow_rot"
                     )
                     Box {

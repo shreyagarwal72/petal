@@ -1,6 +1,11 @@
 package com.petal.browser.compose.tabs
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
+import com.petal.browser.ui.components.PetalNewTabOrigin
+import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.components.rememberReduceMotion
+import com.petal.browser.ui.components.rememberLowEndDevice
+import kotlinx.coroutines.Job
 
 import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
@@ -13,10 +18,13 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
@@ -405,12 +413,49 @@ fun PetalTabGridSwitcher(
         }
     }
 
-    fun launchNewTab(isIncognito: Boolean) {
+    val reduceMotion = rememberReduceMotion()
+    val isLowEnd = rememberLowEndDevice()
+    var currentHeroJob by remember { mutableStateOf<Job?>(null) }
+    var newTabButtonBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+    val closingTabIds = remember { mutableStateListOf<String>() }
+
+    fun initiateTabClose(tab: PetalTabItem) {
+        if (closingTabIds.contains(tab.id)) return
+        closingTabIds.add(tab.id)
+        coroutineScope.launch {
+            com.petal.browser.motion.MotionGate.withMotion("tab_close") {
+                kotlinx.coroutines.delay(180L)
+            }
+            requestOptimisticClose(tab)
+            closingTabIds.remove(tab.id)
+        }
+    }
+
+    fun launchNewTab(isIncognito: Boolean, originBounds: androidx.compose.ui.geometry.Rect? = null, originRadius: Float? = null) {
         newTabLaunchKey = System.currentTimeMillis()
         commitPendingRemovals()
-        coroutineScope.launch {
-            kotlinx.coroutines.delay(160L)
+        currentHeroJob?.cancel()
+        currentHeroJob = coroutineScope.launch {
+            val origin = originBounds ?: newTabButtonBounds ?: PetalNewTabOrigin.peek()
+            val rad = originRadius ?: PetalNewTabOrigin.getRadius().takeIf { it > 0f } ?: (origin?.height?.div(2f) ?: 24f)
+            hero.busy = true
+            hero.customOriginBounds = origin
+            hero.customOriginRadius = rad
+            hero.tabId = null
+            hero.image = null
+            hero.fillColor = if (isIncognito) androidx.compose.ui.graphics.Color(0xFF1C1D24) else androidx.compose.ui.graphics.Color.White
+            hero.visible = true
+            hero.progress.snapTo(1f)
+            com.petal.browser.motion.MotionGate.withMotion("new_tab_grow") {
+                if (reduceMotion) {
+                    hero.progress.snapTo(0f)
+                } else {
+                    hero.progress.animateTo(0f, TabHeroState.spec())
+                }
+            }
             onNewTab(isIncognito)
+            kotlinx.coroutines.delay(700L)
+            hero.dock()
         }
     }
 
@@ -491,23 +536,40 @@ fun PetalTabGridSwitcher(
                 .first()
         }
         hero.progress.snapTo(0f)
-        hero.progress.animateTo(1f, TabHeroState.spec())
+        com.petal.browser.motion.MotionGate.withMotion("tab_switcher_open") {
+            if (reduceMotion) {
+                hero.progress.snapTo(1f)
+            } else {
+                hero.progress.animateTo(1f, TabHeroState.spec())
+            }
+        }
         hero.visible = false
     }
 
     // Select: the tapped tile expands to the full page, then the tab is shown.
     val heroSelect: (PetalTabItem) -> Unit = { tab ->
+        currentHeroJob?.cancel()
         val image = heroImageFor(tab)
-        if (hero.busy || image == null || tabCardBounds[tab.id] == null) {
+        if (image == null || tabCardBounds[tab.id] == null) {
             onTabSelect(tab)
         } else {
-            coroutineScope.launch {
+            currentHeroJob = coroutineScope.launch {
                 hero.busy = true
                 hero.tabId = tab.id
                 hero.image = image
+                hero.customOriginBounds = null
+                hero.customOriginRadius = null
                 hero.visible = true
-                hero.progress.snapTo(1f)
-                hero.progress.animateTo(0f, TabHeroState.spec())
+                if (!hero.visible || hero.progress.value >= 1f) {
+                    hero.progress.snapTo(1f)
+                }
+                com.petal.browser.motion.MotionGate.withMotion("tab_switcher_close") {
+                    if (reduceMotion) {
+                        hero.progress.snapTo(0f)
+                    } else {
+                        hero.progress.animateTo(0f, TabHeroState.spec())
+                    }
+                }
                 onTabSelect(tab)
                 // Safety net: if the host did not tear this screen down, don't leave the overlay stuck.
                 kotlinx.coroutines.delay(700)
@@ -519,8 +581,9 @@ fun PetalTabGridSwitcher(
     // Predictive back: the tile grows with the gesture; commit expands fully, cancel docks it back.
     val predictiveBackOn by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
     androidx.activity.compose.PredictiveBackHandler(
-        enabled = tabs.isNotEmpty() && !hero.busy
+        enabled = tabs.isNotEmpty()
     ) { progressFlow ->
+        currentHeroJob?.cancel()
         val target = tabs.firstOrNull { it.isSelected } ?: tabs.first()
         val image = heroImageFor(target)
         if (!predictiveBackOn || image == null || tabCardBounds[target.id] == null) {
@@ -531,6 +594,8 @@ fun PetalTabGridSwitcher(
         }
         hero.tabId = target.id
         hero.image = image
+        hero.customOriginBounds = null
+        hero.customOriginRadius = null
         hero.visible = true
         hero.progress.snapTo(1f)
         try {
@@ -538,13 +603,29 @@ fun PetalTabGridSwitcher(
                 hero.progress.snapTo(1f - 0.45f * event.progress)
             }
             hero.busy = true
-            hero.progress.animateTo(0f, TabHeroState.spec())
-            effectiveOnBack()
-            kotlinx.coroutines.delay(700)
-            hero.dock()
+            currentHeroJob = coroutineScope.launch {
+                com.petal.browser.motion.MotionGate.withMotion("tab_switcher_close") {
+                    if (reduceMotion) {
+                        hero.progress.snapTo(0f)
+                    } else {
+                        hero.progress.animateTo(0f, TabHeroState.spec())
+                    }
+                }
+                effectiveOnBack()
+                kotlinx.coroutines.delay(700)
+                hero.dock()
+            }
         } catch (e: kotlinx.coroutines.CancellationException) {
-            hero.progress.animateTo(1f, TabHeroState.spec())
-            hero.dock()
+            currentHeroJob = coroutineScope.launch {
+                com.petal.browser.motion.MotionGate.withMotion("tab_switcher_cancel") {
+                    if (reduceMotion) {
+                        hero.progress.snapTo(1f)
+                    } else {
+                        hero.progress.animateTo(1f, TabHeroState.spec())
+                    }
+                }
+                hero.dock()
+            }
             throw e
         }
     }
@@ -713,7 +794,13 @@ fun PetalTabGridSwitcher(
                     // ── 3-Segment Switcher: Regular | Groups | Incognito ──
                     TabCategorySwitcher(
                         selected = selectedCategory,
-                        onSelect = { selectedCategory = it }
+                        onSelect = { newCat ->
+                            if (newCat != selectedCategory) {
+                                com.petal.browser.motion.MotionGate.withMotion("tab_category_switch") {
+                                    selectedCategory = newCat
+                                }
+                            }
+                        }
                     )
 
                     Spacer(Modifier.height(10.dp))
@@ -908,11 +995,51 @@ fun PetalTabGridSwitcher(
                                 translationY = animatedLockPullOffset * 0.95f
                             }
                     ) {
-                        when {
+                        val categoryTransition = updateTransition(targetState = selectedCategory, label = "tab_category_slide")
+                        DisposableEffect(categoryTransition.isRunning) {
+                            val handle = if (categoryTransition.isRunning) com.petal.browser.motion.MotionGate.startTransition("tab_category_switch") else null
+                            onDispose {
+                                handle?.release()
+                            }
+                        }
+                        categoryTransition.AnimatedContent(
+                            transitionSpec = {
+                                if (reduceMotion || isLowEnd) {
+                                    fadeIn(animationSpec = PetalSpring.fadeThroughIn()) togetherWith
+                                        fadeOut(animationSpec = PetalSpring.fadeThroughOut())
+                                } else {
+                                    val direction = if (targetState.ordinal > initialState.ordinal) 1 else -1
+                                    (slideInHorizontally(
+                                        animationSpec = PetalSpring.spatial(),
+                                        initialOffsetX = { fullWidth -> direction * (fullWidth / 3) }
+                                    ) + fadeIn(animationSpec = PetalSpring.fadeThroughIn())) togetherWith
+                                    (slideOutHorizontally(
+                                        animationSpec = PetalSpring.spatial(),
+                                        targetOffsetX = { fullWidth -> -direction * (fullWidth / 3) }
+                                    ) + fadeOut(animationSpec = PetalSpring.fadeThroughOut()))
+                                }
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        ) { currentCategory ->
+                            val currentCategoryTabs = when (currentCategory) {
+                                TabCategory.REGULAR -> tabs.filter { !it.isIncognito }
+                                TabCategory.INCOGNITO -> tabs.filter { it.isIncognito }
+                                TabCategory.GROUPS -> tabs.filter { !it.isIncognito }
+                            }
+                            val currentVisibleTabs = currentCategoryTabs.filter { it.id !in pendingRemovalIds }
+                            val currentFilteredTabs = currentVisibleTabs
+                                .sortedWith(compareByDescending { pinnedTabIds.contains(it.id) })
+                                .filter { tab ->
+                                    searchQuery.isBlank() ||
+                                        tab.title.contains(searchQuery, ignoreCase = true) ||
+                                        tab.url.contains(searchQuery, ignoreCase = true)
+                                }
+
+                            when {
 
 
-                        // ── Tab Groups Screen Category ──────────────────────────────
-                        selectedCategory == TabCategory.GROUPS -> {
+                            // ── Tab Groups Screen Category ──────────────────────────────
+                            currentCategory == TabCategory.GROUPS -> {
                             if (tabGroups.isEmpty()) {
                                 TabManagerEmptyState(
                                     accentColor = accentColor,
@@ -958,22 +1085,23 @@ fun PetalTabGridSwitcher(
                         }
 
                         // ── Regular / Incognito Tab Grid & List ─────────────────────
-                        categoryTabs.isEmpty() -> TabManagerEmptyState(
+                        currentCategoryTabs.isEmpty() -> TabManagerEmptyState(
                             accentColor = accentColor,
                             textColor = textColor,
-                            isIncognito = selectedCategory == TabCategory.INCOGNITO,
-                            title = if (selectedCategory == TabCategory.INCOGNITO)
+                            isIncognito = currentCategory == TabCategory.INCOGNITO,
+                            title = if (currentCategory == TabCategory.INCOGNITO)
                                 "You've gone Incognito"
                             else
                                 "You'll find your tabs here",
-                            subtitle = if (selectedCategory == TabCategory.INCOGNITO)
+                            subtitle = if (currentCategory == TabCategory.INCOGNITO)
                                 "Pages you view in incognito tabs won't be saved in your browser history."
                             else
                                 "Open tabs to visit different pages at the same time",
-                            onNewTab = { launchNewTab(selectedCategory == TabCategory.INCOGNITO) }
+                            onNewTab = { launchNewTab(currentCategory == TabCategory.INCOGNITO) },
+                            onPositioned = { newTabButtonBounds = it }
                         )
 
-                        filteredTabs.isEmpty() -> TabManagerEmptyState(
+                        currentFilteredTabs.isEmpty() -> TabManagerEmptyState(
                             accentColor = accentColor,
                             textColor = textColor,
                             title = stringResource(R.string.ui_no_matching_tabs),
@@ -991,15 +1119,29 @@ fun PetalTabGridSwitcher(
                                 .fillMaxSize()
                                 .scrollMotionBlur(gridState)
                         ) {
-                            items(filteredTabs, key = { it.id }) { tab ->
+                            items(currentFilteredTabs, key = { it.id }) { tab ->
                                 LaunchedEffect(tab.id) { onTabVisible(tab) }
                                 val isCurrentDragging = (draggingTabId == tab.id)
                                 val isTargetHovered = (hoverTargetTabId == tab.id)
 
+                                val isClosing = closingTabIds.contains(tab.id)
+                                val cardCloseScale by animateFloatAsState(
+                                    targetValue = if (isClosing) 0.65f else 1f,
+                                    animationSpec = PetalSpring.exit(),
+                                    label = "tab_close_scale"
+                                )
+                                val cardCloseAlpha by animateFloatAsState(
+                                    targetValue = if (isClosing) 0f else 1f,
+                                    animationSpec = PetalSpring.fadeOut(),
+                                    label = "tab_close_alpha"
+                                )
+
                                 val dismissState = rememberSwipeToDismissBoxState(
                                     confirmValueChange = { dismissValue ->
                                         if (dismissValue != SwipeToDismissBoxValue.Settled) {
-                                            requestOptimisticClose(tab)
+                                            com.petal.browser.motion.MotionGate.withMotion("tab_swipe_close") {
+                                                requestOptimisticClose(tab)
+                                            }
                                             true
                                         } else false
                                     }
@@ -1007,10 +1149,16 @@ fun PetalTabGridSwitcher(
 
                                 Box(
                                     modifier = Modifier
-                                        .animateItem()
+                                        .animateItem(
+                                            fadeInSpec = PetalSpring.fadeIn(),
+                                            fadeOutSpec = PetalSpring.fadeOut(),
+                                            placementSpec = PetalSpring.listReorder()
+                                        )
                                         .graphicsLayer {
+                                            scaleX = cardCloseScale
+                                            scaleY = cardCloseScale
                                             // Real tile fades in as the hero docks onto it.
-                                            alpha = if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f
+                                            alpha = cardCloseAlpha * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
                                         }
                                         .onGloballyPositioned { coordinates ->
                                             tabCardBounds[tab.id] = coordinates.boundsInWindow()
@@ -1082,7 +1230,7 @@ fun PetalTabGridSwitcher(
                                                     heroSelect(tab)
                                                 }
                                             },
-                                            onTabClose = { requestOptimisticClose(tab) },
+                                            onTabClose = { initiateTabClose(tab) },
                                             onLongPress = { contextMenuTabId = tab.id },
                                             contextMenuExpanded = contextMenuTabId == tab.id,
                                             onDismissContextMenu = { if (contextMenuTabId == tab.id) contextMenuTabId = null },
@@ -1111,15 +1259,29 @@ fun PetalTabGridSwitcher(
                                 .fillMaxSize()
                                 .scrollMotionBlur(listState)
                         ) {
-                            items(filteredTabs, key = { it.id }) { tab ->
+                            items(currentFilteredTabs, key = { it.id }) { tab ->
                                 LaunchedEffect(tab.id) { onTabVisible(tab) }
                                 val isCurrentDragging = (draggingTabId == tab.id)
                                 val isTargetHovered = (hoverTargetTabId == tab.id)
 
+                                val isClosing = closingTabIds.contains(tab.id)
+                                val cardCloseScale by animateFloatAsState(
+                                    targetValue = if (isClosing) 0.65f else 1f,
+                                    animationSpec = PetalSpring.exit(),
+                                    label = "tab_close_scale"
+                                )
+                                val cardCloseAlpha by animateFloatAsState(
+                                    targetValue = if (isClosing) 0f else 1f,
+                                    animationSpec = PetalSpring.fadeOut(),
+                                    label = "tab_close_alpha"
+                                )
+
                                 val dismissState = rememberSwipeToDismissBoxState(
                                     confirmValueChange = { dismissValue ->
                                         if (dismissValue != SwipeToDismissBoxValue.Settled) {
-                                            requestOptimisticClose(tab)
+                                            com.petal.browser.motion.MotionGate.withMotion("tab_swipe_close") {
+                                                requestOptimisticClose(tab)
+                                            }
                                             true
                                         } else false
                                     }
@@ -1127,10 +1289,16 @@ fun PetalTabGridSwitcher(
 
                                 Box(
                                     modifier = Modifier
-                                        .animateItem()
+                                        .animateItem(
+                                            fadeInSpec = PetalSpring.fadeIn(),
+                                            fadeOutSpec = PetalSpring.fadeOut(),
+                                            placementSpec = PetalSpring.listReorder()
+                                        )
                                         .graphicsLayer {
+                                            scaleX = cardCloseScale
+                                            scaleY = cardCloseScale
                                             // Real tile fades in as the hero docks onto it.
-                                            alpha = if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f
+                                            alpha = cardCloseAlpha * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
                                         }
                                         .onGloballyPositioned { coordinates ->
                                             tabCardBounds[tab.id] = coordinates.boundsInWindow()
@@ -1202,7 +1370,7 @@ fun PetalTabGridSwitcher(
                                                     heroSelect(tab)
                                                 }
                                             },
-                                            onTabClose = { requestOptimisticClose(tab) },
+                                            onTabClose = { initiateTabClose(tab) },
                                             onLongPress = { contextMenuTabId = tab.id },
                                             contextMenuExpanded = contextMenuTabId == tab.id,
                                             onDismissContextMenu = { if (contextMenuTabId == tab.id) contextMenuTabId = null },
@@ -1221,6 +1389,7 @@ fun PetalTabGridSwitcher(
                                     }
                                 }
                             }
+                        }
                         }
                     }
 
@@ -1698,7 +1867,8 @@ private fun TabManagerEmptyState(
     title: String,
     subtitle: String,
     onNewTab: (() -> Unit)?,
-    isIncognito: Boolean = false
+    isIncognito: Boolean = false,
+    onPositioned: ((androidx.compose.ui.geometry.Rect) -> Unit)? = null
 ) {
     var launchPressed by remember { mutableStateOf(false) }
     LaunchedEffect(launchPressed) {
@@ -1774,10 +1944,12 @@ private fun TabManagerEmptyState(
             Spacer(Modifier.height(24.dp))
             Button(
                 onClick = { launchPressed = true },
-                modifier = Modifier.graphicsLayer {
-                    scaleX = if (launchPressed) 0.94f else 1f
-                    scaleY = if (launchPressed) 0.94f else 1f
-                },
+                modifier = Modifier
+                    .onGloballyPositioned { onPositioned?.invoke(it.boundsInWindow()) }
+                    .graphicsLayer {
+                        scaleX = if (launchPressed) 0.94f else 1f
+                        scaleY = if (launchPressed) 0.94f else 1f
+                    },
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = accentColor,

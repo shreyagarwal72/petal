@@ -202,6 +202,14 @@ private fun Modifier.liquidGlassChromeBase(
     val tuning = com.petal.browser.ui.glass.rememberRefractionTuning(refractionOverride, refractionWidthOverride)
     val masterGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
     if (!enabled || !masterGlass) return this
+    if (com.petal.browser.motion.MotionGate.isAnimating.value || com.petal.browser.motion.MotionGate.isLowEndDevice(context)) {
+        val dark = isDark || (MaterialTheme.colorScheme.background.luminance() < .5f)
+        val tint = if (tintColor != Color.Unspecified) tintColor else MaterialTheme.colorScheme.surfaceContainerHigh
+        val fillAlpha = if (dark) 0.50f else 0.65f
+        val effectiveSheen = (sheenOverride ?: sheenIntensity).coerceIn(0f, 1f)
+        return this.background(tint.copy(alpha = fillAlpha), shape)
+            .liquidGlassSheen(shape, effectiveSheen, tintColor)
+    }
     val backdropOpacity = (alphaOverride ?: sp.getFloat("sp_liquid_glass_alpha", .70f)).coerceIn(.10f, .95f)
     if (backdrop != null && petalRealGlassSupported) {
         val dark = isDark || (MaterialTheme.colorScheme.background.luminance() < .5f)
@@ -359,7 +367,7 @@ fun rememberPetalGroupPressScale(interactionSource: MutableInteractionSource): F
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         if (pressed) 0.97f else 1f,
-        spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        com.petal.browser.ui.components.PetalSpring.segment(),
         label = "petalGroupPressScale",
     )
     return scale
@@ -974,7 +982,7 @@ fun PetalConnectedButtonGroup(
 
             val animatedWeight by animateFloatAsState(
                 targetValue = targetWeight,
-                animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
+                animationSpec = com.petal.browser.ui.components.PetalSpring.segment(),
                 label = "connectedButtonWeight"
             )
 

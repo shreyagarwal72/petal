@@ -35,6 +35,8 @@ import androidx.preference.PreferenceManager
 import kotlinx.coroutines.launch
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.compose.settings.screens.*
+import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.motion.MotionGate
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
@@ -229,7 +231,9 @@ fun PetalSettingsScreen(
         if (!wasOpen) {
             scope.launch {
                 push.snapTo(0f)
-                push.animateTo(1f, tween(SETTINGS_PUSH_MS, easing = SettingsPushEasing))
+                MotionGate.withMotion("settings_category_push") {
+                    push.animateTo(1f, PetalSpring.containerMorph())
+                }
             }
         }
     }
@@ -238,7 +242,9 @@ fun PetalSettingsScreen(
     fun closeCategory() {
         activeHeaderCategory = null
         scope.launch {
-            push.animateTo(0f, tween(SETTINGS_POP_MS, easing = SettingsPushEasing))
+            MotionGate.withMotion("settings_category_pop") {
+                push.animateTo(0f, PetalSpring.containerMorph())
+            }
             pageCategory = null
             currentHighlightId = null
         }
@@ -293,7 +299,10 @@ fun PetalSettingsScreen(
                             .fillMaxSize()
                             .graphicsLayer {
                                 val e = push.value
-                                translationX = (1f - e) * size.width * 0.33f
+                                val scale = 0.94f + 0.06f * e
+                                scaleX = scale
+                                scaleY = scale
+                                translationX = (1f - e) * size.width * 0.25f
                                 alpha = (e * 2.2f).coerceIn(0f, 1f)
                             }
                     ) {

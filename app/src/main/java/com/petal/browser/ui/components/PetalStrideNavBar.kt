@@ -117,7 +117,7 @@ internal fun PetalStrideNavBar(
     val maxDragPx = with(LocalDensity.current) { 28.dp.toPx() }
     val dragOffsetPx by animateFloatAsState(
         targetValue = if (isDragging) (dragAccumulator * 0.35f).coerceIn(-maxDragPx, maxDragPx) else 0f,
-        animationSpec = if (isDragging) snap() else spring(dampingRatio = 0.50f, stiffness = 320f),
+        animationSpec = if (isDragging) snap() else PetalSpring.sheetDragSettle(),
         label = "swipe_rubber_band"
     )
 

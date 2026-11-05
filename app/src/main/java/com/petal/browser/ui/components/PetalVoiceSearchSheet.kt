@@ -174,7 +174,7 @@ fun PetalVoiceSearchSheet(
 
     val pulseScale by animateFloatAsState(
         targetValue = if (isListening) 1.0f + (rmsValue / 10f).coerceIn(0f, 0.4f) else 1.0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        animationSpec = PetalSpring.press(),
         label = "MicPulse"
     )
 

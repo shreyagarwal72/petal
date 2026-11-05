@@ -1,5 +1,8 @@
 package com.petal.browser.ui.components
 
+import android.app.ActivityManager
+import android.content.Context
+import android.content.ContextWrapper
 import android.provider.Settings
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -8,22 +11,31 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import android.app.ActivityManager
-import android.content.Context
-import android.content.ContextWrapper
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 
 /**
  * Single source of truth for Petal Compose motion (springs/tweens). The View-system
  * counterpart is com.petal.browser.motion.PetalMotion (Java).
+ *
+ * ═════════════════════════════════════════════════════════════════════════════
+ * MOTION RULES & FOUNDATION:
+ * 1. Animate ONLY scale, translation, alpha, and clip.
+ * 2. Read animated values INSIDE graphicsLayer { ... } or draw blocks, NEVER
+ *    during composition to eliminate redundant recompositions and layout passes.
+ * 3. Use springs (PetalSpring.*) for anything a tap or gesture can interrupt.
+ * ═════════════════════════════════════════════════════════════════════════════
  *
  * Rule of thumb:
  *  - Spatial  : things that MOVE or RESIZE  -> spring, no bounce
@@ -37,6 +49,8 @@ object PetalSpring {
 
     /** M3 emphasized-decelerate curve, same values already used in .rules. */
     val EmphasizedEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
+    val EmphasizedAccelerateEasing = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
+    val EmphasizedDecelerateEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
 
     /** Layout moves, reorders, sheets, size changes. Calm, no bounce. */
     fun <T> spatial(): FiniteAnimationSpec<T> = spring(
@@ -80,12 +94,97 @@ object PetalSpring {
         stiffness = 320f,
     )
 
+    /** Sheet drag settle: when finger lifts during sheet drag gestures. */
+    fun <T> sheetDragSettle(): FiniteAnimationSpec<T> = spring(
+        dampingRatio = 0.86f,
+        stiffness = 350f,
+    )
+
+    /** Menu pop (origin-anchored scale): fast, crisp expansion with slight tactile settle. */
+    fun <T> menuPop(): FiniteAnimationSpec<T> = spring(
+        dampingRatio = 0.82f,
+        stiffness = 450f,
+    )
+
+    /** Menu origin-anchored scale: opens with tactile settle. */
+    fun <T> menuScale(): FiniteAnimationSpec<T> = menuPop()
+
+    /** Menu item fade: fades in as the menu expands. */
+    fun <T> menuItemFade(): FiniteAnimationSpec<T> = tween(durationMillis = 160, easing = LinearOutSlowInEasing)
+
+    /** Menu exit scale: closes faster than it opens. */
+    fun <T> menuCloseScale(): FiniteAnimationSpec<T> = tween(durationMillis = 110, easing = FastOutLinearInEasing)
+
+    /** Menu exit fade: snappy fade-out. */
+    fun <T> menuCloseFade(): FiniteAnimationSpec<T> = tween(durationMillis = 90, easing = FastOutLinearInEasing)
+
+    /** Dialog pop-in: tactile scale spring. */
+    fun <T> dialogScaleIn(): FiniteAnimationSpec<T> = spring(
+        dampingRatio = 0.82f,
+        stiffness = 450f,
+    )
+
+    /** Dialog matching exit scale: snappy dismiss. */
+    fun <T> dialogScaleOut(): FiniteAnimationSpec<T> = tween(
+        durationMillis = 130,
+        easing = FastOutLinearInEasing
+    )
+
+    /** Dialog fade-in. */
+    fun <T> dialogFadeIn(): FiniteAnimationSpec<T> = tween(
+        durationMillis = 180,
+        easing = LinearOutSlowInEasing
+    )
+
+    /** Dialog matching exit fade. */
+    fun <T> dialogFadeOut(): FiniteAnimationSpec<T> = tween(
+        durationMillis = 120,
+        easing = FastOutLinearInEasing
+    )
+
+    /** List reorder: calm, critically damped spring for moving items in a reordering list. */
+    fun <T> listReorder(): FiniteAnimationSpec<T> = spring(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = 420f,
+    )
+
+    /** Container morphs (search bar -> page, tile -> page). Fast, no bounce, interruptible. */
+    fun <T> container(): FiniteAnimationSpec<T> = spring(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = 520f,
+    )
+
+    /** Alias for container morph token. */
+    fun <T> containerMorph(): FiniteAnimationSpec<T> = container()
+
     /** Pure opacity/colour changes. Fade-in slightly slower than fade-out. */
     fun <T> fadeIn(): FiniteAnimationSpec<T> = tween(durationMillis = 200, easing = EmphasizedEasing)
     fun <T> fadeOut(): FiniteAnimationSpec<T> = tween(durationMillis = 140, easing = EmphasizedEasing)
 
     /** Crossfades of icons/labels (selected state, collapsing-bar buttons). Short, symmetric. */
     fun <T> crossfade(): FiniteAnimationSpec<T> = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+
+    /** M3 Expressive Fade-Through: incoming content. */
+    fun <T> fadeThroughIn(): FiniteAnimationSpec<T> = tween(
+        durationMillis = 210,
+        delayMillis = 90,
+        easing = EmphasizedDecelerateEasing
+    )
+
+    /** M3 Expressive Fade-Through: outgoing content. */
+    fun <T> fadeThroughOut(): FiniteAnimationSpec<T> = tween(
+        durationMillis = 90,
+        easing = EmphasizedAccelerateEasing
+    )
+
+    /** Progress and favicon fade: quick, subtle crossfade for status indicators and icons. */
+    fun <T> progressFade(): FiniteAnimationSpec<T> = tween(
+        durationMillis = 150,
+        easing = FastOutSlowInEasing
+    )
+
+    /** Favicon fade: identical to progressFade for icon loading transitions. */
+    fun <T> faviconFade(): FiniteAnimationSpec<T> = progressFade()
 
     /**
      * Segment / button-group weight changes. A critically damped spring instead of a fixed tween,
@@ -94,12 +193,6 @@ object PetalSpring {
     fun <T> segment(): FiniteAnimationSpec<T> = spring(
         dampingRatio = Spring.DampingRatioNoBouncy,
         stiffness = 500f,
-    )
-
-    /** Container morphs (search bar -> page, tile -> page). Fast, no bounce, interruptible. */
-    fun <T> container(): FiniteAnimationSpec<T> = spring(
-        dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = 520f,
     )
 
     /** Standard press depth so every tappable surface feels the same. */
@@ -113,26 +206,36 @@ object PetalSpring {
 }
 
 /**
+ * Applies motion transforms strictly within the graphics layer / draw phase,
+ * avoiding recomposition on every animated frame.
+ */
+fun Modifier.petalMotionLayer(
+    scaleX: () -> Float = { 1f },
+    scaleY: () -> Float = { 1f },
+    translationX: () -> Float = { 0f },
+    translationY: () -> Float = { 0f },
+    alpha: () -> Float = { 1f },
+    clip: Boolean = false,
+    shape: Shape = RectangleShape
+): Modifier = this.graphicsLayer {
+    this.scaleX = scaleX()
+    this.scaleY = scaleY()
+    this.translationX = translationX()
+    this.translationY = translationY()
+    this.alpha = alpha()
+    this.clip = clip
+    this.shape = shape
+}
+
+/**
  * True when the user turned system animations off (Developer options / Accessibility
  * "Remove animations"). Read once per composition location.
  */
 @Composable
 fun rememberReduceMotion(): Boolean {
     val context = LocalContext.current
-    // Same rule as com.petal.browser.motion.PetalMotion (Java): animators disabled
-    // globally OR duration scale == 0 means the user wants no motion.
     return remember(context) {
-        try {
-            val disabled = !android.animation.ValueAnimator.areAnimatorsEnabled()
-            val scale = Settings.Global.getFloat(
-                context.contentResolver,
-                Settings.Global.ANIMATOR_DURATION_SCALE,
-                1f,
-            )
-            disabled || scale <= 0f
-        } catch (_: Exception) {
-            false
-        }
+        com.petal.browser.motion.MotionGate.isReduceMotion(context)
     }
 }
 
@@ -140,17 +243,12 @@ fun rememberReduceMotion(): Boolean {
 fun <T> FiniteAnimationSpec<T>.orSnap(reduceMotion: Boolean): FiniteAnimationSpec<T> =
     if (reduceMotion) snap() else this
 
-
 /** True on low-RAM devices, where decorative blur / endless motion should be skipped. */
 @Composable
 fun rememberLowEndDevice(): Boolean {
     val context = LocalContext.current
     return remember(context) {
-        try {
-            (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.isLowRamDevice == true
-        } catch (_: Exception) {
-            false
-        }
+        com.petal.browser.motion.MotionGate.isLowEndDevice(context)
     }
 }
 

@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.spring
+import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +25,7 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.lerp
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
@@ -51,6 +53,9 @@ class TabHeroState(startVisible: Boolean) {
     var busy by mutableStateOf(false)
     var tabId by mutableStateOf<String?>(null)
     var image by mutableStateOf<ImageBitmap?>(null)
+    var customOriginBounds by mutableStateOf<Rect?>(null)
+    var customOriginRadius by mutableStateOf<Float?>(null)
+    var fillColor by mutableStateOf(Color.Unspecified)
 
     /** Hero opacity: invisible while docked on the tile (the real tile shows), opaque once it has grown. */
     fun heroAlpha(): Float = ((1f - progress.value) / 0.3f).coerceIn(0f, 1f)
@@ -59,6 +64,9 @@ class TabHeroState(startVisible: Boolean) {
     suspend fun dock() {
         visible = false
         busy = false
+        customOriginBounds = null
+        customOriginRadius = null
+        fillColor = Color.Unspecified
         progress.snapTo(1f)
     }
 
@@ -69,7 +77,7 @@ class TabHeroState(startVisible: Boolean) {
          * re-open) keeps the current velocity, so the morph never jerks or restarts.
          */
         fun spec(): AnimationSpec<Float> =
-            spring(dampingRatio = 1f, stiffness = 520f, visibilityThreshold = 0.002f)
+            PetalSpring.containerMorph()
     }
 }
 
@@ -101,14 +109,14 @@ fun TabHeroOverlay(
             .onGloballyPositioned { origin = it.positionInWindow() }
             .drawBehind {
                 val img = hero.image
-                if (!hero.visible || img == null) return@drawBehind
+                if (!hero.visible || (img == null && hero.fillColor == Color.Unspecified)) return@drawBehind
                 val heroAlpha = hero.heroAlpha()
                 if (heroAlpha <= 0f) return@drawBehind
 
                 val p = hero.progress.value.coerceIn(0f, 1.2f)
                 val full = Rect(Offset.Zero, size)
-                val tile = hero.tabId?.let(tileBounds)?.translate(-origin)
-                // No tile on screen (scrolled away / filtered): shrink towards the centre instead.
+                val tile = (hero.customOriginBounds ?: hero.tabId?.let(tileBounds))?.translate(-origin)
+                // No tile on screen (scrolled away / filtered / new tab origin): shrink towards the centre instead.
                 val target = tile ?: run {
                     val w = full.width * 0.5f
                     val h = full.height * 0.5f
@@ -117,33 +125,38 @@ fun TabHeroOverlay(
                 val r = lerp(full, target, p)
                 if (r.width < 1f || r.height < 1f) return@drawBehind
 
-                // Crop-to-fill, top aligned: take the largest source window with the target's aspect ratio.
-                val srcW = img.width.toFloat()
-                val srcH = img.height.toFloat()
-                val dstAspect = r.width / r.height
-                val cropW: Float
-                val cropH: Float
-                if (srcW / srcH > dstAspect) {
-                    cropH = srcH
-                    cropW = srcH * dstAspect
-                } else {
-                    cropW = srcW
-                    cropH = srcW / dstAspect
-                }
-                val cropX = ((srcW - cropW) / 2f).roundToInt()
-
-                val radius = deviceRadius + (tileRadius - deviceRadius) * cornerEase.transform(p.coerceIn(0f, 1f))
+                val originRadius = hero.customOriginRadius ?: tileRadius
+                val radius = deviceRadius + (originRadius - deviceRadius) * cornerEase.transform(p.coerceIn(0f, 1f))
                 val clip = clipPathHolder.apply { reset(); addRoundRect(RoundRect(r, CornerRadius(radius))) }
                 clipPath(clip) {
-                    drawImage(
-                        image = img,
-                        srcOffset = IntOffset(cropX, 0),
-                        srcSize = IntSize(cropW.roundToInt().coerceAtLeast(1), cropH.roundToInt().coerceAtLeast(1)),
-                        dstOffset = IntOffset(r.left.roundToInt(), r.top.roundToInt()),
-                        dstSize = IntSize(r.width.roundToInt().coerceAtLeast(1), r.height.roundToInt().coerceAtLeast(1)),
-                        alpha = heroAlpha,
-                        filterQuality = FilterQuality.Medium,
-                    )
+                    if (img != null) {
+                        // Crop-to-fill, top aligned: take the largest source window with the target's aspect ratio.
+                        val srcW = img.width.toFloat()
+                        val srcH = img.height.toFloat()
+                        val dstAspect = r.width / r.height
+                        val cropW: Float
+                        val cropH: Float
+                        if (srcW / srcH > dstAspect) {
+                            cropH = srcH
+                            cropW = srcH * dstAspect
+                        } else {
+                            cropW = srcW
+                            cropH = srcW / dstAspect
+                        }
+                        val cropX = ((srcW - cropW) / 2f).roundToInt()
+                        drawImage(
+                            image = img,
+                            srcOffset = IntOffset(cropX, 0),
+                            srcSize = IntSize(cropW.roundToInt().coerceAtLeast(1), cropH.roundToInt().coerceAtLeast(1)),
+                            dstOffset = IntOffset(r.left.roundToInt(), r.top.roundToInt()),
+                            dstSize = IntSize(r.width.roundToInt().coerceAtLeast(1), r.height.roundToInt().coerceAtLeast(1)),
+                            alpha = heroAlpha,
+                            filterQuality = FilterQuality.Medium,
+                        )
+                    } else {
+                        val c = if (hero.fillColor != Color.Unspecified) hero.fillColor else Color(0xFFF7F9FF)
+                        drawRect(c, alpha = heroAlpha)
+                    }
                 }
             }
     )

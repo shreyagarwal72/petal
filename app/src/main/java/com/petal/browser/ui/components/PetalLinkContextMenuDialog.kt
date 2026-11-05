@@ -84,10 +84,10 @@ fun PetalLinkContextMenuDialog(
         ) {
             AnimatedVisibility(
                 visible = isVisible,
-                enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                        scaleIn(initialScale = 0.85f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)),
-                exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessHigh)) +
-                        scaleOut(targetScale = 0.9f, animationSpec = spring(stiffness = Spring.StiffnessHigh))
+                enter = fadeIn(PetalSpring.fadeIn()) +
+                        scaleIn(initialScale = 0.85f, animationSpec = PetalSpring.dialog()),
+                exit = fadeOut(PetalSpring.fadeOut()) +
+                        scaleOut(targetScale = 0.9f, animationSpec = PetalSpring.exit())
             ) {
                 com.petal.browser.ui.containment.PetalHeroCard(
                     shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,

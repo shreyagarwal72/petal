@@ -7,6 +7,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -198,7 +199,7 @@ fun PetalFuelTheCodeSheet(
     ) {
         AnimatedContent(
             targetState = viewState,
-            transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(180)) },
+            transitionSpec = { fadeIn(PetalSpring.fadeThroughIn()) togetherWith fadeOut(PetalSpring.fadeThroughOut()) },
             label = "quest_content"
         ) { state ->
             Column(
@@ -543,7 +544,7 @@ fun PetalFuelTheCodeSheet(
                         )
                         AnimatedContent(
                             targetState = loadingIndex,
-                            transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(180)) },
+                            transitionSpec = { fadeIn(PetalSpring.fadeThroughIn()) togetherWith fadeOut(PetalSpring.fadeThroughOut()) },
                             label = "loading_step"
                         ) { idx ->
                             Text(

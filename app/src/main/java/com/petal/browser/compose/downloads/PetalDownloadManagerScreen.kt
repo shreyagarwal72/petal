@@ -23,7 +23,10 @@ import android.content.pm.PackageManager
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -844,8 +847,8 @@ fun PetalDownloadManagerScreen(
             AnimatedContent(
                 targetState = isSettingsOpen,
                 transitionSpec = {
-                    (fadeIn(animationSpec = tween(220)) togetherWith
-                        fadeOut(animationSpec = tween(160)))
+                    (fadeIn(animationSpec = PetalSpring.fadeIn()) + scaleIn(initialScale = 0.94f, animationSpec = PetalSpring.containerMorph())) togetherWith
+                        (fadeOut(animationSpec = PetalSpring.fadeOut()) + scaleOut(targetScale = 0.94f, animationSpec = PetalSpring.containerMorph()))
                 },
                 label = "downloadSettingsTransition"
             ) { settingsOpen ->

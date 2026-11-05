@@ -115,12 +115,14 @@ public final class PetalMotion {
                 float p = t[0];
                 int w = v.getWidth();
                 int h = v.getHeight();
+                float deviceRadius = 28f * v.getResources().getDisplayMetrics().density;
+                float currentRadius = startRadius + (deviceRadius - startRadius) * p;
                 outline.setRoundRect(
                         Math.round(oL + (0 - oL) * p),
                         Math.round(oT + (0 - oT) * p),
                         Math.round(oR + (w - oR) * p),
                         Math.round(oB + (h - oB) * p),
-                        startRadius * (1f - p));
+                        currentRadius);
             }
         });
         // The bar ghost (drawn above) hides the page's contents at first, so the page itself can
@@ -128,10 +130,12 @@ public final class PetalMotion {
         view.setAlpha(1f);
         if (progress != null) progress.onProgress(t[0]);
 
+        final String transName = opening ? "container_enter" : "container_exit";
+        MotionGate.INSTANCE.startTransition(transName);
         android.animation.ValueAnimator a = android.animation.ValueAnimator.ofFloat(
                 opening ? 0f : 1f, opening ? 1f : 0f);
         a.setDuration(duration);
-        a.setInterpolator(opening ? EMPHASIZED : EMPHASIZED_ACCELERATE);
+        a.setInterpolator(EMPHASIZED);
         a.addUpdateListener(anim -> {
             t[0] = (float) anim.getAnimatedValue();
             view.invalidateOutline();
@@ -140,15 +144,19 @@ public final class PetalMotion {
         a.addListener(new android.animation.AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(android.animation.Animator animation) {
-                if (opening) {
-                    view.setClipToOutline(false);
-                    view.setOutlineProvider(android.view.ViewOutlineProvider.BACKGROUND);
-                    view.setAlpha(1f);
-                } else {
-                    view.setClipToOutline(false);
-                    view.setOutlineProvider(android.view.ViewOutlineProvider.BACKGROUND);
+                try {
+                    if (opening) {
+                        view.setClipToOutline(false);
+                        view.setOutlineProvider(android.view.ViewOutlineProvider.BACKGROUND);
+                        view.setAlpha(1f);
+                    } else {
+                        view.setClipToOutline(false);
+                        view.setOutlineProvider(android.view.ViewOutlineProvider.BACKGROUND);
+                    }
+                    if (onEnd != null) onEnd.run();
+                } finally {
+                    MotionGate.INSTANCE.endTransition(transName);
                 }
-                if (onEnd != null) onEnd.run();
             }
         });
         a.start();
@@ -328,6 +336,7 @@ public final class PetalMotion {
 
     private static boolean animationsEnabled(View view) {
         try {
+            if (view != null && MotionGate.INSTANCE.isReduceMotion(view.getContext())) return false;
             if (!android.animation.ValueAnimator.areAnimatorsEnabled()) return false;
             float scale = Settings.Global.getFloat(
                     view.getContext().getContentResolver(),

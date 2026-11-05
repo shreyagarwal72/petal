@@ -94,7 +94,13 @@ object PetalAddressBarBridge {
     ) {
         _urlState.value = url
         _titleState.value = title
-        _faviconState.value = favicon
+        if (com.petal.browser.motion.MotionGate.isRunning) {
+            com.petal.browser.motion.MotionGate.postAfterTransition {
+                _faviconState.value = favicon
+            }
+        } else {
+            _faviconState.value = favicon
+        }
         _progressState.floatValue = progress
         _isIncognitoState.value = isIncognito
         _isLoadingState.value = isLoading

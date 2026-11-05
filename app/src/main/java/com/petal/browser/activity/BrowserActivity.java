@@ -792,6 +792,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.profile.PetalProfileManager.INSTANCE.init(this);
             com.petal.browser.wallpaper.PetalWallpaperManager.INSTANCE.init(this);
             com.petal.browser.apk.PetalApkInstallerEngine.checkAndRequestShizuku(this);
+            com.petal.browser.motion.PetalJankTracker.attach(this);
             com.petal.browser.compose.reader.PetalReaderBridge.INSTANCE.setReaderEligibilityListener((artUrl, eligible) -> {
                 setReaderModeEligibleForUrl(artUrl, eligible);
                 return kotlin.Unit.INSTANCE;
@@ -1547,9 +1548,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
         if (containerExitInFlight) return; // ignore extra back presses while collapsing
-        if (isOverlayScreenShowing && activeContainerView != null
+        if (activeContainerView != null
                 && getTopContentChild() == activeContainerView) {
-            // Omnibox: collapse the page back into the bar, then run this same close logic again.
+            // Omnibox / New tab: collapse the page back into the origin button, then run this same close logic again.
             collapseOmniboxThen(() -> performBackNavigation(), PB_TRANSITION_DURATION_MS);
             return;
         }
@@ -2474,6 +2475,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             isAdoptedPopupTab = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isAdoptedPopup();
         }
+        final android.graphics.Rect newTabOrigin = pendingContainerOrigin;
+        final float newTabRadius = pendingContainerRadius;
+        pendingContainerOrigin = null;
+        pendingContainerRadius = -1f;
+
         // Home is a native Compose surface backed by an about:blank Gecko/WebView
         // document, so the controller URL alone cannot reliably describe what is visible.
         // If this tab was adopted as a popup window/session, never treat it as the home page.
@@ -2507,6 +2513,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
             ));
             contentFrame.addView(incognitoHome);
+            if (newTabOrigin != null && !newTabOrigin.isEmpty()) {
+                activeContainerOrigin = new android.graphics.Rect(newTabOrigin);
+                activeContainerRadius = newTabRadius;
+                activeContainerView = incognitoHome;
+                incognitoHome.post(() -> com.petal.browser.motion.PetalMotion.containerEnter(
+                        incognitoHome, newTabOrigin, newTabRadius, PB_TRANSITION_DURATION_MS, null, null));
+            }
             if (appBar != null) appBar.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
             updatePersistentBottomNav();
@@ -2677,6 +2690,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             composeView.setScaleX(1f);
             composeView.setScaleY(1f);
             contentFrame.addView(composeView);
+            if (newTabOrigin != null && !newTabOrigin.isEmpty()) {
+                activeContainerOrigin = new android.graphics.Rect(newTabOrigin);
+                activeContainerRadius = newTabRadius;
+                activeContainerView = composeView;
+                composeView.post(() -> com.petal.browser.motion.PetalMotion.containerEnter(
+                        composeView, newTabOrigin, newTabRadius, PB_TRANSITION_DURATION_MS, null, null));
+            }
             composeView.bringToFront();
             composeView.requestLayout();
             composeView.post(() -> {
@@ -2724,6 +2744,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT
                 ));
                 attachAlbumViewSafely(contentFrame, av, controller, 0);
+            }
+            if (newTabOrigin != null && !newTabOrigin.isEmpty()) {
+                activeContainerOrigin = new android.graphics.Rect(newTabOrigin);
+                activeContainerRadius = newTabRadius;
+                activeContainerView = av;
+                av.post(() -> com.petal.browser.motion.PetalMotion.containerEnter(
+                        av, newTabOrigin, newTabRadius, PB_TRANSITION_DURATION_MS, null, null));
             }
             av.bringToFront();
             // Keep the live browser surface stable. GeckoView/WebView owns its compositor;
@@ -2937,6 +2964,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             boolean keepIncognito = currentAlbumController != null
                                     ? currentAlbumController.isIncognito()
                                     : (activeGeckoView != null && activeGeckoView.isIncognito());
+                            float[] o = com.petal.browser.ui.components.PetalNewTabOrigin.take();
+                            if (o != null) {
+                                int[] dl = new int[2];
+                                getWindow().getDecorView().getLocationOnScreen(dl);
+                                android.graphics.Rect origin = new android.graphics.Rect(
+                                        (int) o[0] + dl[0], (int) o[1] + dl[1], (int) o[2] + dl[0], (int) o[3] + dl[1]);
+                                pendingContainerOrigin = origin;
+                                pendingContainerRadius = o[4];
+                            }
                             addAlbum(getString(R.string.app_name), "about:blank", true, keepIncognito);
                         }
 
@@ -4489,6 +4525,25 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         pillSpringAnim.start();
     }
 
+    public void onScrollOffsetDelta(float deltaY) {
+        if (!canCollapseBars()) return;
+        boolean isPillMode = com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp);
+        if (!isPillMode) return;
+        if (pillSpringAnim != null && pillSpringAnim.isRunning()) {
+            pillSpringAnim.cancel();
+        }
+        float density = getResources().getDisplayMetrics().density;
+        float collapseRange = 56f * density;
+        float current = com.petal.browser.ui.components.BarCollapseState.INSTANCE.getCollapsedFraction();
+        float next = Math.max(0f, Math.min(1f, current + deltaY / collapseRange));
+        com.petal.browser.ui.components.BarCollapseState.INSTANCE.setFraction(next);
+        isAddressBarCollapsed = next >= 0.5f;
+    }
+
+    public void settlePillFraction(float target) {
+        animatePillFraction(target >= 0.5f, true);
+    }
+
     /** Whether the bars may be minimized right now. Showing them again is never blocked. */
     private boolean canCollapseBars() {
         if (!sp.getBoolean("sp_hide_bars_on_scroll", true)) return false;
@@ -5460,6 +5515,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             return kotlin.Unit.INSTANCE;
                 },
                 isIncognito -> {
+                    float[] o = com.petal.browser.ui.components.PetalNewTabOrigin.take();
+                    if (o != null) {
+                        int[] dl = new int[2];
+                        getWindow().getDecorView().getLocationOnScreen(dl);
+                        android.graphics.Rect origin = new android.graphics.Rect(
+                                (int) o[0] + dl[0], (int) o[1] + dl[1], (int) o[2] + dl[0], (int) o[3] + dl[1]);
+                        pendingContainerOrigin = origin;
+                        pendingContainerRadius = o[4];
+                    }
                     addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true, isIncognito);
                     return kotlin.Unit.INSTANCE;
                 },
@@ -5647,7 +5711,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         activeContainerView = null;
         activeContainerOrigin = null;
         activeContainerSnapshot = null;
-        if (v == null || origin == null || !isOverlayScreenShowing
+        if (v == null || origin == null
                 || getTopContentChild() != v || !v.isAttachedToWindow()) {
             removeContainerGhost();
             after.run();
@@ -5792,7 +5856,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         } else if (animated[0]) {
                             showAlbum(currentAlbumController);
                         }
-                    }, 240L);
+                    }, PB_TRANSITION_DURATION_MS);
                     return kotlin.Unit.INSTANCE;
                 },
                 // Swipe-back gesture: Petal's predictive-back animation already played, so close at once.

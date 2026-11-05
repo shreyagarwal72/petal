@@ -35,6 +35,12 @@ import com.petal.browser.R
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import com.petal.browser.ui.components.PetalSpring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
 import androidx.compose.ui.graphics.graphicsLayer
@@ -105,6 +111,7 @@ fun PetalPopupMenu(
     tonalElevation: Dp = 0.dp,
     shadowElevation: Dp = 6.dp,
     border: BorderStroke? = null,
+    transformOrigin: androidx.compose.ui.graphics.TransformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
@@ -112,12 +119,30 @@ fun PetalPopupMenu(
     val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
+    val menuScale by animateFloatAsState(
+        targetValue = if (expanded) 1f else 0.82f,
+        animationSpec = if (expanded) PetalSpring.menuScale() else PetalSpring.menuCloseScale(),
+        label = "menu_scale"
+    )
+    val itemAlpha by animateFloatAsState(
+        targetValue = if (expanded) 1f else 0f,
+        animationSpec = if (expanded) PetalSpring.menuItemFade() else PetalSpring.menuCloseFade(),
+        label = "menu_item_alpha"
+    )
+
     // The glass lives INSIDE the menu content. Putting liquidGlassChrome on DropdownMenu's own
     // modifier drew the panel outside the popup's real bounds (an offset ghost rectangle).
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        modifier = modifier.padding(vertical = 4.dp),
+        modifier = modifier
+            .padding(vertical = 4.dp)
+            .graphicsLayer {
+                scaleX = menuScale
+                scaleY = menuScale
+                alpha = itemAlpha
+                this.transformOrigin = transformOrigin
+            },
         shape = shape,
         containerColor = if (isGlass) Color.Transparent else containerColor,
         tonalElevation = if (isGlass) 0.dp else tonalElevation,
@@ -457,6 +482,19 @@ fun PetalDialog(
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
     Dialog(onDismissRequest = onDismissRequest, properties = properties) {
+        var isEntering by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { isEntering = true }
+        val dialogScale by animateFloatAsState(
+            targetValue = if (isEntering) 1f else 0.85f,
+            animationSpec = if (isEntering) PetalSpring.dialogScaleIn() else PetalSpring.dialogScaleOut(),
+            label = "dialog_scale"
+        )
+        val dialogAlpha by animateFloatAsState(
+            targetValue = if (isEntering) 1f else 0f,
+            animationSpec = if (isEntering) PetalSpring.dialogFadeIn() else PetalSpring.dialogFadeOut(),
+            label = "dialog_alpha"
+        )
+
         val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
         androidx.compose.runtime.SideEffect {
             dialogWindow?.let { win ->
@@ -468,7 +506,12 @@ fun PetalDialog(
         com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = modifier
                 .fillMaxWidth(0.92f)
-                .wrapContentHeight(),
+                .wrapContentHeight()
+                .graphicsLayer {
+                    scaleX = dialogScale
+                    scaleY = dialogScale
+                    alpha = dialogAlpha
+                },
             enabled = isGlass,
             live = true
         ) {
@@ -702,6 +745,19 @@ fun PetalSheet(
     val resolvedContainerColor = containerColor ?: if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh
     val resolvedScrimColor = scrimColor ?: if (isGlass) Color.Black.copy(alpha = 0.14f) else BottomSheetDefaults.ScrimColor
 
+    var sheetDragOffset by remember { mutableStateOf(0f) }
+    val animatedDragOffset by animateFloatAsState(
+        targetValue = sheetDragOffset,
+        animationSpec = PetalSpring.sheetDragSettle(),
+        label = "sheet_drag_settle"
+    )
+
+    val isMoving = sheetState.targetValue != sheetState.currentValue || sheetDragOffset > 0f
+    androidx.compose.runtime.DisposableEffect(isMoving) {
+        val handle = if (isMoving) com.petal.browser.motion.MotionGate.startTransition("sheet_settle") else null
+        onDispose { handle?.release() }
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
@@ -726,6 +782,7 @@ fun PetalSheet(
             Box(
                 Modifier
                     .fillMaxWidth()
+                    .graphicsLayer { translationY = animatedDragOffset }
                     .onGloballyPositioned {
                         val top = it.positionInWindow().y
                         statusOverlapPx = (statusTopPx - top).toInt().coerceIn(0, statusTopPx)
@@ -748,7 +805,29 @@ fun PetalSheet(
                         .navigationBarsPadding()
                 ) {
                     if (dragHandle != null) {
-                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { dragHandle() }
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .pointerInput(Unit) {
+                                    detectVerticalDragGestures(
+                                        onDragEnd = {
+                                            if (sheetDragOffset > 180f) {
+                                                onDismissRequest()
+                                            } else {
+                                                sheetDragOffset = 0f
+                                            }
+                                        },
+                                        onDragCancel = {
+                                            sheetDragOffset = 0f
+                                        },
+                                        onVerticalDrag = { change, dragAmount ->
+                                            change.consume()
+                                            sheetDragOffset = (sheetDragOffset + dragAmount).coerceAtLeast(0f)
+                                        }
+                                    )
+                                },
+                            contentAlignment = Alignment.Center
+                        ) { dragHandle() }
                     }
                     if (titleContent != null) {
                         Box(

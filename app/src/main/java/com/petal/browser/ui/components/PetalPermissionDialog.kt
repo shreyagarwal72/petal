@@ -435,7 +435,7 @@ internal fun PermissionActionButton(
     val pressed by interaction.collectIsPressedAsState()
     val corner by animateDpAsState(
         targetValue = if (pressed) 16.dp else 28.dp,
-        animationSpec = spring(dampingRatio = 0.6f, stiffness = 520f),
+        animationSpec = PetalSpring.press(),
         label = "perm_btn_corner"
     )
     val shape = RoundedCornerShape(corner)

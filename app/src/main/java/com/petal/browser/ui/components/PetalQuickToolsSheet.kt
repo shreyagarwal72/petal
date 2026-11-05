@@ -298,7 +298,7 @@ private fun ExpressiveQuickToolItem(
 ) {
     val scaleAnim by animateFloatAsState(
         targetValue = if (isReorderMode) 0.95f else 1f,
-        animationSpec = spring(dampingRatio = 0.7f),
+        animationSpec = PetalSpring.listReorder(),
         label = "toolScale"
     )
 

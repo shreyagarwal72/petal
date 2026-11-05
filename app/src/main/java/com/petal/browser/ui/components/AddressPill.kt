@@ -6,11 +6,13 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -267,9 +269,16 @@ fun AddressPill(
                             }
                         }
                 ) {
-                    if (favicon != null && !isBlankOrSearch && !isIncognito) {
+                AnimatedContent(
+                    targetState = (favicon != null && !isBlankOrSearch && !isIncognito) to favicon,
+                    transitionSpec = {
+                        fadeIn(PetalSpring.faviconFade()) togetherWith fadeOut(PetalSpring.faviconFade())
+                    },
+                    label = "FaviconCrossfade"
+                ) { (hasFavicon, fav) ->
+                    if (hasFavicon && fav != null) {
                         Image(
-                            bitmap = favicon.asImageBitmap(),
+                            bitmap = fav.asImageBitmap(),
                             contentDescription = "Favicon",
                             modifier = Modifier.size(22.dp).clip(CircleShape)
                         )
@@ -287,6 +296,7 @@ fun AddressPill(
                             modifier = Modifier.size(19.dp)
                         )
                     }
+                }
                 }
 
                 val hasActiveSensors = remember(url) {

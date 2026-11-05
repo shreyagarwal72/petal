@@ -435,7 +435,9 @@ fun PetalOmniboxPage(
                 .take(8 - recentSearchItems.size)
                 .map { OmniboxSuggestion(it, isHistory = true, source = SuggestionSource.BROWSING_HISTORY) }
 
-            suggestions = recentSearchItems + browsingHistoryItems
+            com.petal.browser.motion.MotionGate.postAfterTransition {
+                suggestions = recentSearchItems + browsingHistoryItems
+            }
         } else {
             val queryTokens = currentText.lowercase().split("\\s+".toRegex()).filter { it.isNotBlank() }
             val lowerCurrent = currentText.lowercase()
@@ -496,31 +498,35 @@ fun PetalOmniboxPage(
             if (shouldFetchRemote) {
                 delay(180)
                 SearchSuggestionsManager.fetchSuggestionsForEngine(context, currentEngineIndexStr, currentText) { engineResults ->
+                    com.petal.browser.motion.MotionGate.postAfterTransition {
+                        val combined = mutableListOf<OmniboxSuggestion>()
+                        combined.addAll(matchedTabs)
+                        combined.addAll(matchedBookmarks)
+                        combined.addAll(historyMatches)
+                        engineResults.forEach { res ->
+                            val trimmedRes = res.trim()
+                            if (trimmedRes.isNotEmpty() && !removedSuggestions.contains(trimmedRes) && combined.none { it.query.equals(trimmedRes, ignoreCase = true) }) {
+                                combined.add(OmniboxSuggestion(trimmedRes, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
+                            }
+                        }
+                        // For direct searches, ensure the exact query is presented as an actionable row if not already present
+                        if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && combined.none { it.query.equals(currentText, ignoreCase = true) }) {
+                            combined.add(0, OmniboxSuggestion(currentText, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
+                        }
+                        suggestions = combined
+                    }
+                }
+            } else {
+                com.petal.browser.motion.MotionGate.postAfterTransition {
                     val combined = mutableListOf<OmniboxSuggestion>()
                     combined.addAll(matchedTabs)
                     combined.addAll(matchedBookmarks)
+                    if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && historyMatches.none { it.query.equals(currentText, ignoreCase = true) }) {
+                        combined.add(OmniboxSuggestion(currentText, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
+                    }
                     combined.addAll(historyMatches)
-                    engineResults.forEach { res ->
-                        val trimmedRes = res.trim()
-                        if (trimmedRes.isNotEmpty() && !removedSuggestions.contains(trimmedRes) && combined.none { it.query.equals(trimmedRes, ignoreCase = true) }) {
-                            combined.add(OmniboxSuggestion(trimmedRes, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
-                        }
-                    }
-                    // For direct searches, ensure the exact query is presented as an actionable row if not already present
-                    if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && combined.none { it.query.equals(currentText, ignoreCase = true) }) {
-                        combined.add(0, OmniboxSuggestion(currentText, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
-                    }
                     suggestions = combined
                 }
-            } else {
-                val combined = mutableListOf<OmniboxSuggestion>()
-                combined.addAll(matchedTabs)
-                combined.addAll(matchedBookmarks)
-                if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && historyMatches.none { it.query.equals(currentText, ignoreCase = true) }) {
-                    combined.add(OmniboxSuggestion(currentText, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
-                }
-                combined.addAll(historyMatches)
-                suggestions = combined
             }
         }
     }
@@ -1106,8 +1112,8 @@ fun PetalOmniboxPage(
                                             val grouped = suggestions.groupBy { it.source }
                                             grouped.forEach { (source, items) ->
                                                 add("header_${source.name}" to source)
-                                                items.forEachIndexed { itemIdx, item ->
-                                                    add("item_${source.name}_${itemIdx}_${item.query.hashCode()}" to item)
+                                                items.forEach { item ->
+                                                    add("item_${source.name}_${item.query}_${item.targetUrl ?: ""}" to item)
                                                 }
                                             }
                                         }
@@ -1120,10 +1126,10 @@ fun PetalOmniboxPage(
                                         contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
                                         verticalArrangement = Arrangement.spacedBy(1.5.dp)
                                     ) {
-                                        itemsIndexed(
+                                        items(
                                             items = listEntries,
-                                            key = { index, entry -> "${index}_${entry.first}" }
-                                        ) { entryIndex, entry ->
+                                            key = { it.first }
+                                        ) { entry ->
                                             when (val payload = entry.second) {
                                                 is SuggestionSource -> {
                                                     // Section header
@@ -1138,12 +1144,18 @@ fun PetalOmniboxPage(
                                                         text = headerLabel,
                                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
-                                                        modifier = Modifier.padding(
-                                                            start = 16.dp,
-                                                            end = 16.dp,
-                                                            top = if (entryIndex == 0) 2.dp else 10.dp,
-                                                            bottom = 2.dp
-                                                        )
+                                                        modifier = Modifier
+                                                            .animateItem(
+                                                                fadeInSpec = PetalSpring.fadeIn(),
+                                                                fadeOutSpec = PetalSpring.fadeOut(),
+                                                                placementSpec = PetalSpring.listReorder()
+                                                            )
+                                                            .padding(
+                                                                start = 16.dp,
+                                                                end = 16.dp,
+                                                                top = 10.dp,
+                                                                bottom = 2.dp
+                                                            )
                                                     )
                                                 }
                                                 is OmniboxSuggestion -> {
@@ -1207,14 +1219,10 @@ fun PetalOmniboxPage(
                                                         },
                                                         modifier = Modifier
                                                             .fillMaxWidth()
-                                                            // Rows fade in/out and slide smoothly into their
-                                                            // new position as `suggestions` is replaced on
-                                                            // every keystroke, instead of the list just
-                                                            // popping to its new contents.
                                                             .animateItem(
                                                                 fadeInSpec = PetalSpring.fadeIn(),
                                                                 fadeOutSpec = PetalSpring.fadeOut(),
-                                                                placementSpec = PetalSpring.container()
+                                                                placementSpec = PetalSpring.listReorder()
                                                             ),
                                                         leading = {
                                                             com.petal.browser.ui.containment.PetalGroupIconBadge(

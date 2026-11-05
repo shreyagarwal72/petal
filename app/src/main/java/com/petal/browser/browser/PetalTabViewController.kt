@@ -223,6 +223,13 @@ class PetalTabViewController private constructor(
     private var accumulatedScrollY: Int = 0
     private var consecutiveDirectionSteps: Int = 0
     private var lastDirection: Int = 0
+    private val settleHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val settleRunnable = Runnable {
+        val act = resolveActivity(context) as? com.petal.browser.activity.BrowserActivity ?: return@Runnable
+        val currentFrac = com.petal.browser.ui.components.BarCollapseState.collapsedFraction
+        val target = if (currentFrac >= 0.5f) 1f else 0f
+        act.settlePillFraction(target)
+    }
 
     private val scrollDispatcher = Runnable {
         pendingScrollUpdate.set(false)
@@ -247,8 +254,10 @@ class PetalTabViewController private constructor(
                 return@Runnable
             }
 
-            // 3. Cooldown after each state change
-            if (now - lastBarStateChangeTime < 350L) {
+            val isPill = com.petal.browser.ui.components.BarPrefs.isPillCollapse(androidx.preference.PreferenceManager.getDefaultSharedPreferences(context))
+
+            // 3. Cooldown after each state change (only for non-pill hide mode)
+            if (!isPill && now - lastBarStateChangeTime < 350L) {
                 lastProcessedScrollY = currentScrollY
                 accumulatedScrollY = 0
                 consecutiveDirectionSteps = 0
@@ -266,7 +275,10 @@ class PetalTabViewController private constructor(
 
             // At the top of the page: bars are always shown
             if (y <= topThreshold) {
-                if (act.isAddressBarCollapsed()) {
+                settleHandler.removeCallbacks(settleRunnable)
+                if (isPill) {
+                    act.settlePillFraction(0f)
+                } else if (act.isAddressBarCollapsed()) {
                     accumulatedScrollY = 0
                     consecutiveDirectionSteps = 0
                     lastBarStateChangeTime = now
@@ -278,6 +290,23 @@ class PetalTabViewController private constructor(
             if (deltaY == 0) return@Runnable
 
             val currentDirection = if (deltaY > 0) 1 else -1
+
+            if (isPill) {
+                settleHandler.removeCallbacks(settleRunnable)
+                if (currentDirection != lastDirection) {
+                    lastDirection = currentDirection
+                    // Settle with spring when reversing
+                    val target = if (currentDirection > 0) 1f else 0f
+                    act.settlePillFraction(target)
+                } else {
+                    // Driven directly by scroll offset (no timer)
+                    act.onScrollOffsetDelta(deltaY.toFloat())
+                    // Settle with spring when scrolling stops
+                    settleHandler.postDelayed(settleRunnable, 75L)
+                }
+                return@Runnable
+            }
+
             if (currentDirection != lastDirection) {
                 accumulatedScrollY = 0
                 consecutiveDirectionSteps = 0
@@ -1493,7 +1522,9 @@ class PetalTabViewController private constructor(
             if (signal == lastThumbnailSignal) return@observeManually
             lastThumbnailSignal = signal
             if (!content.loading && content.firstContentfulPaint) {
-                post { try { capturePreviewBitmapAsync { } } catch (_: Throwable) {} }
+                com.petal.browser.motion.MotionGate.postAfterTransition {
+                    post { try { capturePreviewBitmapAsync { } } catch (_: Throwable) {} }
+                }
             }
         }.also { it.resume() }
     }

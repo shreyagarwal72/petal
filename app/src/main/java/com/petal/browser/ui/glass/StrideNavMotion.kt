@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -38,10 +39,7 @@ fun Modifier.bouncyClickable(
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed) scaleDown else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
+        animationSpec = PetalSpring.press(),
         label = "bouncyPress"
     )
     return graphicsLayer {
@@ -75,20 +73,20 @@ fun Modifier.navIconMotion(selected: Boolean): Modifier {
             if (selected) {
                 launch {
                     scale.snapTo(0.55f)
-                    scale.animateTo(1f, spring(dampingRatio = 0.35f, stiffness = 520f))
+                    scale.animateTo(1f, PetalSpring.spatial())
                 }
                 launch {
                     tilt.snapTo(-18f)
-                    tilt.animateTo(0f, spring(dampingRatio = 0.28f, stiffness = 360f))
+                    tilt.animateTo(0f, PetalSpring.spatial())
                 }
                 launch {
                     hop.snapTo(-8f)
-                    hop.animateTo(0f, spring(dampingRatio = 0.4f, stiffness = 420f))
+                    hop.animateTo(0f, PetalSpring.spatial())
                 }
             } else {
                 launch {
                     scale.snapTo(0.82f)
-                    scale.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 600f))
+                    scale.animateTo(1f, PetalSpring.spatial())
                 }
             }
         }

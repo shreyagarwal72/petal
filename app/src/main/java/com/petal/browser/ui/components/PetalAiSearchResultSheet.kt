@@ -527,8 +527,8 @@ fun PetalAiSearchResultSheet(
             AnimatedContent(
                 targetState = Triple(isLoading, errorMessage, responseResult),
                 transitionSpec = {
-                    fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) togetherWith
-                            fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                    fadeIn(animationSpec = PetalSpring.fadeThroughIn()) togetherWith
+                            fadeOut(animationSpec = PetalSpring.fadeThroughOut())
                 },
                 label = "AiContentState"
             ) { (loading, error, result) ->
