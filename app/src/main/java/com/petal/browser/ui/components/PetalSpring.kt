@@ -49,6 +49,22 @@ import androidx.lifecycle.LifecycleOwner
  */
 object PetalSpring {
 
+    /** Live "Motion Duration Scale" set in Appearance -> Layout & Controls. */
+    val timeScale: Float
+        get() = try {
+            com.petal.browser.ui.theme.layout.PetalLayoutState.INSTANCE.getSettings().getMotionDurationScale().coerceIn(0.25f, 3f)
+        } catch (_: Throwable) { 1f }
+
+    private fun scaledStiffness(base: Float): Float {
+        val s = timeScale
+        return (base / (s * s)).coerceIn(10f, 10000f)
+    }
+
+    private fun scaledDuration(ms: Int): Int {
+        val s = timeScale
+        return (ms * s).toInt().coerceAtLeast(1)
+    }
+
     /** M3 emphasized-decelerate curve, same values already used in .rules. */
     val EmphasizedEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
     val EmphasizedAccelerateEasing = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
@@ -57,131 +73,131 @@ object PetalSpring {
     /** Layout moves, reorders, sheets, size changes. Calm, no bounce. */
     fun <T> spatial(): FiniteAnimationSpec<T> = spring(
         dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = Spring.StiffnessMediumLow,
+        stiffness = scaledStiffness(Spring.StiffnessMediumLow),
     )
 
     /** Element entering the screen. A hint of life, but not wobbly. */
     fun <T> enter(): FiniteAnimationSpec<T> = spring(
         dampingRatio = 0.85f,
-        stiffness = Spring.StiffnessMediumLow,
+        stiffness = scaledStiffness(Spring.StiffnessMediumLow),
     )
 
     /** Element leaving. Faster than enter so the UI feels responsive. */
     fun <T> exit(): FiniteAnimationSpec<T> = spring(
         dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = Spring.StiffnessMedium,
+        stiffness = scaledStiffness(Spring.StiffnessMedium),
     )
 
     /** Finger-down / finger-up scale feedback. */
     fun <T> press(): FiniteAnimationSpec<T> = spring(
         dampingRatio = 0.8f,
-        stiffness = 400f,
+        stiffness = scaledStiffness(400f),
     )
 
     /** Use sparingly: toggles, FAB, celebratory moments. */
     fun <T> playful(): FiniteAnimationSpec<T> = spring(
         dampingRatio = Spring.DampingRatioMediumBouncy,
-        stiffness = Spring.StiffnessMedium,
+        stiffness = scaledStiffness(Spring.StiffnessMedium),
     )
 
     /** Material 3 Expressive Dialogs: snappy, tactile pop-in with controlled settle. */
     fun <T> dialog(): FiniteAnimationSpec<T> = spring(
         dampingRatio = 0.82f,
-        stiffness = 380f,
+        stiffness = scaledStiffness(380f),
     )
 
     /** Expressive Sheets: smooth decelerating slide with subtle spring cushion. */
     fun <T> sheet(): FiniteAnimationSpec<T> = spring(
         dampingRatio = 0.88f,
-        stiffness = 320f,
+        stiffness = scaledStiffness(320f),
     )
 
     /** Sheet drag settle: when finger lifts during sheet drag gestures. */
     fun <T> sheetDragSettle(): FiniteAnimationSpec<T> = spring(
         dampingRatio = 0.86f,
-        stiffness = 350f,
+        stiffness = scaledStiffness(350f),
     )
 
     /** Menu pop (origin-anchored scale): fast, crisp expansion with slight tactile settle. */
     fun <T> menuPop(): FiniteAnimationSpec<T> = spring(
         dampingRatio = 0.82f,
-        stiffness = 450f,
+        stiffness = scaledStiffness(450f),
     )
 
     /** Menu origin-anchored scale: opens with tactile settle. */
     fun <T> menuScale(): FiniteAnimationSpec<T> = menuPop()
 
     /** Menu item fade: fades in as the menu expands. */
-    fun <T> menuItemFade(): FiniteAnimationSpec<T> = tween(durationMillis = 160, easing = LinearOutSlowInEasing)
+    fun <T> menuItemFade(): FiniteAnimationSpec<T> = tween(durationMillis = scaledDuration(160), easing = LinearOutSlowInEasing)
 
     /** Menu exit scale: closes faster than it opens. */
-    fun <T> menuCloseScale(): FiniteAnimationSpec<T> = tween(durationMillis = 110, easing = FastOutLinearInEasing)
+    fun <T> menuCloseScale(): FiniteAnimationSpec<T> = tween(durationMillis = scaledDuration(110), easing = FastOutLinearInEasing)
 
     /** Menu exit fade: snappy fade-out. */
-    fun <T> menuCloseFade(): FiniteAnimationSpec<T> = tween(durationMillis = 90, easing = FastOutLinearInEasing)
+    fun <T> menuCloseFade(): FiniteAnimationSpec<T> = tween(durationMillis = scaledDuration(90), easing = FastOutLinearInEasing)
 
     /** Dialog pop-in: tactile scale spring. */
     fun <T> dialogScaleIn(): FiniteAnimationSpec<T> = spring(
         dampingRatio = 0.82f,
-        stiffness = 450f,
+        stiffness = scaledStiffness(450f),
     )
 
     /** Dialog matching exit scale: snappy dismiss. */
     fun <T> dialogScaleOut(): FiniteAnimationSpec<T> = tween(
-        durationMillis = 130,
+        durationMillis = scaledDuration(130),
         easing = FastOutLinearInEasing
     )
 
     /** Dialog fade-in. */
     fun <T> dialogFadeIn(): FiniteAnimationSpec<T> = tween(
-        durationMillis = 180,
+        durationMillis = scaledDuration(180),
         easing = LinearOutSlowInEasing
     )
 
     /** Dialog matching exit fade. */
     fun <T> dialogFadeOut(): FiniteAnimationSpec<T> = tween(
-        durationMillis = 120,
+        durationMillis = scaledDuration(120),
         easing = FastOutLinearInEasing
     )
 
     /** List reorder: calm, critically damped spring for moving items in a reordering list. */
     fun <T> listReorder(): FiniteAnimationSpec<T> = spring(
         dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = 420f,
+        stiffness = scaledStiffness(420f),
     )
 
     /** Container morphs (search bar -> page, tile -> page). Fast, no bounce, interruptible. */
     fun <T> container(): FiniteAnimationSpec<T> = spring(
         dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = 520f,
+        stiffness = scaledStiffness(520f),
     )
 
     /** Alias for container morph token. */
     fun <T> containerMorph(): FiniteAnimationSpec<T> = container()
 
     /** Pure opacity/colour changes. Fade-in slightly slower than fade-out. */
-    fun <T> fadeIn(): FiniteAnimationSpec<T> = tween(durationMillis = 200, easing = EmphasizedEasing)
-    fun <T> fadeOut(): FiniteAnimationSpec<T> = tween(durationMillis = 140, easing = EmphasizedEasing)
+    fun <T> fadeIn(): FiniteAnimationSpec<T> = tween(durationMillis = scaledDuration(200), easing = EmphasizedEasing)
+    fun <T> fadeOut(): FiniteAnimationSpec<T> = tween(durationMillis = scaledDuration(140), easing = EmphasizedEasing)
 
     /** Crossfades of icons/labels (selected state, collapsing-bar buttons). Short, symmetric. */
-    fun <T> crossfade(): FiniteAnimationSpec<T> = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+    fun <T> crossfade(): FiniteAnimationSpec<T> = tween(durationMillis = scaledDuration(200), easing = FastOutSlowInEasing)
 
     /** M3 Expressive Fade-Through: incoming content. */
     fun <T> fadeThroughIn(): FiniteAnimationSpec<T> = tween(
-        durationMillis = 210,
-        delayMillis = 90,
+        durationMillis = scaledDuration(210),
+        delayMillis = scaledDuration(90),
         easing = EmphasizedDecelerateEasing
     )
 
     /** M3 Expressive Fade-Through: outgoing content. */
     fun <T> fadeThroughOut(): FiniteAnimationSpec<T> = tween(
-        durationMillis = 90,
+        durationMillis = scaledDuration(90),
         easing = EmphasizedAccelerateEasing
     )
 
     /** Progress and favicon fade: quick, subtle crossfade for status indicators and icons. */
     fun <T> progressFade(): FiniteAnimationSpec<T> = tween(
-        durationMillis = 150,
+        durationMillis = scaledDuration(150),
         easing = FastOutSlowInEasing
     )
 
@@ -194,7 +210,7 @@ object PetalSpring {
      */
     fun <T> segment(): FiniteAnimationSpec<T> = spring(
         dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = 500f,
+        stiffness = scaledStiffness(500f),
     )
 
     /** Standard press depth so every tappable surface feels the same. */

@@ -127,7 +127,7 @@ fun PetalLayoutSettingsSection(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
 
     var sheet by rememberSaveable { mutableStateOf<String?>(null) }
-    val total = 9
+    val total = 8
     fun pos(i: Int) = petalGroupPositionFor(i, total)
 
     PetalSettingsSection(
@@ -185,23 +185,12 @@ fun PetalLayoutSettingsSection(
             position = pos(3),
             onValueChange = { v -> PetalLayoutState.update(context) { it.copy(cornersSize = v) } }
         )
-        EnhancedSliderItem(
-            value = settings.cornersThrottleMs.toFloat(),
-            title = "Corners Animation Throttle",
-            icon = ImageToolboxIcons.Outlined.Timelapse,
-            valueText = "${settings.cornersThrottleMs} ms",
-            defaultValue = 153f,
-            valueRange = 0f..500f,
-            steps = 49,
-            position = pos(4),
-            onValueChange = { v -> PetalLayoutState.update(context) { it.copy(cornersThrottleMs = v.toLong()) } }
-        )
 
         PetalGroupRow(
             icon = ImageToolboxIcons.Rounded.Animation,
             title = "Fling Type",
-            subtitle = settings.flingType.title,
-            position = pos(5),
+            subtitle = "${settings.flingType.title} · Applies to lists & app surfaces",
+            position = pos(4),
             iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
             iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
             trailing = { EditGlyph() },
@@ -216,7 +205,7 @@ fun PetalLayoutSettingsSection(
             defaultValue = 1f,
             valueRange = 0.25f..3f,
             steps = 10,
-            position = pos(6),
+            position = pos(5),
             onValueChange = { v -> PetalLayoutState.update(context) { it.copy(motionDurationScale = v) } }
         )
 
@@ -225,7 +214,7 @@ fun PetalLayoutSettingsSection(
             subtitle = "Soft shadow under switch thumbs",
             icon = Icons.Rounded.Layers,
             checked = settings.drawSwitchShadows,
-            position = pos(7),
+            position = pos(6),
             onCheckedChange = { v -> PetalLayoutState.update(context) { it.copy(drawSwitchShadows = v) } }
         )
         PetalSettingsToggleRow(
@@ -233,7 +222,7 @@ fun PetalLayoutSettingsSection(
             subtitle = "Soft shadow under slider thumbs",
             icon = Icons.Rounded.LinearScale,
             checked = settings.drawSliderShadows,
-            position = pos(8),
+            position = pos(7),
             onCheckedChange = { v -> PetalLayoutState.update(context) { it.copy(drawSliderShadows = v) } }
         )
     }
@@ -609,7 +598,7 @@ private fun FlingDemo(type: PetalFlingType) {
     val transition = rememberInfiniteTransition(label = "flingDemo")
     val x by transition.animateFloat(
         initialValue = 0f,
-        targetValue = 0f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
             keyframes {
                 durationMillis = duration + 800

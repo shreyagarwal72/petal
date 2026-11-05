@@ -10,6 +10,7 @@ package com.petal.browser.compose.downloads
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
+import com.petal.browser.ui.theme.layout.petalFlingBehavior
 
 import com.petal.browser.view.PetalToast;
 import android.os.Environment
@@ -667,6 +668,7 @@ fun PetalDownloadManagerScreen(
                 val downloadsListState = androidx.compose.foundation.lazy.rememberLazyListState()
                 LazyColumn(
                     state = downloadsListState,
+                    flingBehavior = petalFlingBehavior(),
                     modifier = Modifier
                         .fillMaxSize()
                         .scrollMotionBlur(downloadsListState),

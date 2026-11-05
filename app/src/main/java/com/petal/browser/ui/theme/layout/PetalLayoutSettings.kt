@@ -79,7 +79,10 @@ object PetalLayoutState {
 
     // Strong reference: SharedPreferences only keeps listeners weakly.
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { sp, key ->
-        if (key == null || key in KEYS) settings = PetalLayoutSettings.fromPreferences(sp)
+        if (key == null || key in KEYS) {
+            settings = PetalLayoutSettings.fromPreferences(sp)
+            displayCorners = settings.cornersSize
+        }
     }
 
     fun install(context: Context) {
@@ -97,6 +100,7 @@ object PetalLayoutState {
         install(context)
         val next = transform(settings)
         settings = next
+        displayCorners = next.cornersSize
         val sp = prefs ?: PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
         sp.edit()
             .putString(PetalLayoutSettings.KEY_SWITCH_TYPE, next.switchType.key)

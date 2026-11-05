@@ -10,6 +10,7 @@ package com.petal.browser.compose.bookmarks
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
+import com.petal.browser.ui.theme.layout.petalFlingBehavior
 
 import android.content.ClipboardManager
 import android.content.Context
@@ -425,6 +426,7 @@ fun PetalBookmarksScreen(
                     Box(modifier = Modifier.fillMaxSize()) {
                         LazyColumn(
                             state = bookmarksListState,
+                            flingBehavior = petalFlingBehavior(),
                             modifier = Modifier
                                 .fillMaxSize()
                                 .scrollMotionBlur(bookmarksListState),

@@ -1380,11 +1380,15 @@ fun AppearanceSettingsScreenContent(
                         subtitle = stringResource(R.string.ui_display_ambient_morphing_background_sh),
                         icon = Icons.Rounded.BubbleChart,
                         checked = expressiveBgShapes,
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                        position = if (expressiveBgShapes) com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE else com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         onCheckedChange = onExpressiveBgShapesChange
                     )
 
-                    if (expressiveBgShapes) {
+                    AnimatedVisibility(
+                        visible = expressiveBgShapes,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
                         com.petal.browser.ui.containment.PetalHeroCard {
                             Column(
                                 modifier = Modifier

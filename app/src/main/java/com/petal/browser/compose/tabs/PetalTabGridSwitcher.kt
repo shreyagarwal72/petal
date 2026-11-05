@@ -5,6 +5,7 @@ import com.petal.browser.ui.components.PetalNewTabOrigin
 import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.components.rememberReduceMotion
 import com.petal.browser.ui.components.rememberLowEndDevice
+import com.petal.browser.ui.theme.layout.petalFlingBehavior
 import kotlinx.coroutines.Job
 
 import android.graphics.Bitmap
@@ -1062,6 +1063,7 @@ fun PetalTabGridSwitcher(
                             } else {
                                 LazyVerticalGrid(
                                     columns = GridCells.Fixed(2),
+                                    flingBehavior = petalFlingBehavior(),
                                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                                     verticalArrangement = Arrangement.spacedBy(14.dp),
                                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
@@ -1112,6 +1114,7 @@ fun PetalTabGridSwitcher(
                         displayMode == TabDisplayMode.GRID -> LazyVerticalGrid(
                             state = gridState,
                             columns = GridCells.Fixed(2),
+                            flingBehavior = petalFlingBehavior(),
                             horizontalArrangement = Arrangement.spacedBy(14.dp),
                             verticalArrangement = Arrangement.spacedBy(14.dp),
                             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
@@ -1253,6 +1256,7 @@ fun PetalTabGridSwitcher(
 
                         else -> LazyColumn(
                             state = listState,
+                            flingBehavior = petalFlingBehavior(),
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
                             modifier = Modifier
@@ -1680,6 +1684,7 @@ fun PetalTabGridSwitcher(
                     )
 
                     LazyColumn(
+                        flingBehavior = petalFlingBehavior(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.heightIn(max = 220.dp)
                     ) {
@@ -2717,6 +2722,7 @@ private fun PetalTabGroupInspectionDialog(
 
                 // List of tabs in this group
                 LazyColumn(
+                    flingBehavior = petalFlingBehavior(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.weight(1f)
                 ) {

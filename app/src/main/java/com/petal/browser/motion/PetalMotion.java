@@ -29,6 +29,16 @@ public final class PetalMotion {
 
     private PetalMotion() {}
 
+    /** Scales duration based on user's Motion Duration Scale setting. */
+    public static long scaleDuration(long duration) {
+        try {
+            float s = com.petal.browser.ui.theme.layout.PetalLayoutState.INSTANCE.getSettings().getMotionDurationScale();
+            return (long) (duration * Math.max(0.25f, Math.min(3.0f, s)));
+        } catch (Throwable t) {
+            return duration;
+        }
+    }
+
     /** Animate a newly presented surface without touching its lifecycle. */
     public static void enter(View view) {
         enter(view, TRANSITION);
@@ -36,6 +46,7 @@ public final class PetalMotion {
 
     public static void enter(View view, long duration) {
         if (view == null) return;
+        final long effDuration = scaleDuration(duration);
         if (!animationsEnabled(view)) {
             view.setAlpha(1f);
             view.setTranslationX(0f);
@@ -53,7 +64,7 @@ public final class PetalMotion {
                 .translationX(0f)
                 .scaleX(1f)
                 .scaleY(1f)
-                .setDuration(duration)
+                .setDuration(effDuration)
                 .setInterpolator(EMPHASIZED)
                 .withLayer()
                 .start();
@@ -134,7 +145,7 @@ public final class PetalMotion {
         MotionGate.INSTANCE.startTransition(transName);
         android.animation.ValueAnimator a = android.animation.ValueAnimator.ofFloat(
                 opening ? 0f : 1f, opening ? 1f : 0f);
-        a.setDuration(duration);
+        a.setDuration(scaleDuration(duration));
         a.setInterpolator(EMPHASIZED);
         a.addUpdateListener(anim -> {
             t[0] = (float) anim.getAnimatedValue();
@@ -228,7 +239,7 @@ public final class PetalMotion {
                 .translationY(0f)
                 .scaleX(1f)
                 .scaleY(1f)
-                .setDuration(COMPONENT)
+                .setDuration(scaleDuration(COMPONENT))
                 .setInterpolator(EMPHASIZED)
                 .withLayer()
                 .start();
@@ -240,7 +251,7 @@ public final class PetalMotion {
         view.animate()
                 .scaleX(pressed ? 0.95f : 1f)
                 .scaleY(pressed ? 0.95f : 1f)
-                .setDuration(MICRO)
+                .setDuration(scaleDuration(MICRO))
                 .setInterpolator(EMPHASIZED)
                 .start();
     }
@@ -264,7 +275,7 @@ public final class PetalMotion {
                 .translationY(0f)
                 .scaleX(1f)
                 .scaleY(1f)
-                .setDuration(TRANSITION)
+                .setDuration(scaleDuration(TRANSITION))
                 .setInterpolator(EMPHASIZED)
                 .withLayer()
                 .start();
@@ -282,7 +293,7 @@ public final class PetalMotion {
                 .translationY(160f)
                 .scaleX(0.96f)
                 .scaleY(0.96f)
-                .setDuration(COMPONENT)
+                .setDuration(scaleDuration(COMPONENT))
                 .setInterpolator(EMPHASIZED_ACCELERATE)
                 .withLayer()
                 .withEndAction(() -> {
@@ -307,7 +318,7 @@ public final class PetalMotion {
                 .alpha(1f)
                 .scaleX(1f)
                 .scaleY(1f)
-                .setDuration(COMPONENT)
+                .setDuration(scaleDuration(COMPONENT))
                 .setInterpolator(EMPHASIZED)
                 .withLayer()
                 .start();
@@ -315,19 +326,20 @@ public final class PetalMotion {
 
     /** Smooth cross-fade for seamless surface switching without blank frames. */
     public static void crossfade(View outgoing, View incoming, long duration) {
+        final long effDuration = scaleDuration(duration);
         if (incoming != null) {
             incoming.setVisibility(View.VISIBLE);
             incoming.setAlpha(0f);
             incoming.animate()
                     .alpha(1f)
-                    .setDuration(duration)
+                    .setDuration(effDuration)
                     .setInterpolator(EMPHASIZED)
                     .start();
         }
         if (outgoing != null) {
             outgoing.animate()
                     .alpha(0f)
-                    .setDuration(duration)
+                    .setDuration(effDuration)
                     .setInterpolator(EMPHASIZED_ACCELERATE)
                     .withEndAction(() -> outgoing.setVisibility(View.GONE))
                     .start();

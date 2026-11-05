@@ -24,6 +24,8 @@
 
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.layout.petalFlingBehavior
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -1120,6 +1122,7 @@ fun PetalOmniboxPage(
                                     }
 
                                     LazyColumn(
+                                        flingBehavior = petalFlingBehavior(),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .weight(1f, fill = false),

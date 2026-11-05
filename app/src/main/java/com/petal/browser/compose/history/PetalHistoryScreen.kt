@@ -10,6 +10,7 @@ package com.petal.browser.compose.history
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
+import com.petal.browser.ui.theme.layout.petalFlingBehavior
 
 import android.content.Context
 import androidx.activity.ComponentActivity
@@ -365,6 +366,7 @@ fun PetalHistoryScreen(
                         val historyListState = androidx.compose.foundation.lazy.rememberLazyListState()
                         LazyColumn(
                             state = historyListState,
+                            flingBehavior = petalFlingBehavior(),
                             modifier = Modifier
                                 .fillMaxSize()
                                 .scrollMotionBlur(historyListState),

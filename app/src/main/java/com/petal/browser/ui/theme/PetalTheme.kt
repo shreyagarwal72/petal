@@ -314,20 +314,10 @@ fun PetalExpressiveTheme(
     }
 
     val reduceMotion = com.petal.browser.ui.components.rememberReduceMotion()
-    // Corner size eases towards its target over the user's "Corners Animation Throttle" so shapes
-    // morph smoothly instead of snapping (and recomposition stays bounded while dragging the slider).
-    val animatedCorners by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = layoutSettingsState.cornersSize,
-        animationSpec = androidx.compose.animation.core.tween(layoutSettingsState.cornersThrottleMs.toInt()),
-        label = "layoutCorners"
-    )
-    androidx.compose.runtime.SideEffect {
-        com.petal.browser.ui.theme.layout.PetalLayoutState.displayCorners = animatedCorners
-        com.petal.browser.ui.containment.PetalMotion.timeScale = layoutSettingsState.motionDurationScale
-    }
-    val expressiveShapes = remember(expressiveShapesState, layoutSettingsState.shapeType, animatedCorners) {
+    val corners = layoutSettingsState.cornersSize
+    val expressiveShapes = remember(expressiveShapesState, layoutSettingsState.shapeType, corners) {
         val type = layoutSettingsState.shapeType
-        fun c(dp: Int) = type.cornerShape(dp.dp, multiplier = animatedCorners)
+        fun c(dp: Int) = type.cornerShape(dp.dp, multiplier = corners)
         if (expressiveShapesState) {
             Shapes(extraSmall = c(8), small = c(12), medium = c(16), large = c(24), extraLarge = c(32))
         } else {
