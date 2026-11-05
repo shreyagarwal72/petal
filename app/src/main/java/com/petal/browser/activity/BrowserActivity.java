@@ -5859,9 +5859,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }, PB_TRANSITION_DURATION_MS);
                     return kotlin.Unit.INSTANCE;
                 },
-                // Swipe-back gesture: Petal's predictive-back animation already played, so close at once.
+                // Swipe-back gesture: collapse symmetrically into the bar as well.
                 () -> {
-                    showAlbum(currentAlbumController);
+                    collapseOmniboxThen(() -> showAlbum(currentAlbumController), PB_TRANSITION_DURATION_MS);
                     return kotlin.Unit.INSTANCE;
                 }
             );

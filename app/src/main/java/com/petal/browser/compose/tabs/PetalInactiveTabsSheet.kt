@@ -1,5 +1,6 @@
 package com.petal.browser.compose.tabs
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -93,15 +94,14 @@ fun PetalInactiveTabsSheet(
 
     val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
-    PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = onDismiss
+    BackHandler(enabled = true) {
+        onDismiss()
+    }
+
+    Surface(
+        color = MaterialTheme.colorScheme.background,
+        modifier = modifier.fillMaxSize()
     ) {
-        PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-            Surface(
-                color = MaterialTheme.colorScheme.background,
-                modifier = modifier.fillMaxSize()
-            ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 M3ExpressiveVariableBackground(pageSeed = "inactive_tabs_sheet")
 
@@ -297,8 +297,6 @@ fun PetalInactiveTabsSheet(
             }
         }
     }
-}
-}
 
 /**
  * Grid card matching the exact visual style, proportions, and shape of PetalTabGridCard in Tab Manager.

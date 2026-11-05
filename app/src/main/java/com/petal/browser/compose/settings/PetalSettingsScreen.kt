@@ -9,6 +9,7 @@ package com.petal.browser.compose.settings
 
 import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -250,19 +251,13 @@ fun PetalSettingsScreen(
         }
     }
 
+    BackHandler(enabled = pageCategory != null) {
+        closeCategory()
+    }
+
     PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = {
-            if (pageCategory != null) {
-                // The gesture already slid the page away; remove it without a second animation.
-                activeHeaderCategory = null
-                pageCategory = null
-                currentHighlightId = null
-                scope.launch { push.snapTo(0f) }
-            } else {
-                onBackPress()
-            }
-        }
+        enabled = (pageCategory == null),
+        onBack = onBackPress
     ) {
         Box(
             modifier = Modifier

@@ -31,6 +31,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -563,12 +564,11 @@ fun PetalOmniboxPage(
         }
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = { (onBackGesture ?: onBackPress)() },
-    ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-            Scaffold(
+    BackHandler(enabled = true) {
+        (onBackGesture ?: onBackPress)()
+    }
+
+    Scaffold(
                 containerColor = MaterialTheme.colorScheme.background,
                 contentWindowInsets = WindowInsets(0),
                 snackbarHost = { PetalThemedSnackbarHost(hostState = snackbarHostState) }
@@ -1286,8 +1286,6 @@ fun PetalOmniboxPage(
                     }
                 }
             }
-        }
-    }
 
     if (suggestionToRemove != null) {
         val item = suggestionToRemove!!
