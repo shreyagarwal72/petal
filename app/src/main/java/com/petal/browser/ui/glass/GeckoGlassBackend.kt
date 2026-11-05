@@ -1,23 +1,48 @@
 package com.petal.browser.ui.glass
 
+import android.content.Context
 import android.graphics.SurfaceTexture
+import android.os.Build
 import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
+import androidx.preference.PreferenceManager
 import org.mozilla.geckoview.GeckoView
 
 /**
- * Puts a GeckoView on its TextureView backend, so the page passes through the view
- * hierarchy and the nav bar's liquid glass can sample it. A SurfaceView's pixels never do;
- * under glass the page would be a hole.
+ * Manages the GeckoView rendering backend (SurfaceView vs TextureView).
  *
- * GeckoView's TextureView listener treats every new frame ([TextureView.SurfaceTextureListener.onSurfaceTextureUpdated])
- * as a brand-new surface: it wraps the SurfaceTexture in a fresh Surface and hands it to
- * Gecko, which composites again, which produces another frame. Left alone that redraws the
- * whole window at full frame rate on a still page. The TextureView takes in Gecko's frames
- * through its own internal listener, so that callback is simply not passed on.
+ * SurfaceView is the high-performance default (direct hardware overlay, zero compositing overhead,
+ * no frame-listener latency, and no undrawn grey strips). TextureView is only enabled when Liquid Glass
+ * is explicitly enabled by the user and requires sampling the live page behind translucent bars.
  */
 object GeckoGlassBackend {
+
+    @JvmStatic
+    fun shouldSamplePage(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val glassEnabled = sp.getBoolean("sp_liquid_glass_enabled", false)
+        if (!glassEnabled) return false
+        val addressGlass = sp.getBoolean("sp_liquid_glass_address_bar", true)
+        val bottomGlass = sp.getBoolean("sp_liquid_glass_bottom_nav", true)
+        return addressGlass || bottomGlass
+    }
+
+    @JvmStatic
+    fun applyBackend(geckoView: GeckoView, context: Context) {
+        if (shouldSamplePage(context)) {
+            useTextureView(geckoView)
+        } else {
+            useSurfaceView(geckoView)
+        }
+    }
+
+    @JvmStatic
+    fun useSurfaceView(geckoView: GeckoView) {
+        geckoView.setViewBackend(GeckoView.BACKEND_SURFACE_VIEW)
+    }
+
     @JvmStatic
     fun useTextureView(geckoView: GeckoView) {
         geckoView.setViewBackend(GeckoView.BACKEND_TEXTURE_VIEW)
@@ -46,6 +71,10 @@ object GeckoGlassBackend {
         override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean =
             inner.onSurfaceTextureDestroyed(surface)
 
-        override fun onSurfaceTextureUpdated(surface: SurfaceTexture) = Unit
+        override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
+            try {
+                inner.onSurfaceTextureUpdated(surface)
+            } catch (_: Throwable) {}
+        }
     }
 }

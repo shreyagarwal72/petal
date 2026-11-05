@@ -872,9 +872,7 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     val geckoView: GeckoView = SafeGeckoView(context).apply {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            com.petal.browser.ui.glass.GeckoGlassBackend.useTextureView(this)
-        }
+        com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(this, context)
     }
     // The session mode is immutable after GeckoSession construction. Creating a normal
     // session and switching to private mode later is too late and can leak normal-profile
@@ -1766,10 +1764,13 @@ class PetalGeckoView @JvmOverloads constructor(
                 pendingScrollY = scrollY
                 if (isFrameScheduled) return
                 isFrameScheduled = true
-                android.view.Choreographer.getInstance().postFrameCallback {
-                    isFrameScheduled = false
-                    val latestY = pendingScrollY
-                    val act = getHostActivity() ?: return@postFrameCallback
+                post {
+                    android.view.Choreographer.getInstance().postFrameCallback {
+                        isFrameScheduled = false
+                        val latestY = pendingScrollY
+                        val act = getHostActivity() ?: return@postFrameCallback
+                        val bAct = act as? com.petal.browser.activity.BrowserActivity
+                        if (bAct != null && bAct.isBarAnimationRunning()) return@postFrameCallback
                     val density = context.resources.displayMetrics.density
                     val hideAfterPx = 24f * density
                     val showAfterPx = 16f * density

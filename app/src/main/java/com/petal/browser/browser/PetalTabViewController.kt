@@ -195,6 +195,118 @@ class PetalTabViewController private constructor(
             "sp_font_size_scale", "sp_zoom_level_scale", "sp_force_enable_zoom", "sp_caret_browsing" -> {
                 com.petal.browser.accessibility.PetalAccessibilityEngine.applyAccessibilitySettings(this@PetalTabViewController)
             }
+            "sp_liquid_glass_enabled", "sp_liquid_glass_omnibox", "sp_liquid_glass_bottom_nav" -> {
+                if (isHostedByBrowserActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    post {
+                        findGeckoView(engineView.asView())?.let { gv ->
+                            try {
+                                com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(gv, context)
+                            } catch (_: Throwable) {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Volatile
+    var currentScrollY: Int = 0
+        private set
+    @Volatile
+    var currentScrollX: Int = 0
+        private set
+
+    private var lastLayoutChangeTime: Long = 0L
+    private var lastBarStateChangeTime: Long = 0L
+    private val pendingScrollUpdate = java.util.concurrent.atomic.AtomicBoolean(false)
+    private var lastProcessedScrollY: Int = 0
+    private var accumulatedScrollY: Int = 0
+    private var consecutiveDirectionSteps: Int = 0
+    private var lastDirection: Int = 0
+
+    private val scrollDispatcher = Runnable {
+        pendingScrollUpdate.set(false)
+        android.os.Trace.beginSection("PetalTab:handleScrollChanged")
+        try {
+            val act = resolveActivity(context) as? com.petal.browser.activity.BrowserActivity ?: return@Runnable
+            val now = android.os.SystemClock.uptimeMillis()
+
+            // 1. Ignore scroll changes caused by viewport or layout resizes
+            if (now - lastLayoutChangeTime < 350L) {
+                lastProcessedScrollY = currentScrollY
+                accumulatedScrollY = 0
+                consecutiveDirectionSteps = 0
+                return@Runnable
+            }
+
+            // 2. Ignore deltas while bars animate
+            if (act.isBarAnimationRunning()) {
+                lastProcessedScrollY = currentScrollY
+                accumulatedScrollY = 0
+                consecutiveDirectionSteps = 0
+                return@Runnable
+            }
+
+            // 3. Cooldown after each state change
+            if (now - lastBarStateChangeTime < 350L) {
+                lastProcessedScrollY = currentScrollY
+                accumulatedScrollY = 0
+                consecutiveDirectionSteps = 0
+                return@Runnable
+            }
+
+            val density = context.resources.displayMetrics.density
+            val topThreshold = (2f * density).toInt()
+            val hideThreshold = (56f * density).toInt()
+            val showThreshold = (24f * density).toInt()
+
+            val y = currentScrollY
+            val deltaY = y - lastProcessedScrollY
+            lastProcessedScrollY = y
+
+            // At the top of the page: bars are always shown
+            if (y <= topThreshold) {
+                if (act.isAddressBarCollapsed()) {
+                    accumulatedScrollY = 0
+                    consecutiveDirectionSteps = 0
+                    lastBarStateChangeTime = now
+                    act.animateAddressBarCollapse(false)
+                }
+                return@Runnable
+            }
+
+            if (deltaY == 0) return@Runnable
+
+            val currentDirection = if (deltaY > 0) 1 else -1
+            if (currentDirection != lastDirection) {
+                accumulatedScrollY = 0
+                consecutiveDirectionSteps = 0
+                lastDirection = currentDirection
+            }
+
+            accumulatedScrollY += deltaY
+            consecutiveDirectionSteps++
+
+            // During fast flings or scroll, require sustained direction (at least 2 consecutive frames in same direction)
+            if (consecutiveDirectionSteps >= 2) {
+                if (accumulatedScrollY > hideThreshold) {
+                    if (!act.isAddressBarCollapsed()) {
+                        accumulatedScrollY = 0
+                        consecutiveDirectionSteps = 0
+                        lastBarStateChangeTime = now
+                        act.animateAddressBarCollapse(true)
+                    }
+                } else if (accumulatedScrollY < -showThreshold) {
+                    if (act.isAddressBarCollapsed()) {
+                        accumulatedScrollY = 0
+                        consecutiveDirectionSteps = 0
+                        lastBarStateChangeTime = now
+                        act.animateAddressBarCollapse(false)
+                    }
+                }
+            }
+        } finally {
+            android.os.Trace.endSection()
         }
     }
     private var refreshFeature: SwipeRefreshFeature? = null
@@ -237,6 +349,11 @@ class PetalTabViewController private constructor(
             if (pageUrl != url) {
                 previewRevision++
                 previewRetryCount = 0
+                currentScrollX = 0
+                currentScrollY = 0
+                lastProcessedScrollY = 0
+                accumulatedScrollY = 0
+                consecutiveDirectionSteps = 0
             }
             pageUrl = url
             applyPageSettings(url)
@@ -392,6 +509,11 @@ class PetalTabViewController private constructor(
 
     init {
         isNestedScrollingEnabled = true
+        addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) {
+                lastLayoutChangeTime = android.os.SystemClock.uptimeMillis()
+            }
+        }
         // Petal's own PullToRefreshFrameLayout owns the pull gesture inside BrowserActivity;
         // disable the Mozilla SwipeRefreshLayout so it never intercepts or draws its spinner.
         if (isHostedByBrowserActivity()) {
@@ -400,9 +522,9 @@ class PetalTabViewController private constructor(
         // Tab pages are drawn by android-components' GeckoEngineView, whose inner GeckoView
         // defaults to a SurfaceView. A SurfaceView cannot be recorded, so the bars' glass saw a
         // hole and showed the live page through unblurred. Switch it to the TextureView backend.
-        if (isHostedByBrowserActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+        if (isHostedByBrowserActivity()) {
             findGeckoView(engineView.asView())?.let {
-                try { com.petal.browser.ui.glass.GeckoGlassBackend.useTextureView(it) } catch (_: Throwable) {}
+                try { com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(it, context) } catch (_: Throwable) {}
             }
         }
         mediaBridge = com.petal.browser.media.PetalMediaBridge(
@@ -485,12 +607,13 @@ class PetalTabViewController private constructor(
         historyPending = false
         restoreLocationSeen = false
         navUrls.clear(); navIndex = -1; navFallbackEligible = false
+        currentScrollX = 0; currentScrollY = 0; lastProcessedScrollY = 0; accumulatedScrollY = 0; consecutiveDirectionSteps = 0
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
         engineView.render(session)
         if (isHostedByBrowserActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             post {
                 findGeckoView(engineView.asView())?.let {
-                    try { com.petal.browser.ui.glass.GeckoGlassBackend.useTextureView(it) } catch (_: Throwable) {}
+                    try { com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(it, context) } catch (_: Throwable) {}
                 }
             }
         }
@@ -643,49 +766,12 @@ class PetalTabViewController private constructor(
 
             // GeckoSession ScrollDelegate for Tactile Haptics and Address Bar Collapsing on scroll
             gs.scrollDelegate = object : org.mozilla.geckoview.GeckoSession.ScrollDelegate {
-                private var lastAddressBarScrollY: Int = 0
-                private var accumulatedScrollY: Int = 0
-
                 override fun onScrollChanged(session: org.mozilla.geckoview.GeckoSession, scrollX: Int, scrollY: Int) {
-                    android.os.Trace.beginSection("PetalTab:onScrollChanged")
-                    try {
-                        val act = resolveActivity(context) ?: return
-                        act.runOnUiThread {
-                            android.os.Trace.beginSection("PetalTab:updateToolbarOnScroll")
-                            try {
-                                val density = context.resources.displayMetrics.density
-                                val minScrollThreshold = (8f * density).toInt()
-                                val hideThreshold = (56f * density).toInt()
-                                val showThreshold = (24f * density).toInt()
-                                val deltaY = scrollY - lastAddressBarScrollY
-                                lastAddressBarScrollY = scrollY
+                    currentScrollX = scrollX
+                    currentScrollY = scrollY
 
-                                if (act is com.petal.browser.activity.BrowserActivity) {
-                                    if (scrollY <= (2f * density).toInt()) {
-                                        accumulatedScrollY = 0
-                                        act.animateAddressBarCollapse(false)
-                                    } else if (deltaY != 0) {
-                                        // Reset accumulation if direction flipped
-                                        if ((deltaY > 0 && accumulatedScrollY < 0) || (deltaY < 0 && accumulatedScrollY > 0)) {
-                                            accumulatedScrollY = 0
-                                        }
-                                        accumulatedScrollY += deltaY
-
-                                        if (accumulatedScrollY > hideThreshold) {
-                                            accumulatedScrollY = 0
-                                            act.animateAddressBarCollapse(true)
-                                        } else if (accumulatedScrollY < -showThreshold) {
-                                            accumulatedScrollY = 0
-                                            act.animateAddressBarCollapse(false)
-                                        }
-                                    }
-                                }
-                            } finally {
-                                android.os.Trace.endSection()
-                            }
-                        }
-                    } finally {
-                        android.os.Trace.endSection()
+                    if (pendingScrollUpdate.compareAndSet(false, true)) {
+                        post(scrollDispatcher)
                     }
                 }
             }
@@ -1367,8 +1453,8 @@ class PetalTabViewController private constructor(
         if (pageUrl.isBlank() || pageUrl.equals("about:blank", ignoreCase = true) || com.petal.browser.unit.PetalBrowserUtils.isHomePage(pageUrl)) {
             return true
         }
-        val view = engineView.asView()
-        return !view.canScrollVertically(-1)
+        val density = context.resources.displayMetrics.density
+        return currentScrollY <= (2f * density).toInt()
     }
 
     override fun canChildScrollUp(): Boolean {

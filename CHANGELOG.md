@@ -2,6 +2,28 @@
 
 > *"The landmark 'More Expressive' release elevates Petal Browser to new heights of Material 3 Expressive design, fluid reactive theming, and tactile user customization: introducing a comprehensive ImageToolbox-style Layout & Controls suite with live component styling, seamless Liquid Glass auto-adaptation, PixelMusic-grade expressive fast-scrollbars, overhauled Mix Palettes with one-tap harmony recipes, bi-directional Send Tab to Device across all connected Firefox instances, and a robust Reader Mode with Read Aloud text-to-speech."*
 
+#### 🚀 Web Page Scroll Stabilization, Dynamic Toolbar Decoupling & Touch Integrity (`BrowserActivity.java`, `PetalTabViewController.kt`, `PullToRefreshFrameLayout.java`, `GeckoGlassBackend.kt`, `PetalGeckoView.kt`)
+- **Firefox/Fenix Dynamic Toolbar Decoupling & Fixed Viewport Layout**:
+  - Eliminated viewport reflows and layout shifting during scroll by stopping `animateContentPadding` during active scrolls; `main_content` maintains a stable layout size.
+  - Aligned with Mozilla Fenix architecture: GeckoView owns the dynamic toolbar offset via `setDynamicToolbarMaxHeight` and smoothed `setVerticalClipping` clamped to actual bar dimensions.
+  - Refactored spring translations to smoothly redirect running springs via `setFinalPosition` rather than cancelling and restarting, using critically damped spring forces (`DAMPING_RATIO_NO_BOUNCY`) to eliminate bounce oscillations.
+  - Included `pillSpringAnim` and `pillMorphAnimator` in `areBarsAnimating()` / `isBarAnimationRunning()`, preventing collapse animations from colliding with pill morphing.
+- **High-Stability Frame-Coalesced Scroll Direction Detector**:
+  - Replaced unthrottled per-event UI runnable dispatch with atomic frame coalescing onto the main thread.
+  - Implemented viewport layout cooldown (350 ms) to ignore synthetic APZ scroll deltas caused by keyboard/overlay appearance or orientation changes.
+  - Added bar state change cooldown (350 ms), hysteresis thresholds (56dp collapse / 24dp restore), and sustained directional verification (minimum 2 consecutive steps in same direction) to eliminate rapid oscillation flickers during flings.
+- **SurfaceView Default & Live Liquid Glass Backend Management**:
+  - Restored high-performance hardware-composited `BACKEND_SURFACE_VIEW` as default for all tabs on Android 12+, eliminating GPU overhead and compositor latency when Liquid Glass is disabled.
+  - TextureView backend is applied dynamically only when Liquid Glass is enabled and actively sampling webpage content behind translucent bars.
+  - Fixed `FrameQuietListener` to properly forward `onSurfaceTextureUpdated`, resolving undrawn grey strips and compositor stutters.
+  - Added live settings listener to dynamically transition GeckoView backends when Liquid Glass settings are toggled in real time.
+- **Hardened Pull-To-Refresh Touch Stream Protection**:
+  - Replaced unreliable `view.canScrollVertically(-1)` with real APZ compositor scroll offset (`currentScrollY <= 2`) tracked from `GeckoSession.ScrollDelegate`.
+  - Enforced strict `startedAtTop` validation exclusively evaluated at `ACTION_DOWN`; touches starting mid-page can never hijack touch streams into pull-to-refresh.
+  - Guarded touch interception: requires clear downward travel (`dy > touchSlop && dy > Math.abs(dx) * 1.5f`), immediately surrendering touch control to web content during horizontal swipes, carousels, text selection, pinch-to-zoom, and upward scrolls.
+- **Codebase Cleanup**:
+  - Removed dead `BrowserMomentumRecoveryRules.kt`.
+
 #### 🦊 Firefox/Fenix Mozilla Android Components Session Architecture Migration (`BrowserStore`, `AutoSave`, `SessionStorage`)
 - **BrowserStore as Single Source of Truth**:
   - Replaced legacy custom tab session persistence and restore systems (`PetalTabSessionManager` and `PetalTabStateStore`) with the standard Firefox/Fenix architecture powered by Mozilla Android Components 159.

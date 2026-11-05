@@ -2902,8 +2902,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (compose != null) compose.setVisibility(VISIBLE);
     }
 
+    public boolean isAddressBarCollapsed() {
+        return isAddressBarCollapsed;
+    }
+
+    public boolean isBarAnimationRunning() {
+        return areBarsAnimating();
+    }
+
     public boolean areBarsAnimating() {
         if (contentPaddingAnimator != null && contentPaddingAnimator.isRunning()) {
+            return true;
+        }
+        if (pillSpringAnim != null && pillSpringAnim.isRunning()) {
+            return true;
+        }
+        if (pillMorphAnimator != null && pillMorphAnimator.isRunning()) {
             return true;
         }
         for (androidx.dynamicanimation.animation.SpringAnimation spring : barSprings.values()) {
@@ -3099,12 +3113,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     (sp.getBoolean("sp_liquid_glass_bottom_nav", true) || (isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true)));
             boolean liquidGlassTopOn = sp.getBoolean("sp_liquid_glass_enabled", false) &&
                     (!isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true));
-            // Gecko must only be told about a dynamic toolbar when the bar really overlays the page.
-            // At rest the page is padded below the bars, so this is 0 (GeckoView only takes a single,
-            // top-anchored toolbar height; there is no bottom variant, so padding covers the bottom).
-            // Only the hidden legacy pref (sp_glass_page_under_bars) lets the top glass bar overlay.
-            final boolean legacyUnder = com.petal.browser.ui.components.BarInsets.legacyPageUnderBars(sp);
-            updateDynamicToolbarHeights((!isBottom && liquidGlassTopOn && legacyUnder) ? addressHeight : 0);
+            // Firefox / Fenix approach: For top address bar, GeckoView owns the dynamic toolbar offset
+            // via setDynamicToolbarMaxHeight, keeping fixed page view size.
+            updateDynamicToolbarHeights(!isBottom ? addressHeight : 0);
             boolean reserveBarSpace = !isNonWebSurface;
             // Glass bars always sample the live page. Padded strips are filled with the page's
             // mirrored edge rows inside GlassBackdrop, so the wallpaper backdrop is never shown.
@@ -4339,13 +4350,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             pillMorphAnimator.cancel();
             pillMorphAnimator = null;
         }
-        if (pillSpringAnim != null && pillSpringAnim.isRunning()) {
-            pillSpringAnim.cancel();
-        }
         float target = collapse ? 1f : 0f;
         float current = com.petal.browser.ui.components.BarCollapseState.INSTANCE.getCollapsedFraction();
         if (!animate || Math.abs(current - target) < 0.005f) {
+            if (pillSpringAnim != null && pillSpringAnim.isRunning()) {
+                pillSpringAnim.cancel();
+            }
             com.petal.browser.ui.components.BarCollapseState.INSTANCE.setFraction(target);
+            return;
+        }
+        if (pillSpringAnim != null && pillSpringAnim.isRunning()) {
+            if (Math.abs(pillSpringAnim.getSpring().getFinalPosition() - target) < 0.005f) {
+                return;
+            }
+            pillSpringAnim.getSpring().setFinalPosition(target);
             return;
         }
         androidx.dynamicanimation.animation.FloatValueHolder holder =
@@ -4353,9 +4371,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         pillSpringAnim = new androidx.dynamicanimation.animation.SpringAnimation(holder);
         pillSpringAnim.setSpring(new androidx.dynamicanimation.animation.SpringForce(target)
                 .setStiffness(420f)
-                .setDampingRatio(androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_LOW_BOUNCY));
+                .setDampingRatio(androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_NO_BOUNCY));
         pillSpringAnim.addUpdateListener((animation, value, velocity) -> {
-            com.petal.browser.ui.components.BarCollapseState.INSTANCE.setFraction(value);
+            com.petal.browser.ui.components.BarCollapseState.INSTANCE.setFraction(Math.max(0f, Math.min(1f, value)));
         });
         pillSpringAnim.start();
     }
@@ -4409,11 +4427,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (!barInsetsKnown || !canCollapseBars()) return;
             isAddressBarCollapsed = true;
             barsHiddenUrl = currentUrl;
-            applyBarsHiddenState(true, true, true);
+            applyBarsHiddenState(true, true, false);
         } else if (!collapse && isAddressBarCollapsed) {
             isAddressBarCollapsed = false;
             barsHiddenUrl = null;
-            applyBarsHiddenState(false, true, true);
+            applyBarsHiddenState(false, true, false);
         }
     }
 
@@ -4612,8 +4630,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             v.setTranslationY(y);
             View addressBar = findViewById(R.id.compose_address_bar);
             if (v == addressBar) {
-                // Inform Gecko of dynamic vertical clipping so fixed/sticky elements track the bar
-                updateVerticalClipping((int) -y);
+                boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
+                if (!isBottom) {
+                    int maxClip = addressBar.getHeight() > 0 ? addressBar.getHeight() : (int) PetalAndroidUtils.convertDpToPixel(56f, context);
+                    int clip = Math.max(0, Math.min(maxClip, Math.round(-y)));
+                    updateVerticalClipping(clip);
+                } else {
+                    updateVerticalClipping(0);
+                }
             }
         } finally {
             android.os.Trace.endSection();
@@ -4678,20 +4702,32 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         anim.start();
     }
 
-    /** Springs a view's vertical offset. A running spring on the same view is cancelled first, so repeated calls never stack. */
+    /** Springs a view's vertical offset. Smoothly redirects running springs without stacking or flickering. */
     public void springTranslateY(View view, float endValue, float stiffness, float dampingRatio) {
         if (view == null) return;
-        androidx.dynamicanimation.animation.SpringAnimation old = barSprings.get(view);
-        if (old != null && old.isRunning()) old.cancel();
-        androidx.dynamicanimation.animation.SpringAnimation anim =
-                new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.TRANSLATION_Y);
+        androidx.dynamicanimation.animation.SpringAnimation anim = barSprings.get(view);
+        if (anim != null && anim.isRunning()) {
+            if (Math.abs(anim.getSpring().getFinalPosition() - endValue) < 0.5f) {
+                return;
+            }
+            anim.getSpring().setFinalPosition(endValue);
+            return;
+        }
+        anim = new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.TRANSLATION_Y);
         anim.setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
                 .setStiffness(stiffness)
-                .setDampingRatio(dampingRatio));
+                .setDampingRatio(androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_NO_BOUNCY));
         barSprings.put(view, anim);
         View addressBar = findViewById(R.id.compose_address_bar);
         if (view == addressBar) {
-            anim.addUpdateListener((animation, value, velocity) -> updateVerticalClipping((int) -value));
+            boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
+            int maxClip = addressBar.getHeight() > 0 ? addressBar.getHeight() : (int) PetalAndroidUtils.convertDpToPixel(56f, context);
+            anim.addUpdateListener((animation, value, velocity) -> {
+                if (!isBottom) {
+                    int clip = Math.max(0, Math.min(maxClip, Math.round(-value)));
+                    updateVerticalClipping(clip);
+                }
+            });
         }
         anim.start();
     }
