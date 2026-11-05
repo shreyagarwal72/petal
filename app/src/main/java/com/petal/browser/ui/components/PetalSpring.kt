@@ -2,6 +2,7 @@ package com.petal.browser.ui.components
 
 import android.provider.Settings
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.snap
@@ -82,6 +83,24 @@ object PetalSpring {
     /** Pure opacity/colour changes. Fade-in slightly slower than fade-out. */
     fun <T> fadeIn(): FiniteAnimationSpec<T> = tween(durationMillis = 200, easing = EmphasizedEasing)
     fun <T> fadeOut(): FiniteAnimationSpec<T> = tween(durationMillis = 140, easing = EmphasizedEasing)
+
+    /** Crossfades of icons/labels (selected state, collapsing-bar buttons). Short, symmetric. */
+    fun <T> crossfade(): FiniteAnimationSpec<T> = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+
+    /**
+     * Segment / button-group weight changes. A critically damped spring instead of a fixed tween,
+     * so rapid taps re-target smoothly with velocity instead of restarting a 240ms curve.
+     */
+    fun <T> segment(): FiniteAnimationSpec<T> = spring(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = 500f,
+    )
+
+    /** Container morphs (search bar -> page, tile -> page). Fast, no bounce, interruptible. */
+    fun <T> container(): FiniteAnimationSpec<T> = spring(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = 520f,
+    )
 
     /** Standard press depth so every tappable surface feels the same. */
     const val PRESS_SCALE_CARD = 0.97f

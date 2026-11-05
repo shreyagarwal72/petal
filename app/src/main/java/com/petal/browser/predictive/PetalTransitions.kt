@@ -27,6 +27,8 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -57,7 +59,7 @@ fun aospSharedAxisEnter(): EnterTransition {
         initialOffsetX = { it / 3 },
         animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
     ) + fadeIn(
-        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+        animationSpec = tween(durationMillis = 220, delayMillis = 70, easing = LinearOutSlowInEasing)
     )
 }
 
@@ -76,7 +78,7 @@ fun aospSharedAxisPopEnter(): EnterTransition {
         initialOffsetX = { -it / 3 },
         animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
     ) + fadeIn(
-        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+        animationSpec = tween(durationMillis = 220, delayMillis = 70, easing = LinearOutSlowInEasing)
     )
 }
 
@@ -107,7 +109,7 @@ fun enterTransition() = slideInHorizontally(
     initialScale = 0.92f,
     transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.5f)
 ) + fadeIn(
-    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedAccelerateEasing)
+    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION / 2, easing = LinearOutSlowInEasing)
 )
 
 fun exitTransition() = slideOutHorizontally(
@@ -147,7 +149,10 @@ private val MAIN_ROOT_TRANSITION_SPEC =
     tween<androidx.compose.ui.unit.IntOffset>(durationMillis = 400, easing = PetalM3EmphasizedEasing)
 
 private val MAIN_ROOT_FADE_SPEC =
-    tween<Float>(durationMillis = 400, easing = PetalM3EmphasizedEasing)
+    tween<Float>(durationMillis = 220, delayMillis = 80, easing = LinearOutSlowInEasing)
+
+private val MAIN_ROOT_FADE_OUT_SPEC =
+    tween<Float>(durationMillis = 140, easing = FastOutLinearInEasing)
 
 fun mainRootDirection(fromIndex: Int, toIndex: Int): PetalMainRootDirection? {
     if (fromIndex == toIndex) return null
@@ -179,14 +184,14 @@ fun mainRootExitTransition(direction: PetalMainRootDirection?, fallback: ExitTra
             slideOutHorizontally(
                 animationSpec = MAIN_ROOT_TRANSITION_SPEC,
                 targetOffsetX = { -it },
-            ) + fadeOut(animationSpec = MAIN_ROOT_FADE_SPEC)
+            ) + fadeOut(animationSpec = MAIN_ROOT_FADE_OUT_SPEC)
         }
 
         PetalMainRootDirection.BACKWARD -> {
             slideOutHorizontally(
                 animationSpec = MAIN_ROOT_TRANSITION_SPEC,
                 targetOffsetX = { it },
-            ) + fadeOut(animationSpec = MAIN_ROOT_FADE_SPEC)
+            ) + fadeOut(animationSpec = MAIN_ROOT_FADE_OUT_SPEC)
         }
 
         null -> fallback

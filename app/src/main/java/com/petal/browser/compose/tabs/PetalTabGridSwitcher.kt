@@ -569,6 +569,10 @@ fun PetalTabGridSwitcher(
                 .graphicsLayer {
                     val hp = hero.progress.value
                     alpha = ((hp - 0.15f) / 0.85f).coerceIn(0f, 1f)
+                    // Depth: the grid settles up from slightly behind as the page shrinks into its tile.
+                    val gs = 0.94f + 0.06f * hp.coerceIn(0f, 1f)
+                    scaleX = gs
+                    scaleY = gs
                 }
                 .padding(innerPadding)
         ) {

@@ -132,7 +132,7 @@ fun PetalCollapsingTopAppBar(
         navigationIcon = {
             Crossfade(
                 targetState = collapsedFraction > 0.5f,
-                animationSpec = tween(320),
+                animationSpec = PetalSpring.crossfade(),
                 label = "petalHeaderBackButtonMorph",
             ) { scrolled ->
                 val btnModifier = Modifier.graphicsLayer {

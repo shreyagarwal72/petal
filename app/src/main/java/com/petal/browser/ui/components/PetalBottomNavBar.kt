@@ -346,7 +346,7 @@ fun PetalBottomNavBar(
                             )
                             Crossfade(
                                 targetState = isSelected,
-                                animationSpec = tween(180),
+                                animationSpec = PetalSpring.crossfade(),
                                 label = "home_icon_crossfade",
                                 modifier = Modifier.graphicsLayer {
                                     scaleX = iconScale

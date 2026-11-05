@@ -207,7 +207,9 @@ fun PetalPermissionDialog(
     ) {
         AnimatedVisibility(
             visibleState = enter,
-            enter = fadeIn(tween(160)) + scaleIn(spring(dampingRatio = 0.72f, stiffness = 420f), initialScale = 0.88f)
+            enter = fadeIn(PetalSpring.fadeIn()) + scaleIn(PetalSpring.dialog(), initialScale = 0.9f),
+            exit = androidx.compose.animation.fadeOut(PetalSpring.fadeOut()) +
+                androidx.compose.animation.scaleOut(PetalSpring.exit(), targetScale = 0.94f)
         ) {
             Surface(
                 modifier = Modifier

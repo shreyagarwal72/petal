@@ -436,11 +436,7 @@ fun PetalOverflowMenuSheet(
 
     val alpha by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
-        animationSpec = if (isVisible) {
-            spring(stiffness = Spring.StiffnessMediumLow)
-        } else {
-            tween(durationMillis = 150)
-        },
+        animationSpec = if (isVisible) PetalSpring.fadeIn() else PetalSpring.fadeOut(),
         label = "MenuExpandAlpha"
     )
 

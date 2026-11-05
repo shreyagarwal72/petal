@@ -3,7 +3,7 @@ package com.petal.browser.compose.tabs
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -64,12 +64,12 @@ class TabHeroState(startVisible: Boolean) {
 
     companion object {
         /**
-         * Fixed-length emphasized curve (~Chrome's 300-400ms page<->tile morph). The old spring
-         * (damping 0.86, stiffness 400) needed ~0.7s to come to rest, and the tab was only shown
-         * once it had, so opening a tab felt like it hung before the page appeared.
+         * Critically damped spring (no bounce, settles in ~360ms). Unlike a fixed tween it is
+         * interruptible: re-targeting mid-flight (tap during open, back-gesture cancel, quick
+         * re-open) keeps the current velocity, so the morph never jerks or restarts.
          */
         fun spec(): AnimationSpec<Float> =
-            tween(durationMillis = 360, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+            spring(dampingRatio = 1f, stiffness = 520f, visibilityThreshold = 0.002f)
     }
 }
 
@@ -88,6 +88,9 @@ fun TabHeroOverlay(
     tileBounds: (String) -> Rect?,
 ) {
     var origin by remember { mutableStateOf(Offset.Zero) }
+    // Reused every frame: allocating a Path per draw caused GC hitches during the morph.
+    val clipPathHolder = remember { Path() }
+    val cornerEase = remember { CubicBezierEasing(0.3f, 0f, 0.2f, 1f) }
     val density = LocalDensity.current
     val deviceRadius = with(density) { 28.dp.toPx() }
     val tileRadius = with(density) { 20.dp.toPx() }
@@ -102,7 +105,7 @@ fun TabHeroOverlay(
                 val heroAlpha = hero.heroAlpha()
                 if (heroAlpha <= 0f) return@drawBehind
 
-                val p = hero.progress.value
+                val p = hero.progress.value.coerceIn(0f, 1.2f)
                 val full = Rect(Offset.Zero, size)
                 val tile = hero.tabId?.let(tileBounds)?.translate(-origin)
                 // No tile on screen (scrolled away / filtered): shrink towards the centre instead.
@@ -129,8 +132,8 @@ fun TabHeroOverlay(
                 }
                 val cropX = ((srcW - cropW) / 2f).roundToInt()
 
-                val radius = deviceRadius + (tileRadius - deviceRadius) * p
-                val clip = Path().apply { addRoundRect(RoundRect(r, CornerRadius(radius))) }
+                val radius = deviceRadius + (tileRadius - deviceRadius) * cornerEase.transform(p.coerceIn(0f, 1f))
+                val clip = clipPathHolder.apply { reset(); addRoundRect(RoundRect(r, CornerRadius(radius))) }
                 clipPath(clip) {
                     drawImage(
                         image = img,

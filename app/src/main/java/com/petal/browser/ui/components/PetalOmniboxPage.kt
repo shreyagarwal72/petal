@@ -1212,12 +1212,9 @@ fun PetalOmniboxPage(
                                                             // every keystroke, instead of the list just
                                                             // popping to its new contents.
                                                             .animateItem(
-                                                                fadeInSpec = tween(220),
-                                                                fadeOutSpec = tween(150),
-                                                                placementSpec = spring(
-                                                                    dampingRatio = Spring.DampingRatioNoBouncy,
-                                                                    stiffness = Spring.StiffnessMediumLow
-                                                                )
+                                                                fadeInSpec = PetalSpring.fadeIn(),
+                                                                fadeOutSpec = PetalSpring.fadeOut(),
+                                                                placementSpec = PetalSpring.container()
                                                             ),
                                                         leading = {
                                                             com.petal.browser.ui.containment.PetalGroupIconBadge(
