@@ -52,7 +52,7 @@ object PetalSpring {
     /** Live "Motion Duration Scale" set in Appearance -> Layout & Controls. */
     val timeScale: Float
         get() = try {
-            com.petal.browser.ui.theme.layout.PetalLayoutState.INSTANCE.getSettings().getMotionDurationScale().coerceIn(0.25f, 3f)
+            com.petal.browser.ui.theme.layout.PetalLayoutState.settings.motionDurationScale.coerceIn(0.25f, 3f)
         } catch (_: Throwable) { 1f }
 
     private fun scaledStiffness(base: Float): Float {
