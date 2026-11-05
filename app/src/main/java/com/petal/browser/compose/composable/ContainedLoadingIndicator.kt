@@ -11,6 +11,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -161,6 +162,15 @@ private val RefreshBarContainerHeight = 120.dp
 
 /**
  * RefreshBar pull-to-refresh loading indicator utilizing [ContainedLoadingIndicator].
+ *
+ * Fast-flick fix: the indicator used to be mounted lazily inside AnimatedVisibility and its offset,
+ * scale and alpha were chased by springs that started from zero. A quick pull moves the progress from
+ * 0 to ~1 in one or two frames, so the first frames showed a half-composed, half-scaled, clipped circle
+ * until the springs caught up. Now:
+ *  - the indicator is always composed (warm), so the first frame of a flick already has real content;
+ *  - while the finger is down, offset / scale / alpha follow the pull progress directly (no spring lag),
+ *    read inside graphicsLayer so no recomposition or layout happens per touch event;
+ *  - springs are only used for the settle into the refreshing state and for fading out.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -172,17 +182,24 @@ fun RefreshBarLoadingIndicator(
 ) {
     val isVisible = isRefreshing || pullProgress > 0.01f
 
+    // 0 -> 1 while pulling, 1 once refreshing. Bouncy settle only when it commits to refreshing.
+    val refreshFactor by animateFloatAsState(
+        targetValue = if (isRefreshing) 1f else 0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "RefreshBarRefreshFactor"
+    )
+    // Appears instantly (no fade-in lag on a fast flick), fades out smoothly.
+    val visibleTarget = if (isVisible) 1f else 0f
+    val visibleFactor by animateFloatAsState(
+        targetValue = visibleTarget,
+        animationSpec = if (visibleTarget == 1f) snap<Float>() else spring<Float>(stiffness = Spring.StiffnessMediumLow),
+        label = "RefreshBarVisibleFactor"
+    )
+
     // The indicator slides down with graphicsLayer (draw-only, not layout), so the host view
-    // never grows to fit it. The old container was only 66dp tall, but a fast pull sends the
-    // 42dp circle ~48dp down, so about half of it was drawn outside its host and got cut off.
-    // Reserve the full travel (pull + bounce + shadow) up front, even while idle, so the host
-    // is already the right size on the first frame of a quick flick.
+    // never grows to fit it. Reserve the full travel (pull + bounce + shadow) up front, even while
+    // idle, so the host is already the right size on the first frame of a quick flick.
     Box(modifier = modifier.fillMaxWidth().height(RefreshBarContainerHeight)) {
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
-        exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
-    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -191,44 +208,6 @@ fun RefreshBarLoadingIndicator(
                 .padding(top = 8.dp, bottom = 16.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            val targetOffsetY = if (isRefreshing) {
-                24.dp
-            } else if (!isVisible) {
-                0.dp
-            } else {
-                (4.dp.value + (pullProgress.coerceIn(0f, 1f) * 36.dp.value)).dp
-            }
-
-            val animatedOffsetY by animateFloatAsState(
-                targetValue = targetOffsetY.value,
-                animationSpec = if (isRefreshing) {
-                    spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
-                } else {
-                    spring(stiffness = Spring.StiffnessHigh)
-                },
-                label = "RefreshBarIndicatorOffsetY"
-            )
-
-            val currentOpacity = if (isRefreshing) 1.0f else if (!isVisible) 0f else (pullProgress * 1.5f).coerceIn(0f, 1f)
-            val animatedOpacity by animateFloatAsState(
-                targetValue = currentOpacity,
-                animationSpec = spring(stiffness = Spring.StiffnessHigh),
-                label = "RefreshBarIndicatorOpacity"
-            )
-
-            val targetScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.5f + (pullProgress.coerceIn(0f, 1f) * 0.5f)).coerceIn(0.5f, 1.05f)
-            // Bouncy settle once the indicator commits to refreshing (target snaps to 1.0),
-            // and smooth fluid scaling during pull.
-            val currentScale by animateFloatAsState(
-                targetValue = targetScale,
-                animationSpec = if (isRefreshing) {
-                    spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
-                } else {
-                    spring(stiffness = Spring.StiffnessHigh)
-                },
-                label = "RefreshBarIndicatorScale"
-            )
-
             Surface(
                 shape = CircleShape,
                 color = Color.Transparent,
@@ -236,10 +215,16 @@ fun RefreshBarLoadingIndicator(
                 modifier = Modifier
                     .requiredSize(42.dp)
                     .graphicsLayer {
-                        translationY = animatedOffsetY.dp.toPx()
-                        alpha = animatedOpacity
-                        scaleX = currentScale
-                        scaleY = currentScale
+                        val p = pullProgress.coerceIn(0f, 1f)
+                        val r = refreshFactor
+                        val dragOffsetDp = 4f + p * 36f
+                        val offsetDp = dragOffsetDp + (24f - dragOffsetDp) * r
+                        val dragScale = (0.5f + p * 0.5f).coerceIn(0.5f, 1.05f)
+                        val dragAlpha = (p * 1.5f).coerceIn(0f, 1f)
+                        translationY = offsetDp.dp.toPx()
+                        scaleX = dragScale + (1f - dragScale) * r
+                        scaleY = scaleX
+                        alpha = (dragAlpha + (1f - dragAlpha) * r) * visibleFactor
                     }
             ) {
                 ContainedRefreshLoadingIndicator(
@@ -247,7 +232,6 @@ fun RefreshBarLoadingIndicator(
                 )
             }
         }
-    }
     }
 }
 

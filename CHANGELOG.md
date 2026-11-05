@@ -17,10 +17,11 @@
   - TextureView backend is applied dynamically only when Liquid Glass is enabled and actively sampling webpage content behind translucent bars.
   - Fixed `FrameQuietListener` to properly forward `onSurfaceTextureUpdated`, resolving undrawn grey strips and compositor stutters.
   - Added live settings listener to dynamically transition GeckoView backends when Liquid Glass settings are toggled in real time.
-- **Hardened Pull-To-Refresh Touch Stream Protection**:
+- **Hardened Pull-To-Refresh Touch Stream Protection & Fast-Flick Response**:
   - Replaced unreliable `view.canScrollVertically(-1)` with real APZ compositor scroll offset (`currentScrollY <= 2`) tracked from `GeckoSession.ScrollDelegate`.
   - Enforced strict `startedAtTop` validation exclusively evaluated at `ACTION_DOWN`; touches starting mid-page can never hijack touch streams into pull-to-refresh.
   - Guarded touch interception: requires clear downward travel (`dy > touchSlop && dy > Math.abs(dx) * 1.5f`), immediately surrendering touch control to web content during horizontal swipes, carousels, text selection, pinch-to-zoom, and upward scrolls.
+  - Resolved indicator clipping and visual lag on fast pull flicks in `ContainedLoadingIndicator.kt`: indicator remains warm in composition, with offset, scale, and alpha calculated directly inside `graphicsLayer` during touch drags without recomposition latency.
 - **Codebase Cleanup**:
   - Removed dead `BrowserMomentumRecoveryRules.kt`.
 
