@@ -1,11 +1,11 @@
 # Current Project State
 
 ## Active Phase
-- **Phase**: 04
-- **Name**: Menus, Sheets, Settings and Audit
+- **Phase**: 04 (Follow-up)
+- **Name**: Motion Refinement & Proper Back Transitions
 - **Status**: Completed
 
-## All 4 Phases Complete
+## All 4 Phases & Back Motion Refinement Complete
 1. **Phase 1: Motion Foundation**:
    - `PetalSpring` single source of truth tokens.
    - `MotionGate` counter-based coordinator dropping blur/glass to static fill.
@@ -28,3 +28,8 @@
    - Dialogs: shared `dialogScaleIn` / `dialogScaleOut` and `dialogFadeIn` / `dialogFadeOut`.
    - Comprehensive audit of codebase for inline springs/tweens, layout property animations, and composition-phase animation reads.
    - Written `docs/motion.md` motion guide.
+5. **Phase-Specific Back Motion Refinement**:
+   - **Omnibox**: Replaced generic predictive card-scale in `PetalOmniboxPage.kt` and `BrowserActivity.java` with symmetrical reverse container morph into the origin address bar pill via `collapseOmniboxThen()`.
+   - **Settings Screen**: Intercepted back at the category level with `BackHandler`, animating `popCategory()` with `PetalSpring.containerMorph()` so categories collapse smoothly into list rows.
+   - **Downloads Screen**: Intercepted back in download settings with `BackHandler`, reversing cleanly into the downloads list.
+   - **Bottom Sheets**: Removed `PetalPredictiveBackSurface` from `PetalAboutDeveloperSheet.kt`, `PetalInactiveTabsSheet.kt`, and `PetalRecentlyClosedVault.kt` to ensure sheets dismiss downward rather than scaling down as desktop cards.
