@@ -12,7 +12,7 @@
   - Distributed via Google Play Store.
   - **No In-App Self-Updater**: Google Play Developer Program Policy strictly forbids apps downloading or installing executable code/APKs outside Google Play.
   - **Google Play In-App Updates**: Powered by official `com.google.android.play:app-update-ktx` (`PetalPlayUpdateManager.kt`, `PetalPlayUpdatePopup.kt`).
-  - **Monetization & Supportive Ads**: Features Unity Ads (`PetalUnityRewardedAds.kt`) which is strictly opt-in, rewarded only, initialized only after explicit user consent, and never triggered or touched in private/incognito tabs. Google AdMob has been completely removed.
+  - **Monetization & Supportive Ads**: Features Google AdMob rewarded ads (`PetalAdMobRewardedAds.kt`) which is strictly opt-in, rewarded only, initialized only after explicit user consent, and never triggered or touched in private/incognito tabs.
   - **Publishing & Assets**: Tracks Fastlane metadata (`fastlane/`), Google Play graphic assets (`graphics/`, `wiki/`), draft backups (`drafts/`), variable fonts (`inter_variable.ttf`, `lexend_variable.ttf`, etc.), and bundle signing utilities (`.github/scripts/strip_aab_signatures.py`).
   - **Permissions**: Omits `REQUEST_INSTALL_PACKAGES` to maintain Play Store compliance.
 

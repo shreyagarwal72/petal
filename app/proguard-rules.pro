@@ -69,13 +69,14 @@
 -keep class moe.shizuku.** { *; }
 -dontwarn rikka.shizuku.**
 
-# ---- Unity Ads & WorkManager ----------------------------------------------------------------
--keep class com.unity3d.ads.** { *; }
--keep interface com.unity3d.ads.** { *; }
--keep class com.unity3d.services.** { *; }
--keep interface com.unity3d.services.** { *; }
--dontwarn com.unity3d.services.**
--dontwarn com.unity3d.ads.**
+# ---- Google AdMob --------------------------------------------------------------------------
+-keep public class com.google.android.gms.ads.** {
+    public *;
+}
+-keep public class com.google.ads.** {
+    public *;
+}
+-dontwarn com.google.android.gms.ads.**
 
 # Keep WorkManager components instantiated via reflection (WorkDatabase and workers used by Unity Ads)
 -keep class androidx.work.impl.WorkDatabase_Impl { *; }

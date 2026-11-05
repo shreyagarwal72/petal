@@ -73,8 +73,8 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         instance = this
-        // Rewarded ads provider. Only registers a handle; Unity does not start until the user opts in.
-        com.petal.browser.account.progress.PetalAds.provider = com.petal.browser.account.progress.PetalUnityRewardedAds
+        // Rewarded ads provider. Only registers a handle; AdMob does not start until the user opts in.
+        com.petal.browser.account.progress.PetalAds.provider = com.petal.browser.account.progress.PetalAdMobRewardedAds
         // Applies feature locks (and the one-time grandfathering) before any screen reads them.
         com.petal.browser.account.progress.PetalProgressStore.init(this)
         // GeckoView starts helper processes for GPU, content tabs and crash

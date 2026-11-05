@@ -160,6 +160,7 @@ object PetalApkInsights {
         Triple("com/braze", "Braze", "Profiling"),
         Triple("com/appboy", "Braze", "Profiling"),
         Triple("com/applovin", "AppLovin", "Ads"),
+        Triple("com/google/android/gms/ads", "Google AdMob", "Ads"),
         Triple("com/unity3d/ads", "Unity Ads", "Ads"),
         Triple("com/unity3d/services", "Unity Ads", "Ads"),
         Triple("com/ironsource", "ironSource", "Ads"),

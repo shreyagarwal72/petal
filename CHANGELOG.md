@@ -2,6 +2,14 @@
 
 > *"The landmark 'More Expressive' release elevates Petal Browser to new heights of Material 3 Expressive design, fluid reactive theming, and tactile user customization: introducing a comprehensive ImageToolbox-style Layout & Controls suite with live component styling, seamless Liquid Glass auto-adaptation, PixelMusic-grade expressive fast-scrollbars, overhauled Mix Palettes with one-tap harmony recipes, bi-directional Send Tab to Device across all connected Firefox instances, and a robust Reader Mode with Read Aloud text-to-speech."*
 
+#### 🎁 Google AdMob Rewarded Ads Integration (`PetalAdMobRewardedAds.kt`, `PetalFuelTheCodeSheet.kt`, `PetalApplication.kt`, `build.gradle`, `AndroidManifest.xml`)
+- **Migrated from Unity Ads to Google Mobile Ads SDK**:
+  - Replaced legacy `com.unity3d.ads:unity-ads` dependency with official `com.google.android.gms:play-services-ads:23.6.0`.
+  - Implemented `PetalAdMobRewardedAds.kt` conforming strictly to `PetalRewardedAds` interface with safe MainThread dispatch, watchdog timeouts, and friendly error translation.
+  - Added official Google Test Rewarded Ad Unit ID (`ca-app-pub-3940256099942544/5224354917`) on debug builds to safeguard against AdMob policy violations during development.
+  - Configured user's production AdMob App ID (`ca-app-pub-5680314597533936~2825634534`) and Rewarded Ad Unit ID (`ca-app-pub-5680314597533936/6148934278`) for release builds.
+  - Updated ad network integrity checks in `PetalFuelTheCodeSheet.kt` to target Google DoubleClick endpoints, providing clear DNS ad-blocker detection.
+
 #### 🌌 App-Level Quantum Web Launch Animation Architecture (`PetalSplashOverlay.kt`, `BrowserActivity.java`, `PetalHomeScreen.kt`, `AppearanceSettingsScreen.kt`)
 - **Universal Cold-Start Coverage**:
   - Re-architected the "Quantum Web Launch Animation" (`sp_app_launch_animation`) from a local `PetalHomeScreen.kt` composition into a universal app-level overlay in `BrowserActivity` via `PetalSplashOverlay.kt`.

@@ -75,7 +75,7 @@ private suspend fun checkAdIntegrity(context: Context): String? {
     }
     return withContext(Dispatchers.IO) {
         try {
-            val url = java.net.URL("https://config.unityads.unity3d.com")
+            val url = java.net.URL("https://googleads.g.doubleclick.net")
             val conn = (url.openConnection() as java.net.HttpURLConnection).apply {
                 connectTimeout = 3000
                 readTimeout = 3000
@@ -554,7 +554,7 @@ fun PetalFuelTheCodeSheet(
                             )
                         }
                         Text(
-                            text = "(Connecting to Unity Network)",
+                            text = "(Connecting to AdMob Network)",
                             style = MaterialTheme.typography.labelSmall,
                             color = cs.onSurfaceVariant.copy(alpha = 0.6f)
                         )
