@@ -3113,6 +3113,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     (sp.getBoolean("sp_liquid_glass_bottom_nav", true) || (isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true)));
             boolean liquidGlassTopOn = sp.getBoolean("sp_liquid_glass_enabled", false) &&
                     (!isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true));
+            final boolean legacyUnder = com.petal.browser.ui.components.BarInsets.legacyPageUnderBars(sp);
             // Firefox / Fenix approach: For top address bar, GeckoView owns the dynamic toolbar offset
             // via setDynamicToolbarMaxHeight, keeping fixed page view size.
             updateDynamicToolbarHeights(!isBottom ? addressHeight : 0);
