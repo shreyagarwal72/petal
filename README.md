@@ -308,5 +308,5 @@ Bug reports, ideas and pull requests are welcome, especially for browsing reliab
 Petal is free software under the [GNU General Public License v3.0](LICENSE.md).
 
 <p align="center">
-  Made by <strong>Vanshu Agarwal</strong> at NextUp Studio
+  Made by <strong>Vanshu Agarwal</strong> From India 🇮🇳
 </p>
