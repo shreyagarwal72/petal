@@ -5789,10 +5789,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                     addAlbum(null, targetUrl, true, isIncognitoTab);
                                 }
                             });
+                        } else if (animated[0]) {
+                            showAlbum(currentAlbumController);
                         }
-                        // The page's own follow-up "close" call is ignored while collapsing,
-                        // so do it here (when not animated, that follow-up call does it).
-                        if (animated[0]) showAlbum(currentAlbumController);
                     }, 240L);
                     return kotlin.Unit.INSTANCE;
                 },

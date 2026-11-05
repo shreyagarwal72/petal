@@ -144,6 +144,9 @@ public final class PetalMotion {
                     view.setClipToOutline(false);
                     view.setOutlineProvider(android.view.ViewOutlineProvider.BACKGROUND);
                     view.setAlpha(1f);
+                } else {
+                    view.setClipToOutline(false);
+                    view.setOutlineProvider(android.view.ViewOutlineProvider.BACKGROUND);
                 }
                 if (onEnd != null) onEnd.run();
             }

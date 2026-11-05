@@ -3495,8 +3495,12 @@ class PetalGeckoView @JvmOverloads constructor(
  * to complete normally.
  */
 class SafeGeckoView : GeckoView {
-    constructor(context: Context) : super(context)
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context) : super(context) {
+        try { setViewBackend(BACKEND_TEXTURE_VIEW) } catch (_: Throwable) {}
+    }
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
+        try { setViewBackend(BACKEND_TEXTURE_VIEW) } catch (_: Throwable) {}
+    }
 
     private var initialDownY: Float = 0f
     private var gestureCanReachParent: Boolean = true

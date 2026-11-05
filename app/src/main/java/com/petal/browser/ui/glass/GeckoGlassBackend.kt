@@ -31,16 +31,20 @@ object GeckoGlassBackend {
 
     @JvmStatic
     fun applyBackend(geckoView: GeckoView, context: Context) {
-        if (shouldSamplePage(context)) {
-            useTextureView(geckoView)
-        } else {
-            useSurfaceView(geckoView)
-        }
+        // Enforce TextureView backend across Petal Browser.
+        // SurfaceView punches a hole through the view hierarchy, breaking container transforms,
+        // predictive back gestures, and depth blur. Most critically, on Android 12+ (SDK 31+,
+        // especially MIUI/HyperOS on Xiaomi devices), SurfaceView's RenderNode PositionUpdateListener
+        // triggers a fatal SIGSEGV null pointer dereference inside libgui.so
+        // (SurfaceComposerClient::Transaction::registerSurfaceControlForCallback) during layout
+        // transitions and view removals. TextureView runs cleanly through HWUI with zero native crashes.
+        useTextureView(geckoView)
     }
 
     @JvmStatic
     fun useSurfaceView(geckoView: GeckoView) {
-        geckoView.setViewBackend(GeckoView.BACKEND_SURFACE_VIEW)
+        // Safely redirect to TextureView to eliminate native SurfaceControl SIGSEGV crashes
+        useTextureView(geckoView)
     }
 
     @JvmStatic
