@@ -192,6 +192,12 @@ object PetalEngineStore {
     ): Pair<mozilla.components.browser.state.state.TabSessionState, mozilla.components.concept.engine.EngineSession> {
         val eng = getEngine(context)
         val st = getStore(context)
+        // The BrowserStore outlives BrowserActivity. A restored tab reuses its persisted id, so a stale
+        // entry left by the previous activity instance would collide with (and shadow) the new session,
+        // leaving the restored tab bound to a dead engine session / blank page.
+        if (st.state.tabs.any { it.id == tabId }) {
+            st.dispatch(mozilla.components.browser.state.action.TabListAction.RemoveTabAction(tabId))
+        }
         val session = eng.createSession(private = isIncognito)
 
         val tabState = mozilla.components.browser.state.state.TabSessionState(
@@ -251,6 +257,17 @@ object PetalEngineStore {
         getStore(context).dispatch(
             mozilla.components.browser.state.action.ContentAction.ConsumeWindowRequestAction(tabId)
         )
+    }
+
+    /** Removes the given tabs from [BrowserStore] (ids that are not in the store are ignored). */
+    @JvmStatic
+    fun removeTabs(context: Context, tabIds: Collection<String>) {
+        val st = getStore(context)
+        for (id in tabIds) {
+            if (st.state.tabs.any { it.id == id }) {
+                st.dispatch(mozilla.components.browser.state.action.TabListAction.RemoveTabAction(id))
+            }
+        }
     }
 
     /**

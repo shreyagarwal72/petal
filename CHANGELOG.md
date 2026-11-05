@@ -2,6 +2,17 @@
 
 > *"The landmark 'More Expressive' release elevates Petal Browser to new heights of Material 3 Expressive design, fluid reactive theming, and tactile user customization: introducing a comprehensive ImageToolbox-style Layout & Controls suite with live component styling, seamless Liquid Glass auto-adaptation, PixelMusic-grade expressive fast-scrollbars, overhauled Mix Palettes with one-tap harmony recipes, bi-directional Send Tab to Device across all connected Firefox instances, and a robust Reader Mode with Read Aloud text-to-speech."*
 
+#### 🛡️ Tab Session Resilience & Gecko Engine Tab De-collision (`PetalTabSessionManager.kt`, `PetalEngineStore.kt`, `BrowserActivity.java`)
+- **Restoration Gate & Save Suspension**:
+  - Implemented `@Volatile restoreFinished` gating in `PetalTabSessionManager` to prevent early progress or title callbacks during `onCreate` from wiping or overwriting the saved session before tabs are restored.
+  - Added `suspendSaving()` in `BrowserActivity.onDestroy()` to ensure destroyed activity instances never inadvertently flush empty or half-restored states to disk.
+- **Gecko BrowserStore Stale Tab Eviction**:
+  - Automatically evict collided tab entries in `PetalEngineStore.createSession` when restoring tabs, preventing stale engine sessions from outliving the activity and shadowing restored tabs into blank screens.
+  - Added `releaseEngineTabs()` in `BrowserActivity.onDestroy()` and `PetalEngineStore.removeTabs()` to cleanly drop activity tab sessions from the process-wide `BrowserStore`.
+- **Session Backup & Transient State Guard**:
+  - Prevented transient empty container states from clearing persisted tabs unless an explicit clear action is triggered.
+  - Introduced `PREF_SESSION_JSON_BACKUP` safety persistence to preserve session records across unexpected restoration failures.
+
 #### 🎨 Official Material 3 Expressive Progress Bar & Merged Stack Relocation (`PetalProgressBarBridge.kt`, `PetalMergedBar.kt`, `AddressPill.kt`, `BrowserActivity.java`)
 - **Official Material 3 Expressive Design**:
   - Completely redesigned website loading linear progress bar to match official Google Material 3 Expressive specifications with 4dp height, rounded capsule active bar, dynamic 4dp gap, rounded track, and a 4dp circular stop indicator dot at the terminus.

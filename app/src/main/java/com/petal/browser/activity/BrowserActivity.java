@@ -1303,6 +1303,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (notificationManager != null) {
                 notificationManager.cancel(1);
             }
+            com.petal.browser.unit.PetalTabSessionManager.releaseEngineTabs(this);
+            com.petal.browser.unit.PetalTabSessionManager.suspendSaving();
             BrowserContainer.clear();
             if (sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
                 PetalBrowserUtils.clearOnExit(this);

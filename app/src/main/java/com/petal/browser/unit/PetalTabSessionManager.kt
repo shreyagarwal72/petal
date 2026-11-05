@@ -42,6 +42,23 @@ object PetalTabSessionManager {
     const val PREF_OPEN_TABS_LEGACY = "openTabs"
     const val DELIMITER_LEGACY = "‚‗‚"
 
+    const val PREF_SESSION_JSON_BACKUP = "tab_session_state_json_backup"
+
+    /**
+     * Save gate. Nothing may be written until the current activity instance has finished restoring
+     * the previous session. Without this, a progress/title callback firing during onCreate (when the
+     * container is still empty or only partly rebuilt) would overwrite - or wipe - the saved tabs
+     * before they were ever read, which is what made "reopen Petal, site is gone" happen at random.
+     */
+    @Volatile
+    private var restoreFinished = false
+
+    /** Called from BrowserActivity.onDestroy: a dead activity must never write the session. */
+    @JvmStatic
+    fun suspendSaving() {
+        restoreFinished = false
+    }
+
     data class TabSessionRecord(
         val persistentTabId: String = "",
         val title: String = "",
@@ -58,6 +75,7 @@ object PetalTabSessionManager {
     @JvmOverloads
     fun saveSession(context: Context?, currentController: AlbumController? = null) {
         if (context == null) return
+        if (!restoreFinished) return
 
         // Take snapshot of controllers on caller thread to prevent concurrent modification
         val controllers = try {
@@ -66,10 +84,9 @@ object PetalTabSessionManager {
             emptyList()
         }
 
-        if (controllers.isEmpty()) {
-            clearSession(context)
-            return
-        }
+        // An empty container is a transient state (the browser always re-adds a Home tab), never a
+        // reason to erase the saved session. Explicit wipes go through clearSession().
+        if (controllers.isEmpty()) return
 
         val active = currentController ?: controllers.firstOrNull()
 
@@ -186,6 +203,7 @@ object PetalTabSessionManager {
                     PetalTabStateStore.clearAll(context)
                     sp.edit()
                         .remove(PREF_SESSION_JSON)
+                        .remove(PREF_SESSION_JSON_BACKUP)
                         .remove(PREF_OPEN_TABS_LEGACY)
                         .apply()
                     try {
@@ -228,6 +246,30 @@ object PetalTabSessionManager {
         }
     }
 
+    /**
+     * Drops this activity's tabs from the process-wide BrowserStore. Call from onDestroy (after the
+     * session has been saved in onPause/onStop) so the next BrowserActivity instance can restore the
+     * same persisted tab ids without colliding with leftovers of the old instance.
+     */
+    @JvmStatic
+    fun releaseEngineTabs(context: Context?) {
+        if (context == null) return
+        try {
+            val ids = BrowserContainer.list().mapNotNull { c ->
+                when (c) {
+                    is com.petal.browser.browser.PetalTabViewController -> c.getTabId()
+                    is PetalGeckoView -> c.getTabId()
+                    else -> null
+                }
+            }
+            if (ids.isNotEmpty()) {
+                com.petal.browser.engine.gecko.PetalEngineStore.removeTabs(context, ids)
+            }
+        } catch (e: Throwable) {
+            Log.w(TAG, "Failed to release engine tabs", e)
+        }
+    }
+
     @JvmStatic
     fun loadSession(context: Context): List<TabSessionRecord> {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
@@ -261,6 +303,18 @@ object PetalTabSessionManager {
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Could not parse session JSON from SharedPreferences", e)
+            }
+        }
+
+        // 2b. Safety copy taken when a previous restore failed half-way
+        val backupJson = sp.getString(PREF_SESSION_JSON_BACKUP, null)
+        if (!backupJson.isNullOrBlank()) {
+            try {
+                val listType = object : TypeToken<List<TabSessionRecord>>() {}.type
+                val loaded: List<TabSessionRecord>? = gson.fromJson(backupJson, listType)
+                if (!loaded.isNullOrEmpty()) return loaded
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not parse backup session JSON", e)
             }
         }
 
@@ -375,7 +429,17 @@ object PetalTabSessionManager {
 
         } catch (e: Exception) {
             Log.e(TAG, "Failed to restore tab session", e)
+            // Keep the untouched session around: once saving resumes, the half-restored container
+            // would otherwise overwrite it.
+            try {
+                val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+                sp.getString(PREF_SESSION_JSON, null)?.let {
+                    sp.edit().putString(PREF_SESSION_JSON_BACKUP, it).apply()
+                }
+            } catch (_: Exception) {}
             return false
+        } finally {
+            restoreFinished = true
         }
     }
 
@@ -480,6 +544,7 @@ object PetalTabSessionManager {
                 val sp = PreferenceManager.getDefaultSharedPreferences(context)
                 sp.edit()
                     .remove(PREF_SESSION_JSON)
+                    .remove(PREF_SESSION_JSON_BACKUP)
                     .remove(PREF_OPEN_TABS_LEGACY)
                     .apply()
 
