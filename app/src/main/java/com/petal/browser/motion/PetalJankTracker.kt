@@ -47,7 +47,7 @@ object PetalJankTracker {
         isEnabled = BuildConfig.DEBUG || (sp?.getBoolean("sp_motion_jank_stats_enabled", false) == true)
         if (!isEnabled) return
 
-        frameMetricsListener = Window.OnFrameMetricsAvailableListener { _, frameMetrics, _ ->
+        val listener = Window.OnFrameMetricsAvailableListener { _, frameMetrics, _ ->
             if (activeTransitions.isEmpty()) return@OnFrameMetricsAvailableListener
             val totalDurationNs = frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION)
             val deadlineNs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -70,8 +70,9 @@ object PetalJankTracker {
                 }
             }
         }
+        frameMetricsListener = listener
         try {
-            activity.window.addOnFrameMetricsAvailableListener(frameMetricsListener, metricsHandler)
+            activity.window.addOnFrameMetricsAvailableListener(listener, metricsHandler)
             isAttached = true
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to attach FrameMetrics listener", t)

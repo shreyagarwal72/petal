@@ -415,6 +415,7 @@ fun PetalTabGridSwitcher(
 
     val reduceMotion = rememberReduceMotion()
     val isLowEnd = rememberLowEndDevice()
+    val hero = remember { TabHeroState(startVisible = backgroundSnapshot != null).also { it.image = backgroundSnapshot } }
     var currentHeroJob by remember { mutableStateOf<Job?>(null) }
     var newTabButtonBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     val closingTabIds = remember { mutableStateListOf<String>() }
@@ -517,7 +518,6 @@ fun PetalTabGridSwitcher(
     // ── Chrome-style hero transition (page <-> tile) ─────────────────────────────
     // Seed the page snapshot immediately: the overlay is presented without the generic fade-in now, so
     // the very first frame must already show the page (otherwise it flashes blank before the morph).
-    val hero = remember { TabHeroState(startVisible = backgroundSnapshot != null).also { it.image = backgroundSnapshot } }
     fun heroImageFor(tab: PetalTabItem?): androidx.compose.ui.graphics.ImageBitmap? {
         val thumb = tab?.previewBitmap?.takeIf { !it.isRecycled }?.asImageBitmap()
         return if (tab?.isSelected == true) (backgroundSnapshot ?: thumb) else (thumb ?: backgroundSnapshot)
