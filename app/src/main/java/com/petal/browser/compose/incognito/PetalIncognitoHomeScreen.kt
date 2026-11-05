@@ -22,6 +22,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -526,18 +528,23 @@ private fun IncognitoDecoySearchBar(
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "incognito_search_scale"
     )
+    val pillBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
 
     PetalFloatingToolbar(
         elevation = if (isGlass) 0.dp else 6.dp,
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
+            .onGloballyPositioned { pillBounds[0] = it.boundsInWindow() }
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(CircleShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = androidx.compose.foundation.LocalIndication.current
-            ) { onSearch() }
+            ) {
+                com.petal.browser.ui.components.PetalOmniboxOrigin.mark(pillBounds[0], -1f)
+                onSearch()
+            }
     ) {
         Icon(
             imageVector = Icons.Rounded.Search,

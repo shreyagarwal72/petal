@@ -17,6 +17,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -490,8 +492,11 @@ private fun BarActionButton(
         else -> action.icon
     }
 
+    // Real bounds of this button, so a SEARCH action grows the omnibox out of the tapped icon.
+    val buttonBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
     val clickHandler: () -> Unit = {
         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+        if (action == BarAction.SEARCH) PetalOmniboxOrigin.mark(buttonBounds[0], -1f)
         when (action) {
             BarAction.TABS -> onTabsClick()
             BarAction.NEW_TAB -> onNewTabClick()
@@ -532,6 +537,7 @@ private fun BarActionButton(
         color = if (isLiquidGlass && isPressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else Color.Transparent,
         modifier = Modifier
             .size(44.dp)
+            .onGloballyPositioned { buttonBounds[0] = it.boundsInWindow() }
             .graphicsLayer {
                 scaleX = pressScale
                 scaleY = pressScale

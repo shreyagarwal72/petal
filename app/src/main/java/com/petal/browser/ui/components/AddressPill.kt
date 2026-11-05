@@ -27,6 +27,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -161,6 +163,12 @@ fun AddressPill(
 
     var dragAccumulator by remember { mutableFloatStateOf(0f) }
 
+    // Where this pill is on screen, so the omnibox page can grow out of it / collapse back into it.
+    // Plain array (not state) so layout changes while the bar collapses never trigger recomposition.
+    val pillBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
+    val pillRadiusPx = with(androidx.compose.ui.platform.LocalDensity.current) { 20.dp.toPx() }
+    val markOrigin = { PetalOmniboxOrigin.mark(pillBounds[0], pillRadiusPx) }
+
     val urlBoxShape = RoundedCornerShape(20.dp)
     val urlBoxBackground = when {
         inMergedBar -> {
@@ -186,6 +194,7 @@ fun AddressPill(
 
     Box(
         modifier = modifier
+            .onGloballyPositioned { pillBounds[0] = it.boundsInWindow() }
             .clip(urlBoxShape)
             .then(
                 if (glassBorderBrush != null) Modifier.border(1.dp, glassBorderBrush, urlBoxShape)
@@ -214,12 +223,13 @@ fun AddressPill(
                 )
             }
             .combinedClickable(
-                onClick = { onAddressClick() },
+                onClick = { markOrigin(); onAddressClick() },
                 onLongClick = {
                     if (isQuickActionsEnabled && !isBlankOrSearch) {
                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
                         showQuickActionsMenu = true
                     } else {
+                        markOrigin()
                         onAddressClick()
                     }
                 }
@@ -252,6 +262,7 @@ fun AddressPill(
                                 } catch (_: Throwable) {}
                                 PetalPrivacyShieldSheet.show(act, url) {}
                             } else {
+                                markOrigin()
                                 onAddressClick()
                             }
                         }

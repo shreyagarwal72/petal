@@ -215,6 +215,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * Must be set BEFORE presentComposeScreen() and cleared by performBackNavigation().
      */
     public Runnable pendingOverlayBackAction = null;
+    /** Container-transform state for the omnibox page (screen coords of the tapped bar). */
+    private android.graphics.Rect pendingContainerOrigin = null;
+    private android.graphics.Rect activeContainerOrigin = null;
+    private float pendingContainerRadius = -1f;
+    private float activeContainerRadius = -1f;
+    /** Screenshot of the screen the omnibox opened from; shown behind the page only while it animates. */
+    private android.graphics.Bitmap pendingContainerSnapshot = null;
+    private android.graphics.Bitmap activeContainerSnapshot = null;
+    private View activeContainerView = null;
+    private boolean containerExitInFlight = false;
     private com.petal.browser.browser.PetalBrowserFeatures petalBrowserFeatures;
     public LinearLayout tab_container;
     public FrameLayout fullscreenHolder;
@@ -1536,6 +1546,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             closeFindInPage();
             return;
         }
+        if (containerExitInFlight) return; // ignore extra back presses while collapsing
+        if (isOverlayScreenShowing && activeContainerView != null
+                && getTopContentChild() == activeContainerView) {
+            // Omnibox: collapse the page back into the bar, then run this same close logic again.
+            collapseOmniboxThen(() -> performBackNavigation(), PB_TRANSITION_DURATION_MS);
+            return;
+        }
         if (isOverlayScreenShowing) {
             isOverlayScreenShowing = false;
             removeOverlayViews();
@@ -1797,7 +1814,36 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         hideRefreshAndProgressOverlays();
 
         screen.setClickable(true); // consume touches so they never reach a surface behind the overlay
-        if (animate) {
+        final android.graphics.Rect containerOrigin = pendingContainerOrigin;
+        final float containerRadius = pendingContainerRadius;
+        final android.graphics.Bitmap containerSnap = pendingContainerSnapshot;
+        pendingContainerOrigin = null;
+        pendingContainerRadius = -1f;
+        pendingContainerSnapshot = null;
+        activeContainerView = null;
+        activeContainerOrigin = null;
+        activeContainerSnapshot = null;
+        removeContainerGhost();
+        if (animate && containerOrigin != null) {
+            activeContainerOrigin = new android.graphics.Rect(containerOrigin);
+            activeContainerRadius = containerRadius;
+            activeContainerSnapshot = containerSnap;
+            activeContainerView = screen;
+            // Old screen behind the growing page + the bar's own pixels on top, both only while animating.
+            final android.widget.ImageView underlay = makeContainerUnderlay(containerSnap);
+            if (underlay != null) contentFrame.addView(underlay);
+            final com.petal.browser.motion.PetalMotion.BarGhost ghost =
+                    attachBarGhost(containerSnap, containerOrigin, containerRadius);
+            screen.setAlpha(0f);
+            contentFrame.addView(screen);
+            screen.post(() -> com.petal.browser.motion.PetalMotion.containerEnter(
+                    screen, containerOrigin, containerRadius, PB_TRANSITION_DURATION_MS,
+                    ghost != null ? ghost::setProgress : null,
+                    () -> {
+                        if (underlay != null) contentFrame.removeView(underlay);
+                        removeContainerGhost();
+                    }));
+        } else if (animate) {
             screen.setAlpha(0f);
             contentFrame.addView(screen);
             screen.post(() -> com.petal.browser.motion.PetalMotion.enter(
@@ -5502,6 +5548,146 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         com.petal.browser.ui.components.PetalQuickToolsBridge.showQuickTools(this);
     }
 
+    private interface BitmapCallback { void onBitmap(android.graphics.Bitmap bmp); }
+
+    private android.os.HandlerThread omniboxSnapThread;
+    private boolean omniboxOpenPending = false;
+    private com.petal.browser.motion.PetalMotion.BarGhost activeGhost = null;
+
+    /** Half-size window screenshot via PixelCopy, delivered on the main thread (null on failure/timeout). */
+    private void captureWindowAsync(final BitmapCallback cb) {
+        final View decor = getWindow().getDecorView();
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || decor.getWidth() == 0 || decor.getHeight() == 0) {
+            cb.onBitmap(null);
+            return;
+        }
+        final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
+        final java.util.concurrent.atomic.AtomicBoolean done = new java.util.concurrent.atomic.AtomicBoolean(false);
+        final android.graphics.Bitmap bmp;
+        try {
+            bmp = android.graphics.Bitmap.createBitmap(
+                    Math.max(1, decor.getWidth() / 2), Math.max(1, decor.getHeight() / 2),
+                    android.graphics.Bitmap.Config.ARGB_8888);
+        } catch (Throwable t) {
+            cb.onBitmap(null);
+            return;
+        }
+        final Runnable timeout = () -> { if (done.compareAndSet(false, true)) cb.onBitmap(null); };
+        main.postDelayed(timeout, 100);
+        try {
+            if (omniboxSnapThread == null) {
+                omniboxSnapThread = new android.os.HandlerThread("PetalOmniboxSnap");
+                omniboxSnapThread.start();
+            }
+            android.view.PixelCopy.request(getWindow(), bmp,
+                    result -> main.post(() -> {
+                        if (done.compareAndSet(false, true)) {
+                            main.removeCallbacks(timeout);
+                            cb.onBitmap(result == android.view.PixelCopy.SUCCESS ? bmp : null);
+                        }
+                    }),
+                    new android.os.Handler(omniboxSnapThread.getLooper()));
+        } catch (Throwable t) {
+            if (done.compareAndSet(false, true)) {
+                main.removeCallbacks(timeout);
+                cb.onBitmap(null);
+            }
+        }
+    }
+
+    /** Draws the tapped bar's pixels over the page (in contentFrame's overlay, never as a child). */
+    private com.petal.browser.motion.PetalMotion.BarGhost attachBarGhost(
+            android.graphics.Bitmap snap, android.graphics.Rect originOnScreen, float radiusPx) {
+        removeContainerGhost();
+        if (snap == null || snap.isRecycled() || contentFrame == null || originOnScreen == null) return null;
+        try {
+            View decor = getWindow().getDecorView();
+            int[] dl = new int[2];
+            int[] cl = new int[2];
+            decor.getLocationOnScreen(dl);
+            contentFrame.getLocationOnScreen(cl);
+            float scale = snap.getWidth() / (float) Math.max(1, decor.getWidth());
+            int x = Math.max(0, Math.round((originOnScreen.left - dl[0]) * scale));
+            int y = Math.max(0, Math.round((originOnScreen.top - dl[1]) * scale));
+            int w = Math.min(snap.getWidth() - x, Math.round(originOnScreen.width() * scale));
+            int h = Math.min(snap.getHeight() - y, Math.round(originOnScreen.height() * scale));
+            if (w <= 0 || h <= 0) return null;
+            android.graphics.Bitmap crop = android.graphics.Bitmap.createBitmap(snap, x, y, w, h);
+            float r = radiusPx >= 0f ? radiusPx : originOnScreen.height() / 2f;
+            com.petal.browser.motion.PetalMotion.BarGhost ghost = new com.petal.browser.motion.PetalMotion.BarGhost(crop, r);
+            ghost.setBounds(originOnScreen.left - cl[0], originOnScreen.top - cl[1],
+                    originOnScreen.right - cl[0], originOnScreen.bottom - cl[1]);
+            contentFrame.getOverlay().add(ghost);
+            activeGhost = ghost;
+            return ghost;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private void removeContainerGhost() {
+        if (activeGhost != null && contentFrame != null) {
+            try { contentFrame.getOverlay().remove(activeGhost); } catch (Throwable ignored) {}
+        }
+        activeGhost = null;
+    }
+
+    /**
+     * Collapses the omnibox page back into the bar it grew from, then runs {@code after}.
+     * If the omnibox is not the visible container (or animations are off), {@code after} runs at once.
+     * Calls made while a collapse is already running are ignored.
+     * @return true if a collapse animation is running (so {@code after} runs later), else false.
+     */
+    private boolean collapseOmniboxThen(final Runnable after, long duration) {
+        if (containerExitInFlight) return true;
+        final View v = activeContainerView;
+        final android.graphics.Rect origin = activeContainerOrigin;
+        final float radius = activeContainerRadius;
+        final android.graphics.Bitmap snap = activeContainerSnapshot;
+        activeContainerView = null;
+        activeContainerOrigin = null;
+        activeContainerSnapshot = null;
+        if (v == null || origin == null || !isOverlayScreenShowing
+                || getTopContentChild() != v || !v.isAttachedToWindow()) {
+            removeContainerGhost();
+            after.run();
+            return false;
+        }
+        containerExitInFlight = true;
+        PetalAndroidUtils.hideSoftKeyboard(this, getCurrentFocus()); // keyboard leaves with the page
+        final android.widget.ImageView underlay = makeContainerUnderlay(snap);
+        if (underlay != null) contentFrame.addView(underlay, Math.max(0, contentFrame.indexOfChild(v)));
+        final com.petal.browser.motion.PetalMotion.BarGhost ghost = attachBarGhost(snap, origin, radius);
+        com.petal.browser.motion.PetalMotion.containerExit(
+                v, origin, radius, duration,
+                ghost != null ? ghost::setProgress : null,
+                () -> {
+                    containerExitInFlight = false;
+                    if (underlay != null) contentFrame.removeView(underlay);
+                    removeContainerGhost();
+                    after.run();
+                });
+        return true;
+    }
+
+    /** Non-interactive ImageView of [bmp] covering the whole window, positioned inside contentFrame. */
+    private android.widget.ImageView makeContainerUnderlay(android.graphics.Bitmap bmp) {
+        if (bmp == null || bmp.isRecycled() || contentFrame == null) return null;
+        View decor = getWindow().getDecorView();
+        android.widget.ImageView iv = new android.widget.ImageView(this);
+        iv.setImageBitmap(bmp);
+        iv.setScaleType(android.widget.ImageView.ScaleType.FIT_XY);
+        iv.setLayoutParams(new android.widget.FrameLayout.LayoutParams(decor.getWidth(), decor.getHeight()));
+        int[] cl = new int[2];
+        int[] dl = new int[2];
+        contentFrame.getLocationOnScreen(cl);
+        decor.getLocationOnScreen(dl);
+        iv.setTranslationX(dl[0] - cl[0]);
+        iv.setTranslationY(dl[1] - cl[1]);
+        iv.setClickable(false);
+        return iv;
+    }
+
     /**
      * Chrome-style full-screen Omnibox search page, replacing both the legacy
      * AlertDialog-based dialogSearch and the old bottom-sheet PetalOmniboxOverlay.
@@ -5510,6 +5696,43 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * instead of living in a separate dialog window.
      */
     public void showOmniboxPage(String initialQuery) {
+        if (omniboxOpenPending) return;
+        // Where the page should grow from: the exact bar/button the user tapped (reported through
+        // PetalOmniboxOrigin), else the visible address bar, else a pill under the status bar.
+        android.graphics.Rect origin = new android.graphics.Rect();
+        float radius = -1f;
+        float[] o = com.petal.browser.ui.components.PetalOmniboxOrigin.take();
+        View bar = composeAddressBar != null ? composeAddressBar : findViewById(R.id.compose_address_bar);
+        float d = getResources().getDisplayMetrics().density;
+        if (o != null) {
+            int[] dl = new int[2];
+            getWindow().getDecorView().getLocationOnScreen(dl); // window -> screen coords
+            origin.set((int) o[0] + dl[0], (int) o[1] + dl[1], (int) o[2] + dl[0], (int) o[3] + dl[1]);
+            radius = o[4];
+        } else if (bar != null && bar.getVisibility() == View.VISIBLE && bar.getWidth() > 0) {
+            int[] l = new int[2];
+            bar.getLocationOnScreen(l);
+            origin.set(l[0], l[1], l[0] + bar.getWidth(), l[1] + bar.getHeight());
+            radius = 20 * d;
+        } else {
+            int sw = getResources().getDisplayMetrics().widthPixels;
+            int top = (int) (56 * d);
+            origin.set((int) (16 * d), top, sw - (int) (16 * d), top + (int) (52 * d));
+        }
+        pendingContainerOrigin = origin;
+        pendingContainerRadius = radius;
+        // Screenshot the screen we are leaving BEFORE it is hidden; show the page as soon as it
+        // arrives (usually the next frame, 100ms at most) so nothing blocks the main thread.
+        omniboxOpenPending = true;
+        final String query = initialQuery;
+        captureWindowAsync(bmp -> {
+            omniboxOpenPending = false;
+            pendingContainerSnapshot = bmp;
+            showOmniboxPageNow(query);
+        });
+    }
+
+    private void showOmniboxPageNow(String initialQuery) {
         try {
             if (BrowserContainer.size() == 0) {
                 addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
@@ -5546,23 +5769,36 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 pageUrl != null ? pageUrl : "",
                 favicon,
                 isIncognitoTab,
+                // Taps (back arrow, tapping outside, etc.): collapse into the bar, then close.
                 () -> {
-                    showAlbum(currentAlbumController);
+                    collapseOmniboxThen(() -> showAlbum(currentAlbumController), PB_TRANSITION_DURATION_MS);
                     return kotlin.Unit.INSTANCE;
                 },
+                // Submit: collapse (a bit faster), then run the search and close as before.
                 result -> {
-                    if (result != null && !result.trim().isEmpty()) {
-                        performSearchWithFixerPrompt(result.trim(), isIncognitoTab, targetUrl -> {
-                            if (currentAlbumController != null) {
-                                showAlbum(currentAlbumController, targetUrl);
-                            } else if (BrowserContainer.size() > 0) {
-                                AlbumController controller = BrowserContainer.get(0);
-                                showAlbum(controller, targetUrl);
-                            } else {
-                                addAlbum(null, targetUrl, true, isIncognitoTab);
-                            }
-                        });
-                    }
+                    final boolean[] animated = {false};
+                    animated[0] = collapseOmniboxThen(() -> {
+                        if (result != null && !result.trim().isEmpty()) {
+                            performSearchWithFixerPrompt(result.trim(), isIncognitoTab, targetUrl -> {
+                                if (currentAlbumController != null) {
+                                    showAlbum(currentAlbumController, targetUrl);
+                                } else if (BrowserContainer.size() > 0) {
+                                    AlbumController controller = BrowserContainer.get(0);
+                                    showAlbum(controller, targetUrl);
+                                } else {
+                                    addAlbum(null, targetUrl, true, isIncognitoTab);
+                                }
+                            });
+                        }
+                        // The page's own follow-up "close" call is ignored while collapsing,
+                        // so do it here (when not animated, that follow-up call does it).
+                        if (animated[0]) showAlbum(currentAlbumController);
+                    }, 240L);
+                    return kotlin.Unit.INSTANCE;
+                },
+                // Swipe-back gesture: Petal's predictive-back animation already played, so close at once.
+                () -> {
+                    showAlbum(currentAlbumController);
                     return kotlin.Unit.INSTANCE;
                 }
             );

@@ -142,7 +142,10 @@ object PetalOmniboxBridge {
         favicon: Bitmap? = null,
         isIncognito: Boolean = false,
         onBackPress: () -> Unit,
-        onQuerySubmitted: (String) -> Unit
+        onQuerySubmitted: (String) -> Unit,
+        // Called when a predictive swipe-back finishes (its own animation already played).
+        // Defaults to onBackPress, which is what taps use (they may animate the close).
+        onBackGesture: (() -> Unit)? = null
     ): ComposeView {
         val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
         com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
@@ -198,7 +201,8 @@ object PetalOmniboxBridge {
                         },
                         // The predictive-back surface already animates the page away; a second
                         // fade/scale here replayed over the finished gesture, so close at once.
-                        onBackPress = { onBackPress() }
+                        onBackPress = { onBackPress() },
+                        onBackGesture = onBackGesture
                     )
                 }
             }
@@ -216,7 +220,8 @@ fun PetalOmniboxPage(
     favicon: Bitmap? = null,
     isIncognito: Boolean = false,
     onQuerySubmitted: (String) -> Unit,
-    onBackPress: () -> Unit
+    onBackPress: () -> Unit,
+    onBackGesture: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
@@ -542,7 +547,8 @@ fun PetalOmniboxPage(
     }
 
     LaunchedEffect(Unit) {
-        delay(100)
+        // Start the keyboard with the page's grow animation (was 100ms) so they rise together.
+        delay(30)
         try {
             focusRequester.requestFocus()
             keyboardController?.show()
@@ -553,7 +559,7 @@ fun PetalOmniboxPage(
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
-        onBack = { onBackPress() },
+        onBack = { (onBackGesture ?: onBackPress)() },
     ) {
         com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
             Scaffold(

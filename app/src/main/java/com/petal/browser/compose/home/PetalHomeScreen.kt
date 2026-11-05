@@ -63,6 +63,8 @@ import com.petal.browser.account.PetalUserProfile
 import com.petal.browser.profile.PetalProfileAvatar
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -1172,17 +1174,23 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "search_bar_press_scale"
     )
+    // Real on-screen bounds of this pill: the omnibox page grows out of / collapses back into it.
+    val pillBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
 
     PetalFloatingToolbar(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 64.dp)
             .homeLaunchEntrance(2)
+            .onGloballyPositioned { pillBounds[0] = it.boundsInWindow() }
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clickable(
                 interactionSource = interactionSource,
                 indication = androidx.compose.foundation.LocalIndication.current
-            ) { onSearch("") }
+            ) {
+                com.petal.browser.ui.components.PetalOmniboxOrigin.mark(pillBounds[0], -1f)
+                onSearch("")
+            }
     ) {
             // One inner row owns all spacing. PetalFloatingToolbar adds 12dp between its direct
             // children and IconButtons default to 48dp, which made every gap in this bar too wide.

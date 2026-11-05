@@ -83,6 +83,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
@@ -166,8 +168,13 @@ fun PetalBottomNavBar(
             entrance.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = 260f))
         }
     }
+    // Bounds of the tapped search control (separate glass button, else the whole nav bar), so the
+    // omnibox page grows out of it.
+    val searchButtonBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
+    val navBarBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
     val launchSearch: () -> Unit = {
         if (searchLaunch.value == 0f) {
+            PetalOmniboxOrigin.mark(searchButtonBounds[0] ?: navBarBounds[0], -1f)
             scope.launch {
                 searchLaunch.animateTo(1f, tween(durationMillis = 150, easing = FastOutSlowInEasing))
                 onSearchClick()
@@ -236,6 +243,7 @@ fun PetalBottomNavBar(
             Box(
                 modifier = Modifier
                     .weight(1f)
+                    .onGloballyPositioned { navBarBounds[0] = it.boundsInWindow() }
                     .graphicsLayer {
                         val p = searchLaunch.value
                         translationY = p * 22.dp.toPx()
@@ -266,7 +274,7 @@ fun PetalBottomNavBar(
                 PetalSearchGlassButton(
                     glassSource = glassSource,
                     onClick = launchSearch,
-                    modifier = Modifier.graphicsLayer {
+                    modifier = Modifier.onGloballyPositioned { searchButtonBounds[0] = it.boundsInWindow() }.graphicsLayer {
                         val p = searchLaunch.value
                         val sc = 1f + 0.22f * p
                         scaleX = sc
@@ -280,6 +288,7 @@ fun PetalBottomNavBar(
         // Material 3 Expressive Non-Floating Bottom Navigation Bar
         Box(
             modifier = modifier
+                .onGloballyPositioned { navBarBounds[0] = it.boundsInWindow() }
                 .graphicsLayer {
                     translationY = (1f - entrance.value) * entranceOffsetPx + searchLaunch.value * 22.dp.toPx() + collapseOffsetY.toPx()
                     scaleX = collapseScale

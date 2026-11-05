@@ -59,6 +59,145 @@ public final class PetalMotion {
                 .start();
     }
 
+    /** Receives container-transform progress: 0 = collapsed into the bar, 1 = full screen. */
+    public interface ProgressListener {
+        void onProgress(float t);
+    }
+
+    /**
+     * Container transform (Gmail-style search open): the page grows out of {@code origin}
+     * (a rect in screen coordinates, e.g. the tapped search/address bar) to full size, corners
+     * going from the bar's radius to square. Only the visible clip changes, so Compose content and
+     * keyboard focus inside the view are untouched. Falls back to {@link #enter} when animations
+     * are off or the origin is unusable.
+     */
+    public static void containerEnter(final View view, android.graphics.Rect origin, float radiusPx,
+                                      long duration, ProgressListener progress, final Runnable onEnd) {
+        if (view == null) return;
+        if (origin == null || origin.isEmpty() || !animationsEnabled(view)
+                || view.getWidth() == 0 || view.getHeight() == 0) {
+            enter(view, duration);
+            if (progress != null) progress.onProgress(1f);
+            if (onEnd != null) onEnd.run();
+            return;
+        }
+        runContainer(view, origin, radiusPx, duration, true, progress, onEnd);
+    }
+
+    /** Reverse of {@link #containerEnter}: the page collapses back into {@code origin}. */
+    public static void containerExit(final View view, android.graphics.Rect origin, float radiusPx,
+                                     long duration, ProgressListener progress, final Runnable onEnd) {
+        if (view == null || origin == null || origin.isEmpty() || !animationsEnabled(view)
+                || view.getWidth() == 0 || view.getHeight() == 0) {
+            if (onEnd != null) onEnd.run();
+            return;
+        }
+        runContainer(view, origin, radiusPx, duration, false, progress, onEnd);
+    }
+
+    private static void runContainer(final View view, android.graphics.Rect originOnScreen,
+                                     float radiusPx, long duration, final boolean opening,
+                                     final ProgressListener progress, final Runnable onEnd) {
+        int[] loc = new int[2];
+        view.getLocationOnScreen(loc);
+        final int oL = originOnScreen.left - loc[0];
+        final int oT = originOnScreen.top - loc[1];
+        final int oR = originOnScreen.right - loc[0];
+        final int oB = originOnScreen.bottom - loc[1];
+        final float startRadius = radiusPx >= 0f ? radiusPx : originOnScreen.height() / 2f;
+        final float[] t = {opening ? 0f : 1f};
+
+        view.setClipToOutline(true);
+        view.setOutlineProvider(new android.view.ViewOutlineProvider() {
+            @Override
+            public void getOutline(View v, android.graphics.Outline outline) {
+                // Read the live size: the keyboard resizes the window while this runs.
+                float p = t[0];
+                int w = v.getWidth();
+                int h = v.getHeight();
+                outline.setRoundRect(
+                        Math.round(oL + (0 - oL) * p),
+                        Math.round(oT + (0 - oT) * p),
+                        Math.round(oR + (w - oR) * p),
+                        Math.round(oB + (h - oB) * p),
+                        startRadius * (1f - p));
+            }
+        });
+        // The bar ghost (drawn above) hides the page's contents at first, so the page itself can
+        // be fully opaque from frame one: no fade of the page surface, no see-through pill.
+        view.setAlpha(1f);
+        if (progress != null) progress.onProgress(t[0]);
+
+        android.animation.ValueAnimator a = android.animation.ValueAnimator.ofFloat(
+                opening ? 0f : 1f, opening ? 1f : 0f);
+        a.setDuration(duration);
+        a.setInterpolator(opening ? EMPHASIZED : EMPHASIZED_ACCELERATE);
+        a.addUpdateListener(anim -> {
+            t[0] = (float) anim.getAnimatedValue();
+            view.invalidateOutline();
+            if (progress != null) progress.onProgress(t[0]);
+        });
+        a.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                if (opening) {
+                    view.setClipToOutline(false);
+                    view.setOutlineProvider(android.view.ViewOutlineProvider.BACKGROUND);
+                    view.setAlpha(1f);
+                }
+                if (onEnd != null) onEnd.run();
+            }
+        });
+        a.start();
+    }
+
+    /**
+     * The tapped bar's own pixels (cropped from a screenshot), drawn over the growing page and
+     * faded out as the page takes over, so the bar visibly turns into the search page (and back).
+     * Add it to {@code container.getOverlay()}; it never becomes a child view.
+     */
+    public static final class BarGhost extends android.graphics.drawable.Drawable {
+        private final android.graphics.Bitmap bitmap;
+        private final float radius;
+        private final android.graphics.Paint paint =
+                new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG | android.graphics.Paint.FILTER_BITMAP_FLAG);
+        private final android.graphics.Path path = new android.graphics.Path();
+        private final android.graphics.RectF rectF = new android.graphics.RectF();
+        private int alpha = 255;
+
+        public BarGhost(android.graphics.Bitmap bitmap, float radius) {
+            this.bitmap = bitmap;
+            this.radius = radius;
+        }
+
+        /** Ghost is fully visible while collapsed and gone by 30% of the way open. */
+        public void setProgress(float t) {
+            int a = Math.round(255f * Math.max(0f, Math.min(1f, 1f - t / 0.3f)));
+            if (a != alpha) {
+                alpha = a;
+                invalidateSelf();
+            }
+        }
+
+        @Override
+        public void draw(android.graphics.Canvas canvas) {
+            android.graphics.Rect b = getBounds();
+            if (bitmap == null || bitmap.isRecycled() || b.isEmpty() || alpha <= 0) return;
+            paint.setAlpha(alpha);
+            rectF.set(b);
+            path.reset();
+            path.addRoundRect(rectF, radius, radius, android.graphics.Path.Direction.CW);
+            int save = canvas.save();
+            canvas.clipPath(path);
+            canvas.drawBitmap(bitmap, null, b, paint);
+            canvas.restoreToCount(save);
+        }
+
+        @Override public void setAlpha(int a) { alpha = a; invalidateSelf(); }
+        @Override public void setColorFilter(android.graphics.ColorFilter cf) { paint.setColorFilter(cf); }
+        @Override public int getOpacity() { return android.graphics.PixelFormat.TRANSLUCENT; }
+    }
+
     /** Animate a tab/card into a container with a smaller, faster motion. */
     public static void tabEnter(View view) {
         if (view == null) return;
