@@ -1,15 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-
-    <!-- Strip Shizuku elevated install permission for Google Play Store compliance -->
-    <uses-permission
-        android:name="moe.shizuku.manager.permission.API_V23"
-        tools:node="remove" />
-
-    <!-- Strip battery optimization exemption permission for Google Play Store compliance -->
-    <uses-permission
-        android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
-        tools:node="remove" />
-
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Google AdMob Application ID for Google Play release build -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-5680314597533936~2825634534" />
+    </application>
 </manifest>

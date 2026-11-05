@@ -31,7 +31,7 @@ Builds:
     commit: v4.6.0
     subdir: app
     gradle:
-      - assembleGithubRelease
+      - assembleFdroidRelease
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags

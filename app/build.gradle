@@ -37,12 +37,32 @@ android {
         github {
             dimension "distribution"
             buildConfigField "boolean", "IS_PLAY_STORE_BUILD", "false"
+            buildConfigField "boolean", "IS_FDROID_BUILD", "false"
             buildConfigField "String", "DISTRIBUTION_CHANNEL", "\"github\""
         }
         play {
             dimension "distribution"
             buildConfigField "boolean", "IS_PLAY_STORE_BUILD", "true"
+            buildConfigField "boolean", "IS_FDROID_BUILD", "false"
             buildConfigField "String", "DISTRIBUTION_CHANNEL", "\"play\""
+        }
+        fdroid {
+            dimension "distribution"
+            buildConfigField "boolean", "IS_PLAY_STORE_BUILD", "false"
+            buildConfigField "boolean", "IS_FDROID_BUILD", "true"
+            buildConfigField "String", "DISTRIBUTION_CHANNEL", "\"fdroid\""
+        }
+    }
+
+    sourceSets {
+        github {
+            java.srcDirs += ['src/ads/java']
+        }
+        play {
+            java.srcDirs += ['src/ads/java']
+        }
+        fdroid {
+            java.srcDirs += ['src/noAds/java']
         }
     }
 
@@ -177,7 +197,8 @@ configurations.all {
 dependencies {
     implementation 'com.google.android.material:material:1.14.0'
     implementation 'androidx.preference:preference:1.2.1'
-    implementation 'com.google.android.gms:play-services-ads:23.6.0'
+    githubImplementation 'com.google.android.gms:play-services-ads:23.6.0'
+    playImplementation 'com.google.android.gms:play-services-ads:23.6.0'
     implementation 'androidx.fragment:fragment:1.8.9'
     implementation 'androidx.media:media:1.7.0'
     implementation 'androidx.webkit:webkit:1.16.0'

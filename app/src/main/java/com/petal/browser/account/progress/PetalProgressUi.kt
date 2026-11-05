@@ -781,7 +781,23 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
 
             Spacer(Modifier.height(14.dp))
 
-            if (!consent) {
+            if (com.petal.browser.BuildConfig.IS_FDROID_BUILD) {
+                Text(
+                    text = "F-Droid Edition: All features, custom fonts, liquid glass shaders, and supporter rewards are completely unlocked and 100% free forever!",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = cs.onSurfaceVariant
+                )
+                Spacer(Modifier.height(12.dp))
+                Button(
+                    onClick = { showQuestSheet = true },
+                    shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                ) {
+                    Icon(Icons.Rounded.Favorite, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Developer Support Info", fontWeight = FontWeight.Bold)
+                }
+            } else if (!consent) {
                 Text(
                     text = "Petal Browser is built independently without trackers or corporate paywalls. By watching optional sponsor videos, you directly support open-source development and earn cosmetic rewards like Liquid Glass.",
                     style = MaterialTheme.typography.bodyMedium,

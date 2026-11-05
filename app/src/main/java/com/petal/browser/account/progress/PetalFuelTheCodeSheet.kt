@@ -120,6 +120,11 @@ fun PetalFuelTheCodeSheet(
     var loadingIndex by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
+        if (com.petal.browser.BuildConfig.IS_FDROID_BUILD) {
+            viewState = "fdroid"
+            return@LaunchedEffect
+        }
+
         val blockReason = PetalProgressStore.adBlockReason(ctx)
         if (blockReason != null) {
             integrityReason = blockReason
@@ -231,6 +236,97 @@ fun PetalFuelTheCodeSheet(
                             color = cs.onSurfaceVariant
                         )
                         Spacer(Modifier.height(32.dp))
+                    }
+
+                    "fdroid" -> {
+                        Box(
+                            modifier = Modifier
+                                .size(96.dp)
+                                .clip(MaterialShapes.Sunny.toShape())
+                                .background(cs.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Rounded.Favorite, null, Modifier.size(48.dp), tint = cs.primary)
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "F-Droid Edition",
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
+                                textAlign = TextAlign.Center,
+                                color = cs.onSurface,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = cs.primaryContainer
+                            ) {
+                                Text(
+                                    text = "ALL FREE",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = cs.onPrimaryContainer,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "Welcome to the pure FOSS edition of Petal Browser! All developer support features, cosmetic unlocks, and liquid glass styling are completely unlocked and free for everyone without any ads or trackers.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            color = cs.onSurfaceVariant
+                        )
+
+                        val cardShape = RoundedCornerShape(20.dp)
+                        Surface(
+                            shape = cardShape,
+                            color = if (isGlass) petalGroupSurfaceColor() else cs.surfaceContainerHigh,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .bouncyClickable {
+                                    try {
+                                        val intent = android.content.Intent(
+                                            android.content.Intent.ACTION_VIEW,
+                                            android.net.Uri.parse("https://github.com/shreyagarwal72/petal")
+                                        )
+                                        ctx.startActivity(intent)
+                                    } catch (_: Throwable) {}
+                                }
+                                .then(if (isGlass) Modifier.liquidGlassChrome(cardShape, enabled = true) else Modifier)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(CircleShape)
+                                        .background(cs.tertiaryContainer),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Rounded.Code, null, Modifier.size(24.dp), tint = cs.tertiary)
+                                }
+                                Spacer(Modifier.width(14.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text("Star on GitHub", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                                    Text("Support Petal's open-source development", style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
+                                }
+                                Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, tint = cs.onSurfaceVariant)
+                            }
+                        }
+
+                        Button(
+                            onClick = onDismiss,
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.fillMaxWidth().height(52.dp)
+                        ) {
+                            Text("Enjoy All Features (Unlocked)", fontWeight = FontWeight.Bold)
+                        }
                     }
 
                     "violation" -> {

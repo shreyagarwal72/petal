@@ -251,6 +251,15 @@ object PetalProgressStore {
         counters = PetalCounter.values().associate { it.key to p.getLong(it.key, 0L) }
         migrateFeatureLocks(ctx)
         touchDay(ctx)
+
+        // F-Droid build: permanently unlock all features for free (no ads required)
+        if (com.petal.browser.BuildConfig.IS_FDROID_BUILD) {
+            val ed = p.edit()
+            for (u in PetalUnlockable.values()) {
+                ed.putBoolean("pp_unlocked_" + u.id, true)
+            }
+            ed.apply()
+        }
     }
 
     /** Call from tab, bookmark, download and blocker code. Cheap to call often. */
@@ -375,6 +384,7 @@ object PetalProgressStore {
      * - OR previously unlocked / restored via encrypted backup
      */
     fun isUnlocked(ctx: Context, u: PetalUnlockable): Boolean {
+        if (com.petal.browser.BuildConfig.IS_FDROID_BUILD) return true
         init(ctx)
         val p = sp(ctx)
         if (p.getBoolean("pp_unlocked_" + u.id, false)) return true

@@ -163,11 +163,6 @@
             android:name="android.webkit.WebView.MetricsOptOut"
             android:value="true" />
 
-        <!-- Google AdMob Application ID -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-5680314597533936~2825634534" />
-
         <!-- AppLocales Metadata Holder Service for AppCompat auto-store locales -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
