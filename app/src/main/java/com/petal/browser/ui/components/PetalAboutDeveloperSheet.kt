@@ -6,7 +6,6 @@ import android.content.Context
 import android.net.Uri
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
@@ -212,11 +211,12 @@ fun PetalAboutDeveloperSheetContent(
         }
     }
 
-    BackHandler(enabled = true) {
-        onClose()
-    }
-
-    Scaffold(
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onClose
+    ) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            Scaffold(
                 containerColor = MaterialTheme.colorScheme.background,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0)
             ) { innerPadding ->
@@ -379,6 +379,8 @@ fun PetalAboutDeveloperSheetContent(
                     )
                 }
             }
+        }
+    }
 }
 
 /**

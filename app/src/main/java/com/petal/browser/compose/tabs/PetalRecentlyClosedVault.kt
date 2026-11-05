@@ -92,12 +92,9 @@ fun PetalRecentlyClosedVault(
         records = PetalRecentlyClosedManager.getRecentlyClosedTabs()
     }
 
-    // Back navigation: settings sub-page -> vault, and vault -> caller dismiss.
+    // Back navigation: settings sub-page -> vault page (vault dismissal handled by PetalPredictiveBackSurface)
     androidx.activity.compose.BackHandler(enabled = showSettingsPage) {
         showSettingsPage = false
-    }
-    androidx.activity.compose.BackHandler(enabled = !showSettingsPage) {
-        onDismiss()
     }
 
     // Trigger biometric if lockType is biometric
@@ -123,10 +120,15 @@ fun PetalRecentlyClosedVault(
 
     val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    PetalPredictiveBackSurface(
+        enabled = !showSettingsPage,
+        onBack = onDismiss
     ) {
+        PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            Surface(
+                modifier = modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
         Box(Modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(
                 modifier = Modifier.fillMaxSize(),
@@ -270,6 +272,8 @@ fun PetalRecentlyClosedVault(
                     }
                 }
             }
+        }
+    }
         }
     }
 

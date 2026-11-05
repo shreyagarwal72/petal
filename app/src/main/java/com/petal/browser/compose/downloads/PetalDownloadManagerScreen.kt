@@ -21,7 +21,6 @@ import android.graphics.BitmapFactory
 import android.app.Activity
 import android.Manifest
 import android.content.pm.PackageManager
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -533,13 +532,15 @@ fun PetalDownloadManagerScreen(
 
     var isSettingsOpen by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = isSettingsOpen) {
-        isSettingsOpen = false
-    }
-
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = !isSettingsOpen,
-        onBack = onBackPress,
+        enabled = true,
+        onBack = {
+            if (isSettingsOpen) {
+                isSettingsOpen = false
+            } else {
+                onBackPress()
+            }
+        },
     ) {
     // Two-layer transition, same pattern PetalSettingsScreen.kt uses for category drilling:
     // the Downloads list stays mounted underneath as its own background layer (isBehind = true)
