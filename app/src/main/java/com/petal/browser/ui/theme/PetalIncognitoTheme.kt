@@ -58,13 +58,16 @@ val IncognitoAmoledColorScheme: ColorScheme = darkColorScheme(
     outline = IncognitoOutline
 )
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PetalIncognitoTheme(
     useAmoled: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    MaterialTheme(
-        colorScheme = if (useAmoled) IncognitoAmoledColorScheme else IncognitoColorScheme,
+    val scheme = if (useAmoled) IncognitoAmoledColorScheme else IncognitoColorScheme
+    androidx.compose.material3.MaterialExpressiveTheme(
+        colorScheme = scheme,
+        motionScheme = androidx.compose.material3.MotionScheme.expressive(),
         typography = StrideTypography,
         content = content
     )

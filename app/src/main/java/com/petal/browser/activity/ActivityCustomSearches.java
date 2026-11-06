@@ -8,6 +8,7 @@ public class ActivityCustomSearches extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        com.petal.browser.unit.PetalAndroidUtils.initTheme(this);
         Intent intent = getIntent();
         String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
         Intent browserIntent = new Intent(this, BrowserActivity.class);

@@ -7,6 +7,7 @@ import android.os.Bundle
 class ActivityShare : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.petal.browser.unit.PetalAndroidUtils.initTheme(this)
         val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
         val browserIntent = Intent(this, BrowserActivity::class.java).apply {
             putExtra(Intent.EXTRA_TEXT, sharedText)

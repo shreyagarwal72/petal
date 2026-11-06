@@ -13,6 +13,7 @@ public class SettingsProfileActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        com.petal.browser.unit.PetalAndroidUtils.initTheme(this);
         EdgeToEdge.enable(this);
         setContentView(PetalAccountSyncBridge.createAccountSyncView(
             this,

@@ -335,8 +335,12 @@ public class PetalAndroidUtils {
         try {
             sp = PreferenceManager.getDefaultSharedPreferences(context);
             context.setTheme(R.style.AppTheme);
+            // Mirror the live Compose colour scheme into the View theme (API 30+).
+            boolean bridged = com.petal.browser.ui.theme.PetalViewThemeBridge.apply(context);
             boolean isDynamicSupported = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S;
-            if (sp.getBoolean("useDynamicColor", isDynamicSupported) && isDynamicSupported) {
+            // Only when the bridge has no scheme yet (very first launch) fall back to system dynamic colour.
+            if (!bridged && sp.getBoolean("useDynamicColor", isDynamicSupported) && isDynamicSupported
+                    && !com.petal.browser.ui.theme.PetalViewThemeBridge.hasScheme(context)) {
                 com.google.android.material.color.DynamicColors.applyToActivityIfAvailable(context);
             }
         } catch (Exception e) {
@@ -507,8 +511,7 @@ public class PetalAndroidUtils {
                 android.graphics.drawable.GradientDrawable backgroundDrawable = new android.graphics.drawable.GradientDrawable();
                 backgroundDrawable.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
                 backgroundDrawable.setColor(surfaceColor != 0 ? surfaceColor : android.graphics.Color.parseColor("#1C1B1F"));
-                backgroundDrawable.setCornerRadius(convertDpToPixel(32f, context));
-                backgroundDrawable.setStroke(convertDpToPixel(1f, context), getThemeColor(context, com.google.android.material.R.attr.colorOutlineVariant, Color.TRANSPARENT));
+                backgroundDrawable.setCornerRadius(convertDpToPixel(28f, context));
                 dialog.getWindow().setBackgroundDrawable(backgroundDrawable);
                 dialog.getWindow().setDimAmount(0.32f);
                 dialog.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
@@ -821,11 +824,6 @@ public class PetalAndroidUtils {
         }
         int textColor = onSurfaceValue.data != 0 ? onSurfaceValue.data : Color.WHITE;
 
-        // Outline stroke color
-        TypedValue outlineValue = new TypedValue();
-        context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOutlineVariant, outlineValue, true);
-        int strokeColor = outlineValue.data != 0 ? outlineValue.data : Color.parseColor("#44474E");
-
         TextView textView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
         if (textView != null) {
             textView.setMaxLines(4);
@@ -849,13 +847,12 @@ public class PetalAndroidUtils {
             actionView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
         }
 
-        // Pill shape with subtle outline for Material 3 Expressive popups
+        // Flat tonal pill (no outline) per Petal Material 3 Expressive border policy
         GradientDrawable background = new GradientDrawable();
         background.setShape(GradientDrawable.RECTANGLE);
         float radiusPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 28, context.getResources().getDisplayMetrics());
         background.setCornerRadius(radiusPx);
         background.setColor(backgroundColor);
-        background.setStroke((int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, context.getResources().getDisplayMetrics()), strokeColor);
         snackbarView.setBackground(background);
         snackbarView.setElevation(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12, context.getResources().getDisplayMetrics()));
 

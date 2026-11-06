@@ -10,6 +10,7 @@ import com.petal.browser.unit.PetalBrowserUtils
 class PetalScannerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.petal.browser.unit.PetalAndroidUtils.initTheme(this)
         setContent {
             MaterialTheme {
                 PetalQrScannerScreen(

@@ -14,6 +14,7 @@ public class SettingsGestureActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        com.petal.browser.unit.PetalAndroidUtils.initTheme(this);
         Intent intent = new Intent(this, SettingsActivity.class);
         intent.putExtra(SettingsActivity.EXTRA_SETTINGS_CATEGORY, SettingsCategory.ADDRESS_BAR.name());
         startActivity(intent);

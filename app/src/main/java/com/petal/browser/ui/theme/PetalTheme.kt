@@ -200,6 +200,10 @@ fun PetalExpressiveTheme(
         colorScheme = colorScheme.applyAmoled()
     }
 
+    // Legacy View system (dialogs, popups, snackbars, XML) follows the exact same scheme.
+    val bridgeContext = LocalContext.current
+    SideEffect { PetalViewThemeBridge.publish(bridgeContext, colorScheme) }
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

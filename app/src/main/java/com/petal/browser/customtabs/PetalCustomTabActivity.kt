@@ -85,6 +85,7 @@ class PetalCustomTabActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.petal.browser.unit.PetalAndroidUtils.initTheme(this)
 
         parseCustomTabsIntentExtras(intent)
 
