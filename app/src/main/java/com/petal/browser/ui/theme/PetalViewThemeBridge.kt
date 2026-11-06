@@ -122,7 +122,7 @@ object PetalViewThemeBridge {
                 )
                 if (id != 0) map[id] = colors[i]
             }
-            ColorResourcesOverride.getInstance().applyIfPossible(activity, map)
+            ColorResourcesOverride.getInstance()?.applyIfPossible(activity, map) ?: false
         } catch (_: Throwable) {
             false
         }
