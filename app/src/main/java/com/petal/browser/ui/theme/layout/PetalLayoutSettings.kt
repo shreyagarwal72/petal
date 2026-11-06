@@ -28,7 +28,18 @@ data class PetalLayoutSettings(
     val motionDurationScale: Float = 1.0f,
     val drawSwitchShadows: Boolean = true,
     val drawSliderShadows: Boolean = true,
+    /** Containment (cards, rows, chips, hero surfaces) shape style. [PetalContainmentShapeChoice.FOLLOW_APP] = use [shapeType]. */
+    val containmentShape: PetalContainmentShapeChoice = PetalContainmentShapeChoice.FOLLOW_APP,
+    /** When false containment uses the app-wide [cornersSize]; when true it uses [containmentCornersSize]. */
+    val containmentOwnCorners: Boolean = false,
+    val containmentCornersSize: Float = 1.0f,
+    /** Shape of the icon containers (badges) used across containment rows and cards. */
+    val badgeShape: PetalBadgeShape = PetalBadgeShape.MIXED,
 ) {
+    /** Shape style actually used by containment surfaces. */
+    val containmentShapeType: PetalShapeType
+        get() = containmentShape.type ?: shapeType
+
     companion object {
         const val KEY_SWITCH_TYPE = "sp_switch_type"
         const val KEY_SLIDER_TYPE = "sp_slider_type"
@@ -39,6 +50,10 @@ data class PetalLayoutSettings(
         const val KEY_MOTION_DURATION_SCALE = "sp_motion_duration_scale"
         const val KEY_DRAW_SWITCH_SHADOWS = "sp_draw_switch_shadows"
         const val KEY_DRAW_SLIDER_SHADOWS = "sp_draw_slider_shadows"
+        const val KEY_CONTAINMENT_SHAPE = "sp_containment_shape_type"
+        const val KEY_CONTAINMENT_OWN_CORNERS = "sp_containment_own_corners"
+        const val KEY_CONTAINMENT_CORNERS_SIZE = "sp_containment_corners_size"
+        const val KEY_BADGE_SHAPE = "sp_containment_badge_shape"
 
         fun fromPreferences(sp: SharedPreferences): PetalLayoutSettings {
             return PetalLayoutSettings(
@@ -51,6 +66,10 @@ data class PetalLayoutSettings(
                 motionDurationScale = sp.safeFloat(KEY_MOTION_DURATION_SCALE, 1.0f).coerceIn(0.25f, 3f),
                 drawSwitchShadows = sp.getBoolean(KEY_DRAW_SWITCH_SHADOWS, true),
                 drawSliderShadows = sp.getBoolean(KEY_DRAW_SLIDER_SHADOWS, true),
+                containmentShape = PetalContainmentShapeChoice.fromKey(sp.getString(KEY_CONTAINMENT_SHAPE, null)),
+                containmentOwnCorners = sp.getBoolean(KEY_CONTAINMENT_OWN_CORNERS, false),
+                containmentCornersSize = sp.safeFloat(KEY_CONTAINMENT_CORNERS_SIZE, 1.0f).coerceIn(0f, 2f),
+                badgeShape = PetalBadgeShape.fromKey(sp.getString(KEY_BADGE_SHAPE, null)),
             )
         }
 
@@ -76,6 +95,13 @@ object PetalLayoutState {
 
     /** Corner multiplier actually drawn: eased towards [PetalLayoutSettings.cornersSize] by the theme. */
     var displayCorners by mutableFloatStateOf(1f)
+
+    /**
+     * Corner multiplier for containment surfaces: its own slider when "own corners" is on, otherwise the
+     * app-wide (eased) value. Reads snapshot state, so callers recompose when either changes.
+     */
+    val containmentCorners: Float
+        get() = if (settings.containmentOwnCorners) settings.containmentCornersSize else displayCorners
 
     // Strong reference: SharedPreferences only keeps listeners weakly.
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { sp, key ->
@@ -112,6 +138,10 @@ object PetalLayoutState {
             .putFloat(PetalLayoutSettings.KEY_MOTION_DURATION_SCALE, next.motionDurationScale)
             .putBoolean(PetalLayoutSettings.KEY_DRAW_SWITCH_SHADOWS, next.drawSwitchShadows)
             .putBoolean(PetalLayoutSettings.KEY_DRAW_SLIDER_SHADOWS, next.drawSliderShadows)
+            .putString(PetalLayoutSettings.KEY_CONTAINMENT_SHAPE, next.containmentShape.key)
+            .putBoolean(PetalLayoutSettings.KEY_CONTAINMENT_OWN_CORNERS, next.containmentOwnCorners)
+            .putFloat(PetalLayoutSettings.KEY_CONTAINMENT_CORNERS_SIZE, next.containmentCornersSize)
+            .putString(PetalLayoutSettings.KEY_BADGE_SHAPE, next.badgeShape.key)
             .apply()
     }
 
@@ -125,6 +155,10 @@ object PetalLayoutState {
         PetalLayoutSettings.KEY_MOTION_DURATION_SCALE,
         PetalLayoutSettings.KEY_DRAW_SWITCH_SHADOWS,
         PetalLayoutSettings.KEY_DRAW_SLIDER_SHADOWS,
+        PetalLayoutSettings.KEY_CONTAINMENT_SHAPE,
+        PetalLayoutSettings.KEY_CONTAINMENT_OWN_CORNERS,
+        PetalLayoutSettings.KEY_CONTAINMENT_CORNERS_SIZE,
+        PetalLayoutSettings.KEY_BADGE_SHAPE,
     )
 }
 

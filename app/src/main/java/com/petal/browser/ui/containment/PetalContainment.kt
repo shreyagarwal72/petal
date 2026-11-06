@@ -41,6 +41,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.petal.browser.ui.theme.layout.cornerShape
+import com.petal.browser.ui.theme.layout.pillShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -324,7 +325,7 @@ fun rememberPetalGroupShape(position: PetalGroupPosition): androidx.compose.foun
     val bottomEnd by androidx.compose.animation.core.animateDpAsState(corner(target.bottomEnd), spec, label = "groupBottomEnd")
     val bottomStart by androidx.compose.animation.core.animateDpAsState(corner(target.bottomStart), spec, label = "groupBottomStart")
     // Radii already include the live corner multiplier (see petalGroupShape), so draw them 1:1.
-    return com.petal.browser.ui.theme.layout.PetalLayoutState.settings.shapeType.cornerShape(
+    return com.petal.browser.ui.theme.layout.PetalLayoutState.settings.containmentShapeType.cornerShape(
         topStart = topStart.coerceAtLeast(0.dp),
         topEnd = topEnd.coerceAtLeast(0.dp),
         bottomEnd = bottomEnd.coerceAtLeast(0.dp),
@@ -338,14 +339,41 @@ fun rememberPetalGroupShape(position: PetalGroupPosition): androidx.compose.foun
  * the live corner size. Reads snapshot state, so every caller recomposes when the style/size changes.
  */
 fun petalGroupShape(position: PetalGroupPosition): androidx.compose.foundation.shape.CornerBasedShape {
-    val type = com.petal.browser.ui.theme.layout.PetalLayoutState.settings.shapeType
-    val m = com.petal.browser.ui.theme.layout.PetalLayoutState.displayCorners
+    val type = com.petal.browser.ui.theme.layout.PetalLayoutState.settings.containmentShapeType
+    val m = com.petal.browser.ui.theme.layout.PetalLayoutState.containmentCorners
     return when (position) {
         PetalGroupPosition.SINGLE -> type.cornerShape(28.dp, multiplier = m)
         PetalGroupPosition.TOP -> type.cornerShape(28.dp, 28.dp, 6.dp, 6.dp, m)
         PetalGroupPosition.MIDDLE -> type.cornerShape(6.dp, multiplier = m)
         PetalGroupPosition.BOTTOM -> type.cornerShape(6.dp, 6.dp, 28.dp, 28.dp, m)
     }
+}
+
+/**
+ * Containment's own uniform-radius shape: the containment shape style (own or inherited from the app-wide
+ * Shapes Type) scaled by the containment corner size. Reads snapshot state, so callers recompose on change.
+ */
+fun petalContainmentShape(radius: Dp): androidx.compose.foundation.shape.CornerBasedShape =
+    com.petal.browser.ui.theme.layout.PetalLayoutState.settings.containmentShapeType.cornerShape(
+        radius, multiplier = com.petal.browser.ui.theme.layout.PetalLayoutState.containmentCorners,
+    )
+
+/** Shape for chips and other small containment controls (14dp base radius). */
+fun petalChipShape(): Shape = petalContainmentShape(14.dp)
+
+/**
+ * Shape of every containment icon container. Picks a Material 3 Expressive polygon (cookie, sunny, flower,
+ * clover...) when the user chose one in Appearance > Containment shapes, otherwise the classic 14dp tile in
+ * the containment shape style.
+ */
+@androidx.compose.runtime.Composable
+fun petalBadgeShape(key: Any? = null): Shape {
+    val state = com.petal.browser.ui.theme.layout.PetalLayoutState
+    // Stable per icon: seeded by the icon's name when known (same icon, same shape on every launch);
+    // otherwise a random seed remembered for as long as this badge stays composed, so it never flickers.
+    val fallback = androidx.compose.runtime.remember { kotlin.random.Random.nextInt() }
+    val seed = key?.hashCode() ?: fallback
+    return state.settings.badgeShape.shape(state.settings.containmentShapeType, state.containmentCorners, seed)
 }
 
 fun petalGroupPositionFor(index: Int, count: Int): PetalGroupPosition = when {
@@ -399,7 +427,7 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = petalBadgeShape(icon.name),
 ) {
     val (container, tint) = variant.colors()
     Box(
@@ -420,7 +448,7 @@ fun PetalGroupIconBadge(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = petalBadgeShape(),
 ) {
     val (container, tint) = variant.colors()
     Box(
@@ -443,7 +471,7 @@ fun PetalGroupIconBadge(
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
 ) {
-    Box(modifier.size(size).clip(RoundedCornerShape(14.dp)).background(container), contentAlignment = Alignment.Center) {
+    Box(modifier.size(size).clip(petalBadgeShape(icon.name)).background(container), contentAlignment = Alignment.Center) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
     }
 }
@@ -457,7 +485,7 @@ fun PetalGroupIconBadge(
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
 ) {
-    Box(modifier.size(size).clip(RoundedCornerShape(14.dp)).background(container), contentAlignment = Alignment.Center) {
+    Box(modifier.size(size).clip(petalBadgeShape()).background(container), contentAlignment = Alignment.Center) {
         Icon(painter, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
     }
 }
@@ -595,7 +623,7 @@ fun PetalGroupControlRow(
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             if (leadingIcon != null) {
                 PetalGroupIconBadge(
-                    shape = RoundedCornerShape(14.dp),
+                    shape = petalBadgeShape(),
                     containerColor = containerColor,
                     contentColor = contentColor,
                 ) { leadingIcon() }
@@ -640,7 +668,7 @@ fun PetalGroupNavigationRow(
         modifier = modifier.alpha(if (enabled) 1f else 0.38f),
         leading = {
             if (leadingIcon != null) PetalGroupIconBadge(
-                shape = RoundedCornerShape(14.dp),
+                shape = petalBadgeShape(),
                 containerColor = containerColor,
                 contentColor = contentColor,
             ) { leadingIcon() }
@@ -1110,7 +1138,7 @@ fun PetalFilterChip(
     enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = petalChipShape(),
     colors: SelectableChipColors? = null,
     border: BorderStroke? = null,
 ) {
@@ -1172,7 +1200,7 @@ fun PetalAssistChip(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)? = null,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = petalChipShape(),
     colors: ChipColors? = null,
     border: BorderStroke? = null,
 ) {
@@ -1222,7 +1250,7 @@ fun PetalSuggestionChip(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     icon: @Composable (() -> Unit)? = null,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = petalChipShape(),
     colors: ChipColors? = null,
     border: BorderStroke? = null,
 ) {
@@ -1274,7 +1302,7 @@ fun PetalInputChip(
     enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = petalChipShape(),
     colors: SelectableChipColors? = null,
     border: BorderStroke? = null,
 ) {
@@ -1333,7 +1361,7 @@ fun PetalSelectableOptionCard(title: String, selected: Boolean, onClick: () -> U
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val cardShape = RoundedCornerShape(20.dp)
+    val cardShape = petalContainmentShape(20.dp)
     val defaultContainer = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh
     val container by animateColorAsState(if (selected) MaterialTheme.colorScheme.primaryContainer else defaultContainer, label = "petalOptionContainer")
     val border = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
@@ -1358,11 +1386,16 @@ fun PetalSelectableOptionCard(title: String, selected: Boolean, onClick: () -> U
     }
 }
 
+/**
+ * Containment surface shapes. They are live getters (not constants): they follow the containment shape
+ * style and corner size from Appearance, and recompose callers when those change.
+ */
 object PetalContainmentShapes {
-    val Hero = RoundedCornerShape(32.dp)
-    val HeroInner = RoundedCornerShape(24.dp)
-    val Pill = RoundedCornerShape(50)
-    val Badge = RoundedCornerShape(50)
+    val Hero: Shape get() = petalContainmentShape(32.dp)
+    val HeroInner: Shape get() = petalContainmentShape(24.dp)
+    val Pill: Shape
+        get() = com.petal.browser.ui.theme.layout.PetalLayoutState.settings.containmentShapeType.pillShape()
+    val Badge: Shape get() = Pill
 }
 
 @Composable

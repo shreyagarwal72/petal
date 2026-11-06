@@ -31,6 +31,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Air
 import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.Gesture
@@ -98,6 +100,8 @@ import com.petal.browser.ui.icons.imagetoolbox.Timelapse
 import com.petal.browser.ui.icons.imagetoolbox.ToggleOff
 import com.petal.browser.ui.icons.imagetoolbox.ToggleOn
 import com.petal.browser.ui.icons.imagetoolbox.Windows
+import com.petal.browser.ui.theme.layout.PetalBadgeShape
+import com.petal.browser.ui.theme.layout.PetalContainmentShapeChoice
 import com.petal.browser.ui.theme.layout.PetalFlingType
 import com.petal.browser.ui.theme.layout.PetalLayoutState
 import com.petal.browser.ui.theme.layout.PetalShapeType
@@ -227,6 +231,66 @@ fun PetalLayoutSettingsSection(
         )
     }
 
+    // ── Containment shapes ── containment's own shape style, corner size and icon container shape.
+    val totalContainment = 4
+    fun cpos(i: Int) = petalGroupPositionFor(i, totalContainment)
+
+    PetalSettingsSection(
+        title = "Containment Shapes",
+        icon = Icons.Rounded.Category,
+        cardId = "appearance_containment_shapes",
+        targetHighlightId = targetHighlightItemId,
+        modifier = modifier
+    ) {
+        Text(
+            text = "Shape of Petal's cards, rows, chips and icon containers. Follows Shapes Type unless you pick your own.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 6.dp)
+        )
+
+        PetalGroupRow(
+            icon = ImageToolboxIcons.Rounded.RoundedCorner,
+            title = "Containment Shape",
+            subtitle = if (settings.containmentShape == PetalContainmentShapeChoice.FOLLOW_APP)
+                "Following Shapes Type · ${settings.shapeType.title}" else settings.containmentShape.title,
+            position = cpos(0),
+            iconContainer = MaterialTheme.colorScheme.primaryContainer,
+            iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+            trailing = { EditGlyph() },
+            onClick = { sheet = SHEET_CONTAIN_SHAPE }
+        )
+        PetalSettingsToggleRow(
+            title = "Own Corner Size",
+            subtitle = if (settings.containmentOwnCorners) "Containment uses its own corner size" else "Containment follows Corners Size",
+            icon = ImageToolboxIcons.Rounded.Percent,
+            checked = settings.containmentOwnCorners,
+            position = cpos(1),
+            onCheckedChange = { v -> PetalLayoutState.update(context) { it.copy(containmentOwnCorners = v) } }
+        )
+        EnhancedSliderItem(
+            value = settings.containmentCornersSize,
+            title = "Containment Corners",
+            icon = ImageToolboxIcons.Rounded.RoundedCorner,
+            valueText = String.format(Locale.US, "%.2f", settings.containmentCornersSize),
+            defaultValue = 1f,
+            valueRange = 0f..2f,
+            position = cpos(2),
+            enabled = settings.containmentOwnCorners,
+            onValueChange = { v -> PetalLayoutState.update(context) { it.copy(containmentCornersSize = v) } }
+        )
+        PetalGroupRow(
+            icon = Icons.Rounded.Category,
+            title = "Icon Container Shape",
+            subtitle = settings.badgeShape.title,
+            position = cpos(3),
+            iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
+            iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+            trailing = { EditGlyph() },
+            onClick = { sheet = SHEET_BADGE_SHAPE }
+        )
+    }
+
     // ── Pickers ── selection applies immediately; the sheet stays open to compare styles.
 
     if (sheet == SHEET_SWITCH) {
@@ -316,6 +380,78 @@ fun PetalLayoutSettingsSection(
         }
     }
 
+    if (sheet == SHEET_CONTAIN_SHAPE) {
+        ChoiceSheet(
+            title = "Containment Shape",
+            headerIcon = ImageToolboxIcons.Rounded.RoundedCorner,
+            items = PetalContainmentShapeChoice.entries,
+            selected = settings.containmentShape,
+            banner = null,
+            onSelect = { t -> PetalLayoutState.update(context) { it.copy(containmentShape = t) } },
+            onDismiss = { sheet = null }
+        ) { item, selected, position, onClick ->
+            val previewType = item.type ?: settings.shapeType
+            ChoiceCard(
+                selected = selected,
+                title = item.title,
+                subtitle = item.subtitle,
+                icon = ImageToolboxIcons.Rounded.RoundedCorner,
+                position = position,
+                onClick = onClick,
+                trailingPreview = {
+                    Box(
+                        Modifier
+                            .size(44.dp)
+                            .clip(previewType.cornerShape(16.dp, multiplier = PetalLayoutState.containmentCorners.coerceAtLeast(0.4f)))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+                            )
+                    )
+                }
+            )
+        }
+    }
+
+    if (sheet == SHEET_BADGE_SHAPE) {
+        ChoiceSheet(
+            title = "Icon Container Shape",
+            headerIcon = Icons.Rounded.Category,
+            items = PetalBadgeShape.entries,
+            selected = settings.badgeShape,
+            banner = "Mixed gives each icon its own Material 3 Expressive shape, like the Expressive Keyboard. Pick one shape to use it everywhere.",
+            onSelect = { t -> PetalLayoutState.update(context) { it.copy(badgeShape = t) } },
+            onDismiss = { sheet = null }
+        ) { item, selected, position, onClick ->
+            ChoiceCard(
+                selected = selected,
+                title = item.title,
+                subtitle = item.subtitle,
+                icon = Icons.Rounded.Category,
+                position = position,
+                onClick = onClick,
+                trailingPreview = {
+                    Box(
+                        Modifier
+                            .size(44.dp)
+                            .clip(item.shape(settings.containmentShapeType, PetalLayoutState.containmentCorners))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Rounded.Star, null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            )
+        }
+    }
+
     if (sheet == SHEET_FLING) {
         ChoiceSheet(
             title = "Fling Type",
@@ -343,6 +479,8 @@ private const val SHEET_SWITCH = "switch"
 private const val SHEET_SLIDER = "slider"
 private const val SHEET_SHAPE = "shape"
 private const val SHEET_FLING = "fling"
+private const val SHEET_CONTAIN_SHAPE = "containment_shape"
+private const val SHEET_BADGE_SHAPE = "badge_shape"
 
 // ── Icons (ImageToolbox) ─────────────────────────────────────────────────────────────────────
 
