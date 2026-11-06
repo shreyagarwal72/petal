@@ -1622,7 +1622,7 @@ class PetalTabViewController private constructor(
      * and go with the Activity, tabs are removed only when the user closes them).
      */
     @MainThread
-    fun release() {
+    override fun release() {
         stopThumbnails()
         active = false
         val gs = getGeckoSession()

@@ -57,12 +57,15 @@ android {
     sourceSets {
         github {
             java.srcDirs += ['src/ads/java']
+            kotlin.srcDirs += ['src/ads/java']
         }
         play {
             java.srcDirs += ['src/ads/java']
+            kotlin.srcDirs += ['src/ads/java']
         }
         fdroid {
             java.srcDirs += ['src/noAds/java']
+            kotlin.srcDirs += ['src/noAds/java']
         }
     }
 
