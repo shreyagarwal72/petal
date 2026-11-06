@@ -319,8 +319,9 @@ private fun LockScreenContent(
     canBiometric: Boolean,
     accentColor: Color
 ) {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val pulseScale by infiniteTransition.animateFloat(
+    val rawPulseScale by infiniteTransition.animateFloat(
         initialValue = 0.98f,
         targetValue = 1.04f,
         animationSpec = infiniteRepeatable(
@@ -329,6 +330,7 @@ private fun LockScreenContent(
         ),
         label = "pulseScale"
     )
+    val pulseScale = if (animActive) rawPulseScale else 1f
 
     Column(
         modifier = Modifier

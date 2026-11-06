@@ -125,10 +125,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
 
-            // Official Android Native Crash Support
-            // Enables Google Play Console / Android Vitals to symbolicate native crash stack traces (DWARF + symbol tables)
+            // Native Crash Support
+            // 'SYMBOL_TABLE' generates symbol tables rapidly without massive DWARF dumps.
+            // Full DWARF extraction ('FULL') is only needed if explicitly requested via -PFULL_NDK_SYMBOLS=true.
             ndk {
-                debugSymbolLevel 'FULL'
+                debugSymbolLevel(project.findProperty('FULL_NDK_SYMBOLS') == 'true' ? 'FULL' : 'SYMBOL_TABLE')
             }
         }
         debug {

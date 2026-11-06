@@ -39,9 +39,10 @@ fun LinearRipplingWavyProgressIndicator(
     secondaryColor: Color = MaterialTheme.colorScheme.tertiary,
     trackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
 ) {
+    val animActive = rememberAnimationActive()
     val infiniteTransition = rememberInfiniteTransition(label = "ripplingWaveTransition")
 
-    val phase by infiniteTransition.animateFloat(
+    val rawPhase by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 2f * Math.PI.toFloat(),
         animationSpec = infiniteRepeatable(
@@ -51,7 +52,7 @@ fun LinearRipplingWavyProgressIndicator(
         label = "phaseAnimation",
     )
 
-    val shimmerShift by infiniteTransition.animateFloat(
+    val rawShimmerShift by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -60,6 +61,8 @@ fun LinearRipplingWavyProgressIndicator(
         ),
         label = "shimmerAnimation",
     )
+    val phase = if (animActive) rawPhase else 0f
+    val shimmerShift = if (animActive) rawShimmerShift else 0f
 
     Box(
         modifier = modifier

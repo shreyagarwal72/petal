@@ -317,13 +317,15 @@ private fun Modifier.labGlass(
 /** Colour that moves, with fine lines that make bending obvious. This is the backdrop source. */
 @Composable
 private fun LabScene(modifier: Modifier) {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val transition = rememberInfiniteTransition(label = "glassLab")
-    val phase by transition.animateFloat(
+    val rawPhase by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(16000, easing = LinearEasing), RepeatMode.Restart),
         label = "labPhase"
     )
+    val phase = if (animActive) rawPhase else 0.5f
     val blobs = remember {
         listOf(Color(0xFFFF7A59), Color(0xFF35D0BA), Color(0xFFFFD166), Color(0xFF6C8CFF))
     }

@@ -372,8 +372,9 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             Spacer(Modifier.height(18.dp))
 
             // Expressive header: slowly turning scalloped badge behind a steady shield icon.
+            val animActive = rememberAnimationActive()
             val spin = androidx.compose.animation.core.rememberInfiniteTransition(label = "perm_sheet_spin")
-            val angle by spin.animateFloat(
+            val rawAngle by spin.animateFloat(
                 initialValue = 0f,
                 targetValue = 360f,
                 animationSpec = androidx.compose.animation.core.infiniteRepeatable(
@@ -382,6 +383,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                 ),
                 label = "perm_sheet_angle"
             )
+            val angle = if (animActive) rawAngle else 0f
             Box(modifier = Modifier.size(84.dp), contentAlignment = Alignment.Center) {
                 Box(
                     modifier = Modifier

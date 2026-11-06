@@ -70,8 +70,9 @@ fun PetalDeveloperHeroSection(
     var isOtherAppsExpanded by remember { mutableStateOf(false) }
 
     // 360° Infinite Cookie Rotation animation
+    val animActive = rememberAnimationActive()
     val infiniteTransition = rememberInfiniteTransition(label = "avatar_cookie_rotation")
-    val rotationDegrees by infiniteTransition.animateFloat(
+    val rawRotationDegrees by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
@@ -80,6 +81,7 @@ fun PetalDeveloperHeroSection(
         ),
         label = "cookie_rotation"
     )
+    val rotationDegrees = if (animActive) rawRotationDegrees else 0f
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val heroShape = RoundedCornerShape(32.dp)

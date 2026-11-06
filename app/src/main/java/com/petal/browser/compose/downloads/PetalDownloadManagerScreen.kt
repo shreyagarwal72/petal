@@ -1699,7 +1699,7 @@ private fun deleteMultipleFiles(context: Context, items: List<DownloadItem>) {
     if (items.isEmpty()) return
     try {
         PetalFetchDownloadBridge.deleteDownloads(context, items)
-        com.petal.browser.view.PetalToast.show(context, "Deleted ${items.size} items")
+        com.petal.browser.view.PetalToast.show(context, context.getString(R.string.ui_downloads_deleted_multiple, items.size))
     } catch (e: Exception) {
         e.printStackTrace()
     }

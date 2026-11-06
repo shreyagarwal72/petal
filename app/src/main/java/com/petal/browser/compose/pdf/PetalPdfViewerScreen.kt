@@ -870,7 +870,7 @@ private fun PetalPdfViewerScreenImpl(
                                 verticalArrangement = Arrangement.spacedBy(if (isCropMarginsEnabled) 4.dp else 14.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                items(pageCount) { pageIndex ->
+                                items(count = pageCount, key = { it }) { pageIndex ->
                                     val pageAnno = annotationsMap.getOrPut(pageIndex) { PageAnnotations() }
                                     PdfPageView(
                                         renderer = pdfRenderer,
@@ -2635,7 +2635,7 @@ private fun PdfThumbnailSheet(
                     .fillMaxWidth()
                     .heightIn(max = 380.dp)
             ) {
-                items(pageCount) { index ->
+                items(count = pageCount, key = { it }) { index ->
                     PdfThumbnailItem(
                         renderer = renderer,
                         pageIndex = index,

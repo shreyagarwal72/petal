@@ -91,8 +91,9 @@ fun PetalIncognitoHomeScreen(
 
     PetalIncognitoTheme(useAmoled = isAmoled) {
         CompositionLocalProvider(LocalPetalGlassWallpaper provides glassWallpaper) {
+            val animActive = com.petal.browser.ui.components.rememberAnimationActive()
             val infiniteTransition = rememberInfiniteTransition(label = "FirefoxMaskPulse")
-            val avatarScale by infiniteTransition.animateFloat(
+            val rawAvatarScale by infiniteTransition.animateFloat(
                 initialValue = 0.985f,
                 targetValue = 1.018f,
                 animationSpec = infiniteRepeatable(
@@ -101,6 +102,7 @@ fun PetalIncognitoHomeScreen(
                 ),
                 label = "avatarScale"
             )
+            val avatarScale = if (animActive) rawAvatarScale else 1f
             val cookieShape = remember { PetalMaterialShapes.Cookie12Sided.toShape() }
 
             Box(

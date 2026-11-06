@@ -32,10 +32,11 @@ import com.petal.browser.ui.theme.toShape
 fun PetalExpressiveHeroArt(
     modifier: Modifier = Modifier
 ) {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val infiniteTransition = rememberInfiniteTransition(label = "heroArtAnimation")
 
     // Subtle gentle breathing / floating animations
-    val mainPulse by infiniteTransition.animateFloat(
+    val rawMainPulse by infiniteTransition.animateFloat(
         initialValue = 0.98f,
         targetValue = 1.03f,
         animationSpec = infiniteRepeatable(
@@ -45,7 +46,7 @@ fun PetalExpressiveHeroArt(
         label = "mainPulse"
     )
 
-    val satelliteFloatY by infiniteTransition.animateFloat(
+    val rawSatelliteFloatY by infiniteTransition.animateFloat(
         initialValue = -4f,
         targetValue = 4f,
         animationSpec = infiniteRepeatable(
@@ -55,7 +56,7 @@ fun PetalExpressiveHeroArt(
         label = "satelliteFloatY"
     )
 
-    val diamondRotate by infiniteTransition.animateFloat(
+    val rawDiamondRotate by infiniteTransition.animateFloat(
         initialValue = 42f,
         targetValue = 48f,
         animationSpec = infiniteRepeatable(
@@ -64,6 +65,9 @@ fun PetalExpressiveHeroArt(
         ),
         label = "diamondRotate"
     )
+    val mainPulse = if (animActive) rawMainPulse else 1f
+    val satelliteFloatY = if (animActive) rawSatelliteFloatY else 0f
+    val diamondRotate = if (animActive) rawDiamondRotate else 45f
 
     val mainShape = PetalMaterialShapes.Cookie12Sided.toShape()
     val squareShape = PetalMaterialShapes.RoundedSquare.toShape()

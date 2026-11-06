@@ -691,7 +691,7 @@ private fun HelloStage(
                             .heightIn(max = 420.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(filteredLanguages.size) { idx ->
+                        items(count = filteredLanguages.size, key = { filteredLanguages[it].tag }) { idx ->
                             val lang = filteredLanguages[idx]
                             val isSelected = language == lang.tag
                             PetalSelectableOptionCard(

@@ -461,15 +461,18 @@ fun FirefoxAccountSyncScreen(
                                         }
 
                                         val isSyncing = syncState is MozSyncState.Syncing
-                                        val infiniteTransition = rememberInfiniteTransition()
-                                        val rotation by infiniteTransition.animateFloat(
+                                        val animActive = com.petal.browser.ui.components.rememberAnimationActive()
+                                        val infiniteTransition = rememberInfiniteTransition(label = "mozSyncSpin")
+                                        val rawRotation by infiniteTransition.animateFloat(
                                             initialValue = 0f,
                                             targetValue = 360f,
                                             animationSpec = infiniteRepeatable(
                                                 animation = tween(1000, easing = LinearEasing),
                                                 repeatMode = RepeatMode.Restart
-                                            )
+                                            ),
+                                            label = "mozSyncAngle"
                                         )
+                                        val rotation = if (isSyncing && animActive) rawRotation else 0f
 
                                         Column(
                                             modifier = Modifier.fillMaxWidth()

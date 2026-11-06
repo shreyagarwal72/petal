@@ -83,8 +83,9 @@ fun PetalBiometricExpressiveSheet(
     var isSuccess by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val infiniteTransition = rememberInfiniteTransition(label = "pulseTransition")
-    val pulseScale by infiniteTransition.animateFloat(
+    val rawPulseScale by infiniteTransition.animateFloat(
         initialValue = 0.96f,
         targetValue = 1.05f,
         animationSpec = infiniteRepeatable(
@@ -93,6 +94,7 @@ fun PetalBiometricExpressiveSheet(
         ),
         label = "pulseScale"
     )
+    val pulseScale = if (animActive) rawPulseScale else 1f
 
     fun authenticate() {
         val appCompatActivity = context as? AppCompatActivity

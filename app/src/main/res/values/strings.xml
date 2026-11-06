@@ -1795,5 +1795,21 @@
     <string name="dialog_quit_message">Are you sure you want to exit Petal Browser and close your active session?</string>
     <string name="dialog_quit_confirm">Quit</string>
     <string name="dialog_quit_cancel">Stay</string>
+    <string name="toast_caret_on">Caret browsing ON (F7)</string>
+    <string name="toast_caret_off">Caret browsing OFF (F7)</string>
+    <string name="toast_copied_to_clipboard">%1$s copied to clipboard</string>
+    <string name="toast_cannot_save_internal_page">Cannot save internal page offline</string>
+    <string name="toast_saved_offline_success">Saved website to view offline!</string>
+    <string name="toast_saved_offline_failure">Failed to save page offline</string>
+    <string name="toast_reader_mode_unavailable">Reader mode is not available for internal pages</string>
+    <string name="toast_homepage_cannot_bookmark">Home page cannot be bookmarked</string>
+    <string name="toast_bookmark_updated">Bookmark updated</string>
+    <string name="toast_closed_all_incognito">Closed all Incognito tabs</string>
+    <string name="toast_extension_installed">Extension installed</string>
+    <string name="toast_extension_install_failed">Extension installation failed</string>
+    <string name="toast_no_active_page_install">No active web page to install</string>
+    <string name="toast_install_app_failed">Failed to install app</string>
+    <string name="toast_no_pdf_viewer">No PDF viewer found</string>
+    <string name="ui_downloads_deleted_multiple">Deleted %d items</string>
 </resources>
 

@@ -262,13 +262,15 @@ fun PetalPermissionDialog(
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     // Expressive badge: a slowly turning scalloped shape behind a steady icon.
+                    val animActive = rememberAnimationActive()
                     val spin = rememberInfiniteTransition(label = "perm_badge_spin")
-                    val angle by spin.animateFloat(
+                    val rawAngle by spin.animateFloat(
                         initialValue = 0f,
                         targetValue = 360f,
                         animationSpec = infiniteRepeatable(tween(28000, easing = LinearEasing), RepeatMode.Restart),
                         label = "perm_badge_angle"
                     )
+                    val angle = if (animActive) rawAngle else 0f
                     Box(modifier = Modifier.size(88.dp), contentAlignment = Alignment.Center) {
                         Box(
                             modifier = Modifier

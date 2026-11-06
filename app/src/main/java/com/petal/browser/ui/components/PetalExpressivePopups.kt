@@ -378,7 +378,7 @@ fun PetalExpressiveChoiceDialog(
                     .padding(horizontal = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                items(options.size) { index ->
+                items(count = options.size, key = { options[it].id.ifEmpty { "${options[it].label}_$it" } }) { index ->
                     val opt = options[index]
                     when {
                         opt.isSeparator -> HorizontalDivider(
@@ -579,7 +579,7 @@ fun PetalExpressiveColorDialog(
                 .background(Color(current))
         )
         androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(PetalColorPresets.size) { i ->
+            items(count = PetalColorPresets.size, key = { PetalColorPresets[it] }) { i ->
                 val c = PetalColorPresets[i]
                 val isSelected = c == current
                 Box(

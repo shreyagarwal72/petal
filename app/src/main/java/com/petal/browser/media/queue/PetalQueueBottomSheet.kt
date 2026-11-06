@@ -332,25 +332,29 @@ fun PlayingEqualizerBars(
     tint: Color,
     modifier: Modifier = Modifier
 ) {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val transition = rememberInfiniteTransition(label = "eqAnim")
-    val bar1 by transition.animateFloat(
+    val rawBar1 by transition.animateFloat(
         initialValue = 0.25f,
         targetValue = 1.0f,
         animationSpec = infiniteRepeatable(tween(420, easing = LinearEasing), RepeatMode.Reverse),
         label = "b1"
     )
-    val bar2 by transition.animateFloat(
+    val rawBar2 by transition.animateFloat(
         initialValue = 0.85f,
         targetValue = 0.2f,
         animationSpec = infiniteRepeatable(tween(560, easing = LinearEasing), RepeatMode.Reverse),
         label = "b2"
     )
-    val bar3 by transition.animateFloat(
+    val rawBar3 by transition.animateFloat(
         initialValue = 0.4f,
         targetValue = 0.95f,
         animationSpec = infiniteRepeatable(tween(380, easing = LinearEasing), RepeatMode.Reverse),
         label = "b3"
     )
+    val bar1 = if (animActive) rawBar1 else 0.6f
+    val bar2 = if (animActive) rawBar2 else 0.4f
+    val bar3 = if (animActive) rawBar3 else 0.8f
 
     Row(
         modifier = modifier.size(18.dp),

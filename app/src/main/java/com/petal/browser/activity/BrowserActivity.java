@@ -1933,7 +1933,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 return true;
             case KeyEvent.KEYCODE_F7:
                 boolean caretState = com.petal.browser.accessibility.PetalAccessibilityEngine.toggleCaretBrowsing(this, currentAlbumController != null ? currentAlbumController : activeGeckoView);
-                com.petal.browser.view.PetalToast.show(this, caretState ? "Caret browsing ON (F7)" : "Caret browsing OFF (F7)");
+                com.petal.browser.view.PetalToast.show(this, caretState ? R.string.toast_caret_on : R.string.toast_caret_off);
                 return true;
             case KeyEvent.KEYCODE_BACK:
                 performBackNavigation();
@@ -5331,7 +5331,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(android.content.Context.CLIPBOARD_SERVICE);
                                 if (cm != null) {
                                     cm.setPrimaryClip(android.content.ClipData.newPlainText(label, text));
-                                    com.petal.browser.view.PetalToast.show(BrowserActivity.this, label + " copied to clipboard");
+                                    com.petal.browser.view.PetalToast.show(BrowserActivity.this, getString(R.string.toast_copied_to_clipboard, label));
                                 }
                             } catch (Throwable t) {
                                 android.util.Log.w("BrowserActivity", "Failed to copy text", t);
@@ -6119,7 +6119,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (currentAlbumController == null || currentAlbumController.getUrl() == null) return;
         String url = currentAlbumController.getUrl();
         if (url.startsWith("about:") || url.startsWith("petal://") || url.startsWith("file://")) {
-            PetalToast.show(this, "Cannot save internal page offline");
+            PetalToast.show(this, R.string.toast_cannot_save_internal_page);
             return;
         }
 
@@ -6155,7 +6155,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     conn.disconnect();
 
                     runOnUiThread(() -> {
-                        PetalToast.show(BrowserActivity.this, "Saved website to view offline!");
+                        PetalToast.show(BrowserActivity.this, R.string.toast_saved_offline_success);
                         com.petal.browser.engine.gecko.PetalEngineStore.addOfflineArchive(
                                 BrowserActivity.this, url, archiveFile.getAbsolutePath(), rawTitle);
                         com.petal.browser.compose.downloads.PetalLiveAlertManager.trackOfflinePage(
@@ -6163,12 +6163,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     });
                 } catch (Exception e) {
                     Log.e(TAG, "Error saving offline page", e);
-                    runOnUiThread(() -> PetalToast.show(BrowserActivity.this, "Failed to save page offline"));
+                    runOnUiThread(() -> PetalToast.show(BrowserActivity.this, R.string.toast_saved_offline_failure));
                 }
             }).start();
         } catch (Exception e) {
             Log.e(TAG, "Error saving web archive offline", e);
-            PetalToast.show(BrowserActivity.this, "Failed to save page offline");
+            PetalToast.show(BrowserActivity.this, R.string.toast_saved_offline_failure);
         }
     }
 
@@ -6176,7 +6176,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (currentAlbumController == null || currentAlbumController.getUrl() == null) return;
         String url = currentAlbumController.getUrl();
         if (url.startsWith("about:") || url.startsWith("petal://") || url.startsWith("file://")) {
-            PetalToast.show(this, "Reader mode is not available for internal pages");
+            PetalToast.show(this, R.string.toast_reader_mode_unavailable);
             return;
         }
 
@@ -7088,14 +7088,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
     public void saveBookmark(String title, String url) {
         if (url == null || url.trim().isEmpty() || isHomePage(url)) {
-            PetalToast.show(this, "Home page cannot be bookmarked");
+            PetalToast.show(this, R.string.toast_homepage_cannot_bookmark);
             return;
         }
         HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
         action.open(true);
         if (action.checkBookmark(url)) {
             action.updateBookmark(url, title != null && !title.isEmpty() ? title : url, url);
-            PetalToast.show(this, "Bookmark updated");
+            PetalToast.show(this, R.string.toast_bookmark_updated);
         } else {
             action.addBookmark(new Record(title != null && !title.isEmpty() ? title : url, url, 0, 0));
             PetalToast.show(this, R.string.app_done);
@@ -7105,7 +7105,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public boolean toggleBookmark(String title, String url) {
         if (url == null || url.trim().isEmpty() || isHomePage(url)) {
-            PetalToast.show(this, "Home page cannot be bookmarked");
+            PetalToast.show(this, R.string.toast_homepage_cannot_bookmark);
             return false;
         }
         HistoryBookmarkRepository action = new HistoryBookmarkRepository(context);
@@ -7156,7 +7156,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             updatePersistentBottomNav();
             saveOpenedTabs();
             com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(this);
-            PetalToast.show(this, "Closed all Incognito tabs");
+            PetalToast.show(this, R.string.toast_closed_all_incognito);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -7304,7 +7304,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 getIntent().setAction("");
                 com.petal.browser.extensions.PetalExtensionManager.installFromContentUri(this, dataUri, (success, message) -> {
                     runOnUiThread(() -> {
-                        PetalToast.show(this, message != null ? message : (success ? "Extension installed" : "Extension installation failed"));
+                        PetalToast.show(this, message != null ? message : getString(success ? R.string.toast_extension_installed : R.string.toast_extension_install_failed));
                         if (success) {
                             showExtensionsScreen();
                         }
@@ -8105,7 +8105,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             String activeUrl = resolveCurrentTabUrl();
             if (activeUrl == null || activeUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(activeUrl) || activeUrl.startsWith("petal://")) {
-                PetalToast.show(this, "No active web page to install");
+                PetalToast.show(this, R.string.toast_no_active_page_install);
                 return;
             }
             com.petal.browser.pwa.PetalPwaManager manager = null;
@@ -8122,10 +8122,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             
             if (manager != null) manager.installCurrentPwa(this);
-            else PetalToast.show(this, "No active web page to install");
+            else PetalToast.show(this, R.string.toast_no_active_page_install);
         } catch (Exception e) {
             e.printStackTrace();
-            PetalToast.show(this, "Failed to install app");
+            PetalToast.show(this, R.string.toast_install_app_failed);
         }
     }
 
@@ -8259,7 +8259,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             try {
                                 startActivity(Intent.createChooser(intent, getString(R.string.app_name) + " Document"));
                             } catch (Exception e) {
-                                PetalToast.show(BrowserActivity.this, "No PDF viewer found");
+                                PetalToast.show(BrowserActivity.this, R.string.toast_no_pdf_viewer);
                             }
                         });
                     }

@@ -1061,7 +1061,7 @@ fun PetalChangelogHistorySheetContent(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(bottom = 20.dp)
                 ) {
-                    items(releases.size) { index ->
+                    items(count = releases.size, key = { releases[it].versionName.ifEmpty { "$it" } }) { index ->
                         val rel = releases[index]
                         val position = petalGroupPositionFor(index, releases.size)
                         val interactionSource = remember { MutableInteractionSource() }

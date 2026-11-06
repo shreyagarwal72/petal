@@ -8,6 +8,12 @@ on:
   pull_request:
     branches: [ "master", "main" ]
   workflow_dispatch:
+    inputs:
+      build_play_bundle:
+        description: 'Build Google Play AAB bundle'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
@@ -16,7 +22,7 @@ jobs:
     permissions:
       contents: write
     env:
-      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=1536m -XX:+UseG1GC -XX:+ParallelRefProcEnabled -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=4"
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC -XX:+ParallelRefProcEnabled -Dorg.gradle.workers.max=2"
 
     steps:
       - name: Checkout repository
@@ -107,18 +113,25 @@ jobs:
             -storepass "$KEYSTORE_STORE_PASS" \
             -alias "$KEYSTORE_ALIAS" >/dev/null
 
-          ./gradlew :app:assembleGithubRelease :app:bundlePlayRelease \
+          BUILD_TASKS=":app:assembleGithubRelease"
+          if [[ "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" || "${{ github.event.inputs.build_play_bundle }}" == "true" ]]; then
+            echo "📦 Official release tag or Play bundle requested: building Play Store AAB bundle as well..."
+            BUILD_TASKS="$BUILD_TASKS :app:bundlePlayRelease"
+          fi
+
+          ./gradlew $BUILD_TASKS \
             -PRELEASE_STORE_FILE="$KEYSTORE_PATH" \
             -PRELEASE_STORE_PASSWORD="$KEYSTORE_STORE_PASS" \
             -PRELEASE_KEY_ALIAS="$KEYSTORE_ALIAS" \
             -PRELEASE_KEY_PASSWORD="$KEYSTORE_KEY_PASS" \
-            --build-cache --parallel --no-daemon \
-            -Dkotlin.compiler.execution.strategy=in-process \
+            --build-cache --parallel \
             -Dorg.gradle.parallel=true \
             -Dorg.gradle.caching=true \
             --stacktrace
           find app/build/outputs/apk/ -name "*.apk" -exec cp {} raw_apks/ \;
-          find app/build/outputs/bundle/ -name "*.aab" -exec cp {} raw_aabs/ \;
+          if [ -d app/build/outputs/bundle ]; then
+            find app/build/outputs/bundle/ -name "*.aab" -exec cp {} raw_aabs/ \;
+          fi
 
       - name: Sign & ZipAlign Release APKs & AAB
         run: |
@@ -186,6 +199,7 @@ jobs:
           retention-days: 1
 
       - name: Upload Release AAB Bundle Artifact (Play Store)
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_play_bundle == 'true'
         uses: actions/upload-artifact@v4
         continue-on-error: true
         with:

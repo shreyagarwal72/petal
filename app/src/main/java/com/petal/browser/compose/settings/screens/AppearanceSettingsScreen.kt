@@ -2154,7 +2154,7 @@ fun AppearanceSettingsScreenContent(
                             .heightIn(max = 440.dp),
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        items(filteredLanguages.size) { idx ->
+                        items(count = filteredLanguages.size, key = { filteredLanguages[it].tag }) { idx ->
                             val lang = filteredLanguages[idx]
                             val isSelected = appLanguage == lang.tag
                             val position = com.petal.browser.ui.containment.petalGroupPositionFor(idx, filteredLanguages.size)
