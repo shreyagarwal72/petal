@@ -266,7 +266,8 @@ fun PetalTabGridSwitcher(
     // ── Long scroll up / pull-down reveal for Closed Tabs Vault ──
     var pullToRevealLockOffset by remember { mutableFloatStateOf(0f) }
     var isVaultVisible by remember { mutableStateOf(false) }
-    val maxRevealThreshold = 300f // Higher intentional threshold to prevent accidental scroll
+    val maxRevealThreshold = 225f // Reveal point on the damped pull axis
+    val maxPullCap = 300f // Hard cap: the pull can never stretch past this, so it feels like a wall
 
     val vaultNestedScrollConnection = remember {
         object : NestedScrollConnection {
@@ -292,9 +293,14 @@ fun PetalTabGridSwitcher(
                     listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
                 }
 
-                if (isAtTop && available.y > 0) {
-                    // Firm pull resistance with 0.30f dampening factor so normal flick scrolling doesn't trigger it
-                    val newOffset = (pullToRevealLockOffset + available.y * 0.30f).coerceAtMost(360f)
+                // Only a deliberate finger drag counts. Flings / momentum that run into the top
+                // edge used to fill the pull, which made the vault open from a simple fast scroll.
+                if (isAtTop && available.y > 0 && source == NestedScrollSource.UserInput) {
+                    // Rubber-band resistance: starts firm and gets heavier as the pull grows,
+                    // so reaching the threshold needs a long, intentional drag (~1000px).
+                    val progress = (pullToRevealLockOffset / maxPullCap).coerceIn(0f, 1f)
+                    val resistance = 0.6f * Math.pow((1f - progress).toDouble(), 1.5).toFloat()
+                    val newOffset = (pullToRevealLockOffset + available.y * resistance).coerceAtMost(maxPullCap)
                     if (newOffset >= maxRevealThreshold && pullToRevealLockOffset < maxRevealThreshold) {
                         com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
                     }
