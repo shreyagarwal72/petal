@@ -72,6 +72,12 @@ class PrivacySettingsViewModel @Inject constructor(
     val customDohUrl: StateFlow<String> = settingsRepository.customDohUrl
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
+    val privacyProfile: StateFlow<String> = settingsRepository.privacyProfile
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "HARDENED")
+
+    val webglEnabled: StateFlow<Boolean> = settingsRepository.webglEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     fun setAdBlockEnabled(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setAdBlockEnabled(enabled)
     }
@@ -146,5 +152,13 @@ class PrivacySettingsViewModel @Inject constructor(
 
     fun setCustomDohUrl(url: String) = viewModelScope.launch {
         settingsRepository.setCustomDohUrl(url)
+    }
+
+    fun setPrivacyProfile(profile: String) = viewModelScope.launch {
+        settingsRepository.setPrivacyProfile(profile)
+    }
+
+    fun setWebglEnabled(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setWebglEnabled(enabled)
     }
 }

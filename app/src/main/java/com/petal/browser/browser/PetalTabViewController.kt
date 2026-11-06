@@ -2138,22 +2138,7 @@ private class ExternalSchemeNavigationDelegate(
 
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
 
-        // 1. HTTPS-Only Mode Upgrade
-        val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
-        val targetHost = try { android.net.Uri.parse(uri).host } catch (_: Throwable) { null }
-        val isHttpsBypassed = com.petal.browser.privacy.PetalHttpsOnlyWhitelist.isBypassed(context, targetHost)
-        if (httpsOnly && !isHttpsBypassed && uri.startsWith("http://", ignoreCase = true) &&
-            !uri.startsWith("http://localhost", ignoreCase = true) &&
-            !uri.startsWith("http://127.0.0.1", ignoreCase = true) &&
-            !uri.startsWith("http://10.", ignoreCase = true) &&
-            !uri.startsWith("http://192.168.", ignoreCase = true)
-        ) {
-            val upgraded = "https://" + uri.substring(7)
-            session.loadUri(upgraded)
-            return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
-        }
-
-        // 2. Open Redirect Links in Background
+        // Open Redirect Links in Background
         val openRedirectsInBackground = sp.getBoolean("sp_open_redirects_in_background", false)
         if (openRedirectsInBackground && request.target != org.mozilla.geckoview.GeckoSession.NavigationDelegate.TARGET_WINDOW_CURRENT) {
             val currentUrl = currentUrlSupplier()

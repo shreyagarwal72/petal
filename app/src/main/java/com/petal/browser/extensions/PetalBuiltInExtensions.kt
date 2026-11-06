@@ -26,7 +26,7 @@ object PetalBuiltInExtensions {
         isInstalled = true
         try {
             WebCompatFeature.install(engine)
-            Log.i(TAG, "WebCompatFeature.install(engine) completed successfully for ${WebCompatFeature.WEBCOMPAT_EXTENSION_ID}")
+            Log.i(TAG, "WebCompatFeature.install(engine) completed successfully for webcompat@mozilla.org")
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to invoke WebCompatFeature.install(engine): ${t.message}", t)
         }

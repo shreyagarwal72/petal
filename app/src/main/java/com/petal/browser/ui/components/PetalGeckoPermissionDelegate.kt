@@ -55,7 +55,44 @@ class PetalGeckoPermissionDelegate(
     private val activitySupplier: () -> Activity?
 ) : GeckoSession.PermissionDelegate {
 
+    companion object {
+        // In-memory session grants map: key is "$permTypeKey#$origin" -> "allow"
+        private val sessionGrants = ConcurrentHashMap<String, String>()
+
+        @JvmStatic
+        fun getSessionGrant(permTypeKey: String, origin: String): String? {
+            return sessionGrants["$permTypeKey#$origin"]
+        }
+
+        @JvmStatic
+        fun setSessionGrant(permTypeKey: String, origin: String, rule: String = "allow") {
+            sessionGrants["$permTypeKey#$origin"] = rule
+        }
+
+        @JvmStatic
+        fun clearSessionGrantsForOrigin(origin: String) {
+            sessionGrants.keys.filter { it.endsWith("#$origin") }.forEach { sessionGrants.remove(it) }
+        }
+
+        @JvmStatic
+        fun clearAllSessionGrants() {
+            sessionGrants.clear()
+        }
+    }
+
     private val sp by lazy { PreferenceManager.getDefaultSharedPreferences(context) }
+
+    init {
+        // Purge legacy persistent perm_session_* entries from SharedPreferences once
+        try {
+            val legacySessionKeys = sp.all.keys.filter { it.startsWith("perm_session_") }
+            if (legacySessionKeys.isNotEmpty()) {
+                val editor = sp.edit()
+                legacySessionKeys.forEach { editor.remove(it) }
+                editor.apply()
+            }
+        } catch (_: Throwable) {}
+    }
 
     override fun onAndroidPermissionsRequest(
         session: GeckoSession,
@@ -99,8 +136,8 @@ class PetalGeckoPermissionDelegate(
         } catch (_: Exception) { uri }
 
         if (hasVideo && hasAudio) {
-            val cameraRule = sp.getString("perm_camera_$origin", null)
-            val micRule = sp.getString("perm_microphone_$origin", null)
+            val cameraRule = sp.getString("perm_camera_$origin", null) ?: getSessionGrant("camera", origin)
+            val micRule = sp.getString("perm_microphone_$origin", null) ?: getSessionGrant("microphone", origin)
 
             if ("allow" == cameraRule && "allow" == micRule) {
                 PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.CAMERA, true)
@@ -125,6 +162,9 @@ class PetalGeckoPermissionDelegate(
                                 .putString("perm_camera_$origin", "allow")
                                 .putString("perm_microphone_$origin", "allow")
                                 .apply()
+                        } else {
+                            setSessionGrant("camera", origin, "allow")
+                            setSessionGrant("microphone", origin, "allow")
                         }
                         PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.CAMERA, true)
                         PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.MICROPHONE, true)
@@ -147,8 +187,9 @@ class PetalGeckoPermissionDelegate(
         }
 
         val permissionType = if (hasVideo) PetalPermissionType.CAMERA else PetalPermissionType.MICROPHONE
-        val prefKey = "perm_${permissionType.name.lowercase()}_$origin"
-        val savedRule = sp.getString(prefKey, null)
+        val permTypeKey = permissionType.name.lowercase()
+        val prefKey = "perm_${permTypeKey}_$origin"
+        val savedRule = sp.getString(prefKey, null) ?: getSessionGrant(permTypeKey, origin)
 
         if ("allow" == savedRule) {
             PetalActiveMediaSensors.setRecording(origin, permissionType, true)
@@ -166,7 +207,11 @@ class PetalGeckoPermissionDelegate(
                 permissionType,
                 uri,
                 onAllow = { remember ->
-                    if (remember) sp.edit().putString(prefKey, "allow").apply()
+                    if (remember) {
+                        sp.edit().putString(prefKey, "allow").apply()
+                    } else {
+                        setSessionGrant(permTypeKey, origin, "allow")
+                    }
                     PetalActiveMediaSensors.setRecording(origin, permissionType, true)
                     callback.grant(video?.firstOrNull(), audio?.firstOrNull())
                 },
@@ -242,9 +287,8 @@ class PetalGeckoPermissionDelegate(
         }
 
         val prefKey = "perm_${permTypeKey}_$origin"
-        val sessionKey = "perm_session_${permTypeKey}_$origin"
         val savedRule = sp.getString(prefKey, null)
-        val sessionRule = sp.getString(sessionKey, null)
+        val sessionRule = getSessionGrant(permTypeKey, origin)
 
         if ("allow" == sessionRule || "allow" == savedRule) {
             result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
@@ -263,7 +307,7 @@ class PetalGeckoPermissionDelegate(
                     if (remember) {
                         sp.edit().putString(prefKey, "allow").apply()
                     } else {
-                        sp.edit().putString(sessionKey, "allow").apply()
+                        setSessionGrant(permTypeKey, origin, "allow")
                     }
                     result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
                 },

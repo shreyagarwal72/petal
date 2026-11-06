@@ -24,6 +24,8 @@ object PetalPrivacyHardening {
     const val PREF_SECURITY_SLIDER = "sp_security_slider"
     const val PREF_WEBRTC_LEAK_PROTECT = "sp_webrtc_protection"
     const val PREF_CANVAS_LETTERBOXING = "sp_canvas_letterboxing"
+    const val PREF_WEBGL_ENABLED = "sp_webgl_enabled"
+    const val PREF_WEBGL_DISABLED = "sp_webgl_disabled"
 
     enum class PrivacyProfile {
         STANDARD,   // High compatibility + ETP Strict
@@ -96,11 +98,18 @@ object PetalPrivacyHardening {
             user_pref("privacy.partition.always_partition_third_party_non_cookie_storage", true);
             user_pref("privacy.query_stripping.enabled", true);
             user_pref("privacy.query_stripping.enabled.pbmode", true);
-            user_pref("privacy.fingerprintingProtection", true);
-            user_pref("privacy.fingerprintingProtection.pbmode", true);
         """.trimIndent())
 
-        // 2. WebRTC IP Leak Prevention (Mull / IronFox / DivestOS)
+        // 2. Anti-Fingerprinting Baseline (Hardened and Strict only)
+        if (profile != PrivacyProfile.STANDARD) {
+            sb.appendLine("""
+                // Fingerprinting protection enabled for Hardened/Strict profiles
+                user_pref("privacy.fingerprintingProtection", true);
+                user_pref("privacy.fingerprintingProtection.pbmode", true);
+            """.trimIndent())
+        }
+
+        // 3. WebRTC IP Leak Prevention (Mull / IronFox / DivestOS)
         if (profile != PrivacyProfile.STANDARD) {
             sb.appendLine("""
                 // WebRTC local and private interface address leak defuser
@@ -113,7 +122,7 @@ object PetalPrivacyHardening {
             }
         }
 
-        // 3. Hardware & Sensor API Fingerprinting Defuser (Mull / IronFox / LibreWolf)
+        // 4. Hardware & Sensor API Fingerprinting Defuser (Mull / IronFox / LibreWolf)
         if (profile != PrivacyProfile.STANDARD) {
             sb.appendLine("""
                 // Hardware enumeration defenses
@@ -129,37 +138,39 @@ object PetalPrivacyHardening {
             """.trimIndent())
         }
 
-        // 4. Resist Fingerprinting (RFP) & Canvas Defense (Tor / Mullvad)
+        // 5. Resist Fingerprinting (RFP) & Canvas Defense (Tor / Mullvad)
         if (profile == PrivacyProfile.STRICT) {
             sb.appendLine("""
-                // Strict hardware & API restrictions
+                // Strict hardware & API restrictions (beacon.enabled preserved to avoid breaking logins/analytics)
                 user_pref("device.sensors.enabled", false);
                 user_pref("dom.gamepad.enabled", false);
-                user_pref("beacon.enabled", false);
                 user_pref("dom.vibrator.enabled", false);
-                // Tor-grade Resist Fingerprinting (rounds time, spoofs navigator & metrics)
+                // Tor-grade Resist Fingerprinting (rounds time to 100ms, forces light theme, UTC timezone & reduced canvas)
                 user_pref("privacy.resistFingerprinting", true);
                 user_pref("privacy.resistFingerprinting.block_mozAddonManager", true);
                 user_pref("privacy.resistFingerprinting.letterboxing", true);
                 user_pref("privacy.trackingprotection.fingerprinting.enabled", true);
                 user_pref("privacy.trackingprotection.cryptomining.enabled", true);
-                user_pref("webgl.disabled", true);
             """.trimIndent())
         }
 
-        // 5. Security Slider dynamic constraints
+        // 6. WebGL 3D Graphics Toggle (separate setting; off only when disabled or SAFEST)
+        val webglEnabled = sp.getBoolean(PREF_WEBGL_ENABLED, !sp.getBoolean(PREF_WEBGL_DISABLED, false))
+        if (!webglEnabled || secLevel == SecurityLevel.SAFEST) {
+            sb.appendLine("""user_pref("webgl.disabled", true);""")
+        }
+
+        // 7. Security Slider dynamic constraints
         when (secLevel) {
             SecurityLevel.SAFER -> {
                 sb.appendLine("""
-                    // Security Level: SAFER
-                    user_pref("webgl.disabled", true);
+                    // Security Level: SAFER (WebGL allowed; autoplay blocked)
                     user_pref("media.autoplay.default", 5);
                 """.trimIndent())
             }
             SecurityLevel.SAFEST -> {
                 sb.appendLine("""
-                    // Security Level: SAFEST
-                    user_pref("webgl.disabled", true);
+                    // Security Level: SAFEST (JS globally blocked, WebGL disabled, fonts disabled)
                     user_pref("gfx.downloadable_fonts.enabled", false);
                     user_pref("mathml.disabled", true);
                     user_pref("media.autoplay.default", 5);

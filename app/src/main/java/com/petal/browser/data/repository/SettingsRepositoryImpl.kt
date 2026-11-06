@@ -325,6 +325,14 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_open_redirects_in_background", false)
     }
 
+    override val privacyProfile: Flow<String> = preferenceFlow("sp_privacy_profile") {
+        sp.getString("sp_privacy_profile", "HARDENED") ?: "HARDENED"
+    }
+
+    override val webglEnabled: Flow<Boolean> = preferenceFlow("sp_webgl_enabled") {
+        sp.getBoolean("sp_webgl_enabled", !sp.getBoolean("sp_webgl_disabled", false))
+    }
+
     override val privateDnsMode: Flow<String> = preferenceFlow("sp_private_dns_mode") {
         sp.getString("sp_private_dns_mode", "OFF") ?: "OFF"
     }
@@ -848,6 +856,17 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setCustomDohUrl(url: String) {
         sp.edit().putString("sp_custom_doh_url", url).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun setPrivacyProfile(profile: String) {
+        sp.edit().putString("sp_privacy_profile", profile).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun setWebglEnabled(enabled: Boolean) {
+        sp.edit().putBoolean("sp_webgl_enabled", enabled)
+            .putBoolean("sp_webgl_disabled", !enabled).apply()
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 

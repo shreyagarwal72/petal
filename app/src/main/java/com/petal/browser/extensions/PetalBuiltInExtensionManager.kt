@@ -396,13 +396,13 @@ object PetalBuiltInExtensionManager {
                             controller.disable(ext, WebExtensionController.EnableSource.USER)
                         action.accept(
                             { Log.i(TAG, "Mozilla WebCompat initial sync → ${if (enabled) "enabled" else "disabled"}") },
-                            { e -> Log.w(TAG, "Failed to sync Mozilla WebCompat state: ${e.message}") }
+                            { e -> Log.w(TAG, "Failed to sync Mozilla WebCompat state: ${e?.message}") }
                         )
                     } else {
                         Log.d(TAG, "Mozilla WebCompat not yet present in controller list during initial sync")
                     }
                 },
-                { e -> Log.w(TAG, "Could not list extensions to sync WebCompat: ${e.message}") }
+                { e -> Log.w(TAG, "Could not list extensions to sync WebCompat: ${e?.message}") }
             )
             return
         }

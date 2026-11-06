@@ -72,6 +72,8 @@ fun PrivacySettingsScreen(
     val openRedirectsInBackground by viewModel.openRedirectsInBackground.collectAsStateWithLifecycle()
     val privateDnsMode by viewModel.privateDnsMode.collectAsStateWithLifecycle()
     val customDohUrl by viewModel.customDohUrl.collectAsStateWithLifecycle()
+    val privacyProfile by viewModel.privacyProfile.collectAsStateWithLifecycle()
+    val webglEnabled by viewModel.webglEnabled.collectAsStateWithLifecycle()
 
     PrivacySettingsScreenContent(
         adBlockEnabled = adBlockEnabled,
@@ -93,6 +95,8 @@ fun PrivacySettingsScreen(
         openRedirectsInBackground = openRedirectsInBackground,
         privateDnsMode = privateDnsMode,
         customDohUrl = customDohUrl,
+        privacyProfile = privacyProfile,
+        webglEnabled = webglEnabled,
         onAdBlockEnabledChange = viewModel::setAdBlockEnabled,
         onBlockThirdPartyCookiesChange = viewModel::setBlockThirdPartyCookies,
         onTotalCookieProtectionChange = viewModel::setTotalCookieProtection,
@@ -112,6 +116,8 @@ fun PrivacySettingsScreen(
         onOpenRedirectsInBackgroundChange = viewModel::setOpenRedirectsInBackground,
         onPrivateDnsModeChange = viewModel::setPrivateDnsMode,
         onCustomDohUrlChange = viewModel::setCustomDohUrl,
+        onPrivacyProfileChange = viewModel::setPrivacyProfile,
+        onWebglEnabledChange = viewModel::setWebglEnabled,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -140,6 +146,8 @@ fun PrivacySettingsScreenContent(
     openRedirectsInBackground: Boolean,
     privateDnsMode: String,
     customDohUrl: String,
+    privacyProfile: String = "HARDENED",
+    webglEnabled: Boolean = true,
     onAdBlockEnabledChange: (Boolean) -> Unit,
     onBlockThirdPartyCookiesChange: (Boolean) -> Unit,
     onTotalCookieProtectionChange: (Boolean) -> Unit = {},
@@ -159,6 +167,8 @@ fun PrivacySettingsScreenContent(
     onOpenRedirectsInBackgroundChange: (Boolean) -> Unit,
     onPrivateDnsModeChange: (String) -> Unit,
     onCustomDohUrlChange: (String) -> Unit,
+    onPrivacyProfileChange: (String) -> Unit = {},
+    onWebglEnabledChange: (Boolean) -> Unit = {},
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
@@ -318,6 +328,67 @@ fun PrivacySettingsScreenContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // ── Section 0: Privacy Profile (Baseline Hardening) ──
+                PetalSettingsSection(
+                    title = "Privacy Hardening Profile",
+                    icon = Icons.Rounded.Shield,
+                    cardId = "privacy_profile",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    val profiles = listOf(
+                        Triple("STANDARD", "Standard Compatibility", "High compatibility with Firefox Enhanced Tracking Protection baseline"),
+                        Triple("HARDENED", "Hardened (Arkenfox)", "WebRTC leak defuse, referrer trimming and hardware API isolation (Default)"),
+                        Triple("STRICT", "Strict (Tor / Mullvad RFP)", "Tor-grade Resist Fingerprinting: forces light color scheme, UTC time and reduced canvas")
+                    )
+
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = profiles.size) { index, position ->
+                        val (mode, name, desc) = profiles[index]
+                        val isSelected = privacyProfile.equals(mode, ignoreCase = true)
+                        com.petal.browser.ui.containment.PetalGroupListRow(
+                            position = position,
+                            selected = isSelected,
+                            onClick = {
+                                if (!isSelected) {
+                                    onPrivacyProfileChange(mode)
+                                    (context as? ComponentActivity)?.let { act ->
+                                        com.petal.browser.ui.components.PetalConfirmSheetBridge.showRestartConfirmation(act) {
+                                            com.petal.browser.flags.PetalRestartManager.restartApp(context)
+                                        }
+                                    }
+                                }
+                            },
+                            leading = {
+                                com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                    icon = if (mode == "STRICT") Icons.Rounded.Security else Icons.Rounded.Shield,
+                                    variant = if (isSelected) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                )
+                            },
+                            content = {
+                                Text(
+                                    text = name,
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = desc,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            trailing = {
+                                if (isSelected) {
+                                    Icon(
+                                        Icons.Rounded.CheckCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+
                 // ── Section 1: Shield & Anti-Tracking Protection ──
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_shield_anti_tracking),
@@ -380,6 +451,21 @@ fun PrivacySettingsScreenContent(
                         icon = Icons.Rounded.Fingerprint,
                         checked = fingerprintProtection,
                         onCheckedChange = onFingerprintProtectionChange
+                    )
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                        title = "Enable WebGL 3D Graphics",
+                        subtitle = "Hardware-accelerated 3D graphics (disabling enhances fingerprint protection)",
+                        icon = Icons.Rounded.VideogameAsset,
+                        checked = webglEnabled,
+                        onCheckedChange = { newValue ->
+                            onWebglEnabledChange(newValue)
+                            (context as? ComponentActivity)?.let { act ->
+                                com.petal.browser.ui.components.PetalConfirmSheetBridge.showRestartConfirmation(act) {
+                                    com.petal.browser.flags.PetalRestartManager.restartApp(context)
+                                }
+                            }
+                        }
                     )
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,

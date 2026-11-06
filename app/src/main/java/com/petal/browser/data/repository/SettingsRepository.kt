@@ -82,6 +82,8 @@ interface SettingsRepository {
     val javaScriptEnabled: Flow<Boolean>
     val blockPopups: Flow<Boolean>
     val openRedirectsInBackground: Flow<Boolean>
+    val privacyProfile: Flow<String>
+    val webglEnabled: Flow<Boolean>
     val privateDnsMode: Flow<String>
     val customDohUrl: Flow<String>
 
@@ -214,6 +216,8 @@ interface SettingsRepository {
     suspend fun setOpenRedirectsInBackground(enabled: Boolean)
     suspend fun setPrivateDnsMode(mode: String)
     suspend fun setCustomDohUrl(url: String)
+    suspend fun setPrivacyProfile(profile: String)
+    suspend fun setWebglEnabled(enabled: Boolean)
 
     suspend fun setTouchHaptics(enabled: Boolean)
     suspend fun setImmersiveFullScreen(enabled: Boolean)

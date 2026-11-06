@@ -30,6 +30,7 @@ object PetalGeckoRuntime {
     private var geckoAvailable: Boolean? = null
     private var pendingActivityResult: GeckoResult<Intent>? = null
     private var foregroundActivity: WeakReference<Activity>? = null
+    private var appContextRef: WeakReference<Context>? = null
 
     @JvmStatic
     fun setForegroundActivity(activity: Activity?) {
@@ -114,6 +115,7 @@ object PetalGeckoRuntime {
         }
 
         val appContext = context.applicationContext
+        appContextRef = WeakReference(appContext)
         val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
 
         val am = appContext.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
@@ -169,8 +171,12 @@ object PetalGeckoRuntime {
         val userChangedFontSize = sp.contains("sp_font_size_scale")
         val fontScale = sp.getFloat("sp_font_size_scale", 1.0f)
 
+        val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
+        val insecureMode = if (httpsOnly) GeckoRuntimeSettings.HTTPS_ONLY else GeckoRuntimeSettings.ALLOW_ALL
+
         val settingsBuilder = GeckoRuntimeSettings.Builder()
             .aboutConfigEnabled(allowAboutConfig)
+            .allowInsecureConnections(insecureMode)
             .trustedRecursiveResolverMode(trrMode)
             .preferredColorScheme(targetColorScheme)
             .contentBlocking(
@@ -414,8 +420,20 @@ object PetalGeckoRuntime {
                     rt.settings.setTrustedRecursiveResolverUri(dohUri)
                 }
 
-                // 8. Theme / Preferred Color Scheme
+                // 8. HTTPS-Only / Insecure Connection Mode
+                val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
+                val insecureMode = if (httpsOnly) GeckoRuntimeSettings.HTTPS_ONLY else GeckoRuntimeSettings.ALLOW_ALL
+                try {
+                    rt.settings.setAllowInsecureConnections(insecureMode)
+                } catch (_: Throwable) {}
+
+                // 9. Theme / Preferred Color Scheme
                 syncTheme(sp)
+
+                // 10. Re-seed profile user.js with updated Arkenfox/WebGL/DRM rules
+                appContextRef?.get()?.let { ctx ->
+                    seedProfileUserJs(ctx)
+                }
             } catch (e: Exception) {
                 Log.w(TAG, "Error synchronizing GeckoRuntime preferences: ${e.message}")
             }

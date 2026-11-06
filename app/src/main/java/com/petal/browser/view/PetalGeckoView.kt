@@ -933,7 +933,10 @@ class PetalGeckoView @JvmOverloads constructor(
         ?: GeckoSession(
             GeckoSessionSettings.Builder()
                 .usePrivateMode(initialIncognito)
-                .allowJavascript(true)
+                .allowJavascript(
+                    if (com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(PreferenceManager.getDefaultSharedPreferences(context)) == com.petal.browser.privacy.PetalPrivacyHardening.SecurityLevel.SAFEST) false
+                    else PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_javascript", true)
+                )
                 .build()
         )
 
@@ -1432,26 +1435,6 @@ class PetalGeckoView @JvmOverloads constructor(
                     )
                 }
 
-                // HTTPS-Only Mode: intercept here (before the request fires) rather than in
-                // onPageStart. onPageStart fires after DNS + TCP are already initiated, so any
-                // enforcement there is too late — cookies/session data can leak over HTTP.
-                // Matching Firefox's NavigationDelegate interception: deny the plain-HTTP load
-                // and immediately reload as HTTPS so no insecure request is ever sent.
-                val httpsOnlyEarly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
-                val targetHost = try { android.net.Uri.parse(uri).host } catch (_: Throwable) { null }
-                val isBypassed = com.petal.browser.privacy.PetalHttpsOnlyWhitelist.isBypassed(context, targetHost)
-                if (httpsOnlyEarly
-                    && !isBypassed
-                    && uri.startsWith("http://", ignoreCase = true)
-                    && !uri.startsWith("http://localhost", ignoreCase = true)
-                    && !uri.startsWith("http://127.", ignoreCase = true)
-                    && !uri.startsWith("http://[::1]", ignoreCase = true)) {
-                    val secureUri = "https://" + uri.substring(7)
-                    // Post the reload so we don't mutate session state inside the delegate callback.
-                    post { try { session.loadUri(secureUri) } catch (_: Throwable) {} }
-                    return GeckoResult.fromValue(AllowOrDeny.DENY)
-                }
-
                 if (PetalBrowserUtils.isHomePage(uri)) {
                     if (uri.equals("about:blank", ignoreCase = true)) {
                         return GeckoResult.fromValue(AllowOrDeny.ALLOW)
@@ -1552,9 +1535,18 @@ class PetalGeckoView @JvmOverloads constructor(
                 // GeckoView itself will call open() on it. Once open, we adopt it into a new
                 // popup tab via adoptPopupSession() — which reuses the already-open session
                 // without calling open() a second time (which would crash).
-                val popupSession = GeckoSession(GeckoSessionSettings.Builder()
+                val parentSettings = this@PetalGeckoView.session.settings
+                val secLevel = com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp)
+                val allowJs = if (secLevel == com.petal.browser.privacy.PetalPrivacyHardening.SecurityLevel.SAFEST) {
+                    false
+                } else {
+                    val prof = getProfile(context)
+                    sp.getBoolean("sp_javascript", sp.getBoolean("${prof}_javascript", sp.getBoolean("profileStandard_javascript", true)))
+                }
+                val popupSession = GeckoSession(GeckoSessionSettings.Builder(parentSettings)
                     .usePrivateMode(this@PetalGeckoView.isIncognito)
-                    .allowJavascript(true)
+                    .allowJavascript(allowJs)
+                    .userAgentMode(parentSettings.userAgentMode)
                     .build())
                 val result = GeckoResult<GeckoSession>()
                 result.complete(popupSession)
@@ -2108,7 +2100,12 @@ class PetalGeckoView @JvmOverloads constructor(
         }
         applyDesktopMode(desktopEnabled)
         applyGeckoBlockingPolicy(currentUrl)
-        val enableJs = sp.getBoolean("sp_javascript", sp.getBoolean("${profile}_javascript", sp.getBoolean("profileStandard_javascript", true)))
+        val secLevel = com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp)
+        val enableJs = if (secLevel == com.petal.browser.privacy.PetalPrivacyHardening.SecurityLevel.SAFEST) {
+            false
+        } else {
+            sp.getBoolean("sp_javascript", sp.getBoolean("${profile}_javascript", sp.getBoolean("profileStandard_javascript", true)))
+        }
         session.settings.allowJavascript = enableJs
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
@@ -2300,13 +2297,7 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         val redirected = PetalBrowserUtils.redirectURL(sp, url)
-        var targetUrl = PetalBrowserUtils.queryWrapper(context, redirected)
-
-        // Enforce HTTPS-Only Security Upgrade
-        val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
-        if (httpsOnly && targetUrl.startsWith("http://", ignoreCase = true)) {
-            targetUrl = "https://" + targetUrl.substring(7)
-        }
+        val targetUrl = PetalBrowserUtils.queryWrapper(context, redirected)
 
         // APKMirror download endpoints are file responses, not pages. Rendering the
         // download.php response in Gecko can create a large transient document and
@@ -2413,10 +2404,13 @@ class PetalGeckoView @JvmOverloads constructor(
             // Recreate the session and all delegates instead of reopening the dead instance.
             try { geckoView.releaseSession() } catch (_: Throwable) {}
             try { if (session.isOpen) session.close() } catch (_: Throwable) {}
+            val secLevel = com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp)
+            val enableJs = if (secLevel == com.petal.browser.privacy.PetalPrivacyHardening.SecurityLevel.SAFEST) false
+            else sp.getBoolean("sp_javascript", true)
             session = GeckoSession(
                 GeckoSessionSettings.Builder()
                     .usePrivateMode(isIncognito)
-                    .allowJavascript(true)
+                    .allowJavascript(enableJs)
                     .build()
             )
             sessionInitializationStarted = false
@@ -3183,6 +3177,7 @@ class PetalGeckoView @JvmOverloads constructor(
             }
             if (origin != null) {
                 com.petal.browser.ui.components.PetalActiveMediaSensors.clearOrigin(origin)
+                com.petal.browser.ui.components.PetalGeckoPermissionDelegate.clearSessionGrantsForOrigin(origin)
             }
         } catch (_: Throwable) {}
         sessionState = SessionState.DESTROYED
