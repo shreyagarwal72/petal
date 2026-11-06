@@ -2200,7 +2200,7 @@ class PetalGeckoView @JvmOverloads constructor(
         return if (errorUri != null) GeckoResult.fromValue(errorUri) else null
     }
 
-    private fun mapWebRequestErrorToErrorType(error: WebRequestError): mozilla.components.browser.errorpages.ErrorType {
+    private fun mapWebRequestErrorToErrorType(error: WebRequestError): mozilla.components.concept.engine.request.ErrorType {
         val name = when (error.code) {
             WebRequestError.ERROR_UNKNOWN_HOST -> "ERROR_UNKNOWN_HOST"
             WebRequestError.ERROR_NET_TIMEOUT -> "ERROR_NET_TIMEOUT"
@@ -2225,16 +2225,16 @@ class PetalGeckoView @JvmOverloads constructor(
                 WebRequestError.ERROR_CATEGORY_NETWORK -> "ERROR_OFFLINE"
                 WebRequestError.ERROR_CATEGORY_SAFEBROWSING -> "ERROR_SAFEBROWSING_MALWARE_URI"
                 WebRequestError.ERROR_CATEGORY_URI -> "ERROR_MALFORMED_URI"
-                else -> "ERROR_UNKNOWN"
+                else -> "UNKNOWN"
             }
         }
         return try {
-            mozilla.components.browser.errorpages.ErrorType.valueOf(name)
+            mozilla.components.concept.engine.request.ErrorType.valueOf(name)
         } catch (_: Throwable) {
             try {
-                mozilla.components.browser.errorpages.ErrorType.valueOf("ERROR_UNKNOWN")
+                mozilla.components.concept.engine.request.ErrorType.UNKNOWN
             } catch (_: Throwable) {
-                mozilla.components.browser.errorpages.ErrorType.values().first()
+                mozilla.components.concept.engine.request.ErrorType.values().first()
             }
         }
     }
