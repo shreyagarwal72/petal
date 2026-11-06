@@ -66,8 +66,31 @@ object PetalEngineStore {
         val appContext = context.applicationContext
         val runtime = PetalGeckoRuntime.getOrCreate(appContext)
 
+        val defaultSettings = mozilla.components.concept.engine.DefaultSettings(
+            requestInterceptor = object : mozilla.components.concept.engine.request.RequestInterceptor {
+                override fun onErrorRequest(
+                    session: mozilla.components.concept.engine.EngineSession,
+                    errorType: mozilla.components.browser.errorpages.ErrorType,
+                    uri: String?
+                ): mozilla.components.concept.engine.request.RequestInterceptor.ErrorResponse? {
+                    return try {
+                        val errorPageUri = mozilla.components.browser.errorpages.ErrorPages.createUrlEncodedErrorPage(
+                            appContext,
+                            errorType,
+                            uri
+                        )
+                        mozilla.components.concept.engine.request.RequestInterceptor.ErrorResponse.Uri(errorPageUri)
+                    } catch (t: Throwable) {
+                        Log.e(TAG, "Failed to create url-encoded error page", t)
+                        null
+                    }
+                }
+            }
+        )
+
         val newEngine = GeckoEngine(
             context = appContext,
+            defaultSettings = defaultSettings,
             runtime = runtime
         )
         engine = newEngine

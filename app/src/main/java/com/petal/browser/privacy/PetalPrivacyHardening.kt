@@ -62,7 +62,7 @@ object PetalPrivacyHardening {
     @JvmStatic
     fun isWebRtcLeakProtectionEnabled(sp: SharedPreferences): Boolean {
         val profile = getPrivacyProfile(sp)
-        return sp.getBoolean(PREF_WEBRTC_LEAK_PROTECT, profile != PrivacyProfile.STANDARD)
+        return sp.getBoolean(PREF_WEBRTC_LEAK_PROTECT, profile == PrivacyProfile.STRICT)
     }
 
     /**
@@ -101,13 +101,16 @@ object PetalPrivacyHardening {
         """.trimIndent())
 
         // 2. WebRTC IP Leak Prevention (Mull / IronFox / DivestOS)
-        if (webrtcProtect || profile != PrivacyProfile.STANDARD) {
+        if (profile != PrivacyProfile.STANDARD) {
             sb.appendLine("""
                 // WebRTC local and private interface address leak defuser
-                user_pref("media.peerconnection.ice.no_host", true);
                 user_pref("media.peerconnection.ice.default_address_only", true);
-                user_pref("media.peerconnection.ice.proxy_only", true);
+                user_pref("media.peerconnection.ice.proxy_only_if_behind_proxy", true);
             """.trimIndent())
+            val explicitWebrtc = sp.contains(PREF_WEBRTC_LEAK_PROTECT) && sp.getBoolean(PREF_WEBRTC_LEAK_PROTECT, false)
+            if (profile == PrivacyProfile.STRICT || explicitWebrtc) {
+                sb.appendLine("""user_pref("media.peerconnection.ice.no_host", true);""")
+            }
         }
 
         // 3. Hardware & Sensor API Fingerprinting Defuser (Mull / IronFox / LibreWolf)
@@ -115,13 +118,9 @@ object PetalPrivacyHardening {
             sb.appendLine("""
                 // Hardware enumeration defenses
                 user_pref("dom.battery.v2.enabled", false);
-                user_pref("dom.gamepad.enabled", false);
                 user_pref("dom.vr.enabled", false);
-                user_pref("device.sensors.enabled", false);
-                user_pref("beacon.enabled", false);
-                user_pref("dom.vibrator.enabled", false);
-                // Referrer Trimming: Trim to origin on cross-origin requests (IronFox standard)
-                user_pref("network.http.referer.XOriginPolicy", 2);
+                // Referrer Trimming: XOriginPolicy=1 (same base domain) for HARDENED, 2 for STRICT
+                user_pref("network.http.referer.XOriginPolicy", ${if (profile == PrivacyProfile.STRICT) 2 else 1});
                 user_pref("network.http.referer.XOriginTrimmingPolicy", 2);
                 // Disable prefetching and speculative connections (stops background tracker pings)
                 user_pref("network.prefetch-next", false);
@@ -133,6 +132,11 @@ object PetalPrivacyHardening {
         // 4. Resist Fingerprinting (RFP) & Canvas Defense (Tor / Mullvad)
         if (profile == PrivacyProfile.STRICT) {
             sb.appendLine("""
+                // Strict hardware & API restrictions
+                user_pref("device.sensors.enabled", false);
+                user_pref("dom.gamepad.enabled", false);
+                user_pref("beacon.enabled", false);
+                user_pref("dom.vibrator.enabled", false);
                 // Tor-grade Resist Fingerprinting (rounds time, spoofs navigator & metrics)
                 user_pref("privacy.resistFingerprinting", true);
                 user_pref("privacy.resistFingerprinting.block_mozAddonManager", true);

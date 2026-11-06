@@ -1458,15 +1458,8 @@ class PetalTabViewController private constructor(
 
     fun evaluateJavascript(script: String, callback: ((String?) -> Unit)? = null) {
         try {
-            val session = observedSession
-            if (session != null) {
-                val cleanScript = script.trim().removeSuffix(";")
-                val js = "javascript:(function(){ try { $cleanScript; } catch(e) { console.error('JS eval error:', e); } })()"
-                session.loadUrl(js)
-                callback?.invoke(null)
-            } else {
-                callback?.invoke(null)
-            }
+            val session = com.petal.browser.view.PetalGeckoView.getEngineGeckoSession(observedSession)
+            com.petal.browser.extensions.PetalBuiltInExtensionManager.evaluateJavascript(session, script, callback)
         } catch (t: Throwable) {
             callback?.invoke("ERROR: ${t.message}")
         }
@@ -1648,118 +1641,22 @@ class PetalTabViewController private constructor(
     private fun injectPagePrivacyAndAdBlock() {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
         val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
-        val dntGpc = sp.getBoolean("sp_dnt_gpc", sp.getBoolean("profileStandard_dnt", true))
-        val webrtcProtection = sp.getBoolean("sp_webrtc_protection", sp.getBoolean("profileStandard_webrtcProtection", true))
-        val trimReferrers = sp.getBoolean("sp_trim_referrers", true)
-        val fingerprintProtection = sp.getBoolean("sp_fingerprint_protection", sp.getBoolean("profileStandard_fingerPrintProtection", true))
 
         if (pageUrl.isBlank() || pageUrl.startsWith("about:") || pageUrl.startsWith("chrome:") || pageUrl.startsWith("moz-extension:")) return
         val gs = getGeckoSession() ?: return
 
         try {
-            // 1. Inject uBlock cosmetic filtering and scriptlets
+            // Waterfox-grade cosmetic and anti-adblock scriptlet injection
+            // Note: DNT/GPC, WebRTC IP masking, canvas/webgl noise, and visibility overrides
+            // run at document_start via defuser.js to guarantee scripts never miss early page execution.
             if (adBlockEnabled) {
                 val cosmeticScript = com.petal.browser.browser.PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload(pageUrl)
                 if (cosmeticScript.isNotBlank()) {
                     gs.loadUri(cosmeticScript)
                 }
             }
-
-            // 2. Client-side privacy scripts: DNT/GPC, WebRTC IP masking, Referrer trimming, Canvas anti-fingerprinting
-            val host = try { android.net.Uri.parse(pageUrl).host?.lowercase() ?: "" } catch (_: Throwable) { "" }
-            val isSearchOrCaptchaDomain = host.contains("google.") || host.contains("gstatic.") ||
-                host.contains("recaptcha") || host.contains("hcaptcha") || host.contains("cloudflare") ||
-                host.contains("bing.com") || host.contains("duckduckgo.com")
-
-            val sb = java.lang.StringBuilder("(function() {\n")
-            if (dntGpc) {
-                sb.append("""
-                    try {
-                        Object.defineProperty(navigator, 'doNotTrack', { get: () => '1', configurable: true });
-                        Object.defineProperty(navigator, 'globalPrivacyControl', { get: () => true, configurable: true });
-                        Object.defineProperty(window, 'doNotTrack', { get: () => '1', configurable: true });
-                    } catch(e) {}
-                """.trimIndent()).append("\n")
-            }
-            if (webrtcProtection) {
-                sb.append("""
-                    try {
-                        if (window.RTCPeerConnection) {
-                            const OrigRTCPeerConnection = window.RTCPeerConnection;
-                            window.RTCPeerConnection = function(config, constraints) {
-                                if (config && config.iceServers) {
-                                    config.iceCandidatePoolSize = 0;
-                                }
-                                const pc = new OrigRTCPeerConnection(config, constraints);
-                                const origCreateOffer = pc.createOffer.bind(pc);
-                                pc.createOffer = function(options) {
-                                    return origCreateOffer(options).then(offer => {
-                                        offer.sdp = offer.sdp.replace(/c=IN IP4 .+\r\n/g, 'c=IN IP4 0.0.0.0\r\n');
-                                        return offer;
-                                    });
-                                };
-                                return pc;
-                            };
-                            window.RTCPeerConnection.prototype = OrigRTCPeerConnection.prototype;
-                        }
-                    } catch(e) {}
-                """.trimIndent()).append("\n")
-            }
-            if (trimReferrers) {
-                sb.append("""
-                    try {
-                        if (!document.querySelector('meta[name="referrer"]')) {
-                            const meta = document.createElement('meta');
-                            meta.name = 'referrer';
-                            meta.content = 'strict-origin-when-cross-origin';
-                            (document.head || document.documentElement).appendChild(meta);
-                        }
-                    } catch(e) {}
-                """.trimIndent()).append("\n")
-            }
-            if (fingerprintProtection && !isSearchOrCaptchaDomain) {
-                sb.append("""
-                    try {
-                        const shift = Math.floor(Math.random() * 2) - 1;
-                        const origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
-                        CanvasRenderingContext2D.prototype.getImageData = function(...args) {
-                            const imgData = origGetImageData.apply(this, args);
-                            if (imgData.data.length > 4) {
-                                imgData.data[0] = (imgData.data[0] + shift) & 255;
-                            }
-                            return imgData;
-                        };
-                    } catch(e) {}
-                """.trimIndent()).append("\n")
-            }
-
-            // Firefox / Mozilla Video Background Play Fix:
-            // Prevents media players (YouTube, Vimeo, web video) from pausing when tabs are switched or app minimized
-            val backgroundPlay = sp.getBoolean("sp_background_play", false)
-            if (backgroundPlay) {
-                sb.append("""
-                    try {
-                        Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
-                        Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
-                        Object.defineProperty(document, 'webkitHidden', { get: () => false, configurable: true });
-                        Object.defineProperty(document, 'webkitVisibilityState', { get: () => 'visible', configurable: true });
-                        const stopVisProp = (e) => {
-                            if (e && e.type === 'visibilitychange') {
-                                e.stopImmediatePropagation();
-                            }
-                        };
-                        window.addEventListener('visibilitychange', stopVisProp, true);
-                        document.addEventListener('visibilitychange', stopVisProp, true);
-                    } catch(e) {}
-                """.trimIndent()).append("\n")
-            }
-            sb.append("})();")
-            val js = sb.toString()
-            if (js.length > "(function() {\n})();".length) {
-                gs.loadUri("javascript:$js")
-            }
         } catch (t: Throwable) {
-            android.util.Log.w("PetalTabViewController", "Failed to inject privacy/adblock protections: ${t.message}")
+            android.util.Log.w("PetalTabViewController", "Failed to inject cosmetic adblock rules: ${t.message}")
         }
     }
 
@@ -2222,19 +2119,21 @@ private class ExternalSchemeNavigationDelegate(
         val fxaManager = com.petal.browser.account.mozilla.FxAccountManager.getInstance()
         if (fxaManager.isRedirectUrl(uri)) {
             val code = fxaManager.extractQueryParam(uri, "code")
-                ?: fxaManager.extractQueryParam(uri, "session_token")
-                ?: java.util.UUID.randomUUID().toString().replace("-", "")
-            val email = fxaManager.extractQueryParam(uri, "email") ?: "user@firefox.com"
-            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-                val ok = fxaManager.exchangeCodeForTokens(code, email)
-                if (ok) {
-                    com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(context)
-                    android.os.Handler(android.os.Looper.getMainLooper()).post {
-                        android.widget.Toast.makeText(context, "Firefox Account connected & sync active!", android.widget.Toast.LENGTH_SHORT).show()
+            val state = fxaManager.extractQueryParam(uri, "state")
+            if (!code.isNullOrBlank() && fxaManager.consumePendingAuth(state)) {
+                val email = fxaManager.extractQueryParam(uri, "email") ?: ""
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    val ok = fxaManager.exchangeCodeForTokens(code, email)
+                    if (ok) {
+                        com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(context)
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            android.widget.Toast.makeText(context, "Firefox Account connected & sync active!", android.widget.Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
+                return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
             }
-            return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
+            // If not a pending OAuth flow from this app or missing code, do not intercept or fake auth
         }
 
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)

@@ -341,6 +341,26 @@ public class PetalPwaActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        com.petal.browser.ui.components.PetalRuntimePermissionBridge.handlePermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    public void showFileChooser(android.webkit.ValueCallback<android.net.Uri[]> filePathCallback,
+                                android.webkit.WebChromeClient.FileChooserParams fileChooserParams) {
+        com.petal.browser.compose.file.PetalUploadChooser.show(
+                this,
+                filePathCallback,
+                fileChooserParams,
+                () -> {
+                    android.util.Log.e("PetalPwaActivity", "Petal pickers failed to open");
+                    return kotlin.Unit.INSTANCE;
+                }
+        );
+    }
+
+    @Override
     protected void onDestroy() {
         if (geckoView != null) {
             try {

@@ -1291,6 +1291,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        com.petal.browser.ui.components.PetalRuntimePermissionBridge.handlePermissionsResult(requestCode, permissions, grantResults);
         if (petalBrowserFeatures != null) {
             petalBrowserFeatures.onPermissionsResult(requestCode, permissions, grantResults);
         }

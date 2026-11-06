@@ -334,7 +334,7 @@ class PetalGeckoView @JvmOverloads constructor(
             return object : GeckoSession.PromptDelegate {
                 override fun onAlertPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.AlertPrompt): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
                     val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
-                    val act = activityProvider() ?: return result
+                    val act = activityProvider() ?: return GeckoResult.fromValue(prompt.dismiss())
                     act.runOnUiThread {
                         com.petal.browser.ui.components.PetalExpressivePromptBridge.showAlert(
                             act,
@@ -349,7 +349,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
                 override fun onButtonPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.ButtonPrompt): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
                     val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
-                    val act = activityProvider() ?: return result
+                    val act = activityProvider() ?: return GeckoResult.fromValue(prompt.dismiss())
                     act.runOnUiThread {
                         com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
                             act,
@@ -649,16 +649,26 @@ class PetalGeckoView @JvmOverloads constructor(
                                     initialUsername = username,
                                     initialPassword = password,
                                     onSave = { finalUser, finalPass ->
+                                        val guid = login.guid ?: java.util.UUID.randomUUID().toString()
                                         com.petal.browser.passwords.PetalCredentialVault.save(
                                             com.petal.browser.passwords.PetalCredential(
-                                                id = login.guid ?: java.util.UUID.randomUUID().toString(),
+                                                id = guid,
                                                 domain = domain,
                                                 originUrl = origin.ifBlank { "https://$domain" },
                                                 username = finalUser,
                                                 password = finalPass
                                             )
                                         )
-                                        geckoResult.complete(request.confirm(option))
+                                        val editedEntry = org.mozilla.geckoview.Autocomplete.LoginEntry.Builder()
+                                            .origin(login.origin)
+                                            .formActionOrigin(login.formActionOrigin)
+                                            .httpRealm(login.httpRealm)
+                                            .username(finalUser)
+                                            .password(finalPass)
+                                            .guid(guid)
+                                            .build()
+                                        val editedOption = org.mozilla.geckoview.Autocomplete.LoginSaveOption(editedEntry)
+                                        geckoResult.complete(request.confirm(editedOption))
                                     },
                                     onNeverSave = {
                                         com.petal.browser.passwords.PetalCredentialVault.addNeverSaveDomain(context, domain)
@@ -678,7 +688,16 @@ class PetalGeckoView @JvmOverloads constructor(
                                     newPassword = password,
                                     onUpdate = { newPass ->
                                         com.petal.browser.passwords.PetalCredentialVault.updatePassword(existing.id, newPass)
-                                        geckoResult.complete(request.confirm(option))
+                                        val editedEntry = org.mozilla.geckoview.Autocomplete.LoginEntry.Builder()
+                                            .origin(login.origin)
+                                            .formActionOrigin(login.formActionOrigin)
+                                            .httpRealm(login.httpRealm)
+                                            .username(username)
+                                            .password(newPass)
+                                            .guid(existing.id)
+                                            .build()
+                                        val editedOption = org.mozilla.geckoview.Autocomplete.LoginSaveOption(editedEntry)
+                                        geckoResult.complete(request.confirm(editedOption))
                                     },
                                     onDismiss = {
                                         geckoResult.complete(request.dismiss())
@@ -765,53 +784,84 @@ class PetalGeckoView @JvmOverloads constructor(
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
                     val geckoResult = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
                     val act = activityProvider()
-                    if (act !is com.petal.browser.activity.BrowserActivity) {
+                    if (act !is androidx.activity.ComponentActivity) {
                         return GeckoResult.fromValue(prompt.dismiss())
                     }
                     act.runOnUiThread {
                         val isMultiple = prompt.type == GeckoSession.PromptDelegate.FilePrompt.Type.MULTIPLE
                         val mimeTypes = prompt.mimeTypes?.filter { !it.isNullOrBlank() }?.toTypedArray() ?: emptyArray()
 
-                        act.showFileChooser(
-                            object : android.webkit.ValueCallback<Array<android.net.Uri>?> {
-                                override fun onReceiveValue(value: Array<android.net.Uri>?) {
-                                    if (value == null || value.isEmpty()) {
-                                        if (!prompt.isComplete) {
-                                            geckoResult.complete(prompt.dismiss())
-                                        }
-                                    } else if (isMultiple) {
-                                        if (!prompt.isComplete) {
-                                            geckoResult.complete(prompt.confirm(act, value))
-                                        }
-                                    } else {
-                                        if (!prompt.isComplete) {
-                                            geckoResult.complete(prompt.confirm(act, value[0]))
-                                        }
+                        val valueCallback = object : android.webkit.ValueCallback<Array<android.net.Uri>?> {
+                            override fun onReceiveValue(value: Array<android.net.Uri>?) {
+                                if (value == null || value.isEmpty()) {
+                                    if (!prompt.isComplete) {
+                                        geckoResult.complete(prompt.dismiss())
                                     }
-                                }
-                            },
-                            object : android.webkit.WebChromeClient.FileChooserParams() {
-                                override fun getMode(): Int = if (isMultiple) MODE_OPEN_MULTIPLE else MODE_OPEN
-                                override fun getAcceptTypes(): Array<String> = mimeTypes
-                                override fun isCaptureEnabled(): Boolean = prompt.capture != GeckoSession.PromptDelegate.FilePrompt.Capture.NONE
-                                override fun getTitle(): CharSequence? = null
-                                override fun getFilenameHint(): String? = null
-                                override fun createIntent(): android.content.Intent {
-                                    val intent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
-                                        addCategory(android.content.Intent.CATEGORY_OPENABLE)
-                                        if (isMultiple) putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE, true)
-                                        type = if (mimeTypes.isNotEmpty() && mimeTypes[0].isNotBlank()) mimeTypes[0] else "*/*"
-                                        if (mimeTypes.size > 1) {
-                                            putExtra(android.content.Intent.EXTRA_MIME_TYPES, mimeTypes)
-                                        }
+                                } else if (isMultiple) {
+                                    if (!prompt.isComplete) {
+                                        geckoResult.complete(prompt.confirm(act, value))
                                     }
-                                    return intent
+                                } else {
+                                    if (!prompt.isComplete) {
+                                        geckoResult.complete(prompt.confirm(act, value[0]))
+                                    }
                                 }
                             }
-                        )
+                        }
+
+                        val fileChooserParams = object : android.webkit.WebChromeClient.FileChooserParams() {
+                            override fun getMode(): Int = if (isMultiple) MODE_OPEN_MULTIPLE else MODE_OPEN
+                            override fun getAcceptTypes(): Array<String> = mimeTypes
+                            override fun isCaptureEnabled(): Boolean = prompt.capture != GeckoSession.PromptDelegate.FilePrompt.Capture.NONE
+                            override fun getTitle(): CharSequence? = null
+                            override fun getFilenameHint(): String? = null
+                            override fun createIntent(): android.content.Intent {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
+                                    addCategory(android.content.Intent.CATEGORY_OPENABLE)
+                                    if (isMultiple) putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE, true)
+                                    type = if (mimeTypes.isNotEmpty() && mimeTypes[0].isNotBlank()) mimeTypes[0] else "*/*"
+                                    if (mimeTypes.size > 1) {
+                                        putExtra(android.content.Intent.EXTRA_MIME_TYPES, mimeTypes)
+                                    }
+                                }
+                                return intent
+                            }
+                        }
+
+                        if (act is com.petal.browser.activity.BrowserActivity) {
+                            act.showFileChooser(valueCallback, fileChooserParams)
+                        } else {
+                            com.petal.browser.compose.file.PetalUploadChooser.show(
+                                act,
+                                valueCallback,
+                                fileChooserParams
+                            ) {
+                                if (!prompt.isComplete) {
+                                    geckoResult.complete(prompt.dismiss())
+                                }
+                            }
+                        }
                     }
                     return geckoResult
                 }
+
+                // ─────────────────────────────────────────────────────────────────
+                // Autofill Gaps: Credit Card, Address & FedCM (Identity-Credential)
+                // Note: Credit card autofill, physical address autofill, and FedCM
+                // (Federated Credential Management) prompts are currently not supported in Petal Browser.
+                // Dismissing them immediately prevents UI hangs and unhandled Gecko promise rejections.
+                //
+                // TODO: Future Implementation Plan:
+                // 1. Credit Card Storage & Selection:
+                //    - Store cards encrypted in PetalCredentialVault (Tink AES-256-GCM / Android Keystore).
+                //    - Material 3 Expressive bottom sheets for card selection and save confirmation.
+                // 2. Address Autofill:
+                //    - Encrypted address storage for billing/shipping fields.
+                //    - Address picker bottom sheet conforming to Material 3 Design.
+                // 3. FedCM (Identity Credential):
+                //    - Material 3 Expressive provider and account chooser sheets.
+                //    - Privacy policy sheet and consent flow.
+                // ─────────────────────────────────────────────────────────────────
 
                 override fun onCreditCardSave(
                     session: GeckoSession,
@@ -1126,6 +1176,13 @@ class PetalGeckoView @JvmOverloads constructor(
                     try {
                         com.petal.browser.compose.store.PetalStoreScriptInjector.inject(session, context, url, "document-start")
                     } catch (_: Throwable) {}
+
+                    // Inject video autoplay blocker if flag enabled
+                    try {
+                        if (com.petal.browser.flags.PetalFlagsRegistry.isEnabled(context, "enable-autoplay-blocker")) {
+                            evaluateJavascript(com.petal.browser.engine.petal.VideoAutoplayBlockerScript.installScript)
+                        }
+                    } catch (_: Throwable) {}
                 }
 
                 if (engineSession != null) {
@@ -1163,6 +1220,15 @@ class PetalGeckoView @JvmOverloads constructor(
                     evaluateJavascript(com.petal.browser.media.sniffer.PetalNativeSnifferEngine.DOM_SCAN_JS) { result ->
                         com.petal.browser.media.sniffer.PetalNativeSnifferEngine.parseDomScanResult(tabId, currentUrl, result)
                     }
+
+                    // Forced vertical scroll override if enabled
+                    try {
+                        val host = try { android.net.Uri.parse(currentUrl ?: "").host ?: "" } catch (_: Throwable) { "" }
+                        if (host.isNotBlank() && sp.getBoolean("sp_force_vertical_scroll", false)) {
+                            val scrollJs = com.petal.browser.engine.petal.blocking.ForcedVerticalScrollScript.create(listOf(host))
+                            if (scrollJs.isNotBlank()) evaluateJavascript(scrollJs)
+                        }
+                    } catch (_: Throwable) {}
 
                     // Firefox-style Article Detection for dynamic Reader View indicator
                     val isCachedEligible = com.petal.browser.compose.reader.PetalReaderBridge.isUrlEligible(currentUrl)
@@ -1256,6 +1322,24 @@ class PetalGeckoView @JvmOverloads constructor(
                 perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
                 hasUserGesture: Boolean
             ) {
+                try {
+                    val oldOrigin = currentUrl?.let { u ->
+                        val p = android.net.Uri.parse(u)
+                        val s = p.scheme ?: "https"
+                        val a = p.authority
+                        if (a != null) "$s://$a" else null
+                    }
+                    val newOrigin = url?.let { u ->
+                        val p = android.net.Uri.parse(u)
+                        val s = p.scheme ?: "https"
+                        val a = p.authority
+                        if (a != null) "$s://$a" else null
+                    }
+                    if (oldOrigin != null && oldOrigin != newOrigin) {
+                        com.petal.browser.ui.components.PetalActiveMediaSensors.clearOrigin(oldOrigin)
+                    }
+                } catch (_: Throwable) {}
+
                 if (url.isNullOrBlank() || url.equals(currentUrl, ignoreCase = true)) return
                 if (isInternalBootstrapUrl(url)) return
                 if (url.equals("about:blank", ignoreCase = true) && persistentUrl.isNotBlank() && !PetalBrowserUtils.isHomePage(persistentUrl)) {
@@ -1299,8 +1383,9 @@ class PetalGeckoView @JvmOverloads constructor(
                         val fxManager = com.petal.browser.account.mozilla.FxAccountManager.getInstance()
                         if (fxManager.isRedirectUrl(url)) {
                             val authCode = fxManager.extractQueryParam(url, "code")
-                            if (!authCode.isNullOrBlank()) {
-                                val emailParam = fxManager.extractQueryParam(url, "email") ?: "user@mozilla.org"
+                            val state = fxManager.extractQueryParam(url, "state")
+                            if (!authCode.isNullOrBlank() && fxManager.consumePendingAuth(state)) {
+                                val emailParam = fxManager.extractQueryParam(url, "email") ?: ""
                                 kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
                                     fxManager.exchangeCodeForTokens(authCode, emailParam)
                                     com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(act)
@@ -1418,19 +1503,21 @@ class PetalGeckoView @JvmOverloads constructor(
                 val fxaManager = com.petal.browser.account.mozilla.FxAccountManager.getInstance()
                 if (fxaManager.isRedirectUrl(uri)) {
                     val code = fxaManager.extractQueryParam(uri, "code")
-                        ?: fxaManager.extractQueryParam(uri, "session_token")
-                        ?: java.util.UUID.randomUUID().toString().replace("-", "")
-                    val email = fxaManager.extractQueryParam(uri, "email") ?: "user@firefox.com"
-                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-                        val ok = fxaManager.exchangeCodeForTokens(code, email)
-                        if (ok) {
-                            com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(context)
-                            post {
-                                android.widget.Toast.makeText(context, "Firefox Account connected & sync active!", android.widget.Toast.LENGTH_SHORT).show()
+                    val state = fxaManager.extractQueryParam(uri, "state")
+                    if (!code.isNullOrBlank() && fxaManager.consumePendingAuth(state)) {
+                        val email = fxaManager.extractQueryParam(uri, "email") ?: ""
+                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                            val ok = fxaManager.exchangeCodeForTokens(code, email)
+                            if (ok) {
+                                com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(context)
+                                post {
+                                    android.widget.Toast.makeText(context, "Firefox Account connected & sync active!", android.widget.Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
+                        return GeckoResult.fromValue(AllowOrDeny.DENY)
                     }
-                    return GeckoResult.fromValue(AllowOrDeny.DENY)
+                    // If no valid pending OAuth flow or missing code, do not intercept or fake auth; allow navigation
                 }
 
                 // Handle Android deep links and external app URI schemes (intent://, market://, tel:, etc.)
@@ -2098,7 +2185,54 @@ class PetalGeckoView @JvmOverloads constructor(
                 act.updateAddressBar()
             }
         }
-        return null
+
+        val errorType = mapWebRequestErrorToErrorType(error)
+        val errorUri = try {
+            mozilla.components.browser.errorpages.ErrorPages.createUrlEncodedErrorPage(
+                context.applicationContext,
+                errorType,
+                uri
+            )
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to build error page URI", t)
+            null
+        }
+        return if (errorUri != null) GeckoResult.fromValue(errorUri) else null
+    }
+
+    private fun mapWebRequestErrorToErrorType(error: WebRequestError): mozilla.components.browser.errorpages.ErrorType {
+        val name = when (error.code) {
+            WebRequestError.ERROR_UNKNOWN_HOST -> "ERROR_UNKNOWN_HOST"
+            WebRequestError.ERROR_NET_TIMEOUT -> "ERROR_NET_TIMEOUT"
+            WebRequestError.ERROR_CONNECTION_REFUSED -> "ERROR_CONNECTION_REFUSED"
+            WebRequestError.ERROR_NET_RESET -> "ERROR_NET_RESET"
+            WebRequestError.ERROR_NET_INTERRUPT -> "ERROR_NET_INTERRUPT"
+            WebRequestError.ERROR_OFFLINE -> "ERROR_OFFLINE"
+            WebRequestError.ERROR_PORT_BLOCKED -> "ERROR_PORT_BLOCKED"
+            WebRequestError.ERROR_REDIRECT_LOOP -> "ERROR_REDIRECT_LOOP"
+            WebRequestError.ERROR_UNKNOWN_PROTOCOL -> "ERROR_UNKNOWN_PROTOCOL"
+            WebRequestError.ERROR_MALFORMED_URI -> "ERROR_MALFORMED_URI"
+            WebRequestError.ERROR_SECURITY_SSL -> "ERROR_SECURITY_SSL"
+            WebRequestError.ERROR_SECURITY_BAD_CERT -> "ERROR_SECURITY_BAD_CERT"
+            WebRequestError.ERROR_BAD_HSTS_CERT -> "ERROR_BAD_HSTS_CERT"
+            WebRequestError.ERROR_HTTPS_ONLY -> "ERROR_HTTPS_ONLY"
+            WebRequestError.ERROR_SAFEBROWSING_PHISHING_URI -> "ERROR_SAFEBROWSING_PHISHING_URI"
+            WebRequestError.ERROR_SAFEBROWSING_MALWARE_URI -> "ERROR_SAFEBROWSING_MALWARE_URI"
+            WebRequestError.ERROR_SAFEBROWSING_UNWANTED_URI -> "ERROR_SAFEBROWSING_UNWANTED_URI"
+            WebRequestError.ERROR_SAFEBROWSING_HARMFUL_URI -> "ERROR_SAFEBROWSING_HARMFUL_URI"
+            else -> when (error.category) {
+                WebRequestError.ERROR_CATEGORY_SECURITY -> "ERROR_SECURITY_SSL"
+                WebRequestError.ERROR_CATEGORY_NETWORK -> "ERROR_OFFLINE"
+                WebRequestError.ERROR_CATEGORY_SAFEBROWSING -> "ERROR_SAFEBROWSING_MALWARE_URI"
+                WebRequestError.ERROR_CATEGORY_URI -> "ERROR_MALFORMED_URI"
+                else -> "ERROR_UNKNOWN"
+            }
+        }
+        return runCatching { mozilla.components.browser.errorpages.ErrorType.valueOf(name) }.getOrElse {
+            runCatching { mozilla.components.browser.errorpages.ErrorType.valueOf("ERROR_UNKNOWN") }.getOrElse {
+                mozilla.components.browser.errorpages.ErrorType.values().first()
+            }
+        }
     }
 
     fun onSubframeLoadRequest(
@@ -3057,6 +3191,17 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     override fun destroy() {
+        try {
+            val origin = currentUrl?.let { u ->
+                val p = android.net.Uri.parse(u)
+                val s = p.scheme ?: "https"
+                val a = p.authority
+                if (a != null) "$s://$a" else null
+            }
+            if (origin != null) {
+                com.petal.browser.ui.components.PetalActiveMediaSensors.clearOrigin(origin)
+            }
+        } catch (_: Throwable) {}
         sessionState = SessionState.DESTROYED
         pendingLoadUrl = null
         stopLoading()
@@ -3234,14 +3379,12 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     /**
-     * Evaluates JavaScript on the current GeckoSession safely.
+     * Evaluates JavaScript on the current GeckoSession safely with a real result path
+     * via the built-in WebExtension content script native messaging port.
      */
     fun evaluateJavascript(script: String, callback: ((String?) -> Unit)? = null) {
         try {
-            val cleanScript = script.trim().removeSuffix(";")
-            val js = "javascript:(function(){ try { $cleanScript; } catch(e) { console.error('JS eval error:', e); } })()"
-            session.loadUri(js)
-            callback?.invoke(null)
+            com.petal.browser.extensions.PetalBuiltInExtensionManager.evaluateJavascript(session, script, callback)
         } catch (t: Throwable) {
             callback?.invoke("ERROR: ${t.message}")
         }
@@ -3295,161 +3438,36 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     /**
-     * Injects client-side privacy protections into the active page DOM:
-     * - Do Not Track & Global Privacy Control (navigator.doNotTrack = '1', navigator.globalPrivacyControl = true)
-     * - WebRTC IP Leak Shield (disables or restricts RTCPeerConnection candidate gathering)
-     * - Strict Referrer Trimming (enforces strict-origin-when-cross-origin / no-referrer meta)
-     * - Anti-Fingerprinting Canvas/Audio noise injection
+     * Client-side privacy and content protections.
+     * Note: DNT/GPC, WebRTC IP protection, Canvas/WebGL noise, and visibility overrides
+     * run at document_start via the built-in extension (defuser.js) to guarantee page scripts
+     * cannot execute before protections are applied.
      */
     fun injectClientPrivacyProtections() {
         if (currentUrl.startsWith("about:") || currentUrl.startsWith("chrome:") || currentUrl.startsWith("moz-extension:")) return
         try {
-            val dntGpc = sp.getBoolean("sp_dnt_gpc", sp.getBoolean("profileStandard_dnt", true))
-            val webrtcProtection = sp.getBoolean("sp_webrtc_protection", sp.getBoolean("profileStandard_webrtcProtection", true))
-            val trimReferrers = sp.getBoolean("sp_trim_referrers", true)
-            val fingerprintProtection = sp.getBoolean("sp_fingerprint_protection", sp.getBoolean("profileStandard_fingerPrintProtection", true))
-
-            // Avoid injecting canvas prototype modifications on search engine & challenge domains (Google, Cloudflare, hCaptcha)
-            // as mutating CanvasRenderingContext2D triggers automated bot-detection and endless Captchas.
-            val host = try { android.net.Uri.parse(currentUrl).host?.lowercase() ?: "" } catch (_: Throwable) { "" }
-            val isSearchOrCaptchaDomain = host.contains("google.") || host.contains("gstatic.") ||
-                host.contains("recaptcha") || host.contains("hcaptcha") || host.contains("cloudflare") ||
-                host.contains("bing.com") || host.contains("duckduckgo.com")
-
-            val sb = StringBuilder("(function() {\n")
-            if (dntGpc) {
-                sb.append("""
-                    try {
-                        Object.defineProperty(navigator, 'doNotTrack', { get: () => '1', configurable: true });
-                        Object.defineProperty(navigator, 'globalPrivacyControl', { get: () => true, configurable: true });
-                        Object.defineProperty(window, 'doNotTrack', { get: () => '1', configurable: true });
-                    } catch(e) {}
-                """.trimIndent()).append("\n")
-            }
-            if (webrtcProtection) {
-                sb.append("""
-                    try {
-                        if (window.RTCPeerConnection) {
-                            const OrigRTCPeerConnection = window.RTCPeerConnection;
-                            window.RTCPeerConnection = function(config, constraints) {
-                                if (config && config.iceServers) {
-                                    config.iceCandidatePoolSize = 0;
-                                }
-                                const pc = new OrigRTCPeerConnection(config, constraints);
-                                const origCreateOffer = pc.createOffer.bind(pc);
-                                pc.createOffer = function(options) {
-                                    return origCreateOffer(options).then(offer => {
-                                        offer.sdp = offer.sdp.replace(/c=IN IP4 .+\r\n/g, 'c=IN IP4 0.0.0.0\r\n');
-                                        return offer;
-                                    });
-                                };
-                                return pc;
-                            };
-                            window.RTCPeerConnection.prototype = OrigRTCPeerConnection.prototype;
-                        }
-                    } catch(e) {}
-                """.trimIndent()).append("\n")
-            }
-            if (trimReferrers) {
-                sb.append("""
-                    try {
-                        if (!document.querySelector('meta[name="referrer"]')) {
-                            const meta = document.createElement('meta');
-                            meta.name = 'referrer';
-                            meta.content = 'strict-origin-when-cross-origin';
-                            (document.head || document.documentElement).appendChild(meta);
-                        }
-                    } catch(e) {}
-                """.trimIndent()).append("\n")
-            }
-            if (fingerprintProtection && !isSearchOrCaptchaDomain) {
-                // Brave-style: randomized per-session noise for Canvas2D, WebGL, AudioContext, Font metrics
-                sb.append("""
-                    try {
-                        // Unique session noise seed — rotates each page load
-                        const _pNoise = (function() {
-                            const seed = Math.floor(Math.random() * 32) - 16;
-                            const audioShift = (Math.random() * 0.0002) - 0.0001;
-                            const fontNoise = Math.floor(Math.random() * 2);
-                            return { seed, audioShift, fontNoise };
-                        })();
-
-                        // Canvas 2D noise
-                        const origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
-                        CanvasRenderingContext2D.prototype.getImageData = function(...args) {
-                            const d = origGetImageData.apply(this, args);
-                            if (d.data.length > 4) {
-                                d.data[0] = (d.data[0] + _pNoise.seed) & 255;
-                                d.data[1] = (d.data[1] + (_pNoise.seed >> 1)) & 255;
-                            }
-                            return d;
-                        };
-
-                        // WebGL readPixels noise
-                        const _origReadPixels = WebGLRenderingContext.prototype.readPixels;
-                        WebGLRenderingContext.prototype.readPixels = function(x, y, w, h, fmt, type, buf) {
-                            _origReadPixels.apply(this, arguments);
-                            if (buf && buf.length > 0) buf[0] = (buf[0] ^ 1) & 255;
-                        };
-
-                        // AudioContext noise
-                        if (typeof AudioBuffer !== 'undefined') {
-                            const origGetChannelData = AudioBuffer.prototype.getChannelData;
-                            AudioBuffer.prototype.getChannelData = function(channel) {
-                                const d = origGetChannelData.apply(this, [channel]);
-                                if (d.length > 0) d[0] = d[0] + _pNoise.audioShift;
-                                return d;
-                            };
-                        }
-                    } catch(e) {}
-                """.trimIndent()).append("\n")
-            }
-
-            // Firefox / Mozilla Video Background Play Fix:
-            // Prevents media players (YouTube, Vimeo, web video) from pausing when tabs are switched or app minimized
-            val backgroundPlay = sp.getBoolean("sp_background_play", false)
-            if (backgroundPlay) {
-                sb.append("""
-                    try {
-                        Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
-                        Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
-                        Object.defineProperty(document, 'webkitHidden', { get: () => false, configurable: true });
-                        Object.defineProperty(document, 'webkitVisibilityState', { get: () => 'visible', configurable: true });
-                        const stopVisProp = (e) => {
-                            if (e && e.type === 'visibilitychange') {
-                                e.stopImmediatePropagation();
-                            }
-                        };
-                        window.addEventListener('visibilitychange', stopVisProp, true);
-                        document.addEventListener('visibilitychange', stopVisProp, true);
-                    } catch(e) {}
-                """.trimIndent()).append("\n")
-            }
-            sb.append("})();")
-            evaluateJavascript(sb.toString())
-
             // Waterfox-grade cosmetic and anti-adblock scriptlet injection
             val adBlock = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
             if (adBlock) {
                 val uboPayload = com.petal.browser.browser.PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload(currentUrl)
-                evaluateJavascript(uboPayload)
+                if (uboPayload.isNotBlank()) {
+                    evaluateJavascript(uboPayload)
+                }
             }
         } catch (_: Throwable) {}
     }
 
     /**
      * Seamless Media Handoff: Captures the live playback state of the first or active
-     * HTML5 <video> element on the page.
+     * HTML5 <video> element on the page with real DOM evaluation.
      */
     fun captureVideoHandoffState(callback: (com.petal.browser.media.handoff.MediaHandoff?) -> Unit) {
         try {
-            // Find active video and post its state
             val js = """
                 (function() {
                     try {
                         var vids = Array.from(document.querySelectorAll('video'));
                         if (vids.length === 0) return null;
-                        // Prefer playing video, else first video
                         var vid = vids.find(function(v) { return !v.paused; }) || vids[0];
                         var pos = Math.round((vid.currentTime || 0) * 1000);
                         var dur = Math.round((vid.duration || 0) * 1000);
@@ -3470,8 +3488,24 @@ class PetalGeckoView @JvmOverloads constructor(
                     }
                 })()
             """.trimIndent()
-            // Even if async callback is immediate, return default fallback if cannot query DOM synchronously
-            callback(com.petal.browser.media.handoff.MediaHandoff(0L, 0L, 1.0f, false, 1.0f, currentUrl))
+            evaluateJavascript(js) { rawResult ->
+                if (rawResult.isNullOrBlank() || rawResult == "null" || rawResult.startsWith("ERROR:")) {
+                    callback(null)
+                    return@evaluateJavascript
+                }
+                try {
+                    val json = org.json.JSONObject(rawResult)
+                    val pos = json.optLong("pos", 0L)
+                    val dur = json.optLong("dur", 0L)
+                    val speed = json.optDouble("speed", 1.0).toFloat()
+                    val paused = json.optBoolean("paused", false)
+                    val vol = json.optDouble("vol", 1.0).toFloat()
+                    val src = json.optString("src", "").takeIf { it.isNotBlank() } ?: currentUrl
+                    callback(com.petal.browser.media.handoff.MediaHandoff(pos, dur, speed, paused, vol, src))
+                } catch (_: Throwable) {
+                    callback(null)
+                }
+            }
         } catch (_: Throwable) {
             callback(null)
         }

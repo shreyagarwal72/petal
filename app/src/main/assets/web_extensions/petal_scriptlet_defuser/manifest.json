@@ -9,7 +9,9 @@
         }
     },
     "permissions": [
-        "<all_urls>"
+        "<all_urls>",
+        "nativeMessaging",
+        "nativeMessagingFromContent"
     ],
     "content_scripts": [
         {

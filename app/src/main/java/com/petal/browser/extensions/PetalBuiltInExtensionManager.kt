@@ -30,11 +30,53 @@ object PetalBuiltInExtensionManager {
     private const val TAG = "PetalBuiltInExt"
     private const val MEDIA_GRABBER_ID = "petal-media-grabber@petalbrowser.app"
     private const val DARK_WEBPAGES_ID = "petal-dark-webpages@petalbrowser.app"
+    private const val SCRIPTLET_DEFUSER_ID = "petal-scriptlet-defuser@petalbrowser.app"
     private const val NATIVE_APP = "petalApp"
 
     private var appContext: Context? = null
     private val installedExtensions = ConcurrentHashMap<String, WebExtension>()
     private val activeSessions = Collections.newSetFromMap(WeakHashMap<GeckoSession, Boolean>())
+    private val sessionPorts = Collections.synchronizedMap(WeakHashMap<GeckoSession, WebExtension.Port>())
+    private val pendingEvaluations = ConcurrentHashMap<String, (String?) -> Unit>()
+
+    private val defuserPortDelegate = object : WebExtension.PortDelegate {
+        override fun onPortMessage(message: Any, port: WebExtension.Port) {
+            val json = runCatching { if (message is JSONObject) message else JSONObject(message.toString()) }.getOrNull()
+                ?: return
+            if (json.optString("type") == "EVAL_RESULT") {
+                val id = json.optString("id")
+                val error = json.optString("error").takeIf { it.isNotBlank() }
+                val result = json.optString("result").takeIf { it.isNotBlank() && it != "null" }
+                val cb = pendingEvaluations.remove(id)
+                if (error != null) {
+                    cb?.invoke("ERROR: $error")
+                } else {
+                    cb?.invoke(result)
+                }
+            }
+        }
+
+        override fun onDisconnect(port: WebExtension.Port) {
+            synchronized(sessionPorts) {
+                val it = sessionPorts.entries.iterator()
+                while (it.hasNext()) {
+                    if (it.next().value == port) {
+                        it.remove()
+                    }
+                }
+            }
+        }
+    }
+
+    private val scriptletMessageDelegate = object : WebExtension.MessageDelegate {
+        override fun onConnect(port: WebExtension.Port) {
+            port.setDelegate(defuserPortDelegate)
+            val sess = port.sender?.session
+            if (sess != null) {
+                sessionPorts[sess] = port
+            }
+        }
+    }
 
     private val darkMessageDelegate = object : WebExtension.MessageDelegate {
         override fun onMessage(nativeApp: String, message: Any, sender: WebExtension.MessageSender): GeckoResult<Any>? {
@@ -288,6 +330,14 @@ object PetalBuiltInExtensionManager {
                 Log.w(TAG, "Failed to attach dark webpages delegate to session", t)
             }
         }
+        val scriptletDefuser = installedExtensions[SCRIPTLET_DEFUSER_ID]
+        if (scriptletDefuser != null) {
+            try {
+                session.webExtensionController.setMessageDelegate(scriptletDefuser, scriptletMessageDelegate, NATIVE_APP)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to attach scriptlet defuser delegate to session", t)
+            }
+        }
     }
 
     /** Install and sync all built-in extensions. Called from BrowserActivity. */
@@ -369,6 +419,21 @@ object PetalBuiltInExtensionManager {
                             session.webExtensionController.setMessageDelegate(ext, darkMessageDelegate, NATIVE_APP)
                         } catch (t: Throwable) {
                             Log.w(TAG, "Failed to retroactively attach dark webpages delegate to active session", t)
+                        }
+                    }
+                }
+                if (spec.extensionId == SCRIPTLET_DEFUSER_ID) {
+                    try {
+                        ext.setMessageDelegate(scriptletMessageDelegate, NATIVE_APP)
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Failed to set global message delegate for scriptlet defuser", t)
+                    }
+                    val sessions = synchronized(activeSessions) { activeSessions.toList() }
+                    for (session in sessions) {
+                        try {
+                            session.webExtensionController.setMessageDelegate(ext, scriptletMessageDelegate, NATIVE_APP)
+                        } catch (t: Throwable) {
+                            Log.w(TAG, "Failed to retroactively attach scriptlet defuser delegate to active session", t)
                         }
                     }
                 }
@@ -475,5 +540,46 @@ object PetalBuiltInExtensionManager {
     fun setTorraysEnabled(context: Context, enabled: Boolean) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
         sp.edit().putBoolean(PREF_TORRAYS, enabled).apply()
+    }
+
+    /**
+     * Evaluates JavaScript in the given GeckoSession via the built-in scriptlet defuser
+     * content script native messaging port. The result is returned asynchronously to the callback.
+     * If the native port is not connected or session is unavailable, falls back to loadUri(javascript:...)
+     * and honestly reports null to the callback without pretending an empty result was returned.
+     */
+    @JvmStatic
+    fun evaluateJavascript(session: GeckoSession?, script: String, callback: ((String?) -> Unit)? = null) {
+        if (session == null) {
+            callback?.invoke(null)
+            return
+        }
+        val port = sessionPorts[session]
+        if (port != null) {
+            val reqId = java.util.UUID.randomUUID().toString()
+            if (callback != null) {
+                pendingEvaluations[reqId] = callback
+            }
+            val json = JSONObject().apply {
+                put("type", "EVAL_JS")
+                put("id", reqId)
+                put("script", script)
+            }
+            try {
+                port.postMessage(json)
+                return
+            } catch (t: Throwable) {
+                pendingEvaluations.remove(reqId)
+                Log.w(TAG, "Failed to post EVAL_JS message to port", t)
+            }
+        }
+
+        // Fallback: run via javascript: URL without a result path
+        try {
+            val cleanScript = script.trim().removeSuffix(";")
+            val js = "javascript:(function(){ try { $cleanScript; } catch(e) { console.error('JS eval error:', e); } })()"
+            session.loadUri(js)
+        } catch (_: Throwable) {}
+        callback?.invoke(null)
     }
 }

@@ -151,23 +151,30 @@ object PetalAccessibilityEngine {
         val context = view.context ?: return
         if (!isForceZoomEnabled(context)) return
 
-        val js = """
-            (function() {
-                try {
-                    var metas = document.querySelectorAll('meta[name="viewport"]');
-                    metas.forEach(function(m) {
-                        m.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes');
-                    });
-                    if (metas.length === 0) {
-                        var m = document.createElement('meta');
-                        m.name = 'viewport';
-                        m.content = 'width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes';
-                        document.head.appendChild(m);
-                    }
-                } catch(e) {}
-            })();
-        """.trimIndent()
-        evaluateJavascript(controller, js)
+        val host = try { android.net.Uri.parse(controller.url ?: "").host ?: "" } catch (_: Throwable) { "" }
+        val js = if (host.isNotBlank()) {
+            com.petal.browser.engine.petal.blocking.ForcedPageZoomScript.create(listOf(host))
+        } else {
+            """
+                (function() {
+                    try {
+                        var metas = document.querySelectorAll('meta[name="viewport"]');
+                        metas.forEach(function(m) {
+                            m.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes');
+                        });
+                        if (metas.length === 0) {
+                            var m = document.createElement('meta');
+                            m.name = 'viewport';
+                            m.content = 'width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes';
+                            document.head.appendChild(m);
+                        }
+                    } catch(e) {}
+                })();
+            """.trimIndent()
+        }
+        if (js.isNotBlank()) {
+            evaluateJavascript(controller, js)
+        }
     }
 
     @JvmStatic

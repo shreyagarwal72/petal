@@ -111,6 +111,30 @@ enum class PetalPermissionType(
         description = "Lets the site save offline data, settings and cache on this device.",
         icon = Icons.Rounded.Cookie,
         accentColor = Color(0xFFE91E63)
+    ),
+    CAMERA_AND_MICROPHONE(
+        title = "Camera & Microphone",
+        description = "Lets the site record video and capture audio for calls.",
+        icon = Icons.Rounded.Videocam,
+        accentColor = Color(0xFFFF9400)
+    ),
+    XR(
+        title = "Virtual / Augmented Reality",
+        description = "Lets the site access VR / AR headsets and spatial sensors.",
+        icon = Icons.Rounded.ViewInAr,
+        accentColor = Color(0xFF9C27B0)
+    ),
+    LOCAL_NETWORK(
+        title = "Local Network Access",
+        description = "Lets the site discover and connect to devices on your local network.",
+        icon = Icons.Rounded.Router,
+        accentColor = Color(0xFF009688)
+    ),
+    TRACKING(
+        title = "Cross-Site Tracking",
+        description = "Lets the site track your browsing activity across other websites.",
+        icon = Icons.Rounded.Security,
+        accentColor = Color(0xFFE53935)
     )
 }
 
@@ -121,12 +145,14 @@ private data class PermissionAccent(val container: Color, val onContainer: Color
 private fun PetalPermissionType.accent(): PermissionAccent {
     val c = MaterialTheme.colorScheme
     return when (this) {
-        PetalPermissionType.LOCATION, PetalPermissionType.NOTIFICATION ->
+        PetalPermissionType.LOCATION, PetalPermissionType.NOTIFICATION, PetalPermissionType.LOCAL_NETWORK ->
             PermissionAccent(c.primaryContainer, c.onPrimaryContainer, c.primary)
-        PetalPermissionType.CAMERA, PetalPermissionType.DRM ->
+        PetalPermissionType.CAMERA, PetalPermissionType.DRM, PetalPermissionType.CAMERA_AND_MICROPHONE ->
             PermissionAccent(c.tertiaryContainer, c.onTertiaryContainer, c.tertiary)
-        PetalPermissionType.MICROPHONE, PetalPermissionType.STORAGE ->
+        PetalPermissionType.MICROPHONE, PetalPermissionType.STORAGE, PetalPermissionType.XR ->
             PermissionAccent(c.secondaryContainer, c.onSecondaryContainer, c.secondary)
+        PetalPermissionType.TRACKING ->
+            PermissionAccent(c.errorContainer, c.onErrorContainer, c.error)
     }
 }
 
@@ -135,9 +161,13 @@ private fun PetalPermissionType.titleSuffix(): String = when (this) {
     PetalPermissionType.LOCATION -> " to use your location?"
     PetalPermissionType.CAMERA -> " to use your camera?"
     PetalPermissionType.MICROPHONE -> " to use your microphone?"
+    PetalPermissionType.CAMERA_AND_MICROPHONE -> " to use your camera and microphone?"
     PetalPermissionType.NOTIFICATION -> " to send you notifications?"
     PetalPermissionType.DRM -> " to play protected media?"
     PetalPermissionType.STORAGE -> " to save site data?"
+    PetalPermissionType.XR -> " to access VR / AR devices?"
+    PetalPermissionType.LOCAL_NETWORK -> " to access local network devices?"
+    PetalPermissionType.TRACKING -> " to track your browsing across sites?"
 }
 
 /** A softly scalloped circle: the expressive "cookie" badge shape. */

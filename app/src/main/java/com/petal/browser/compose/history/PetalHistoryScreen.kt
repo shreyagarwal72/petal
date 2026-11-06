@@ -16,6 +16,8 @@ import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -126,8 +128,45 @@ private sealed class HistoryListItem {
     data class Entry(val record: Record, val indexInGroup: Int, val groupSize: Int) : HistoryListItem()
 }
 
-/** Build a flat list of [HistoryListItem]s with group headers inserted, preserving DESC order. */
-private fun buildGroupedItems(records: List<Record>): List<HistoryListItem> {
+@Immutable
+enum class HistorySortOption(val label: String) {
+    TIME_DESC("Recent"),
+    NAME_ASC("A–Z"),
+    NAME_DESC("Z–A"),
+    SITE_ASC("By Site"),
+    TIME_ASC("Oldest")
+}
+
+private fun extractDomain(record: Record): String {
+    val rawDomain = record.domain?.takeIf { it.isNotBlank() }
+        ?: try { java.net.URI(record.url ?: "").host } catch (_: Exception) { null }
+    return rawDomain?.removePrefix("www.")?.ifBlank { "Other" } ?: "Other"
+}
+
+/** Build a flat list of [HistoryListItem]s with group headers inserted according to [HistorySortOption]. */
+private fun buildGroupedItems(
+    records: List<Record>,
+    sortOption: HistorySortOption
+): List<HistoryListItem> {
+    if (records.isEmpty()) return emptyList()
+
+    val sortedRecords = when (sortOption) {
+        HistorySortOption.TIME_DESC -> records.sortedByDescending { it.time }
+        HistorySortOption.TIME_ASC -> records.sortedBy { it.time }
+        HistorySortOption.NAME_ASC -> records.sortedWith(
+            compareBy<Record> { (it.title?.trim()?.ifBlank { it.url } ?: "").lowercase(Locale.getDefault()) }
+                .thenByDescending { it.time }
+        )
+        HistorySortOption.NAME_DESC -> records.sortedWith(
+            compareByDescending<Record> { (it.title?.trim()?.ifBlank { it.url } ?: "").lowercase(Locale.getDefault()) }
+                .thenByDescending { it.time }
+        )
+        HistorySortOption.SITE_ASC -> records.sortedWith(
+            compareBy<Record> { extractDomain(it).lowercase(Locale.getDefault()) }
+                .thenByDescending { it.time }
+        )
+    }
+
     val result = mutableListOf<HistoryListItem>()
     var currentGroup: String? = null
     var groupBuffer = mutableListOf<Record>()
@@ -141,8 +180,14 @@ private fun buildGroupedItems(records: List<Record>): List<HistoryListItem> {
         groupBuffer = mutableListOf()
     }
 
-    for (record in records) {
-        val group = getHistoryDateGroup(record.time)
+    for (record in sortedRecords) {
+        val group = when (sortOption) {
+            HistorySortOption.TIME_DESC, HistorySortOption.TIME_ASC -> getHistoryDateGroup(record.time)
+            HistorySortOption.NAME_ASC, HistorySortOption.NAME_DESC -> {
+                extractFastScrollGlyph(record.title?.ifBlank { record.url }) ?: "#"
+            }
+            HistorySortOption.SITE_ASC -> extractDomain(record)
+        }
         if (group != currentGroup) {
             flushGroup()
             currentGroup = group
@@ -239,6 +284,13 @@ fun PetalHistoryScreen(
         }
     }
 
+    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    var sortOption by remember {
+        val saved = sp.getString("sp_history_sort_mode", HistorySortOption.TIME_DESC.name)
+        mutableStateOf(try { HistorySortOption.valueOf(saved ?: "") } catch (_: Exception) { HistorySortOption.TIME_DESC })
+    }
+    var sortMenuExpanded by remember { mutableStateOf(false) }
+
     val filteredHistory = remember(searchQuery, rawHistory) {
         val historyList = rawHistory ?: emptyList()
         if (searchQuery.isBlank()) {
@@ -252,11 +304,30 @@ fun PetalHistoryScreen(
         }
     }
 
-    // Build grouped items — date headers inserted when browsing normally.
-    // When searching, show flat results without headers for clarity.
-    val groupedItems = remember(filteredHistory, searchQuery) {
-        if (searchQuery.isBlank()) buildGroupedItems(filteredHistory)
-        else filteredHistory.mapIndexed { i, r -> HistoryListItem.Entry(r, i, filteredHistory.size) }
+    // Build grouped items — headers inserted when browsing normally according to sortOption.
+    // When searching, sort the matching results according to sortOption.
+    val groupedItems = remember(filteredHistory, searchQuery, sortOption) {
+        if (searchQuery.isBlank()) {
+            buildGroupedItems(filteredHistory, sortOption)
+        } else {
+            val sortedMatches = when (sortOption) {
+                HistorySortOption.TIME_DESC -> filteredHistory.sortedByDescending { it.time }
+                HistorySortOption.TIME_ASC -> filteredHistory.sortedBy { it.time }
+                HistorySortOption.NAME_ASC -> filteredHistory.sortedWith(
+                    compareBy<Record> { (it.title?.trim()?.ifBlank { it.url } ?: "").lowercase(Locale.getDefault()) }
+                        .thenByDescending { it.time }
+                )
+                HistorySortOption.NAME_DESC -> filteredHistory.sortedWith(
+                    compareByDescending<Record> { (it.title?.trim()?.ifBlank { it.url } ?: "").lowercase(Locale.getDefault()) }
+                        .thenByDescending { it.time }
+                )
+                HistorySortOption.SITE_ASC -> filteredHistory.sortedWith(
+                    compareBy<Record> { extractDomain(it).lowercase(Locale.getDefault()) }
+                        .thenByDescending { it.time }
+                )
+            }
+            sortedMatches.mapIndexed { i, r -> HistoryListItem.Entry(r, i, sortedMatches.size) }
+        }
     }
 
     if (showClearConfirm) {
@@ -313,6 +384,60 @@ fun PetalHistoryScreen(
                     subtitle = "${filteredHistory.size} items",
                     onBack = onDismiss,
                     actions = {
+                        Box {
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.Sort,
+                                contentDescription = "Sort History",
+                                onClick = { sortMenuExpanded = true }
+                            )
+                            com.petal.browser.ui.containment.PetalPopupMenu(
+                                expanded = sortMenuExpanded,
+                                onDismissRequest = { sortMenuExpanded = false }
+                            ) {
+                                HistorySortOption.values().forEach { option ->
+                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                        text = {
+                                            Text(
+                                                text = when (option) {
+                                                    HistorySortOption.TIME_DESC -> "Date (Newest first)"
+                                                    HistorySortOption.TIME_ASC -> "Date (Oldest first)"
+                                                    HistorySortOption.NAME_ASC -> "Name (A–Z)"
+                                                    HistorySortOption.NAME_DESC -> "Name (Z–A)"
+                                                    HistorySortOption.SITE_ASC -> "Site (A–Z)"
+                                                },
+                                                fontWeight = if (sortOption == option) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = when (option) {
+                                                    HistorySortOption.TIME_DESC -> Icons.Rounded.Schedule
+                                                    HistorySortOption.TIME_ASC -> Icons.Rounded.History
+                                                    HistorySortOption.NAME_ASC -> Icons.Rounded.FormatListBulleted
+                                                    HistorySortOption.NAME_DESC -> Icons.Rounded.FormatListBulleted
+                                                    HistorySortOption.SITE_ASC -> Icons.Rounded.Public
+                                                },
+                                                contentDescription = null
+                                            )
+                                        },
+                                        trailingIcon = {
+                                            if (sortOption == option) {
+                                                Icon(
+                                                    Icons.Rounded.Check,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        },
+                                        onClick = {
+                                            sortOption = option
+                                            sp.edit().putString("sp_history_sort_mode", option.name).apply()
+                                            sortMenuExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
                         if (rawHistory?.isNotEmpty() == true) {
                             HeaderActionIcon(
                                 icon = Icons.Rounded.DeleteSweep,
@@ -352,11 +477,70 @@ fun PetalHistoryScreen(
                     )
                 )
 
+                // ── Material 3 Expressive Liquid Glass Sort Chips ──
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HistorySortOption.values().forEach { option ->
+                        val selected = sortOption == option
+                        val chipScale by animateFloatAsState(
+                            targetValue = if (selected) 1f else 0.96f,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium
+                            ),
+                            label = "historySortChipScale_${option.name}"
+                        )
+                        val chipShape = RoundedCornerShape(14.dp)
+                        FilterChip(
+                            selected = selected,
+                            onClick = {
+                                sortOption = option
+                                sp.edit().putString("sp_history_sort_mode", option.name).apply()
+                            },
+                            label = {
+                                Text(
+                                    text = option.label,
+                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                    fontSize = 13.sp
+                                )
+                            },
+                            leadingIcon = {
+                                val icon = when (option) {
+                                    HistorySortOption.TIME_DESC -> Icons.Rounded.Schedule
+                                    HistorySortOption.TIME_ASC -> Icons.Rounded.History
+                                    HistorySortOption.NAME_ASC -> Icons.Rounded.FormatListBulleted
+                                    HistorySortOption.NAME_DESC -> Icons.Rounded.FormatListBulleted
+                                    HistorySortOption.SITE_ASC -> Icons.Rounded.Public
+                                }
+                                Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+                            },
+                            shape = chipShape,
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                labelColor = MaterialTheme.colorScheme.onSurface,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            border = null,
+                            modifier = Modifier
+                                .graphicsLayer(scaleX = chipScale, scaleY = chipScale)
+                                .liquidGlassChrome(shape = chipShape, enabled = isGlass, sheenIntensity = 0.35f)
+                        )
+                    }
+                }
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .padding(horizontal = 20.dp, vertical = 8.dp)
                 ) {
                     if (rawHistory == null) {
                         ContainedLoadingIndicator(
@@ -364,6 +548,7 @@ fun PetalHistoryScreen(
                         )
                     } else {
                         val historyListState = androidx.compose.foundation.lazy.rememberLazyListState()
+                        val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                         LazyColumn(
                             state = historyListState,
                             flingBehavior = petalFlingBehavior(),
@@ -371,7 +556,12 @@ fun PetalHistoryScreen(
                                 .fillMaxSize()
                                 .scrollMotionBlur(historyListState),
                             verticalArrangement = Arrangement.spacedBy(3.dp),
-                            contentPadding = PaddingValues(bottom = 24.dp)
+                            contentPadding = PaddingValues(
+                                start = 20.dp,
+                                end = 20.dp,
+                                top = 8.dp,
+                                bottom = navBarBottom + 24.dp
+                            )
                         ) {
                             item(key = "clear_banner") {
                                 PetalGroupRow(
@@ -395,8 +585,8 @@ fun PetalHistoryScreen(
                                     items = groupedItems,
                                     key = { _, item ->
                                         when (item) {
-                                            is HistoryListItem.Header -> "header_${item.label}"
-                                            is HistoryListItem.Entry -> "${item.record.url}_${item.record.time}"
+                                            is HistoryListItem.Header -> "header_${sortOption.name}_${item.label}"
+                                            is HistoryListItem.Entry -> "${sortOption.name}_${item.record.url}_${item.record.time}_${item.indexInGroup}"
                                         }
                                     }
                                 ) { _, listItem ->
@@ -511,11 +701,24 @@ fun PetalHistoryScreen(
 
                         PetalExpressiveScrollBar(
                             listState = historyListState,
-                            modifier = Modifier.align(Alignment.CenterEnd),
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .padding(top = 8.dp, bottom = navBarBottom + 8.dp),
                             dragLabelProvider = { index ->
-                                when (val item = groupedItems.getOrNull(index)) {
+                                if (index == 0) null
+                                else when (val item = groupedItems.getOrNull(index - 1)) {
                                     is HistoryListItem.Header -> item.label.take(2).uppercase()
-                                    is HistoryListItem.Entry -> extractFastScrollGlyph(item.record.title)
+                                    is HistoryListItem.Entry -> {
+                                        when (sortOption) {
+                                            HistorySortOption.NAME_ASC, HistorySortOption.NAME_DESC -> {
+                                                extractFastScrollGlyph(item.record.title?.ifBlank { item.record.url })
+                                            }
+                                            HistorySortOption.SITE_ASC -> {
+                                                extractFastScrollGlyph(extractDomain(item.record))
+                                            }
+                                            else -> extractFastScrollGlyph(item.record.title)
+                                        }
+                                    }
                                     null -> null
                                 }
                             }

@@ -53,6 +53,8 @@ class FxAccountManager private constructor() {
         }
     }
 
+    private val pendingOAuthStates = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
     /**
      * Constructs the official Mozilla Accounts OAuth2 authorization URL.
      * Uses web OAuth parameters (action=email, entrypoint=petal, prompt=login)
@@ -60,10 +62,27 @@ class FxAccountManager private constructor() {
      * internal Fenix WebChannel extension.
      */
     fun beginLogin(state: String = UUID.randomUUID().toString()): String {
+        pendingOAuthStates.add(state)
         val encodedRedirect = URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8.name())
         val encodedScope = URLEncoder.encode(DEFAULT_SCOPES, StandardCharsets.UTF_8.name())
         val encodedState = URLEncoder.encode(state, StandardCharsets.UTF_8.name())
         return "$AUTH_ENDPOINT?client_id=$CLIENT_ID&response_type=code&redirect_uri=$encodedRedirect&scope=$encodedScope&state=$encodedState&access_type=offline&action=email&entrypoint=petal&prompt=login"
+    }
+
+    /**
+     * Checks whether an OAuth response matches an active login request started by this app.
+     */
+    fun hasPendingAuth(state: String?): Boolean {
+        if (state.isNullOrBlank()) return false
+        return pendingOAuthStates.contains(state)
+    }
+
+    /**
+     * Consumes and removes a pending OAuth state if present.
+     */
+    fun consumePendingAuth(state: String?): Boolean {
+        if (state.isNullOrBlank()) return false
+        return pendingOAuthStates.remove(state)
     }
 
     /**

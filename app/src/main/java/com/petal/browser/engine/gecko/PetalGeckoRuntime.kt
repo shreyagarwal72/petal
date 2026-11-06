@@ -125,7 +125,10 @@ object PetalGeckoRuntime {
             else -> if (forceDark) GeckoRuntimeSettings.COLOR_SCHEME_DARK else GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM
         }
 
-        val allowAboutConfig = sp.getBoolean("sp_enable_about_config", true)
+        val allowAboutConfig = sp.getBoolean("sp_enable_about_config", isDebug)
+        val userChangedFontSize = sp.contains("sp_font_size_scale")
+        val fontScale = sp.getFloat("sp_font_size_scale", 1.0f)
+
         val settingsBuilder = GeckoRuntimeSettings.Builder()
             .aboutConfigEnabled(allowAboutConfig)
             .trustedRecursiveResolverMode(trrMode)
@@ -142,7 +145,6 @@ object PetalGeckoRuntime {
                 if (securityLevel == com.petal.browser.privacy.PetalPrivacyHardening.SecurityLevel.SAFEST) false
                 else sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
             )
-            .fontSizeFactor(sp.getFloat("sp_font_size_scale", 1.0f))
             .consoleOutput(isDebug)
             .remoteDebuggingEnabled(isDebug)
             .webManifest(true)
@@ -151,7 +153,14 @@ object PetalGeckoRuntime {
             // Enable login autofill API so password manager extensions (Bitwarden, etc.) can
             // intercept login forms via the WebExtension loginAutofill API. Without this,
             // extensions receive the form events but cannot fill credentials.
-            .loginAutofillEnabled(sp.getBoolean("sp_webauthn_enabled", true))
+            .loginAutofillEnabled(sp.getBoolean("sp_login_autofill_enabled", true))
+
+        if (userChangedFontSize && fontScale != 1.0f) {
+            settingsBuilder.automaticFontSizeAdjustment(false)
+            settingsBuilder.fontSizeFactor(fontScale)
+        } else {
+            settingsBuilder.automaticFontSizeAdjustment(true)
+        }
 
         if (!dohUri.isNullOrBlank() && trrMode != GeckoRuntimeSettings.TRR_MODE_OFF) {
             settingsBuilder.trustedRecursiveResolverUri(dohUri)
@@ -265,8 +274,14 @@ object PetalGeckoRuntime {
 
                 // Text zoom / font scale factor
                 try {
+                    val userChanged = sp.contains("sp_font_size_scale")
                     val fontScale = sp.getFloat("sp_font_size_scale", 1.0f)
-                    rt.settings.fontSizeFactor = fontScale
+                    if (userChanged && fontScale != 1.0f) {
+                        rt.settings.automaticFontSizeAdjustment = false
+                        rt.settings.fontSizeFactor = fontScale
+                    } else {
+                        rt.settings.automaticFontSizeAdjustment = true
+                    }
                 } catch (t: Throwable) {
                     Log.w(TAG, "Could not sync fontSizeFactor: ${t.message}")
                 }
@@ -299,9 +314,9 @@ object PetalGeckoRuntime {
                 // 5. Safe Browsing Malware & Phishing Shield
                 rt.settings.contentBlocking.setSafeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
 
-                // 6. WebAuthn & Passkeys Autofill
-                val webauthnEnabled = sp.getBoolean("sp_webauthn_enabled", true)
-                rt.settings.loginAutofillEnabled = webauthnEnabled
+                // 6. Login Autofill & WebAuthn / Passkeys
+                val loginAutofill = sp.getBoolean("sp_login_autofill_enabled", true)
+                rt.settings.loginAutofillEnabled = loginAutofill
 
                 // 7. Private DNS / Trusted Recursive Resolver (TRR / DoH)
                 val privateDnsMode = sp.getString("sp_private_dns_mode", com.petal.browser.unit.PetalPrivateDnsHelper.DNS_OFF)
@@ -357,23 +372,24 @@ object PetalGeckoRuntime {
     private fun seedProfileUserJs(appContext: Context) {
         try {
             val arkenfoxRules = com.petal.browser.privacy.PetalPrivacyHardening.buildArkenfoxUserJs(appContext)
+            val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
+            val drmEnabled = sp.getBoolean("sp_drm", true)
+            val backgroundPlay = sp.getBoolean("sp_background_play", false)
+
+            val drmPref = if (!drmEnabled) "user_pref(\"media.eme.enabled\", false);\n" else ""
+            val bkgndVideoPref = if (backgroundPlay) "user_pref(\"media.suspend-bkgnd-video.enabled\", false);\n" else ""
+
             val userJsContent = """
                 // Petal Browser Android 16+ Native Stability & GMP Crash Prevention
                 user_pref("media.gmp-provider.enabled", false);
                 user_pref("media.gmp.decoder.enabled", false);
                 user_pref("media.gmp-manager.url", "");
                 user_pref("media.gmp-manager.updateEnabled", false);
-                user_pref("media.gmp-widevinecdm.visible", false);
-                user_pref("media.gmp-widevinecdm.enabled", false);
-                user_pref("media.gmp-widevinecdm.autoupdate", false);
                 user_pref("media.gmp-gmpopenh264.visible", false);
                 user_pref("media.gmp-gmpopenh264.enabled", false);
                 user_pref("media.gmp-gmpopenh264.autoupdate", false);
-                user_pref("media.eme.enabled", false);
-
-                // Uninterrupted Background Playback & Web Audio Stability
-                user_pref("media.suspend-bkgnd-video.enabled", false);
-
+                $drmPref
+                $bkgndVideoPref
                 // Firefox Reader Mode engine preferences
                 user_pref("reader.parse-on-load.enabled", true);
                 user_pref("reader.color_scheme", "auto");
@@ -388,17 +404,41 @@ object PetalGeckoRuntime {
             )
 
             for (dir in possibleDirs) {
-                if (dir.exists() && dir.isDirectory) {
-                    val subdirs = dir.listFiles { f -> f.isDirectory } ?: emptyArray()
-                    val targetDirs = if (subdirs.isNotEmpty()) subdirs.toList() + dir else listOf(dir)
-                    for (target in targetDirs) {
-                        try {
-                            val flagsJs = java.io.File(target, "petal-flags.js")
-                            val extraFlags = if (flagsJs.exists()) "\n" + flagsJs.readText() else ""
-                            val userJs = java.io.File(target, "user.js")
-                            userJs.writeText(userJsContent + extraFlags)
-                        } catch (_: Throwable) {}
-                    }
+                if (!dir.exists()) {
+                    dir.mkdirs()
+                }
+
+                // Deterministically ensure default profile and profiles.ini exist for first launch
+                val profilesIni = java.io.File(dir, "profiles.ini")
+                val defaultProfile = java.io.File(dir, "default.default")
+                if (!profilesIni.exists()) {
+                    defaultProfile.mkdirs()
+                    try {
+                        val iniContent = """
+                            [General]
+                            StartWithLastProfile=1
+                            Version=2
+
+                            [Profile0]
+                            Name=default
+                            IsRelative=1
+                            Path=default.default
+                            Default=1
+                        """.trimIndent()
+                        profilesIni.writeText(iniContent)
+                    } catch (_: Throwable) {}
+                }
+
+                val subdirs = dir.listFiles { f -> f.isDirectory } ?: emptyArray()
+                val targetDirs = if (subdirs.isNotEmpty()) subdirs.toList() + dir else listOf(defaultProfile, dir)
+                for (target in targetDirs) {
+                    try {
+                        if (!target.exists()) target.mkdirs()
+                        val flagsJs = java.io.File(target, "petal-flags.js")
+                        val extraFlags = if (flagsJs.exists()) "\n" + flagsJs.readText() else ""
+                        val userJs = java.io.File(target, "user.js")
+                        userJs.writeText(userJsContent + extraFlags)
+                    } catch (_: Throwable) {}
                 }
             }
         } catch (_: Throwable) {}

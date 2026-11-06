@@ -8,7 +8,6 @@ import java.util.concurrent.CompletableFuture
 class ContentBlocker(context: Context) {
     private data class CompiledCosmeticRules(
         val rules: EasyListCosmeticRules,
-        val genericPayload: GenericCosmeticPayload,
     )
 
     private val appContext = context.applicationContext
@@ -29,7 +28,6 @@ class ContentBlocker(context: Context) {
             )
             CompiledCosmeticRules(
                 rules = rules,
-                genericPayload = GenericCosmeticPayload.create(rules.genericSelectors()),
             )
         }
     }
@@ -163,30 +161,6 @@ class ContentBlocker(context: Context) {
                 compiled
         ).distinct()
     }
-
-    internal fun genericCosmeticPayload(): String =
-        compiledCosmeticRulesFuture.join().genericPayload.encoded
-
-    internal fun genericCosmeticPolicyForHost(host: String?): String = runCatching {
-        GenericCosmeticPolicyEncoding.encode(
-            compiledCosmeticRulesFuture.join().rules.genericPolicyForHost(host),
-        )
-    }.getOrDefault(GenericCosmeticPolicyEncoding.DISABLED)
-
-    fun genericCosmeticDocumentStartScript(
-        pausedHosts: Collection<String> = emptyList(),
-        bridgeToken: String,
-    ): String = if (compiledCosmeticRulesIfReady() == null) {
-        ""
-    } else {
-        GenericCosmeticScript.create(
-            pausedHosts = pausedHosts,
-            bridgeToken = bridgeToken,
-        )
-    }
-
-    val genericCosmeticCleanupScript: String
-        get() = GenericCosmeticScript.cleanupScript
 
     fun adCosmeticDocumentStartScript(
         pageUrl: String?,

@@ -17,3 +17,7 @@
 - [x] **Phase 04: Menus, Sheets, Settings and Audit**
   - Goal: Origin-anchored menus, velocity-settled bottom sheets, settings & downloads container morphs, shared dialog pop-in/exit, inline animation audit, motion documentation.
   - Status: Complete.
+
+- [x] **Phase 05: Web-Facing GeckoView and Permissions Fixes**
+  - Goal: Real error pages via browser-errorpages, activity runtime permission bridges, autoplay/storage/XR content permissions, prompt hang fixes and CCT/PWA file upload support.
+  - Status: Complete.

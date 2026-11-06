@@ -326,6 +326,32 @@ class PetalCustomTabActivity : ComponentActivity() {
         startActivity(browserIntent)
         finish()
     }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        com.petal.browser.ui.components.PetalRuntimePermissionBridge.handlePermissionsResult(
+            requestCode,
+            permissions,
+            grantResults
+        )
+    }
+
+    fun showFileChooser(
+        filePathCallback: android.webkit.ValueCallback<Array<android.net.Uri>>?,
+        fileChooserParams: android.webkit.WebChromeClient.FileChooserParams?
+    ) {
+        com.petal.browser.compose.file.PetalUploadChooser.show(
+            this,
+            filePathCallback,
+            fileChooserParams
+        ) {
+            android.util.Log.e("PetalCustomTabActivity", "Petal pickers failed to open")
+        }
+    }
 }
 
 @Composable

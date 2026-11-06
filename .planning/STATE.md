@@ -1,11 +1,11 @@
 # Current Project State
 
 ## Active Phase
-- **Phase**: 04 (Follow-up)
-- **Name**: Motion Refinement & Proper Back Transitions
+- **Phase**: 05
+- **Name**: Web-Facing GeckoView and Permissions Fixes
 - **Status**: Completed
 
-## All 4 Phases & Back Motion Refinement Complete
+## All 5 Phases Complete
 1. **Phase 1: Motion Foundation**:
    - `PetalSpring` single source of truth tokens.
    - `MotionGate` counter-based coordinator dropping blur/glass to static fill.
@@ -28,8 +28,8 @@
    - Dialogs: shared `dialogScaleIn` / `dialogScaleOut` and `dialogFadeIn` / `dialogFadeOut`.
    - Comprehensive audit of codebase for inline springs/tweens, layout property animations, and composition-phase animation reads.
    - Written `docs/motion.md` motion guide.
-5. **Phase-Specific Back Motion Refinement**:
-   - **Omnibox**: Replaced generic predictive card-scale in `PetalOmniboxPage.kt` and `BrowserActivity.java` with symmetrical reverse container morph into the origin address bar pill via `collapseOmniboxThen()`.
-   - **Settings Screen**: Intercepted back at the category level with `BackHandler`, animating `popCategory()` with `PetalSpring.containerMorph()` so categories collapse smoothly into list rows.
-   - **Downloads Screen**: Intercepted back in download settings with `BackHandler`, reversing cleanly into the downloads list.
-   - **Bottom Sheets**: Removed `PetalPredictiveBackSurface` from `PetalAboutDeveloperSheet.kt`, `PetalInactiveTabsSheet.kt`, and `PetalRecentlyClosedVault.kt` to ensure sheets dismiss downward rather than scaling down as desktop cards.
+5. **Phase 5: Web-Facing GeckoView and Permissions Fixes**:
+   - Error pages: Added `org.mozilla.components:browser-errorpages:159.0.1` and `RequestInterceptor` in `PetalEngineStore.kt` via `DefaultSettings`. Updated `PetalGeckoView.onLoadError` to generate URL-encoded error pages with retry and advanced/accept-risk paths while preserving HTTPS-Only bypass toast.
+   - Android runtime permissions: Implemented `PetalRuntimePermissionBridge` and `onAndroidPermissionsRequest` in `PetalGeckoPermissionDelegate.kt` with activity hooks across `BrowserActivity`, `PetalCustomTabActivity`, and `PetalPwaActivity`. Removed legacy `PetalAndroidUtils.grantPermissions*` dialog calls. Combined camera & microphone requests into a unified prompt. Cleaned up `PetalActiveMediaSensors` on navigation and session destroy.
+   - Autoplay and content permissions: Handled `PERMISSION_AUTOPLAY_INAUDIBLE` (auto-allow) and `PERMISSION_AUTOPLAY_AUDIBLE` (blocked by default unless allowed by site rule, no dialog). Mapped persistent storage, storage access, XR, tracking, and local device/network permissions to distinct prompts and origin-scoped rules without falling back to storage text.
+   - Prompt hangs and uploads: Fixed uncompleted `GeckoResult` in `onAlertPrompt` and `onButtonPrompt` when activity is null. Extended `onFilePrompt` to `ComponentActivity` so file upload pickers work in `PetalCustomTabActivity` and `PetalPwaActivity` as well as `BrowserActivity`, honoring the camera capture hint.

@@ -301,6 +301,7 @@ dependencies {
         exclude group: 'org.mozilla.geckoview', module: 'geckoview-omni'
     }
     implementation 'org.mozilla.components:concept-engine:159.0.1'
+    implementation 'org.mozilla.components:browser-errorpages:159.0.1'
     implementation 'org.mozilla.components:browser-state:159.0.1'
     implementation 'org.mozilla.components:browser-session-storage:159.0.1'
     implementation 'org.mozilla.components:lib-state:159.0.1'
