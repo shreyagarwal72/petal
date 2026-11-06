@@ -1732,7 +1732,6 @@
     <string name="ui_bookmark_removed">Bookmark removed</string>
     <string name="ui_saved_to_bookmarks">Saved to Bookmarks</string>
     <string name="ui_clean_url_copied">Clean URL copied to clipboard</string>
-    <string name="ui_copy_clean_url">Copy Clean URL</string>
     <string name="ui_copy_clean_url_desc">Copies link with tracking parameters removed</string>
     <string name="ui_paste_and_go">Paste &amp; Go</string>
     <string name="ui_remove_from_bookmarks">Remove from Bookmarks</string>
