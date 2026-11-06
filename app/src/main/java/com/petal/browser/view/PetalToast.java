@@ -24,6 +24,16 @@ public final class PetalToast {
         show(context, context.getString(stringResId));
     }
 
+    public static void show(Context context, @StringRes int stringResId, int duration) {
+        if (context == null) return;
+        show(context, context.getString(stringResId), duration);
+    }
+
+    public static void show(Context context, @StringRes int stringResId, int duration, String actionLabel, Runnable onAction) {
+        if (context == null) return;
+        show(context, context.getString(stringResId), duration, actionLabel, onAction);
+    }
+
     public static void show(Context context, String text) {
         show(context, text, LENGTH_SHORT);
     }

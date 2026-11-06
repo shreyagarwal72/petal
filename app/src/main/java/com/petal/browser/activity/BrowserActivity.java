@@ -772,6 +772,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         final androidx.core.splashscreen.SplashScreen splashScreen =
                 androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+        com.petal.browser.unit.PetalBrowserUtils.setLiveSessionActive(true);
         context = this;
         activity = this;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -1415,14 +1416,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // Release the VIEWS only. clear() would destroy() every tab, which removes it from the
             // BrowserStore (AutoSave then deletes the saved session) and deletes its thumbnail.
             BrowserContainer.releaseAll();
-            if (sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
-                com.petal.browser.unit.PetalBrowserUtils.clearOnExit(this, isFinishing());
-            }
-            if (sp != null && sp.getBoolean("sp_backup_quit", false)) {
-                com.petal.browser.unit.PetalBackupManager.backupData(getApplicationContext(), 0);
-            }
             if (isFinishing()) {
-                com.petal.browser.unit.PetalBrowserUtils.waitForExitCleanupCompletion(1500);
+                com.petal.browser.unit.PetalBrowserUtils.setLiveSessionActive(false);
+                com.petal.browser.unit.PetalBrowserUtils.clearOnExit(this, true);
             }
             com.petal.browser.media.BrowserMediaDelegate.unregisterPipReceiver(this);
         } catch (Exception e) {
@@ -1435,11 +1431,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void onStop() {
         if (petalBrowserFeatures != null) petalBrowserFeatures.stop();
         try {
-            // Gecko reports session-state (history) changes asynchronously, so onPause() can run a
-            // moment before the last navigation is reflected. Persist once more when fully backgrounded -
-            // this is the last reliable point before the user clears the app from recents. Skipped when
-            // finishing so a clear-on-exit wipe below is never undone by a fresh save.
-            if (!isFinishing()) saveOpenedTabs();
+            // BrowserStore holds in-memory tab state. When backgrounded, flush session state and history
+            // to disk via SessionStorage asynchronously, awaiting up to 300ms so the process can exit safely.
+            if (!isFinishing()) com.petal.browser.browser.PetalSessionRestoreManager.saveSession(this, true);
         } catch (Exception e) {
             PetalAppLogger.w(TAG, "Error saving tab session in onStop", e);
         }
@@ -8302,22 +8296,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         super.onPause();
         try {
-            long now = android.os.SystemClock.uptimeMillis();
-            boolean allowCapture = (now - lastOnPausePreviewCaptureTime > 1500L);
-            if (allowCapture) {
-                lastOnPausePreviewCaptureTime = now;
-            }
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.view.PetalGeckoView activeGecko = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                if (allowCapture) {
-                    activeGecko.updatePreviewCache(false);
-                }
+                activeGecko.updatePreviewCache(false);
                 activeGecko.onPause();
             } else if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                 com.petal.browser.browser.PetalTabViewController activeController = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
-                if (allowCapture) {
-                    activeController.updatePreviewCache(false);
-                }
+                activeController.updatePreviewCache(false);
             }
             saveOpenedTabs();
             com.petal.browser.engine.gecko.PetalEngineStore.onAppPause(this);

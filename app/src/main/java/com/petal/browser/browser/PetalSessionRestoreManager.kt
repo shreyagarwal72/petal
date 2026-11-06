@@ -32,8 +32,8 @@ import java.util.UUID
  * Official Mozilla Android Components SessionStorage persistence and restore
  * orchestrator for Petal Browser.
  *
- * BrowserStore in [PetalEngineStore] is the single source of truth for all tabs.
- * Persistence to disk is performed atomically by [mozilla.components.browser.session.storage.AutoSave].
+ * BrowserStore in [PetalEngineStore] is the single source of truth for in-memory tab state.
+ * Persistence to disk is handled by SessionStorage write on onStop/onPause.
  */
 object PetalSessionRestoreManager {
 
@@ -51,6 +51,13 @@ object PetalSessionRestoreManager {
 
     private val gson = Gson()
 
+    private val SAVE_EXECUTOR: java.util.concurrent.ExecutorService =
+        java.util.concurrent.Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "PetalSessionSaveDisk").apply { isDaemon = true }
+        }
+    @Volatile
+    private var pendingSaveFuture: java.util.concurrent.Future<*>? = null
+
     private data class LegacyTabRecord(
         val persistentTabId: String = "",
         val title: String = "",
@@ -63,12 +70,16 @@ object PetalSessionRestoreManager {
     )
 
     /**
-     * Synchronously flushes all open tabs, including full engineSessionState history stacks
-     * and active indices, into BrowserStore and writes the snapshot to disk via SessionStorage.
+     * Flushes open tabs state into BrowserStore (including full engineSessionState history stacks
+     * and active indices) and writes the snapshot to disk via SessionStorage asynchronously.
+     * When [isStopping] is true, awaits completion for up to 300ms before returning so the
+     * process can terminate without data loss. When [isStopping] is false (e.g. onPause),
+     * only cheap in-memory updates are dispatched to BrowserStore without disk blocking.
      */
     @JvmStatic
+    @JvmOverloads
     @MainThread
-    fun saveSession(activity: BrowserActivity) {
+    fun saveSession(activity: BrowserActivity, isStopping: Boolean = false) {
         try {
             if (activity.isFinishing) return
             val store = PetalEngineStore.getStore(activity)
@@ -80,6 +91,17 @@ object PetalSessionRestoreManager {
                 when (controller) {
                     is PetalTabViewController -> {
                         val tabId = controller.getTabId() ?: continue
+                        if (isStopping) {
+                            try {
+                                val tab = store.state.tabs.firstOrNull { it.id == tabId }
+                                val engineSessionState = tab?.engineState?.engineSession?.saveState()
+                                if (engineSessionState != null) {
+                                    store.dispatch(EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState))
+                                }
+                            } catch (t: Throwable) {
+                                Log.w(TAG, "Failed to capture engine state for tab $tabId: ${t.message}")
+                            }
+                        }
                         val url = controller.url
                         if (url.isNotBlank() && !isHomeUrl(url) && !url.equals("about:blank", ignoreCase = true)) {
                             store.dispatch(ContentAction.UpdateUrlAction(tabId, url))
@@ -91,6 +113,17 @@ object PetalSessionRestoreManager {
                     }
                     is PetalGeckoView -> {
                         val tabId = controller.getTabId()
+                        if (isStopping) {
+                            try {
+                                val tab = store.state.tabs.firstOrNull { it.id == tabId }
+                                val engineSessionState = tab?.engineState?.engineSession?.saveState()
+                                if (engineSessionState != null) {
+                                    store.dispatch(EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState))
+                                }
+                            } catch (t: Throwable) {
+                                Log.w(TAG, "Failed to capture engine state for tab $tabId: ${t.message}")
+                            }
+                        }
                         val url = controller.url
                         if (url.isNotBlank() && !isHomeUrl(url) && !url.equals("about:blank", ignoreCase = true)) {
                             store.dispatch(ContentAction.UpdateUrlAction(tabId, url))
@@ -118,10 +151,27 @@ object PetalSessionRestoreManager {
                 store.dispatch(TabListAction.SelectTabAction(activeTabId))
             }
 
-            // 3. Synchronously flush BrowserStore state to disk via SessionStorage
-            val storage = PetalEngineStore.getSessionStorage(activity)
-            val saved = storage.save(store.state)
-            Log.d(TAG, "saveSession: flushed ${store.state.tabs.size} tabs to SessionStorage (success=$saved)")
+            // 3. Persist to disk off-main thread via SessionStorage when stopping
+            if (isStopping) {
+                val storage = PetalEngineStore.getSessionStorage(activity)
+                val snapshot = store.state
+                val future = SAVE_EXECUTOR.submit {
+                    try {
+                        val saved = storage.save(snapshot)
+                        Log.d(TAG, "saveSession: flushed ${snapshot.tabs.size} tabs to SessionStorage (success=$saved)")
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Failed to write session snapshot to disk: ${t.message}", t)
+                    }
+                }
+                pendingSaveFuture = future
+                try {
+                    future.get(300L, java.util.concurrent.TimeUnit.MILLISECONDS)
+                } catch (_: java.util.concurrent.TimeoutException) {
+                    Log.w(TAG, "Session disk save timed out after 300ms, continuing in background")
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Error waiting for session disk save: ${t.message}")
+                }
+            }
         } catch (t: Throwable) {
             Log.w(TAG, "Error in saveSession: ${t.message}", t)
         }

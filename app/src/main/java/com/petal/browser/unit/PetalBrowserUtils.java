@@ -257,13 +257,24 @@ public class PetalBrowserUtils {
         action.close();
     }
 
+    public static final String PREF_PENDING_EXIT_CLEANUP = "sp_pending_exit_cleanup";
+    private static final java.util.concurrent.atomic.AtomicBoolean isLiveSessionActive = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private static final java.util.concurrent.atomic.AtomicBoolean isPerformingClear = new java.util.concurrent.atomic.AtomicBoolean(false);
     private static final java.util.concurrent.atomic.AtomicBoolean hasClearedOnExit = new java.util.concurrent.atomic.AtomicBoolean(false);
     private static final java.util.concurrent.ExecutorService EXIT_EXECUTOR = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "PetalExitWorker");
-        t.setPriority(Thread.NORM_PRIORITY);
+        t.setPriority(Thread.MAX_PRIORITY);
         return t;
     });
     private static volatile java.util.concurrent.Future<?> exitWorkFuture = null;
+
+    public static void setLiveSessionActive(boolean active) {
+        isLiveSessionActive.set(active);
+    }
+
+    public static boolean isLiveSessionActive() {
+        return isLiveSessionActive.get();
+    }
 
     public static void resetClearOnExitState() {
         hasClearedOnExit.set(false);
@@ -274,7 +285,7 @@ public class PetalBrowserUtils {
         java.util.concurrent.Future<?> future = exitWorkFuture;
         if (future != null && !future.isDone()) {
             try {
-                future.get(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+                future.get(Math.min(timeoutMs, 300L), java.util.concurrent.TimeUnit.MILLISECONDS);
             } catch (Exception ignored) {}
         }
     }
@@ -287,19 +298,23 @@ public class PetalBrowserUtils {
         if (context == null) return;
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         boolean clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false);
-        if (!clearQuit) return;
+        boolean backupQuit = sp.getBoolean("sp_backup_quit", false);
+        if (!clearQuit && !backupQuit) return;
 
         if (!hasClearedOnExit.compareAndSet(false, true)) {
             // Already scheduled or completed
             if (waitForCompletion && exitWorkFuture != null) {
                 try {
-                    exitWorkFuture.get(1500, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    exitWorkFuture.get(300, java.util.concurrent.TimeUnit.MILLISECONDS);
                 } catch (Exception ignored) {}
             }
             return;
         }
 
         final Context appContext = context.getApplicationContext();
+
+        // Persist marker before starting executor path
+        sp.edit().putBoolean(PREF_PENDING_EXIT_CLEANUP, true).commit();
 
         // Enqueue WorkManager job as insurance in case the process is killed before the background thread finishes
         try {
@@ -315,16 +330,23 @@ public class PetalBrowserUtils {
 
         Runnable task = () -> {
             try {
-                performClearOnExitInternal(appContext);
+                if (clearQuit) {
+                    performClearOnExitInternal(appContext);
+                }
+                if (backupQuit) {
+                    com.petal.browser.unit.PetalBackupManager.backupData(appContext, 0);
+                }
             } catch (Throwable t) {
                 com.petal.browser.logger.PetalAppLogger.w("PetalBrowserUtils", "Error during clearOnExit background task", t);
+            } finally {
+                sp.edit().putBoolean(PREF_PENDING_EXIT_CLEANUP, false).commit();
             }
         };
 
         try {
             exitWorkFuture = EXIT_EXECUTOR.submit(task);
             if (waitForCompletion) {
-                exitWorkFuture.get(1500, java.util.concurrent.TimeUnit.MILLISECONDS);
+                exitWorkFuture.get(300, java.util.concurrent.TimeUnit.MILLISECONDS);
             }
         } catch (Exception e) {
             com.petal.browser.logger.PetalAppLogger.w("PetalBrowserUtils", "Exit executor rejected task, running inline", e);
@@ -334,46 +356,41 @@ public class PetalBrowserUtils {
 
     public static void performClearOnExitInternal(Context context) {
         if (context == null) return;
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-        boolean clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false);
-        if (!clearQuit) return;
-
-        boolean clearHistory = sp.getBoolean("sp_clear_history", false);
-        boolean clearCache = sp.getBoolean("sp_clear_cache", false);
-
-        // 1. History cleanup: full table wipe only when the user explicitly opted in.
-        //    Session history is preserved across restarts unless sp_clear_history is true —
-        //    matching Firefox's behaviour where "Clear on Exit" for cache/cookies does NOT
-        //    automatically delete browsing history.
-        if (clearHistory) {
-            clearHistory(context);
-            PetalSessionHistoryManager.clearSessionHistory(context);
-            // Clear persisted session state and sidecar metadata
-            com.petal.browser.browser.PetalSessionRestoreManager.clearSession(context);
-        } else {
-            // Reset in-memory session tracker (clears duplicate-visit suppression set)
-            // without touching any rows in the SQLite HISTORY table.
-            PetalSessionHistoryManager.resetSession();
+        if (!isPerformingClear.compareAndSet(false, true)) {
+            return;
         }
-
-        // 2. Clear render & disk cache if explicitly enabled OR when clear on exit is active
-        if (clearCache || clearQuit) {
-            try {
-                CacheManager.clearAllCache(context, null);
-            } catch (Exception exception) {
-                com.petal.browser.logger.PetalAppLogger.w("browser", "Error clearing cache on exit", exception);
-            }
-        }
-
-        // 3. Keep tab thumbnails across app exits. They are removed only when the
-        // corresponding tab is explicitly closed or all tabs are explicitly closed.
-        // Note: NEVER remove account logins, Google credentials, saved passwords, or auth tokens on exit.
-
-        // 4. Firefox-grade ephemeral storage clean & SQLite database compaction
         try {
-            com.petal.browser.engine.gecko.PetalStorageManager.cleanEphemeralStorage(context);
-            com.petal.browser.engine.gecko.PetalStorageManager.optimizeDatabases(context);
-        } catch (Exception ignored) {}
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+            boolean clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false);
+            if (!clearQuit) return;
+
+            boolean clearHistory = sp.getBoolean("sp_clear_history", false);
+            boolean clearCache = sp.getBoolean("sp_clear_cache", false);
+
+            if (clearHistory) {
+                clearHistory(context);
+                PetalSessionHistoryManager.clearSessionHistory(context);
+                com.petal.browser.browser.PetalSessionRestoreManager.clearSession(context);
+            } else {
+                PetalSessionHistoryManager.resetSession();
+            }
+
+            if (clearCache || clearQuit) {
+                try {
+                    CacheManager.clearAllCache(context, null);
+                } catch (Exception exception) {
+                    com.petal.browser.logger.PetalAppLogger.w("browser", "Error clearing cache on exit", exception);
+                }
+            }
+
+            try {
+                com.petal.browser.engine.gecko.PetalStorageManager.cleanEphemeralStorage(context);
+                com.petal.browser.engine.gecko.PetalStorageManager.optimizeDatabases(context);
+            } catch (Exception ignored) {}
+        } finally {
+            isPerformingClear.set(false);
+        }
+    }
     }
 
     public static void clearBrowserData(Context context) {

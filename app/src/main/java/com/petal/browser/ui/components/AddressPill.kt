@@ -1,6 +1,7 @@
 package com.petal.browser.ui.components
 
 import com.petal.browser.R
+import androidx.compose.ui.res.stringResource
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 

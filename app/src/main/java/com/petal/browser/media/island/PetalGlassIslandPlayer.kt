@@ -9,6 +9,7 @@
 package com.petal.browser.media.island
 
 import com.petal.browser.R
+import androidx.compose.ui.res.stringResource
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.*
@@ -135,7 +136,7 @@ fun PetalGlassIslandPlayer(
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
-                            contentDescription = stringResource(R.string.close_button),
+                            contentDescription = stringResource(R.string.ui_close),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
@@ -168,7 +169,7 @@ fun PetalGlassIslandPlayer(
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
-                                contentDescription = stringResource(R.string.close_button),
+                                contentDescription = stringResource(R.string.ui_close),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp)
                             )

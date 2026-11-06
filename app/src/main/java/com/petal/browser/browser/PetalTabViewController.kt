@@ -12,6 +12,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.petal.browser.R
 import com.petal.browser.unit.TabThumbnailCache
+import com.petal.browser.view.PetalCrashOverlayHelper
 import com.petal.browser.engine.gecko.PetalEngineStore
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.state.TabSessionState
@@ -47,6 +48,7 @@ class PetalTabViewController private constructor(
     private var observedSession: EngineSession? = null
     private var active = false
     private var previewRevision = 0L
+    @Volatile
     private var capturedPreviewRevision = -1L
     private var previewCaptureSequence = 0L
     private var previewRetryCount = 0
@@ -366,6 +368,7 @@ class PetalTabViewController private constructor(
 
     private val observer = object : EngineSession.Observer {
         override fun onLocationChange(url: String, hasUserGesture: Boolean) {
+            dismissCrashErrorState()
             android.util.Log.d("PetalTabNav", "observer.onLocationChange: url=$url gesture=$hasUserGesture oldPageUrl=$pageUrl")
             if (isStaleInitialBlank(url)) {
                 android.util.Log.d("PetalTabNav", "ignoring initial about:blank while loading $pendingNavUrl")
@@ -606,6 +609,7 @@ class PetalTabViewController private constructor(
     /** Bind this view to a tab already owned by BrowserStore. */
     @MainThread
     fun bindTab(tab: TabSessionState) {
+        dismissCrashErrorState()
         val session = requireNotNull(tab.engineState.engineSession) {
             "Tab ${tab.id} has no engine session"
         }
@@ -957,6 +961,7 @@ class PetalTabViewController private constructor(
     }
 
     fun loadUrl(url: String) {
+        dismissCrashErrorState()
         val rawUrl = url.trim()
         if (rawUrl.isEmpty()) return
         if (rawUrl.equals("Petal Home", ignoreCase = true) || rawUrl.equals("Petal Start", ignoreCase = true)) {
@@ -1182,9 +1187,11 @@ class PetalTabViewController private constructor(
 
     @JvmOverloads
     fun updatePreviewCache(force: Boolean = false) {
-        if (!force && capturedPreviewRevision == previewRevision) return
+        val currentRev = previewRevision
         val now = android.os.SystemClock.uptimeMillis()
-        if (!force && now - lastPreviewCaptureTime < 1500L) return
+        if (!force && capturedPreviewRevision == currentRev) {
+            if (now - lastPreviewCaptureTime < 1500L) return
+        }
         lastPreviewCaptureTime = now
         capturePreviewBitmapAsync { }
     }
@@ -1459,74 +1466,19 @@ class PetalTabViewController private constructor(
     private var crashErrorView: android.view.View? = null
 
     private fun showCrashErrorState() {
-        if (crashErrorView != null) return
-        val density = resources.displayMetrics.density
-        val container = android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            gravity = android.view.Gravity.CENTER
-            setPadding((32 * density).toInt(), (32 * density).toInt(), (32 * density).toInt(), (32 * density).toInt())
-            layoutParams = android.widget.FrameLayout.LayoutParams(
-                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                android.widget.FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            setBackgroundColor(
-                com.google.android.material.color.MaterialColors.getColor(
-                    this,
-                    com.google.android.material.R.attr.colorSurface,
-                    0xFF121212.toInt()
-                )
-            )
-
-            val titleView = android.widget.TextView(context).apply {
-                text = context.getString(R.string.tab_crash_error_title)
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 20f)
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-                setTextColor(
-                    com.google.android.material.color.MaterialColors.getColor(
-                        this,
-                        com.google.android.material.R.attr.colorOnSurface,
-                        0xFFFFFFFF.toInt()
-                    )
-                )
-                gravity = android.view.Gravity.CENTER
-                setPadding(0, 0, 0, (12 * density).toInt())
-            }
-            addView(titleView)
-
-            val msgView = android.widget.TextView(context).apply {
-                text = context.getString(R.string.tab_crash_error_message)
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
-                setTextColor(
-                    com.google.android.material.color.MaterialColors.getColor(
-                        this,
-                        com.google.android.material.R.attr.colorOnSurfaceVariant,
-                        0xFFAAAAAA.toInt()
-                    )
-                )
-                gravity = android.view.Gravity.CENTER
-                setPadding(0, 0, 0, (24 * density).toInt())
-            }
-            addView(msgView)
-
-            val reloadBtn = com.google.android.material.button.MaterialButton(context).apply {
-                text = context.getString(R.string.ui_reload)
-                setOnClickListener {
-                    dismissCrashErrorState()
-                    crashRecoveryCount = 0
-                    recoverCrashedSession()
-                }
-            }
-            addView(reloadBtn)
+        crashErrorView = PetalCrashOverlayHelper.showCrashErrorState(this, crashErrorView) {
+            crashRecoveryCount = 0
+            recoverCrashedSession()
         }
-        crashErrorView = container
-        addView(container)
     }
 
     private fun dismissCrashErrorState() {
-        crashErrorView?.let {
-            removeView(it)
-            crashErrorView = null
-        }
+        crashErrorView = PetalCrashOverlayHelper.dismissCrashErrorState(this, crashErrorView)
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        dismissCrashErrorState()
     }
 
     fun recoverCrashedSession() {
@@ -1572,7 +1524,7 @@ class PetalTabViewController private constructor(
                     mozilla.components.browser.state.action.EngineAction.LinkEngineSessionAction(
                         tabId = currentTabId,
                         engineSession = newEngineSession,
-                        skipLoading = false
+                        skipLoading = true
                     )
                 )
             }

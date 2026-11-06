@@ -25,12 +25,21 @@ class PetalExitWorkWorker(
     override fun doWork(): Result {
         return try {
             val sp = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-            val clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
-            if (clearQuit) {
-                PetalBrowserUtils.performClearOnExitInternal(applicationContext)
+            val isPending = sp.getBoolean(PetalBrowserUtils.PREF_PENDING_EXIT_CLEANUP, false)
+            if (!isPending || PetalBrowserUtils.isLiveSessionActive()) {
+                // Exit cleanup already completed by the primary executor or a new live session is active
+                return Result.success()
             }
-            if (sp.getBoolean("sp_backup_quit", false)) {
-                PetalBackupManager.backupData(applicationContext, 0)
+            try {
+                val clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
+                if (clearQuit) {
+                    PetalBrowserUtils.performClearOnExitInternal(applicationContext)
+                }
+                if (sp.getBoolean("sp_backup_quit", false)) {
+                    PetalBackupManager.backupData(applicationContext, 0)
+                }
+            } finally {
+                sp.edit().putBoolean(PetalBrowserUtils.PREF_PENDING_EXIT_CLEANUP, false).commit()
             }
             Result.success()
         } catch (t: Throwable) {

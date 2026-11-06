@@ -499,7 +499,7 @@ fun PetalVideoPlayerOverlay(
                                 PetalLiquidIconButton(
                                     onClick = onCloseFullscreen,
                                     size = 48.dp,
-                                    contentDescription = stringResource(R.string.close_button),
+                                    contentDescription = stringResource(R.string.ui_close),
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,

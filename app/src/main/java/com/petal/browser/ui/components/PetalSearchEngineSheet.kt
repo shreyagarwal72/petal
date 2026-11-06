@@ -314,12 +314,12 @@ fun PetalSearchEngineSheetContent(
                     trailing = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (engine.custom) {
-                        IconButton(onClick = { editingEngine = engine }) { Icon(Icons.Rounded.Edit, stringResource(R.string.edit)) }
+                        IconButton(onClick = { editingEngine = engine }) { Icon(Icons.Rounded.Edit, stringResource(R.string.ui_edit)) }
                         IconButton(onClick = {
                             customEngines = customEngines.filterNot { it.index == engine.index }
                             saveCustomSearchEngines(context, customEngines)
                             if (selectedIndex == engine.index) selectedIndex = 0
-                        }) { Icon(Icons.Rounded.DeleteOutline, stringResource(R.string.delete)) }
+                        }) { Icon(Icons.Rounded.DeleteOutline, stringResource(R.string.ui_delete)) }
                             }
                             RadioButton(selected = isSelected, onClick = { selectedIndex = engine.index })
                         }

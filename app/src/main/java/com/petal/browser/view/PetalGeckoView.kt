@@ -1027,6 +1027,7 @@ class PetalGeckoView @JvmOverloads constructor(
     var isReaderEligible: Boolean = false
     private var isMediaPlaying: Boolean = false
     private var previewRevision: Long = 0L
+    @Volatile
     private var capturedPreviewRevision: Long = -1L
     private var previewCaptureSequence: Long = 0L
     // Mirrors Firefox's BrowserThumbnails gate: only thumbnail once the compositor has painted
@@ -1404,6 +1405,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
                 hasUserGesture: Boolean
             ) {
+                post { dismissCrashErrorState() }
                 try {
                     val oldOrigin = currentUrl?.let { u ->
                         val p = android.net.Uri.parse(u)
@@ -2370,6 +2372,7 @@ class PetalGeckoView @JvmOverloads constructor(
     // ─────────────────────────────────────────────────────────────────────────
 
     fun loadUrl(url: String) {
+        dismissCrashErrorState()
         val trimmed = url.trim()
         if (trimmed.equals("about:config", ignoreCase = true) ||
             trimmed.equals("about:flags", ignoreCase = true) ||
@@ -2481,74 +2484,19 @@ class PetalGeckoView @JvmOverloads constructor(
     private var crashErrorView: View? = null
 
     private fun showCrashErrorState() {
-        if (crashErrorView != null) return
-        val density = resources.displayMetrics.density
-        val container = android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            gravity = android.view.Gravity.CENTER
-            setPadding((32 * density).toInt(), (32 * density).toInt(), (32 * density).toInt(), (32 * density).toInt())
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            setBackgroundColor(
-                com.google.android.material.color.MaterialColors.getColor(
-                    this,
-                    com.google.android.material.R.attr.colorSurface,
-                    0xFF121212.toInt()
-                )
-            )
-
-            val titleView = android.widget.TextView(context).apply {
-                text = context.getString(R.string.tab_crash_error_title)
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 20f)
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-                setTextColor(
-                    com.google.android.material.color.MaterialColors.getColor(
-                        this,
-                        com.google.android.material.R.attr.colorOnSurface,
-                        0xFFFFFFFF.toInt()
-                    )
-                )
-                gravity = android.view.Gravity.CENTER
-                setPadding(0, 0, 0, (12 * density).toInt())
-            }
-            addView(titleView)
-
-            val msgView = android.widget.TextView(context).apply {
-                text = context.getString(R.string.tab_crash_error_message)
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
-                setTextColor(
-                    com.google.android.material.color.MaterialColors.getColor(
-                        this,
-                        com.google.android.material.R.attr.colorOnSurfaceVariant,
-                        0xFFAAAAAA.toInt()
-                    )
-                )
-                gravity = android.view.Gravity.CENTER
-                setPadding(0, 0, 0, (24 * density).toInt())
-            }
-            addView(msgView)
-
-            val reloadBtn = com.google.android.material.button.MaterialButton(context).apply {
-                text = context.getString(R.string.ui_reload)
-                setOnClickListener {
-                    dismissCrashErrorState()
-                    crashRecoveryCount = 0
-                    recoverCrashedSession()
-                }
-            }
-            addView(reloadBtn)
+        crashErrorView = PetalCrashOverlayHelper.showCrashErrorState(this, crashErrorView) {
+            crashRecoveryCount = 0
+            recoverCrashedSession()
         }
-        crashErrorView = container
-        addView(container)
     }
 
     private fun dismissCrashErrorState() {
-        crashErrorView?.let {
-            removeView(it)
-            crashErrorView = null
-        }
+        crashErrorView = PetalCrashOverlayHelper.dismissCrashErrorState(this, crashErrorView)
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        dismissCrashErrorState()
     }
 
     private fun recoverCrashedSession() {
@@ -3194,9 +3142,11 @@ class PetalGeckoView @JvmOverloads constructor(
 
     @JvmOverloads
     fun updatePreviewCache(force: Boolean = false) {
-        if (!force && capturedPreviewRevision == previewRevision) return
+        val currentRev = previewRevision
         val now = android.os.SystemClock.uptimeMillis()
-        if (!force && now - lastPreviewCaptureTime < 1500L) return
+        if (!force && capturedPreviewRevision == currentRev) {
+            if (now - lastPreviewCaptureTime < 1500L) return
+        }
         lastPreviewCaptureTime = now
         capturePreviewBitmapAsync { /* cache updated */ }
     }

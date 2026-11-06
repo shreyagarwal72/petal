@@ -1787,5 +1787,13 @@
     <string name="ui_downloading_n_images">Downloading %d images…</string>
     <string name="ui_user_agent_switched">User-Agent switched to %s</string>
     <string name="ui_user_agent_restored">Restored default User-Agent</string>
+    <string name="dialog_restart_title">Restart Petal Browser?</string>
+    <string name="dialog_restart_message">A restart is required to apply the updated configuration and engine settings.</string>
+    <string name="dialog_restart_now">Restart Now</string>
+    <string name="dialog_restart_later">Later</string>
+    <string name="dialog_quit_title">Quit Petal Browser?</string>
+    <string name="dialog_quit_message">Are you sure you want to exit Petal Browser and close your active session?</string>
+    <string name="dialog_quit_confirm">Quit</string>
+    <string name="dialog_quit_cancel">Stay</string>
 </resources>
 

@@ -202,7 +202,7 @@ fun PetalBrowserStoreScreen(
                             trailingIcon = {
                                 if (searchQuery.isNotEmpty()) {
                                     IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(Icons.Rounded.Close, stringResource(R.string.close_button))
+                                        Icon(Icons.Rounded.Close, stringResource(R.string.ui_close))
                                     }
                                 }
                             },

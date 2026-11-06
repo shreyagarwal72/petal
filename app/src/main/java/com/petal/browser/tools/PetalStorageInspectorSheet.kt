@@ -212,7 +212,7 @@ fun PetalStorageInspectorSheet(
                 leadingIcon = { Icon(Icons.Rounded.FilterList, null, modifier = Modifier.size(18.dp)) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Rounded.Clear, stringResource(R.string.clear_all)) }
+                        IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Rounded.Clear, stringResource(R.string.ui_clear)) }
                     }
                 },
                 singleLine = true,

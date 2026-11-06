@@ -244,10 +244,10 @@ object PetalConfirmSheetBridge {
         showConfirmSheet(
             activity = activity,
             icon = Icons.Rounded.ExitToApp,
-            title = "Quit Petal Browser?",
-            message = "Are you sure you want to exit Petal Browser and close your active session?",
-            confirmText = "Quit",
-            cancelText = "Stay",
+            title = activity.getString(R.string.dialog_quit_title),
+            message = activity.getString(R.string.dialog_quit_message),
+            confirmText = activity.getString(R.string.dialog_quit_confirm),
+            cancelText = activity.getString(R.string.dialog_quit_cancel),
             isDestructive = false,
             onConfirm = onConfirm
         )
@@ -267,10 +267,10 @@ object PetalConfirmSheetBridge {
         showConfirmSheet(
             activity = activity,
             icon = Icons.Rounded.RestartAlt,
-            title = "Restart Petal Browser?",
-            message = "A restart is required to apply the updated configuration and engine settings.",
-            confirmText = "Restart Now",
-            cancelText = "Later",
+            title = activity.getString(R.string.dialog_restart_title),
+            message = activity.getString(R.string.dialog_restart_message),
+            confirmText = activity.getString(R.string.dialog_restart_now),
+            cancelText = activity.getString(R.string.dialog_restart_later),
             isDestructive = false,
             onConfirm = onConfirm,
             onCancel = onCancel
