@@ -84,4 +84,10 @@
 -keep class * extends androidx.work.InputMerger { <init>(); }
 -dontwarn androidx.work.impl.**
 
+# ---- Mozilla Telemetry / Nimbus -------------------------------------------------------------
+-dontwarn mozilla.telemetry.glean.**
+-dontwarn org.mozilla.experiments.nimbus.**
+-dontwarn mozilla.components.service.nimbus.**
+
+
 
