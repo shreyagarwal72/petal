@@ -21,7 +21,8 @@ import org.mozilla.geckoview.GeckoRuntime
 import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.request.RequestInterceptor
-import mozilla.components.concept.engine.request.RequestInterceptor.ErrorType
+import mozilla.components.browser.errorpages.ErrorPages
+import mozilla.components.browser.errorpages.ErrorType
 
 /**
  * PetalEngineStore
