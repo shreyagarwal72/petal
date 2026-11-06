@@ -2419,11 +2419,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             BrowserContainer.replace(slot, materialized);
             controller = materialized;
 
-            boolean hasEngineHistory = sessionPair.getFirst().getEngineState().getEngineSessionState() != null;
             if (overrideUrl != null && !overrideUrl.isEmpty() && !isHomePage(overrideUrl)) {
                 materialized.loadUrl(overrideUrl);
-            } else if (hasEngineHistory) {
-                // Engine session state (back/forward history stack) restored; no extra load
             } else if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
                 materialized.loadUrl(targetUrl);
             } else {
@@ -2782,9 +2779,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 String currentUrl = surface != null ? surface.getUrl() : "";
                 String targetUrl = overrideUrl != null && !overrideUrl.isEmpty() ? overrideUrl : currentUrl;
                 if (surface != null && targetUrl != null && !targetUrl.isEmpty()
-                        && !isHomePage(targetUrl) && !"about:blank".equalsIgnoreCase(targetUrl)
-                        && !targetUrl.equals(currentUrl)) {
-                    surface.loadUrl(targetUrl);
+                        && !isHomePage(targetUrl) && !"about:blank".equalsIgnoreCase(targetUrl)) {
+                    if (!targetUrl.equals(currentUrl) || surface.needsReloadOrRecovery()) {
+                        surface.loadUrl(targetUrl);
+                    }
                 }
             } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.view.PetalGeckoView geckoView = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
@@ -7756,8 +7754,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     activeView.setTabGroupTitle(groupTitle);
                 }
 
-                boolean hasEngineHistory = sessionPair.getFirst().getEngineState().getEngineSessionState() != null;
-                if (!hasEngineHistory && url != null && !url.isEmpty() && !com.petal.browser.browser.PetalSessionRestoreManager.INSTANCE.isHomeUrl(url)) {
+                if (url != null && !url.isEmpty() && !com.petal.browser.browser.PetalSessionRestoreManager.INSTANCE.isHomeUrl(url)) {
                     activeView.loadUrl(url);
                 }
 

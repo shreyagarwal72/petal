@@ -372,7 +372,7 @@ class PetalTabViewController private constructor(
             }
             if (!url.equals("about:blank", ignoreCase = true)) {
                 pendingNavUrl = null
-                if (historyPending) restoreLocationSeen = true
+                restoreLocationSeen = true
                 trackNavigation(url)
             }
             if (pageUrl != url) {
@@ -640,6 +640,10 @@ class PetalTabViewController private constructor(
         historyPending = PetalEngineStore.consumeRestoredFlag(tab.id)
         historyPendingSince = android.os.SystemClock.uptimeMillis()
         restoreLocationSeen = false
+        if (pageUrl.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(pageUrl) && !pageUrl.equals("about:blank", ignoreCase = true)) {
+            pendingNavUrl = pageUrl
+            pendingNavSince = android.os.SystemClock.uptimeMillis()
+        }
         navUrls.clear(); navIndex = -1; navFallbackEligible = false
         currentScrollX = 0; currentScrollY = 0; lastProcessedScrollY = 0; accumulatedScrollY = 0; consecutiveDirectionSteps = 0
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
@@ -705,7 +709,10 @@ class PetalTabViewController private constructor(
             val locationCallback: (String) -> Unit = { newUrl ->
                 android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLocationChanged -> $newUrl (current pageUrl=$pageUrl)")
                 val staleBlank = isStaleInitialBlank(newUrl)
-                if (!staleBlank && !newUrl.equals("about:blank", ignoreCase = true)) pendingNavUrl = null
+                if (!staleBlank && !newUrl.equals("about:blank", ignoreCase = true)) {
+                    pendingNavUrl = null
+                    restoreLocationSeen = true
+                }
                 if (!staleBlank && newUrl.isNotBlank() && !newUrl.equals(pageUrl, ignoreCase = true)) {
                     previewRevision++
                     previewRetryCount = 0
@@ -1421,6 +1428,13 @@ class PetalTabViewController private constructor(
             android.util.Log.w("PetalTabNav", "restoreEngineState failed: ${t.message}")
             false
         }
+    }
+
+    /**
+     * Returns true if this tab has a restored real URL but has not yet navigated to or loaded it.
+     */
+    fun needsReloadOrRecovery(): Boolean {
+        return !restoreLocationSeen && pageUrl.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(pageUrl) && !pageUrl.equals("about:blank", ignoreCase = true)
     }
 
     /** False only when the saved state clearly holds a single entry; unknown formats count as "has history". */
