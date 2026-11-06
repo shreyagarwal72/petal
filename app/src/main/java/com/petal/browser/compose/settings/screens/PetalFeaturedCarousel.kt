@@ -11,6 +11,7 @@
 
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedContent
@@ -433,7 +434,7 @@ private fun CarouselIndicator(
         modifier = Modifier
             .width(animatedWidth)
             .height(6.dp)
-            .clip(CircleShape)
+            .clip(ExpressiveButtonShape)
             .background(animatedColor)
     ) {
         if (isActive) {

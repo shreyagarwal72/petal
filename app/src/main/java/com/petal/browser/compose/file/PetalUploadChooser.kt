@@ -16,6 +16,7 @@
 
 package com.petal.browser.compose.file
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.net.Uri
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -294,7 +295,7 @@ private fun ChoiceRow(icon: ImageVector, title: String, subtitle: String, onClic
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+            Surface(shape = ExpressiveButtonShape, color = MaterialTheme.colorScheme.primaryContainer) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,

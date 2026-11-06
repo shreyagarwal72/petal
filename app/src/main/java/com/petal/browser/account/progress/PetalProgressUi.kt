@@ -1,5 +1,6 @@
 package com.petal.browser.account.progress
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -116,7 +117,7 @@ fun PetalProfileCard(
                     modifier = Modifier.weight(1f)
                 )
                 Surface(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = cs.surfaceContainerHighest.copy(alpha = 0.95f),
                     contentColor = cs.onSurface
                 ) {
@@ -135,7 +136,7 @@ fun PetalProfileCard(
                 ) {
                     ProfileAvatarDisplay(profile = profile, sizeDp = avatarSizeDp)
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = cs.primary,
                         contentColor = cs.onPrimary,
                         modifier = Modifier.size(cameraBadgeSizeDp.dp)
@@ -170,7 +171,7 @@ fun PetalProfileCard(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .bouncyClickable { onEditName() },
                             contentAlignment = Alignment.Center
                         ) {
@@ -197,7 +198,7 @@ fun PetalProfileCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(10.dp)
-                    .clip(CircleShape)
+                    .clip(ExpressiveButtonShape)
                     .background(cs.surface.copy(alpha = 0.55f))
             ) {
                 val barProgress = progress.coerceIn(0f, 1f)
@@ -211,7 +212,7 @@ fun PetalProfileCard(
                         modifier = Modifier
                             .fillMaxHeight()
                             .width(fillWidth)
-                            .clip(CircleShape)
+                            .clip(ExpressiveButtonShape)
                             .background(cs.primary)
                     )
                 }
@@ -252,7 +253,7 @@ fun PetalProfileCard(
                             } else {
                                 showcased.forEach {
                                     Surface(
-                                        shape = CircleShape,
+                                        shape = ExpressiveButtonShape,
                                         color = cs.surface,
                                         contentColor = cs.primary,
                                         modifier = Modifier.size(36.dp)
@@ -293,7 +294,7 @@ fun PetalProfileCard(
                             } else {
                                 showcased.forEach {
                                     Surface(
-                                        shape = CircleShape,
+                                        shape = ExpressiveButtonShape,
                                         color = cs.surface,
                                         contentColor = cs.primary,
                                         modifier = Modifier.size(36.dp)
@@ -372,7 +373,7 @@ fun PetalRewardsCatalogCard(onOpen: () -> Unit, modifier: Modifier = Modifier) {
                     Text("$unlockedCount of $total features unlocked", style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
                 }
                 Surface(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = cs.tertiaryContainer,
                     contentColor = cs.onTertiaryContainer,
                     modifier = Modifier.size(48.dp)
@@ -385,7 +386,7 @@ fun PetalRewardsCatalogCard(onOpen: () -> Unit, modifier: Modifier = Modifier) {
             Spacer(Modifier.height(14.dp))
             LinearProgressIndicator(
                 progress = { p },
-                modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+                modifier = Modifier.fillMaxWidth().height(8.dp).clip(ExpressiveButtonShape),
                 color = cs.tertiary,
                 trackColor = cs.surfaceVariant
             )
@@ -394,7 +395,7 @@ fun PetalRewardsCatalogCard(onOpen: () -> Unit, modifier: Modifier = Modifier) {
                 PetalUnlockable.values().take(5).forEach { u ->
                     val unlocked = PetalProgressStore.isUnlocked(ctx, u)
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = if (unlocked) cs.primaryContainer else cs.surfaceContainerHighest,
                         contentColor = if (unlocked) cs.onPrimaryContainer else cs.onSurfaceVariant,
                         modifier = Modifier.size(48.dp)
@@ -418,7 +419,7 @@ private fun BadgeChip(b: PetalBadge, size: Dp) {
     val cs = MaterialTheme.colorScheme
     val unlocked = PetalProgressStore.isBadgeUnlocked(b.id)
     Surface(
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = if (unlocked) cs.primaryContainer else cs.surfaceContainerHighest,
         contentColor = if (unlocked) cs.onPrimaryContainer else cs.onSurfaceVariant,
         modifier = Modifier.size(size)
@@ -472,7 +473,7 @@ fun PetalRewardsSheet(onDismiss: () -> Unit) {
                 Column(Modifier.padding(18.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = cs.surface.copy(alpha = 0.5f),
                             modifier = Modifier.size(40.dp)
                         ) {
@@ -531,7 +532,7 @@ fun PetalRewardsSheet(onDismiss: () -> Unit) {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = if (unlocked) cs.primaryContainer else cs.surfaceContainerHighest,
                             contentColor = if (unlocked) cs.onPrimaryContainer else cs.onSurfaceVariant,
                             modifier = Modifier.size(60.dp)
@@ -575,7 +576,7 @@ fun PetalBadgeCollectionCard(onOpen: () -> Unit, modifier: Modifier = Modifier) 
                     Text("Badge collection", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                     Text("$got of $total unlocked", style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
                 }
-                Surface(shape = CircleShape, color = cs.primaryContainer, contentColor = cs.onPrimaryContainer, modifier = Modifier.size(48.dp)) {
+                Surface(shape = ExpressiveButtonShape, color = cs.primaryContainer, contentColor = cs.onPrimaryContainer, modifier = Modifier.size(48.dp)) {
                     Box(contentAlignment = Alignment.Center) { Icon(Icons.AutoMirrored.Rounded.ArrowForward, "Open badges") }
                 }
             }
@@ -618,7 +619,7 @@ fun PetalBadgesSheet(onDismiss: () -> Unit) {
                     } else {
                         LinearProgressIndicator(
                             progress = { (cur.toFloat() / goal.coerceAtLeast(1)).coerceIn(0f, 1f) },
-                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape)
+                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(ExpressiveButtonShape)
                         )
                         Text("${fmt(cur)} / ${fmt(goal)}", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 4.dp))
                     }
@@ -763,7 +764,7 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                 if (consent) {
                     Spacer(Modifier.width(8.dp))
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = cs.surfaceContainerHighest,
                         modifier = Modifier.size(36.dp)
                     ) {
@@ -828,7 +829,7 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp)
-                        .clip(CircleShape),
+                        .clip(ExpressiveButtonShape),
                     color = cs.primary,
                     trackColor = cs.surfaceVariant
                 )

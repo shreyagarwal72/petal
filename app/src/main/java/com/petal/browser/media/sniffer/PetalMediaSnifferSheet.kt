@@ -1,5 +1,6 @@
 package com.petal.browser.media.sniffer
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.webkit.CookieManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -168,7 +169,7 @@ fun PetalMediaSnifferOverlay(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
@@ -213,7 +214,7 @@ fun PetalMediaSnifferOverlay(
                     onClick = { dismissed = true },
                     modifier = Modifier
                         .size(34.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,

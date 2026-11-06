@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -364,7 +365,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             Box(
                 modifier = Modifier
                     .size(width = 32.dp, height = 4.dp)
-                    .clip(CircleShape)
+                    .clip(ExpressiveButtonShape)
                     .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
             )
 
@@ -436,7 +437,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth(0.6f)
                         .height(8.dp)
-                        .clip(CircleShape),
+                        .clip(ExpressiveButtonShape),
                     color = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
                 )
@@ -535,7 +536,7 @@ private fun ZenithPermissionItemRow(
             if (isGranted) {
                 Icon(Icons.Rounded.CheckCircle, contentDescription = stringResource(R.string.ui_granted), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             } else {
-                FilledTonalButton(onClick = onGrant, shape = CircleShape, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)) {
+                FilledTonalButton(onClick = onGrant, shape = ExpressiveButtonShape, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)) {
                     Text(actionText, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                 }
             }

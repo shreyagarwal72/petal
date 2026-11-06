@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -65,8 +66,13 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.petal.browser.ui.containment.liquidGlassChrome
 
-/** Only the bottom corners are rounded (24dp) for a clean Material 3 Expressive header look */
-private val HeaderShape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
+/** Large continuous-curvature bottom corners (squircle) for the expressive header silhouette. */
+private val HeaderShape = com.petal.browser.ui.theme.SmoothRoundedShape(
+    topStart = 0.dp,
+    topEnd = 0.dp,
+    bottomEnd = 36.dp,
+    bottomStart = 36.dp,
+)
 
 /**
  * Material 3 Expressive Header component ported from LastWave-native (duxtami).
@@ -122,12 +128,14 @@ fun ExpressiveHeader(
                 isDark = isDarkSurface
             ),
         ) {
+            val decorColor = MaterialTheme.colorScheme.primary
             Column(
                 Modifier
                     .fillMaxWidth()
+                    .expressiveHeaderDecor(decorColor)
                     .statusBarsPadding()
                     .padding(horizontal = 20.dp)
-                    .padding(top = 4.dp, bottom = 12.dp),
+                    .padding(top = 8.dp, bottom = 16.dp),
             ) {
                 val backState = com.petal.browser.predictive.LocalPredictiveBackState.current
                 val effectiveTargetTitle = targetTitle ?: if (onBack != null) "Settings" else null
@@ -172,22 +180,25 @@ fun ExpressiveHeader(
                                 translationX = backButtonOffset
                             }
                         ) {
-                            FilledTonalIconButton(
+                            com.petal.browser.ui.theme.ExpressiveIconButton(
+                                icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = "Back",
                                 onClick = { onBack?.invoke() },
-                                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                    containerColor = if (enableLiquidGlass) {
-                                        com.petal.browser.ui.containment.petalGroupSurfaceColor()
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceContainerHighest
-                                    },
-                                    contentColor = MaterialTheme.colorScheme.onSurface
-                                ),
+                                size = 44.dp,
+                                containerColor = if (enableLiquidGlass) {
+                                    com.petal.browser.ui.containment.petalGroupSurfaceColor()
+                                } else {
+                                    MaterialTheme.colorScheme.secondaryContainer
+                                },
+                                contentColor = if (enableLiquidGlass) {
+                                    MaterialTheme.colorScheme.onSurface
+                                } else {
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                                },
                                 modifier = if (enableLiquidGlass) {
-                                    Modifier.liquidGlassChrome(CircleShape, enabled = true)
-                                } else Modifier
-                            ) {
-                                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                            }
+                                    Modifier.liquidGlassChrome(com.petal.browser.ui.theme.ExpressiveAccentShape, enabled = true)
+                                } else Modifier,
+                            )
                             Spacer(Modifier.width(12.dp))
                         }
                     }
@@ -294,7 +305,7 @@ fun ExpressiveHeader(
                         }
                     ) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.graphicsLayer {
                                 if (isGestureActive) {
@@ -327,10 +338,10 @@ private fun HeaderTitleBlock(
                 hasBack && title.length > 18 -> 15.sp
                 hasBack && title.length > 14 -> 16.5.sp
                 hasBack -> 18.sp
-                title.length > 22 -> 16.5.sp
-                title.length > 18 -> 17.5.sp
-                title.length > 14 -> 19.5.sp
-                else -> 22.sp
+                title.length > 22 -> 17.5.sp
+                title.length > 18 -> 19.5.sp
+                title.length > 14 -> 22.sp
+                else -> 26.sp
             }
         }
 
@@ -341,7 +352,7 @@ private fun HeaderTitleBlock(
                 lineHeight = (titleFontSize.value + 4).sp
             ),
             color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.ExtraBold,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
@@ -381,22 +392,48 @@ fun HeaderActionIcon(
     contentDescription: String?,
     onClick: () -> Unit,
     enableLiquidGlass: Boolean = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments"),
+    /** Pick a different expressive shape per neighbour, e.g. ExpressiveButtonPreset.variety[index]. */
+    preset: com.petal.browser.ui.theme.ExpressiveButtonPreset? = null,
+    emphasized: Boolean = false,
 ) {
-    FilledTonalIconButton(
-        onClick = onClick,
-        colors = IconButtonDefaults.filledTonalIconButtonColors(
-            containerColor = if (enableLiquidGlass) {
-                com.petal.browser.ui.containment.petalGroupSurfaceColor()
-            } else {
-                MaterialTheme.colorScheme.surfaceContainerHighest
-            },
-            contentColor = MaterialTheme.colorScheme.onSurface,
-        ),
-        modifier = if (enableLiquidGlass) {
-            Modifier.liquidGlassChrome(CircleShape, enabled = true)
-        } else Modifier,
-    ) {
-        Icon(icon, contentDescription = contentDescription)
+    val container = when {
+        enableLiquidGlass -> com.petal.browser.ui.containment.petalGroupSurfaceColor()
+        emphasized -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.secondaryContainer
     }
+    val content = when {
+        enableLiquidGlass -> MaterialTheme.colorScheme.onSurface
+        emphasized -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.onSecondaryContainer
+    }
+    com.petal.browser.ui.theme.ExpressiveIconButton(
+        icon = icon,
+        contentDescription = contentDescription,
+        onClick = onClick,
+        size = 44.dp,
+        containerColor = container,
+        contentColor = content,
+        preset = preset,
+        modifier = if (enableLiquidGlass) {
+            Modifier.liquidGlassChrome(com.petal.browser.ui.theme.ExpressiveAccentShape, enabled = true)
+        } else Modifier,
+    )
 }
 
+/** Soft, oversized expressive shape peeking in from the top-end corner of the header. */
+private fun Modifier.expressiveHeaderDecor(color: Color): Modifier = this.drawWithCache {
+    val preset = com.petal.browser.ui.theme.PetalShapeState.effectivePreset
+    val show = preset != com.petal.browser.ui.theme.ExpressiveButtonPreset.CIRCLE &&
+        preset != com.petal.browser.ui.theme.ExpressiveButtonPreset.PILL
+    val path = if (show) {
+        com.petal.browser.ui.theme.buildExpressivePath(
+            com.petal.browser.ui.theme.ExpressiveButtonPreset.SUNNY,
+            cx = size.width * 0.94f,
+            cy = size.height * 0.12f,
+            radius = size.height * 0.85f,
+        )
+    } else null
+    onDrawBehind {
+        if (path != null) drawPath(path, color.copy(alpha = 0.07f))
+    }
+}

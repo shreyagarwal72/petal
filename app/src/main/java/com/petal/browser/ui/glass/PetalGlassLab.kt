@@ -1,5 +1,6 @@
 package com.petal.browser.ui.glass
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
@@ -137,7 +138,7 @@ fun PetalGlassLab(
                 .size(orbSize)
                 .glassPressScale(orbPress, 14f)
                 .labGlass(backdrop, CircleShape, tuning) { if (fx.showLens) orbPress.progress else 0f }
-                .glassPressOverlay(orbPress, CircleShape)
+                .glassPressOverlay(orbPress, ExpressiveButtonShape)
                 .pointerInput(maxX, maxY) {
                     detectDragGestures { change, drag ->
                         change.consume()

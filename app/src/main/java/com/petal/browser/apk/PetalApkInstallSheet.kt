@@ -1,5 +1,6 @@
 package com.petal.browser.apk
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -793,7 +794,7 @@ private fun ExpressiveChip(
     val fgColor = if (warn) cs.onTertiaryContainer else cs.onSurface
 
     Surface(
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = bgColor,
         contentColor = fgColor
     ) {
@@ -991,7 +992,7 @@ private fun InspectPage(rep: PetalApkInsights.Report) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 4.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                 )
             }
         }

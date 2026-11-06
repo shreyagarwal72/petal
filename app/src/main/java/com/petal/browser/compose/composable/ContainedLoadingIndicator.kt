@@ -1,5 +1,6 @@
 package com.petal.browser.compose.composable
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -209,7 +210,7 @@ fun RefreshBarLoadingIndicator(
             contentAlignment = Alignment.TopCenter
         ) {
             Surface(
-                shape = CircleShape,
+                shape = ExpressiveButtonShape,
                 color = Color.Transparent,
                 shadowElevation = 4.dp,
                 modifier = Modifier

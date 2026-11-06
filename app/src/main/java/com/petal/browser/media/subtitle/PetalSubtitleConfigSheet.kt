@@ -1,5 +1,6 @@
 package com.petal.browser.media.subtitle
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -235,7 +236,7 @@ fun PetalSubtitleConfigSheet(
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .background(color)
                                 .clickable { onSubtitleTextColorChange(color) },
                             contentAlignment = Alignment.Center

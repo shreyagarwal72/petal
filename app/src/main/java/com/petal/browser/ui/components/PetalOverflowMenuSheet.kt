@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -866,7 +867,7 @@ private fun CircularIconButton(
         enabled = enabled,
         modifier = Modifier
             .size(44.dp)
-            .clip(CircleShape)
+            .clip(ExpressiveButtonShape)
             .then(
                 if (isGlass) {
                     Modifier.background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))

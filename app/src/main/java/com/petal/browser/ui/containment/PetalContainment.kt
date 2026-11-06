@@ -1,5 +1,6 @@
 package com.petal.browser.ui.containment
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -1061,7 +1062,7 @@ fun PetalFloatingToolbar(modifier: Modifier = Modifier, elevation: Dp = 6.dp, co
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val toolbarShape = CircleShape
+    val toolbarShape = ExpressiveButtonShape
     Surface(
         modifier = modifier.liquidGlassChrome(shape = toolbarShape, enabled = isGlass, sheenIntensity = sheen),
         shape = toolbarShape,
@@ -1379,7 +1380,7 @@ fun PetalSelectableOptionCard(title: String, selected: Boolean, onClick: () -> U
                 Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                 subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
-            if (selected) Box(Modifier.size(28.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
+            if (selected) Box(Modifier.size(28.dp).clip(ExpressiveButtonShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
                 Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
             }
         }
@@ -1490,7 +1491,7 @@ fun PetalStatusHeroCard(
                         Box(
                             Modifier
                                 .size(8.dp)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .background(if (statusActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
                         )
                         Text(

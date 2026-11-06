@@ -9,6 +9,7 @@
  */
 
 package com.petal.browser.compose.home
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 
 import android.content.Context
@@ -601,18 +602,13 @@ fun PetalHomeScreen(
                         title = "Petal",
                         subtitle = "Personal Window to the Web",
                         actions = {
-                                // Wallpaper Customizer Action Button
-                                IconButton(
+                                // Wallpaper Customizer Action Button (expressive cookie)
+                                com.petal.browser.ui.components.HeaderActionIcon(
+                                    icon = Icons.Rounded.Palette,
+                                    contentDescription = stringResource(R.string.ui_customize_wallpaper),
                                     onClick = { showWallpaperSheet = true },
-                                    modifier = Modifier.size(38.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Palette,
-                                        contentDescription = stringResource(R.string.ui_customize_wallpaper),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
+                                    emphasized = true,
+                                )
 
                                 Spacer(Modifier.width(4.dp))
 
@@ -635,14 +631,14 @@ fun PetalHomeScreen(
                                         Box(
                                             modifier = Modifier
                                                 .size(20.dp)
-                                                .clip(CircleShape)
+                                                .clip(ExpressiveButtonShape)
                                                 .background(currentProfile.getComposeColor().copy(alpha = 0.25f)),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             PetalProfileAvatar(
                                                 profile = currentProfile,
                                                 size = 20.dp,
-                                                shape = CircleShape
+                                                shape = ExpressiveButtonShape
                                             )
                                         }
                                         Spacer(Modifier.width(6.dp))
@@ -761,7 +757,7 @@ fun PetalHomeScreen(
                                                             Box(
                                                                 modifier = Modifier
                                                                     .size(10.dp)
-                                                                    .clip(CircleShape)
+                                                                    .clip(ExpressiveButtonShape)
                                                                     .background(
                                                                         try {
                                                                             Color(android.graphics.Color.parseColor(col.colorHex))

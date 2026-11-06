@@ -8,6 +8,7 @@
 
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -52,7 +53,7 @@ fun PetalAutoScrollOverlay(
     Surface(
         modifier = modifier
             .padding(16.dp),
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.95f),
         tonalElevation = 6.dp,
         shadowElevation = 8.dp
@@ -82,7 +83,7 @@ fun PetalAutoScrollOverlay(
                     speedLevel = if (speedLevel >= 4) 1 else speedLevel + 1
                 },
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                shape = CircleShape
+                shape = ExpressiveButtonShape
             ) {
                 Text(
                     text = "${speedLevel}x",

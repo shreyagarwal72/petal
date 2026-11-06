@@ -1,5 +1,6 @@
 package com.petal.browser.media
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -570,7 +571,7 @@ fun PetalCastDeviceSheet(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Surface(
-                                    shape = CircleShape,
+                                    shape = ExpressiveButtonShape,
                                     color = MaterialTheme.colorScheme.primaryContainer,
                                     modifier = Modifier.size(40.dp),
                                 ) {

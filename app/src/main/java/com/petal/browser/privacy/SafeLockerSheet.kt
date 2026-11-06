@@ -8,6 +8,7 @@
 
 package com.petal.browser.privacy
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.view.PetalToast;
 import android.content.Intent
 import android.net.Uri
@@ -114,7 +115,7 @@ fun SafeLockerSheet(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = MaterialTheme.colorScheme.primaryContainer,
                         modifier = Modifier.size(44.dp)
                     ) {

@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.CubicBezierEasing
@@ -566,7 +567,7 @@ private fun <T> ChoiceSheet(
 private fun SheetTitle(title: String, icon: ImageVector) {
     Row(
         modifier = Modifier
-            .clip(CircleShape)
+            .clip(ExpressiveButtonShape)
             .background(MaterialTheme.colorScheme.surfaceContainerLowest)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -755,14 +756,14 @@ private fun FlingDemo(type: PetalFlingType) {
             Modifier
                 .align(Alignment.Center)
                 .size(width = track, height = 4.dp)
-                .clip(CircleShape)
+                .clip(ExpressiveButtonShape)
                 .background(MaterialTheme.colorScheme.outlineVariant)
         )
         Box(
             Modifier
                 .offset(x = (track - dot) * x.coerceIn(0f, 1.2f))
                 .size(dot)
-                .clip(CircleShape)
+                .clip(ExpressiveButtonShape)
                 .background(MaterialTheme.colorScheme.primary)
         )
     }

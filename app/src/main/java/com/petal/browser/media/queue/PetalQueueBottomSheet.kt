@@ -13,6 +13,7 @@
 
 package com.petal.browser.media.queue
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -164,6 +165,7 @@ fun PetalQueueBottomSheet(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     FilledTonalIconButton(
+                        shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                         onClick = { audioPicker.launch(arrayOf("audio/*")) },
                         colors = IconButtonDefaults.filledTonalIconButtonColors(
                             containerColor = audioPalette.surfaceContainerHigh,
@@ -176,6 +178,7 @@ fun PetalQueueBottomSheet(
 
                     if (queueManager.queue.size > 1) {
                         FilledTonalIconButton(
+                            shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                             onClick = {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                 queueManager.clear()
@@ -191,6 +194,7 @@ fun PetalQueueBottomSheet(
                     }
 
                     FilledTonalIconButton(
+                        shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                         onClick = onDismiss,
                         colors = IconButtonDefaults.filledTonalIconButtonColors(
                             containerColor = audioPalette.surfaceContainerHigh,
@@ -296,6 +300,7 @@ fun PetalQueueBottomSheet(
                             // Delete button (if not currently playing or multiple tracks exist)
                             if (queueManager.queue.size > 1) {
                                 FilledTonalIconButton(
+                                    shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                                     onClick = {
                                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.3f)
                                         queueManager.removeItem(index)

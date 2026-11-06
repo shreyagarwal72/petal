@@ -14,6 +14,7 @@
 
 package com.petal.browser.media.lyrics
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -235,6 +236,7 @@ fun PetalLyricsSheet(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     FilledTonalIconButton(
+                        shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                         onClick = { lrcPickerLauncher.launch(arrayOf("*/*")) },
                         colors = IconButtonDefaults.filledTonalIconButtonColors(
                             containerColor = audioPalette.surfaceContainerHigh,
@@ -250,6 +252,7 @@ fun PetalLyricsSheet(
                     }
 
                     FilledTonalIconButton(
+                        shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                         onClick = onDismiss,
                         colors = IconButtonDefaults.filledTonalIconButtonColors(
                             containerColor = audioPalette.surfaceContainerHigh,
@@ -469,6 +472,7 @@ fun PetalLyricsSheet(
                         }
 
                         FilledTonalIconButton(
+                            shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                             onClick = {
                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                 onPlayPauseToggle()

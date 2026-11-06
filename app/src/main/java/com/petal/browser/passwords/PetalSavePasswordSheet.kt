@@ -1,5 +1,6 @@
 package com.petal.browser.passwords
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.app.Dialog
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -263,7 +264,7 @@ private fun SavePasswordSheetContent(
                     Box(
                         modifier = Modifier
                             .size(width = 36.dp, height = 4.dp)
-                            .clip(CircleShape)
+                            .clip(ExpressiveButtonShape)
                             .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                     )
 

@@ -78,13 +78,14 @@ data class ExpressiveShapeHolder(
  * Converts a [RoundedPolygon] into a Jetpack Compose [Shape].
  */
 fun RoundedPolygon.toShape(): Shape {
+    // Normalised polygons live in the 0..1 box, so a plain scale to the target size is enough.
+    val unit = android.graphics.Path().also { this.normalized().toPath(it) }
     return GenericShape { size, _ ->
-        val androidPath = this@toShape.toPath()
         val matrix = android.graphics.Matrix()
-        matrix.postScale(size.width / 2f, size.height / 2f)
-        matrix.postTranslate(size.width / 2f, size.height / 2f)
-        androidPath.transform(matrix)
-        this.addPath(androidPath.asComposePath())
+        matrix.setScale(size.width, size.height)
+        val out = android.graphics.Path()
+        unit.transform(matrix, out)
+        this.addPath(out.asComposePath())
     }
 }
 
@@ -93,151 +94,65 @@ object PetalMaterialShapes {
 
     // --- 1. Basic & Geometric (8 Shapes) ---
     val Circle: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder("Circle", "Basic", RoundedPolygon.circle(numVertices = 16))
+        ExpressiveShapeHolder("Circle", "Basic", androidx.compose.material3.MaterialShapes.Circle)
     }
 
     val Square: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Square",
-            "Basic",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.12f, 0.3f)
-            )
-        )
+        ExpressiveShapeHolder("Square", "Basic", androidx.compose.material3.MaterialShapes.Square)
     }
 
     val Slanted: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Slanted",
-            "Geometric",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.2f, 0.4f)
-            )
-        )
+        ExpressiveShapeHolder("Slanted", "Geometric", androidx.compose.material3.MaterialShapes.Slanted)
     }
 
     val Arch: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Arch",
-            "Architecture",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.4f, 0.6f)
-            )
-        )
+        ExpressiveShapeHolder("Arch", "Architecture", androidx.compose.material3.MaterialShapes.Arch)
     }
 
     val SemiCircle: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Semi Circle",
-            "Architecture",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.5f, 0.7f)
-            )
-        )
+        ExpressiveShapeHolder("Semi Circle", "Architecture", androidx.compose.material3.MaterialShapes.SemiCircle)
     }
 
     val Oval: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder("Oval", "Basic", RoundedPolygon.circle(numVertices = 16, radius = 0.85f))
+        ExpressiveShapeHolder("Oval", "Basic", androidx.compose.material3.MaterialShapes.Oval)
     }
 
     val Pill: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder("Pill", "Basic", RoundedPolygon.circle(numVertices = 12, radius = 1f))
+        ExpressiveShapeHolder("Pill", "Basic", androidx.compose.material3.MaterialShapes.Pill)
     }
 
     val Triangle: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Triangle",
-            "Basic",
-            RoundedPolygon(
-                numVertices = 3,
-                rounding = CornerRounding(0.2f, 0.5f)
-            )
-        )
+        ExpressiveShapeHolder("Triangle", "Basic", androidx.compose.material3.MaterialShapes.Triangle)
     }
 
     // --- 2. Dynamic & Architectural (6 Shapes) ---
     val Arrow: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Arrow",
-            "Dynamic",
-            RoundedPolygon(
-                numVertices = 5,
-                rounding = CornerRounding(0.15f, 0.4f)
-            )
-        )
+        ExpressiveShapeHolder("Arrow", "Dynamic", androidx.compose.material3.MaterialShapes.Arrow)
     }
 
     val Fan: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Fan",
-            "Dynamic",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.35f, 0.7f)
-            )
-        )
+        ExpressiveShapeHolder("Fan", "Dynamic", androidx.compose.material3.MaterialShapes.Fan)
     }
 
     val Diamond: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Diamond",
-            "Geometric",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.25f, 0.5f)
-            )
-        )
+        ExpressiveShapeHolder("Diamond", "Geometric", androidx.compose.material3.MaterialShapes.Diamond)
     }
 
     val ClamShell: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Clam Shell",
-            "Nature",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 5,
-                innerRadius = 0.75f,
-                rounding = CornerRounding(0.35f, 0.75f)
-            )
-        )
+        ExpressiveShapeHolder("Clam Shell", "Nature", androidx.compose.material3.MaterialShapes.ClamShell)
     }
 
     val Pentagon: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Pentagon",
-            "Geometric",
-            RoundedPolygon(
-                numVertices = 5,
-                rounding = CornerRounding(0.2f, 0.5f)
-            )
-        )
+        ExpressiveShapeHolder("Pentagon", "Geometric", androidx.compose.material3.MaterialShapes.Pentagon)
     }
 
     val Gem: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Gem",
-            "Geometric",
-            RoundedPolygon(
-                numVertices = 6,
-                rounding = CornerRounding(0.25f, 0.6f)
-            )
-        )
+        ExpressiveShapeHolder("Gem", "Geometric", androidx.compose.material3.MaterialShapes.Gem)
     }
 
     // --- 3. Sunny & Cookie Series (7 Shapes) ---
     val Sunny: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Sunny",
-            "Celestial",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 8,
-                innerRadius = 0.75f,
-                rounding = CornerRounding(0.35f, 0.75f)
-            )
-        )
+        ExpressiveShapeHolder("Sunny", "Celestial", androidx.compose.material3.MaterialShapes.Sunny)
     }
 
     val Sun: ExpressiveShapeHolder by lazy {
@@ -253,63 +168,23 @@ object PetalMaterialShapes {
     }
 
     val VerySunny: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Very Sunny",
-            "Celestial",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 12,
-                innerRadius = 0.72f,
-                rounding = CornerRounding(0.3f, 0.7f)
-            )
-        )
+        ExpressiveShapeHolder("Very Sunny", "Celestial", androidx.compose.material3.MaterialShapes.VerySunny)
     }
 
     val Cookie4Sided: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Cookie 4-Sided",
-            "Cookies",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 4,
-                innerRadius = 0.78f,
-                rounding = CornerRounding(0.4f, 0.8f)
-            )
-        )
+        ExpressiveShapeHolder("Cookie 4-Sided", "Cookies", androidx.compose.material3.MaterialShapes.Cookie4Sided)
     }
 
     val Cookie6Sided: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Cookie 6-Sided",
-            "Cookies",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 6,
-                innerRadius = 0.82f,
-                rounding = CornerRounding(0.35f, 0.8f)
-            )
-        )
+        ExpressiveShapeHolder("Cookie 6-Sided", "Cookies", androidx.compose.material3.MaterialShapes.Cookie6Sided)
     }
 
     val Cookie7Sided: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Cookie 7-Sided",
-            "Cookies",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 7,
-                innerRadius = 0.84f,
-                rounding = CornerRounding(0.3f, 0.8f)
-            )
-        )
+        ExpressiveShapeHolder("Cookie 7-Sided", "Cookies", androidx.compose.material3.MaterialShapes.Cookie7Sided)
     }
 
     val Cookie9Sided: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Cookie 9-Sided",
-            "Cookies",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 9,
-                innerRadius = 0.86f,
-                rounding = CornerRounding(0.28f, 0.8f)
-            )
-        )
+        ExpressiveShapeHolder("Cookie 9-Sided", "Cookies", androidx.compose.material3.MaterialShapes.Cookie9Sided)
     }
 
     val Cookie10Sided: ExpressiveShapeHolder by lazy {
@@ -325,182 +200,65 @@ object PetalMaterialShapes {
     }
 
     val Cookie12Sided: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Cookie 12-Sided",
-            "Cookies",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 12,
-                innerRadius = 0.88f,
-                rounding = CornerRounding(0.25f, 0.8f)
-            )
-        )
+        ExpressiveShapeHolder("Cookie 12-Sided", "Cookies", androidx.compose.material3.MaterialShapes.Cookie12Sided)
     }
 
     // --- 4. Organic, Clovers & Playful (7 Shapes) ---
     val Ghostish: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Ghostish",
-            "Playful",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.45f, 0.8f)
-            )
-        )
+        ExpressiveShapeHolder("Ghostish", "Playful", androidx.compose.material3.MaterialShapes.Ghostish)
     }
 
     val Clover4Leaf: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Clover 4-Leaf",
-            "Nature",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 4,
-                innerRadius = 0.55f,
-                rounding = CornerRounding(0.6f, 0.9f)
-            )
-        )
+        ExpressiveShapeHolder("Clover 4-Leaf", "Nature", androidx.compose.material3.MaterialShapes.Clover4Leaf)
     }
 
     val Clover8Leaf: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Clover 8-Leaf",
-            "Nature",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 8,
-                innerRadius = 0.65f,
-                rounding = CornerRounding(0.5f, 0.9f)
-            )
-        )
+        ExpressiveShapeHolder("Clover 8-Leaf", "Nature", androidx.compose.material3.MaterialShapes.Clover8Leaf)
     }
 
     val Flower: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Flower",
-            "Nature",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 6,
-                innerRadius = 0.60f,
-                rounding = CornerRounding(0.55f, 0.85f)
-            )
-        )
+        ExpressiveShapeHolder("Flower", "Nature", androidx.compose.material3.MaterialShapes.Flower)
     }
 
     val Puffy: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Puffy",
-            "Playful",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 5,
-                innerRadius = 0.80f,
-                rounding = CornerRounding(0.5f, 0.9f)
-            )
-        )
+        ExpressiveShapeHolder("Puffy", "Playful", androidx.compose.material3.MaterialShapes.Puffy)
     }
 
     val PuffyDiamond: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Puffy Diamond",
-            "Playful",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 4,
-                innerRadius = 0.70f,
-                rounding = CornerRounding(0.45f, 0.85f)
-            )
-        )
+        ExpressiveShapeHolder("Puffy Diamond", "Playful", androidx.compose.material3.MaterialShapes.PuffyDiamond)
     }
 
     val Heart: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Heart",
-            "Organic",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 3,
-                innerRadius = 0.62f,
-                rounding = CornerRounding(0.5f, 0.85f)
-            )
-        )
+        ExpressiveShapeHolder("Heart", "Organic", androidx.compose.material3.MaterialShapes.Heart)
     }
 
     // --- 5. High Energy, Explosive, Pixel & Treats (7 Shapes) ---
     val Burst: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Burst",
-            "High Energy",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 12,
-                innerRadius = 0.70f,
-                rounding = CornerRounding(0.15f, 0.3f)
-            )
-        )
+        ExpressiveShapeHolder("Burst", "High Energy", androidx.compose.material3.MaterialShapes.Burst)
     }
 
     val SoftBurst: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Soft Burst",
-            "High Energy",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 10,
-                innerRadius = 0.76f,
-                rounding = CornerRounding(0.25f, 0.6f)
-            )
-        )
+        ExpressiveShapeHolder("Soft Burst", "High Energy", androidx.compose.material3.MaterialShapes.SoftBurst)
     }
 
     val Boom: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Boom",
-            "High Energy",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 16,
-                innerRadius = 0.65f,
-                rounding = CornerRounding(0.12f, 0.35f)
-            )
-        )
+        ExpressiveShapeHolder("Boom", "High Energy", androidx.compose.material3.MaterialShapes.Boom)
     }
 
     val SoftBoom: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Soft Boom",
-            "High Energy",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 14,
-                innerRadius = 0.72f,
-                rounding = CornerRounding(0.22f, 0.55f)
-            )
-        )
+        ExpressiveShapeHolder("Soft Boom", "High Energy", androidx.compose.material3.MaterialShapes.SoftBoom)
     }
 
     val PixelCircle: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Pixel Circle",
-            "Pixel",
-            RoundedPolygon(
-                numVertices = 8,
-                rounding = CornerRounding(0.08f, 0.15f)
-            )
-        )
+        ExpressiveShapeHolder("Pixel Circle", "Pixel", androidx.compose.material3.MaterialShapes.PixelCircle)
     }
 
     val PixelTriangle: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Pixel Triangle",
-            "Pixel",
-            RoundedPolygon(
-                numVertices = 6,
-                rounding = CornerRounding(0.08f, 0.15f)
-            )
-        )
+        ExpressiveShapeHolder("Pixel Triangle", "Pixel", androidx.compose.material3.MaterialShapes.PixelTriangle)
     }
 
     val Bun: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Bun",
-            "Organic",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 5,
-                innerRadius = 0.78f,
-                rounding = CornerRounding(0.42f, 0.82f)
-            )
-        )
+        ExpressiveShapeHolder("Bun", "Organic", androidx.compose.material3.MaterialShapes.Bun)
     }
 
     // --- Backward Compatibility Aliases ---

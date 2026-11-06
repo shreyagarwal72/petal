@@ -11,6 +11,7 @@
 
 package com.petal.browser.compose.security
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.app.Activity
 import android.os.Build
 import android.view.ViewGroup
@@ -158,7 +159,7 @@ fun PetalBiometricExpressiveSheet(
             ) {
                 // Drag Handle
                 Surface(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
                     modifier = Modifier
                         .size(width = 36.dp, height = 4.dp)
@@ -168,7 +169,7 @@ fun PetalBiometricExpressiveSheet(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Standard circular badge
-                val badgeShape = CircleShape
+                val badgeShape = ExpressiveButtonShape
 
                 Surface(
                     shape = badgeShape,
@@ -276,7 +277,7 @@ fun PetalBiometricExpressiveSheet(
                             errorMessage = null
                             authenticate()
                         },
-                        shape = if (allowPasswordFallback && onUsePassword != null) petalConnectedShape(1, 2) else CircleShape,
+                        shape = if (allowPasswordFallback && onUsePassword != null) petalConnectedShape(1, 2) else ExpressiveButtonShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary

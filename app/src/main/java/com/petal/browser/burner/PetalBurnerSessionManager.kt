@@ -1,5 +1,6 @@
 package com.petal.browser.burner
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -111,7 +112,7 @@ fun PetalBurnerStatusPill(
             Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .clip(CircleShape)
+                    .clip(ExpressiveButtonShape)
                     .background(MaterialTheme.colorScheme.error),
                 contentAlignment = Alignment.Center
             ) {

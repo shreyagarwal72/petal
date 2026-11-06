@@ -7,6 +7,7 @@
  */
 
 package com.petal.browser.compose.history
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
@@ -631,7 +632,7 @@ fun PetalHistoryScreen(
                                                             SubcomposeAsyncImage(
                                                                 model = faviconUrl,
                                                                 contentDescription = "Website Icon",
-                                                                modifier = Modifier.size(24.dp).clip(CircleShape),
+                                                                modifier = Modifier.size(24.dp).clip(ExpressiveButtonShape),
                                                                 contentScale = androidx.compose.ui.layout.ContentScale.Fit,
                                                                 loading = { Icon(Icons.Rounded.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) },
                                                                 error = { Icon(Icons.Rounded.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) }

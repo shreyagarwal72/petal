@@ -34,6 +34,7 @@
 
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -162,7 +163,7 @@ fun PetalQuickToolsSheet(
                     modifier = Modifier
                         .width(36.dp)
                         .height(4.dp),
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                 ) {}
             }

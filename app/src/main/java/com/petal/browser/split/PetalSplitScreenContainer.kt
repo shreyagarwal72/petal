@@ -1,5 +1,6 @@
 package com.petal.browser.split
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -289,7 +290,7 @@ private fun SplitDividerHandle(
         contentAlignment = Alignment.Center
     ) {
         Surface(
-            shape = CircleShape,
+            shape = ExpressiveButtonShape,
             color = MaterialTheme.colorScheme.outlineVariant,
             modifier = Modifier
                 .then(

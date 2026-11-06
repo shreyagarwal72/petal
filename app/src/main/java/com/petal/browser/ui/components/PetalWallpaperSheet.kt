@@ -14,6 +14,7 @@
 
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -930,7 +931,7 @@ fun PetalWallpaperSheet(
 
                         if (isSelected) {
                             Surface(
-                                shape = CircleShape,
+                                shape = ExpressiveButtonShape,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier
                                     .padding(6.dp)
@@ -950,7 +951,7 @@ fun PetalWallpaperSheet(
 
                         if (preset.isVideo) {
                             Surface(
-                                shape = CircleShape,
+                                shape = ExpressiveButtonShape,
                                 color = Color.Black.copy(alpha = 0.6f),
                                 modifier = Modifier
                                     .padding(6.dp)
@@ -981,7 +982,7 @@ fun PetalWallpaperSheet(
 
                         if (isSelected) {
                             Surface(
-                                shape = CircleShape,
+                                shape = ExpressiveButtonShape,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier
                                     .padding(6.dp)

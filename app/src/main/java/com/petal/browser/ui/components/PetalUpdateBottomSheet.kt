@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.containment.liquidGlassChrome
 import android.app.Activity
 import android.content.Intent
@@ -443,7 +444,7 @@ fun PetalUpdateSheetContent(
                 Box(
                     modifier = Modifier
                         .size(width = 36.dp, height = 4.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                 )
 
@@ -534,7 +535,7 @@ fun PetalUpdateSheetContent(
                 // Version Transition Pill (Orion-Store style)
                 if (updateInfo.isUpdateAvailable) {
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
                         border = null,
                         modifier = Modifier.padding(top = 2.dp)
@@ -564,7 +565,7 @@ fun PetalUpdateSheetContent(
                     }
                 } else {
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
                         modifier = Modifier.padding(top = 2.dp)
                     ) {
@@ -617,7 +618,7 @@ fun PetalUpdateSheetContent(
                                     Box(
                                         modifier = Modifier
                                             .size(10.dp)
-                                            .clip(CircleShape)
+                                            .clip(ExpressiveButtonShape)
                                             .background(MaterialTheme.colorScheme.primary)
                                     )
                                     Text(
@@ -726,7 +727,7 @@ fun PetalUpdateSheetContent(
                                     Box(
                                         modifier = Modifier
                                             .size(10.dp)
-                                            .clip(CircleShape)
+                                            .clip(ExpressiveButtonShape)
                                             .background(MaterialTheme.colorScheme.tertiary)
                                     )
                                     Text(
@@ -788,7 +789,7 @@ fun PetalUpdateSheetContent(
                                 Box(
                                     modifier = Modifier
                                         .size(36.dp)
-                                        .background(Color(0xFF2E7D32).copy(alpha = 0.15f), CircleShape),
+                                        .background(Color(0xFF2E7D32).copy(alpha = 0.15f), ExpressiveButtonShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -1001,7 +1002,7 @@ fun PetalChangelogHistorySheetContent(
             Box(
                 modifier = Modifier
                     .size(68.dp)
-                    .clip(CircleShape)
+                    .clip(ExpressiveButtonShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
@@ -1102,7 +1103,7 @@ fun PetalChangelogHistorySheetContent(
                                             Box(
                                                 modifier = Modifier
                                                     .size(8.dp)
-                                                    .clip(CircleShape)
+                                                    .clip(ExpressiveButtonShape)
                                                     .background(
                                                         if (index == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
                                                     )
@@ -1118,6 +1119,7 @@ fun PetalChangelogHistorySheetContent(
                                     // Action to Open GitHub Release Link
                                     if (rel.releaseUrl.isNotBlank()) {
                                         FilledTonalIconButton(
+                                            shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                                             onClick = {
                                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                                 try {

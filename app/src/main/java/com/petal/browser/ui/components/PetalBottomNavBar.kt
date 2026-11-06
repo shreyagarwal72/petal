@@ -23,6 +23,7 @@
 
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
@@ -548,7 +549,7 @@ private fun FloatingNavTabItem(
     )
 
     Surface(
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = currentBgColor,
         modifier = modifier
             .height(48.dp)
@@ -558,7 +559,7 @@ private fun FloatingNavTabItem(
                 scaleY = pressScale * enter.value.coerceAtLeast(0f)
                 alpha = enter.value.coerceIn(0f, 1f)
             }
-            .clip(CircleShape)
+            .clip(ExpressiveButtonShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = ripple(),

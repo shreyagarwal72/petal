@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.view.PetalToast;
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
@@ -214,7 +215,7 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                             modifier = Modifier
                                 .height(6.dp)
                                 .width(width)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .background(color)
                         )
                     }
@@ -433,7 +434,7 @@ private fun WelcomeStepPage() {
         Spacer(Modifier.height(10.dp))
 
         Surface(
-            shape = CircleShape,
+            shape = ExpressiveButtonShape,
             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
             tonalElevation = 2.dp
         ) {
@@ -471,7 +472,7 @@ private fun WelcomeStepPage() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(
-                shape = CircleShape,
+                shape = ExpressiveButtonShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 shadowElevation = 6.dp,
                 modifier = Modifier.size(84.dp)
@@ -482,7 +483,7 @@ private fun WelcomeStepPage() {
                         contentDescription = stringResource(R.string.ui_petal_logo),
                         modifier = Modifier
                             .size(64.dp)
-                            .clip(CircleShape)
+                            .clip(ExpressiveButtonShape)
                     )
                 }
             }
@@ -549,7 +550,7 @@ private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) 
     Spacer(Modifier.height(12.dp))
 
     Surface(
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = MaterialTheme.colorScheme.secondaryContainer,
         modifier = Modifier.size(80.dp)
     ) {
@@ -658,13 +659,13 @@ private fun PermissionStatusRow(
         Spacer(Modifier.width(8.dp))
 
         if (isGranted) {
-            FilledTonalButton(onClick = {}, enabled = false, shape = CircleShape, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)) {
+            FilledTonalButton(onClick = {}, enabled = false, shape = ExpressiveButtonShape, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)) {
                 Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
                 Text(stringResource(R.string.ui_granted), style = MaterialTheme.typography.labelSmall)
             }
         } else {
-            Button(onClick = onGrant, shape = CircleShape, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)) {
+            Button(onClick = onGrant, shape = ExpressiveButtonShape, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)) {
                 Text(stringResource(R.string.ui_grant), style = MaterialTheme.typography.labelSmall)
             }
         }
@@ -687,7 +688,7 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
     Spacer(Modifier.height(12.dp))
 
     Surface(
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = MaterialTheme.colorScheme.tertiaryContainer,
         modifier = Modifier.size(80.dp)
     ) {
@@ -750,7 +751,7 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
                     }
                 },
                 enabled = !hasNotification,
-                shape = CircleShape,
+                shape = ExpressiveButtonShape,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
@@ -793,7 +794,7 @@ private fun BackupFeatureStepPage(context: Context) {
     Spacer(Modifier.height(12.dp))
 
     Surface(
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = MaterialTheme.colorScheme.tertiaryContainer,
         modifier = Modifier.size(80.dp)
     ) {
@@ -830,7 +831,7 @@ private fun BackupFeatureStepPage(context: Context) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.tertiaryContainer, modifier = Modifier.size(44.dp)) {
+                Surface(shape = ExpressiveButtonShape, color = MaterialTheme.colorScheme.tertiaryContainer, modifier = Modifier.size(44.dp)) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(Icons.Rounded.Restore, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(22.dp))
                     }
@@ -909,7 +910,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
     Spacer(Modifier.height(12.dp))
 
     Surface(
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = MaterialTheme.colorScheme.primaryContainer,
         modifier = Modifier.size(80.dp)
     ) {
@@ -1075,7 +1076,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(12.dp))
 
     Surface(
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = MaterialTheme.colorScheme.tertiaryContainer,
         modifier = Modifier.size(80.dp)
     ) {
@@ -1190,7 +1191,7 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(12.dp))
 
     Surface(
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = MaterialTheme.colorScheme.primaryContainer,
         modifier = Modifier.size(80.dp)
     ) {
@@ -1254,7 +1255,7 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(12.dp))
 
     Surface(
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = MaterialTheme.colorScheme.secondaryContainer,
         modifier = Modifier.size(80.dp)
     ) {
@@ -1344,7 +1345,7 @@ private fun AdBlockerStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(12.dp))
 
     Surface(
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = MaterialTheme.colorScheme.tertiaryContainer,
         modifier = Modifier.size(80.dp)
     ) {

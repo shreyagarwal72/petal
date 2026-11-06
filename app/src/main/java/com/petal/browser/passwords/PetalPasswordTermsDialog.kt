@@ -1,5 +1,6 @@
 package com.petal.browser.passwords
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -61,7 +62,7 @@ fun PetalPasswordTermsDialog(
             Box(
                 modifier = Modifier
                     .size(64.dp)
-                    .clip(CircleShape)
+                    .clip(ExpressiveButtonShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
@@ -180,7 +181,7 @@ private fun TermsBulletPoint(
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .clip(CircleShape)
+                    .clip(ExpressiveButtonShape)
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {

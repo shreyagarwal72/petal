@@ -1,5 +1,6 @@
 package com.petal.browser.compose.tabs
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.ui.graphics.asImageBitmap
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
@@ -858,14 +859,14 @@ private fun VaultChoiceRow(
         trailing = {
             if (selected) {
                 Box(
-                    Modifier.size(28.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary),
+                    Modifier.size(28.dp).clip(ExpressiveButtonShape).background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
                 }
             } else {
                 Box(
-                    Modifier.size(28.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    Modifier.size(28.dp).clip(ExpressiveButtonShape).background(MaterialTheme.colorScheme.surfaceContainerHighest)
                 )
             }
         }

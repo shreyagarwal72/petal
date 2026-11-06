@@ -11,6 +11,7 @@
 
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
@@ -448,7 +449,7 @@ fun PetalTabSwitcherContent(
                     modifier = Modifier
                         .width(36.dp)
                         .height(4.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                         .align(Alignment.CenterHorizontally)
                 )
@@ -727,7 +728,7 @@ fun PetalTabSwitcherContent(
                         }
                 ) {
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
                         contentColor = MaterialTheme.colorScheme.onSurface,
                         tonalElevation = 6.dp,

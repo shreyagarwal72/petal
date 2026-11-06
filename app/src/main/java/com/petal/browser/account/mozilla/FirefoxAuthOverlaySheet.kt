@@ -1,5 +1,6 @@
 package com.petal.browser.account.mozilla
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
 import android.view.ViewGroup
 import android.webkit.WebResourceRequest
@@ -82,7 +83,7 @@ fun FirefoxAuthOverlaySheet(
                     Box(
                         modifier = Modifier
                             .size(42.dp)
-                            .clip(CircleShape)
+                            .clip(ExpressiveButtonShape)
                             .background(Color(0xFFFF9400)),
                         contentAlignment = Alignment.Center
                     ) {

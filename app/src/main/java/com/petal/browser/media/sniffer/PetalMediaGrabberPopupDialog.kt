@@ -1,5 +1,6 @@
 package com.petal.browser.media.sniffer
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -136,7 +137,7 @@ fun PetalMediaGrabberPopupDialog(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Surface(
-                                shape = CircleShape,
+                                shape = ExpressiveButtonShape,
                                 color = MaterialTheme.colorScheme.tertiaryContainer
                             ) {
                                 Text(

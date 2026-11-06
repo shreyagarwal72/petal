@@ -1,5 +1,6 @@
 package com.petal.browser.media
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.SizeTransform
@@ -880,7 +881,7 @@ fun PetalPixelControlButton(
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val context = LocalContext.current
-    val shape = CircleShape
+    val shape = ExpressiveButtonShape
     val btnModifier = if (isLiquidGlass) {
         Modifier
             .background(containerColor.copy(alpha = 0.5f), shape)
@@ -1174,10 +1175,10 @@ fun PetalPlayerHeaderTopBar(
         Box(
             modifier = Modifier
                 .size(42.dp)
-                .clip(CircleShape)
+                .clip(ExpressiveButtonShape)
                 .background(pillBg)
                 .then(
-                    if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
+                    if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
                     else Modifier
                 )
                 .clickable {
@@ -1293,10 +1294,10 @@ fun PetalPlayerHeaderTopBar(
                 Box(
                     modifier = Modifier
                         .size(42.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(pillBg)
                         .then(
-                            if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
+                            if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
                             else Modifier
                         )
                         .clickable {

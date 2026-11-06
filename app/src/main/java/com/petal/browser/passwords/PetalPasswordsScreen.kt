@@ -1,4 +1,5 @@
 package com.petal.browser.passwords
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.petal.browser.ui.components.PetalChoiceButtonGroup
@@ -445,7 +446,7 @@ fun PetalPasswordsScreen(
                                         verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         Surface(
-                                            shape = CircleShape,
+                                            shape = ExpressiveButtonShape,
                                             color = MaterialTheme.colorScheme.surfaceContainerHighest,
                                             modifier = Modifier.size(56.dp)
                                         ) {

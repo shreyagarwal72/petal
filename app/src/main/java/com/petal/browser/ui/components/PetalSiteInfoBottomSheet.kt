@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslCertificate
@@ -172,7 +173,7 @@ fun PetalSiteInfoBottomSheet(
                                 contentDescription = stringResource(R.string.ui_site_favicon),
                                 modifier = Modifier
                                     .size(26.dp)
-                                    .clip(CircleShape)
+                                    .clip(ExpressiveButtonShape)
                             )
                         } else {
                             Icon(

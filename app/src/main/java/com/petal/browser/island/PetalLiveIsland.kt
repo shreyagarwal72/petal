@@ -15,6 +15,7 @@
 
 package com.petal.browser.island
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -449,7 +450,7 @@ private fun CompactPill(item: LiveActionItem, palette: IslandPalette) {
                 Box(
                     modifier = Modifier
                         .size(32.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(palette.accentSoft),
                     contentAlignment = Alignment.Center
                 ) {
@@ -474,7 +475,7 @@ private fun CompactPill(item: LiveActionItem, palette: IslandPalette) {
                 Box(
                     modifier = Modifier
                         .size(32.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(palette.accent.copy(alpha = 0.25f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -504,7 +505,7 @@ private fun CompactPill(item: LiveActionItem, palette: IslandPalette) {
                 Box(
                     modifier = Modifier
                         .size(32.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(palette.accent.copy(alpha = 0.25f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -538,9 +539,9 @@ private fun SatelliteBubble(item: LiveActionItem, palette: IslandPalette, onClic
     Surface(
         modifier = Modifier
             .size(44.dp)
-            .clip(CircleShape)
+            .clip(ExpressiveButtonShape)
             .clickable(role = Role.Button, onClickLabel = "Show live update", onClick = onClick),
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = palette.surface,
         shadowElevation = 10.dp
     ) {
@@ -647,7 +648,7 @@ private fun ExpandedCard(
                     Button(
                         onClick = { listener.onDownloadTogglePause(item.downloadId) },
                         modifier = Modifier.weight(1f),
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         colors = ButtonDefaults.buttonColors(containerColor = palette.accent, contentColor = palette.onAccent)
                     ) {
                         Icon(
@@ -661,7 +662,7 @@ private fun ExpandedCard(
                     FilledTonalButton(
                         onClick = { listener.onDownloadCancel(item.downloadId); onCollapse() },
                         modifier = Modifier.weight(1f),
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         colors = ButtonDefaults.filledTonalButtonColors(containerColor = palette.accentSoft, contentColor = palette.content)
                     ) {
                         Icon(Icons.Rounded.Close, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -809,7 +810,7 @@ private fun ExpandedCard(
                         Box(
                             modifier = Modifier
                                 .size(44.dp)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .background(palette.accent.copy(alpha = 0.25f)),
                             contentAlignment = Alignment.Center
                         ) {
@@ -852,7 +853,7 @@ private fun ExpandedCard(
                         Box(
                             modifier = Modifier
                                 .size(44.dp)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .background(palette.accent.copy(alpha = 0.25f)),
                             contentAlignment = Alignment.Center
                         ) {
@@ -1052,7 +1053,7 @@ private fun ProgressBadge(
 private fun MediaArt(item: LiveActionItem.Media, palette: IslandPalette, size: Int, corner: Int) {
     val art = item.albumArt
     val artShape: androidx.compose.ui.graphics.Shape = if (item.isPlaying) {
-        CircleShape
+        ExpressiveButtonShape
     } else {
         RoundedCornerShape(corner.dp)
     }
@@ -1085,7 +1086,7 @@ private fun PulsingDot(color: Color) {
         animationSpec = infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Reverse),
         label = "dotAlpha"
     )
-    Box(Modifier.size(6.dp).clip(CircleShape).background(color.copy(alpha = alpha)))
+    Box(Modifier.size(6.dp).clip(ExpressiveButtonShape).background(color.copy(alpha = alpha)))
 }
 
 @Composable

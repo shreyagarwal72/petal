@@ -9,6 +9,7 @@
 
 package com.petal.browser.account.mozilla
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -74,7 +75,7 @@ fun PetalSendToDeviceSheet(
                 Box(
                     modifier = Modifier
                         .size(44.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {

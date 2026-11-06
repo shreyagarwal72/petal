@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -249,7 +250,7 @@ fun AddressPill(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .size(32.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .clickable(
                             indication = ripple(bounded = true),
                             interactionSource = remember { MutableInteractionSource() }
@@ -280,7 +281,7 @@ fun AddressPill(
                         Image(
                             bitmap = fav.asImageBitmap(),
                             contentDescription = "Favicon",
-                            modifier = Modifier.size(22.dp).clip(CircleShape)
+                            modifier = Modifier.size(22.dp).clip(ExpressiveButtonShape)
                         )
                     } else {
                         Icon(
@@ -314,7 +315,7 @@ fun AddressPill(
                     Box(
                         modifier = Modifier
                             .size(7.dp)
-                            .clip(CircleShape)
+                            .clip(ExpressiveButtonShape)
                             .background(Color(0xFF00E676))
                     )
                 }
@@ -407,7 +408,7 @@ fun AddressPill(
                     ) {
                         val count = nativeResources.size
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                             modifier = Modifier
                                 .padding(end = 4.dp)
@@ -493,7 +494,7 @@ fun AddressPill(
                                     Image(
                                         bitmap = favicon.asImageBitmap(),
                                         contentDescription = null,
-                                        modifier = Modifier.size(26.dp).clip(CircleShape)
+                                        modifier = Modifier.size(26.dp).clip(ExpressiveButtonShape)
                                     )
                                 } else {
                                     Icon(

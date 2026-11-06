@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -117,7 +118,7 @@ fun EnhancedSliderItem(
                         Box(
                             modifier = Modifier
                                 .size(28.dp)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                                 .clickable { onValueChange(defaultValue) },
                             contentAlignment = Alignment.Center

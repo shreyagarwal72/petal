@@ -18,6 +18,7 @@
 
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -245,7 +246,7 @@ fun PetalFloatingStatusCard(
                             Box(
                                 modifier = Modifier
                                     .size(44.dp)
-                                    .clip(CircleShape),
+                                    .clip(ExpressiveButtonShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 data.iconContent.invoke()
@@ -258,7 +259,7 @@ fun PetalFloatingStatusCard(
                                 ?: MaterialTheme.colorScheme.onPrimaryContainer
 
                             Surface(
-                                shape = CircleShape,
+                                shape = ExpressiveButtonShape,
                                 color = iconBg,
                                 modifier = Modifier.size(44.dp)
                             ) {

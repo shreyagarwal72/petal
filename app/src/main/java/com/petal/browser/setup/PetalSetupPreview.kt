@@ -1,5 +1,6 @@
 package com.petal.browser.setup
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -41,8 +42,8 @@ fun MiniPetal(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     Text(stringResource(R.string.petal_setup_mini_page_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = if (darkWebpages) Color.White else MaterialTheme.colorScheme.onSurface)
-                    Box(Modifier.fillMaxWidth(.82f).height(7.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = .65f)))
-                    Box(Modifier.fillMaxWidth(.58f).height(6.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .3f)))
+                    Box(Modifier.fillMaxWidth(.82f).height(7.dp).clip(ExpressiveButtonShape).background(MaterialTheme.colorScheme.primary.copy(alpha = .65f)))
+                    Box(Modifier.fillMaxWidth(.58f).height(6.dp).clip(ExpressiveButtonShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .3f)))
                 }
                 if (adBlock) Icon(Icons.Rounded.Shield, stringResource(R.string.petal_setup_ad_shield), Modifier.align(Alignment.TopEnd).size(18.dp), tint = MaterialTheme.colorScheme.primary)
             }

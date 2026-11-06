@@ -242,9 +242,22 @@ fun PetalExpressiveTheme(
     com.petal.browser.ui.theme.layout.PetalLayoutState.install(androidx.compose.ui.platform.LocalContext.current)
     val layoutSettingsState = com.petal.browser.ui.theme.layout.PetalLayoutState.settings
 
+    // Expressive button shape system: seed the live state, then follow preference changes.
+    androidx.compose.runtime.remember(sp) {
+        PetalShapeState.preset = ExpressiveButtonPreset.fromId(sp.getString(PetalShapePrefs.KEY_BUTTON_PRESET, null))
+        PetalShapeState.amount = ExpressiveShapeAmount.fromId(sp.getString(PetalShapePrefs.KEY_SHAPE_AMOUNT, null))
+        PetalShapeState.enabled = expressiveShapesEnabled
+        true
+    }
+    androidx.compose.runtime.SideEffect { PetalShapeState.enabled = expressiveShapesState }
+
     androidx.compose.runtime.DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "sp_touch_haptics") {
+            if (key == PetalShapePrefs.KEY_BUTTON_PRESET) {
+                PetalShapeState.preset = ExpressiveButtonPreset.fromId(sp.getString(key, null))
+            } else if (key == PetalShapePrefs.KEY_SHAPE_AMOUNT) {
+                PetalShapeState.amount = ExpressiveShapeAmount.fromId(sp.getString(key, null))
+            } else if (key == "sp_touch_haptics") {
                 hapticsEnabled = sp.getBoolean("sp_touch_haptics", true)
             } else if (key == PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED) {
                 expressiveShapesState = sp.getBoolean(PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED, true)

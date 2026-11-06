@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import com.petal.browser.ui.containment.PetalSettingsSection
@@ -517,6 +518,16 @@ fun AppearanceSettingsScreenContent(
                     }
                 }
 
+                // Expressive button shapes (Expressive Keyboard style shape system)
+                PetalSettingsSection(
+                    title = "Button Shapes",
+                    iconRes = com.petal.browser.R.drawable.icon_cookie,
+                    cardId = "appearance_button_shapes",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    PetalButtonShapePicker()
+                }
+
                 // Section 1: App Theme & Dynamic Color Palette
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_theme_color_palette),
@@ -643,7 +654,7 @@ fun AppearanceSettingsScreenContent(
                                 Box(
                                     modifier = Modifier
                                         .size(38.dp)
-                                        .clip(CircleShape)
+                                        .clip(ExpressiveButtonShape)
                                         .background(pal.seed)
                                         .clickable {
                                             reveal.reveal {
@@ -668,7 +679,7 @@ fun AppearanceSettingsScreenContent(
                             Box(
                                 modifier = Modifier
                                     .size(38.dp)
-                                    .clip(CircleShape)
+                                    .clip(ExpressiveButtonShape)
                                     .background(
                                         if (customSelected) Brush.linearGradient(listOf(Color(customSpec.seed), Color(customSpec.seed)))
                                         else Brush.sweepGradient(listOf(Color(0xFFFF5252), Color(0xFFFFEB3B), Color(0xFF69F0AE), Color(0xFF40C4FF), Color(0xFFE040FB), Color(0xFFFF5252)))
@@ -914,7 +925,7 @@ fun AppearanceSettingsScreenContent(
                                 onClick = { pickerSlot = index },
                                 leading = {
                                     Box(
-                                        Modifier.size(40.dp).clip(CircleShape)
+                                        Modifier.size(40.dp).clip(ExpressiveButtonShape)
                                             .background(if (slotColor != 0) Color(slotColor) else MaterialTheme.colorScheme.surfaceContainerHighest),
                                         contentAlignment = Alignment.Center
                                     ) {

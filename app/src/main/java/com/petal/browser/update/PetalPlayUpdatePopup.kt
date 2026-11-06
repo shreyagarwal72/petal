@@ -1,5 +1,6 @@
 package com.petal.browser.update
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -162,7 +163,7 @@ fun PetalPlayUpdatePopupContent(
         ) {
             // Expressive Animated Halo Icon
             Surface(
-                shape = CircleShape,
+                shape = ExpressiveButtonShape,
                 color = if (isDownloaded) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.tertiaryContainer,
                 modifier = Modifier.size(68.dp)
             ) {
@@ -181,7 +182,7 @@ fun PetalPlayUpdatePopupContent(
             // Play Store Badge
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                shape = CircleShape
+                shape = ExpressiveButtonShape
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),

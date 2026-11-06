@@ -7,6 +7,7 @@
  */
 
 package com.petal.browser.compose.downloads
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
@@ -1331,7 +1332,7 @@ private fun ActiveDownloadsSummary(items: List<DownloadItem>, modifier: Modifier
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp)
-                        .clip(CircleShape),
+                        .clip(ExpressiveButtonShape),
                     color = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.12f)
                 )
@@ -1422,7 +1423,7 @@ private fun DownloadProgressRing(
     }
 
     Surface(
-        shape = if (showRing) CircleShape else avatarShape,
+        shape = if (showRing) ExpressiveButtonShape else avatarShape,
         color = containerBgColor,
         modifier = Modifier
             .size(46.dp)

@@ -10,6 +10,7 @@
 
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -193,7 +194,7 @@ fun PetalProfileSwitchSheet(
                                         modifier = Modifier
                                             .align(Alignment.BottomEnd)
                                             .size(18.dp)
-                                            .clip(CircleShape)
+                                            .clip(ExpressiveButtonShape)
                                             .background(MaterialTheme.colorScheme.primary),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -290,7 +291,7 @@ fun PetalProfileSwitchSheet(
                         Box(
                             modifier = Modifier
                                 .size(72.dp)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .background(Color(android.graphics.Color.parseColor(selectedColorHex)).copy(alpha = 0.2f))
                                 .clickable {
                                     PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
@@ -306,7 +307,7 @@ fun PetalProfileSwitchSheet(
                                     contentDescription = stringResource(R.string.ui_profile_picture),
                                     modifier = Modifier
                                         .size(72.dp)
-                                        .clip(CircleShape),
+                                        .clip(ExpressiveButtonShape),
                                     contentScale = ContentScale.Crop
                                 )
                             } else {
@@ -323,7 +324,7 @@ fun PetalProfileSwitchSheet(
                                 modifier = Modifier
                                     .align(Alignment.BottomEnd)
                                     .size(24.dp)
-                                    .clip(CircleShape)
+                                    .clip(ExpressiveButtonShape)
                                     .background(MaterialTheme.colorScheme.primary),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -369,7 +370,7 @@ fun PetalProfileSwitchSheet(
                             Box(
                                 modifier = Modifier
                                     .size(36.dp)
-                                    .clip(CircleShape)
+                                    .clip(ExpressiveButtonShape)
                                     .background(color)
                                     .clickable { selectedColorHex = hex },
                                 contentAlignment = Alignment.Center

@@ -1,5 +1,6 @@
 package com.petal.browser.lens
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.view.PetalToast;
 import android.Manifest
 import android.content.pm.PackageManager
@@ -315,7 +316,7 @@ fun PetalLensBottomSheet(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(CircleShape)
+                                    .clip(ExpressiveButtonShape)
                                     .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -368,7 +369,7 @@ fun PetalLensBottomSheet(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(CircleShape)
+                                    .clip(ExpressiveButtonShape)
                                     .background(MaterialTheme.colorScheme.secondaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -503,7 +504,7 @@ fun PetalLensBottomSheet(
             Box(
                 modifier = Modifier
                     .size(width = 36.dp, height = 4.dp)
-                    .clip(CircleShape)
+                    .clip(ExpressiveButtonShape)
                     .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
             )
 
@@ -518,7 +519,7 @@ fun PetalLensBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = MaterialTheme.colorScheme.primaryContainer,
                         modifier = Modifier.size(42.dp)
                     ) {
@@ -845,7 +846,7 @@ private fun LensActionCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Surface(
-                shape = CircleShape,
+                shape = ExpressiveButtonShape,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                 modifier = Modifier.size(36.dp)
             ) {

@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -61,7 +62,7 @@ fun ExpressiveFabWheel(
     )
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val fabShape = if (isExpanded) RoundedCornerShape(20.dp) else CircleShape
+    val fabShape = if (isExpanded) RoundedCornerShape(20.dp) else ExpressiveButtonShape
 
     Column(
         horizontalAlignment = Alignment.End,

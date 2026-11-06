@@ -1,5 +1,6 @@
 package com.petal.browser.compose.find
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -127,7 +128,7 @@ fun PetalFindInPageBar(
                 Box(
                     modifier = Modifier
                         .size(38.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -191,6 +192,7 @@ fun PetalFindInPageBar(
 
                 // Navigation Controls (Previous, Next)
                 FilledTonalIconButton(
+                    shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                     onClick = onFindPrevious,
                     enabled = query.isNotEmpty(),
                     modifier = Modifier.size(36.dp)
@@ -203,6 +205,7 @@ fun PetalFindInPageBar(
                 }
 
                 FilledTonalIconButton(
+                    shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                     onClick = onFindNext,
                     enabled = query.isNotEmpty(),
                     modifier = Modifier.size(36.dp)
@@ -219,7 +222,7 @@ fun PetalFindInPageBar(
                     onClick = onClose,
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .bouncyClickable(onClick = onClose)
                 ) {
                     Icon(

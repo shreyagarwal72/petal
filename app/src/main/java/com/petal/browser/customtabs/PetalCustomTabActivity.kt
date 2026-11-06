@@ -1,5 +1,6 @@
 package com.petal.browser.customtabs
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ComponentName
@@ -517,7 +518,7 @@ private fun CustomTabTopBar(
                     // ── Right: Compact "Open in Petal Browser" Action ─────────
                     FilledTonalIconButton(
                         onClick = onOpenInPetal,
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         modifier = Modifier.size(38.dp)
                     ) {
                         Icon(

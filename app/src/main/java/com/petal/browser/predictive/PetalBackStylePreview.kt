@@ -5,6 +5,7 @@
 
 package com.petal.browser.predictive
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.activity.BackEventCompat
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -234,7 +235,7 @@ private fun MockPage(accent: Color, surface: Color) {
             .padding(10.dp),
     ) {
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Box(Modifier.size(14.dp).background(accent, CircleShape))
+            Box(Modifier.size(14.dp).background(accent, ExpressiveButtonShape))
             Spacer(Modifier.width(6.dp))
             Bar(width = 46.dp, height = 7.dp, color = accent)
         }

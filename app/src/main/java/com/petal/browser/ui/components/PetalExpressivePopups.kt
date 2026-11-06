@@ -1,6 +1,7 @@
 package com.petal.browser.ui.components
 
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
@@ -584,7 +585,7 @@ fun PetalExpressiveColorDialog(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .clip(com.petal.browser.ui.theme.ExpressiveButtonShape)
                         .background(Color(c))
                         .clickable { apply(c) },
                     contentAlignment = Alignment.Center

@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -125,7 +126,7 @@ fun PetalLinkContextMenuDialog(
                                         contentDescription = stringResource(R.string.ui_site_favicon),
                                         modifier = Modifier
                                             .size(24.dp)
-                                            .clip(CircleShape)
+                                            .clip(ExpressiveButtonShape)
                                     )
                                 } else {
                                     Text(

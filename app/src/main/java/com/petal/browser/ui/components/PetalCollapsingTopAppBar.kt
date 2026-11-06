@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -140,11 +141,11 @@ fun PetalCollapsingTopAppBar(
                     scaleY = buttonScale
                 }
                 if (scrolled) {
-                    FilledIconButton(onClick = onNavigateBack, modifier = btnModifier) {
+                    FilledIconButton(shape = com.petal.browser.ui.theme.ExpressiveButtonShape,onClick = onNavigateBack, modifier = btnModifier) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 } else {
-                    FilledTonalIconButton(onClick = onNavigateBack, modifier = btnModifier) {
+                    FilledTonalIconButton(shape = com.petal.browser.ui.theme.ExpressiveButtonShape,onClick = onNavigateBack, modifier = btnModifier) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 }

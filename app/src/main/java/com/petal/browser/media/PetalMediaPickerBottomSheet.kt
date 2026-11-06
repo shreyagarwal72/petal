@@ -1,5 +1,6 @@
 package com.petal.browser.media
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.view.PetalToast;
 import android.Manifest
 import android.content.Context
@@ -216,7 +217,7 @@ fun PetalMediaPickerBottomSheet(
                 modifier = Modifier
                     .padding(top = 12.dp)
                     .size(width = 36.dp, height = 4.dp)
-                    .clip(CircleShape)
+                    .clip(ExpressiveButtonShape)
                     .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                     .align(Alignment.CenterHorizontally)
             )
@@ -427,7 +428,7 @@ fun PetalMediaPickerBottomSheet(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier.size(56.dp)
                         ) {
@@ -520,7 +521,7 @@ fun PetalMediaPickerBottomSheet(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = MaterialTheme.colorScheme.surfaceContainerHighest,
                             modifier = Modifier.size(52.dp)
                         ) {
@@ -652,7 +653,7 @@ fun PetalMediaPickerBottomSheet(
                                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
                                     )
                                     Surface(
-                                        shape = CircleShape,
+                                        shape = ExpressiveButtonShape,
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier
                                             .align(Alignment.TopEnd)

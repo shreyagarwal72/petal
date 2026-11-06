@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -399,7 +400,7 @@ private fun HeroGlassButton(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit
 ) {
-    val shape = CircleShape
+    val shape = ExpressiveButtonShape
     FilledTonalButton(
         onClick = onClick,
         shape = shape,
@@ -469,7 +470,7 @@ private fun HeroLinkBadge(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Surface(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
                             else MaterialTheme.colorScheme.surfaceContainerHigh
                 ) {

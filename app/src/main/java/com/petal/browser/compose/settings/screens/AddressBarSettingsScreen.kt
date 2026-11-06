@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -687,7 +688,7 @@ fun AddressBarSettingsScreen(
                                     Box(
                                         modifier = Modifier
                                             .size(32.dp)
-                                            .clip(CircleShape)
+                                            .clip(ExpressiveButtonShape)
                                             .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)),
                                         contentAlignment = Alignment.Center
                                     ) {

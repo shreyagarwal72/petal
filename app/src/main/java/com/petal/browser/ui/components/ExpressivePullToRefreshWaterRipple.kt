@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components;
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.core.Spring;
 import androidx.compose.animation.core.animateFloatAsState;
 import androidx.compose.animation.core.spring;
@@ -50,13 +51,13 @@ fun ExpressivePullToRefreshWaterRipple(
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .clip(CircleShape)
+                .clip(ExpressiveButtonShape)
                 .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f))
         )
         Box(
             modifier = Modifier
                 .size(26.dp)
-                .clip(CircleShape)
+                .clip(ExpressiveButtonShape)
                 .background(MaterialTheme.colorScheme.primary)
         )
     }

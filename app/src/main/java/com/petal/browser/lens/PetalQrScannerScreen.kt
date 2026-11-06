@@ -1,5 +1,6 @@
 package com.petal.browser.lens
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -372,11 +373,11 @@ fun PetalQrScannerScreen(
                     .padding(top = 4.dp, bottom = 12.dp)
             ) {
                 Surface(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
                     modifier = Modifier
                         .size(44.dp)
-                        .then(if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
+                        .then(if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true) else Modifier)
                         .bouncyClickable {
                             PetalHapticEngine.getInstance(context).playClick(context)
                             onDismiss()
@@ -408,11 +409,11 @@ fun PetalQrScannerScreen(
                 }
 
                 Surface(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = if (isLiquidGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
                     modifier = Modifier
                         .size(44.dp)
-                        .then(if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
+                        .then(if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true) else Modifier)
                         .bouncyClickable(enabled = !isDecodingGallery) {
                             PetalHapticEngine.getInstance(context).playClick(context)
                             launchSafePhotoPicker()
@@ -523,11 +524,11 @@ fun PetalQrScannerScreen(
                 ) {
                     // Switch camera (front/back)
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                         modifier = Modifier
                             .size(54.dp)
-                            .then(if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
+                            .then(if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true) else Modifier)
                             .bouncyClickable {
                                 PetalHapticEngine.getInstance(context).playClick(context)
                                 lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
@@ -549,12 +550,12 @@ fun PetalQrScannerScreen(
 
                     // Main Capture Click Button
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = MaterialTheme.colorScheme.primary,
                         shadowElevation = 6.dp,
                         modifier = Modifier
                             .size(68.dp)
-                            .then(if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
+                            .then(if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true) else Modifier)
                             .bouncyClickable(enabled = !isCapturing) {
                                 PetalHapticEngine.getInstance(context).playClick(context)
                                 val capture = imageCapture
@@ -618,11 +619,11 @@ fun PetalQrScannerScreen(
 
                     // Torch Toggle Button
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = if (torchEnabled) MaterialTheme.colorScheme.primaryContainer else if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                         modifier = Modifier
                             .size(54.dp)
-                            .then(if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
+                            .then(if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true) else Modifier)
                             .bouncyClickable {
                                 PetalHapticEngine.getInstance(context).playClick(context)
                                 torchEnabled = !torchEnabled
@@ -669,7 +670,7 @@ fun PetalQrScannerScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier.size(44.dp)
                         ) {
@@ -823,7 +824,7 @@ fun PetalQrScannerScreen(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(CircleShape)
+                                    .clip(ExpressiveButtonShape)
                                     .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -875,7 +876,7 @@ fun PetalQrScannerScreen(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(CircleShape)
+                                    .clip(ExpressiveButtonShape)
                                     .background(MaterialTheme.colorScheme.secondaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {

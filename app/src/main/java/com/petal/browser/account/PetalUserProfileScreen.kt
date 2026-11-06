@@ -1,5 +1,6 @@
 package com.petal.browser.account
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.net.Uri
 import android.preference.PreferenceManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -81,7 +82,7 @@ fun ProfileAvatarDisplay(
     Box(
         modifier = modifier
             .size(size)
-            .clip(CircleShape)
+            .clip(ExpressiveButtonShape)
             .background(MaterialTheme.colorScheme.primaryContainer),
         contentAlignment = Alignment.Center
     ) {
@@ -90,7 +91,7 @@ fun ProfileAvatarDisplay(
                 AsyncImage(
                     model = profile.avatarUrl,
                     contentDescription = stringResource(R.string.ui_profile_photo),
-                    modifier = Modifier.size(size).clip(CircleShape),
+                    modifier = Modifier.size(size).clip(ExpressiveButtonShape),
                     contentScale = ContentScale.Crop
                 )
             }
@@ -114,7 +115,7 @@ fun ProfileAvatarDisplay(
                     AsyncImage(
                         model = imageModel,
                         contentDescription = stringResource(R.string.ui_custom_photo),
-                        modifier = Modifier.size(size).clip(CircleShape),
+                        modifier = Modifier.size(size).clip(ExpressiveButtonShape),
                         contentScale = ContentScale.Crop
                     )
                 } else {
@@ -376,7 +377,7 @@ private fun RenderUserProfileContent(
                     ) {
                         ProfileAvatarDisplay(profile = profile, sizeDp = 88)
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(30.dp)
@@ -406,7 +407,7 @@ private fun RenderUserProfileContent(
                         )
                         Spacer(Modifier.width(8.dp))
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier
@@ -458,7 +459,7 @@ private fun RenderUserProfileContent(
                     ) {
                         // Gallery / Built-in Media Picker & Crop Button
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = if (profile.avatarType == AvatarType.GALLERY_URI) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = if (profile.avatarType == AvatarType.GALLERY_URI) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
                             tonalElevation = if (profile.avatarType == AvatarType.GALLERY_URI) 4.dp else 0.dp,
@@ -479,7 +480,7 @@ private fun RenderUserProfileContent(
                         PetalUserProfileManager.builtinAvatarPresets.forEach { (presetId, label) ->
                             val isSelected = profile.avatarType == AvatarType.PRESET && profile.avatarPresetId == presetId
                             Surface(
-                                shape = CircleShape,
+                                shape = ExpressiveButtonShape,
                                 color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
                                 tonalElevation = if (isSelected) 4.dp else 0.dp,
                                 modifier = Modifier
@@ -1029,7 +1030,7 @@ private fun ProfilePictureCropDialog(
                 Box(
                     modifier = Modifier
                         .size(200.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(Color.Black)
                         .pointerInput(Unit) {
                             detectTransformGestures { _, pan, zoom, _ ->
@@ -1079,7 +1080,7 @@ private fun ProfilePictureCropDialog(
                     ) {
                         Surface(
                             onClick = { rotation = (rotation + 90f) % 360f },
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             contentColor = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier
@@ -1097,7 +1098,7 @@ private fun ProfilePictureCropDialog(
                                 offsetY = 0f
                                 rotation = 0f
                             },
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             contentColor = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier

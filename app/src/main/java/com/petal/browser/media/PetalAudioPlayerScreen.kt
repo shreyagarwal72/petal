@@ -17,6 +17,7 @@
 
 package com.petal.browser.media
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -647,8 +648,8 @@ fun PetalAudioPlayerScreen(
                             modifier = Modifier
                                 .sizeIn(maxWidth = 310.dp, maxHeight = 310.dp)
                                 .aspectRatio(1f)
-                                .shadow(24.dp, CircleShape, spotColor = Color.Black.copy(alpha = 0.5f))
-                                .clip(CircleShape)
+                                .shadow(24.dp, ExpressiveButtonShape, spotColor = Color.Black.copy(alpha = 0.5f))
+                                .clip(ExpressiveButtonShape)
                                 .background(Color(0xFF161618))
                                 .clickable {
                                     isVinylMode = false
@@ -684,10 +685,10 @@ fun PetalAudioPlayerScreen(
                                     Box(
                                         modifier = Modifier
                                             .size(70.dp)
-                                            .clip(CircleShape)
+                                            .clip(ExpressiveButtonShape)
                                             .background(MaterialTheme.colorScheme.surface)
                                             .padding(4.dp)
-                                            .clip(CircleShape)
+                                            .clip(ExpressiveButtonShape)
                                             .background(MaterialTheme.colorScheme.primary),
                                         contentAlignment = Alignment.Center,
                                     ) {
@@ -752,10 +753,10 @@ fun PetalAudioPlayerScreen(
                             Box(
                                 modifier = Modifier
                                     .size(46.dp)
-                                    .clip(CircleShape)
+                                    .clip(ExpressiveButtonShape)
                                     .background(actionPillBg)
                                     .then(
-                                        if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
+                                        if (isGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
                                         else Modifier
                                     )
                                     .clickable {
@@ -776,10 +777,10 @@ fun PetalAudioPlayerScreen(
                             Box(
                                 modifier = Modifier
                                     .size(46.dp)
-                                    .clip(CircleShape)
+                                    .clip(ExpressiveButtonShape)
                                     .background(actionPillBg)
                                     .then(
-                                        if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
+                                        if (isGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
                                         else Modifier
                                     )
                                     .clickable {

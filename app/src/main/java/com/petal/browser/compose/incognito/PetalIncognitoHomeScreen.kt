@@ -1,5 +1,6 @@
 package com.petal.browser.compose.incognito
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.*
@@ -537,7 +538,7 @@ private fun IncognitoDecoySearchBar(
             .heightIn(min = 56.dp)
             .onGloballyPositioned { pillBounds[0] = it.boundsInWindow() }
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .clip(CircleShape)
+            .clip(ExpressiveButtonShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = androidx.compose.foundation.LocalIndication.current

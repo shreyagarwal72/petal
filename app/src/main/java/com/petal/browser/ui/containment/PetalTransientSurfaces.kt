@@ -1,5 +1,6 @@
 package com.petal.browser.ui.containment
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.luminance
@@ -67,13 +68,13 @@ fun PetalSnackbarHost(
             }
         ) {
             Surface(
-                shape = CircleShape,
+                shape = ExpressiveButtonShape,
                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 tonalElevation = if (isGlass) 0.dp else 6.dp,
                 shadowElevation = 6.dp,
                 border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
-                modifier = if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.65f) else Modifier
+                modifier = if (isGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.65f) else Modifier
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
@@ -299,7 +300,7 @@ fun PetalAlertDialog(
                 modifier = Modifier
                     .background(
                         color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                        shape = CircleShape
+                        shape = ExpressiveButtonShape
                     )
                     .padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
@@ -611,7 +612,7 @@ fun PetalSheetTitleBadge(
         modifier = modifier
             .background(
                 color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                shape = CircleShape
+                shape = ExpressiveButtonShape
             )
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {

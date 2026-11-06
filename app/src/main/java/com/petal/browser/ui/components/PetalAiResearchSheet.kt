@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.containment.liquidGlassChrome
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -201,10 +202,11 @@ fun PetalAiResearchSheet(
                 }
                 val closeGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
                 FilledTonalIconButton(
+                    shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                     onClick = onDismiss,
                     modifier = Modifier
                         .size(40.dp)
-                        .then(if (closeGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.5f) else Modifier),
+                        .then(if (closeGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.5f) else Modifier),
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
                         containerColor = if (closeGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -713,6 +715,7 @@ fun PetalAiResearchSheet(
 
                                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     FilledTonalIconButton(
+                                        shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                                         onClick = {
                                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                             clipboard.setPrimaryClip(ClipData.newPlainText("AI Research", response))
@@ -727,6 +730,7 @@ fun PetalAiResearchSheet(
                                     }
 
                                     FilledTonalIconButton(
+                                        shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                                         onClick = {
                                             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                                 type = "text/plain"

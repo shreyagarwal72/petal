@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -60,7 +61,7 @@ fun PetalFeatureInfoButton(
 ) {
     Surface(
         onClick = onClick,
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = containerColor,
         contentColor = contentColor,
         modifier = modifier
@@ -155,7 +156,7 @@ fun PetalFeatureExplainerDialog(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                             modifier = Modifier
                                 .padding(top = 4.dp)
@@ -372,7 +373,7 @@ private fun MotionBlurLivePreview() {
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Surface(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(28.dp)
                 ) {
@@ -492,7 +493,7 @@ private fun AdBlockTrieLivePreview() {
             modifier = Modifier
                 .offset(x = cleanOffset.dp, y = (-12).dp)
                 .size(10.dp)
-                .clip(CircleShape)
+                .clip(ExpressiveButtonShape)
                 .background(MaterialTheme.colorScheme.primary)
         )
 
@@ -504,7 +505,7 @@ private fun AdBlockTrieLivePreview() {
                 .offset(x = trackerOffset.dp, y = 14.dp)
                 .size(10.dp)
                 .graphicsLayer { alpha = trackerAlpha }
-                .clip(CircleShape)
+                .clip(ExpressiveButtonShape)
                 .background(MaterialTheme.colorScheme.error)
         )
     }

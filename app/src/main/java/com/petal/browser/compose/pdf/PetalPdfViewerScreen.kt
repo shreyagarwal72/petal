@@ -22,6 +22,7 @@
 
 package com.petal.browser.compose.pdf
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.petalContainerEnter
 import android.content.Context
 import android.content.Intent
@@ -751,7 +752,7 @@ private fun PetalPdfViewerScreenImpl(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                    shape = CircleShape,
+                                    shape = ExpressiveButtonShape,
                                     containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
                                     contentColor = MaterialTheme.colorScheme.error,
                                     size = 72.dp,
@@ -2251,7 +2252,7 @@ private fun PdfEditTopBar(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
                                 .size(24.dp)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .background(color)
                                 .clickable { onColorChange(color) }
                         ) {
@@ -2323,7 +2324,7 @@ private fun PdfViewerBottomBar(
             ) {
                 // Page Number Tag
                 Surface(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.75f)
                             else MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.clickable { onJumpPage() }
@@ -2464,7 +2465,7 @@ private fun PdfViewerBottomBar(
                 // Reset Zoom Tag
                 if (kotlin.math.abs(scale - 1f) > 0.05f) {
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = MaterialTheme.colorScheme.secondaryContainer,
                         modifier = Modifier.clickable { onResetZoom() }
                     ) {

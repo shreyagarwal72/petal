@@ -1,4 +1,5 @@
 package com.petal.browser.compose.tabs
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.PetalNewTabOrigin
@@ -951,7 +952,7 @@ fun PetalTabGridSwitcher(
                         val fit = ((gapPx - indicatorHeightPx * 0.6f) / (indicatorHeightPx * 0.6f)).coerceIn(0f, 1f)
 
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = if (isThresholdReached) accentColor else MaterialTheme.colorScheme.surfaceContainerHighest,
                             contentColor = if (isThresholdReached) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                             shadowElevation = (lockProgress * 8f).dp,
@@ -1892,7 +1893,7 @@ private fun TabManagerEmptyState(
     ) {
         val badgeColor = if (isIncognito) MaterialTheme.colorScheme.tertiary else accentColor
         Surface(
-            shape = CircleShape,
+            shape = ExpressiveButtonShape,
             modifier = Modifier.size(112.dp),
             color = badgeColor,
             tonalElevation = 6.dp
@@ -2115,7 +2116,7 @@ private fun PetalTabCard(
                     }
                     AnimatedVisibility(visible = isSelectionMode && isSelectedForSelection) {
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = accentColor,
                             modifier = Modifier.size(18.dp)
                         ) {
@@ -2267,7 +2268,7 @@ private fun PetalHomePreviewCard(
                 Box(
                     modifier = Modifier
                         .size(32.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(accentColor.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -2315,7 +2316,7 @@ private fun PetalHomePreviewCard(
                         Box(
                             modifier = Modifier
                                 .size(18.dp)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         )
                     }
@@ -2429,7 +2430,7 @@ private fun PetalTabListItem(
                     Icon(Icons.Rounded.PushPin, contentDescription = stringResource(R.string.ui_pinned), tint = accentColor, modifier = Modifier.size(16.dp))
                 }
                 AnimatedVisibility(visible = isSelectionMode && isSelectedForSelection) {
-                    Surface(shape = CircleShape, color = accentColor, modifier = Modifier.size(20.dp)) {
+                    Surface(shape = ExpressiveButtonShape, color = accentColor, modifier = Modifier.size(20.dp)) {
                         Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.ui_selected), tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
                     }
                 }
@@ -2517,7 +2518,7 @@ private fun PetalTabGroupCard(
                 }
 
                 Surface(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
                     modifier = Modifier
                         .size(24.dp)
@@ -2696,7 +2697,7 @@ private fun PetalTabGroupInspectionDialog(
                         val parsedColor = try { Color(android.graphics.Color.parseColor(colorHex)) } catch (_: Exception) { accentColor }
                         val isSelectedColor = group.colorHex.equals(colorHex, ignoreCase = true)
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = parsedColor,
                             modifier = Modifier
                                 .size(28.dp)
@@ -2772,11 +2773,11 @@ private fun TabFavicon(tab: PetalTabItem, accentColor: Color, size: androidx.com
             contentDescription = null,
             modifier = Modifier
                 .size(size)
-                .clip(CircleShape)
+                .clip(ExpressiveButtonShape)
         )
     } else {
         Surface(
-            shape = CircleShape,
+            shape = ExpressiveButtonShape,
             color = accentColor.copy(alpha = 0.2f),
             modifier = Modifier.size(size)
         ) {

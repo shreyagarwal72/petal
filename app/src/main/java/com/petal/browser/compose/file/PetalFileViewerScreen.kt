@@ -20,6 +20,7 @@
 
 package com.petal.browser.compose.file
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.petalContainerEnter
 import android.content.Context
 import android.content.Intent
@@ -1560,7 +1561,7 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         verticalArrangement = Arrangement.Center
     ) {
         PetalGroupIconBadge(
-            shape = CircleShape,
+            shape = ExpressiveButtonShape,
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             size = 80.dp,
@@ -1617,7 +1618,7 @@ private fun ErrorDisplayBox(error: String) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 PetalGroupIconBadge(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
                     contentColor = MaterialTheme.colorScheme.error,
                     size = 72.dp,

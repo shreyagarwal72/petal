@@ -1,5 +1,6 @@
 package com.petal.browser.compose.mlkit
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -348,7 +349,7 @@ fun PetalImageScanResultSheet(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .size(width = 36.dp, height = 4.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                 )
 
@@ -360,7 +361,7 @@ fun PetalImageScanResultSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = MaterialTheme.colorScheme.primaryContainer,
                         modifier = Modifier.size(44.dp)
                     ) {

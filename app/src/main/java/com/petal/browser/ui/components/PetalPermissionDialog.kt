@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.net.Uri
 import android.view.Gravity
@@ -286,7 +287,7 @@ fun PetalPermissionDialog(
 
                     // Origin chip
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = scheme.surfaceContainerHighest.copy(alpha = if (isGlass) 0.55f else 0.9f)
                     ) {
                         Row(
@@ -359,7 +360,7 @@ fun PetalPermissionDialog(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .background(scheme.surfaceContainerHigh.copy(alpha = if (isGlass) 0.7f else 1f)),
                             contentAlignment = Alignment.Center
                         ) {

@@ -1,5 +1,6 @@
 package com.petal.browser.security
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -132,7 +133,7 @@ fun PetalPinLockDialog(
             ) {
                 // Header Lock Icon
                 Surface(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.size(56.dp)
                 ) {
@@ -171,7 +172,7 @@ fun PetalPinLockDialog(
                         Box(
                             modifier = Modifier
                                 .size(16.dp)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .background(
                                     if (isFilled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
                                 )
@@ -200,7 +201,7 @@ fun PetalPinLockDialog(
                         ) {
                             row.forEach { key ->
                                 Surface(
-                                    shape = CircleShape,
+                                    shape = ExpressiveButtonShape,
                                     color = if (key in "0".."9") MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent,
                                     modifier = Modifier
                                         .size(64.dp)

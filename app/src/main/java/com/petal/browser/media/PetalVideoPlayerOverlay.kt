@@ -1,5 +1,6 @@
 package com.petal.browser.media
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.media.AudioManager
 import androidx.compose.animation.AnimatedVisibility
@@ -281,7 +282,7 @@ fun PetalVideoPlayerOverlay(
 
         // ── 3.5. 2x Speed Boost HUD Indicator (Soul / YouTube Style) ────────
         if (isLongPressBoostActive) {
-            val boostShape = CircleShape
+            val boostShape = ExpressiveButtonShape
             Surface(
                 shape = boostShape,
                 color = Color.Black.copy(alpha = 0.75f),
@@ -356,7 +357,7 @@ fun PetalVideoPlayerOverlay(
             }
         }
         if (aspectRatioHudText != null) {
-            val shape = CircleShape
+            val shape = ExpressiveButtonShape
             val hudModifier = if (isLiquidGlass) {
                 Modifier
                     .background(petalGroupSurfaceColor(), shape)
@@ -608,7 +609,7 @@ fun PetalVideoPlayerOverlay(
                     // Horizontal Speed Quick Selector Bar
                     AnimatedVisibility(visible = showSpeedSelector) {
                         val speeds = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f, 2.5f, 3.0f)
-                        val selectorShape = CircleShape
+                        val selectorShape = ExpressiveButtonShape
                         val selectorModifier = if (isLiquidGlass) {
                             Modifier
                                 .background(Color.Black.copy(alpha = 0.55f), selectorShape)
@@ -630,7 +631,7 @@ fun PetalVideoPlayerOverlay(
                             ) {
                                 speeds.forEach { spd ->
                                     val isSelected = currentSpeed == spd
-                                    val pillShape = CircleShape
+                                    val pillShape = ExpressiveButtonShape
                                     val pillModifier = if (isSelected) {
                                         if (isLiquidGlass) {
                                             Modifier

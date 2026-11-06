@@ -1,5 +1,6 @@
 package com.petal.browser.compose.image
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -222,7 +223,7 @@ fun PetalImageCropDialog(
                             rotationAngle = (rotationAngle + 90f) % 360f
                             PetalHapticEngine.getInstance(context).playClick(context)
                         },
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         colors = ButtonDefaults.filledTonalButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                             contentColor = MaterialTheme.colorScheme.onSurface

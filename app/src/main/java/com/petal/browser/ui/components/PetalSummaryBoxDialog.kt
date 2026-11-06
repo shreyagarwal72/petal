@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -138,12 +139,12 @@ fun PetalSummaryBoxDialog(
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Surface(
-                                shape = CircleShape,
+                                shape = ExpressiveButtonShape,
                                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.primaryContainer,
                                 border = null,
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .then(if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.5f, pressFx = true) else Modifier)
+                                    .then(if (isGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.5f, pressFx = true) else Modifier)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(

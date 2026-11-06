@@ -1,5 +1,6 @@
 package com.petal.browser.account.mozilla
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.net.Uri
 import android.preference.PreferenceManager
@@ -258,7 +259,7 @@ fun FirefoxAccountSyncScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Surface(
-                                        shape = CircleShape,
+                                        shape = ExpressiveButtonShape,
                                         color = MaterialTheme.colorScheme.primaryContainer,
                                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.size(44.dp)
@@ -323,7 +324,7 @@ fun FirefoxAccountSyncScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Surface(
-                                            shape = CircleShape,
+                                            shape = ExpressiveButtonShape,
                                             color = if (profile.avatarType == AvatarType.GALLERY_URI) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                                             contentColor = if (profile.avatarType == AvatarType.GALLERY_URI) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
                                             tonalElevation = if (profile.avatarType == AvatarType.GALLERY_URI) 4.dp else 0.dp,
@@ -343,7 +344,7 @@ fun FirefoxAccountSyncScreen(
                                         PetalUserProfileManager.builtinAvatarPresets.forEach { (presetId, label) ->
                                             val isSelected = profile.avatarType == AvatarType.PRESET && profile.avatarPresetId == presetId
                                             Surface(
-                                                shape = CircleShape,
+                                                shape = ExpressiveButtonShape,
                                                 color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
                                                 tonalElevation = if (isSelected) 4.dp else 0.dp,
                                                 modifier = Modifier
@@ -397,7 +398,7 @@ fun FirefoxAccountSyncScreen(
                                             Box(
                                                 modifier = Modifier
                                                     .size(52.dp)
-                                                    .clip(CircleShape)
+                                                    .clip(ExpressiveButtonShape)
                                                     .background(MaterialTheme.colorScheme.primaryContainer),
                                                 contentAlignment = Alignment.Center
                                             ) {
@@ -405,7 +406,7 @@ fun FirefoxAccountSyncScreen(
                                                     AsyncImage(
                                                         model = signedIn.avatarUrl,
                                                         contentDescription = stringResource(R.string.ui_firefox_avatar),
-                                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                                        modifier = Modifier.fillMaxSize().clip(ExpressiveButtonShape),
                                                         contentScale = ContentScale.Crop
                                                     )
                                                 } else {
@@ -600,7 +601,7 @@ fun FirefoxAccountSyncScreen(
                                             Box(
                                                 modifier = Modifier
                                                     .size(64.dp)
-                                                    .clip(CircleShape)
+                                                    .clip(ExpressiveButtonShape)
                                                     .background(MaterialTheme.colorScheme.primaryContainer),
                                                 contentAlignment = Alignment.Center
                                             ) {

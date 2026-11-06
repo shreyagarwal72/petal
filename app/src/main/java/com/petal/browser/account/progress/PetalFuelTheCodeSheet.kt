@@ -1,5 +1,6 @@
 package com.petal.browser.account.progress
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -305,7 +306,7 @@ fun PetalFuelTheCodeSheet(
                                 Box(
                                     modifier = Modifier
                                         .size(44.dp)
-                                        .clip(CircleShape)
+                                        .clip(ExpressiveButtonShape)
                                         .background(cs.tertiaryContainer),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -431,7 +432,7 @@ fun PetalFuelTheCodeSheet(
                                 Box(
                                     modifier = Modifier
                                         .size(44.dp)
-                                        .clip(CircleShape)
+                                        .clip(ExpressiveButtonShape)
                                         .background(cs.tertiaryContainer),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -552,7 +553,7 @@ fun PetalFuelTheCodeSheet(
                             }
                         }
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = cs.secondaryContainer,
                             modifier = Modifier.padding(vertical = 2.dp)
                         ) {
@@ -593,7 +594,7 @@ fun PetalFuelTheCodeSheet(
                                     val progress = (adsWatched.toFloat() / nextMilestone.level).coerceIn(0f, 1f)
                                     LinearProgressIndicator(
                                         progress = { progress },
-                                        modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+                                        modifier = Modifier.fillMaxWidth().height(8.dp).clip(ExpressiveButtonShape),
                                         color = cs.primary,
                                         trackColor = cs.surfaceVariant
                                     )
@@ -674,7 +675,7 @@ fun PetalFuelTheCodeSheet(
                             color = cs.onSurface
                         )
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = cs.primaryContainer,
                             modifier = Modifier.padding(vertical = 2.dp)
                         ) {

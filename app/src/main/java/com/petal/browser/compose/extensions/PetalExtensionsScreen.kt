@@ -9,6 +9,7 @@
 
 package com.petal.browser.compose.extensions
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -268,6 +269,7 @@ fun PetalExtensionsScreen(
                             onBack = onDismiss,
                             actions = {
                                 FilledTonalIconButton(
+                                    shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                                     onClick = { showStoreScreen = true },
                                     colors = IconButtonDefaults.filledTonalIconButtonColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -708,7 +710,7 @@ private fun FirefoxAddonsList(
                 trailing = {
                     if (isInstalled) {
                         Icon(Icons.Rounded.CheckCircle, "Installed", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-                    } else FilledTonalIconButton(onClick = { PetalExtensionManager.install(entry.downloadUrl) { _, _ -> } }, modifier = Modifier.size(36.dp)) {
+                    } else FilledTonalIconButton(shape = com.petal.browser.ui.theme.ExpressiveButtonShape,onClick = { PetalExtensionManager.install(entry.downloadUrl) { _, _ -> } }, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Rounded.Download, "Install", modifier = Modifier.size(18.dp))
                     }
                 }

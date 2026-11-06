@@ -1,5 +1,6 @@
 package com.petal.browser.passwords
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.app.Dialog
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
@@ -147,7 +148,7 @@ private fun AccountPickerSheetContent(
                 Box(
                     modifier = Modifier
                         .size(width = 36.dp, height = 4.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                 )
 
@@ -234,7 +235,7 @@ private fun AccountPickerSheetContent(
                                 ) {
                                     // Initials badge
                                     Surface(
-                                        shape = CircleShape,
+                                        shape = ExpressiveButtonShape,
                                         color = MaterialTheme.colorScheme.primaryContainer,
                                         modifier = Modifier.size(38.dp)
                                     ) {

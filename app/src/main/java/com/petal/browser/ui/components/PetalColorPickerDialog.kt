@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -198,7 +199,7 @@ private fun Color.luminance(): Float = 0.2126f * red + 0.7152f * green + 0.0722f
 @Composable
 private fun TabPills(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     Row(
-        modifier = modifier.fillMaxWidth().clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHighest).padding(4.dp),
+        modifier = modifier.fillMaxWidth().clip(ExpressiveButtonShape).background(MaterialTheme.colorScheme.surfaceContainerHighest).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         PickerTab.entries.forEachIndexed { i, t ->
@@ -209,7 +210,7 @@ private fun TabPills(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier 
                 if (i == selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, label = "tabFg"
             )
             Box(
-                Modifier.weight(1f).height(44.dp).clip(CircleShape).background(bg).clickable { onSelect(i) },
+                Modifier.weight(1f).height(44.dp).clip(ExpressiveButtonShape).background(bg).clickable { onSelect(i) },
                 contentAlignment = Alignment.Center
             ) { Text(t.label, color = fg, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)) }
         }
@@ -348,7 +349,7 @@ private fun ImagePickPage(onPicked: (Color) -> Unit) {
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(
                 onClick = { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                shape = CircleShape
+                shape = ExpressiveButtonShape
             ) { Text("Choose photo") }
         }
     } else {

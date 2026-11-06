@@ -1,4 +1,5 @@
 package com.petal.browser.compose.settings.screens
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -161,7 +162,7 @@ fun UpdaterSettingsScreenContent(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Surface(
-                                    shape = CircleShape,
+                                    shape = ExpressiveButtonShape,
                                     color = MaterialTheme.colorScheme.primaryContainer,
                                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(40.dp)
@@ -227,7 +228,7 @@ fun UpdaterSettingsScreenContent(
                                                         Box(
                                                             modifier = Modifier
                                                                 .size(8.dp)
-                                                                .clip(CircleShape)
+                                                                .clip(ExpressiveButtonShape)
                                                                 .background(MaterialTheme.colorScheme.primary)
                                                         )
                                                         Text(
@@ -311,7 +312,7 @@ fun UpdaterSettingsScreenContent(
                                                         Box(
                                                             modifier = Modifier
                                                                 .size(8.dp)
-                                                                .clip(CircleShape)
+                                                                .clip(ExpressiveButtonShape)
                                                                 .background(MaterialTheme.colorScheme.tertiary)
                                                         )
                                                         Text(
@@ -377,7 +378,7 @@ fun UpdaterSettingsScreenContent(
                                                     Box(
                                                         modifier = Modifier
                                                             .size(32.dp)
-                                                            .background(Color(0xFF2E7D32).copy(alpha = 0.15f), CircleShape),
+                                                            .background(Color(0xFF2E7D32).copy(alpha = 0.15f), ExpressiveButtonShape),
                                                         contentAlignment = Alignment.Center
                                                     ) {
                                                         Icon(

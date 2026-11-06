@@ -7,6 +7,7 @@
 
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -336,7 +337,7 @@ fun PetalAdBlockSettingsScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Surface(
-                            shape = CircleShape,
+                            shape = ExpressiveButtonShape,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(48.dp)
                         ) {
@@ -478,7 +479,7 @@ fun PetalAdBlockSettingsScreen(
                                     if (sub.isCustom) {
                                         Spacer(Modifier.width(6.dp))
                                         Surface(
-                                            shape = CircleShape,
+                                            shape = ExpressiveButtonShape,
                                             color = MaterialTheme.colorScheme.tertiaryContainer
                                         ) {
                                             Text(
@@ -685,7 +686,7 @@ private fun ShieldModeCard(
                         color = scheme.onSurface
                     )
                     if (mode == PetalAdBlockMode.STANDARD) {
-                        Surface(shape = CircleShape, color = scheme.primary) {
+                        Surface(shape = ExpressiveButtonShape, color = scheme.primary) {
                             Text(
                                 text = "RECOMMENDED",
                                 style = MaterialTheme.typography.labelSmall,

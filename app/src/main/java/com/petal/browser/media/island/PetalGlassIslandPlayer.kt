@@ -8,6 +8,7 @@
  */
 package com.petal.browser.media.island
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -196,6 +197,7 @@ fun PetalGlassIslandPlayer(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         FilledIconButton(
+                            shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                             onClick = { GlassIslandController.togglePlayPause() },
                             colors = IconButtonDefaults.filledIconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -240,7 +242,7 @@ private fun WaveformVisualizer(isPlaying: Boolean) {
                 modifier = Modifier
                     .width(3.dp)
                     .height(h.value.dp)
-                    .clip(CircleShape)
+                    .clip(ExpressiveButtonShape)
                     .background(MaterialTheme.colorScheme.primary)
             )
         }

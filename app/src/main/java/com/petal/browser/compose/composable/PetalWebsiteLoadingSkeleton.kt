@@ -1,5 +1,6 @@
 package com.petal.browser.compose.composable
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -124,7 +125,7 @@ fun PetalWebsiteLoadingSkeleton(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .clip(CircleShape)
+                            .clip(ExpressiveButtonShape)
                             .background(shimmerBrush)
                     )
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -148,7 +149,7 @@ fun PetalWebsiteLoadingSkeleton(
                 Box(
                     modifier = Modifier
                         .size(28.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(shimmerBrush)
                 )
             }

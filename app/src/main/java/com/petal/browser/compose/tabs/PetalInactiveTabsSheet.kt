@@ -1,5 +1,6 @@
 package com.petal.browser.compose.tabs
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -347,7 +348,7 @@ private fun InactiveTabGridCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = accentColor.copy(alpha = 0.15f),
                         modifier = Modifier.size(18.dp)
                     ) {
@@ -373,7 +374,7 @@ private fun InactiveTabGridCard(
                 }
 
                 Surface(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
                     modifier = Modifier
                         .size(24.dp)
@@ -453,7 +454,7 @@ private fun InactiveTabPreviewCard(
             Box(
                 modifier = Modifier
                     .size(34.dp)
-                    .clip(CircleShape)
+                    .clip(ExpressiveButtonShape)
                     .background(accentColor.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {

@@ -1,4 +1,5 @@
 package com.petal.browser.compose.settings.screens
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 
 import com.petal.browser.ui.containment.PetalSettingsSection
@@ -643,7 +644,7 @@ fun DisplaySettingsScreenContent(
                                     ) {
                                         Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size((12 * zoomLevelScale).dp)) {}
+                                                Surface(shape = ExpressiveButtonShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size((12 * zoomLevelScale).dp)) {}
                                                 Text(
                                                     stringResource(R.string.ui_sample_web_page_article),
                                                     fontSize = (12 * zoomLevelScale).sp,

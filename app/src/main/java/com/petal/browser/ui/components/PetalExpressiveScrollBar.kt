@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -754,7 +755,7 @@ fun PetalExpressiveScrollBar(
                             scaleX = dragLabelScale
                             scaleY = dragLabelScale
                         },
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = labelContainerColor,
                     contentColor = labelContentColor,
                     tonalElevation = 6.dp,

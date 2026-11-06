@@ -13,6 +13,7 @@
 
 package com.petal.browser.media.sheets
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -155,6 +156,7 @@ fun PetalSleepTimerSheet(
                 }
 
                 FilledTonalIconButton(
+                    shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                     onClick = onDismiss,
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
                         containerColor = audioPalette.surfaceContainerHigh,
@@ -373,6 +375,7 @@ fun PetalSongInfoSheet(
                 }
 
                 FilledTonalIconButton(
+                    shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                     onClick = onDismiss,
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
                         containerColor = audioPalette.surfaceContainerHigh,
@@ -495,6 +498,7 @@ fun PetalSpeedSelectorSheet(
                 }
 
                 FilledTonalIconButton(
+                    shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                     onClick = onDismiss,
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
                         containerColor = audioPalette.surfaceContainerHigh,
@@ -641,6 +645,7 @@ fun PetalAudioRouteSheet(
                 }
 
                 FilledTonalIconButton(
+                    shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                     onClick = onDismiss,
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
                         containerColor = audioPalette.surfaceContainerHigh,

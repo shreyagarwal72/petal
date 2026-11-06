@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -50,12 +51,12 @@ fun PetalAiActionDialog(
                 ) {
                     val isGlassHeader = isLiquidGlassEnabled("sp_liquid_glass_containments")
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = if (isGlassHeader) petalGroupSurfaceColor() else MaterialTheme.colorScheme.primaryContainer,
                         border = null,
                         modifier = Modifier
                             .size(42.dp)
-                            .then(if (isGlassHeader) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.5f, pressFx = true) else Modifier)
+                            .then(if (isGlassHeader) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.5f, pressFx = true) else Modifier)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -71,7 +72,7 @@ fun PetalAiActionDialog(
                             modifier = Modifier
                                 .background(
                                     color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                                    shape = CircleShape
+                                    shape = ExpressiveButtonShape
                                 )
                                 .padding(horizontal = 12.dp, vertical = 4.dp)
                         ) {
@@ -181,13 +182,13 @@ private fun AiActionTile(
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Surface(
-                shape = CircleShape,
+                shape = ExpressiveButtonShape,
                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.primaryContainer,
                 contentColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
                 border = null,
                 modifier = Modifier
                     .size(40.dp)
-                    .then(if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
+                    .then(if (isGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))

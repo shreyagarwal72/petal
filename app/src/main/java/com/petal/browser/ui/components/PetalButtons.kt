@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -76,7 +77,7 @@ fun PetalLiquidButton(
     modifier: Modifier = Modifier,
     variant: PetalButtonVariant = PetalButtonVariant.Tonal,
     enabled: Boolean = true,
-    shape: Shape = CircleShape,
+    shape: Shape = ExpressiveButtonShape,
     pressFx: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
     content: @Composable RowScope.() -> Unit
@@ -227,7 +228,7 @@ fun PetalLiquidIconButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     size: Dp = 44.dp,
-    shape: Shape = CircleShape,
+    shape: Shape = ExpressiveButtonShape,
     tint: Color = Color.Unspecified,
     pressFx: Boolean = true,
     contentDescription: String? = null,

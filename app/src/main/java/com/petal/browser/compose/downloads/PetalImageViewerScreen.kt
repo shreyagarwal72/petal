@@ -24,6 +24,7 @@
 
 package com.petal.browser.compose.downloads
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -701,7 +702,7 @@ private fun ZoomableImagePage(
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                shape = CircleShape,
+                                shape = ExpressiveButtonShape,
                                 containerColor = Color.White.copy(alpha = 0.12f),
                                 contentColor = Color.White.copy(alpha = 0.7f),
                                 size = 64.dp,
@@ -826,7 +827,7 @@ private fun ImageViewerTopBar(
                 Box(
                     modifier = Modifier
                         .size(42.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(buttonBg)
                         .clickable {
                             PetalHapticEngine.getInstance(context).playClick(context)
@@ -887,7 +888,7 @@ private fun ImageViewerTopBar(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .clip(CircleShape)
+                            .clip(ExpressiveButtonShape)
                             .background(buttonBg)
                             .clickable {
                                 PetalHapticEngine.getInstance(context).playClick(context)
@@ -907,7 +908,7 @@ private fun ImageViewerTopBar(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .clip(CircleShape)
+                            .clip(ExpressiveButtonShape)
                             .background(buttonBg)
                             .clickable {
                                 PetalHapticEngine.getInstance(context).playClick(context)
@@ -933,7 +934,7 @@ private fun ImageViewerTopBar(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .clip(CircleShape)
+                                .clip(ExpressiveButtonShape)
                                 .background(buttonBg)
                                 .graphicsLayer { rotationZ = menuRotation }
                                 .clickable {
@@ -1158,7 +1159,7 @@ private fun PageIndicatorDots(count: Int, current: Int) {
             Box(
                 modifier = Modifier
                     .size(size.dp)
-                    .clip(CircleShape)
+                    .clip(ExpressiveButtonShape)
                     .background(Color.White.copy(alpha = alpha)),
             )
         }

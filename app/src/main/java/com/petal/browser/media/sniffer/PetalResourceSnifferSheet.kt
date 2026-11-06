@@ -1,5 +1,6 @@
 package com.petal.browser.media.sniffer
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -86,7 +87,7 @@ fun PetalResourceSnifferSheet(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val headerBadgeShape = CircleShape
+                    val headerBadgeShape = ExpressiveButtonShape
                     Box(
                         modifier = Modifier
                             .size(38.dp)
@@ -153,7 +154,7 @@ fun PetalResourceSnifferSheet(
                         resources.count { it.category == category }
                     }
 
-                    val shape = CircleShape
+                    val shape = ExpressiveButtonShape
 
                     val icon = when (category) {
                         PetalResourceCategory.ALL -> Icons.Rounded.Category
@@ -300,7 +301,7 @@ fun PetalResourceSnifferSheet(
                             Box(
                                 modifier = Modifier
                                     .size(28.dp)
-                                    .clip(CircleShape)
+                                    .clip(ExpressiveButtonShape)
                                     .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -378,7 +379,7 @@ private fun SniffedResourceRow(
         PetalResourceCategory.ALL -> Icons.Rounded.Attachment
     }
 
-    val categoryShape = CircleShape
+    val categoryShape = ExpressiveButtonShape
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val itemShape = RoundedCornerShape(18.dp)

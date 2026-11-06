@@ -23,6 +23,7 @@
 
 package com.petal.browser.dialogs
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -148,7 +149,7 @@ private fun CustomRedirectsDialogContent(
                 Box(
                     modifier = Modifier
                         .size(44.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {

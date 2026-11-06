@@ -10,6 +10,7 @@
 
 package com.petal.browser.tools
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -108,7 +109,7 @@ fun PetalDevConsoleSheet(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Surface(
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         color = MaterialTheme.colorScheme.secondaryContainer,
                         modifier = Modifier.size(40.dp)
                     ) {

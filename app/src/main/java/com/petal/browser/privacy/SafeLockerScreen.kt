@@ -11,6 +11,7 @@
 
 package com.petal.browser.privacy
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -345,7 +346,7 @@ fun SafeLockerScreen(
                                     verticalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
                                     Surface(
-                                        shape = CircleShape,
+                                        shape = ExpressiveButtonShape,
                                         color = MaterialTheme.colorScheme.primaryContainer,
                                         modifier = Modifier.size(96.dp)
                                     ) {
@@ -442,7 +443,7 @@ fun SafeLockerScreen(
                                         verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         Surface(
-                                            shape = CircleShape,
+                                            shape = ExpressiveButtonShape,
                                             color = MaterialTheme.colorScheme.surfaceContainerHighest,
                                             modifier = Modifier.size(72.dp)
                                         ) {

@@ -24,6 +24,7 @@
 
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.theme.layout.petalFlingBehavior
 
 import android.content.ClipData
@@ -777,13 +778,13 @@ fun PetalOmniboxPage(
                                                 contentDescription = stringResource(R.string.ui_page_favicon),
                                                 modifier = Modifier
                                                     .size(28.dp)
-                                                    .clip(CircleShape)
+                                                    .clip(ExpressiveButtonShape)
                                             )
                                         } else {
                                             Box(
                                                 modifier = Modifier
                                                     .size(28.dp)
-                                                    .clip(CircleShape)
+                                                    .clip(ExpressiveButtonShape)
                                                     .background(MaterialTheme.colorScheme.primaryContainer),
                                                 contentAlignment = Alignment.Center
                                             ) {
@@ -930,7 +931,7 @@ fun PetalOmniboxPage(
                                         Box(
                                             modifier = Modifier
                                                 .size(36.dp)
-                                                .clip(CircleShape)
+                                                .clip(ExpressiveButtonShape)
                                                 .background(MaterialTheme.colorScheme.primaryContainer),
                                             contentAlignment = Alignment.Center
                                         ) {
@@ -1031,7 +1032,7 @@ fun PetalOmniboxPage(
                                                 Box(
                                                     modifier = Modifier
                                                         .size(36.dp)
-                                                        .clip(CircleShape)
+                                                        .clip(ExpressiveButtonShape)
                                                         .background(MaterialTheme.colorScheme.primaryContainer),
                                                     contentAlignment = Alignment.Center
                                                 ) {
@@ -1040,7 +1041,7 @@ fun PetalOmniboxPage(
                                                         contentDescription = shortcut.title,
                                                         modifier = Modifier
                                                             .size(24.dp)
-                                                            .clip(CircleShape),
+                                                            .clip(ExpressiveButtonShape),
                                                         contentScale = androidx.compose.ui.layout.ContentScale.Fit,
                                                         loading = {
                                                             Icon(

@@ -1,5 +1,6 @@
 package com.petal.browser.setup
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -175,7 +176,7 @@ fun PetalExpressiveHeroArt(
                 .padding(bottom = 20.dp, start = 26.dp)
                 .offset(y = (-satelliteFloatY).dp)
                 .size(78.dp)
-                .clip(CircleShape)
+                .clip(ExpressiveButtonShape)
                 .background(MaterialTheme.colorScheme.secondaryContainer)
                 .padding(14.dp),
             contentAlignment = Alignment.Center

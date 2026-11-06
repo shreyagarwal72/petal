@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -313,7 +314,7 @@ fun PetalVoiceSearchSheet(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        val closeShape = CircleShape
+                        val closeShape = ExpressiveButtonShape
                         IconButton(
                             onClick = onDismiss,
                             modifier = if (isLiquidGlass) Modifier.liquidGlassChrome(closeShape, enabled = true, sheenIntensity = 0.5f) else Modifier
@@ -325,7 +326,7 @@ fun PetalVoiceSearchSheet(
                     Spacer(Modifier.height(12.dp))
 
                     // Animated Mic Container with Material 3 Expressive Primary Colors & Liquid Glass
-                    val micShape = CircleShape
+                    val micShape = ExpressiveButtonShape
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier

@@ -7,6 +7,7 @@
 
 package com.petal.browser.compose.security
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -174,7 +175,7 @@ fun PetalAppLockScreen(
 
                     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
                     val sheen = rememberGlassSheen(isGlass)
-                    val avatarShape = CircleShape
+                    val avatarShape = ExpressiveButtonShape
 
                     Surface(
                         shape = avatarShape,
@@ -228,7 +229,7 @@ fun PetalAppLockScreen(
                             Box(
                                 modifier = Modifier
                                     .size(8.dp)
-                                    .clip(CircleShape)
+                                    .clip(ExpressiveButtonShape)
                                     .background(MaterialTheme.colorScheme.primary)
                             )
                             Spacer(Modifier.width(8.dp))
@@ -297,7 +298,7 @@ fun PetalAppLockScreen(
                         ) {
                             FilledTonalButton(
                                 onClick = { triggerBiometricUnlock() },
-                                shape = CircleShape,
+                                shape = ExpressiveButtonShape,
                                 colors = ButtonDefaults.filledTonalButtonColors(
                                     containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                     contentColor = MaterialTheme.colorScheme.onSurface

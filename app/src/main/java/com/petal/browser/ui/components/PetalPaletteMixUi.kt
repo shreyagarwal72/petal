@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -57,7 +58,7 @@ fun PetalMixPreviewStrip(modifier: Modifier = Modifier) {
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
         listOf("Primary" to c.primary, "Secondary" to c.secondary, "Tertiary" to c.tertiary).forEach { (name, color) ->
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                Box(Modifier.size(44.dp).clip(CircleShape).background(color))
+                Box(Modifier.size(44.dp).clip(ExpressiveButtonShape).background(color))
                 Text(name, style = MaterialTheme.typography.labelSmall, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
             }
         }
@@ -91,14 +92,14 @@ fun PetalMixSourceDialog(
                     }
                     PetalPalettes.forEach { pal ->
                         SourceRow(pal.label, "Preset palette", current == Source.Preset(pal.id),
-                            swatch = { Box(Modifier.size(28.dp).clip(CircleShape).background(pal.seed)) }) {
+                            swatch = { Box(Modifier.size(28.dp).clip(ExpressiveButtonShape).background(pal.seed)) }) {
                             onSelect(Source.Preset(pal.id))
                         }
                     }
                     SourceRow("Pick a colour", mixSourceLabel(Source.Custom, customArgb), current == Source.Custom,
                         swatch = {
                             Box(
-                                Modifier.size(28.dp).clip(CircleShape).background(
+                                Modifier.size(28.dp).clip(ExpressiveButtonShape).background(
                                     if (customArgb != 0) Brush.linearGradient(listOf(Color(customArgb), Color(customArgb)))
                                     else Brush.sweepGradient(listOf(Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red))
                                 )
@@ -121,7 +122,7 @@ private fun SourceRow(label: String, sub: String, selected: Boolean, swatch: @Co
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Box(
-            Modifier.size(40.dp).clip(CircleShape)
+            Modifier.size(40.dp).clip(ExpressiveButtonShape)
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             contentAlignment = Alignment.Center
         ) { swatch() }
@@ -175,7 +176,7 @@ fun PetalMixComponentPreview(modifier: Modifier = Modifier) {
                 }
                 // Tertiary Highlight Pill
                 Surface(
-                    shape = CircleShape,
+                    shape = ExpressiveButtonShape,
                     color = cs.tertiary,
                     modifier = Modifier.weight(1f).height(40.dp)
                 ) {

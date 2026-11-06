@@ -12,6 +12,7 @@
 
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
@@ -239,7 +240,7 @@ fun PetalNetworkStatusBanner(
                     Box(
                         modifier = Modifier
                             .size(24.dp)
-                            .clip(CircleShape)
+                            .clip(ExpressiveButtonShape)
                             .background(contentColor.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -268,7 +269,7 @@ fun PetalNetworkStatusBanner(
                         tint = contentColor.copy(alpha = 0.7f),
                         modifier = Modifier
                             .size(16.dp)
-                            .clip(CircleShape)
+                            .clip(ExpressiveButtonShape)
                             .clickable { onDismiss() }
                     )
                 }

@@ -1,4 +1,5 @@
 package com.petal.browser.compose.store
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
 
@@ -933,7 +934,7 @@ private fun StoreEmptyStateCard(
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .clip(CircleShape)
+                    .clip(ExpressiveButtonShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 contentAlignment = Alignment.Center
             ) {

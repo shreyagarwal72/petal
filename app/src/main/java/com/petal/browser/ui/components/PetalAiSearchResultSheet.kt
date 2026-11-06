@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -338,6 +339,7 @@ fun PetalAiSearchResultSheet(
                 }
 
                 FilledTonalIconButton(
+                    shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                     onClick = onDismiss,
                     modifier = Modifier.size(40.dp),
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
@@ -430,7 +432,7 @@ fun PetalAiSearchResultSheet(
                                 executeSearch(searchQuery)
                             }
                         },
-                        shape = CircleShape,
+                        shape = ExpressiveButtonShape,
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
@@ -564,7 +566,7 @@ fun PetalAiSearchResultSheet(
                                 }
 
                                 Surface(
-                                    shape = CircleShape,
+                                    shape = ExpressiveButtonShape,
                                     color = MaterialTheme.colorScheme.surfaceContainerHighest
                                 ) {
                                     Text(
@@ -681,7 +683,7 @@ fun PetalAiSearchResultSheet(
                                     }
 
                                     Surface(
-                                        shape = CircleShape,
+                                        shape = ExpressiveButtonShape,
                                         color = MaterialTheme.colorScheme.surfaceContainerHighest
                                     ) {
                                         Text(
@@ -710,7 +712,7 @@ fun PetalAiSearchResultSheet(
                                     FilledTonalIconButton(
                                         onClick = { executeSearch(activeQuery) },
                                         modifier = Modifier.size(40.dp),
-                                        shape = CircleShape,
+                                        shape = ExpressiveButtonShape,
                                         colors = IconButtonDefaults.filledTonalIconButtonColors(
                                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                                         )
@@ -732,7 +734,7 @@ fun PetalAiSearchResultSheet(
                                             com.petal.browser.view.PetalToast.show(context, "Answer copied to clipboard")
                                         },
                                         modifier = Modifier.size(40.dp),
-                                        shape = CircleShape,
+                                        shape = ExpressiveButtonShape,
                                         colors = IconButtonDefaults.filledTonalIconButtonColors(
                                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                                         )
@@ -755,7 +757,7 @@ fun PetalAiSearchResultSheet(
                                             context.startActivity(Intent.createChooser(shareIntent, "Share AI Search Answer"))
                                         },
                                         modifier = Modifier.size(40.dp),
-                                        shape = CircleShape,
+                                        shape = ExpressiveButtonShape,
                                         colors = IconButtonDefaults.filledTonalIconButtonColors(
                                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                                         )

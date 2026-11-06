@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.os.Environment
 import android.webkit.URLUtil
@@ -99,7 +100,7 @@ fun PetalDownloadConfirmationDialog(
                 modifier = Modifier
                     .background(
                         color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                        shape = androidx.compose.foundation.shape.CircleShape
+                        shape = com.petal.browser.ui.theme.ExpressiveButtonShape
                     )
                     .padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
@@ -313,7 +314,7 @@ fun PetalFirstTimeDownloadEngineDialog(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Surface(
-                                shape = androidx.compose.foundation.shape.CircleShape,
+                                shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
                                 modifier = Modifier.size(36.dp)
                             ) {

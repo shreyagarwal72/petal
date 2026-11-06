@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -74,7 +75,7 @@ fun DownloadsEmptyIllustration(
                 Box(
                     modifier = Modifier
                         .size(width = 20.dp, height = 2.5.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(contentColor)
                 )
             }
@@ -123,14 +124,14 @@ fun BookmarksEmptyIllustration(
                 Box(
                     modifier = Modifier
                         .size(width = 22.dp, height = 2.5.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(contentColor.copy(alpha = 0.8f))
                 )
                 Spacer(Modifier.height(3.dp))
                 Box(
                     modifier = Modifier
                         .size(width = 14.dp, height = 2.5.dp)
-                        .clip(CircleShape)
+                        .clip(ExpressiveButtonShape)
                         .background(contentColor.copy(alpha = 0.5f))
                 )
             }

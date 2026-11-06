@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -533,7 +534,7 @@ private fun BarActionButton(
     )
 
     Surface(
-        shape = CircleShape,
+        shape = ExpressiveButtonShape,
         color = if (isLiquidGlass && isPressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else Color.Transparent,
         modifier = Modifier
             .size(44.dp)
@@ -542,7 +543,7 @@ private fun BarActionButton(
                 scaleX = pressScale
                 scaleY = pressScale
             }
-            .clip(CircleShape)
+            .clip(ExpressiveButtonShape)
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = ripple(bounded = true),

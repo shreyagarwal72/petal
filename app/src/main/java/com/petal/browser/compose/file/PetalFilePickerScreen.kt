@@ -16,6 +16,7 @@
  */
 
 package com.petal.browser.compose.file
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
 
@@ -267,7 +268,7 @@ private fun StoragePermissionRequestState(
         verticalArrangement = Arrangement.Center
     ) {
         Surface(
-            shape = CircleShape,
+            shape = ExpressiveButtonShape,
             color = MaterialTheme.colorScheme.primaryContainer,
             modifier = Modifier.size(80.dp)
         ) {
