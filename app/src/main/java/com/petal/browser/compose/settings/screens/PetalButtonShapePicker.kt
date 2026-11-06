@@ -13,7 +13,6 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -89,26 +88,22 @@ fun PetalButtonShapePicker() {
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            listOf(
-                ExpressiveShapeAmount.FULL to "Everywhere",
-                ExpressiveShapeAmount.ACCENTS to "Main buttons",
-                ExpressiveShapeAmount.NONE to "Plain circles",
-            ).forEach { (value, label) ->
-                FilterChip(
-                    selected = amount == value,
-                    onClick = {
-                        amount = value
-                        PetalShapeState.amount = value
-                        sp.edit().putString(PetalShapePrefs.KEY_SHAPE_AMOUNT, value.name).apply()
-                    },
-                    label = { Text(label) },
-                )
+        // Connected segmented group (same Expressive style as the Design System Presets row).
+        com.petal.browser.ui.components.PetalChoiceButtonGroup(
+            options = listOf(
+                com.petal.browser.ui.components.PetalButtonGroupItem(ExpressiveShapeAmount.FULL, "Everywhere"),
+                com.petal.browser.ui.components.PetalButtonGroupItem(ExpressiveShapeAmount.ACCENTS, "Main buttons"),
+                com.petal.browser.ui.components.PetalButtonGroupItem(ExpressiveShapeAmount.NONE, "Plain circles"),
+            ),
+            selected = amount,
+            minHeight = 44.dp,
+            scrollableIfCrowded = true,
+            onSelect = { value ->
+                amount = value
+                PetalShapeState.amount = value
+                sp.edit().putString(PetalShapePrefs.KEY_SHAPE_AMOUNT, value.name).apply()
             }
-        }
+        )
 
         // Live preview row: header-style buttons using the icons from the home and tab screens.
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
