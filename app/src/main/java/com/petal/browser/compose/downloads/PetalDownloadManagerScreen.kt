@@ -283,15 +283,15 @@ fun getFileTypeContainerColors(fileName: String, isSelected: Boolean): Pair<Colo
         "mp3", "wav", "aac", "flac", "ogg", "m4a", "opus" -> 
             Pair(scheme.primaryContainer, scheme.onPrimaryContainer)
         "apk", "xapk", "apks" -> 
-            Pair(Color(0xFFDCFCE7), Color(0xFF15803D))
+            Pair(scheme.tertiaryFixed, scheme.onTertiaryFixed)
         "pdf" -> 
-            Pair(Color(0xFFFEE2E2), Color(0xFFB91C1C))
+            Pair(scheme.errorContainer, scheme.onErrorContainer)
         "doc", "docx", "txt", "rtf", "odt" -> 
             Pair(scheme.surfaceContainerHighest, scheme.onSurfaceVariant)
         "zip", "tar", "gz", "rar", "7z", "bz2", "xz" -> 
-            Pair(Color(0xFFFEF3C7), Color(0xFFB45309))
+            Pair(scheme.secondaryFixed, scheme.onSecondaryFixed)
         "html", "htm", "xml", "json", "js", "css", "py", "kt", "java", "c", "cpp", "sh" -> 
-            Pair(Color(0xFFCFFAFE), Color(0xFF0E7490))
+            Pair(scheme.primaryFixed, scheme.onPrimaryFixed)
         else -> 
             Pair(scheme.surfaceContainerHigh, scheme.onSurfaceVariant)
     }

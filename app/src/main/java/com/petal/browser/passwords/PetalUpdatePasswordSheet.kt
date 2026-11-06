@@ -357,7 +357,7 @@ private fun UpdatePasswordSheetContent(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        OutlinedButton(
+                        androidx.compose.material3.FilledTonalButton(
                             onClick = {
                                 if (!isMorphing && !isClosing) {
                                     haptic.playClick(context)

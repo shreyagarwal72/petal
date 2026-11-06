@@ -833,7 +833,7 @@ public class PetalPwaManager {
                 urlView.setText(domainText);
             }
 
-            AlertDialog dialog = new MaterialAlertDialogBuilder(activity)
+            AlertDialog dialog = new com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
                     .setView(dialogView)
                     .create();
 

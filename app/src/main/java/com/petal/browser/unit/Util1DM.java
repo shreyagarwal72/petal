@@ -154,7 +154,7 @@ public class Util1DM {
     }
 
     public static void install1DM(Activity activity, String packageName, boolean update) {
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+        MaterialAlertDialogBuilder builder = new com.petal.browser.ui.components.PetalAlertDialogBuilder(activity);
         builder.setMessage(update ? MESSAGE_UPDATE_1DM : MESSAGE_INSTALL_1DM)
                 .setPositiveButton(update ? "Update" : "Install", new DialogInterface.OnClickListener() {
                     @Override

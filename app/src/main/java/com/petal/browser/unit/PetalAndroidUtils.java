@@ -133,7 +133,7 @@ public class PetalAndroidUtils {
     public static void grantPermissionsLoc(final Activity activity) {
         int hasACCESS_FINE_LOCATION = activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
         if (hasACCESS_FINE_LOCATION != PackageManager.PERMISSION_GRANTED) {
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+            MaterialAlertDialogBuilder builder = new com.petal.browser.ui.components.PetalAlertDialogBuilder(activity);
             builder.setIcon(R.drawable.icon_alert);
             builder.setTitle(R.string.setting_title_location);
             builder.setMessage(R.string.app_permission);
@@ -148,7 +148,7 @@ public class PetalAndroidUtils {
     public static void grantPermissionsCamera(final Activity activity) {
         int camera = activity.checkSelfPermission(Manifest.permission.CAMERA);
         if (camera != PackageManager.PERMISSION_GRANTED) {
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+            MaterialAlertDialogBuilder builder = new com.petal.browser.ui.components.PetalAlertDialogBuilder(activity);
             builder.setIcon(R.drawable.icon_alert);
             builder.setTitle(R.string.setting_title_camera);
             builder.setMessage(R.string.app_permission);
@@ -163,7 +163,7 @@ public class PetalAndroidUtils {
     public static void grantPermissionsMic(final Activity activity) {
         int mic = activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO);
         if (mic != PackageManager.PERMISSION_GRANTED) {
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+            MaterialAlertDialogBuilder builder = new com.petal.browser.ui.components.PetalAlertDialogBuilder(activity);
             builder.setIcon(R.drawable.icon_alert);
             builder.setTitle(R.string.setting_title_microphone);
             builder.setMessage(R.string.app_permission);
@@ -179,7 +179,7 @@ public class PetalAndroidUtils {
         if (PetalBackupManager.checkPermissionStorage(activity)) {
 
             try {
-                MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+                MaterialAlertDialogBuilder builder = new com.petal.browser.ui.components.PetalAlertDialogBuilder(activity);
 
                 View dialogView = View.inflate(activity, R.layout.dialog_edit, null);
                 TextInputLayout editBottomLayout = dialogView.findViewById(R.id.editBottomLayout);
@@ -402,7 +402,7 @@ public class PetalAndroidUtils {
         byte[] imagedata = dataUriParser.getImagedata();
         String filename = dataUriParser.getFilename();
 
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+        MaterialAlertDialogBuilder builder = new com.petal.browser.ui.components.PetalAlertDialogBuilder(activity);
         View dialogView = View.inflate(activity, R.layout.dialog_edit, null);
         TextInputLayout editBottomLayout = dialogView.findViewById(R.id.editBottomLayout);
         TextInputLayout editTopLayout = dialogView.findViewById(R.id.editTopLayout);

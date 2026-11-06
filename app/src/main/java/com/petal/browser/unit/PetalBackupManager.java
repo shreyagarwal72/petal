@@ -100,7 +100,7 @@ public class PetalBackupManager {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             return;
         }
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+        MaterialAlertDialogBuilder builder = new com.petal.browser.ui.components.PetalAlertDialogBuilder(activity);
         builder.setIcon(R.drawable.icon_alert);
         builder.setTitle(R.string.app_warning);
         builder.setMessage(R.string.app_permission);

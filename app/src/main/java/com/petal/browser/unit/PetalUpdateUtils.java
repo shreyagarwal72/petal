@@ -285,7 +285,7 @@ public class PetalUpdateUtils {
             tvReleaseNotes.setText(formattedNotes);
         }
 
-        final AlertDialog dialog = new MaterialAlertDialogBuilder(activity)
+        final AlertDialog dialog = new com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
                 .setView(dialogView)
                 .setCancelable(!isLaunchCheck)
                 .create();

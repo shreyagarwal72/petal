@@ -1962,7 +1962,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (isPipSupported && hasMediaPlaying) {
                 if (!isPipPermissionAsked) {
                     sp.edit().putBoolean("sp_pip_asked", true).apply();
-                    MaterialAlertDialogBuilder pipBuilder = new MaterialAlertDialogBuilder(this)
+                    MaterialAlertDialogBuilder pipBuilder = new com.petal.browser.ui.components.PetalAlertDialogBuilder(this)
                             .setIcon(com.petal.browser.R.drawable.icon_alert)
                             .setTitle("Picture-in-Picture Permission")
                             .setMessage("Would you like Petal Browser to automatically enter Picture-in-Picture mode when minimizing the app during video playback?")
@@ -2614,7 +2614,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 @Override
                 public void onAddShortcut() {
                     runOnUiThread(() -> {
-                        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(BrowserActivity.this);
+                        MaterialAlertDialogBuilder builder = new com.petal.browser.ui.components.PetalAlertDialogBuilder(BrowserActivity.this);
                         builder.setTitle("Add Custom Shortcut");
                         LinearLayout layout = new LinearLayout(BrowserActivity.this);
                         layout.setOrientation(LinearLayout.VERTICAL);
@@ -6305,7 +6305,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         if (url != null) {
-            MaterialAlertDialogBuilder builderFastToggle = new MaterialAlertDialogBuilder(context);
+            MaterialAlertDialogBuilder builderFastToggle = new com.petal.browser.ui.components.PetalAlertDialogBuilder(context);
             View dialogViewFastToggle = View.inflate(context, R.layout.dialog_fast_toggle, null);
             builderFastToggle.setView(dialogViewFastToggle);
             AlertDialog dialogFastToggle = builderFastToggle.create();
@@ -6906,7 +6906,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 GridItem item_03 = new GridItem( context.getString(R.string.menu_edit), R.drawable.icon_edit);
 
                 View dialogView = View.inflate(context, R.layout.dialog_menu, null);
-                MaterialAlertDialogBuilder builderTrack = new MaterialAlertDialogBuilder(context);
+                MaterialAlertDialogBuilder builderTrack = new com.petal.browser.ui.components.PetalAlertDialogBuilder(context);
 
                 LinearLayout textGroup = dialogView.findViewById(R.id.textGroup);
                 TextView overflowURL = dialogView.findViewById(R.id.overflowURL);
@@ -6984,7 +6984,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             input.setText(url);
                             PetalAndroidUtils.showSoftKeyboard(input);
 
-                            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
+                            MaterialAlertDialogBuilder builder = new com.petal.browser.ui.components.PetalAlertDialogBuilder(context);
                             builder.setTitle(context.getString(R.string.menu_edit));
                             builder.setIcon(R.drawable.icon_tracking);
                             builder.setView(dialogEdit);
@@ -7030,7 +7030,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             PetalToast.show(this, getString(R.string.app_done));
             addAlbum("", urlForPosting, true);
         } else {
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
+            MaterialAlertDialogBuilder builder = new com.petal.browser.ui.components.PetalAlertDialogBuilder(context);
             View dialogViewSubMenu = View.inflate(context, R.layout.dialog_edit, null);
             TextInputLayout editBottomLayout = dialogViewSubMenu.findViewById(R.id.editBottomLayout);
             TextInputLayout editTopLayout = dialogViewSubMenu.findViewById(R.id.editTopLayout);

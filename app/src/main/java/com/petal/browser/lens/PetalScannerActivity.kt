@@ -12,7 +12,7 @@ class PetalScannerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         com.petal.browser.unit.PetalAndroidUtils.initTheme(this)
         setContent {
-            MaterialTheme {
+            com.petal.browser.ui.theme.PetalExpressiveTheme {
                 PetalQrScannerScreen(
                     onResult = { value ->
                         if (value.startsWith("http://") || value.startsWith("https://")) {

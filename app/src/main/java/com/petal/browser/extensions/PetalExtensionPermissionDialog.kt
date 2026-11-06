@@ -39,7 +39,7 @@ object PetalExtensionPermissionDialog {
             }
         }
 
-        MaterialAlertDialogBuilder(context)
+        com.petal.browser.ui.components.PetalAlertDialogBuilder(context)
             .setTitle(if (isUpdate) "Update Permissions" else "Add Extension")
             .setMessage(messageBuilder.toString().trimEnd())
             .setPositiveButton(if (isUpdate) "Update" else "Add") { dialog, _ ->

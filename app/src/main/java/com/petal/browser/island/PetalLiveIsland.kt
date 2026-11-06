@@ -928,12 +928,12 @@ private fun ExpandedCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(
+                    FilledTonalButton(
                         onClick = {
                             listener.onCopyText(item.password, "Password")
                         },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = palette.content)
+                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = palette.content.copy(alpha = 0.14f), contentColor = palette.content)
                     ) {
                         Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))

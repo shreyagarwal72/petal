@@ -338,7 +338,7 @@ private fun SavePasswordSheetContent(
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             // Username field
-                            OutlinedTextField(
+                            androidx.compose.material3.TextField(
                                 value = username,
                                 onValueChange = { username = it },
                                 label = { Text("Username or Email") },
@@ -352,14 +352,11 @@ private fun SavePasswordSheetContent(
                                 singleLine = true,
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                                )
+                                colors = com.petal.browser.ui.containment.petalFilledTextFieldColors()
                             )
 
                             // Password field
-                            OutlinedTextField(
+                            androidx.compose.material3.TextField(
                                 value = password,
                                 onValueChange = { password = it },
                                 label = { Text("Password") },
@@ -383,10 +380,7 @@ private fun SavePasswordSheetContent(
                                 singleLine = true,
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                                )
+                                colors = com.petal.browser.ui.containment.petalFilledTextFieldColors()
                             )
                         }
                     }
@@ -399,7 +393,7 @@ private fun SavePasswordSheetContent(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         // Secondary action: "Never for this site"
-                        OutlinedButton(
+                        androidx.compose.material3.FilledTonalButton(
                             onClick = {
                                 if (!isMorphing && !isClosing) {
                                     haptic.playClick(context)

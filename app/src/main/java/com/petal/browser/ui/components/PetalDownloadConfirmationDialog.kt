@@ -481,7 +481,7 @@ object PetalDownloadDialogBridge {
                     }
                 }
 
-                engineDialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+                engineDialog = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
                     .setView(composeView)
                     .setCancelable(true)
                     .setOnCancelListener {
@@ -589,7 +589,7 @@ object PetalDownloadDialogBridge {
                         }
                     }
 
-                    dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+                    dialog = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
                         .setView(composeView)
                         .setCancelable(true)
                         .create()
@@ -679,7 +679,7 @@ object PetalDownloadDialogBridge {
                     }
                 }
 
-                dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+                dialog = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
                     .setView(composeView)
                     .setCancelable(true)
                     .create()

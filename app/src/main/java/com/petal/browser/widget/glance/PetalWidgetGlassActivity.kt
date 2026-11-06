@@ -95,7 +95,7 @@ class PetalWidgetGlassActivity : ComponentActivity() {
         PetalSearchGlanceWidgetUpdater.refresh(this)
 
         setContent {
-            MaterialTheme {
+            com.petal.browser.ui.theme.PetalExpressiveTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = Color.Black

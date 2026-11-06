@@ -92,7 +92,7 @@ public class CustomRedirectAdapter extends RecyclerView.Adapter<RedirectsViewHol
         LinearLayout textGroup = holder.itemView.findViewById(R.id.textGroup);
         textGroup.setOnClickListener((iV) -> {
 
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
+            MaterialAlertDialogBuilder builder = new com.petal.browser.ui.components.PetalAlertDialogBuilder(context);
             View dialogView = View.inflate(context, R.layout.create_new_redirect, null);
             TextInputEditText source2 = dialogView.findViewById(R.id.source);
             TextInputEditText target2 = dialogView.findViewById(R.id.target);

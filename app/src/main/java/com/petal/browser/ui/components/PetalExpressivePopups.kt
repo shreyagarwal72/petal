@@ -980,7 +980,7 @@ object PetalExpressivePromptBridge {
                 }
             }
         }
-        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+        val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
             .setView(composeView)
             .setCancelable(true)
             .setOnCancelListener { onConfirm.run() }
@@ -1028,7 +1028,7 @@ object PetalExpressivePromptBridge {
                 }
             }
         }
-        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+        val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
             .setView(composeView)
             .setCancelable(true)
             .setOnCancelListener { onCancel.run() }
@@ -1084,7 +1084,7 @@ object PetalExpressivePromptBridge {
                 }
             }
         }
-        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+        val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
             .setView(composeView)
             .setCancelable(true)
             .setOnCancelListener {
@@ -1133,7 +1133,7 @@ object PetalExpressivePromptBridge {
                 }
             }
         }
-        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+        val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
             .setView(composeView)
             .setCancelable(true)
             .setOnCancelListener { onCancel.run() }
@@ -1179,7 +1179,7 @@ object PetalExpressivePromptBridge {
                 }
             }
         }
-        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+        val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
             .setView(composeView)
             .setCancelable(true)
             .setOnCancelListener { onCancel.run() }
@@ -1223,7 +1223,7 @@ object PetalExpressivePromptBridge {
                 }
             }
         }
-        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+        val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
             .setView(composeView)
             .setCancelable(true)
             .setOnCancelListener { if (!finished) { finished = true; onCancel.run() } }
@@ -1255,7 +1255,7 @@ object PetalExpressivePromptBridge {
             setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent { com.petal.browser.ui.theme.PetalExpressiveTheme { content(complete) } }
         }
-        dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+        dialog = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
             .setView(composeView)
             .setCancelable(true)
             .setOnCancelListener { complete { onCancel.run() } }

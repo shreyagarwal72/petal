@@ -301,7 +301,7 @@ public class PetalPwaActivity extends AppCompatActivity {
                 "Close App"
         };
 
-        new MaterialAlertDialogBuilder(this)
+        new com.petal.browser.ui.components.PetalAlertDialogBuilder(this)
                 .setTitle(pwaTitle)
                 .setItems(options, (dialog, which) -> {
                     switch (which) {

@@ -73,7 +73,7 @@ fun PetalSnackbarHost(
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 tonalElevation = if (isGlass) 0.dp else 6.dp,
                 shadowElevation = 6.dp,
-                border = if (isGlass) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+                border = null,
                 modifier = if (isGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.65f) else Modifier
             ) {
                 Row(

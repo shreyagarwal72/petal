@@ -956,32 +956,35 @@ fun PetalXpBackupRestoreDialog(
                     }
                 } else if (mode == "export") {
                     Text("Enter a dedicated password to encrypt your .pt backup file:", style = MaterialTheme.typography.bodyMedium)
-                    OutlinedTextField(
+                    androidx.compose.material3.TextField(
                         value = password,
                         onValueChange = { password = it; errorMessage = null },
                         label = { Text("Backup Password") },
                         visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
+                        singleLine = true,
+    colors = com.petal.browser.ui.containment.petalFilledTextFieldColors()
+)
+                    androidx.compose.material3.TextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it; errorMessage = null },
                         label = { Text("Confirm Password") },
                         visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+                        singleLine = true,
+    colors = com.petal.browser.ui.containment.petalFilledTextFieldColors()
+)
                 } else if (mode == "restore") {
                     Text("Enter the password used when this .pt backup was created:", style = MaterialTheme.typography.bodyMedium)
-                    OutlinedTextField(
+                    androidx.compose.material3.TextField(
                         value = password,
                         onValueChange = { password = it; errorMessage = null },
                         label = { Text("Password") },
                         visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+                        singleLine = true,
+    colors = com.petal.browser.ui.containment.petalFilledTextFieldColors()
+)
                 }
 
                 if (errorMessage != null) {

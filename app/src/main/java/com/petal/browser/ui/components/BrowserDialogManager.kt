@@ -34,7 +34,7 @@ object BrowserDialogManager {
     @JvmStatic
     fun showDialogFilter(activity: BrowserActivity) {
         val context: Context = activity
-        val builder = MaterialAlertDialogBuilder(context)
+        val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(context)
         val dialogView = View.inflate(context, R.layout.dialog_menu, null)
         builder.setTitle(R.string.setting_filter)
         builder.setIcon(R.drawable.icon_filter)
@@ -88,7 +88,7 @@ object BrowserDialogManager {
         }
 
         val context: Context = activity
-        val builder = MaterialAlertDialogBuilder(context)
+        val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(context)
         val dialogView = View.inflate(context, R.layout.custom_redirects_list, null)
         val recyclerView = dialogView.findViewById<RecyclerView>(R.id.redirects_recycler)
         recyclerView.layoutManager = LinearLayoutManager(context)
@@ -116,7 +116,7 @@ object BrowserDialogManager {
         var dialogCustomSearches: AlertDialog? = null
 
         builder.setNegativeButton(R.string.create_new) { _, _ ->
-            val builderAddCustom = MaterialAlertDialogBuilder(context)
+            val builderAddCustom = com.petal.browser.ui.components.PetalAlertDialogBuilder(context)
             val dialogViewAddCustom = View.inflate(context, R.layout.create_new_searches, null)
             val source = dialogViewAddCustom.findViewById<TextInputEditText>(R.id.source)
             val target = dialogViewAddCustom.findViewById<TextInputEditText>(R.id.target)
