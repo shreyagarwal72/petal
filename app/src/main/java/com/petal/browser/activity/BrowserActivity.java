@@ -7682,7 +7682,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void saveOpenedTabs() {
-        // Obsolete: Mozilla AutoSave automatically persists BrowserStore to disk
+        com.petal.browser.browser.PetalSessionRestoreManager.saveSession(this);
     }
 
     public synchronized AlbumController restoreTab(String title, String url, int index, boolean isIncognito, String groupId, String groupTitle, String groupColorHex, boolean keepOverviewOpen) {

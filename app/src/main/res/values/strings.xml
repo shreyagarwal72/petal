@@ -185,6 +185,8 @@
     <string name="crash_reporting_mode_auto">Auto</string>
     <string name="crash_reporting_dialog_title">Petal Browser Crashed</string>
     <string name="crash_reporting_dialog_desc">Petal recovered from an unexpected crash during its previous session. Would you like to view the diagnostic trace or share a report to help resolve it?</string>
+    <string name="tab_crash_error_title">This page has crashed</string>
+    <string name="tab_crash_error_message">Petal stopped auto-reloading this page because it repeatedly crashed.</string>
     <string name="action_view_crash_log">View Log</string>
     <string name="action_report_issue">Report Issue</string>
     <string name="action_simulate_crash">Simulate Crash</string>

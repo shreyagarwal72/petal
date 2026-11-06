@@ -673,9 +673,7 @@ class PetalTabViewController private constructor(
             val engineContent = gs.contentDelegate
             val crashCallback: () -> Unit = {
                 post {
-                    try {
-                        reload()
-                    } catch (_: Throwable) {}
+                    recoverCrashedSession()
                 }
             }
             if (engineContent !is PetalContentDelegateWrapper) {
@@ -1435,6 +1433,167 @@ class PetalTabViewController private constructor(
      */
     fun needsReloadOrRecovery(): Boolean {
         return !restoreLocationSeen && pageUrl.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(pageUrl) && !pageUrl.equals("about:blank", ignoreCase = true)
+    }
+
+    private var crashRecoveryCount = 0
+    private var lastCrashRecoveryTime = 0L
+    private var crashErrorView: android.view.View? = null
+
+    private fun showCrashErrorState() {
+        if (crashErrorView != null) return
+        val density = resources.displayMetrics.density
+        val container = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER
+            setPadding((32 * density).toInt(), (32 * density).toInt(), (32 * density).toInt(), (32 * density).toInt())
+            layoutParams = android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundColor(
+                com.google.android.material.color.MaterialColors.getColor(
+                    this,
+                    com.google.android.material.R.attr.colorSurface,
+                    0xFF121212.toInt()
+                )
+            )
+
+            val titleView = android.widget.TextView(context).apply {
+                text = context.getString(R.string.tab_crash_error_title)
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 20f)
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                setTextColor(
+                    com.google.android.material.color.MaterialColors.getColor(
+                        this,
+                        com.google.android.material.R.attr.colorOnSurface,
+                        0xFFFFFFFF.toInt()
+                    )
+                )
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (12 * density).toInt())
+            }
+            addView(titleView)
+
+            val msgView = android.widget.TextView(context).apply {
+                text = context.getString(R.string.tab_crash_error_message)
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
+                setTextColor(
+                    com.google.android.material.color.MaterialColors.getColor(
+                        this,
+                        com.google.android.material.R.attr.colorOnSurfaceVariant,
+                        0xFFAAAAAA.toInt()
+                    )
+                )
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (24 * density).toInt())
+            }
+            addView(msgView)
+
+            val reloadBtn = com.google.android.material.button.MaterialButton(context).apply {
+                text = context.getString(R.string.ui_reload)
+                setOnClickListener {
+                    dismissCrashErrorState()
+                    crashRecoveryCount = 0
+                    recoverCrashedSession()
+                }
+            }
+            addView(reloadBtn)
+        }
+        crashErrorView = container
+        addView(container)
+    }
+
+    private fun dismissCrashErrorState() {
+        crashErrorView?.let {
+            removeView(it)
+            crashErrorView = null
+        }
+    }
+
+    fun recoverCrashedSession() {
+        try {
+            dismissCrashErrorState()
+            val now = System.currentTimeMillis()
+            if (now - lastCrashRecoveryTime < 8000L) {
+                crashRecoveryCount++
+            } else {
+                crashRecoveryCount = 1
+            }
+            lastCrashRecoveryTime = now
+
+            if (crashRecoveryCount > 3) {
+                android.util.Log.e("PetalTabNav", "Repeated GeckoSession crash detected ($crashRecoveryCount times in short window). Halting recovery loop.")
+                showCrashErrorState()
+                return
+            }
+
+            val currentTab = tab
+            val currentTabId = currentTab?.id ?: boundTabId
+            val urlToRestore = if (pageUrl.isNotBlank() && !pageUrl.equals("about:blank", ignoreCase = true)) pageUrl else currentTab?.content?.url ?: ""
+            val stateToRestore = latestGeckoState
+
+            // 1. Release and close the dead GeckoSession
+            val gs = getGeckoSession()
+            try {
+                com.petal.browser.extensions.PetalExtensionManager.detachSession(gs)
+                observedSession?.unregister(observer)
+                engineView.release()
+            } catch (_: Throwable) {}
+            try {
+                if (gs?.isOpen == true) gs.close()
+            } catch (_: Throwable) {}
+
+            // 2. Recreate fresh EngineSession
+            val eng = com.petal.browser.engine.gecko.PetalEngineStore.getEngine(context)
+            val isPrivate = isIncognito()
+            val newEngineSession = eng.createSession(private = isPrivate)
+
+            if (currentTabId != null) {
+                browserStore.dispatch(
+                    mozilla.components.browser.state.action.EngineAction.LinkEngineSessionAction(
+                        tabId = currentTabId,
+                        engineSession = newEngineSession,
+                        skipLoading = false
+                    )
+                )
+            }
+
+            // 3. Rebind the display: detach & re-attach GeckoView inside post to rebind compositor surface
+            val gv = findGeckoView(engineView.asView())
+            val parent = gv?.parent as? android.view.ViewGroup
+            if (parent != null && gv != null) {
+                val idx = parent.indexOfChild(gv)
+                parent.removeView(gv)
+                post {
+                    try {
+                        parent.addView(gv, idx)
+                        val updatedTab = if (currentTabId != null) browserStore.state.tabs.firstOrNull { it.id == currentTabId } else null
+                        if (updatedTab != null) {
+                            bindTab(updatedTab)
+                        }
+                        if (stateToRestore != null) {
+                            getGeckoSession()?.restoreState(stateToRestore)
+                        } else if (urlToRestore.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(urlToRestore)) {
+                            loadUrl(urlToRestore)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("PetalTabNav", "Failed to re-attach GeckoView after crash recovery: ${e.message}", e)
+                    }
+                }
+            } else {
+                val updatedTab = if (currentTabId != null) browserStore.state.tabs.firstOrNull { it.id == currentTabId } else null
+                if (updatedTab != null) {
+                    bindTab(updatedTab)
+                }
+                if (stateToRestore != null) {
+                    getGeckoSession()?.restoreState(stateToRestore)
+                } else if (urlToRestore.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(urlToRestore)) {
+                    loadUrl(urlToRestore)
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("PetalTabNav", "Failed to recover crashed GeckoSession: ${e.message}", e)
+        }
     }
 
     /** False only when the saved state clearly holds a single entry; unknown formats count as "has history". */

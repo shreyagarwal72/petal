@@ -2478,8 +2478,82 @@ class PetalGeckoView @JvmOverloads constructor(
      * the last URL is the only way to restore a usable page. No page state (scroll
      * position, form data) survives this - that data is lost with the killed process.
      */
+    private var crashErrorView: View? = null
+
+    private fun showCrashErrorState() {
+        if (crashErrorView != null) return
+        val density = resources.displayMetrics.density
+        val container = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER
+            setPadding((32 * density).toInt(), (32 * density).toInt(), (32 * density).toInt(), (32 * density).toInt())
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundColor(
+                com.google.android.material.color.MaterialColors.getColor(
+                    this,
+                    com.google.android.material.R.attr.colorSurface,
+                    0xFF121212.toInt()
+                )
+            )
+
+            val titleView = android.widget.TextView(context).apply {
+                text = context.getString(R.string.tab_crash_error_title)
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 20f)
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                setTextColor(
+                    com.google.android.material.color.MaterialColors.getColor(
+                        this,
+                        com.google.android.material.R.attr.colorOnSurface,
+                        0xFFFFFFFF.toInt()
+                    )
+                )
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (12 * density).toInt())
+            }
+            addView(titleView)
+
+            val msgView = android.widget.TextView(context).apply {
+                text = context.getString(R.string.tab_crash_error_message)
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
+                setTextColor(
+                    com.google.android.material.color.MaterialColors.getColor(
+                        this,
+                        com.google.android.material.R.attr.colorOnSurfaceVariant,
+                        0xFFAAAAAA.toInt()
+                    )
+                )
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 0, 0, (24 * density).toInt())
+            }
+            addView(msgView)
+
+            val reloadBtn = com.google.android.material.button.MaterialButton(context).apply {
+                text = context.getString(R.string.ui_reload)
+                setOnClickListener {
+                    dismissCrashErrorState()
+                    crashRecoveryCount = 0
+                    recoverCrashedSession()
+                }
+            }
+            addView(reloadBtn)
+        }
+        crashErrorView = container
+        addView(container)
+    }
+
+    private fun dismissCrashErrorState() {
+        crashErrorView?.let {
+            removeView(it)
+            crashErrorView = null
+        }
+    }
+
     private fun recoverCrashedSession() {
         try {
+            dismissCrashErrorState()
             val now = System.currentTimeMillis()
             if (now - lastCrashRecoveryTime < 8000L) {
                 crashRecoveryCount++
@@ -2490,12 +2564,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
             if (crashRecoveryCount > 3) {
                 android.util.Log.e(TAG, "Repeated GeckoSession crash detected ($crashRecoveryCount times in short window). Halting recovery loop.")
-                val act = getHostActivity()
-                if (act is com.petal.browser.activity.BrowserActivity) {
-                    act.runOnUiThread {
-                        com.petal.browser.view.PetalToast.show(context, "Page repeatedly crashed. Stopped auto-reloading.")
-                    }
-                }
+                showCrashErrorState()
                 return
             }
 

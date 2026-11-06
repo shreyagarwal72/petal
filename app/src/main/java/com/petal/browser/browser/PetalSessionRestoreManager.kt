@@ -2,6 +2,7 @@ package com.petal.browser.browser
 
 import android.content.Context
 import android.util.Log
+import androidx.annotation.MainThread
 import androidx.preference.PreferenceManager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -9,8 +10,12 @@ import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.engine.gecko.PetalEngineStore
+import com.petal.browser.view.PetalGeckoView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mozilla.components.browser.engine.gecko.GeckoEngineSessionState
+import mozilla.components.browser.state.action.ContentAction
+import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.RestoreCompleteAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
@@ -57,6 +62,91 @@ object PetalSessionRestoreManager {
         val tabGroupTitle: String? = null,
         val tabGroupColorHex: String? = null
     )
+
+    /**
+     * Synchronously flushes all open tabs, including full engineSessionState history stacks
+     * and active indices, into BrowserStore and writes the snapshot to disk via SessionStorage.
+     */
+    @JvmStatic
+    @MainThread
+    fun saveSession(activity: BrowserActivity) {
+        try {
+            if (activity.isFinishing) return
+            val store = PetalEngineStore.getStore(activity)
+            if (!store.state.restoreComplete) return
+
+            // 1. Capture latest engineSessionState, URL, and title for every live tab
+            for (i in 0 until BrowserContainer.size()) {
+                val controller = BrowserContainer.get(i) ?: continue
+                when (controller) {
+                    is PetalTabViewController -> {
+                        val tabId = controller.getTabId() ?: continue
+                        val gs = controller.getGeckoSession()
+                        if (gs != null && gs.isOpen) {
+                            try {
+                                val sessionState = gs.saveState()
+                                val engineSessionState = GeckoEngineSessionState(sessionState)
+                                store.dispatch(EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState))
+                            } catch (t: Throwable) {
+                                Log.w(TAG, "Failed to capture engine state for tab $tabId: ${t.message}")
+                            }
+                        }
+                        val url = controller.url
+                        if (url.isNotBlank() && !isHomeUrl(url) && !url.equals("about:blank", ignoreCase = true)) {
+                            store.dispatch(ContentAction.UpdateUrlAction(tabId, url))
+                        }
+                        val title = controller.title
+                        if (title.isNotBlank()) {
+                            store.dispatch(ContentAction.UpdateTitleAction(tabId, title))
+                        }
+                    }
+                    is PetalGeckoView -> {
+                        val tabId = controller.getTabId()
+                        val gs = controller.session
+                        if (gs != null && gs.isOpen) {
+                            try {
+                                val sessionState = gs.saveState()
+                                val engineSessionState = GeckoEngineSessionState(sessionState)
+                                store.dispatch(EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState))
+                            } catch (t: Throwable) {
+                                Log.w(TAG, "Failed to capture engine state for tab $tabId: ${t.message}")
+                            }
+                        }
+                        val url = controller.url
+                        if (url.isNotBlank() && !isHomeUrl(url) && !url.equals("about:blank", ignoreCase = true)) {
+                            store.dispatch(ContentAction.UpdateUrlAction(tabId, url))
+                        }
+                        val title = controller.title
+                        if (title.isNotBlank()) {
+                            store.dispatch(ContentAction.UpdateTitleAction(tabId, title))
+                        }
+                    }
+                    is PlaceholderAlbumController -> {
+                        // Already suspended with engineSessionState captured
+                    }
+                }
+            }
+
+            // 2. Update selected tab in store to match active album
+            val activeController = activity.currentAlbumController
+            val activeTabId = when (activeController) {
+                is PetalTabViewController -> activeController.getTabId()
+                is PetalGeckoView -> activeController.getTabId()
+                is PlaceholderAlbumController -> activeController.getTabId()
+                else -> null
+            }
+            if (activeTabId != null) {
+                store.dispatch(TabListAction.SelectTabAction(activeTabId))
+            }
+
+            // 3. Synchronously flush BrowserStore state to disk via SessionStorage
+            val storage = PetalEngineStore.getSessionStorage(activity)
+            val saved = storage.save(store.state)
+            Log.d(TAG, "saveSession: flushed ${store.state.tabs.size} tabs to SessionStorage (success=$saved)")
+        } catch (t: Throwable) {
+            Log.w(TAG, "Error in saveSession: ${t.message}", t)
+        }
+    }
 
     fun isHomeUrl(url: String?): Boolean {
         if (url == null || url.trim().isEmpty()) return true

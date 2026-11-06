@@ -82,6 +82,18 @@ object PetalTabSuspender {
                 isIncognito = controller.isIncognito()
 
                 try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
+                try {
+                    val gs = controller.session
+                    if (gs != null && gs.isOpen) {
+                        val sessionState = gs.saveState()
+                        val engineSessionState = mozilla.components.browser.engine.gecko.GeckoEngineSessionState(sessionState)
+                        PetalEngineStore.dispatch(
+                            EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState)
+                        )
+                    }
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Error saving GeckoSession state before suspension: ${t.message}")
+                }
                 try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
 
                 try {
@@ -106,6 +118,18 @@ object PetalTabSuspender {
                 isIncognito = controller.isIncognito()
 
                 try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
+                try {
+                    val gs = controller.getGeckoSession()
+                    if (gs != null && gs.isOpen) {
+                        val sessionState = gs.saveState()
+                        val engineSessionState = mozilla.components.browser.engine.gecko.GeckoEngineSessionState(sessionState)
+                        PetalEngineStore.dispatch(
+                            EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState)
+                        )
+                    }
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Error saving GeckoSession state before suspension: ${t.message}")
+                }
                 try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
 
                 try {
