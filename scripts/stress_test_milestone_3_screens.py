@@ -25,9 +25,8 @@ from typing import List, Dict, Tuple, Optional
 REPO_ROOT = "/data/data/com.termux/files/home/petal"
 
 M3_ALL_26_FILES = [
-    # Track 1: Tabs & Vault (3 files)
+    # Track 1: Tabs & Vault (2 files)
     "app/src/main/java/com/petal/browser/compose/tabs/PetalTabGridSwitcher.kt",
-    "app/src/main/java/com/petal/browser/compose/tabs/PetalInactiveTabsSheet.kt",
     "app/src/main/java/com/petal/browser/compose/tabs/PetalRecentlyClosedVault.kt",
     # Track 2: Home & Incognito (2 files)
     "app/src/main/java/com/petal/browser/compose/home/PetalHomeScreen.kt",
@@ -176,18 +175,6 @@ def test_connected_segmented_button_geometry(result: TestResult):
         result.record_pass("DataBackupSettingsScreen connected asymmetric pill geometry (50/6, 6/50, 6dp gap)")
     else:
         result.record_fail("DataBackupSettingsScreen", "Missing connected pill geometry")
-
-    # 3. PetalInactiveTabsSheet.kt: Restore All / Close All
-    inactive_path = os.path.join(REPO_ROOT, "app/src/main/java/com/petal/browser/compose/tabs/PetalInactiveTabsSheet.kt")
-    with open(inactive_path) as f:
-        inactive_src = f.read()
-    if ("topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp" in inactive_src and
-        "topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp" in inactive_src and
-        "Arrangement.spacedBy(6.dp)" in inactive_src and
-        "heightIn(min = 52.dp)" in inactive_src):
-        result.record_pass("PetalInactiveTabsSheet bulk action row (50/6, 6/50, 6dp gap, 52dp height)")
-    else:
-        result.record_fail("PetalInactiveTabsSheet", "Missing connected bulk action row geometry")
 
     # 4. PetalRecentlyClosedVault.kt: Cancel / Save
     vault_path = os.path.join(REPO_ROOT, "app/src/main/java/com/petal/browser/compose/tabs/PetalRecentlyClosedVault.kt")
@@ -389,13 +376,6 @@ def test_text_overflow_and_viewport_stress(result: TestResult):
     # Look for tab title Text composable
     assert "maxLines = 1" in ts_src and "overflow = TextOverflow.Ellipsis" in ts_src
     result.record_pass("PetalTabGridSwitcher tab titles defended with maxLines=1 and TextOverflow.Ellipsis")
-
-    # In InactiveTabsSheet, verify title and url truncation
-    inactive_path = os.path.join(REPO_ROOT, "app/src/main/java/com/petal/browser/compose/tabs/PetalInactiveTabsSheet.kt")
-    with open(inactive_path) as f:
-        in_src = f.read()
-    assert "TextOverflow.Ellipsis" in in_src
-    result.record_pass("PetalInactiveTabsSheet tab items defended with TextOverflow.Ellipsis")
 
     # In PetalHomeScreen, verify shortcut label truncation
     home_path = os.path.join(REPO_ROOT, "app/src/main/java/com/petal/browser/compose/home/PetalHomeScreen.kt")

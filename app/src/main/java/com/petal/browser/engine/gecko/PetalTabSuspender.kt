@@ -136,15 +136,23 @@ object PetalTabSuspender {
         return true
     }
 
+    private val tabAccessMap = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
+    @JvmStatic
+    fun recordTabAccess(tabId: String) {
+        tabAccessMap[tabId] = System.currentTimeMillis()
+    }
+
+    @JvmStatic
+    fun getTabLastAccess(tabId: String): Long {
+        return tabAccessMap[tabId] ?: 0L
+    }
+
     /**
      * Evaluates all open background tabs and suspends any tabs that exceed the inactivity threshold.
-     *
-     * Collects eligible controllers first (snapshot), then suspends, to avoid modifying
-     * BrowserContainer by index while iterating — BrowserContainer.replace() during iteration
-     * can cause index drift or ConcurrentModificationException if an observer removes tabs.
      */
     @JvmStatic
-    fun checkAndSuspendInactiveTabs(context: Context, activeController: AlbumController?) {
+    fun checkAndSuspendBackgroundTabs(context: Context, activeController: AlbumController?) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val saverMode = sp.getString(PREF_MEMORY_SAVER_MODE, "balanced") ?: "balanced"
         if (saverMode == "off") return
@@ -167,7 +175,7 @@ object PetalTabSuspender {
                 is com.petal.browser.browser.PetalTabViewController -> controller.getTabId()
                 else -> null
             } ?: continue
-            val lastAccess = com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, tabId)
+            val lastAccess = getTabLastAccess(tabId)
             if (lastAccess > 0L && (now - lastAccess) >= timeoutMs) {
                 toSuspend.add(Pair(i, controller))
             }
@@ -176,6 +184,11 @@ object PetalTabSuspender {
         for ((index, _) in toSuspend.asReversed()) {
             suspendTab(context, index)
         }
+    }
+
+    @JvmStatic
+    fun checkAndSuspendInactiveTabs(context: Context, activeController: AlbumController?) {
+        checkAndSuspendBackgroundTabs(context, activeController)
     }
 
     /**
@@ -195,7 +208,7 @@ object PetalTabSuspender {
                 is com.petal.browser.browser.PetalTabViewController -> controller.getTabId()
                 else -> null
             } ?: continue
-            val lastAccess = com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, tabId)
+            val lastAccess = getTabLastAccess(tabId)
             candidates.add(Pair(i, lastAccess))
         }
 

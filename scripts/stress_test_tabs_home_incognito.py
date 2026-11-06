@@ -55,7 +55,6 @@ def test_static_integrity():
 
     target_files = [
         "app/src/main/java/com/petal/browser/compose/tabs/PetalTabGridSwitcher.kt",
-        "app/src/main/java/com/petal/browser/compose/tabs/PetalInactiveTabsSheet.kt",
         "app/src/main/java/com/petal/browser/compose/tabs/PetalRecentlyClosedVault.kt",
         "app/src/main/java/com/petal/browser/compose/home/PetalHomeScreen.kt",
         "app/src/main/java/com/petal/browser/compose/incognito/PetalIncognitoHomeScreen.kt",
@@ -478,21 +477,12 @@ def simulate_incognito_screen():
 
 
 # ==============================================================================
-# SECTION 6: INACTIVE TABS & RECENTLY CLOSED VAULT
+# SECTION 6: RECENTLY CLOSED VAULT
 # ==============================================================================
 def simulate_vault_and_inactive_tabs():
-    print("\n=== SUITE 6: Inactive Tabs Sheet & Recently Closed Vault Verification ===")
+    print("\n=== SUITE 6: Recently Closed Vault Verification ===")
 
-    inactive_src = open(os.path.join(APP_SRC, "compose/tabs/PetalInactiveTabsSheet.kt"), "r").read()
     vault_src = open(os.path.join(APP_SRC, "compose/tabs/PetalRecentlyClosedVault.kt"), "r").read()
-
-    # Inactive tabs bulk action row geometry
-    has_inactive_connected = (
-        "RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp)" in inactive_src and
-        "RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp)" in inactive_src
-    )
-    record("PetalInactiveTabsSheet: Bulk actions use connected 50dp/6dp geometry",
-           has_inactive_connected, "Restore All & Close All form unified segmented pill row")
 
     # Vault action row geometry
     has_vault_connected = (

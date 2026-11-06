@@ -63,7 +63,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     ADDRESS_BAR("Address Bar", "Position, size, gestures and toolbar actions", com.petal.browser.R.drawable.ic_search),
     MEDIA("Media", "Video player, media sniffer & background detection", com.petal.browser.R.drawable.video_filled),
     DOWNLOADS("Downloads", "Download engine, external downloaders & storage management", com.petal.browser.R.drawable.icon_download),
-    TABS("Tabs", "Inactive tabs, tab groups and tab cleanup", com.petal.browser.R.drawable.icon_tab),
+    TABS("Tabs", "Tab groups, startup restore and tab cleanup", com.petal.browser.R.drawable.icon_tab),
     MISCELLANEOUS("Miscellaneous", "Custom tabs, external apps and camera tools", com.petal.browser.R.drawable.app_registration),
     DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", com.petal.browser.R.drawable.backup_filled),
     UPDATER("Updates & Diagnostics", "Release tracker, auto-updates & crash reporting", com.petal.browser.R.drawable.update_rounded),
@@ -384,7 +384,6 @@ private fun RenderCategoryContent(
         }
         SettingsCategory.TABS -> {
             TabsSettingsScreen(
-                onNavigateToInactiveSettings = { /* dedicated page is shown from Tabs */ },
                 onNavigateBack = onNavigateBack,
                 targetHighlightItemId = targetHighlightItemId
             )

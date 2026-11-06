@@ -19,20 +19,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
 import com.petal.browser.browser.PetalSessionRestoreManager
-import com.petal.browser.compose.tabs.PetalInactiveTabManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
 /**
- * Tabs Settings Overview Screen matching Chrome/Brave layout from images.png:
- * - Inactive Tabs row showing current configuration ("After 21 days" / "Never")
+ * Tabs Settings Overview Screen:
+ * - Session restoration on startup
  * - Cross-device Tab Groups auto-open switch
+ * - Confirmation before closing tab
  */
 @Composable
 fun TabsSettingsScreen(
-    onNavigateToInactiveSettings: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     targetHighlightItemId: String? = null
@@ -40,9 +39,6 @@ fun TabsSettingsScreen(
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-    var thresholdPref by remember {
-        mutableStateOf(sp.getString(PetalInactiveTabManager.PREF_INACTIVE_DAYS_THRESHOLD, "21") ?: "21")
-    }
     var restoreTabsOnStart by remember {
         mutableStateOf(sp.getBoolean(PetalSessionRestoreManager.PREF_RESTORE_TABS, true))
     }
@@ -53,30 +49,13 @@ fun TabsSettingsScreen(
         mutableStateOf(sp.getBoolean("sp_auto_open_tab_groups_other_devices", true))
     }
 
-    var showInactiveSettings by remember { mutableStateOf(false) }
-
-    if (showInactiveSettings) {
-        InactiveSettingsScreen(onNavigateBack = { showInactiveSettings = false }, modifier = modifier)
-        return
-    }
-
-    val thresholdSummary = remember(thresholdPref) {
-        when (thresholdPref) {
-            "never" -> "Never"
-            "7" -> "After 7 days"
-            "14" -> "After 14 days"
-            "21" -> "After 21 days"
-            else -> "After 21 days"
-        }
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "tabs_settings")
 
         Column(modifier = Modifier.fillMaxSize()) {
             ExpressiveHeader(
                 title = "Tabs",
-                subtitle = "Tab management & inactive tabs",
+                subtitle = "Tab management & tab groups",
                 onBack = onNavigateBack
             )
 
@@ -96,36 +75,9 @@ fun TabsSettingsScreen(
                     cardId = "tabs_management",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    Text(
-                        text = stringResource(R.string.ui_configure_inactive_tab_archiving_and),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                    )
-
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 4) { index, position ->
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { index, position ->
                         when (index) {
                             0 -> {
-                                com.petal.browser.ui.containment.PetalGroupRow(
-                                    icon = Icons.Rounded.Schedule,
-                                    title = stringResource(R.string.ui_inactive),
-                                    subtitle = thresholdSummary,
-                                    position = position,
-                                    onClick = {
-                                        showInactiveSettings = true
-                                        onNavigateToInactiveSettings()
-                                    },
-                                    trailing = {
-                                        Icon(
-                                            imageVector = Icons.Rounded.ChevronRight,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                )
-                            }
-                            1 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                     title = stringResource(R.string.ui_restore_tabs_on_startup),
                                     subtitle = stringResource(R.string.ui_reopen_your_open_tabs_when),
@@ -138,7 +90,7 @@ fun TabsSettingsScreen(
                                     }
                                 )
                             }
-                            2 -> {
+                            1 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                     title = stringResource(R.string.ui_automatically_open_tab_groups_from),
                                     subtitle = stringResource(R.string.ui_sync_tab_sessions_seamlessly_across),
@@ -151,7 +103,7 @@ fun TabsSettingsScreen(
                                     }
                                 )
                             }
-                            3 -> {
+                            2 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                     title = stringResource(R.string.ui_confirm_before_closing_tab),
                                     subtitle = stringResource(R.string.ui_prompt_for_confirmation_before_closing),
@@ -193,7 +145,7 @@ fun TabsSettingsScreen(
                             0 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                     title = "Memory Saver Mode",
-                                    subtitle = if (memorySaverMode != "off") "Frees RAM and halts CPU cycles for inactive tabs" else "Disabled (all tabs kept loaded)",
+                                    subtitle = if (memorySaverMode != "off") "Frees RAM and halts CPU cycles for background tabs" else "Disabled (all tabs kept loaded)",
                                     icon = Icons.Rounded.Memory,
                                     checked = memorySaverMode != "off",
                                     position = position,

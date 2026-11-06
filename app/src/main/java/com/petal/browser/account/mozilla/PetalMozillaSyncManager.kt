@@ -216,7 +216,7 @@ class PetalMozillaSyncManager private constructor(
                                 .filter { !it.content.private && it.content.url.isNotBlank() && !it.content.url.startsWith("about:") }
                                 .map { tab ->
                                     val lastAccess = try {
-                                        com.petal.browser.compose.tabs.PetalInactiveTabManager.getTabLastAccess(context, tab.id)
+                                        com.petal.browser.engine.gecko.PetalTabSuspender.getTabLastAccess(tab.id).let { if (it > 0L) it else System.currentTimeMillis() }
                                     } catch (_: Throwable) {
                                         System.currentTimeMillis()
                                     }

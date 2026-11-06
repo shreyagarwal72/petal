@@ -1346,7 +1346,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         try {
             com.petal.browser.engine.gecko.PetalEngineStore.onAppResume(this);
-            com.petal.browser.engine.gecko.PetalTabSuspender.checkAndSuspendInactiveTabs(this, currentAlbumController);
+            com.petal.browser.engine.gecko.PetalTabSuspender.checkAndSuspendBackgroundTabs(this, currentAlbumController);
         } catch (Throwable t) {
             PetalAppLogger.w(TAG, "Error in onResume engine resume or tab suspension", t);
         }
@@ -2906,7 +2906,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.ui.components.PetalNetworkStatusBridge.INSTANCE.setWebsiteActive(isWebsiteContent);
         } catch (Exception ignored) {}
 
-        // Inactive Tabs: Record active tab access
+        // Record tab access timestamp for background tab memory management
         try {
             if (currentAlbumController != null) {
                 String currentTabId = String.valueOf(currentAlbumController.hashCode());
@@ -2917,8 +2917,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     String boundId = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getTabId();
                     if (boundId != null && !boundId.isEmpty()) currentTabId = boundId;
                 }
-                com.petal.browser.compose.tabs.PetalInactiveTabManager.INSTANCE.recordTabAccess(this, currentTabId);
-                com.petal.browser.compose.tabs.PetalInactiveTabManager.INSTANCE.recordTabAccess(this, String.valueOf(currentAlbumController.hashCode()));
+                com.petal.browser.engine.gecko.PetalTabSuspender.recordTabAccess(currentTabId);
             }
         } catch (Exception ignored) {}
     }
