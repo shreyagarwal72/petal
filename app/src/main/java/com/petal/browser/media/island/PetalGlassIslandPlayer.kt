@@ -8,6 +8,8 @@
  */
 package com.petal.browser.media.island
 
+import com.petal.browser.R
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -117,11 +119,11 @@ fun PetalGlassIslandPlayer(
 
                     IconButton(
                         onClick = { GlassIslandController.togglePlayPause() },
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
                             imageVector = if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                            contentDescription = null,
+                            contentDescription = stringResource(if (state.isPlaying) R.string.ui_pause else R.string.ui_play),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -129,11 +131,11 @@ fun PetalGlassIslandPlayer(
 
                     IconButton(
                         onClick = { GlassIslandController.dismiss() },
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.close_button),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
@@ -162,11 +164,11 @@ fun PetalGlassIslandPlayer(
                         }
                         IconButton(
                             onClick = { GlassIslandController.dismiss() },
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
-                                contentDescription = null,
+                                contentDescription = stringResource(R.string.close_button),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -207,7 +209,7 @@ fun PetalGlassIslandPlayer(
                         ) {
                             Icon(
                                 imageVector = if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                                contentDescription = null
+                                contentDescription = stringResource(if (state.isPlaying) R.string.ui_pause else R.string.ui_play)
                             )
                         }
                     }

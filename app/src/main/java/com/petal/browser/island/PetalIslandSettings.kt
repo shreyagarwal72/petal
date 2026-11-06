@@ -119,5 +119,5 @@ fun rememberIslandSettings(): State<IslandSettings> {
     val initial = remember(context) {
         IslandSettings.read(PreferenceManager.getDefaultSharedPreferences(context))
     }
-    return flow.collectAsStateWithLifecycle(initial = initial)
+    return flow.collectAsStateWithLifecycle(initialValue = initial)
 }

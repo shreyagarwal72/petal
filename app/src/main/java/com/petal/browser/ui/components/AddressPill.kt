@@ -1,5 +1,7 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.R
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
@@ -363,11 +365,11 @@ fun AddressPill(
                                     if (isBookmarked) {
                                         action.deleteURL(url, HistoryBookmarkContract.TABLE_BOOKMARK)
                                         isBookmarked = false
-                                        PetalToast.show(context, "Bookmark removed")
+                                        PetalToast.show(context, context.getString(R.string.ui_bookmark_removed))
                                     } else {
                                         action.addBookmark(Record(if (title.isNotBlank()) title else url, url, 0L, 0))
                                         isBookmarked = true
-                                        PetalToast.show(context, "Saved to Bookmarks")
+                                        PetalToast.show(context, context.getString(R.string.ui_saved_to_bookmarks))
                                     }
                                     action.close()
                                 } catch (e: Exception) {
@@ -375,11 +377,11 @@ fun AddressPill(
                                 }
                             }
                         },
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
                             imageVector = if (addressBarAction.equals("AI", true)) Icons.Rounded.AutoAwesome else if (isBookmarked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
-                            contentDescription = if (addressBarAction.equals("AI", true)) "Petal AI" else if (isBookmarked) "Remove bookmark" else "Bookmark",
+                            contentDescription = if (addressBarAction.equals("AI", true)) "Petal AI" else if (isBookmarked) stringResource(R.string.ui_remove_from_bookmarks) else stringResource(R.string.ui_bookmark_this_page),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -390,7 +392,7 @@ fun AddressPill(
                 if (isReaderEligible) {
                     IconButton(
                         onClick = onReaderClick,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.MenuBook,
@@ -557,15 +559,15 @@ fun AddressPill(
                 actions.add(
                     QuickActionItem(
                         icon = Icons.Rounded.ContentCopy,
-                        title = "Copy Clean URL",
-                        subtitle = "Copies link with tracking parameters removed",
+                        title = context.getString(R.string.ui_copy_clean_url),
+                        subtitle = context.getString(R.string.ui_copy_clean_url_desc),
                         iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
                         iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
                         onClick = {
                             showQuickActionsMenu = false
                             val cleanUrl = sanitizeTrackingParameters(url)
                             clipboard.setPrimaryClip(ClipData.newPlainText("Clean URL", cleanUrl))
-                            PetalToast.show(context, "Clean URL copied to clipboard")
+                            PetalToast.show(context, context.getString(R.string.ui_clean_url_copied))
                         }
                     )
                 )
@@ -574,7 +576,7 @@ fun AddressPill(
                     actions.add(
                         QuickActionItem(
                             icon = Icons.Rounded.ContentPasteGo,
-                            title = "Paste & Go",
+                            title = context.getString(R.string.ui_paste_and_go),
                             subtitle = clipText,
                             iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                             iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -589,8 +591,8 @@ fun AddressPill(
                 actions.add(
                     QuickActionItem(
                         icon = if (isBookmarked) Icons.Rounded.BookmarkRemove else Icons.Rounded.BookmarkAdd,
-                        title = if (isBookmarked) "Remove from Bookmarks" else "Bookmark This Page",
-                        subtitle = if (isBookmarked) "Tap to unbookmark this page" else "Save this page for quick access later",
+                        title = if (isBookmarked) context.getString(R.string.ui_remove_from_bookmarks) else context.getString(R.string.ui_bookmark_this_page),
+                        subtitle = if (isBookmarked) context.getString(R.string.ui_unbookmark_desc) else context.getString(R.string.ui_bookmark_desc),
                         iconContainerColor = if (isBookmarked) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.tertiaryContainer,
                         iconTint = if (isBookmarked) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer,
                         onClick = {
@@ -600,12 +602,12 @@ fun AddressPill(
                                 if (isBookmarked) {
                                     action.deleteURL(url, HistoryBookmarkContract.TABLE_BOOKMARK)
                                     isBookmarked = false
-                                    PetalToast.show(context, "Bookmark removed")
+                                    PetalToast.show(context, context.getString(R.string.ui_bookmark_removed))
                                 } else {
                                     val r = Record(if (title.isNotBlank()) title else url, url, 0L, 0)
                                     action.addBookmark(r)
                                     isBookmarked = true
-                                    PetalToast.show(context, "Saved to Bookmarks")
+                                    PetalToast.show(context, context.getString(R.string.ui_saved_to_bookmarks))
                                 }
                                 action.close()
                             } catch (e: Exception) {

@@ -910,7 +910,7 @@ private fun ArchiveEntryPreview(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back to archive")
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.ui_back))
                 }
                 Text(
                     entry.path.substringAfterLast('/'),

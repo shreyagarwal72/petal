@@ -199,7 +199,7 @@ private fun CustomRedirectsDialogContent(
                         .height(240.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    itemsIndexed(redirectsList) { index, redirect ->
+                    itemsIndexed(redirectsList, key = { index, redirect -> "${redirect.source}->${redirect.target}_$index" }) { index, redirect ->
                         com.petal.browser.ui.containment.PetalHeroCard(
                             shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,

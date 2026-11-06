@@ -365,20 +365,15 @@ fun PetalDownloadManagerScreen(
         com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { showBatteryDialog = false },
             icon = { Icon(Icons.Rounded.BatteryAlert, contentDescription = null) },
-            title = { Text("Keep downloads running") },
+            title = { Text(stringResource(R.string.ui_keep_downloads_running)) },
             text = {
-                Text(
-                    "Android can pause downloads when your screen locks to save battery. " +
-                        "Allow Petal to run in the background so large downloads finish while your phone is locked.\n\n" +
-                        "On some phones you may also need to enable \"Autostart\" or choose \"No restrictions\" " +
-                        "for Petal in system settings."
-                )
+                Text(stringResource(R.string.ui_keep_downloads_desc))
             },
             confirmButton = {
                 TextButton(onClick = {
                     showBatteryDialog = false
                     PetalBatteryOptimization.requestExemption(context)
-                }) { Text("Allow") }
+                }) { Text(stringResource(R.string.ui_grant_permission)) }
             },
             dismissButton = { TextButton(onClick = { showBatteryDialog = false }) { Text(stringResource(R.string.ui_not_now)) } }
         )
@@ -1523,18 +1518,18 @@ internal fun openDownloadedFile(context: Context, item: DownloadItem) {
         if (contentUri != null) {
             com.petal.browser.download.PetalFileOpener.openFile(context, contentUri, item.fileName, mimeType)
         } else {
-            PetalToast.show(context, "File not found: ${item.fileName}", android.widget.Toast.LENGTH_SHORT)
+            PetalToast.show(context, context.getString(R.string.ui_download_file_not_found, item.fileName), android.widget.Toast.LENGTH_SHORT)
         }
     } catch (e: Exception) {
         e.printStackTrace()
-        PetalToast.show(context, "Unable to open file: ${e.message}", android.widget.Toast.LENGTH_SHORT)
+        PetalToast.show(context, context.getString(R.string.ui_download_unable_to_open, e.message ?: ""), android.widget.Toast.LENGTH_SHORT)
     }
 }
 
 private fun deleteDownloadedFile(context: Context, item: DownloadItem) {
     try {
         PetalFetchDownloadBridge.deleteDownload(context, item)
-        PetalToast.show(context, "Deleted ${item.fileName}", android.widget.Toast.LENGTH_SHORT)
+        PetalToast.show(context, context.getString(R.string.ui_download_deleted, item.fileName), android.widget.Toast.LENGTH_SHORT)
     } catch (e: Exception) {
         e.printStackTrace()
     }
@@ -1549,7 +1544,7 @@ private fun renameDownloadedFile(context: Context, item: DownloadItem, newName: 
                 val newFile = java.io.File(oldFile.parent, newName)
                 if (oldFile.renameTo(newFile)) {
                     android.media.MediaScannerConnection.scanFile(context, arrayOf(newFile.absolutePath), null, null)
-                    com.petal.browser.view.PetalToast.show(context, "Renamed to $newName")
+                    com.petal.browser.view.PetalToast.show(context, context.getString(R.string.ui_download_renamed, newName))
                 }
             }
         }
@@ -1563,7 +1558,7 @@ private fun copyDownloadLink(context: Context, url: String) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
         val clip = android.content.ClipData.newPlainText("Download Link", url)
         clipboard.setPrimaryClip(clip)
-        com.petal.browser.view.PetalToast.show(context, "Link copied to clipboard")
+        com.petal.browser.view.PetalToast.show(context, context.getString(R.string.pref_custom_tabs_copied))
     } catch (e: Exception) {
         e.printStackTrace()
     }

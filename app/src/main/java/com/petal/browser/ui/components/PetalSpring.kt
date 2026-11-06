@@ -295,3 +295,33 @@ fun rememberIsForeground(): Boolean {
     }
     return state.value
 }
+
+/**
+ * True while the host lifecycle is RESUMED and system animations (animator-duration scale)
+ * are enabled. When false, infinite/looping animations should pause to conserve CPU/battery
+ * and honor user accessibility preferences.
+ */
+@Composable
+fun rememberAnimationActive(): Boolean {
+    val context = LocalContext.current
+    val reduceMotion = rememberReduceMotion()
+    if (reduceMotion) return false
+
+    val owner = remember(context) {
+        var c: Context? = context
+        while (c is ContextWrapper && c !is LifecycleOwner) c = c.baseContext
+        c as? LifecycleOwner
+    } ?: return true
+
+    val state = remember(owner) {
+        mutableStateOf(owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+    }
+    DisposableEffect(owner) {
+        val obs = LifecycleEventObserver { _, _ ->
+            state.value = owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        }
+        owner.lifecycle.addObserver(obs)
+        onDispose { owner.lifecycle.removeObserver(obs) }
+    }
+    return state.value
+}

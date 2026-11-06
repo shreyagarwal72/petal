@@ -498,8 +498,8 @@ fun PetalVideoPlayerOverlay(
                             ) {
                                 PetalLiquidIconButton(
                                     onClick = onCloseFullscreen,
-                                    size = 38.dp,
-                                    contentDescription = "Close",
+                                    size = 48.dp,
+                                    contentDescription = stringResource(R.string.close_button),
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
@@ -546,8 +546,8 @@ fun PetalVideoPlayerOverlay(
                                 // Subtitles & Sync
                                 PetalLiquidIconButton(
                                     onClick = { showSubtitleSheet = true },
-                                    size = 38.dp,
-                                    contentDescription = "Subtitles",
+                                    size = 48.dp,
+                                    contentDescription = stringResource(R.string.ui_subtitles),
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.Subtitles,
@@ -563,7 +563,7 @@ fun PetalVideoPlayerOverlay(
                                         isControlsLocked = true
                                         PetalHapticEngine.getInstance(context).playClick(context)
                                     },
-                                    size = 38.dp,
+                                    size = 48.dp,
                                     contentDescription = stringResource(R.string.ui_player_locked),
                                 ) {
                                     Icon(
@@ -578,7 +578,7 @@ fun PetalVideoPlayerOverlay(
                                 if (onCastClick != null) {
                                     PetalLiquidIconButton(
                                         onClick = { onCastClick.invoke() },
-                                        size = 38.dp,
+                                        size = 48.dp,
                                         contentDescription = stringResource(R.string.ui_cast_to_device),
                                     ) {
                                         Icon(
@@ -593,8 +593,8 @@ fun PetalVideoPlayerOverlay(
                                 // Picture in Picture
                                 PetalLiquidIconButton(
                                     onClick = onPipClick,
-                                    size = 38.dp,
-                                    contentDescription = "PiP",
+                                    size = 48.dp,
+                                    contentDescription = stringResource(R.string.ui_pip),
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.PictureInPictureAlt,

@@ -287,7 +287,7 @@ fun PetalLyricsSheet(
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 40.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        itemsIndexed(lyrics.synced) { index, line ->
+                        itemsIndexed(lyrics.synced, key = { index, line -> "${line.timeMs}_$index" }) { index, line ->
                             val isActive = index == activeIndex
                             val isUpcoming = index == activeIndex + 1
 
@@ -336,7 +336,7 @@ fun PetalLyricsSheet(
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 24.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        itemsIndexed(lyrics.plain) { _, line ->
+                        itemsIndexed(lyrics.plain, key = { index, line -> "${index}_${line.hashCode()}" }) { _, line ->
                             Text(
                                 text = line.ifBlank { "♪" },
                                 style = MaterialTheme.typography.bodyLarge,

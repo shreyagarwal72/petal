@@ -2410,7 +2410,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 new java.util.function.Consumer<String>() {
                     @Override
                     public void accept(String error) {
-                        PetalToast.show(BrowserActivity.this, "Authentication required to view private tabs", Toast.LENGTH_SHORT);
+                        PetalToast.show(BrowserActivity.this, R.string.ui_auth_required_private_tabs, Toast.LENGTH_SHORT);
                     }
                 }
             );
@@ -4064,7 +4064,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (activeGeckoView != null && activeGeckoView.canGoBack()) {
                     activeGeckoView.goBack();
                 } else {
-                    PetalToast.show(BrowserActivity.this, "Nothing to undo");
+                    PetalToast.show(BrowserActivity.this, R.string.ui_nothing_to_undo);
                 }
             });
         }
@@ -4427,7 +4427,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         isAiResearchExtracting = true;
-        PetalToast.show(BrowserActivity.this, "Analyzing page\u2026");
+        PetalToast.show(BrowserActivity.this, R.string.ui_analyzing_page);
 
         if (currentAlbumController != null) {
             isAiResearchExtracting = false;
@@ -4451,7 +4451,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         aiResearchTimeoutRunnable = () -> {
             if (isAiResearchExtracting) {
                 isAiResearchExtracting = false;
-                PetalToast.show(BrowserActivity.this, "Petal AI timed out reading this page. Please try again.");
+                PetalToast.show(BrowserActivity.this, R.string.ui_ai_timeout);
             }
         };
         aiResearchTimeoutHandler.postDelayed(aiResearchTimeoutRunnable, 6000);
@@ -7119,7 +7119,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         boolean wasBookmarked = action.checkBookmark(url);
         if (wasBookmarked) {
             action.deleteURL(url, HistoryBookmarkContract.TABLE_BOOKMARK);
-            PetalToast.show(this, "Bookmark removed");
+            PetalToast.show(this, R.string.ui_bookmark_removed);
         } else {
             action.addBookmark(new Record(title != null && !title.isEmpty() ? title : url, url, 0, 0));
             PetalToast.show(this, R.string.app_done);

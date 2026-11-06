@@ -839,10 +839,10 @@ fun PetalOmniboxPage(
                                                 } catch (e: Exception) {
                                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                                     clipboard.setPrimaryClip(ClipData.newPlainText("URL", cleanPageUrl))
-                                                    com.petal.browser.view.PetalToast.show(context, "Link copied to clipboard")
+                                                    com.petal.browser.view.PetalToast.show(context, context.getString(R.string.pref_custom_tabs_copied))
                                                 }
                                             },
-                                            modifier = Modifier.size(36.dp)
+                                            modifier = Modifier.size(48.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.Share,
@@ -857,9 +857,9 @@ fun PetalOmniboxPage(
                                             onClick = {
                                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                                 clipboard.setPrimaryClip(ClipData.newPlainText("URL", cleanPageUrl))
-                                                com.petal.browser.view.PetalToast.show(context, "Link copied to clipboard")
+                                                com.petal.browser.view.PetalToast.show(context, context.getString(R.string.pref_custom_tabs_copied))
                                             },
-                                            modifier = Modifier.size(36.dp)
+                                            modifier = Modifier.size(48.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.ContentCopy,
@@ -1139,8 +1139,8 @@ fun PetalOmniboxPage(
                                                     // Section header
                                                     val headerLabel = when (payload) {
                                                         SuggestionSource.SWITCH_TO_TAB -> stringResource(R.string.ui_switch_to_tab)
-                                                        SuggestionSource.RECENT_SEARCH -> "Recent Searches"
-                                                        SuggestionSource.BROWSING_HISTORY -> "From Browsing History"
+                                                        SuggestionSource.RECENT_SEARCH -> stringResource(R.string.ui_recent_searches)
+                                                        SuggestionSource.BROWSING_HISTORY -> stringResource(R.string.ui_from_browsing_history)
                                                         SuggestionSource.SEARCH_ENGINE -> stringResource(R.string.ui_search_suggestions)
                                                         SuggestionSource.BOOKMARK -> stringResource(R.string.ui_bookmarks)
                                                     }

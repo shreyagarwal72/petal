@@ -1095,13 +1095,13 @@ fun PetalTabGridSwitcher(
                             textColor = textColor,
                             isIncognito = currentCategory == TabCategory.INCOGNITO,
                             title = if (currentCategory == TabCategory.INCOGNITO)
-                                "You've gone Incognito"
+                                stringResource(R.string.ui_tab_gone_incognito)
                             else
-                                "You'll find your tabs here",
+                                stringResource(R.string.ui_tab_find_tabs_here),
                             subtitle = if (currentCategory == TabCategory.INCOGNITO)
-                                "Pages you view in incognito tabs won't be saved in your browser history."
+                                stringResource(R.string.ui_tab_incognito_desc)
                             else
-                                "Open tabs to visit different pages at the same time",
+                                stringResource(R.string.ui_tab_regular_desc),
                             onNewTab = { launchNewTab(currentCategory == TabCategory.INCOGNITO) },
                             onPositioned = { newTabButtonBounds = it }
                         )

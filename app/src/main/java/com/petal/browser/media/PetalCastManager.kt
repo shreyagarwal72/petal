@@ -540,7 +540,7 @@ fun PetalCastDeviceSheet(
                         .heightIn(max = 280.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(devices, key = { it.id }) { device ->
+                    items(devices, key = { it.controlUrl.ifEmpty { it.locationUrl.ifEmpty { it.friendlyName } } }) { device ->
                         val isThisCasting = castingDeviceName == device.friendlyName
                         Surface(
                             shape = RoundedCornerShape(14.dp),

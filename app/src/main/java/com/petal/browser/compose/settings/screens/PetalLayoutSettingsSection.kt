@@ -705,6 +705,7 @@ private fun rememberDemoToggle(): androidx.compose.runtime.MutableState<Boolean>
 
 @Composable
 private fun SliderDemo(type: PetalSliderType) {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val transition = rememberInfiniteTransition(label = "sliderDemo")
     val auto by transition.animateFloat(
         initialValue = 0.15f,
@@ -714,7 +715,7 @@ private fun SliderDemo(type: PetalSliderType) {
     )
     var user by remember { mutableStateOf<Float?>(null) }
     PetalSlider(
-        value = user ?: auto,
+        value = user ?: (if (animActive) auto else 0.5f),
         onValueChange = { user = it },
         valueRange = 0f..1f,
         typeOverride = type,
@@ -734,8 +735,9 @@ private fun FlingDemo(type: PetalFlingType) {
         PetalFlingType.REDUCED_MOTION -> 140 to false
     }
     val decel = CubicBezierEasing(0.1f, 0.9f, 0.2f, 1f)
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val transition = rememberInfiniteTransition(label = "flingDemo")
-    val x by transition.animateFloat(
+    val animatedX by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -749,6 +751,7 @@ private fun FlingDemo(type: PetalFlingType) {
         ),
         label = "flingDemoX"
     )
+    val x = if (animActive) animatedX else 0.5f
     val track = 52.dp
     val dot = 12.dp
     Box(modifier = Modifier.size(width = track, height = dot)) {

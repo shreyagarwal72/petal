@@ -1079,18 +1079,22 @@ private fun MediaArt(item: LiveActionItem.Media, palette: IslandPalette, size: I
 
 @Composable
 private fun PulsingDot(color: Color) {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val t = rememberInfiniteTransition(label = "dot")
-    val alpha by t.animateFloat(
+    val dotAlpha by t.animateFloat(
         initialValue = 0.3f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Reverse),
         label = "dotAlpha"
     )
+    val alpha = if (animActive) dotAlpha else 0.7f
     Box(Modifier.size(6.dp).clip(ExpressiveButtonShape).background(color.copy(alpha = alpha)))
 }
 
 @Composable
 private fun Equalizer(isPlaying: Boolean, color: Color) {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
+    val isLive = isPlaying && animActive
     val t = rememberInfiniteTransition(label = "eq")
     val b1 by t.animateFloat(4f, 14f, infiniteRepeatable(tween(350, easing = LinearEasing), RepeatMode.Reverse), label = "b1")
     val b2 by t.animateFloat(12f, 5f, infiniteRepeatable(tween(420, easing = LinearEasing), RepeatMode.Reverse), label = "b2")
@@ -1101,9 +1105,9 @@ private fun Equalizer(isPlaying: Boolean, color: Color) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         listOf(
-            if (isPlaying) b1 else 4f,
-            if (isPlaying) b2 else 8f,
-            if (isPlaying) b3 else 5f
+            if (isLive) b1 else 4f,
+            if (isLive) b2 else 8f,
+            if (isLive) b3 else 5f
         ).forEach { h ->
             Box(Modifier.width(3.dp).height(h.dp).clip(RoundedCornerShape(2.dp)).background(color))
         }

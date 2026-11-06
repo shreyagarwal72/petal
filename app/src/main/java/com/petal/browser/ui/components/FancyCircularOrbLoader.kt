@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
@@ -27,8 +28,9 @@ fun FancyCircularOrbLoader(
     size: Dp = 48.dp,
     strokeWidth: Dp = 4.dp,
 ) {
+    val animActive = rememberAnimationActive()
     val transition = rememberInfiniteTransition(label = "orbLoader")
-    val rotation by transition.animateFloat(
+    val animatedRotation by transition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
@@ -37,23 +39,27 @@ fun FancyCircularOrbLoader(
         ),
         label = "rotation",
     )
+    val rotation = if (animActive) animatedRotation else 0f
 
     val primary = MaterialTheme.colorScheme.primary
     val tertiary = MaterialTheme.colorScheme.tertiary
+    val brush = remember(primary, tertiary) {
+        Brush.sweepGradient(
+            colors = listOf(
+                primary.copy(alpha = 0.1f),
+                primary,
+                tertiary,
+                primary.copy(alpha = 0.1f),
+            ),
+        )
+    }
 
     Canvas(modifier = modifier.size(size)) {
         val sweepAngle = 270f
         val strokePx = strokeWidth.toPx()
 
         drawArc(
-            brush = Brush.sweepGradient(
-                colors = listOf(
-                    primary.copy(alpha = 0.1f),
-                    primary,
-                    tertiary,
-                    primary.copy(alpha = 0.1f),
-                ),
-            ),
+            brush = brush,
             startAngle = rotation,
             sweepAngle = sweepAngle,
             useCenter = false,

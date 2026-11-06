@@ -59,6 +59,7 @@ import com.petal.browser.unit.PetalAndroidUtils
  */
 @Composable
 private fun rememberShimmerBrush(): Brush {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val transition = rememberInfiniteTransition(label = "websiteSkeletonShimmer")
     val translateAnim by transition.animateFloat(
         initialValue = 0f,
@@ -72,11 +73,12 @@ private fun rememberShimmerBrush(): Brush {
 
     val baseColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.55f)
     val highlightColor = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.95f)
+    val offset = if (animActive) translateAnim else 600f
 
     return Brush.linearGradient(
         colors = listOf(baseColor, highlightColor, baseColor),
-        start = Offset(translateAnim - 450f, translateAnim - 450f),
-        end = Offset(translateAnim + 450f, translateAnim + 450f)
+        start = Offset(offset - 450f, offset - 450f),
+        end = Offset(offset + 450f, offset + 450f)
     )
 }
 

@@ -235,7 +235,7 @@ fun SettingsHubScreen(
                         PetalSectionLabel("Matching Settings (${matchingItems.size})", Modifier.padding(top = 4.dp))
                     }
 
-                    itemsIndexed(matchingItems) { index, item ->
+                    itemsIndexed(matchingItems, key = { _, item -> "${item.category.name}_${item.id}" }) { index, item ->
                         PetalGroupListRow(
                             position = petalGroupPositionFor(index, matchingItems.size),
                             onClick = { onCategoryClick(item.category, item.id) },
@@ -279,7 +279,7 @@ fun SettingsHubScreen(
                         )
                     }
 
-                    itemsIndexed(filteredCategories) { index, category ->
+                    itemsIndexed(filteredCategories, key = { _, category -> category.name }) { index, category ->
                         val badgeVariant = when (index % 4) {
                             0 -> PetalBadgeVariant.PRIMARY
                             1 -> PetalBadgeVariant.SECONDARY

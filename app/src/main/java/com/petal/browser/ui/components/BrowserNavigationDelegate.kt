@@ -122,7 +122,7 @@ object BrowserNavigationDelegate {
 
                 override fun onNewIncognitoTab() {
                     activity.addAlbum("Incognito Tab", prefs.getString("favoriteURL", "about:blank"), true, true)
-                    PetalToast.show(activity, "Opened Incognito Tab")
+                    PetalToast.show(activity, activity.getString(R.string.ui_opened_incognito_tab))
                 }
 
                 override fun onOpenHistory() {
@@ -184,7 +184,7 @@ object BrowserNavigationDelegate {
                         val clip = android.content.ClipData.newPlainText("Clean URL", cleanUrl)
                         clipboard?.setPrimaryClip(clip)
                         com.petal.browser.haptics.PetalHapticEngine.getInstance(activity).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.7f)
-                        PetalToast.show(activity, "Clean link copied to clipboard")
+                        PetalToast.show(activity, activity.getString(R.string.ui_clean_url_copied))
                     }
                 }
 
@@ -271,9 +271,9 @@ object BrowserNavigationDelegate {
                     if (isPipSupported) {
                         activity.triggerSystemPipMode()
                     } else if (isBgPlayEnabled) {
-                        PetalToast.show(activity, "Background media playback active")
+                        PetalToast.show(activity, activity.getString(R.string.ui_background_media_active))
                     } else {
-                        PetalToast.show(activity, "Enable Auto PiP or Background Play in Settings")
+                        PetalToast.show(activity, activity.getString(R.string.ui_enable_auto_pip_hint))
                     }
                 }
             }

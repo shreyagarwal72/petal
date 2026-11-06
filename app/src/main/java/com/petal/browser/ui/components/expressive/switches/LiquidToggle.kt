@@ -99,7 +99,7 @@ internal fun LiquidToggle(
     interactionSource: MutableInteractionSource,
     modifier: Modifier = Modifier
 ) {
-    val interactions by interactionSource.interactions.collectAsStateWithLifecycle(initial = null)
+    val interactions by interactionSource.interactions.collectAsStateWithLifecycle(initialValue = null)
 
     val accentColor by colors.trackColor(
         enabled = enabled,

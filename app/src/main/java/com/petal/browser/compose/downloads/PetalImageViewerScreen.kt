@@ -485,7 +485,7 @@ fun PetalImageViewerScreen(
                                 val url = currentEntry?.sourceUrl ?: return@ImageViewerTopBar
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                 clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Image URL", url))
-                                com.petal.browser.view.PetalToast.show(context, "URL copied")
+                                com.petal.browser.view.PetalToast.show(context, context.getString(R.string.ui_url_copied))
                             },
                             onScanOcr = {
                                 val entry = currentEntry ?: return@ImageViewerTopBar
@@ -539,7 +539,7 @@ fun PetalImageViewerScreen(
                                 if (entry.downloadItem != null) {
                                     setAsWallpaper(context, entry.downloadItem)
                                 } else {
-                                    com.petal.browser.view.PetalToast.show(context, "Download the image first to set as wallpaper")
+                                    com.petal.browser.view.PetalToast.show(context, context.getString(R.string.ui_download_image_first_wallpaper))
                                 }
                             },
                             onInfo        = { showInfoSheet = true },
@@ -566,7 +566,7 @@ fun PetalImageViewerScreen(
                 onDismissRequest = { showCropDialog = false },
                 onImageSaved = { savedFile ->
                     showCropDialog = false
-                    com.petal.browser.view.PetalToast.show(context, "Image saved")
+                    com.petal.browser.view.PetalToast.show(context, context.getString(R.string.ui_image_saved))
                 }
             )
         }
@@ -1314,6 +1314,6 @@ private fun setAsWallpaper(context: Context, item: DownloadItem) {
         })
     } catch (e: Exception) {
         e.printStackTrace()
-        com.petal.browser.view.PetalToast.show(context, "Unable to set wallpaper")
+        com.petal.browser.view.PetalToast.show(context, context.getString(R.string.ui_unable_to_set_wallpaper))
     }
 }

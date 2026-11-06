@@ -13,6 +13,8 @@
 
 package com.petal.browser.ui.components
 
+import com.petal.browser.R
+
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -206,7 +208,7 @@ object PetalQuickToolsBridge {
                 try {
                     PetalLensBridge.showPetalScannerDirectly(activity)
                 } catch (e: Exception) {
-                    PetalToast.show(activity, "Opening Scanner...")
+                    PetalToast.show(activity, activity.getString(R.string.ui_opening_scanner))
                 }
             }
 
@@ -219,7 +221,7 @@ object PetalQuickToolsBridge {
                         } catch (_: Exception) {}
                     }
                 } else {
-                    PetalToast.show(activity, "Navigate to a webpage to translate")
+                    PetalToast.show(activity, activity.getString(R.string.ui_navigate_to_translate))
                 }
             }
 
@@ -266,7 +268,7 @@ object PetalQuickToolsBridge {
                         val firstQr = qrUrls.first()
                         com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(activity, firstQr)
                     } else {
-                        PetalToast.show(activity, "Searching webpage for QR codes...")
+                        PetalToast.show(activity, activity.getString(R.string.ui_searching_webpage_qr))
                     }
                 }
             }
@@ -346,7 +348,7 @@ object PetalQuickToolsBridge {
                         }, true);
                     })()
                 """.trimIndent())
-                PetalToast.show(activity, "Tap any element to remove it")
+                PetalToast.show(activity, activity.getString(R.string.ui_tap_element_remove))
             }
 
             QuickToolId.SPOOF_IDENTITY -> {
@@ -368,7 +370,7 @@ object PetalQuickToolsBridge {
                         }
                     })()
                 """.trimIndent())
-                PetalToast.show(activity, "Pinch-to-zoom force-enabled on page")
+                PetalToast.show(activity, activity.getString(R.string.ui_pinch_to_zoom_enabled))
             }
 
             QuickToolId.SCREENSHOT -> {
@@ -383,12 +385,12 @@ object PetalQuickToolsBridge {
                                 bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
                             }
                             android.media.MediaScannerConnection.scanFile(activity, arrayOf(file.absolutePath), arrayOf("image/png"), null)
-                            PetalToast.show(activity, "Screenshot saved to Pictures/Petal")
+                            PetalToast.show(activity, activity.getString(R.string.ui_screenshot_saved))
                         } catch (e: Exception) {
-                            PetalToast.show(activity, "Screenshot captured")
+                            PetalToast.show(activity, activity.getString(R.string.ui_screenshot_captured))
                         }
                     } else {
-                        PetalToast.show(activity, "Failed to capture screenshot")
+                        PetalToast.show(activity, activity.getString(R.string.ui_screenshot_failed))
                     }
                 }
             }
@@ -408,10 +410,10 @@ object PetalQuickToolsBridge {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(magnets.first()))
                             activity.startActivity(Intent.createChooser(intent, "Open Magnet Link"))
                         } else {
-                            PetalToast.show(activity, "No magnet links found on this page")
+                            PetalToast.show(activity, activity.getString(R.string.ui_no_magnet_links))
                         }
                     } catch (e: Exception) {
-                        PetalToast.show(activity, "No magnet links found")
+                        PetalToast.show(activity, activity.getString(R.string.ui_no_magnet_links))
                     }
                 }
             }
@@ -636,7 +638,7 @@ object PetalQuickToolsBridge {
                                         url = imgUrl,
                                         fileName = imgUrl.substringAfterLast("/").substringBefore("?").ifEmpty { "image.jpg" }
                                     )
-                                    PetalToast.show(activity, "Downloading image...")
+                                    PetalToast.show(activity, activity.getString(R.string.ui_downloading_image))
                                 },
                                 onDownloadAll = {
                                     images.forEach { imgUrl ->
@@ -646,7 +648,7 @@ object PetalQuickToolsBridge {
                                             fileName = imgUrl.substringAfterLast("/").substringBefore("?").ifEmpty { "image.jpg" }
                                         )
                                     }
-                                    PetalToast.show(activity, "Downloading ${images.size} images...")
+                                    PetalToast.show(activity, activity.getString(R.string.ui_downloading_n_images, images.size))
                                     try { dialog.dismiss() } catch (_: Exception) {}
                                 },
                                 onDismissRequest = {
@@ -697,10 +699,10 @@ object PetalQuickToolsBridge {
                         onSelectIdentity = { preset ->
                             if (preset.userAgent != null) {
                                 setUserAgent(controller, preset.userAgent)
-                                PetalToast.show(activity, "User-Agent switched to ${preset.title}")
+                                PetalToast.show(activity, activity.getString(R.string.ui_user_agent_switched, preset.title))
                             } else {
                                 setUserAgent(controller, null)
-                                PetalToast.show(activity, "Restored default User-Agent")
+                                PetalToast.show(activity, activity.getString(R.string.ui_user_agent_restored))
                             }
                             reloadTab(controller)
                         },

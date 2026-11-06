@@ -194,8 +194,9 @@ fun PetalFeatureExplainerDialog(
  */
 @Composable
 private fun AppleDuoLivePreview() {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val infiniteTransition = rememberInfiniteTransition(label = "appleDuoFold")
-    val tiltAngle by infiniteTransition.animateFloat(
+    val animatedTilt by infiniteTransition.animateFloat(
         initialValue = -16f,
         targetValue = 16f,
         animationSpec = infiniteRepeatable(
@@ -204,6 +205,7 @@ private fun AppleDuoLivePreview() {
         ),
         label = "tilt"
     )
+    val tiltAngle = if (animActive) animatedTilt else 0f
 
     Box(
         modifier = Modifier
@@ -294,19 +296,22 @@ private fun AppleDuoLivePreview() {
  */
 @Composable
 private fun MorphingShapesLivePreview() {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val transition = rememberInfiniteTransition(label = "m3Shapes")
-    val rotation by transition.animateFloat(
+    val animatedRotation by transition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(tween(7000, easing = LinearEasing), RepeatMode.Restart),
         label = "rot"
     )
-    val cornerRadius by transition.animateFloat(
+    val animatedCornerRadius by transition.animateFloat(
         initialValue = 12f,
         targetValue = 48f,
         animationSpec = infiniteRepeatable(tween(2200, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "corner"
     )
+    val rotation = if (animActive) animatedRotation else 0f
+    val cornerRadius = if (animActive) animatedCornerRadius else 24f
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -343,13 +348,15 @@ private fun MorphingShapesLivePreview() {
  */
 @Composable
 private fun MotionBlurLivePreview() {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val transition = rememberInfiniteTransition(label = "motionBlur")
-    val offsetY by transition.animateFloat(
+    val animatedOffsetY by transition.animateFloat(
         initialValue = -30f,
         targetValue = 30f,
         animationSpec = infiniteRepeatable(tween(1200, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "scrollOffset"
     )
+    val offsetY = if (animActive) animatedOffsetY else 0f
     val simulatedBlur = (kotlin.math.abs(offsetY) / 6f).coerceIn(0f, 6f)
 
     Column(
@@ -396,13 +403,15 @@ private fun MotionBlurLivePreview() {
  */
 @Composable
 private fun AddressBarPositionLivePreview() {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val transition = rememberInfiniteTransition(label = "addrPos")
-    val isBottom by transition.animateFloat(
+    val animatedIsBottom by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(2500, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "posSwitch"
     )
+    val isBottom = if (animActive) animatedIsBottom else 1f
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -459,13 +468,15 @@ private fun AddressBarPositionLivePreview() {
  */
 @Composable
 private fun AdBlockTrieLivePreview() {
+    val animActive = com.petal.browser.ui.components.rememberAnimationActive()
     val transition = rememberInfiniteTransition(label = "adBlockShield")
-    val progress by transition.animateFloat(
+    val animatedProgress by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing), RepeatMode.Restart),
         label = "packetProgress"
     )
+    val progress = if (animActive) animatedProgress else 0.5f
 
     Box(
         modifier = Modifier.fillMaxSize(),
