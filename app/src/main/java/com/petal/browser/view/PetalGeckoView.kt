@@ -1758,19 +1758,13 @@ class PetalGeckoView @JvmOverloads constructor(
             private var isFrameScheduled: Boolean = false
             private var pendingScrollY: Int = 0
 
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
-                currentScrollX = scrollX
-                currentScrollY = scrollY
-                pendingScrollY = scrollY
-                if (isFrameScheduled) return
-                isFrameScheduled = true
-                post {
-                    android.view.Choreographer.getInstance().postFrameCallback {
+            // One callback object for the whole session: no allocation per scroll event.
+            private val frameCallback = android.view.Choreographer.FrameCallback {
                         isFrameScheduled = false
                         val latestY = pendingScrollY
-                        val act = getHostActivity() ?: return@postFrameCallback
+                        val act = getHostActivity() ?: return@FrameCallback
                         val bAct = act as? com.petal.browser.activity.BrowserActivity
-                        if (bAct != null && bAct.isBarAnimationRunning()) return@postFrameCallback
+                        if (bAct != null && bAct.isBarAnimationRunning()) return@FrameCallback
                         val density = context.resources.displayMetrics.density
                         val hideAfterPx = 24f * density
                         val showAfterPx = 16f * density
@@ -1801,8 +1795,16 @@ class PetalGeckoView @JvmOverloads constructor(
                                     .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.40f, 50L)
                             }
                         }
-                    }
-                }
+            }
+
+            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+                currentScrollX = scrollX
+                currentScrollY = scrollY
+                pendingScrollY = scrollY
+                if (isFrameScheduled) return
+                isFrameScheduled = true
+                // Gecko calls this on the UI thread, so go straight to the next frame.
+                android.view.Choreographer.getInstance().postFrameCallback(frameCallback)
             }
         }
 

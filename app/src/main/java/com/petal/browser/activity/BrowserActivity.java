@@ -230,7 +230,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public FrameLayout fullscreenHolder;
     public com.petal.browser.compose.composable.PetalRefreshBarState refreshState = new com.petal.browser.compose.composable.PetalRefreshBarState();
     public ListView list_search;
-    private android.animation.ValueAnimator contentPaddingAnimator = null;
+    private androidx.dynamicanimation.animation.SpringAnimation contentPaddingAnimator = null;
+    /** Offset (px) still applied to the page views while the content spring settles. */
+    private float contentOffsetApplied = 0f;
 
     // Others
     public BottomNavigationView bottom_navigation;
@@ -4693,6 +4695,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 animateContentPadding(targetTop, targetBottom);
             } else {
                 if (contentPaddingAnimator != null) contentPaddingAnimator.cancel();
+                if (contentOffsetApplied != 0f && mainContent instanceof android.view.ViewGroup) {
+                    shiftContentChildren((android.view.ViewGroup) mainContent, -contentOffsetApplied);
+                    contentOffsetApplied = 0f;
+                }
                 mainContent.setPadding(mainContent.getPaddingLeft(), targetTop, mainContent.getPaddingRight(), targetBottom);
             }
         }
@@ -4708,8 +4714,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     bubble.setScaleX(0f);
                     bubble.setScaleY(0f);
                     bubble.setAlpha(0f);
-                    springScale(bubble, 1f, 550f, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-                    springAlpha(bubble, 1f, 550f, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                    springScale(bubble, 1f, 550f, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
+                    springAlpha(bubble, 1f, 550f, SpringForce.DAMPING_RATIO_NO_BOUNCY);
                 } else {
                     bubble.setScaleX(1f);
                     bubble.setScaleY(1f);
@@ -4717,8 +4723,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             } else if (animate) {
                 final float fAddrH = addrH, fNavH = navH;
-                springScale(bubble, 0f, 550f, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-                springAlpha(bubble, 0f, 550f, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                springScale(bubble, 0f, 550f, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+                springAlpha(bubble, 0f, 550f, SpringForce.DAMPING_RATIO_NO_BOUNCY);
                 bubble.postDelayed(() -> {
                     if (!isAddressBarCollapsed) {
                         bubble.setVisibility(GONE);
@@ -4748,22 +4754,33 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private void placeBubble(View bubble, boolean hiddenState, float addrH, float navH) {
         if (!(bubble.getLayoutParams() instanceof RelativeLayout.LayoutParams)) return;
         RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) bubble.getLayoutParams();
+        boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
+        boolean alignBottom;
+        int top, bottom;
+        if (hiddenState) {
+            alignBottom = true;
+            top = 0;
+            bottom = navigationBarBottomInset + (int) PetalAndroidUtils.convertDpToPixel(20f, context);
+        } else if (isBottom) {
+            alignBottom = true;
+            top = 0;
+            bottom = (int) (navH + addrH + PetalAndroidUtils.convertDpToPixel(12f, context));
+        } else {
+            alignBottom = false;
+            bottom = 0;
+            top = (int) (addrH + PetalAndroidUtils.convertDpToPixel(16f, context));
+        }
+        int[] rules = lp.getRules();
+        boolean sameAlign = alignBottom
+                ? rules[RelativeLayout.ALIGN_PARENT_BOTTOM] != 0 && rules[RelativeLayout.ALIGN_PARENT_TOP] == 0
+                : rules[RelativeLayout.ALIGN_PARENT_TOP] != 0 && rules[RelativeLayout.ALIGN_PARENT_BOTTOM] == 0;
+        // No layout pass when nothing moved: it would land in the middle of the slide.
+        if (sameAlign && lp.topMargin == top && lp.bottomMargin == bottom) return;
         lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
         lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-        boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
-        if (hiddenState) {
-            lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-            lp.topMargin = 0;
-            lp.bottomMargin = navigationBarBottomInset + (int) PetalAndroidUtils.convertDpToPixel(20f, context);
-        } else if (isBottom) {
-            lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-            lp.topMargin = 0;
-            lp.bottomMargin = (int) (navH + addrH + PetalAndroidUtils.convertDpToPixel(12f, context));
-        } else {
-            lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-            lp.bottomMargin = 0;
-            lp.topMargin = (int) (addrH + PetalAndroidUtils.convertDpToPixel(16f, context));
-        }
+        lp.addRule(alignBottom ? RelativeLayout.ALIGN_PARENT_BOTTOM : RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+        lp.topMargin = top;
+        lp.bottomMargin = bottom;
         bubble.setLayoutParams(lp);
     }
 
@@ -4824,53 +4841,58 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private void animateContentPadding(int targetTop, int targetBottom) {
         final View mainContent = findViewById(R.id.main_content);
         if (mainContent == null) return;
-        if (contentPaddingAnimator != null) {
-            contentPaddingAnimator.cancel(); // flushes its leftover offset, see onAnimationEnd/Cancel
-        }
         final int startTop = mainContent.getPaddingTop();
         final int startBottom = mainContent.getPaddingBottom();
         if (startTop == targetTop && startBottom == targetBottom) return;
-        final float startOffset = startTop - targetTop; // content top moves by this when padding snaps
-        mainContent.setPadding(mainContent.getPaddingLeft(), targetTop, mainContent.getPaddingRight(), targetBottom);
-        if (startOffset == 0f || !(mainContent instanceof android.view.ViewGroup)) return;
+        if (!(mainContent instanceof android.view.ViewGroup)) {
+            mainContent.setPadding(mainContent.getPaddingLeft(), targetTop, mainContent.getPaddingRight(), targetBottom);
+            return;
+        }
         final android.view.ViewGroup group = (android.view.ViewGroup) mainContent;
-        final float[] applied = {0f};
-        final java.lang.Runnable flush = () -> {
-            float rest = -applied[0];
-            if (rest != 0f) {
-                for (int i = 0; i < group.getChildCount(); i++) {
-                    View c = group.getChildAt(i);
-                    c.setTranslationY(c.getTranslationY() + rest);
-                }
-                applied[0] = 0f;
+
+        // Keep whatever offset is still on screen and add the new jump on top of it, so a
+        // re-trigger in the middle of a slide continues from where the page visibly is.
+        if (contentPaddingAnimator != null && contentPaddingAnimator.isRunning()) {
+            contentPaddingAnimator.cancel();
+        }
+        final float newOffset = contentOffsetApplied + (startTop - targetTop);
+        mainContent.setPadding(mainContent.getPaddingLeft(), targetTop, mainContent.getPaddingRight(), targetBottom);
+        shiftContentChildren(group, newOffset - contentOffsetApplied);
+        contentOffsetApplied = newOffset;
+        if (newOffset == 0f) return;
+
+        // Same spring as the bars (stiffness 550, no bounce) so page and bars move as one.
+        final androidx.dynamicanimation.animation.FloatValueHolder holder =
+                new androidx.dynamicanimation.animation.FloatValueHolder(newOffset);
+        final androidx.dynamicanimation.animation.SpringAnimation spring =
+                new androidx.dynamicanimation.animation.SpringAnimation(holder);
+        spring.setSpring(new androidx.dynamicanimation.animation.SpringForce(0f)
+                .setStiffness(550f)
+                .setDampingRatio(androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_NO_BOUNCY));
+        spring.setMinimumVisibleChange(0.5f);
+        spring.addUpdateListener((anim, value, vel) -> {
+            float delta = value - contentOffsetApplied;
+            if (delta != 0f) {
+                shiftContentChildren(group, delta);
+                contentOffsetApplied = value;
             }
-        };
-        // Apply the starting offset now so the first drawn frame matches the old layout.
+        });
+        spring.addEndListener((anim, canceled, value, vel) -> {
+            if (contentPaddingAnimator == spring && !canceled) {
+                shiftContentChildren(group, -contentOffsetApplied);
+                contentOffsetApplied = 0f;
+            }
+        });
+        contentPaddingAnimator = spring;
+        spring.start();
+    }
+
+    private void shiftContentChildren(android.view.ViewGroup group, float delta) {
+        if (delta == 0f) return;
         for (int i = 0; i < group.getChildCount(); i++) {
             View c = group.getChildAt(i);
-            c.setTranslationY(c.getTranslationY() + startOffset);
+            c.setTranslationY(c.getTranslationY() + delta);
         }
-        applied[0] = startOffset;
-        final android.animation.ValueAnimator anim = android.animation.ValueAnimator.ofFloat(1f, 0f);
-        contentPaddingAnimator = anim;
-        anim.setDuration(300L);
-        anim.setInterpolator(new PathInterpolator(0.2f, 0f, 0f, 1f));
-        anim.addUpdateListener(a -> {
-            float target = startOffset * (float) a.getAnimatedValue();
-            float delta = target - applied[0];
-            if (delta != 0f) {
-                for (int i = 0; i < group.getChildCount(); i++) {
-                    View c = group.getChildAt(i);
-                    c.setTranslationY(c.getTranslationY() + delta);
-                }
-                applied[0] = target;
-            }
-        });
-        anim.addListener(new android.animation.AnimatorListenerAdapter() {
-            @Override public void onAnimationEnd(android.animation.Animator animation) { flush.run(); }
-            @Override public void onAnimationCancel(android.animation.Animator animation) { flush.run(); }
-        });
-        anim.start();
     }
 
     /** Springs a view's vertical offset. Smoothly redirects running springs without stacking or flickering. */
