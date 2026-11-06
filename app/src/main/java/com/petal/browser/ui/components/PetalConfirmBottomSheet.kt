@@ -140,6 +140,7 @@ object PetalConfirmSheetBridge {
         if (activity.isFinishing) return
 
         val dialog = BottomSheetDialog(activity)
+        var actionHandled = false
         val composeView = ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
@@ -178,10 +179,12 @@ object PetalConfirmSheetBridge {
                             cancelText = cancelText,
                             isDestructive = isDestructive,
                             onConfirm = {
+                                actionHandled = true
                                 dialog.dismiss()
                                 onConfirm.run()
                             },
                             onCancel = {
+                                actionHandled = true
                                 dialog.dismiss()
                                 onCancel?.run()
                             }
@@ -193,6 +196,11 @@ object PetalConfirmSheetBridge {
 
         dialog.setContentView(composeView)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.setOnDismissListener {
+            if (!actionHandled) {
+                onCancel?.run()
+            }
+        }
         dialog.show()
     }
 
@@ -246,7 +254,12 @@ object PetalConfirmSheetBridge {
     }
 
     @JvmStatic
-    fun showRestartConfirmation(activity: ComponentActivity, onConfirm: Runnable) {
+    @JvmOverloads
+    fun showRestartConfirmation(
+        activity: ComponentActivity,
+        onConfirm: Runnable,
+        onCancel: Runnable? = null
+    ) {
         showConfirmSheet(
             activity = activity,
             icon = Icons.Rounded.RestartAlt,
@@ -255,7 +268,8 @@ object PetalConfirmSheetBridge {
             confirmText = "Restart Now",
             cancelText = "Later",
             isDestructive = false,
-            onConfirm = onConfirm
+            onConfirm = onConfirm,
+            onCancel = onCancel
         )
     }
 

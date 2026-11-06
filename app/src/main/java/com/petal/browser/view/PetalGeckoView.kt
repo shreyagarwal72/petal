@@ -3190,9 +3190,14 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun getThumbnailKey(): String = getTabId()
 
+    private var lastPreviewCaptureTime = 0L
+
     @JvmOverloads
     fun updatePreviewCache(force: Boolean = false) {
         if (!force && capturedPreviewRevision == previewRevision) return
+        val now = android.os.SystemClock.uptimeMillis()
+        if (!force && now - lastPreviewCaptureTime < 1500L) return
+        lastPreviewCaptureTime = now
         capturePreviewBitmapAsync { /* cache updated */ }
     }
 
@@ -3242,20 +3247,24 @@ class PetalGeckoView @JvmOverloads constructor(
             }
             geckoView.capturePixels().then({ bitmap ->
                 if (bitmap != null) {
-                    val w = bitmap.width
-                    val h = bitmap.height
-                    val targetWidth = Math.min(w, 480)
-                    val targetHeight = Math.max(1, (h.toFloat() * targetWidth / w).toInt())
-                    val scaled = try {
-                        val s = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
-                        if (s !== bitmap && !bitmap.isRecycled) {
-                            bitmap.recycle()
+                    TabThumbnailCache.DISK.execute {
+                        val w = bitmap.width
+                        val h = bitmap.height
+                        val targetWidth = Math.min(w, 480)
+                        val targetHeight = Math.max(1, (h.toFloat() * targetWidth / w).toInt())
+                        val scaled = try {
+                            val s = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+                            if (s !== bitmap && !bitmap.isRecycled) {
+                                bitmap.recycle()
+                            }
+                            s
+                        } catch (_: Throwable) {
+                            bitmap
                         }
-                        s
-                    } catch (_: Throwable) {
-                        bitmap
+                        post {
+                            cachingConsumer(scaled)
+                        }
                     }
-                    cachingConsumer(scaled)
                 } else {
                     cachingConsumer(null)
                 }

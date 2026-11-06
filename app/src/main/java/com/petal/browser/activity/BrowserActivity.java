@@ -61,6 +61,7 @@ import android.text.TextWatcher;
 import com.petal.browser.compose.downloads.PetalDownloadBridge;
 import com.petal.browser.compose.home.PetalComposeBridge;
 import com.petal.browser.compose.home.PetalHomeActionHandler;
+import com.petal.browser.logger.PetalAppLogger;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
@@ -248,6 +249,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public ValueCallback<Uri[]> filePathCallback = null;
     public int statusBarTopInset = 0;
     public AlbumController currentAlbumController = null;
+    private boolean cameraPermissionRequested = false;
+    private static final int REQUEST_CODE_CAMERA_PERMISSION = 1;
+    private boolean restartPromptDismissedInSession = false;
+    private long lastOnPausePreviewCaptureTime = 0L;
 
     public AlbumController getCurrentAlbumController() {
         return currentAlbumController;
@@ -958,6 +963,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         com.petal.browser.account.PetalUserProfileManager.INSTANCE.init(this);
         com.petal.browser.account.mozilla.FxAccountManager.Companion.getInstance().initialize(this);
         PetalBackupManager.performAutoVersionBackup(this);
+        com.petal.browser.unit.PetalBrowserUtils.resetClearOnExitState();
 
         if (sp.getBoolean("sp_screenOn", false)) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (sp.getBoolean("sp_standard_restart", false)) sp.edit().putString("profile", "profileStandard").apply();
@@ -1294,6 +1300,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_CODE_CAMERA_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (sp != null) {
+                    sp.edit().remove("camera_permission_denied").remove("camera_permission_dont_ask_again").apply();
+                }
+            } else {
+                boolean showRationale = ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA);
+                if (sp != null) {
+                    if (!showRationale) {
+                        sp.edit().putBoolean("camera_permission_dont_ask_again", true)
+                                 .putBoolean("camera_permission_denied", true).apply();
+                    } else {
+                        sp.edit().putBoolean("camera_permission_denied", true).apply();
+                    }
+                }
+            }
+        }
         com.petal.browser.ui.components.PetalRuntimePermissionBridge.handlePermissionsResult(requestCode, permissions, grantResults);
         if (petalBrowserFeatures != null) {
             petalBrowserFeatures.onPermissionsResult(requestCode, permissions, grantResults);
@@ -1323,30 +1346,41 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             com.petal.browser.engine.gecko.PetalEngineStore.onAppResume(this);
             com.petal.browser.engine.gecko.PetalTabSuspender.checkAndSuspendInactiveTabs(this, currentAlbumController);
-        } catch (Throwable ignored) {}
-        if (sp.getBoolean("sp_camera", false)) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
+        } catch (Throwable t) {
+            PetalAppLogger.w(TAG, "Error in onResume engine resume or tab suspension", t);
+        }
+        if (sp != null && sp.getBoolean("sp_camera", false)) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                if (sp.getBoolean("camera_permission_denied", false) || sp.getBoolean("camera_permission_dont_ask_again", false)) {
+                    sp.edit().remove("camera_permission_denied").remove("camera_permission_dont_ask_again").apply();
+                }
+            } else {
+                boolean dontAskAgain = sp.getBoolean("camera_permission_dont_ask_again", false);
+                boolean previouslyDenied = sp.getBoolean("camera_permission_denied", false);
+                if (!cameraPermissionRequested && !previouslyDenied && !dontAskAgain) {
+                    cameraPermissionRequested = true;
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, REQUEST_CODE_CAMERA_PERMISSION);
+                }
             }
         }
-        if (sp.getInt("restart_changed", 1) == 1) {
+        if (sp != null && sp.getInt("restart_changed", 1) == 1) {
             triggerRebirth(context);
         }
-        if (sp.getBoolean("pdf_create", false)) {
+        if (sp != null && sp.getBoolean("pdf_create", false)) {
             sp.edit().putBoolean("pdf_create", false).apply();
             String text = getString(R.string.app_done) + ". " + getString(R.string.menu_download) +"?";
             com.petal.browser.view.PetalToast.show(context, text, com.petal.browser.view.PetalToast.LENGTH_SHORT, context.getString(R.string.app_ok), () -> showDownloads());
         }
         // Skip the first post-onCreate resume — dispatchIntent() already ran at the
         // end of onCreate() once all tabs were ready. Every subsequent resume (coming
-        // back from another app, screen-off, etc.) should still dispatch normally.
-        // (Widget actions no longer need special handling here — dispatchIntent()
-        // now defers them itself via contentFrame.post(), regardless of whether it
-        // was called from onCreate() or onNewIntent().)
+        // back from another app, screen-off, etc.) should only dispatch if there is an unhandled action.
         if (suppressResumeDispatch) {
             suppressResumeDispatch = false;
         } else {
-            dispatchIntent(getIntent());
+            Intent currentIntent = getIntent();
+            if (isActionDispatchable(currentIntent)) {
+                dispatchIntent(currentIntent);
+            }
         }
         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
         if (bottomNavContainer != null) {
@@ -1360,7 +1394,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         com.petal.browser.compose.splash.PetalSplashOverlay.dismiss(this, null);
         try {
             if (sp != null) sp.unregisterOnSharedPreferenceChangeListener(toolbarPrefsListener);
-        } catch (Throwable ignored) {}
+        } catch (Throwable t) {
+            PetalAppLogger.w(TAG, "Error unregistering preference listener in onDestroy", t);
+        }
         activeGeckoView = null;
         com.petal.browser.predictive.PetalLiveUnderlay.detach(liveUnderlayHost);
         try {
@@ -1368,7 +1404,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 try {
                     unbindService(mediaConnection);
                     isMediaBound = false;
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    PetalAppLogger.w(TAG, "Error unbinding media service in onDestroy", e);
+                }
             }
             NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
             if (notificationManager != null) {
@@ -1378,14 +1416,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // BrowserStore (AutoSave then deletes the saved session) and deletes its thumbnail.
             BrowserContainer.releaseAll();
             if (sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
-                PetalBrowserUtils.clearOnExit(this);
+                com.petal.browser.unit.PetalBrowserUtils.clearOnExit(this, isFinishing());
             }
             if (sp != null && sp.getBoolean("sp_backup_quit", false)) {
-                PetalBackupManager.backupData(activity, 0);
+                com.petal.browser.unit.PetalBackupManager.backupData(getApplicationContext(), 0);
+            }
+            if (isFinishing()) {
+                com.petal.browser.unit.PetalBrowserUtils.waitForExitCleanupCompletion(1500);
             }
             com.petal.browser.media.BrowserMediaDelegate.unregisterPipReceiver(this);
         } catch (Exception e) {
-            Log.e(TAG, "Error in BrowserActivity.onDestroy", e);
+            PetalAppLogger.w(TAG, "Error in BrowserActivity.onDestroy", e);
         }
         super.onDestroy();
     }
@@ -1400,14 +1441,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // finishing so a clear-on-exit wipe below is never undone by a fresh save.
             if (!isFinishing()) saveOpenedTabs();
         } catch (Exception e) {
-            Log.e(TAG, "Error saving tab session in onStop", e);
+            PetalAppLogger.w(TAG, "Error saving tab session in onStop", e);
         }
         try {
             if (isFinishing() && sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
-                PetalBrowserUtils.clearOnExit(this);
+                com.petal.browser.unit.PetalBrowserUtils.clearOnExit(this, false);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error in BrowserActivity.onStop", e);
+            PetalAppLogger.w(TAG, "Error in BrowserActivity.onStop", e);
         }
         super.onStop();
     }
@@ -1422,7 +1463,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 com.petal.browser.unit.TabThumbnailCache.clearMemory();
             }
         } catch (Throwable t) {
-            Log.d(TAG, "Error in onTrimMemory: " + t.getMessage());
+            PetalAppLogger.w(TAG, "Error in onTrimMemory: " + t.getMessage(), t);
         }
         // Firefox-grade tab suspension under memory pressure:
         // Levels RUNNING_LOW (10), RUNNING_CRITICAL (15), and COMPLETE (80)
@@ -1433,14 +1474,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // suspending the tab the user is about to switch to (minActiveTabs=1 minimum).
                 com.petal.browser.engine.gecko.PetalTabSuspender.trimBackgroundTabs(this, currentAlbumController, 1);
             } catch (Exception e) {
-                Log.e(TAG, "Error trimming background tabs on critical memory", e);
+                PetalAppLogger.w(TAG, "Error trimming background tabs on critical memory", e);
             }
         } else if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             try {
                 // Moderate memory pressure: preserve foreground tab + top 2 active tabs
                 com.petal.browser.engine.gecko.PetalTabSuspender.trimBackgroundTabs(this, currentAlbumController, 2);
             } catch (Exception e) {
-                Log.e(TAG, "Error trimming background tabs on low memory", e);
+                PetalAppLogger.w(TAG, "Error trimming background tabs on low memory", e);
             }
         }
     }
@@ -7127,6 +7168,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    public boolean isActionDispatchable(Intent intent) {
+        if (intent == null) return false;
+        String action = intent.getAction();
+        if (action == null || action.isEmpty() || Intent.ACTION_MAIN.equals(action)) {
+            return false;
+        }
+        return true;
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     public void dispatchIntent(Intent intent) {
         if (intent == null) return;
@@ -7136,6 +7186,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // screen instead of just reopening to whatever was last on screen.
         if (intent.getBooleanExtra("open_downloads", false)) {
             intent.removeExtra("open_downloads");
+            setIntent(new Intent(Intent.ACTION_MAIN));
             showDownloads();
             return;
         }
@@ -7155,6 +7206,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             String updateVer = intent.getStringExtra("update_version");
             String updateUrl = intent.getStringExtra("update_url");
             intent.setAction("");
+            setIntent(new Intent(Intent.ACTION_MAIN));
             if (updateVer != null && updateUrl != null) {
                 com.petal.browser.ui.components.PetalUpdateSheetBridge.showUpdateSheet(
                     this,
@@ -7172,6 +7224,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (com.petal.browser.compose.incognito.PetalIncognitoSessionManager.ACTION_CLOSE_INCOGNITO.equals(action)) {
             closeAllIncognitoTabs();
             intent.setAction("");
+            setIntent(new Intent(Intent.ACTION_MAIN));
             return;
         }
         String url = intent.getStringExtra(Intent.EXTRA_TEXT);
@@ -7203,6 +7256,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     cctIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(cctIntent);
                     getIntent().setAction("");
+                    setIntent(new Intent(Intent.ACTION_MAIN));
                     finish();
                     return;
                 }
@@ -7545,6 +7599,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             };
             runOrDeferPendingWidgetAction();
         }
+        setIntent(new Intent(Intent.ACTION_MAIN));
     }
 
     /**
@@ -7997,18 +8052,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void triggerRebirth(Context context) {
-        sp.edit().putInt("restart_changed", 0).putBoolean("restoreOnRestart", true).apply();
-        saveOpenedTabs();
-        com.petal.browser.ui.components.PetalConfirmSheetBridge.showRestartConfirmation(this, () -> {
-            PackageManager packageManager = context.getPackageManager();
-            Intent intent = packageManager.getLaunchIntentForPackage(context.getPackageName());
-            if (intent != null) {
-                ComponentName componentName = intent.getComponent();
-                Intent mainIntent = Intent.makeRestartActivityTask(componentName);
-                context.startActivity(mainIntent);
-                System.exit(0);
+        if (restartPromptDismissedInSession) {
+            return;
+        }
+        com.petal.browser.ui.components.PetalConfirmSheetBridge.showRestartConfirmation(
+            this,
+            () -> {
+                if (sp != null) {
+                    sp.edit().putInt("restart_changed", 0).putBoolean("restoreOnRestart", true).apply();
+                }
+                saveOpenedTabs();
+                com.petal.browser.flags.PetalRestartManager.restartApp(this);
+            },
+            () -> {
+                restartPromptDismissedInSession = true;
             }
-        });
+        );
     }
 
     public String resolveCurrentTabUrl() {
@@ -8243,18 +8302,27 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         super.onPause();
         try {
+            long now = android.os.SystemClock.uptimeMillis();
+            boolean allowCapture = (now - lastOnPausePreviewCaptureTime > 1500L);
+            if (allowCapture) {
+                lastOnPausePreviewCaptureTime = now;
+            }
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.view.PetalGeckoView activeGecko = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                activeGecko.updatePreviewCache(true);
+                if (allowCapture) {
+                    activeGecko.updatePreviewCache(false);
+                }
                 activeGecko.onPause();
             } else if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                 com.petal.browser.browser.PetalTabViewController activeController = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
-                activeController.updatePreviewCache(true);
+                if (allowCapture) {
+                    activeController.updatePreviewCache(false);
+                }
             }
             saveOpenedTabs();
             com.petal.browser.engine.gecko.PetalEngineStore.onAppPause(this);
         } catch (Exception e) {
-            Log.e(TAG, "Error saving tab session in onPause", e);
+            PetalAppLogger.w(TAG, "Error saving tab session in onPause", e);
         }
     }
 
@@ -8266,7 +8334,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.engine.gecko.PetalGeckoRuntime.onLowMemory(this);
             com.petal.browser.unit.TabThumbnailCache.clearMemory();
         } catch (Throwable t) {
-            Log.d(TAG, "Error in onLowMemory: " + t.getMessage());
+            PetalAppLogger.w(TAG, "Error in onLowMemory: " + t.getMessage(), t);
         }
     }
 }

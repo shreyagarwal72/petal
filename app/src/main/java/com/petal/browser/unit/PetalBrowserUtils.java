@@ -257,7 +257,82 @@ public class PetalBrowserUtils {
         action.close();
     }
 
+    private static final java.util.concurrent.atomic.AtomicBoolean hasClearedOnExit = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private static final java.util.concurrent.ExecutorService EXIT_EXECUTOR = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "PetalExitWorker");
+        t.setPriority(Thread.NORM_PRIORITY);
+        return t;
+    });
+    private static volatile java.util.concurrent.Future<?> exitWorkFuture = null;
+
+    public static void resetClearOnExitState() {
+        hasClearedOnExit.set(false);
+        exitWorkFuture = null;
+    }
+
+    public static void waitForExitCleanupCompletion(long timeoutMs) {
+        java.util.concurrent.Future<?> future = exitWorkFuture;
+        if (future != null && !future.isDone()) {
+            try {
+                future.get(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (Exception ignored) {}
+        }
+    }
+
     public static void clearOnExit(Context context) {
+        clearOnExit(context, false);
+    }
+
+    public static void clearOnExit(Context context, boolean waitForCompletion) {
+        if (context == null) return;
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+        boolean clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false);
+        if (!clearQuit) return;
+
+        if (!hasClearedOnExit.compareAndSet(false, true)) {
+            // Already scheduled or completed
+            if (waitForCompletion && exitWorkFuture != null) {
+                try {
+                    exitWorkFuture.get(1500, java.util.concurrent.TimeUnit.MILLISECONDS);
+                } catch (Exception ignored) {}
+            }
+            return;
+        }
+
+        final Context appContext = context.getApplicationContext();
+
+        // Enqueue WorkManager job as insurance in case the process is killed before the background thread finishes
+        try {
+            androidx.work.OneTimeWorkRequest workRequest = new androidx.work.OneTimeWorkRequest.Builder(PetalExitWorkWorker.class).build();
+            androidx.work.WorkManager.getInstance(appContext).enqueueUniqueWork(
+                PetalExitWorkWorker.WORK_NAME,
+                androidx.work.ExistingWorkPolicy.KEEP,
+                workRequest
+            );
+        } catch (Throwable t) {
+            com.petal.browser.logger.PetalAppLogger.w("PetalBrowserUtils", "Failed to schedule exit work with WorkManager", t);
+        }
+
+        Runnable task = () -> {
+            try {
+                performClearOnExitInternal(appContext);
+            } catch (Throwable t) {
+                com.petal.browser.logger.PetalAppLogger.w("PetalBrowserUtils", "Error during clearOnExit background task", t);
+            }
+        };
+
+        try {
+            exitWorkFuture = EXIT_EXECUTOR.submit(task);
+            if (waitForCompletion) {
+                exitWorkFuture.get(1500, java.util.concurrent.TimeUnit.MILLISECONDS);
+            }
+        } catch (Exception e) {
+            com.petal.browser.logger.PetalAppLogger.w("PetalBrowserUtils", "Exit executor rejected task, running inline", e);
+            task.run();
+        }
+    }
+
+    public static void performClearOnExitInternal(Context context) {
         if (context == null) return;
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         boolean clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false);
@@ -286,7 +361,7 @@ public class PetalBrowserUtils {
             try {
                 CacheManager.clearAllCache(context, null);
             } catch (Exception exception) {
-                Log.w("browser", "Error clearing cache on exit", exception);
+                com.petal.browser.logger.PetalAppLogger.w("browser", "Error clearing cache on exit", exception);
             }
         }
 

@@ -1177,9 +1177,14 @@ class PetalTabViewController private constructor(
 
     fun getCachedPreviewBitmap(): Bitmap? = TabThumbnailCache.getMemoryOnly(boundTabId, isIncognito())
 
+    private var lastPreviewCaptureTime = 0L
+
     @JvmOverloads
     fun updatePreviewCache(force: Boolean = false) {
         if (!force && capturedPreviewRevision == previewRevision) return
+        val now = android.os.SystemClock.uptimeMillis()
+        if (!force && now - lastPreviewCaptureTime < 1500L) return
+        lastPreviewCaptureTime = now
         capturePreviewBitmapAsync { }
     }
 
@@ -1226,27 +1231,40 @@ class PetalTabViewController private constructor(
         }
         try {
             geckoView.capturePixels().then({ bitmap: Bitmap? ->
-                val current = key == boundTabId
-                var stored = false
-                var storedBitmap: Bitmap? = null
-                if (bitmap != null && current) {
-                    val w = bitmap.width
-                    val h = bitmap.height
-                    val targetWidth = Math.min(w, 480)
-                    val targetHeight = Math.max(1, (h.toFloat() * targetWidth / w).toInt())
-                    val scaled = try {
-                        val s = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
-                        if (s !== bitmap && !bitmap.isRecycled) {
-                            bitmap.recycle()
-                        }
-                        s
-                    } catch (_: Throwable) {
-                        bitmap
-                    }
-                    stored = TabThumbnailCache.put(key, scaled, privateTab, forceAccept || hasContentfulPaint())
-                    if (stored) { capturedPreviewRevision = revision; storedBitmap = scaled } else schedulePreviewRetry()
+                if (bitmap == null) {
+                    callback(null)
+                    return@then org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
                 }
-                callback(if (current && stored) storedBitmap else null)
+                TabThumbnailCache.DISK.execute {
+                    val current = key == boundTabId
+                    var stored = false
+                    var storedBitmap: Bitmap? = null
+                    if (current) {
+                        val w = bitmap.width
+                        val h = bitmap.height
+                        val targetWidth = Math.min(w, 480)
+                        val targetHeight = Math.max(1, (h.toFloat() * targetWidth / w).toInt())
+                        val scaled = try {
+                            val s = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+                            if (s !== bitmap && !bitmap.isRecycled) {
+                                bitmap.recycle()
+                            }
+                            s
+                        } catch (_: Throwable) {
+                            bitmap
+                        }
+                        stored = TabThumbnailCache.put(key, scaled, privateTab, forceAccept || hasContentfulPaint())
+                        if (stored) {
+                            capturedPreviewRevision = revision
+                            storedBitmap = scaled
+                        } else {
+                            post { schedulePreviewRetry() }
+                        }
+                    }
+                    post {
+                        callback(if (current && stored) storedBitmap else null)
+                    }
+                }
                 org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
             }, {
                 callback(null)

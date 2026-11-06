@@ -229,6 +229,34 @@ object PetalAppLogger {
     }
 
     @JvmStatic
+    @JvmOverloads
+    fun w(tag: String, message: String, throwable: Throwable? = null) {
+        val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
+        val sw = StringWriter()
+        throwable?.printStackTrace(PrintWriter(sw))
+        val stack = sw.toString()
+        val entry = "[$timestamp] [WARN] [$tag] $message${if (stack.isNotBlank()) "\n$stack" else ""}"
+        Log.w(tag, message, throwable)
+        logBuffer.add(entry)
+        while (logBuffer.size > MAX_IN_MEMORY_LOGS) {
+            logBuffer.poll()
+        }
+    }
+
+    @JvmStatic
+    @JvmOverloads
+    fun d(tag: String, message: String, throwable: Throwable? = null) {
+        val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
+        val entry = "[$timestamp] [DEBUG] [$tag] $message"
+        Log.d(tag, message, throwable)
+        logBuffer.add(entry)
+        while (logBuffer.size > MAX_IN_MEMORY_LOGS) {
+            logBuffer.poll()
+        }
+    }
+
+    @JvmStatic
+    @JvmOverloads
     fun e(tag: String, message: String, throwable: Throwable? = null) {
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
         val sw = StringWriter()

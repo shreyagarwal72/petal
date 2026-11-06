@@ -1125,6 +1125,11 @@ public class PetalBackupManager {
         backupToJson(context, true, true, true, true);
     }
 
+    public static void backupData(Context context, int i) {
+        if (context == null) return;
+        backupToDownloadManager(context.getApplicationContext(), true, true, true, true, true, true);
+    }
+
     public static void performAutoVersionBackup(Context context) {
         if (context == null) return;
         ExecutorService executor = Executors.newSingleThreadExecutor();
