@@ -72,7 +72,7 @@ class PetalAlertDialogBuilder : MaterialAlertDialogBuilder {
         @JvmStatic
         fun styleContent(dialog: AlertDialog) {
             val root = dialog.window?.decorView ?: return
-            val primary = color(root, com.google.android.material.R.attr.colorPrimary, 0xFFB81D63.toInt())
+            val primary = color(root, androidx.appcompat.R.attr.colorPrimary, 0xFFB81D63.toInt())
             val onPrimary = color(root, com.google.android.material.R.attr.colorOnPrimary, 0xFFFFFFFF.toInt())
             val tonal = color(root, com.google.android.material.R.attr.colorSecondaryContainer, primary)
             val onTonal = color(root, com.google.android.material.R.attr.colorOnSecondaryContainer, onPrimary)
