@@ -1138,6 +1138,8 @@ class PetalGeckoView @JvmOverloads constructor(
     @Volatile
     private var latestGeckoState: GeckoSession.SessionState? = null
 
+    fun getSessionState(): GeckoSession.SessionState? = latestGeckoState
+
     fun captureEngineState(): String? {
         if (isIncognito) return null
         val state = latestGeckoState ?: return null

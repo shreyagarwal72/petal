@@ -391,7 +391,6 @@ public class PetalBrowserUtils {
             isPerformingClear.set(false);
         }
     }
-    }
 
     public static void clearBrowserData(Context context) {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);

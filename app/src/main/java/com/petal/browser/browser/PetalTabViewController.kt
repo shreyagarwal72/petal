@@ -1411,6 +1411,8 @@ class PetalTabViewController private constructor(
         }
     }
 
+    fun getSessionState(): org.mozilla.geckoview.GeckoSession.SessionState? = latestGeckoState
+
     /**
      * Serialized GeckoView session state (history stack, scroll, zoom, form data) for persistence,
      * or null when none is available yet or the tab is private (private tabs are never persisted).

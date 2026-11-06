@@ -69,6 +69,19 @@ object PetalSessionRestoreManager {
         val tabGroupColorHex: String? = null
     )
 
+    fun wrapGeckoState(actualState: org.mozilla.geckoview.GeckoSession.SessionState?): mozilla.components.concept.engine.EngineSessionState? {
+        if (actualState == null) return null
+        return try {
+            val cls = Class.forName("mozilla.components.browser.engine.gecko.GeckoEngineSessionState")
+            val ctor = cls.getDeclaredConstructor(org.mozilla.geckoview.GeckoSession.SessionState::class.java)
+            ctor.isAccessible = true
+            ctor.newInstance(actualState) as? mozilla.components.concept.engine.EngineSessionState
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to wrap GeckoSession.SessionState into GeckoEngineSessionState: ${t.message}")
+            null
+        }
+    }
+
     /**
      * Flushes open tabs state into BrowserStore (including full engineSessionState history stacks
      * and active indices) and writes the snapshot to disk via SessionStorage asynchronously.
@@ -93,8 +106,7 @@ object PetalSessionRestoreManager {
                         val tabId = controller.getTabId() ?: continue
                         if (isStopping) {
                             try {
-                                val tab = store.state.tabs.firstOrNull { it.id == tabId }
-                                val engineSessionState = tab?.engineState?.engineSession?.saveState()
+                                val engineSessionState = wrapGeckoState(controller.getSessionState())
                                 if (engineSessionState != null) {
                                     store.dispatch(EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState))
                                 }
@@ -115,8 +127,7 @@ object PetalSessionRestoreManager {
                         val tabId = controller.getTabId()
                         if (isStopping) {
                             try {
-                                val tab = store.state.tabs.firstOrNull { it.id == tabId }
-                                val engineSessionState = tab?.engineState?.engineSession?.saveState()
+                                val engineSessionState = wrapGeckoState(controller.getSessionState())
                                 if (engineSessionState != null) {
                                     store.dispatch(EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState))
                                 }
