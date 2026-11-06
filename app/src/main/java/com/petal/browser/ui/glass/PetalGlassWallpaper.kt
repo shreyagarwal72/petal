@@ -334,7 +334,6 @@ fun Modifier.petalGlassPanel(
 ): Modifier {
     val tuning = rememberRefractionTuning(refractionOverride, refractionWidthOverride)
     val wallpaper = LocalPetalGlassWallpaper.current ?: return this
-    if (!wallpaper.ready) return this
     val place = remember { GlassPanelPlace() }
     val glass = rememberGraphicsLayer()
     val dark = MaterialTheme.colorScheme.background.luminance() < .5f
@@ -390,7 +389,7 @@ fun Modifier.petalGlassPanel(
                     val stored = place.origin // read so a layout move (scroll) redraws the panel
                     val shift = glassShift(wallpaper, place.coords, stored)
                     clipPath(outline) {
-                        if (wallpaper.hasRecorded) {
+                        if (wallpaper.ready && wallpaper.hasRecorded) {
                             try {
                                 if (effect != null && full.width > 0 && full.height > 0) {
                                     glass.record(full) { translate(shift.x + pad, shift.y + pad) { drawLayer(wallpaper.frosted) } }

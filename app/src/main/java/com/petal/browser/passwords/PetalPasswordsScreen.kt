@@ -69,7 +69,8 @@ fun PetalPasswordsScreen(
     val context = LocalContext.current
     val haptic = remember { PetalHapticEngine.getInstance(context) }
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val wallpaper = rememberPetalGlassWallpaper()
+    val ambientWallpaper = LocalPetalGlassWallpaper.current
+    val wallpaper = ambientWallpaper ?: rememberPetalGlassWallpaper()
 
     var credentials by remember { mutableStateOf(emptyList<PetalCredential>()) }
     var neverSaveDomains by remember { mutableStateOf(emptySet<String>()) }
@@ -227,7 +228,6 @@ fun PetalPasswordsScreen(
                 pageSeed = "petal_passwords_screen",
                 modifier = Modifier
                     .matchParentSize()
-                    .captureGlassWallpaper(wallpaper)
             )
 
             Column(modifier = Modifier.fillMaxSize()) {

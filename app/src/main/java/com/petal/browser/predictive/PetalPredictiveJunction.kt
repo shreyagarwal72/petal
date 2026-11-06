@@ -430,6 +430,7 @@ fun PetalScreenWrapper(
      * draws no background of its own and still wants to refract the shared one.
      */
     isolateGlassWallpaper: Boolean = true,
+    customGlassWallpaper: com.petal.browser.ui.glass.PetalGlassWallpaper? = null,
     content: @Composable () -> Unit,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -457,8 +458,10 @@ fun PetalScreenWrapper(
 
     val outerGlassWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
     val ownGlassWallpaper =
-        if (isolateGlassWallpaper && outerGlassWallpaper != null) com.petal.browser.ui.glass.rememberPetalGlassWallpaper() else null
-    val pageGlassWallpaper = ownGlassWallpaper ?: outerGlassWallpaper
+        if (customGlassWallpaper != null) null
+        else if (isolateGlassWallpaper && outerGlassWallpaper != null) com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+        else null
+    val pageGlassWallpaper = customGlassWallpaper ?: ownGlassWallpaper ?: outerGlassWallpaper
 
     val myEntry = lifecycleOwner as? NavBackStackEntry
     val previousEntryId = navController?.previousBackStackEntry?.id
@@ -526,6 +529,9 @@ fun PetalScreenWrapper(
             frame.behindBlurDp.dp
         } else if (transitionBlurRadiusDp > 0.dp) {
             transitionBlurRadiusDp
+        } else if (behindFraction != null) {
+            // Item 4: Don't blur behind state during push/pop transition; prefer scrim/dim.
+            0.dp
         } else {
             24.dp
         }
@@ -652,7 +658,8 @@ fun PetalScreenWrapper(
                                 translationY = pose.translationY * fr
                                 alpha = 1f + (pose.alpha - 1f) * fr
                                 restCorner = pose.cornerDp * fr
-                                blurDp = rest.behindBlurDp * fr
+                                // Item 4: Scrim/dim only for behind state during transition, no blur over glass panels
+                                blurDp = 0f
                                 fractionActive = fr > 0.001f
                             } else {
                                 alpha = 1f

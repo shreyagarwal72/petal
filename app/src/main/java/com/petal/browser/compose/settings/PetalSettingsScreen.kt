@@ -211,8 +211,10 @@ fun PetalSettingsScreen(
     val push = remember(initialCategory) {
         Animatable(if (initialCategory != SettingsCategory.OVERVIEW) 1f else 0f)
     }
-    val drilled = pageCategory != null
-    val behindFraction: () -> Float = remember(push) { { if (pageCategory != null) push.value else 0f } }
+    // Keep category wallpaper isolated and pre-warmed for category pages
+    val categoryWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+    val drilled = pageCategory != null || push.value > 0.001f
+    val behindFraction: () -> Float = remember(push) { { push.value } }
 
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
     val isZenithMode = remember(junctionPredictiveEnabled, pageCategory) {
@@ -231,7 +233,13 @@ fun PetalSettingsScreen(
         if (!wasOpen) {
             scope.launch {
                 push.snapTo(0f)
-                MotionGate.withMotion("settings_category_push") {
+                // (1) Pre-warm category wallpaper: gate start of push animation until ready and recorded (or ~100ms timeout)
+                val start = android.os.SystemClock.uptimeMillis()
+                while (android.os.SystemClock.uptimeMillis() - start < 100L) {
+                    if (categoryWallpaper.ready && categoryWallpaper.hasRecorded) break
+                    kotlinx.coroutines.delay(16)
+                }
+                MotionGate.withMotionSuspend("settings_category_push") {
                     push.animateTo(1f, PetalSpring.containerMorph())
                 }
             }
@@ -242,11 +250,13 @@ fun PetalSettingsScreen(
     fun closeCategory() {
         activeHeaderCategory = null
         scope.launch {
-            MotionGate.withMotion("settings_category_pop") {
+            MotionGate.withMotionSuspend("settings_category_pop") {
                 push.animateTo(0f, PetalSpring.containerMorph())
             }
             pageCategory = null
             currentHighlightId = null
+            categoryWallpaper.ready = false
+            categoryWallpaper.hasRecorded = false
         }
     }
 
@@ -258,6 +268,8 @@ fun PetalSettingsScreen(
                 activeHeaderCategory = null
                 pageCategory = null
                 currentHighlightId = null
+                categoryWallpaper.ready = false
+                categoryWallpaper.hasRecorded = false
                 scope.launch { push.snapTo(0f) }
             } else {
                 onBackPress()
@@ -295,6 +307,7 @@ fun PetalSettingsScreen(
                 if (shown != null) {
                     PetalScreenWrapper(
                         isBehind = false,
+                        customGlassWallpaper = categoryWallpaper,
                         modifier = Modifier
                             .fillMaxSize()
                             .graphicsLayer {
@@ -303,7 +316,10 @@ fun PetalSettingsScreen(
                                 scaleX = scale
                                 scaleY = scale
                                 translationX = (1f - e) * size.width * 0.25f
-                                alpha = (e * 2.2f).coerceIn(0f, 1f)
+                                // Item 1 & 2: Pre-warm gate & smooth 1.4f alpha ramp to eliminate hard cut
+                                val isPrewarmed = categoryWallpaper.ready && categoryWallpaper.hasRecorded
+                                val baseAlpha = if (isPrewarmed || e > 0.01f) (e * 1.4f).coerceIn(0f, 1f) else 0f
+                                alpha = baseAlpha
                             }
                     ) {
                         PetalSettingsAnimatedContent(targetKey = shown) { category ->

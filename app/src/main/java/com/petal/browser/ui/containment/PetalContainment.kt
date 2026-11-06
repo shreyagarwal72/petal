@@ -940,6 +940,7 @@ fun PetalGroupListRow(
         modifier = modifier
             .fillMaxWidth()
             .scale(scale)
+            .clip(shape)
             .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true)
             .combinedClickable(interactionSource = source, indication = ripple(), onClick = onClick, onLongClick = onLongClick?.let { { haptics.performHapticFeedback(HapticFeedbackType.LongPress); it() } })
     ) {

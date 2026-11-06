@@ -174,7 +174,8 @@ fun PrivacySettingsScreenContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val wallpaper = rememberPetalGlassWallpaper()
+    val ambientWallpaper = LocalPetalGlassWallpaper.current
+    val wallpaper = ambientWallpaper ?: rememberPetalGlassWallpaper()
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     var showPasswordsScreen by remember { mutableStateOf(false) }
     var showAdBlockSettings by remember { mutableStateOf(false) }
@@ -279,7 +280,6 @@ fun PrivacySettingsScreenContent(
                 pageSeed = "privacy_settings",
                 modifier = Modifier
                     .matchParentSize()
-                    .captureGlassWallpaper(wallpaper)
             )
 
             Column(modifier = Modifier.fillMaxSize()) {

@@ -109,7 +109,8 @@ fun PetalFlagsHubScreen(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
-    val wallpaper = rememberPetalGlassWallpaper()
+    val ambientWallpaper = LocalPetalGlassWallpaper.current
+    val wallpaper = ambientWallpaper ?: rememberPetalGlassWallpaper()
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = rememberGlassSheen(isGlass)
 
@@ -144,7 +145,6 @@ fun PetalFlagsHubScreen(
                 pageSeed = "petal_flags_hub",
                 modifier = Modifier
                     .matchParentSize()
-                    .captureGlassWallpaper(wallpaper)
             )
 
             Column(
