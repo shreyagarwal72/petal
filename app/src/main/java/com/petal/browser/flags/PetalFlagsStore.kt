@@ -37,7 +37,7 @@ object PetalFlagsStore {
         if (state == FlagState.ENABLED) return true
         if (state == FlagState.DISABLED) return false
         val flag = PetalFlagsRegistry.flags.find { it.id == flagId }
-        return flag?.defaultValue == FlagState.ENABLED
+        return flag?.defaultState == FlagState.ENABLED
     }
 
     fun getFlagState(context: Context, flagId: String): FlagState {

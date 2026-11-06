@@ -20,8 +20,8 @@ import java.util.concurrent.TimeUnit
 import org.mozilla.geckoview.GeckoRuntime
 import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.EngineSession
-import mozilla.components.concept.engine.error.ErrorType
 import mozilla.components.concept.engine.request.RequestInterceptor
+import mozilla.components.concept.engine.request.RequestInterceptor.ErrorType
 
 /**
  * PetalEngineStore
