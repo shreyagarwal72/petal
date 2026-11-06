@@ -10,6 +10,7 @@ import androidx.annotation.MainThread
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.petal.browser.R
 import com.petal.browser.unit.TabThumbnailCache
 import com.petal.browser.engine.gecko.PetalEngineStore
 import mozilla.components.browser.state.action.ContentAction

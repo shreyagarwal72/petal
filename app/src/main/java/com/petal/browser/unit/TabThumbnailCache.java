@@ -50,7 +50,7 @@ public final class TabThumbnailCache {
     private static final int TRIM_EVERY_N_WRITES = 12;
     private static final AtomicInteger WRITES_SINCE_TRIM = new AtomicInteger();
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
-    private static final ExecutorService DISK = Executors.newSingleThreadExecutor(runnable -> {
+    public static final ExecutorService DISK = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "PetalThumbnailDisk");
         thread.setDaemon(true);
         return thread;

@@ -13,7 +13,6 @@ import com.petal.browser.engine.gecko.PetalEngineStore
 import com.petal.browser.view.PetalGeckoView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import mozilla.components.browser.engine.gecko.GeckoEngineSessionState
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.RestoreCompleteAction
@@ -81,15 +80,14 @@ object PetalSessionRestoreManager {
                 when (controller) {
                     is PetalTabViewController -> {
                         val tabId = controller.getTabId() ?: continue
-                        val gs = controller.getGeckoSession()
-                        if (gs != null && gs.isOpen) {
-                            try {
-                                val sessionState = gs.saveState()
-                                val engineSessionState = GeckoEngineSessionState(sessionState)
+                        try {
+                            val tab = store.state.tabs.firstOrNull { it.id == tabId }
+                            val engineSessionState = tab?.engineState?.engineSession?.saveState()
+                            if (engineSessionState != null) {
                                 store.dispatch(EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState))
-                            } catch (t: Throwable) {
-                                Log.w(TAG, "Failed to capture engine state for tab $tabId: ${t.message}")
                             }
+                        } catch (t: Throwable) {
+                            Log.w(TAG, "Failed to capture engine state for tab $tabId: ${t.message}")
                         }
                         val url = controller.url
                         if (url.isNotBlank() && !isHomeUrl(url) && !url.equals("about:blank", ignoreCase = true)) {
@@ -102,15 +100,14 @@ object PetalSessionRestoreManager {
                     }
                     is PetalGeckoView -> {
                         val tabId = controller.getTabId()
-                        val gs = controller.session
-                        if (gs != null && gs.isOpen) {
-                            try {
-                                val sessionState = gs.saveState()
-                                val engineSessionState = GeckoEngineSessionState(sessionState)
+                        try {
+                            val tab = store.state.tabs.firstOrNull { it.id == tabId }
+                            val engineSessionState = tab?.engineState?.engineSession?.saveState()
+                            if (engineSessionState != null) {
                                 store.dispatch(EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState))
-                            } catch (t: Throwable) {
-                                Log.w(TAG, "Failed to capture engine state for tab $tabId: ${t.message}")
                             }
+                        } catch (t: Throwable) {
+                            Log.w(TAG, "Failed to capture engine state for tab $tabId: ${t.message}")
                         }
                         val url = controller.url
                         if (url.isNotBlank() && !isHomeUrl(url) && !url.equals("about:blank", ignoreCase = true)) {

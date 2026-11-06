@@ -254,11 +254,15 @@ object PetalConfirmSheetBridge {
     }
 
     @JvmStatic
-    @JvmOverloads
+    fun showRestartConfirmation(activity: ComponentActivity, onConfirm: Runnable) {
+        showRestartConfirmation(activity, onConfirm, null)
+    }
+
+    @JvmStatic
     fun showRestartConfirmation(
         activity: ComponentActivity,
         onConfirm: Runnable,
-        onCancel: Runnable? = null
+        onCancel: Runnable?
     ) {
         showConfirmSheet(
             activity = activity,

@@ -83,16 +83,15 @@ object PetalTabSuspender {
 
                 try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
                 try {
-                    val gs = controller.session
-                    if (gs != null && gs.isOpen) {
-                        val sessionState = gs.saveState()
-                        val engineSessionState = mozilla.components.browser.engine.gecko.GeckoEngineSessionState(sessionState)
+                    val tab = PetalEngineStore.getStore(context).state.tabs.firstOrNull { it.id == tabId }
+                    val engineSessionState = tab?.engineState?.engineSession?.saveState()
+                    if (engineSessionState != null) {
                         PetalEngineStore.dispatch(
                             EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState)
                         )
                     }
                 } catch (t: Throwable) {
-                    Log.w(TAG, "Error saving GeckoSession state before suspension: ${t.message}")
+                    Log.w(TAG, "Error saving EngineSession state before suspension: ${t.message}")
                 }
                 try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
 
@@ -119,16 +118,15 @@ object PetalTabSuspender {
 
                 try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
                 try {
-                    val gs = controller.getGeckoSession()
-                    if (gs != null && gs.isOpen) {
-                        val sessionState = gs.saveState()
-                        val engineSessionState = mozilla.components.browser.engine.gecko.GeckoEngineSessionState(sessionState)
+                    val tab = PetalEngineStore.getStore(context).state.tabs.firstOrNull { it.id == tabId }
+                    val engineSessionState = tab?.engineState?.engineSession?.saveState()
+                    if (engineSessionState != null) {
                         PetalEngineStore.dispatch(
                             EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState)
                         )
                     }
                 } catch (t: Throwable) {
-                    Log.w(TAG, "Error saving GeckoSession state before suspension: ${t.message}")
+                    Log.w(TAG, "Error saving EngineSession state before suspension: ${t.message}")
                 }
                 try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
 
