@@ -66,12 +66,40 @@ public class PetalTabRegistry {
         return count;
     }
 
+    /**
+     * Permanently closes every tab: each controller's destroy() removes its tab from the
+     * BrowserStore and deletes its thumbnail. Only for an explicit "close all tabs".
+     * Activity teardown must use {@link #releaseAll()} instead.
+     */
     public synchronized static void clear() {
         List<AlbumController> copy = new ArrayList<>(list);
         list.clear();
         for (AlbumController albumController : copy) {
             if (albumController != null) {
                 albumController.destroy();
+            }
+        }
+    }
+
+    /**
+     * Drops only the views (Activity teardown / recreation). The tabs themselves stay in the
+     * BrowserStore, so Mozilla's AutoSave keeps the saved session and the tab thumbnails stay
+     * on disk. This mirrors Fenix: tabs are removed only when the user closes them, never
+     * because a view was destroyed.
+     */
+    public synchronized static void releaseAll() {
+        List<AlbumController> copy = new ArrayList<>(list);
+        list.clear();
+        for (AlbumController albumController : copy) {
+            if (albumController == null) continue;
+            try {
+                if (albumController instanceof PetalTabViewController) {
+                    ((PetalTabViewController) albumController).release();
+                } else if (!(albumController instanceof PlaceholderAlbumController)) {
+                    albumController.destroy();
+                }
+            } catch (Throwable ignored) {
+                // A failing view teardown must never abort the rest of the release.
             }
         }
     }

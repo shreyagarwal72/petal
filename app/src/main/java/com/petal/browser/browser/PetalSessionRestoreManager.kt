@@ -262,6 +262,14 @@ object PetalSessionRestoreManager {
                     )
                 )
                 PetalEngineStore.markRestoreComplete(activity)
+                // Thumbnails live exactly as long as their tab: drop files of tabs that no longer
+                // exist (closed while the process was dead, crashes). Safe here: no tab has produced
+                // a new thumbnail yet, and the keep-list is the restored tab list.
+                try {
+                    com.petal.browser.unit.TabThumbnailCache.retainOnly(
+                        store.state.tabs.filter { !it.content.private }.map { it.id }
+                    )
+                } catch (_: Throwable) {}
                 true
             } else {
                 Log.i(TAG, "No recoverable tabs found in SessionStorage")

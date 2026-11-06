@@ -98,9 +98,9 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
                 // the existing Petal tab/session UI as the source of truth.
                 try {
                     com.petal.browser.engine.gecko.PetalEngineStore.getSessionStorage(this)
-                    com.petal.browser.engine.gecko.PetalEngineStore.getAutoSave(this)
-                        .whenGoingToBackground()
-                        .whenSessionsChange()
+                    // Fenix's three triggers (30 s foreground timer, background, tab/load changes).
+                    // Writes stay blocked until the saved session has been restored into the store.
+                    com.petal.browser.engine.gecko.PetalEngineStore.startAutoSave(this)
                 } catch (t: Throwable) {
                     Log.w(TAG, "BrowserStore session persistence unavailable", t)
                 }

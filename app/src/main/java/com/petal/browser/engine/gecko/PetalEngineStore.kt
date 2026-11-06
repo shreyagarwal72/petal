@@ -15,6 +15,8 @@ import mozilla.components.feature.prompts.PromptMiddleware
 import mozilla.components.feature.prompts.file.FileUploadsDirCleaner
 import mozilla.components.feature.prompts.file.FileUploadsDirCleanerMiddleware
 import mozilla.components.support.utils.DefaultDownloadFileUtils
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import org.mozilla.geckoview.GeckoRuntime
 
 /**
@@ -44,6 +46,15 @@ object PetalEngineStore {
 
     @Volatile
     private var fileUploadsDirCleaner: FileUploadsDirCleaner? = null
+
+    @Volatile
+    private var autoSaveStarted = false
+
+    /**
+     * Tabs whose engine session was just rebuilt from saved state. Gecko has not reported their
+     * history yet, so the view treats Back as available for a short time (see bindTab).
+     */
+    private val restoredTabIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     private val mainScope = MainScope()
 
@@ -96,7 +107,8 @@ object PetalEngineStore {
                 downloadMiddleware,
                 PromptMiddleware(),
                 FileUploadsDirCleanerMiddleware(uploadCleaner),
-                PetalSessionPrioritizationMiddleware()
+                PetalSessionPrioritizationMiddleware(),
+                PetalThumbnailsMiddleware()
             ) + engineMiddleware
         )
         store = newStore
@@ -138,13 +150,46 @@ object PetalEngineStore {
         val currentStorage = getSessionStorage(appContext)
         val saver = AutoSave(
             store = currentStore,
-            sessionStorage = currentStorage,
+            sessionStorage = RestoreGatedStorage(currentStorage),
             minimumIntervalMs = 2000L,
             applicationScope = mainScope
         )
         autoSave = saver
-        Log.i(TAG, "Initialized and started Mozilla AutoSave lifecycle")
+        Log.i(TAG, "Initialized Mozilla AutoSave")
         return saver
+    }
+
+    /**
+     * Starts the same three save triggers Fenix uses: every 30 s while in the foreground, when the
+     * app goes to the background, and when tabs / the selected tab / a page load change.
+     * Safe to call more than once.
+     */
+    @JvmStatic
+    @Synchronized
+    fun startAutoSave(context: Context) {
+        if (autoSaveStarted) return
+        autoSaveStarted = true
+        getAutoSave(context)
+            .periodicallyInForeground(interval = 30, unit = TimeUnit.SECONDS)
+            .whenGoingToBackground()
+            .whenSessionsChange()
+        Log.i(TAG, "Started Mozilla AutoSave triggers")
+    }
+
+    /** Returns true exactly once for a tab whose session was just restored from saved state. */
+    @JvmStatic
+    fun consumeRestoredFlag(tabId: String): Boolean = restoredTabIds.remove(tabId)
+
+    /**
+     * Never persists before the saved session has been restored into the store. SessionStorage.save()
+     * DELETES the session file when the store holds no tabs, and an empty store before restore means
+     * "not restored yet", not "the user closed every tab".
+     */
+    private class RestoreGatedStorage(private val delegate: SessionStorage) : AutoSave.Storage {
+        override fun save(state: BrowserState): Boolean {
+            if (!state.restoreComplete) return false
+            return delegate.save(state)
+        }
     }
 
     @JvmStatic
@@ -243,10 +288,14 @@ object PetalEngineStore {
             } else {
                 val newSession = eng.createSession(private = existingTab.content.private)
                 val state = existingTab.engineState.engineSessionState
+                // Same rule as Mozilla's CreateEngineSessionMiddleware: skip the initial load ONLY when
+                // the engine accepted the saved state. An empty/rejected state must load the URL,
+                // otherwise the tab stays blank.
                 val skipLoading = if (state != null) {
                     try {
-                        newSession.restoreState(state)
-                        true
+                        val restored = newSession.restoreState(state)
+                        if (restored) restoredTabIds.add(tabId)
+                        restored
                     } catch (t: Throwable) {
                         Log.w(TAG, "Failed to restore engine session state: ${t.message}")
                         false

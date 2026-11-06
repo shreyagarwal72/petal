@@ -631,9 +631,14 @@ class PetalTabViewController private constructor(
         progress = tab.content.progress
         loading = tab.content.loading
         applyPageSettings(pageUrl)
-        backAvailable = false
-        forwardAvailable = false
-        historyPending = false
+        // Seed from BrowserStore (kept current by Mozilla's EngineObserver even while no view is
+        // attached). Zeroing these flags made Back fall through to Home whenever a tab that
+        // already had history was re-bound, because Gecko only reports canGoBack on CHANGE.
+        backAvailable = tab.content.canGoBack
+        forwardAvailable = tab.content.canGoForward
+        // A session rebuilt from saved state has not reported its history yet: trust Back briefly.
+        historyPending = PetalEngineStore.consumeRestoredFlag(tab.id)
+        historyPendingSince = android.os.SystemClock.uptimeMillis()
         restoreLocationSeen = false
         navUrls.clear(); navIndex = -1; navFallbackEligible = false
         currentScrollX = 0; currentScrollY = 0; lastProcessedScrollY = 0; accumulatedScrollY = 0; consecutiveDirectionSteps = 0
@@ -662,19 +667,31 @@ class PetalTabViewController private constructor(
             // Content Delegate: preserve Mozilla's engine contentDelegate so title, crash,
             // and fullscreen callbacks are NOT dropped, while handling onExternalResponse and onContextMenu.
             val engineContent = gs.contentDelegate
+            val crashCallback: () -> Unit = {
+                post {
+                    try {
+                        reload()
+                    } catch (_: Throwable) {}
+                }
+            }
             if (engineContent !is PetalContentDelegateWrapper) {
                 gs.contentDelegate = PetalContentDelegateWrapper(
                     engine = engineContent,
                     contextProvider = { context },
                     isPrivateProvider = { isIncognito() },
                     referrerProvider = { pageUrl.takeIf { it.startsWith("http") } },
-                    onCrashCallback = {
-                        post {
-                            try {
-                                reload()
-                            } catch (_: Throwable) {}
-                        }
-                    },
+                    onCrashCallback = crashCallback,
+                    pageUrlProvider = { pageUrl },
+                    pageTitleProvider = { pageTitle }
+                )
+            } else {
+                // The session outlived the previous view (Activity recreation, suspension): point the
+                // existing wrapper at THIS view instead of the destroyed one.
+                engineContent.rebind(
+                    contextProvider = { context },
+                    isPrivateProvider = { isIncognito() },
+                    referrerProvider = { pageUrl.takeIf { it.startsWith("http") } },
+                    onCrashCallback = crashCallback,
                     pageUrlProvider = { pageUrl },
                     pageTitleProvider = { pageTitle }
                 )
@@ -685,6 +702,60 @@ class PetalTabViewController private constructor(
             // (this class's `observer`) and tracks the load request used by reload().
             // We explicitly forward all methods because Kotlin's `by` delegation drops Java default methods.
             val engineNavigation = gs.navigationDelegate
+            val locationCallback: (String) -> Unit = { newUrl ->
+                android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLocationChanged -> $newUrl (current pageUrl=$pageUrl)")
+                val staleBlank = isStaleInitialBlank(newUrl)
+                if (!staleBlank && !newUrl.equals("about:blank", ignoreCase = true)) pendingNavUrl = null
+                if (!staleBlank && newUrl.isNotBlank() && !newUrl.equals(pageUrl, ignoreCase = true)) {
+                    previewRevision++
+                    previewRetryCount = 0
+                    pageUrl = newUrl
+                    applyPageSettings(newUrl)
+                    tab?.let { browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, newUrl)) }
+                    publishState()
+                }
+            }
+            val canGoBackCallback: (Boolean) -> Unit = { canBack ->
+                post {
+                    backAvailable = canBack
+                    tab?.let {
+                        PetalEngineStore.updateNavigationState(
+                            appContext,
+                            it.id,
+                            backAvailable,
+                            forwardAvailable
+                        )
+                    }
+                    val act = resolveActivity(context)
+                    if (act is com.petal.browser.activity.BrowserActivity) {
+                        act.updateBackCallbackState()
+                        act.updateOmniBox()
+                    }
+                    publishState()
+                }
+            }
+            val canGoForwardCallback: (Boolean) -> Unit = { canFwd ->
+                post {
+                    forwardAvailable = canFwd
+                    tab?.let {
+                        PetalEngineStore.updateNavigationState(
+                            appContext,
+                            it.id,
+                            backAvailable,
+                            forwardAvailable
+                        )
+                    }
+                    val act = resolveActivity(context)
+                    if (act is com.petal.browser.activity.BrowserActivity) {
+                        act.updateOmniBox()
+                    }
+                    publishState()
+                }
+            }
+            val externalSchemeCallback: (String) -> Boolean = { uri ->
+                val act = resolveActivity(context)
+                act != null && com.petal.browser.view.PetalGeckoView.handleExternalScheme(act, uri)
+            }
             if (engineNavigation !is ExternalSchemeNavigationDelegate) {
                 val inner = engineNavigation ?: object : org.mozilla.geckoview.GeckoSession.NavigationDelegate {}
                 gs.navigationDelegate = ExternalSchemeNavigationDelegate(
@@ -692,62 +763,23 @@ class PetalTabViewController private constructor(
                     context = context,
                     currentUrlSupplier = { pageUrl },
                     isIncognitoSupplier = { isIncognito() },
-                    onLocationChanged = { newUrl ->
-                        android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLocationChanged -> $newUrl (current pageUrl=$pageUrl)")
-                        val staleBlank = isStaleInitialBlank(newUrl)
-                        if (!staleBlank && !newUrl.equals("about:blank", ignoreCase = true)) pendingNavUrl = null
-                        if (!staleBlank && newUrl.isNotBlank() && !newUrl.equals(pageUrl, ignoreCase = true)) {
-                            previewRevision++
-                            previewRetryCount = 0
-                            pageUrl = newUrl
-                            applyPageSettings(newUrl)
-                            tab?.let { browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, newUrl)) }
-                            publishState()
-                        }
-                    },
-                    onCanGoBackChanged = { canBack ->
-                        post {
-                            backAvailable = canBack
-                            tab?.let {
-                                PetalEngineStore.updateNavigationState(
-                                    appContext,
-                                    it.id,
-                                    backAvailable,
-                                    forwardAvailable
-                                )
-                            }
-                            val act = resolveActivity(context)
-                            if (act is com.petal.browser.activity.BrowserActivity) {
-                                act.updateBackCallbackState()
-                                act.updateOmniBox()
-                            }
-                            publishState()
-                        }
-                    },
-                    onCanGoForwardChanged = { canFwd ->
-                        post {
-                            forwardAvailable = canFwd
-                            tab?.let {
-                                PetalEngineStore.updateNavigationState(
-                                    appContext,
-                                    it.id,
-                                    backAvailable,
-                                    forwardAvailable
-                                )
-                            }
-                            val act = resolveActivity(context)
-                            if (act is com.petal.browser.activity.BrowserActivity) {
-                                act.updateOmniBox()
-                            }
-                            publishState()
-                        }
-                    }
-                ) { uri ->
-                    val act = resolveActivity(context)
-                    act != null && com.petal.browser.view.PetalGeckoView.handleExternalScheme(act, uri)
-                }
+                    onLocationChanged = locationCallback,
+                    onCanGoBackChanged = canGoBackCallback,
+                    onCanGoForwardChanged = canGoForwardCallback,
+                    handleExternal = externalSchemeCallback
+                )
             } else {
-                engineNavigation.updateDependencies(context, { pageUrl }, { isIncognito() })
+                // Re-bind: every callback must point at THIS view. Keeping the old view's lambdas
+                // sends canGoBack/location updates (and external-app intents) to a destroyed view.
+                engineNavigation.updateDependencies(
+                    context,
+                    { pageUrl },
+                    { isIncognito() },
+                    canGoBackCallback,
+                    canGoForwardCallback,
+                    locationCallback,
+                    externalSchemeCallback
+                )
             }
 
             // Progress Delegate: keep Mozilla's engine delegate (page start/stop, progress, security)
@@ -1052,9 +1084,16 @@ class PetalTabViewController private constructor(
         attachedLifecycle?.addObserver(engineLifecycleObserver)
     }
 
+    /** Same source Mozilla's SessionFeature.onBackPressed uses: the store's canGoBack, plus our live flag. */
+    private fun hasBackHistory(): Boolean {
+        if (backAvailable || isHistoryPending()) return true
+        val id = boundTabId ?: return false
+        return browserStore.state.tabs.firstOrNull { it.id == id }?.content?.canGoBack == true
+    }
+
     fun goBack(userInteraction: Boolean = true) {
         val gs = getGeckoSession()
-        if (backAvailable || isHistoryPending()) {
+        if (hasBackHistory()) {
             try {
                 if (gs != null) {
                     gs.goBack(userInteraction)
@@ -1111,12 +1150,12 @@ class PetalTabViewController private constructor(
         session.processBackPressed { handled ->
             if (handled) return@processBackPressed
             post {
-                if (backAvailable || isHistoryPending() || canTrailBack()) goBack() else onUnhandled()
+                if (hasBackHistory() || canTrailBack()) goBack() else onUnhandled()
             }
         }
     }
 
-    fun canGoBack(): Boolean = backAvailable || isHistoryPending() || canTrailBack()
+    fun canGoBack(): Boolean = hasBackHistory() || canTrailBack()
 
     fun canGoForward(): Boolean = forwardAvailable
 
@@ -1551,26 +1590,44 @@ class PetalTabViewController private constructor(
 
     override fun isIncognito(): Boolean = tab?.content?.private ?: false
 
+    /** Permanently closes the tab: removes it from BrowserStore and deletes its thumbnail. */
     override fun destroy() = destroy(keepThumbnail = false)
 
     /**
-     * @param keepThumbnail true when the tab itself stays open (memory-saver suspension): the
-     *        placeholder that replaces this controller still needs its preview. Only a real
-     *        close may evict it.
+     * @param keepThumbnail true when the tab itself stays open (memory-saver suspension): the tab
+     *        stays in BrowserStore (Mozilla's SuspendEngineSessionAction already stored its
+     *        history in it) and its thumbnail stays on disk, so only the view is released. Only a
+     *        real close (false) removes the tab and its thumbnail.
      */
     fun destroy(keepThumbnail: Boolean) {
-        stopThumbnails()
-        val removedTabId = tab?.id
-        active = false
-        if (!keepThumbnail) {
-            if (isIncognito()) {
-                removedTabId?.let(TabThumbnailCache::removePrivate)
-            } else {
-                removedTabId?.let(TabThumbnailCache::remove)
-            }
+        if (keepThumbnail) {
+            release()
+            return
         }
-        com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(getGeckoSession(), null)
-        com.petal.browser.extensions.PetalExtensionManager.detachSession(getGeckoSession())
+        val removedTabId = tab?.id
+        if (removedTabId != null) {
+            // BrowserStore is the single source of truth: removing the tab there also
+            // deletes its thumbnail through PetalThumbnailsMiddleware. The direct calls below
+            // cover a tab that is already gone from the store.
+            if (isIncognito()) TabThumbnailCache.removePrivate(removedTabId)
+            else TabThumbnailCache.remove(removedTabId)
+        }
+        release()
+        if (removedTabId != null) PetalEngineStore.removeTab(appContext, removedTabId)
+    }
+
+    /**
+     * Detaches this VIEW from its tab without closing the tab. The tab, its engine session
+     * state, its metadata and its thumbnail all stay as they are (same rule as Fenix: views come
+     * and go with the Activity, tabs are removed only when the user closes them).
+     */
+    @MainThread
+    fun release() {
+        stopThumbnails()
+        active = false
+        val gs = getGeckoSession()
+        com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(gs, null)
+        com.petal.browser.extensions.PetalExtensionManager.detachSession(gs)
         refreshFeature?.stop()
         refreshFeature = null
         fullScreenFeature?.stop()
@@ -1586,7 +1643,6 @@ class PetalTabViewController private constructor(
             preferences.unregisterOnSharedPreferenceChangeListener(prefChangeListener)
         } catch (_: Throwable) {}
         engineView.release()
-        if (removedTabId != null) PetalEngineStore.removeTab(appContext, removedTabId)
     }
 
     private fun injectPagePrivacyAndAdBlock() {
@@ -1770,13 +1826,30 @@ class PetalTabViewController private constructor(
  */
 private class PetalContentDelegateWrapper(
     val engine: org.mozilla.geckoview.GeckoSession.ContentDelegate?,
-    private val contextProvider: () -> android.content.Context,
-    private val isPrivateProvider: () -> Boolean = { false },
-    private val referrerProvider: () -> String? = { null },
-    private val onCrashCallback: (() -> Unit)? = null,
-    private val pageUrlProvider: () -> String? = { null },
-    private val pageTitleProvider: () -> String? = { null }
+    private var contextProvider: () -> android.content.Context,
+    private var isPrivateProvider: () -> Boolean = { false },
+    private var referrerProvider: () -> String? = { null },
+    private var onCrashCallback: (() -> Unit)? = null,
+    private var pageUrlProvider: () -> String? = { null },
+    private var pageTitleProvider: () -> String? = { null }
 ) : org.mozilla.geckoview.GeckoSession.ContentDelegate {
+
+    /** Re-points every provider at a newly bound view (the session can outlive its view). */
+    fun rebind(
+        contextProvider: () -> android.content.Context,
+        isPrivateProvider: () -> Boolean,
+        referrerProvider: () -> String?,
+        onCrashCallback: (() -> Unit)?,
+        pageUrlProvider: () -> String?,
+        pageTitleProvider: () -> String?
+    ) {
+        this.contextProvider = contextProvider
+        this.isPrivateProvider = isPrivateProvider
+        this.referrerProvider = referrerProvider
+        this.onCrashCallback = onCrashCallback
+        this.pageUrlProvider = pageUrlProvider
+        this.pageTitleProvider = pageTitleProvider
+    }
 
     private fun resolveActivity(): android.app.Activity? {
         var ctx: android.content.Context? = contextProvider()
@@ -1912,10 +1985,10 @@ private class ExternalSchemeNavigationDelegate(
     private var context: android.content.Context,
     private var currentUrlSupplier: () -> String,
     private var isIncognitoSupplier: () -> Boolean,
-    private val onLocationChanged: (String) -> Unit,
+    private var onLocationChanged: (String) -> Unit,
     private var onCanGoBackChanged: ((Boolean) -> Unit)? = null,
     private var onCanGoForwardChanged: ((Boolean) -> Unit)? = null,
-    private val handleExternal: (String) -> Boolean
+    private var handleExternal: (String) -> Boolean
 ) : org.mozilla.geckoview.GeckoSession.NavigationDelegate {
 
     fun updateDependencies(
@@ -1923,13 +1996,17 @@ private class ExternalSchemeNavigationDelegate(
         newUrlSupplier: () -> String,
         newIncognitoSupplier: () -> Boolean,
         newOnCanGoBack: ((Boolean) -> Unit)? = null,
-        newOnCanGoForward: ((Boolean) -> Unit)? = null
+        newOnCanGoForward: ((Boolean) -> Unit)? = null,
+        newOnLocationChanged: ((String) -> Unit)? = null,
+        newHandleExternal: ((String) -> Boolean)? = null
     ) {
         context = newContext
         currentUrlSupplier = newUrlSupplier
         isIncognitoSupplier = newIncognitoSupplier
         if (newOnCanGoBack != null) onCanGoBackChanged = newOnCanGoBack
         if (newOnCanGoForward != null) onCanGoForwardChanged = newOnCanGoForward
+        if (newOnLocationChanged != null) onLocationChanged = newOnLocationChanged
+        if (newHandleExternal != null) handleExternal = newHandleExternal
     }
 
     override fun onLocationChange(
@@ -1943,14 +2020,14 @@ private class ExternalSchemeNavigationDelegate(
             val unbouncedUrl = com.petal.browser.privacy.PetalBounceTrackingProtection.detectAndUnwrapBounceUrl(url)
             if (unbouncedUrl != null && !unbouncedUrl.equals(url, ignoreCase = true)) {
                 android.util.Log.i("PetalTabNav", "Bounce Tracking detected: bypassing $url -> $unbouncedUrl")
-                session.loadUri(unbouncedUrl)
+                loadReplacingHistory(session, unbouncedUrl)
                 return
             }
 
             val deAmpUrl = com.petal.browser.privacy.PetalDeAmpEngine.unwrapAmpUrl(url)
             if (deAmpUrl != null && !deAmpUrl.equals(url, ignoreCase = true)) {
                 android.util.Log.i("PetalTabNav", "De-AMP triggered: redirecting $url -> $deAmpUrl")
-                session.loadUri(deAmpUrl)
+                loadReplacingHistory(session, deAmpUrl)
                 return
             }
 
@@ -1960,6 +2037,23 @@ private class ExternalSchemeNavigationDelegate(
             engine.onLocationChange(session, url, perms, hasUserGesture)
         } catch (t: Throwable) {
             android.util.Log.w("PetalTabNav", "Error forwarding onLocationChange(4-arg): ${t.message}")
+        }
+    }
+
+    /**
+     * Loads [target] in place of the current history entry. A plain loadUri() would ADD an entry, so
+     * Back from the unwrapped page would return to the redirect/AMP wrapper, which is unwrapped
+     * again immediately: Back looks stuck.
+     */
+    private fun loadReplacingHistory(session: org.mozilla.geckoview.GeckoSession, target: String) {
+        try {
+            session.load(
+                org.mozilla.geckoview.GeckoSession.Loader()
+                    .uri(target)
+                    .flags(org.mozilla.geckoview.GeckoSession.LOAD_FLAGS_REPLACE_HISTORY)
+            )
+        } catch (_: Throwable) {
+            session.loadUri(target)
         }
     }
 
