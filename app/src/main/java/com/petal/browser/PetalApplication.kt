@@ -44,6 +44,10 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
     }
 
     private val widgetThemePrefListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == "sp_theme_config" || key == "sp_force_dark_mode") {
+            val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
+            com.petal.browser.engine.gecko.PetalGeckoRuntime.syncTheme(sp)
+        }
         if (key != null && (key.startsWith("sp_gs_") || key == "sp_gs_flex_preset" || key.startsWith("sp_custom_font"))) {
             PetalSearchWidgetProvider.updateAllWidgets(this@PetalApplication)
             return@OnSharedPreferenceChangeListener
@@ -91,6 +95,14 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             com.petal.browser.logger.PetalAppLogger.init(this)
             if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(this)) {
                 com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(this)
+                // Ensure GeckoEngine and WebCompatFeature are created at app start
+                // so WebCompat interventions are active immediately for all tabs.
+                try {
+                    com.petal.browser.engine.gecko.PetalEngineStore.getEngine(this)
+                    Log.i(TAG, "Initialized GeckoEngine at application start for WebCompat")
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Failed to initialize GeckoEngine at application start: ${t.message}")
+                }
                 // Initialize Android Components session persistence alongside the
                 // shared Gecko runtime. PetalEngineStore owns the BrowserStore and
                 // AutoSave lifecycle; touching it here makes state persistence
@@ -156,8 +168,14 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
                 startedActivityCount++
                 com.petal.browser.island.PetalForegroundTracker.onStartedCountChanged(startedActivityCount)
             }
-            override fun onActivityResumed(activity: Activity) {}
-            override fun onActivityPaused(activity: Activity) {}
+            override fun onActivityResumed(activity: Activity) {
+                com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(activity)
+            }
+            override fun onActivityPaused(activity: Activity) {
+                if (com.petal.browser.engine.gecko.PetalGeckoRuntime.getForegroundActivity() === activity) {
+                    com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(null)
+                }
+            }
             override fun onActivityStopped(activity: Activity) {
                 startedActivityCount = maxOf(0, startedActivityCount - 1)
                 com.petal.browser.island.PetalForegroundTracker.onStartedCountChanged(startedActivityCount)

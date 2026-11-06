@@ -240,8 +240,23 @@ class PetalCustomTabActivity : ComponentActivity() {
     }
 
     override fun onResume() {
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(this)
         super.onResume()
         updateCurrentUrlAndTitle()
+    }
+
+    override fun onPause() {
+        if (com.petal.browser.engine.gecko.PetalGeckoRuntime.getForegroundActivity() === this) {
+            com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(null)
+        }
+        super.onPause()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (com.petal.browser.engine.gecko.PetalGeckoRuntime.handleActivityResult(requestCode, resultCode, data)) {
+            return
+        }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onDestroy() {

@@ -2,6 +2,7 @@ package com.petal.browser.extensions
 
 import android.util.Log
 import mozilla.components.browser.engine.gecko.GeckoEngine
+import mozilla.components.feature.webcompat.WebCompatFeature
 
 /**
  * PetalBuiltInExtensions
@@ -12,29 +13,22 @@ import mozilla.components.browser.engine.gecko.GeckoEngine
  */
 object PetalBuiltInExtensions {
     private const val TAG = "PetalBuiltInExtensions"
-    private const val WEBCOMPAT_ID = "webcompat@mozilla.org"
-    private const val WEBCOMPAT_URL = "resource://android/assets/extensions/webcompat/"
 
     @Volatile
     private var isInstalled = false
 
     @JvmStatic
     fun installAll(engine: GeckoEngine) {
-        if (isInstalled) return
+        if (isInstalled) {
+            Log.d(TAG, "WebCompatFeature already installed; skipping duplicate call")
+            return
+        }
+        isInstalled = true
         try {
-            engine.installBuiltInWebExtension(
-                id = WEBCOMPAT_ID,
-                url = WEBCOMPAT_URL,
-                onSuccess = { ext ->
-                    isInstalled = true
-                    Log.i(TAG, "WebCompat extension loaded successfully: ${ext.id}")
-                },
-                onError = { e ->
-                    Log.w(TAG, "WebCompat built-in install skipped or not present in AAR assets: $WEBCOMPAT_ID (${e.message})")
-                }
-            )
+            WebCompatFeature.install(engine)
+            Log.i(TAG, "WebCompatFeature.install(engine) completed successfully for ${WebCompatFeature.WEBCOMPAT_EXTENSION_ID}")
         } catch (t: Throwable) {
-            Log.w(TAG, "Failed to invoke installBuiltInWebExtension: ${t.message}")
+            Log.e(TAG, "Failed to invoke WebCompatFeature.install(engine): ${t.message}", t)
         }
     }
 }

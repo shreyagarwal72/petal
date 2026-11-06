@@ -1241,6 +1241,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (com.petal.browser.engine.gecko.PetalGeckoRuntime.handleActivityResult(requestCode, resultCode, data)) {
+            return;
+        }
         if (requestCode == VOICE_SEARCH_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
             ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
             if (matches != null && !matches.isEmpty()) {
@@ -1307,6 +1310,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onResume() {
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(this);
         if (browserBackCallback != null) browserBackCallback.setEnabled(true);
         super.onResume();
         predictiveBackStartedOnOverlay = false;
@@ -8237,6 +8241,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onPause() {
+        if (com.petal.browser.engine.gecko.PetalGeckoRuntime.getForegroundActivity() == this) {
+            com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(null);
+        }
         super.onPause();
         try {
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {

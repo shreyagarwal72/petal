@@ -86,7 +86,7 @@ private fun PetalSetupContent(
     var adBlock by remember { mutableStateOf(PetalAdBlockEngine.isAdBlockEnabled(context)) }
     var floatingTabs by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
     var addressAtBottom by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") == "BOTTOM") }
-    var darkWebpages by remember { mutableStateOf(sp.getBoolean("petal_builtin_dark_webpages", true)) }
+    var darkWebpages by remember { mutableStateOf(sp.getBoolean("petal_builtin_dark_webpages", false)) }
     var selectedEngine by remember { mutableIntStateOf(state.selectedEngine.value) }
     var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", true)) }
     var amoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }

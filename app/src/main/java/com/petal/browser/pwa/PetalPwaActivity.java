@@ -331,14 +331,26 @@ public class PetalPwaActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(this);
         super.onResume();
         if (geckoView != null) geckoView.onResume();
     }
 
     @Override
     protected void onPause() {
+        if (com.petal.browser.engine.gecko.PetalGeckoRuntime.getForegroundActivity() == this) {
+            com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(null);
+        }
         super.onPause();
         if (geckoView != null) geckoView.onPause();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (com.petal.browser.engine.gecko.PetalGeckoRuntime.handleActivityResult(requestCode, resultCode, data)) {
+            return;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override

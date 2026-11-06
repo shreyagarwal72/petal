@@ -2107,7 +2107,6 @@ class PetalGeckoView @JvmOverloads constructor(
             sp.getBoolean("${profile}_desktop", sp.getBoolean("sp_desktop_site", false))
         }
         applyDesktopMode(desktopEnabled)
-        applyDarkModePolicy()
         applyGeckoBlockingPolicy(currentUrl)
         val enableJs = sp.getBoolean("sp_javascript", sp.getBoolean("${profile}_javascript", sp.getBoolean("profileStandard_javascript", true)))
         session.settings.allowJavascript = enableJs
@@ -2115,32 +2114,12 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     /**
-     * Configures GeckoView's preferred color scheme and website dark mode.
-     * Tells web content (via @media (prefers-color-scheme: dark)) to render native dark themes
-     * without producing inverted negative artifacts on media and images.
+     * Preferred color scheme is runtime-wide in GeckoView (preferredColorScheme).
+     * It is configured on GeckoRuntime creation and updated via PetalGeckoRuntime.syncTheme(sp)
+     * only when the theme setting changes, avoiding per-tab re-application.
      */
     private fun applyDarkModePolicy() {
-        try {
-            val forceDark = sp.getBoolean("sp_force_dark_mode", false) ||
-                sp.getBoolean("petal_builtin_dark_webpages", true)
-            val themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
-            val isSysDark = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
-            val targetColorScheme = when (themeConfig.uppercase()) {
-                "LIGHT" -> GeckoRuntimeSettings.COLOR_SCHEME_LIGHT
-                "DARK" -> GeckoRuntimeSettings.COLOR_SCHEME_DARK
-                else -> if (forceDark || isSysDark) GeckoRuntimeSettings.COLOR_SCHEME_DARK else GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM
-            }
-            try {
-                PetalGeckoRuntime.getOrCreate(context).settings.preferredColorScheme = targetColorScheme
-            } catch (_: Throwable) {
-                runCatching {
-                    val method = PetalGeckoRuntime.getOrCreate(context).settings.javaClass.getMethod("setPreferredColorScheme", Int::class.javaPrimitiveType)
-                    method.invoke(PetalGeckoRuntime.getOrCreate(context).settings, targetColorScheme)
-                }
-            }
-        } catch (t: Throwable) {
-            android.util.Log.w("PetalGeckoView", "Failed to apply dark mode policy: ${t.message}")
-        }
+        // No-op per-tab to preserve runtime-wide preferredColorScheme integrity.
     }
 
     fun onLoadError(

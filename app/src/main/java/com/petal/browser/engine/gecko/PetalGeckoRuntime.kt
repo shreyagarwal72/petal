@@ -1,12 +1,17 @@
 package com.petal.browser.engine.gecko
 
+import android.app.Activity
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.preference.PreferenceManager
 import org.mozilla.geckoview.ContentBlocking
+import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoRuntimeSettings
+import java.lang.ref.WeakReference
 
 /**
  * PetalGeckoRuntime
@@ -17,11 +22,43 @@ import org.mozilla.geckoview.GeckoRuntimeSettings
  */
 object PetalGeckoRuntime {
     private const val TAG = "PetalGeckoRuntime"
+    private const val REQUEST_CODE_GECKO_ACTIVITY = 8600
 
     @Volatile
     private var runtime: GeckoRuntime? = null
 
     private var geckoAvailable: Boolean? = null
+    private var pendingActivityResult: GeckoResult<Intent>? = null
+    private var foregroundActivity: WeakReference<Activity>? = null
+
+    @JvmStatic
+    fun setForegroundActivity(activity: Activity?) {
+        foregroundActivity = if (activity != null) WeakReference(activity) else null
+    }
+
+    @JvmStatic
+    fun getForegroundActivity(): Activity? = foregroundActivity?.get()
+
+    @JvmStatic
+    fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        if (requestCode == REQUEST_CODE_GECKO_ACTIVITY) {
+            val pending = pendingActivityResult
+            pendingActivityResult = null
+            if (pending != null) {
+                if (resultCode == Activity.RESULT_OK) {
+                    Log.i(TAG, "ActivityDelegate onActivityResult completed successfully with RESULT_OK")
+                    pending.complete(data ?: Intent())
+                } else {
+                    Log.w(TAG, "ActivityDelegate onActivityResult cancelled or failed with resultCode $resultCode")
+                    pending.completeExceptionally(
+                        IllegalStateException("Activity request cancelled or failed (resultCode=$resultCode)")
+                    )
+                }
+            }
+            return true
+        }
+        return false
+    }
 
     @JvmStatic
     fun isGeckoAvailable(context: Context): Boolean {
@@ -116,13 +153,16 @@ object PetalGeckoRuntime {
             GeckoRuntimeSettings.TRR_MODE_OFF
         }
 
-        val forceDark = sp.getBoolean("sp_force_dark_mode", false) ||
-            sp.getBoolean("petal_builtin_dark_webpages", true)
         val themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
-        val targetColorScheme = when (themeConfig.uppercase()) {
-            "LIGHT" -> GeckoRuntimeSettings.COLOR_SCHEME_LIGHT
-            "DARK" -> GeckoRuntimeSettings.COLOR_SCHEME_DARK
-            else -> if (forceDark) GeckoRuntimeSettings.COLOR_SCHEME_DARK else GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM
+        val forceDark = sp.getBoolean("sp_force_dark_mode", false)
+        val targetColorScheme = if (forceDark) {
+            GeckoRuntimeSettings.COLOR_SCHEME_DARK
+        } else {
+            when (themeConfig.uppercase()) {
+                "LIGHT" -> GeckoRuntimeSettings.COLOR_SCHEME_LIGHT
+                "DARK" -> GeckoRuntimeSettings.COLOR_SCHEME_DARK
+                else -> GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM
+            }
         }
 
         val allowAboutConfig = sp.getBoolean("sp_enable_about_config", isDebug)
@@ -191,6 +231,49 @@ object PetalGeckoRuntime {
         }
 
         val newRuntime = GeckoRuntime.create(appContext, settingsBuilder.build())
+
+        // Passkey / WebAuthn support:
+        // GeckoRuntime uses ActivityDelegate to launch the Google Play Services FIDO / security key activity.
+        try {
+            newRuntime.setActivityDelegate(object : GeckoRuntime.ActivityDelegate {
+                override fun onStartActivityForResult(intent: PendingIntent): GeckoResult<Intent> {
+                    val result = GeckoResult<Intent>()
+                    val activity = foregroundActivity?.get()
+                    if (activity == null || activity.isFinishing || activity.isDestroyed) {
+                        Log.w(TAG, "Cannot launch WebAuthn activity: no active foreground activity")
+                        result.completeExceptionally(
+                            IllegalStateException("No foreground activity available to launch WebAuthn intent")
+                        )
+                        return result
+                    }
+                    pendingActivityResult?.completeExceptionally(
+                        IllegalStateException("Superseded by new activity request")
+                    )
+                    pendingActivityResult = result
+                    activity.runOnUiThread {
+                        try {
+                            activity.startIntentSenderForResult(
+                                intent.intentSender,
+                                REQUEST_CODE_GECKO_ACTIVITY,
+                                null,
+                                0,
+                                0,
+                                0
+                            )
+                            Log.i(TAG, "Launched WebAuthn ActivityDelegate intent via startIntentSenderForResult")
+                        } catch (t: Throwable) {
+                            Log.e(TAG, "Failed to launch WebAuthn IntentSender", t)
+                            pendingActivityResult = null
+                            result.completeExceptionally(t)
+                        }
+                    }
+                    return result
+                }
+            })
+            Log.i(TAG, "Registered GeckoRuntime.ActivityDelegate for FIDO / WebAuthn passkeys")
+        } catch (t: Throwable) {
+            Log.w(TAG, "Could not register GeckoRuntime.ActivityDelegate: ${t.message}")
+        }
 
         // Connect Petal's local password vault to GeckoView's autocomplete system.
         // This allows the browser engine to:
@@ -330,8 +413,39 @@ object PetalGeckoRuntime {
                 if (!dohUri.isNullOrBlank() && trrMode != GeckoRuntimeSettings.TRR_MODE_OFF) {
                     rt.settings.setTrustedRecursiveResolverUri(dohUri)
                 }
+
+                // 8. Theme / Preferred Color Scheme
+                syncTheme(sp)
             } catch (e: Exception) {
                 Log.w(TAG, "Error synchronizing GeckoRuntime preferences: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Synchronizes the runtime-wide preferred color scheme with user theme settings.
+     * New rule: LIGHT gives light, DARK gives dark, and FOLLOW_SYSTEM gives COLOR_SCHEME_SYSTEM.
+     * Force dark (sp_force_dark_mode) applies only when explicitly enabled by user.
+     */
+    @JvmStatic
+    fun syncTheme(sp: SharedPreferences) {
+        runtime?.let { rt ->
+            val themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
+            val forceDark = sp.getBoolean("sp_force_dark_mode", false)
+            val targetColorScheme = if (forceDark) {
+                GeckoRuntimeSettings.COLOR_SCHEME_DARK
+            } else {
+                when (themeConfig.uppercase()) {
+                    "LIGHT" -> GeckoRuntimeSettings.COLOR_SCHEME_LIGHT
+                    "DARK" -> GeckoRuntimeSettings.COLOR_SCHEME_DARK
+                    else -> GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM
+                }
+            }
+            try {
+                rt.settings.preferredColorScheme = targetColorScheme
+                Log.d(TAG, "Synchronized runtime preferredColorScheme to $targetColorScheme (themeConfig=$themeConfig, forceDark=$forceDark)")
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to update preferredColorScheme: ${t.message}")
             }
         }
     }

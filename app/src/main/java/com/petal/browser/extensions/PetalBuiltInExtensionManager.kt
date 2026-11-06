@@ -89,7 +89,7 @@ object PetalBuiltInExtensionManager {
             when (msgType) {
                 "GET_DARK_SETTINGS" -> {
                     val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
-                    val enabled = sp.getBoolean("petal_builtin_dark_webpages", true)
+                    val enabled = sp.getBoolean("petal_builtin_dark_webpages", false)
                     val contrast = getDarkWebpagesContrast(ctx)
                     val whitelist = getDarkWebpagesWhitelist(ctx)
                     val resp = JSONObject().apply {
@@ -230,7 +230,8 @@ object PetalBuiltInExtensionManager {
             extensionId = "petal-dark-webpages@petalbrowser.app",
             label       = "Petal Smart Dark Mode",
             description = "Intelligent website dark mode that inverts bright canvases while preserving images and videos.",
-            prefKey     = "petal_builtin_dark_webpages"
+            prefKey     = "petal_builtin_dark_webpages",
+            defaultOn   = false
         ),
         BuiltInSpec(
             assetPath   = "web_extensions/petal_clean_link/",
@@ -382,8 +383,27 @@ object PetalBuiltInExtensionManager {
         spec: BuiltInSpec,
         enabled: Boolean
     ) {
-        // Special case for Mozilla WebCompat: it does not exist as an APK asset; ignore ensureBuiltIn error
-        if (spec.extensionId == "webcompat@mozilla.org" || spec.assetPath.isEmpty()) {
+        // Special case for Mozilla WebCompat: installed via WebCompatFeature.install(engine)
+        if (spec.extensionId == "webcompat@mozilla.org" || spec.prefKey == "petal_builtin_webcompat") {
+            controller.list().accept(
+                { list ->
+                    val ext = list?.find { it.id == "webcompat@mozilla.org" }
+                    if (ext != null) {
+                        installedExtensions[spec.extensionId] = ext
+                        val action = if (enabled)
+                            controller.enable(ext, WebExtensionController.EnableSource.USER)
+                        else
+                            controller.disable(ext, WebExtensionController.EnableSource.USER)
+                        action.accept(
+                            { Log.i(TAG, "Mozilla WebCompat initial sync → ${if (enabled) "enabled" else "disabled"}") },
+                            { e -> Log.w(TAG, "Failed to sync Mozilla WebCompat state: ${e.message}") }
+                        )
+                    } else {
+                        Log.d(TAG, "Mozilla WebCompat not yet present in controller list during initial sync")
+                    }
+                },
+                { e -> Log.w(TAG, "Could not list extensions to sync WebCompat: ${e.message}") }
+            )
             return
         }
 
@@ -458,22 +478,18 @@ object PetalBuiltInExtensionManager {
         val spec = builtIns.find { it.prefKey == prefKey } ?: return
         val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
         sp.edit().putBoolean(prefKey, enabled).apply()
-        if (prefKey == "petal_builtin_dark_webpages") {
-            sp.edit().putBoolean("sp_force_dark_mode", enabled).apply()
-        }
-        if (spec.assetPath.isEmpty()) {
-            return
-        }
+        // Do NOT force runtime-wide sp_force_dark_mode on Smart Dark Mode toggle.
+        // Smart Dark Mode applies solely as extension-level dark rendering.
         val runtime = try { PetalGeckoRuntime.getOrCreate(context.applicationContext) }
                       catch (_: Throwable) { return }
         runtime.webExtensionController.list().accept({ list ->
-            val ext = list?.find { it.id == spec.extensionId } ?: return@accept
+            val ext = list?.find { it.id == spec.extensionId || (spec.prefKey == "petal_builtin_webcompat" && it.id == "webcompat@mozilla.org") } ?: return@accept
             val action = if (enabled)
-                runtime.webExtensionController.enable(ext, WebExtensionController.EnableSource.APP)
+                runtime.webExtensionController.enable(ext, WebExtensionController.EnableSource.USER)
             else
-                runtime.webExtensionController.disable(ext, WebExtensionController.EnableSource.APP)
+                runtime.webExtensionController.disable(ext, WebExtensionController.EnableSource.USER)
             action.accept(
-                { Log.d(TAG, "${spec.label} runtime toggle → ${if (enabled) "on" else "off"}") },
+                { Log.i(TAG, "${spec.label} runtime toggle → ${if (enabled) "enabled" else "disabled"}") },
                 { e -> Log.e(TAG, "Toggle failed for ${spec.label}", e) }
             )
         }, { e -> Log.e(TAG, "Cannot list extensions for toggle", e) })
