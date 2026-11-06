@@ -968,10 +968,17 @@ class PetalGeckoView @JvmOverloads constructor(
                     val act = activityProvider() ?: return GeckoResult.fromValue(prompt.dismiss())
                     val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
                     act.runOnUiThread {
-                        val message = if (!prompt.url.isNullOrBlank()) {
-                            "Do you agree to the privacy policy?\n\n${prompt.url}"
-                        } else {
-                            "Do you agree to the privacy policy?"
+                        val policyUrl = prompt.privacyPolicyUrl
+                        val provider = prompt.providerDomain
+                        val message = when {
+                            policyUrl.isNotBlank() && provider.isNotBlank() ->
+                                "Do you agree to the privacy policy for $provider?\n\n$policyUrl"
+                            policyUrl.isNotBlank() ->
+                                "Do you agree to the privacy policy?\n\n$policyUrl"
+                            provider.isNotBlank() ->
+                                "Do you agree to the privacy policy for $provider?"
+                            else ->
+                                "Do you agree to the privacy policy?"
                         }
                         com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
                             act,
@@ -3361,6 +3368,7 @@ class PetalGeckoView @JvmOverloads constructor(
         if (url.isNullOrBlank() || !isExternalScheme(url)) return false
 
         val act = getHostActivity() ?: return false
+        val lower = url.lowercase()
         if (lower.startsWith("intent://")) {
             try {
                 val intent = android.content.Intent.parseUri(url, android.content.Intent.URI_INTENT_SCHEME)
