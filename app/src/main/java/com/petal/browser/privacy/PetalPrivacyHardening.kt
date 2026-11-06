@@ -181,6 +181,16 @@ object PetalPrivacyHardening {
             }
         }
 
+        // 8. Cookie Banner Handling (Gecko engine preferences: 2 = reject or accept, 0 = disabled)
+        val cookieBannerAutoReject = sp.getBoolean("sp_cookie_banner_auto_reject", sp.getBoolean("petal_builtin_consent_manager", true))
+        val cookieBannerMode = if (cookieBannerAutoReject) 2 else 0
+        sb.appendLine("""
+            // Automated Cookie Banner Handling (engine-level preferences + bundled CSS/extension fallback)
+            user_pref("cookiebanners.service.mode", $cookieBannerMode);
+            user_pref("cookiebanners.service.mode.privateBrowsing", $cookieBannerMode);
+            user_pref("cookiebanners.bannerClicking.enabled", ${if (cookieBannerAutoReject) "true" else "false"});
+        """.trimIndent())
+
         return sb.toString()
     }
 

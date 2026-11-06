@@ -40,6 +40,7 @@ import com.petal.browser.unit.PetalBrowserUtils
 import com.petal.browser.unit.TabThumbnailCache
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
+import org.mozilla.geckoview.SlowScriptResponse
 import org.mozilla.geckoview.GeckoRuntimeSettings
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSessionSettings
@@ -895,21 +896,92 @@ class PetalGeckoView @JvmOverloads constructor(
                     session: GeckoSession,
                     prompt: GeckoSession.PromptDelegate.IdentityCredential.ProviderSelectorPrompt
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                    return GeckoResult.fromValue(prompt.dismiss())
+                    val act = activityProvider() ?: return GeckoResult.fromValue(prompt.dismiss())
+                    val providers = prompt.providers
+                    if (providers.isNullOrEmpty()) {
+                        return GeckoResult.fromValue(prompt.dismiss())
+                    }
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val options = providers.mapIndexed { idx, provider ->
+                        val label = provider.name.ifBlank { provider.domain }
+                        com.petal.browser.ui.components.PetalChoiceOption(id = idx.toString(), label = label)
+                    }
+                    act.runOnUiThread {
+                        com.petal.browser.ui.components.PetalExpressivePromptBridge.showChoice(
+                            act,
+                            prompt.title ?: "Choose an Identity Provider",
+                            options,
+                            false,
+                            { selectedIds ->
+                                val selectedIdx = selectedIds.firstOrNull()?.toIntOrNull() ?: 0
+                                result.complete(prompt.confirm(selectedIdx))
+                            },
+                            {
+                                result.complete(prompt.dismiss())
+                            }
+                        )
+                    }
+                    return result
                 }
 
                 override fun onSelectIdentityCredentialAccount(
                     session: GeckoSession,
                     prompt: GeckoSession.PromptDelegate.IdentityCredential.AccountSelectorPrompt
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                    return GeckoResult.fromValue(prompt.dismiss())
+                    val act = activityProvider() ?: return GeckoResult.fromValue(prompt.dismiss())
+                    val accounts = prompt.accounts
+                    if (accounts.isNullOrEmpty()) {
+                        return GeckoResult.fromValue(prompt.dismiss())
+                    }
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    val options = accounts.mapIndexed { idx, acc ->
+                        val label = when {
+                            !acc.name.isNullOrBlank() && !acc.email.isNullOrBlank() -> "${acc.name} (${acc.email})"
+                            !acc.name.isNullOrBlank() -> acc.name
+                            !acc.email.isNullOrBlank() -> acc.email
+                            else -> "Account ${idx + 1}"
+                        }
+                        com.petal.browser.ui.components.PetalChoiceOption(id = idx.toString(), label = label)
+                    }
+                    act.runOnUiThread {
+                        com.petal.browser.ui.components.PetalExpressivePromptBridge.showChoice(
+                            act,
+                            prompt.title ?: "Select Account to Continue",
+                            options,
+                            false,
+                            { selectedIds ->
+                                val selectedIdx = selectedIds.firstOrNull()?.toIntOrNull() ?: 0
+                                result.complete(prompt.confirm(selectedIdx))
+                            },
+                            {
+                                result.complete(prompt.dismiss())
+                            }
+                        )
+                    }
+                    return result
                 }
 
                 override fun onShowPrivacyPolicyIdentityCredential(
                     session: GeckoSession,
                     prompt: GeckoSession.PromptDelegate.IdentityCredential.PrivacyPolicyPrompt
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                    return GeckoResult.fromValue(prompt.dismiss())
+                    val act = activityProvider() ?: return GeckoResult.fromValue(prompt.dismiss())
+                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                    act.runOnUiThread {
+                        val message = if (!prompt.url.isNullOrBlank()) {
+                            "Do you agree to the privacy policy?\n\n${prompt.url}"
+                        } else {
+                            "Do you agree to the privacy policy?"
+                        }
+                        com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
+                            act,
+                            prompt.title ?: "Privacy Policy",
+                            message,
+                            { result.complete(prompt.confirm(true)) },
+                            { result.complete(prompt.confirm(false)) }
+                        )
+                    }
+                    return result
                 }
             }
         }
@@ -1504,8 +1576,14 @@ class PetalGeckoView @JvmOverloads constructor(
                 }
 
                 // Handle Android deep links and external app URI schemes (intent://, market://, tel:, etc.)
-                if (handleDeepLinkOrCustomScheme(uri)) {
-                    return GeckoResult.fromValue(AllowOrDeny.DENY)
+                if (isExternalScheme(uri)) {
+                    if (!request.hasUserGesture) {
+                        android.util.Log.d(TAG, "Blocked external app link without user gesture: $uri")
+                        return GeckoResult.fromValue(AllowOrDeny.DENY)
+                    }
+                    if (handleDeepLinkOrCustomScheme(uri)) {
+                        return GeckoResult.fromValue(AllowOrDeny.DENY)
+                    }
                 }
 
                 // If "Open Redirect Links in Background" is enabled, spawn cross-origin redirects/links in background tabs
@@ -1812,6 +1890,19 @@ class PetalGeckoView @JvmOverloads constructor(
                         pageTitle = this@PetalGeckoView.title
                     )
                 }
+            }
+
+            override fun onSlowScript(session: GeckoSession, scriptFileName: String): GeckoResult<SlowScriptResponse>? {
+                val act = getHostActivity() ?: return GeckoResult.fromValue(SlowScriptResponse.CONTINUE)
+                val result = GeckoResult<SlowScriptResponse>()
+                act.runOnUiThread {
+                    com.petal.browser.ui.components.PetalExpressivePromptBridge.showSlowScriptDialog(
+                        act,
+                        { result.complete(SlowScriptResponse.STOP) },
+                        { result.complete(SlowScriptResponse.CONTINUE) }
+                    )
+                }
+                return result
             }
         }
 
@@ -2220,7 +2311,8 @@ class PetalGeckoView @JvmOverloads constructor(
         request: GeckoSession.NavigationDelegate.LoadRequest
     ): GeckoResult<AllowOrDeny>? {
         val uri = request.uri
-        if (handleDeepLinkOrCustomScheme(uri)) {
+        if (isExternalScheme(uri)) {
+            android.util.Log.d(TAG, "Blocked subframe external scheme request: $uri")
             return GeckoResult.fromValue(AllowOrDeny.DENY)
         }
         return GeckoResult.fromValue(AllowOrDeny.ALLOW)
@@ -3255,23 +3347,27 @@ class PetalGeckoView @JvmOverloads constructor(
         // No-op: Full-screen skeleton overlay disabled
     }
 
-    private fun handleDeepLinkOrCustomScheme(url: String?): Boolean {
+    private fun isExternalScheme(url: String?): Boolean {
         if (url.isNullOrBlank()) return false
         val lower = url.lowercase()
-        if (lower.startsWith("http://") || lower.startsWith("https://") ||
-            lower.startsWith("about:") || lower.startsWith("blob:") ||
-            lower.startsWith("data:") || lower.startsWith("javascript:") ||
-            lower.startsWith("petal:") || lower.startsWith("moz-extension:") ||
-            lower.startsWith("resource:") || lower.startsWith("chrome:")
-        ) {
-            return false
-        }
+        return !(lower.startsWith("http://") || lower.startsWith("https://") ||
+                 lower.startsWith("about:") || lower.startsWith("blob:") ||
+                 lower.startsWith("data:") || lower.startsWith("javascript:") ||
+                 lower.startsWith("petal:") || lower.startsWith("moz-extension:") ||
+                 lower.startsWith("resource:") || lower.startsWith("chrome:"))
+    }
+
+    private fun handleDeepLinkOrCustomScheme(url: String?): Boolean {
+        if (url.isNullOrBlank() || !isExternalScheme(url)) return false
 
         val act = getHostActivity() ?: return false
         if (lower.startsWith("intent://")) {
             try {
                 val intent = android.content.Intent.parseUri(url, android.content.Intent.URI_INTENT_SCHEME)
                 if (intent != null) {
+                    intent.component = null
+                    intent.selector = null
+                    intent.addCategory(android.content.Intent.CATEGORY_BROWSABLE)
                     intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                     val pm = act.packageManager
                     if (pm != null && intent.resolveActivity(pm) != null) {
@@ -3290,14 +3386,21 @@ class PetalGeckoView @JvmOverloads constructor(
                                 android.content.Intent.ACTION_VIEW,
                                 android.net.Uri.parse("market://details?id=$pkg")
                             )
+                            marketIntent.component = null
+                            marketIntent.selector = null
+                            marketIntent.addCategory(android.content.Intent.CATEGORY_BROWSABLE)
                             marketIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                            act.startActivity(marketIntent)
-                            return true
-                        } catch (_: Exception) {}
+                            if (pm != null && marketIntent.resolveActivity(pm) != null) {
+                                act.startActivity(marketIntent)
+                                return true
+                            }
+                        } catch (e: Exception) {
+                            android.util.Log.d(TAG, "Blocked or failed market intent launch: $url", e)
+                        }
                     }
                 }
             } catch (e: Exception) {
-                android.util.Log.w(TAG, "Error handling intent scheme: $url", e)
+                android.util.Log.d(TAG, "Blocked or failed intent scheme: $url", e)
             }
             return true
         }
@@ -3305,6 +3408,9 @@ class PetalGeckoView @JvmOverloads constructor(
         try {
             val parsedUri = android.net.Uri.parse(url)
             val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, parsedUri)
+            intent.component = null
+            intent.selector = null
+            intent.addCategory(android.content.Intent.CATEGORY_BROWSABLE)
             intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
             val pm = act.packageManager
             if (pm != null && intent.resolveActivity(pm) != null) {
@@ -3321,8 +3427,11 @@ class PetalGeckoView @JvmOverloads constructor(
                 )
                 return true
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            android.util.Log.d(TAG, "Blocked or failed custom scheme launch: $url", e)
+        }
 
+        android.util.Log.d(TAG, "Blocked unhandled external link or no app found: $url")
         // No app can handle this URI (e.g. content:// with no matching viewer) and it's
         // not http(s)/about/blob/data/javascript/petal — don't let Gecko fall through and
         // try to render it as a webpage (it will just fail and can leave a broken tab).

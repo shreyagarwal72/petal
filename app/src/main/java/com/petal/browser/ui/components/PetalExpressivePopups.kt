@@ -1038,6 +1038,67 @@ object PetalExpressivePromptBridge {
     }
 
     @JvmStatic
+    fun showSlowScriptDialog(
+        context: android.content.Context,
+        onStop: Runnable,
+        onWait: Runnable
+    ) {
+        val activity = findActivity(context) ?: run { onWait.run(); return }
+        var dialog: androidx.appcompat.app.AlertDialog? = null
+        var finished = false
+        val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                com.petal.browser.ui.theme.PetalExpressiveTheme {
+                    PetalExpressiveAlertDialog(
+                        onDismissRequest = {
+                            if (!finished) {
+                                finished = true
+                                try { dialog?.dismiss() } catch (_: Exception) {}
+                                onWait.run()
+                            }
+                        },
+                        title = "Page not responding",
+                        message = "A script on this page is taking longer than expected. Do you want to stop it or wait for it to finish?",
+                        confirmText = "Stop",
+                        onConfirm = {
+                            if (!finished) {
+                                finished = true
+                                try { dialog?.dismiss() } catch (_: Exception) {}
+                                onStop.run()
+                            }
+                        },
+                        dismissText = "Wait",
+                        onDismiss = {
+                            if (!finished) {
+                                finished = true
+                                try { dialog?.dismiss() } catch (_: Exception) {}
+                                onWait.run()
+                            }
+                        }
+                    )
+                }
+            }
+        }
+        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+            .setView(composeView)
+            .setCancelable(true)
+            .setOnCancelListener {
+                if (!finished) {
+                    finished = true
+                    onWait.run()
+                }
+            }
+        dialog = builder.create().apply {
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+            show()
+        }
+    }
+
+    @JvmStatic
     fun showPrompt(
         context: android.content.Context,
         title: String,

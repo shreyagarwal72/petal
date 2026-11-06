@@ -776,7 +776,10 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun setCookieBannerAutoReject(enabled: Boolean) {
-        sp.edit().putBoolean("sp_cookie_banner_auto_reject", enabled).apply()
+        sp.edit()
+            .putBoolean("sp_cookie_banner_auto_reject", enabled)
+            .putBoolean("petal_builtin_consent_manager", enabled)
+            .apply()
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 

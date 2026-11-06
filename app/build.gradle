@@ -309,19 +309,13 @@ dependencies {
     implementation 'org.mozilla.components:support-utils:159.0.1'
 
     // Android Components Features (159.0.1)
-    implementation 'org.mozilla.components:feature-readerview:159.0.1'
     implementation 'org.mozilla.components:feature-session:159.0.1'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-    implementation 'org.mozilla.components:feature-findinpage:159.0.1'
     implementation 'org.mozilla.components:feature-sitepermissions:159.0.1'
     implementation 'org.mozilla.components:feature-prompts:159.0.1'
     implementation 'org.mozilla.components:feature-tabs:159.0.1'
-    implementation 'org.mozilla.components:feature-contextmenu:159.0.1'
-    implementation 'org.mozilla.components:feature-pwa:159.0.1'
     implementation 'org.mozilla.components:feature-downloads:159.0.1'
-    implementation 'org.mozilla.components:feature-search:159.0.1'
     implementation 'org.mozilla.components:feature-webcompat:159.0.1'
-    implementation 'org.mozilla.components:feature-customtabs:159.0.1'
     implementation 'org.mozilla.components:feature-media:159.0.1'
 
     // Dagger Hilt Dependency Injection
