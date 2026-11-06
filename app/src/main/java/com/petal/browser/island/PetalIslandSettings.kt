@@ -1,5 +1,7 @@
 package com.petal.browser.island
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.compose.runtime.Composable
@@ -117,5 +119,5 @@ fun rememberIslandSettings(): State<IslandSettings> {
     val initial = remember(context) {
         IslandSettings.read(PreferenceManager.getDefaultSharedPreferences(context))
     }
-    return flow.collectAsState(initial = initial)
+    return flow.collectAsStateWithLifecycle(initial = initial)
 }

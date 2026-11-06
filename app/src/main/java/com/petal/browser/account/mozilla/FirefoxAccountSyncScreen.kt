@@ -1,5 +1,7 @@
 package com.petal.browser.account.mozilla
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.net.Uri
@@ -82,9 +84,9 @@ fun FirefoxAccountSyncScreen(
     val fxaManager = remember { FxAccountManager.getInstance() }
     val syncManager = remember { PetalMozillaSyncManager.getInstance() }
 
-    val accountState by fxaManager.accountState.collectAsState()
-    val syncState by syncManager.syncState.collectAsState()
-    val remoteDevices by syncManager.tabBridge.remoteTabsFlow.collectAsState()
+    val accountState by fxaManager.accountState.collectAsStateWithLifecycle()
+    val syncState by syncManager.syncState.collectAsStateWithLifecycle()
+    val remoteDevices by syncManager.tabBridge.remoteTabsFlow.collectAsStateWithLifecycle()
 
     val profile = PetalUserProfileManager.currentProfile
     val coroutineScope = rememberCoroutineScope()

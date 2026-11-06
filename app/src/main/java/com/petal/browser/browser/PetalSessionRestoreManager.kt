@@ -80,15 +80,6 @@ object PetalSessionRestoreManager {
                 when (controller) {
                     is PetalTabViewController -> {
                         val tabId = controller.getTabId() ?: continue
-                        try {
-                            val tab = store.state.tabs.firstOrNull { it.id == tabId }
-                            val engineSessionState = tab?.engineState?.engineSession?.saveState()
-                            if (engineSessionState != null) {
-                                store.dispatch(EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState))
-                            }
-                        } catch (t: Throwable) {
-                            Log.w(TAG, "Failed to capture engine state for tab $tabId: ${t.message}")
-                        }
                         val url = controller.url
                         if (url.isNotBlank() && !isHomeUrl(url) && !url.equals("about:blank", ignoreCase = true)) {
                             store.dispatch(ContentAction.UpdateUrlAction(tabId, url))
@@ -100,15 +91,6 @@ object PetalSessionRestoreManager {
                     }
                     is PetalGeckoView -> {
                         val tabId = controller.getTabId()
-                        try {
-                            val tab = store.state.tabs.firstOrNull { it.id == tabId }
-                            val engineSessionState = tab?.engineState?.engineSession?.saveState()
-                            if (engineSessionState != null) {
-                                store.dispatch(EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState))
-                            }
-                        } catch (t: Throwable) {
-                            Log.w(TAG, "Failed to capture engine state for tab $tabId: ${t.message}")
-                        }
                         val url = controller.url
                         if (url.isNotBlank() && !isHomeUrl(url) && !url.equals("about:blank", ignoreCase = true)) {
                             store.dispatch(ContentAction.UpdateUrlAction(tabId, url))

@@ -1,5 +1,7 @@
 package com.petal.browser.ui.components
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -127,8 +129,8 @@ fun AddressPill(
         sp.registerOnSharedPreferenceChangeListener(l)
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(l) }
     }
-    val hasPlayableMedia by PetalMediaSniffer.interceptor.hasPlayableMedia.collectAsState()
-    val nativeResources by PetalNativeSnifferEngine.currentTabResources.collectAsState()
+    val hasPlayableMedia by PetalMediaSniffer.interceptor.hasPlayableMedia.collectAsStateWithLifecycle()
+    val nativeResources by PetalNativeSnifferEngine.currentTabResources.collectAsStateWithLifecycle()
 
     val isBlankOrSearch = url.isEmpty() || url == "about:blank" || url.startsWith("file:///android_asset/")
     val showMediaButton = isMediaButtonPrefEnabled && (hasPlayableMedia || nativeResources.isNotEmpty()) && !isBlankOrSearch

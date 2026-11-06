@@ -7,6 +7,8 @@
  */
 
 package com.petal.browser.compose.downloads
+
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
@@ -408,7 +410,7 @@ fun PetalDownloadManagerScreen(
         PetalFetchDownloadBridge.ensureInitialized(context)
         PetalFetchDownloadBridge.refresh(context)
     }
-    val rawDownloadList by PetalFetchDownloadBridge.downloadItems.collectAsState()
+    val rawDownloadList by PetalFetchDownloadBridge.downloadItems.collectAsStateWithLifecycle()
     var pendingDeletedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var pendingDeleteItems by remember { mutableStateOf<List<DownloadItem>>(emptyList()) }
     val rowBounds = remember { mutableMapOf<Long, androidx.compose.ui.geometry.Rect>() }

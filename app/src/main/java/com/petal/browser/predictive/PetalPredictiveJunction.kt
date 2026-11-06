@@ -23,6 +23,8 @@
 
 package com.petal.browser.predictive
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.content.SharedPreferences
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
@@ -232,8 +234,8 @@ fun PetalPredictiveBackSurface(
     onBack: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
-    val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
+    val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
+    val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsStateWithLifecycle()
     val isUnderlayPreview = LocalIsUnderlayPreview.current
     val progressAnim = remember { Animatable(0f) }
     var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
@@ -449,8 +451,8 @@ fun PetalScreenWrapper(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
-    val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
+    val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
+    val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsStateWithLifecycle()
 
     val predictiveEnabled = junctionPredictiveEnabled
     val blurEnabled = junctionBlurEnabled
@@ -504,8 +506,8 @@ fun PetalScreenWrapper(
     } else 0.dp
 
     val isActive = predictiveBackState.isActive
-    val style by PetalPredictiveJunction.backStyle.collectAsState()
-    val exitDirection by PetalPredictiveJunction.backExitDirection.collectAsState()
+    val style by PetalPredictiveJunction.backStyle.collectAsStateWithLifecycle()
+    val exitDirection by PetalPredictiveJunction.backExitDirection.collectAsStateWithLifecycle()
     val configuration = LocalConfiguration.current
     val screenDensity = LocalDensity.current.density
     val gestureLive = predictiveEnabled && isActive

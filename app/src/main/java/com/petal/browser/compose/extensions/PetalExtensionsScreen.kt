@@ -9,6 +9,8 @@
 
 package com.petal.browser.compose.extensions
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.graphics.Bitmap
@@ -194,14 +196,14 @@ fun PetalExtensionsScreen(
     onDismiss: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val extensions by PetalExtensionManager.extensions.collectAsState()
+    val extensions by PetalExtensionManager.extensions.collectAsStateWithLifecycle()
     val firefoxExtensions = remember(extensions) {
         extensions.filter { !PetalBuiltInExtensionManager.isBuiltIn(it.id) }
     }
-    val pendingPrompt by PetalExtensionManager.pendingPrompt.collectAsState()
-    val pendingPopup by PetalExtensionManager.pendingPopup.collectAsState()
-    val busy by PetalExtensionManager.busy.collectAsState()
-    val lastError by PetalExtensionManager.lastError.collectAsState()
+    val pendingPrompt by PetalExtensionManager.pendingPrompt.collectAsStateWithLifecycle()
+    val pendingPopup by PetalExtensionManager.pendingPopup.collectAsStateWithLifecycle()
+    val busy by PetalExtensionManager.busy.collectAsStateWithLifecycle()
+    val lastError by PetalExtensionManager.lastError.collectAsStateWithLifecycle()
 
     var selectedTabIndex by remember { mutableStateOf(0) } // 0: Built-in, 1: Firefox Add-ons
     var showAddSheet by remember { mutableStateOf(false) }
@@ -549,7 +551,7 @@ private fun FirefoxAddonsList(
     onAddClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val busy by PetalExtensionManager.busy.collectAsState()
+    val busy by PetalExtensionManager.busy.collectAsStateWithLifecycle()
     val addonsListState = rememberLazyListState()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -1190,8 +1192,8 @@ private fun AddExtensionSheet(
     var manualUrl by remember { mutableStateOf("") }
     var showMozillaCatalogPrompt by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val busy by PetalExtensionManager.busy.collectAsState()
-    val extensions by PetalExtensionManager.extensions.collectAsState()
+    val busy by PetalExtensionManager.busy.collectAsStateWithLifecycle()
+    val extensions by PetalExtensionManager.extensions.collectAsStateWithLifecycle()
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val btnShape = RoundedCornerShape(16.dp)
 

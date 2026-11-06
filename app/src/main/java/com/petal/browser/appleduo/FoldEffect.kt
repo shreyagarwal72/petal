@@ -7,6 +7,8 @@
 
 package com.petal.browser.appleduo
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
@@ -33,14 +35,14 @@ fun Modifier.appleDuoFoldEffect(
 ): Modifier = composed {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@composed this
 
-    val isEnabled by AppleDuoManager.isEnabled.collectAsState()
+    val isEnabled by AppleDuoManager.isEnabled.collectAsStateWithLifecycle()
     if (!isEnabled) return@composed this
 
-    val tiltDegrees by AppleDuoManager.currentTilt.collectAsState()
-    val hingeSide by AppleDuoManager.currentHingeSide.collectAsState()
-    val eyeDistance by AppleDuoManager.eyeDistance.collectAsState()
-    val blurSpread by AppleDuoManager.blurSpread.collectAsState()
-    val darkening by AppleDuoManager.darkening.collectAsState()
+    val tiltDegrees by AppleDuoManager.currentTilt.collectAsStateWithLifecycle()
+    val hingeSide by AppleDuoManager.currentHingeSide.collectAsStateWithLifecycle()
+    val eyeDistance by AppleDuoManager.eyeDistance.collectAsStateWithLifecycle()
+    val blurSpread by AppleDuoManager.blurSpread.collectAsStateWithLifecycle()
+    val darkening by AppleDuoManager.darkening.collectAsStateWithLifecycle()
 
     if (Math.abs(tiltDegrees) < 1e-4f) return@composed this
 

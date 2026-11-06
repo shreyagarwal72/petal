@@ -9,6 +9,8 @@
 
 package com.petal.browser.account.mozilla
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import androidx.compose.animation.*
@@ -52,8 +54,8 @@ fun PetalSendToDeviceSheet(
     val syncManager = remember { PetalMozillaSyncManager.getInstance() }
     val fxaManager = remember { FxAccountManager.getInstance() }
 
-    val accountState by fxaManager.accountState.collectAsState()
-    val remoteDevices by syncManager.tabBridge.remoteTabsFlow.collectAsState()
+    val accountState by fxaManager.accountState.collectAsStateWithLifecycle()
+    val remoteDevices by syncManager.tabBridge.remoteTabsFlow.collectAsStateWithLifecycle()
 
     var isSending by remember { mutableStateOf(false) }
     var sentTarget by remember { mutableStateOf<String?>(null) }
@@ -193,7 +195,7 @@ fun PetalSendToDeviceSheet(
                         .heightIn(max = 280.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(remoteDevices) { device ->
+                    items(remoteDevices, key = { it.deviceId }) { device ->
                         val deviceIcon = resolveDeviceIcon(device.deviceType, device.deviceName)
                         val isTargetSent = sentTarget == device.deviceId
 

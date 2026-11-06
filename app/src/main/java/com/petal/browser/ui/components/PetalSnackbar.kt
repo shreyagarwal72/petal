@@ -1,5 +1,7 @@
 package com.petal.browser.ui.components
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.app.Activity
 import android.content.Context
 import android.os.Handler
@@ -182,7 +184,7 @@ object PetalSnackbarDispatcher {
 fun PetalSnackbarHost(
     modifier: Modifier = Modifier
 ) {
-    val snackbarData by PetalSnackbarDispatcher.currentSnackbar.collectAsState()
+    val snackbarData by PetalSnackbarDispatcher.currentSnackbar.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
 

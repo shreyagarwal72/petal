@@ -12,6 +12,8 @@
 
 package com.petal.browser.compose.downloads
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -129,7 +131,7 @@ object PetalDownloadBannerBridge {
                 }
 
                 // Collect live download items from PetalFetchDownloadBridge
-                val downloadItems by PetalFetchDownloadBridge.downloadItems.collectAsState()
+                val downloadItems by PetalFetchDownloadBridge.downloadItems.collectAsStateWithLifecycle()
 
                 LaunchedEffect(downloadItems) {
                     val activeItem: DownloadItem? = downloadItems.maxByOrNull { it.timestampMs }

@@ -111,7 +111,7 @@ fun PetalNewsSection(
             contentPadding = PaddingValues(horizontal = 0.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(articles) { article ->
+            items(articles, key = { it.url.ifBlank { it.title } }) { article ->
                 PetalNewsArticleCard(
                     article = article,
                     onClick = { onArticleClick(article.url) }

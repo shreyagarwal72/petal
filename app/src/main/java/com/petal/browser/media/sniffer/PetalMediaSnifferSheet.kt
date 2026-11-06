@@ -1,5 +1,7 @@
 package com.petal.browser.media.sniffer
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.webkit.CookieManager
 import androidx.compose.animation.AnimatedVisibility
@@ -110,7 +112,7 @@ fun PetalMediaSnifferOverlay(
     val detectBackground = remember { sp.getBoolean("sp_media_detect_background", true) }
     val autoOpenPanel = remember { sp.getBoolean("sp_media_auto_open_panel", false) }
 
-    val media by PetalMediaSniffer.interceptor.playableMedia.collectAsState()
+    val media by PetalMediaSniffer.interceptor.playableMedia.collectAsStateWithLifecycle()
     val platform = remember(currentPageUrl) { SupportedPlatforms.getPlatform(currentPageUrl) }
     val socialOnly = platform != null
     var sheetOpen by remember { mutableStateOf(false) }

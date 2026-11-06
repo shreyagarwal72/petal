@@ -1,5 +1,7 @@
 package com.petal.browser.island
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.app.Application
 import android.graphics.PixelFormat
 import android.os.Build
@@ -114,7 +116,7 @@ object PetalLiveOverlayController {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
             setContent {
                 PetalExpressiveTheme {
-                    val current by ui.collectAsState()
+                    val current by ui.collectAsStateWithLifecycle()
                     PetalLiveIsland(
                         state = current.bus,
                         settings = current.settings,

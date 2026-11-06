@@ -17,6 +17,8 @@
 
 package com.petal.browser.ui.components.expressive.switches
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.MutatorMutex
@@ -97,7 +99,7 @@ internal fun LiquidToggle(
     interactionSource: MutableInteractionSource,
     modifier: Modifier = Modifier
 ) {
-    val interactions by interactionSource.interactions.collectAsState(initial = null)
+    val interactions by interactionSource.interactions.collectAsStateWithLifecycle(initial = null)
 
     val accentColor by colors.trackColor(
         enabled = enabled,

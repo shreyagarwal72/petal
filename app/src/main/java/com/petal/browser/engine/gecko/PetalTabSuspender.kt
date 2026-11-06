@@ -82,17 +82,6 @@ object PetalTabSuspender {
                 isIncognito = controller.isIncognito()
 
                 try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
-                try {
-                    val tab = PetalEngineStore.getStore(context).state.tabs.firstOrNull { it.id == tabId }
-                    val engineSessionState = tab?.engineState?.engineSession?.saveState()
-                    if (engineSessionState != null) {
-                        PetalEngineStore.dispatch(
-                            EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState)
-                        )
-                    }
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Error saving EngineSession state before suspension: ${t.message}")
-                }
                 try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
 
                 try {
@@ -117,17 +106,6 @@ object PetalTabSuspender {
                 isIncognito = controller.isIncognito()
 
                 try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
-                try {
-                    val tab = PetalEngineStore.getStore(context).state.tabs.firstOrNull { it.id == tabId }
-                    val engineSessionState = tab?.engineState?.engineSession?.saveState()
-                    if (engineSessionState != null) {
-                        PetalEngineStore.dispatch(
-                            EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState)
-                        )
-                    }
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Error saving EngineSession state before suspension: ${t.message}")
-                }
                 try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
 
                 try {

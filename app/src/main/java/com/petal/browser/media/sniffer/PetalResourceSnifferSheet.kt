@@ -1,5 +1,7 @@
 package com.petal.browser.media.sniffer
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -54,7 +56,7 @@ fun PetalResourceSnifferSheet(
     onPlayVideo: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val resources by PetalNativeSnifferEngine.currentTabResources.collectAsState()
+    val resources by PetalNativeSnifferEngine.currentTabResources.collectAsStateWithLifecycle()
     var selectedCategory by remember { mutableStateOf(PetalResourceCategory.ALL) }
     val selectedIds = remember { mutableStateListOf<String>() }
 

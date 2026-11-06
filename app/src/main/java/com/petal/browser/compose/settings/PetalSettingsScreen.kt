@@ -7,6 +7,8 @@
 
 package com.petal.browser.compose.settings
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedContent
@@ -216,7 +218,7 @@ fun PetalSettingsScreen(
     val drilled = pageCategory != null || push.value > 0.001f
     val behindFraction: () -> Float = remember(push) { { push.value } }
 
-    val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
+    val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
     val isZenithMode = remember(junctionPredictiveEnabled, pageCategory) {
         PetalPredictiveJunction.shouldUseZenithHeaderTransition(
             isPredictiveSettingEnabled = junctionPredictiveEnabled,

@@ -8,6 +8,8 @@
 
 package com.petal.browser.privacy
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.view.PetalToast;
 import android.content.Intent
@@ -55,7 +57,7 @@ fun SafeLockerSheet(
     val activity = context as? FragmentActivity
     val scope = rememberCoroutineScope()
     val lockerManager = remember { SafeLockerManager(context) }
-    val lockedFiles by lockerManager.lockedFiles.collectAsState()
+    val lockedFiles by lockerManager.lockedFiles.collectAsStateWithLifecycle()
 
     var isUnlocked by remember { mutableStateOf(false) }
     var authError by remember { mutableStateOf<String?>(null) }

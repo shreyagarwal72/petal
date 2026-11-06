@@ -525,7 +525,7 @@ fun PetalRewardsSheet(onDismiss: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(PetalUnlockable.values()) { u ->
+                items(PetalUnlockable.values(), key = { it.name }) { u ->
                     val unlocked = PetalProgressStore.isUnlocked(ctx, u)
                     Column(
                         Modifier.bouncyClickable { focus = u },
@@ -630,7 +630,7 @@ fun PetalBadgesSheet(onDismiss: () -> Unit) {
                 columns = GridCells.Fixed(4), modifier = Modifier.heightIn(max = 360.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(PETAL_BADGES) { b ->
+                items(PETAL_BADGES, key = { it.id }) { b ->
                     Column(Modifier.bouncyClickable { focus = b }, horizontalAlignment = Alignment.CenterHorizontally) {
                         BadgeChip(b, 64.dp)
                         Text(b.title, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)

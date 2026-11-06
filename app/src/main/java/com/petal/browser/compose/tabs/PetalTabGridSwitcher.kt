@@ -1,4 +1,6 @@
 package com.petal.browser.compose.tabs
+
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
@@ -581,7 +583,7 @@ fun PetalTabGridSwitcher(
     }
 
     // Predictive back: the tile grows with the gesture; commit expands fully, cancel docks it back.
-    val predictiveBackOn by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
+    val predictiveBackOn by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
     androidx.activity.compose.PredictiveBackHandler(
         enabled = tabs.isNotEmpty()
     ) { progressFlow ->

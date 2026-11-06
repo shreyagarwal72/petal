@@ -1,5 +1,7 @@
 package com.petal.browser.media.sniffer
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -73,7 +75,7 @@ fun PetalMediaGrabberPopupDialog(
     val scope = rememberCoroutineScope()
     val haptics = remember { PetalHapticEngine.getInstance(context) }
 
-    val media by PetalMediaSniffer.interceptor.playableMedia.collectAsState()
+    val media by PetalMediaSniffer.interceptor.playableMedia.collectAsStateWithLifecycle()
     val platform = remember(currentPageUrl) { SupportedPlatforms.getPlatform(currentPageUrl) }
 
     var ytDlpVersion by remember { mutableStateOf(PetalYtDlpEngine.version(context)) }

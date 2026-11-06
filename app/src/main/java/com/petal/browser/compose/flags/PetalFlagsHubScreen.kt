@@ -1,5 +1,7 @@
 package com.petal.browser.compose.flags
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -121,8 +123,8 @@ fun PetalFlagsHubScreen(
     var selectedTabIndex by remember { mutableStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(FlagCategory.ALL) }
-    val hasPendingRelaunch by PetalFlagsStore.hasPendingRelaunch.collectAsState()
-    val modifiedCount by PetalFlagsStore.modifiedFlagsCount.collectAsState()
+    val hasPendingRelaunch by PetalFlagsStore.hasPendingRelaunch.collectAsStateWithLifecycle()
+    val modifiedCount by PetalFlagsStore.modifiedFlagsCount.collectAsStateWithLifecycle()
 
     val filteredFlags = remember(searchQuery, selectedCategory) {
         PetalFlagsRegistry.flags.filter { flag ->

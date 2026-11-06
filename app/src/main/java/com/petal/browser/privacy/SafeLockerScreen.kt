@@ -11,6 +11,8 @@
 
 package com.petal.browser.privacy
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.app.Activity
 import android.content.Context
@@ -137,7 +139,7 @@ fun SafeLockerScreen(
     val activity = context as? FragmentActivity
     val scope = rememberCoroutineScope()
     val lockerManager = remember { SafeLockerManager(context) }
-    val lockedFiles by lockerManager.lockedFiles.collectAsState()
+    val lockedFiles by lockerManager.lockedFiles.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var isUnlocked by remember { mutableStateOf(false) }

@@ -8,6 +8,8 @@
 
 package com.petal.browser.island
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -29,7 +31,7 @@ fun PetalNowBar(
     actionListener: LiveActionActionListener? = null
 ) {
     val context = LocalContext.current
-    val busState by PetalLiveActionBus.state.collectAsState()
+    val busState by PetalLiveActionBus.state.collectAsStateWithLifecycle()
     val settings by rememberIslandSettings()
     val show = remember(settings) { PetalIslandPermissions.shouldShowIsland(context, settings) }
 

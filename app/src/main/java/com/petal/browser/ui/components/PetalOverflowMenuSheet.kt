@@ -1,5 +1,7 @@
 package com.petal.browser.ui.components
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
@@ -717,7 +719,7 @@ fun PetalOverflowMenuSheet(
                 )
 
                 // Tier 5: Extensions & Add-ons
-                val extensions by PetalExtensionManager.extensions.collectAsState()
+                val extensions by PetalExtensionManager.extensions.collectAsStateWithLifecycle()
                 val enabledExtensions = remember(extensions) {
                     extensions.filter { it.enabled && !PetalBuiltInExtensionManager.isBuiltIn(it.id) }
                 }

@@ -1,4 +1,6 @@
 package com.petal.browser.compose.store
+
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
@@ -125,11 +127,11 @@ fun PetalBrowserStoreScreen(
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val installedExtensions by PetalExtensionManager.extensions.collectAsState()
-    val isExtensionBusy by PetalExtensionManager.busy.collectAsState()
+    val installedExtensions by PetalExtensionManager.extensions.collectAsStateWithLifecycle()
+    val isExtensionBusy by PetalExtensionManager.busy.collectAsStateWithLifecycle()
     // The install prompt used to be rendered only by the Extensions screen, which stops composing
     // while the Store is open - so Gecko waited forever for an answer and installs from the Store hung.
-    val pendingInstallPrompt by PetalExtensionManager.pendingPrompt.collectAsState()
+    val pendingInstallPrompt by PetalExtensionManager.pendingPrompt.collectAsStateWithLifecycle()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }

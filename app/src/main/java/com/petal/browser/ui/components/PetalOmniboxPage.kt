@@ -1010,7 +1010,7 @@ fun PetalOmniboxPage(
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
-                                    items(siteShortcuts) { shortcut ->
+                                    items(siteShortcuts, key = { it.url.ifEmpty { it.title } }) { shortcut ->
                                         val faviconUrl = remember(shortcut.url) {
                                             com.petal.browser.database.FaviconHelper.getGoogleFaviconUrl(shortcut.url)
                                         }
