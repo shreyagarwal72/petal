@@ -1367,7 +1367,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (notificationManager != null) {
                 notificationManager.cancel(1);
             }
-            BrowserContainer.clear();
+            // Release the VIEWS only. clear() would destroy() every tab, which removes it from the
+            // BrowserStore (AutoSave then deletes the saved session) and deletes its thumbnail.
+            BrowserContainer.releaseAll();
             if (sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
                 PetalBrowserUtils.clearOnExit(this);
             }
