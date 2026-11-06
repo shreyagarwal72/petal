@@ -166,4 +166,5 @@ object PetalFlagsRegistry {
 
     fun findById(id: String): PetalFlagDefinition? = flags.firstOrNull { it.id == id }
     fun findByPrefKey(key: String): PetalFlagDefinition? = flags.firstOrNull { it.prefKey == key }
+    fun isEnabled(context: android.content.Context, id: String): Boolean = PetalFlagsStore.isEnabled(context, id)
 }

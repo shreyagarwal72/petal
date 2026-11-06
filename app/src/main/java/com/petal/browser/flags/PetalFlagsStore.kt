@@ -32,6 +32,14 @@ object PetalFlagsStore {
         refreshModifiedCount(sp)
     }
 
+    fun isEnabled(context: Context, flagId: String): Boolean {
+        val state = getFlagState(context, flagId)
+        if (state == FlagState.ENABLED) return true
+        if (state == FlagState.DISABLED) return false
+        val flag = PetalFlagsRegistry.flags.find { it.id == flagId }
+        return flag?.defaultValue == FlagState.ENABLED
+    }
+
     fun getFlagState(context: Context, flagId: String): FlagState {
         val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
         val stateName = sp.getString(PREF_PREFIX + flagId, FlagState.DEFAULT.name) ?: FlagState.DEFAULT.name

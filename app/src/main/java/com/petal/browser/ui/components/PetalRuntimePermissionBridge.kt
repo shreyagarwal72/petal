@@ -50,7 +50,7 @@ object PetalRuntimePermissionBridge {
     @JvmStatic
     fun handlePermissionsResult(
         requestCode: Int,
-        permissions: Array<out String>,
+        permissions: Array<String>,
         grantResults: IntArray
     ): Boolean {
         val callback = pendingCallbacks.remove(requestCode) ?: return false

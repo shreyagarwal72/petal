@@ -791,7 +791,7 @@ class PetalGeckoView @JvmOverloads constructor(
                         val isMultiple = prompt.type == GeckoSession.PromptDelegate.FilePrompt.Type.MULTIPLE
                         val mimeTypes = prompt.mimeTypes?.filter { !it.isNullOrBlank() }?.toTypedArray() ?: emptyArray()
 
-                        val valueCallback = object : android.webkit.ValueCallback<Array<android.net.Uri>?> {
+                        val valueCallback = object : android.webkit.ValueCallback<Array<android.net.Uri>> {
                             override fun onReceiveValue(value: Array<android.net.Uri>?) {
                                 if (value == null || value.isEmpty()) {
                                     if (!prompt.isComplete) {
@@ -2200,7 +2200,7 @@ class PetalGeckoView @JvmOverloads constructor(
         return if (errorUri != null) GeckoResult.fromValue(errorUri) else null
     }
 
-    private fun mapWebRequestErrorToErrorType(error: WebRequestError): mozilla.components.browser.errorpages.ErrorType {
+    private fun mapWebRequestErrorToErrorType(error: WebRequestError): mozilla.components.concept.engine.error.ErrorType {
         val name = when (error.code) {
             WebRequestError.ERROR_UNKNOWN_HOST -> "ERROR_UNKNOWN_HOST"
             WebRequestError.ERROR_NET_TIMEOUT -> "ERROR_NET_TIMEOUT"
@@ -2228,9 +2228,13 @@ class PetalGeckoView @JvmOverloads constructor(
                 else -> "ERROR_UNKNOWN"
             }
         }
-        return runCatching { mozilla.components.browser.errorpages.ErrorType.valueOf(name) }.getOrElse {
-            runCatching { mozilla.components.browser.errorpages.ErrorType.valueOf("ERROR_UNKNOWN") }.getOrElse {
-                mozilla.components.browser.errorpages.ErrorType.values().first()
+        return try {
+            mozilla.components.concept.engine.error.ErrorType.valueOf(name)
+        } catch (_: Throwable) {
+            try {
+                mozilla.components.concept.engine.error.ErrorType.valueOf("ERROR_UNKNOWN")
+            } catch (_: Throwable) {
+                mozilla.components.concept.engine.error.ErrorType.values().first()
             }
         }
     }

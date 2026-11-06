@@ -18,6 +18,10 @@ import mozilla.components.support.utils.DefaultDownloadFileUtils
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import org.mozilla.geckoview.GeckoRuntime
+import mozilla.components.concept.engine.DefaultSettings
+import mozilla.components.concept.engine.EngineSession
+import mozilla.components.concept.engine.error.ErrorType
+import mozilla.components.concept.engine.request.RequestInterceptor
 
 /**
  * PetalEngineStore
@@ -66,20 +70,20 @@ object PetalEngineStore {
         val appContext = context.applicationContext
         val runtime = PetalGeckoRuntime.getOrCreate(appContext)
 
-        val defaultSettings = mozilla.components.concept.engine.DefaultSettings(
-            requestInterceptor = object : mozilla.components.concept.engine.request.RequestInterceptor {
+        val defaultSettings = DefaultSettings(
+            requestInterceptor = object : RequestInterceptor {
                 override fun onErrorRequest(
-                    session: mozilla.components.concept.engine.EngineSession,
-                    errorType: mozilla.components.browser.errorpages.ErrorType,
+                    session: EngineSession,
+                    errorType: ErrorType,
                     uri: String?
-                ): mozilla.components.concept.engine.request.RequestInterceptor.ErrorResponse? {
+                ): RequestInterceptor.ErrorResponse? {
                     return try {
                         val errorPageUri = mozilla.components.browser.errorpages.ErrorPages.createUrlEncodedErrorPage(
                             appContext,
                             errorType,
                             uri
                         )
-                        mozilla.components.concept.engine.request.RequestInterceptor.ErrorResponse.Uri(errorPageUri)
+                        RequestInterceptor.ErrorResponse(errorPageUri)
                     } catch (t: Throwable) {
                         Log.e(TAG, "Failed to create url-encoded error page", t)
                         null
