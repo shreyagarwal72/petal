@@ -120,7 +120,6 @@ import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
-import racra.compose.smooth_corner_rect_library.AbsoluteSmoothCornerShape
 
 /**
  * Petal Player Component Suite
@@ -711,16 +710,7 @@ fun PetalAnimatedPlaybackControls(
                 animationSpec = defaultSpatialDpSpec,
                 label = "playCorner",
             )
-            val playShape = AbsoluteSmoothCornerShape(
-                cornerRadiusTL = playCorner,
-                smoothnessAsPercentTR = 60,
-                cornerRadiusBL = playCorner,
-                smoothnessAsPercentTL = 60,
-                cornerRadiusTR = playCorner,
-                smoothnessAsPercentBL = 60,
-                cornerRadiusBR = playCorner,
-                smoothnessAsPercentBR = 60,
-            )
+            val playShape = RoundedCornerShape(playCorner)
             val playModifier = if (isLiquidGlass) {
                 Modifier
                     .background(colorPlayPause.copy(alpha = 0.9f), playShape)

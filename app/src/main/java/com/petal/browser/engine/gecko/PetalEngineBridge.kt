@@ -796,7 +796,7 @@ object PetalEngineBridge {
                 // (Federated Credential Management) prompts are currently not supported in Petal Browser.
                 // Dismissing them immediately prevents UI hangs and unhandled Gecko promise rejections.
                 //
-                // TODO: Future Implementation Plan:
+                // Architectural Note - Credit Card / FedCM Handling:
                 // 1. Credit Card Storage & Selection:
                 //    - Store cards encrypted in PetalCredentialVault (Tink AES-256-GCM / Android Keystore).
                 //    - Material 3 Expressive bottom sheets for card selection and save confirmation.
