@@ -1052,7 +1052,7 @@ object PetalExtensionManager {
             })();
         """.trimIndent().replace("\n", " ")
         try {
-            session.loadUri("javascript:$js")
+            PetalBuiltInExtensionManager.evaluateJavascript(session, js)
         } catch (ignored: Exception) {}
     }
 

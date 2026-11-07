@@ -1950,25 +1950,8 @@ class PetalTabViewController private constructor(
     }
 
     private fun injectPagePrivacyAndAdBlock() {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
-        val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
-
-        if (pageUrl.isBlank() || pageUrl.startsWith("about:") || pageUrl.startsWith("chrome:") || pageUrl.startsWith("moz-extension:")) return
-        val gs = getGeckoSession() ?: return
-
-        try {
-            // Waterfox-grade cosmetic and anti-adblock scriptlet injection
-            // Note: DNT/GPC, WebRTC IP masking, canvas/webgl noise, and visibility overrides
-            // run at document_start via defuser.js to guarantee scripts never miss early page execution.
-            if (adBlockEnabled) {
-                val cosmeticScript = com.petal.browser.browser.PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload(pageUrl)
-                if (cosmeticScript.isNotBlank()) {
-                    gs.loadUri(cosmeticScript)
-                }
-            }
-        } catch (t: Throwable) {
-            android.util.Log.w("PetalTabViewController", "Failed to inject cosmetic adblock rules: ${t.message}")
-        }
+        // Late gs.loadUri(javascript:) injection deleted per Stage 4.
+        // Cosmetic filtering and scriptlets are handled early at document_start via WebExtension content scripts.
     }
 
     private fun recordHistoryVisit(targetUrl: String, titleToRecord: String? = null, force: Boolean = false) {

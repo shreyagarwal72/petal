@@ -141,7 +141,9 @@ object PetalGeckoRuntime {
 
         var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT
         if (adBlockEnabled || etpStrict) {
-            antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or ContentBlocking.AntiTracking.STP or
+            antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or
+                    ContentBlocking.AntiTracking.ANALYTIC or ContentBlocking.AntiTracking.SOCIAL or
+                    ContentBlocking.AntiTracking.CONTENT or ContentBlocking.AntiTracking.STP or
                     ContentBlocking.AntiTracking.CRYPTOMINING or ContentBlocking.AntiTracking.FINGERPRINTING
         }
         // Match official Firefox default: STRICT when strict/ad-blocking is requested,
@@ -397,8 +399,10 @@ object PetalGeckoRuntime {
                 // 4. Anti-Tracking Flags (STP, Social, Cryptominers, Ads)
                 var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT
                 if (adBlockEnabled || etpStrict) {
-                    antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or ContentBlocking.AntiTracking.STP or
-                    ContentBlocking.AntiTracking.CRYPTOMINING or ContentBlocking.AntiTracking.FINGERPRINTING
+                    antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or
+                            ContentBlocking.AntiTracking.ANALYTIC or ContentBlocking.AntiTracking.SOCIAL or
+                            ContentBlocking.AntiTracking.CONTENT or ContentBlocking.AntiTracking.STP or
+                            ContentBlocking.AntiTracking.CRYPTOMINING or ContentBlocking.AntiTracking.FINGERPRINTING
                 }
                 rt.settings.contentBlocking.setAntiTracking(antiTrackingFlags)
 

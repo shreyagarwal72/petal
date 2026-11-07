@@ -31,6 +31,7 @@ object PetalBuiltInExtensionManager {
     private const val MEDIA_GRABBER_ID = "petal-media-grabber@petalbrowser.app"
     private const val DARK_WEBPAGES_ID = "petal-dark-webpages@petalbrowser.app"
     private const val SCRIPTLET_DEFUSER_ID = "petal-scriptlet-defuser@petalbrowser.app"
+    private const val NETWORK_BLOCKER_ID = "petal-network-blocker@petalbrowser.app"
     private const val NATIVE_APP = "petalApp"
 
     private var appContext: Context? = null
@@ -116,6 +117,37 @@ object PetalBuiltInExtensionManager {
                         put("whitelist", org.json.JSONArray(getDarkWebpagesWhitelist(ctx).toList()))
                     }
                     return GeckoResult.fromValue(resp)
+                }
+            }
+            return null
+        }
+    }
+
+    private val blockerMessageDelegate = object : WebExtension.MessageDelegate {
+        override fun onMessage(nativeApp: String, message: Any, sender: WebExtension.MessageSender): GeckoResult<Any>? {
+            if (nativeApp != NATIVE_APP) return null
+            val json = runCatching { if (message is JSONObject) message else JSONObject(message.toString()) }.getOrNull()
+                ?: return null
+            val msgType = json.optString("type")
+            val ctx = appContext ?: return null
+
+            when (msgType) {
+                "GET_BLOCKER_CONFIG" -> {
+                    val enabled = com.petal.browser.browser.PetalAdBlockEngine.isAdBlockEnabled(ctx)
+                    val whitelist = com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains().toList()
+                    val totalBlocked = com.petal.browser.browser.PetalAdBlockEngine.getTotalBlockedCount()
+                    val resp = JSONObject().apply {
+                        put("type", "BLOCKER_CONFIG_RESPONSE")
+                        put("enabled", enabled)
+                        put("whitelist", org.json.JSONArray(whitelist))
+                        put("totalBlocked", totalBlocked)
+                    }
+                    return GeckoResult.fromValue(resp)
+                }
+                "RECORD_BLOCK" -> {
+                    val pageUrl = json.optString("pageUrl").takeIf { it.isNotBlank() }
+                    com.petal.browser.browser.PetalAdBlockEngine.recordBlock(pageUrl)
+                    return GeckoResult.fromValue(JSONObject().apply { put("success", true) })
                 }
             }
             return null
@@ -296,6 +328,14 @@ object PetalBuiltInExtensionManager {
             description = "Open-source, ad-free torrent and media search index with instant magnet links.",
             prefKey     = "petal_builtin_torrays",
             defaultOn   = true
+        ),
+        BuiltInSpec(
+            assetPath   = "web_extensions/petal_network_blocker/",
+            extensionId = NETWORK_BLOCKER_ID,
+            label       = "Petal Network Shield & Blocker",
+            description = "High-performance network subresource blocker and early cosmetic filter for ads and trackers.",
+            prefKey     = "sp_ad_block",
+            defaultOn   = true
         )
     )
 
@@ -337,6 +377,14 @@ object PetalBuiltInExtensionManager {
                 session.webExtensionController.setMessageDelegate(scriptletDefuser, scriptletMessageDelegate, NATIVE_APP)
             } catch (t: Throwable) {
                 Log.w(TAG, "Failed to attach scriptlet defuser delegate to session", t)
+            }
+        }
+        val networkBlocker = installedExtensions[NETWORK_BLOCKER_ID]
+        if (networkBlocker != null) {
+            try {
+                session.webExtensionController.setMessageDelegate(networkBlocker, blockerMessageDelegate, NATIVE_APP)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to attach network blocker delegate to session", t)
             }
         }
     }
@@ -457,6 +505,21 @@ object PetalBuiltInExtensionManager {
                         }
                     }
                 }
+                if (spec.extensionId == NETWORK_BLOCKER_ID) {
+                    try {
+                        ext.setMessageDelegate(blockerMessageDelegate, NATIVE_APP)
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Failed to set global message delegate for network blocker", t)
+                    }
+                    val sessions = synchronized(activeSessions) { activeSessions.toList() }
+                    for (session in sessions) {
+                        try {
+                            session.webExtensionController.setMessageDelegate(ext, blockerMessageDelegate, NATIVE_APP)
+                        } catch (t: Throwable) {
+                            Log.w(TAG, "Failed to retroactively attach network blocker delegate to active session", t)
+                        }
+                    }
+                }
                 controller.setAllowedInPrivateBrowsing(ext, true)
                 val action = if (enabled)
                     controller.enable(ext, WebExtensionController.EnableSource.APP)
@@ -561,8 +624,8 @@ object PetalBuiltInExtensionManager {
     /**
      * Evaluates JavaScript in the given GeckoSession via the built-in scriptlet defuser
      * content script native messaging port. The result is returned asynchronously to the callback.
-     * If the native port is not connected or session is unavailable, falls back to loadUri(javascript:...)
-     * and honestly reports null to the callback without pretending an empty result was returned.
+     * If the native port is not connected or session is unavailable, reports null safely without
+     * falling back to loadUri(javascript:...) (which would cause top-level page navigation loops).
      */
     @JvmStatic
     fun evaluateJavascript(session: GeckoSession?, script: String, callback: ((String?) -> Unit)? = null) {
@@ -590,12 +653,8 @@ object PetalBuiltInExtensionManager {
             }
         }
 
-        // Fallback: run via javascript: URL without a result path
-        try {
-            val cleanScript = script.trim().removeSuffix(";")
-            val js = "javascript:(function(){ try { $cleanScript; } catch(e) { console.error('JS eval error:', e); } })()"
-            session.loadUri(js)
-        } catch (_: Throwable) {}
+        // Never navigate to a javascript: URI via session.loadUri() in GeckoView, as that treats the script
+        // as a top-level page navigation and exposes the raw script in the address bar in an infinite loop.
         callback?.invoke(null)
     }
 }

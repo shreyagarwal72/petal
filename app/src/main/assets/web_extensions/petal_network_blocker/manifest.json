@@ -1,0 +1,30 @@
+{
+    "manifest_version": 2,
+    "name": "Petal Network Blocker",
+    "version": "1.0.0",
+    "description": "High-speed network subresource blocker & early cosmetic injector for Petal Browser.",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "petal-network-blocker@petalbrowser.app"
+        }
+    },
+    "permissions": [
+        "<all_urls>",
+        "webRequest",
+        "webRequestBlocking",
+        "nativeMessaging",
+        "nativeMessagingFromContent"
+    ],
+    "background": {
+        "scripts": ["blocker_background.js"]
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["early_cosmetics.js"],
+            "run_at": "document_start",
+            "all_frames": true,
+            "match_about_blank": true
+        }
+    ]
+}

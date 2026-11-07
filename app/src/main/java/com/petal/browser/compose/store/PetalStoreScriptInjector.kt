@@ -64,7 +64,7 @@ object PetalStoreScriptInjector {
         if (pageUrl.isNullOrBlank()) return
         try {
             val payload = buildPayload(context, pageUrl, stage) ?: return
-            session.loadUri("javascript:" + Uri.encode(payload))
+            com.petal.browser.extensions.PetalBuiltInExtensionManager.evaluateJavascript(session, payload)
         } catch (t: Throwable) {
             Log.w(TAG, "Store script injection failed for $pageUrl: ${t.message}")
         }

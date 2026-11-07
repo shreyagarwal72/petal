@@ -102,11 +102,6 @@ object PetalAdBlockEngine {
                 .apply { isDaemon = true; priority = Thread.MIN_PRIORITY }
                 .start()
 
-            // Initialize Brave Shields adblock-rust native engine
-            try {
-                com.petal.browser.browser.adblock.PetalBraveShieldEngine.initialize(appContext)
-            } catch (_: Throwable) {}
-
             isInitialized = true
         }
     }
@@ -238,15 +233,6 @@ object PetalAdBlockEngine {
             }
         }
 
-        // 1b. Brave Shields native adblock-rust check
-        if (com.petal.browser.browser.adblock.PetalBraveShieldEngine.isNativeActive()) {
-            val braveBlocked = com.petal.browser.browser.adblock.PetalBraveShieldEngine.shouldBlock(requestUrl, pageHost)
-            if (braveBlocked) {
-                recordBlock(pageUrl)
-                return true
-            }
-        }
-
         // 2. Fast Trie fallback
         val trieBlocked = trieEngine.containsSubstring(requestUrl)
         if (trieBlocked) {
@@ -334,166 +320,12 @@ object PetalAdBlockEngine {
     fun getTotalBlockedCount(): Long = totalBlockedCount.get()
 
     /**
-     * uBlock Origin & AdGuard Injection Payload:
-     * - Bundled cosmetic CSS selectors and procedural selectors (:has(), :has-text()) from petal ContentBlocker
-     * - uBO Scriptlets (`set-constant`, `abort-on-property-read`, `nano-sib`)
-     * - Dedicated YouTube Mobile auto-skip, mute, and speedup scriptlet
+     * Deprecated: Cosmetic filtering and scriptlets are handled directly at document_start
+     * by the petal_network_blocker WebExtension content script (early_cosmetics.js).
      */
+    @Deprecated("Handled by petal_network_blocker WebExtension early_cosmetics.js at document_start")
     @JvmStatic
-    fun getuBlockCosmeticAndScriptletPayload(url: String? = null): String {
-        val cleanHost = try {
-            if (!url.isNullOrBlank()) Uri.parse(url).host?.lowercase(Locale.US)?.removePrefix("www.") ?: "" else ""
-        } catch (_: Exception) { "" }
-
-        val app = com.petal.browser.PetalApplication.instance
-        val userCustomRules = if (app != null && cleanHost.isNotEmpty()) {
-            com.petal.browser.privacy.PetalElementBlocker.getRulesForDomain(app, cleanHost)
-        } else {
-            emptyList()
-        }
-
-        val isYouTube = !url.isNullOrBlank() && url.contains("youtube.com")
-
-        val ytScriptlet = if (isYouTube) """
-            // ── Dedicated YouTube Mobile Video Ad Auto-Skipper & Muter ──
-            function handleYouTubeAds() {
-                try {
-                    const video = document.querySelector('video');
-                    const adContainer = document.querySelector('.ad-container, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-module, ytd-promoted-sparkles-web-renderer, #player-ads');
-                    const skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, .ytp-ad-skip-button-slot');
-
-                    if (adContainer || skipBtn || (video && document.querySelector('.ytp-ad-text'))) {
-                        if (video) {
-                            video.muted = true;
-                            video.playbackRate = 16.0;
-                            if (isFinite(video.duration) && video.duration > 0) {
-                                video.currentTime = video.duration - 0.1;
-                            }
-                        }
-                        if (skipBtn) {
-                            skipBtn.click();
-                        }
-                    }
-                    // Remove promo banners & companion ads
-                    const promoElements = document.querySelectorAll('ytd-compact-promoted-item-renderer, ytd-promoted-video-renderer, #masthead-ad, rendered-ad-background, .ytd-in-feed-ad-layout-renderer, ytd-ad-slot-renderer');
-                    promoElements.forEach(el => el.remove());
-                } catch (e) {}
-            }
-            setInterval(handleYouTubeAds, 250);
-        """.trimIndent() else ""
-
-        val cosmeticScript = contentBlocker?.let { blocker ->
-            try {
-                val selectors = blocker.adCosmeticSelectors(url)
-                val script = PetalCosmeticScript.create(selectors)
-                val procedural = blocker.adProceduralDocumentStartScript(url)
-                "$script\n$procedural"
-            } catch (_: Throwable) {
-                ""
-            }
-        }.orEmpty()
-
-        val customSelectorsJson = org.json.JSONArray(userCustomRules).toString()
-
-        return """
-            javascript:(function() {
-                if (window.__petal_ubo_injected__) return;
-                window.__petal_ubo_injected__ = true;
-
-                // 1. uBO Scriptlets: set-constant, abort-on-property-read & prevent-bab
-                window.uBO = {
-                    setConstant: function(obj, prop, val) {
-                        try {
-                            Object.defineProperty(obj, prop, { value: val, writable: false });
-                        } catch(e) {}
-                    },
-                    abortOnPropertyRead: function(obj, prop) {
-                        try {
-                            Object.defineProperty(obj, prop, { get: function() { throw new Error('uBO Abort'); } });
-                        } catch(e) {}
-                    }
-                };
-
-                // Defuse anti-adblock detection scripts & common trackers
-                try {
-                    window.google_ad_status = 1;
-                    window.canRunAds = true;
-                    window.isAdBlockActive = false;
-                    window.adBlocker = false;
-                    window.adsbygoogle = { loaded: true, push: function(){}, length: 0 };
-                    window.BlockAdBlock = function() { this.on = function(){}; this.check = function(){}; };
-                    window.fuckAdBlock = window.blockAdBlock = new window.BlockAdBlock();
-                } catch(e) {}
-
-                // 2. High-Performance Native CSS Injection (Early document_start)
-                const baseAdSelectors = [
-                    '.ad-container', '.ad-banner', '.ad-wrapper', '.ad-slot', '.ad-unit', '.ad-box',
-                    '[id*="google_ads"]', '[id*="taboola"]', '[id*="outbrain"]', '[class*="sponsored"]',
-                    'iframe[src*="ads"]', 'iframe[src*="doubleclick"]', 'iframe[src*="adnxs"]',
-                    '.popunder', '.popup-overlay', '.adsterra_tag', '[class*="adsterra"]', '[id*="adsterra"]',
-                    '.top-ad', '.bottom-ad', '.sidebar-ad', '.header-ad', 'ins.adsbygoogle', '.native-ad',
-                    '.advertisement', '[data-ad-unit]', '[data-ad-slot]', '[data-ad]', 'div[class*="-ad-"]', 'div[id*="-ad-"]',
-                    '.fc-ab-root', '.adblock-overlay', '.adblock-modal', '[class*="adblock-wall"]', '[id*="adblock-dialog"]'
-                ];
-                const customSelectors = $customSelectorsJson;
-                const allSelectors = baseAdSelectors.concat(customSelectors);
-
-                try {
-                    let styleEl = document.getElementById('petal-native-cosmetic-shield');
-                    if (!styleEl) {
-                        styleEl = document.createElement('style');
-                        styleEl.id = 'petal-native-cosmetic-shield';
-                        styleEl.textContent = allSelectors.join(', ') + ' { display: none !important; visibility: hidden !important; height: 0 !important; max-height: 0 !important; opacity: 0 !important; pointer-events: none !important; margin: 0 !important; padding: 0 !important; }';
-                        (document.head || document.documentElement).appendChild(styleEl);
-                    }
-                } catch(e) {}
-
-                // Procedural :has-text filtering and anti-adblock modal unlocker
-                function cleanAnnoyances() {
-                    try {
-                        const allDivs = document.querySelectorAll('div, section, article');
-                        allDivs.forEach(el => {
-                            if (el.children.length === 0 && (el.textContent.trim() === 'Sponsored' || el.textContent.trim() === 'Advertisement')) {
-                                if (el.parentElement) el.parentElement.style.setProperty('display', 'none', 'important');
-                            }
-                        });
-                        // Remove anti-adblock backdrop scrolling locks
-                        const antiAdModals = document.querySelectorAll('.fc-ab-root, .adblock-overlay, .adblock-modal, [class*="adblock-wall"]');
-                        if (antiAdModals.length > 0) {
-                            antiAdModals.forEach(el => el.remove());
-                            if (document.body) {
-                                document.body.style.setProperty('overflow', 'auto', 'important');
-                                document.body.style.setProperty('position', 'static', 'important');
-                            }
-                        }
-                    } catch (e) {}
-                }
-
-                cleanAnnoyances();
-
-                if (document.body) {
-                    const observer = new MutationObserver(() => cleanAnnoyances());
-                    observer.observe(document.body, { childList: true, subtree: true });
-                } else {
-                    document.addEventListener('DOMContentLoaded', () => {
-                        cleanAnnoyances();
-                        if (document.body) {
-                            const observer = new MutationObserver(() => cleanAnnoyances());
-                            observer.observe(document.body, { childList: true, subtree: true });
-                        }
-                    });
-                }
-
-                // 3. Petal Engine Cosmetic & Procedural Rules
-                try {
-                    $cosmeticScript
-                } catch(e) {}
-
-                // 4. YouTube Mobile Ad Skipper
-                $ytScriptlet
-            })();
-        """.trimIndent()
-    }
+    fun getuBlockCosmeticAndScriptletPayload(url: String? = null): String = ""
 
     private fun Context.contextOrApp(): Context = this.applicationContext ?: this
 }

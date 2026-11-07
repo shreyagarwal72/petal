@@ -50,13 +50,13 @@ object PetalAccessibilityEngine {
         val view = controller.albumView ?: return
         val context = view.context ?: return
 
-        // 1. Bypass viewport zoom locks if force zoom is enabled
-        applyForceZoom(controller)
+        // 1. Bypass viewport zoom locks on WebViews if force zoom is enabled
+        // (GeckoView surfaces have viewport locks overridden at document_start via defuser.js)
+        if (controller is WebView) {
+            applyForceZoom(controller)
+        }
 
-        // 2. Apply text and site zoom
-        applyZoom(controller, controller.url)
-
-        // 3. Synchronize caret browsing if active
+        // 2. Synchronize caret browsing if active
         if (isCaretBrowsingEnabled(context)) {
             applyCaretBrowsing(controller, true)
         }
