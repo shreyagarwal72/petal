@@ -1,5 +1,6 @@
 package com.petal.browser.objects;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.preference.PreferenceManager;
@@ -11,7 +12,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Comparator;
 
-import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.PetalApplication;
 
 public class CustomRedirectsHelper {
 
@@ -52,7 +53,9 @@ public class CustomRedirectsHelper {
     }
 
     public static void saveRedirects(ArrayList<CustomRedirect> redirects) throws JSONException {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(BrowserActivity.getAppContext());
+        Context context = PetalApplication.getAppContext();
+        if (context == null) return;
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
         JSONArray array = new JSONArray();
         for (int i = 0; i < redirects.size(); i++) {
             CustomRedirect redirect = redirects.get(i);

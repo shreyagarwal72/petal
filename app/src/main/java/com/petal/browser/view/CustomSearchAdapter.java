@@ -25,7 +25,6 @@ import org.json.JSONException;
 import java.util.ArrayList;
 
 import com.petal.browser.R;
-import com.petal.browser.activity.BrowserActivity;
 import com.petal.browser.objects.CustomRedirect;
 import com.petal.browser.objects.CustomSearchesHelper;
 import com.petal.browser.unit.PetalBrowserUtils;
@@ -98,7 +97,7 @@ public class CustomSearchAdapter extends RecyclerView.Adapter<RedirectsViewHolde
                 PetalBrowserUtils.intentURL(context, Uri.parse(t));
                 sp.edit().putString("sp_search_customSearches", "").apply();
             } else {
-                PetalToast.show(BrowserActivity.getAppContext(), R.string.app_error);
+                PetalToast.show(context, R.string.app_error);
             }
         });
     }
