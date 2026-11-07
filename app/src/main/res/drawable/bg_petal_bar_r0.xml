@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tintable bar fill, corner radius 0dp. Shape drawables work on every API level, unlike Glance's cornerRadius (API 31+ only). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#FFFFFFFF" />
+    <corners android:radius="0dp" />
+</shape>
