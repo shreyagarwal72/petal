@@ -1,24 +1,15 @@
 package com.petal.browser.compose.settings.screens
-import com.petal.browser.ui.components.scrollMotionBlur
-
-import com.petal.browser.ui.containment.PetalSettingsSection
-import com.petal.browser.ui.containment.PetalGroup
-import com.petal.browser.ui.containment.PetalGroupListRow
-import com.petal.browser.ui.containment.PetalGroupNavigationRow
-import com.petal.browser.ui.containment.PetalGroupPosition
-import com.petal.browser.ui.containment.PetalHeroCard
-import com.petal.browser.ui.containment.PetalBadgeVariant
 
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import androidx.activity.ComponentActivity
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.background
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -26,25 +17,38 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.preference.PreferenceManager
+import com.petal.browser.R
 import com.petal.browser.browser.PetalAdBlockEngine
 import com.petal.browser.compose.settings.viewmodel.PrivacySettingsViewModel
-import androidx.activity.ComponentActivity
 import com.petal.browser.passwords.PetalPasswordsScreen
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.containment.isLiquidGlassEnabled
-import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.containment.*
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
-import com.petal.browser.ui.glass.captureGlassWallpaper
 import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
+import java.text.NumberFormat
 
+/**
+ * Unified Privacy & Security Screen (Stage 5 Consolidation)
+ * Single coherent page in Petal containment style organized into 7 core pillars:
+ * 1. Ad & Tracker Blocking (live counter, master switch, filter lists, site exceptions whitelist)
+ * 2. Tracking Protection (Standard/Strict segmented control, Total Cookie Protection, Unlinkable Session Partitioning)
+ * 3. Fingerprinting Protection (Gecko RFP / FPP primary defense, Canvas/Audio randomization)
+ * 4. Connection Security (HTTPS-Only, Private DNS / DoH, WebRTC leak shield, Privacy signals GPC+DNT, Strict referrer trimming)
+ * 5. Site Permissions & Content (Popups, GDPR cookie banners, JavaScript)
+ * 6. Private Browsing (Biometric lock, Clear on exit)
+ * 7. Passwords & Passkeys (Unified Password manager & autofill vault)
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PrivacySettingsScreen(
@@ -60,20 +64,16 @@ fun PrivacySettingsScreen(
     val etpStrict by viewModel.etpStrict.collectAsStateWithLifecycle()
     val biometricTabLock by viewModel.biometricTabLock.collectAsStateWithLifecycle()
     val sessionPartitioning by viewModel.sessionPartitioning.collectAsStateWithLifecycle()
-    val torPrivateWindow by viewModel.torPrivateWindow.collectAsStateWithLifecycle()
     val fingerprintProtection by viewModel.fingerprintProtection.collectAsStateWithLifecycle()
     val webrtcProtection by viewModel.webrtcProtection.collectAsStateWithLifecycle()
     val dntGpc by viewModel.dntGpc.collectAsStateWithLifecycle()
     val trimReferrers by viewModel.trimReferrers.collectAsStateWithLifecycle()
-    val webauthnEnabled by viewModel.webauthnEnabled.collectAsStateWithLifecycle()
     val httpsOnly by viewModel.httpsOnly.collectAsStateWithLifecycle()
     val javaScriptEnabled by viewModel.javaScriptEnabled.collectAsStateWithLifecycle()
     val blockPopups by viewModel.blockPopups.collectAsStateWithLifecycle()
     val openRedirectsInBackground by viewModel.openRedirectsInBackground.collectAsStateWithLifecycle()
     val privateDnsMode by viewModel.privateDnsMode.collectAsStateWithLifecycle()
     val customDohUrl by viewModel.customDohUrl.collectAsStateWithLifecycle()
-    val privacyProfile by viewModel.privacyProfile.collectAsStateWithLifecycle()
-    val webglEnabled by viewModel.webglEnabled.collectAsStateWithLifecycle()
 
     PrivacySettingsScreenContent(
         adBlockEnabled = adBlockEnabled,
@@ -83,20 +83,16 @@ fun PrivacySettingsScreen(
         etpStrict = etpStrict,
         biometricTabLock = biometricTabLock,
         sessionPartitioning = sessionPartitioning,
-        torPrivateWindow = torPrivateWindow,
         fingerprintProtection = fingerprintProtection,
         webrtcProtection = webrtcProtection,
         dntGpc = dntGpc,
         trimReferrers = trimReferrers,
-        webauthnEnabled = webauthnEnabled,
         httpsOnly = httpsOnly,
         javaScriptEnabled = javaScriptEnabled,
         blockPopups = blockPopups,
         openRedirectsInBackground = openRedirectsInBackground,
         privateDnsMode = privateDnsMode,
         customDohUrl = customDohUrl,
-        privacyProfile = privacyProfile,
-        webglEnabled = webglEnabled,
         onAdBlockEnabledChange = viewModel::setAdBlockEnabled,
         onBlockThirdPartyCookiesChange = viewModel::setBlockThirdPartyCookies,
         onTotalCookieProtectionChange = viewModel::setTotalCookieProtection,
@@ -104,20 +100,16 @@ fun PrivacySettingsScreen(
         onEtpStrictChange = viewModel::setEtpStrict,
         onBiometricTabLockChange = viewModel::setBiometricTabLock,
         onSessionPartitioningChange = viewModel::setSessionPartitioning,
-        onTorPrivateWindowChange = viewModel::setTorPrivateWindow,
         onFingerprintProtectionChange = viewModel::setFingerprintProtection,
         onWebrtcProtectionChange = viewModel::setWebrtcProtection,
         onDntGpcChange = viewModel::setDntGpc,
         onTrimReferrersChange = viewModel::setTrimReferrers,
-        onWebauthnEnabledChange = viewModel::setWebauthnEnabled,
         onHttpsOnlyChange = viewModel::setHttpsOnly,
         onJavaScriptEnabledChange = viewModel::setJavaScriptEnabled,
         onBlockPopupsChange = viewModel::setBlockPopups,
         onOpenRedirectsInBackgroundChange = viewModel::setOpenRedirectsInBackground,
         onPrivateDnsModeChange = viewModel::setPrivateDnsMode,
         onCustomDohUrlChange = viewModel::setCustomDohUrl,
-        onPrivacyProfileChange = viewModel::setPrivacyProfile,
-        onWebglEnabledChange = viewModel::setWebglEnabled,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -134,20 +126,16 @@ fun PrivacySettingsScreenContent(
     etpStrict: Boolean = true,
     biometricTabLock: Boolean = false,
     sessionPartitioning: Boolean = true,
-    torPrivateWindow: Boolean = false,
     fingerprintProtection: Boolean,
     webrtcProtection: Boolean,
     dntGpc: Boolean,
     trimReferrers: Boolean,
-    webauthnEnabled: Boolean,
     httpsOnly: Boolean,
     javaScriptEnabled: Boolean,
     blockPopups: Boolean,
     openRedirectsInBackground: Boolean,
     privateDnsMode: String,
     customDohUrl: String,
-    privacyProfile: String = "HARDENED",
-    webglEnabled: Boolean = true,
     onAdBlockEnabledChange: (Boolean) -> Unit,
     onBlockThirdPartyCookiesChange: (Boolean) -> Unit,
     onTotalCookieProtectionChange: (Boolean) -> Unit = {},
@@ -155,33 +143,39 @@ fun PrivacySettingsScreenContent(
     onEtpStrictChange: (Boolean) -> Unit = {},
     onBiometricTabLockChange: (Boolean) -> Unit = {},
     onSessionPartitioningChange: (Boolean) -> Unit = {},
-    onTorPrivateWindowChange: (Boolean) -> Unit = {},
     onFingerprintProtectionChange: (Boolean) -> Unit,
     onWebrtcProtectionChange: (Boolean) -> Unit,
     onDntGpcChange: (Boolean) -> Unit,
     onTrimReferrersChange: (Boolean) -> Unit,
-    onWebauthnEnabledChange: (Boolean) -> Unit,
     onHttpsOnlyChange: (Boolean) -> Unit,
     onJavaScriptEnabledChange: (Boolean) -> Unit,
     onBlockPopupsChange: (Boolean) -> Unit,
     onOpenRedirectsInBackgroundChange: (Boolean) -> Unit,
     onPrivateDnsModeChange: (String) -> Unit,
     onCustomDohUrlChange: (String) -> Unit,
-    onPrivacyProfileChange: (String) -> Unit = {},
-    onWebglEnabledChange: (Boolean) -> Unit = {},
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val ambientWallpaper = LocalPetalGlassWallpaper.current
     val wallpaper = ambientWallpaper ?: rememberPetalGlassWallpaper()
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+
     var showPasswordsScreen by remember { mutableStateOf(false) }
     var showAdBlockSettings by remember { mutableStateOf(false) }
     var showWhitelistDialog by remember { mutableStateOf(false) }
     var whitelistDomainInput by remember { mutableStateOf("") }
     var whitelistedDomainsState by remember { mutableStateOf(PetalAdBlockEngine.getWhitelistedDomains()) }
+
+    var clearOnExit by remember {
+        mutableStateOf(sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))
+    }
+
+    val totalBlockedCount = remember(adBlockEnabled) {
+        PetalAdBlockEngine.getTotalBlockedCount()
+    }
 
     if (showAdBlockSettings) {
         PetalAdBlockSettingsScreen(
@@ -195,7 +189,7 @@ fun PrivacySettingsScreenContent(
     }
 
     if (showWhitelistDialog) {
-        com.petal.browser.ui.containment.PetalAlertDialog(
+        PetalAlertDialog(
             onDismissRequest = { showWhitelistDialog = false },
             title = stringResource(R.string.ui_adblock_domain_whitelist),
             confirmText = stringResource(R.string.ui_done),
@@ -261,7 +255,11 @@ fun PrivacySettingsScreenContent(
                                 },
                                 label = { Text(domain) },
                                 trailingIcon = {
-                                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_remove), modifier = Modifier.size(16.dp))
+                                    Icon(
+                                        Icons.Rounded.Close,
+                                        contentDescription = stringResource(R.string.ui_remove),
+                                        modifier = Modifier.size(16.dp)
+                                    )
                                 }
                             )
                         }
@@ -272,433 +270,393 @@ fun PrivacySettingsScreenContent(
     }
 
     CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-        ) {
+        Box(modifier = modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(
                 pageSeed = "privacy_settings",
-                modifier = Modifier
-                    .matchParentSize()
+                modifier = Modifier.matchParentSize()
             )
 
             Column(modifier = Modifier.fillMaxSize()) {
-            ExpressiveHeader(
-                title = "Privacy & Security",
-                subtitle = "AdBlock, HTTPS-only, Private DNS & cookies",
-                onBack = onNavigateBack
-            )
+                ExpressiveHeader(
+                    title = "Privacy & Security",
+                    subtitle = "AdBlock, Tracking Protection & Connection Security",
+                    onBack = onNavigateBack
+                )
 
-            var showAdBlockExplainer by remember { mutableStateOf(false) }
-
-            PetalFeatureExplainerDialog(
-                visible = showAdBlockExplainer,
-                onDismissRequest = { showAdBlockExplainer = false },
-                feature = PetalExplainerFeature(
-                    type = ExplainerFeatureType.ADBLOCK_TRIE_SHIELD,
-                    title = "Ad & Tracker Shield",
-                    badge = "PROTECTION",
-                    subtitle = "Block ads, trackers and fingerprinters",
-                    bullets = listOf(
-                        "Uses compact algorithmic Trie tree indexing for sub-millisecond rule matching.",
-                        "Directly intercepts third-party trackers, cryptominers, and malicious popups.",
-                        "Compatible with uBlock Origin and AdGuard filter syntax.",
-                        "Saves up to 45% mobile data and reduces website page load times."
-                    ),
-                    icon = Icons.Rounded.Shield,
-                    iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    iconTint = MaterialTheme.colorScheme.primary
-                ),
-                actionLabel = if (!adBlockEnabled) "Turn Shield On" else "Got it",
-                onActionClick = {
-                    if (!adBlockEnabled) {
-                        onAdBlockEnabledChange(true)
-                        PetalAdBlockEngine.setAdBlockEnabled(context, true)
-                    }
-                }
-            )
-
-            val scrollState = rememberScrollState()
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .scrollMotionBlur(scrollState)
-                    .verticalScroll(scrollState, flingBehavior = com.petal.browser.ui.theme.layout.petalFlingBehavior())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // ── Section 0: Privacy Profile (Baseline Hardening) ──
-                PetalSettingsSection(
-                    title = "Privacy Hardening Profile",
-                    icon = Icons.Rounded.Shield,
-                    cardId = "privacy_profile",
-                    targetHighlightId = targetHighlightItemId
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .scrollMotionBlur(scrollState)
+                        .verticalScroll(scrollState, flingBehavior = com.petal.browser.ui.theme.layout.petalFlingBehavior())
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    val profiles = listOf(
-                        Triple("STANDARD", "Standard Compatibility", "High compatibility with Firefox Enhanced Tracking Protection baseline"),
-                        Triple("HARDENED", "Hardened (Arkenfox)", "WebRTC leak defuse, referrer trimming and hardware API isolation (Default)"),
-                        Triple("STRICT", "Strict (Tor / Mullvad RFP)", "Tor-grade Resist Fingerprinting: forces light color scheme, UTC time and reduced canvas")
-                    )
-
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = profiles.size) { index, position ->
-                        val (mode, name, desc) = profiles[index]
-                        val isSelected = privacyProfile.equals(mode, ignoreCase = true)
-                        com.petal.browser.ui.containment.PetalGroupListRow(
-                            position = position,
-                            selected = isSelected,
-                            onClick = {
-                                if (!isSelected) {
-                                    onPrivacyProfileChange(mode)
-                                    (context as? ComponentActivity)?.let { act ->
-                                        com.petal.browser.ui.components.PetalConfirmSheetBridge.showRestartConfirmation(act) {
-                                            com.petal.browser.flags.PetalRestartManager.restartApp(context)
-                                        }
-                                    }
-                                }
-                            },
-                            leading = {
-                                com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                    icon = if (mode == "STRICT") Icons.Rounded.Security else Icons.Rounded.Shield,
-                                    variant = if (isSelected) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
-                                )
-                            },
-                            content = {
-                                Text(
-                                    text = name,
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = desc,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            },
-                            trailing = {
-                                if (isSelected) {
+                    // ── 1. Ad & Tracker Blocking (Master Switch + Hero Counter + Filters + Whitelist) ──
+                    PetalSettingsSection(
+                        title = "Ad & Tracker Blocking",
+                        icon = Icons.Rounded.Shield,
+                        cardId = "privacy_adblock",
+                        targetHighlightId = targetHighlightItemId
+                    ) {
+                        // Live Blocked Stats Hero Banner
+                        PetalHeroCard {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (adBlockEnabled) MaterialTheme.colorScheme.primaryContainer
+                                            else MaterialTheme.colorScheme.surfaceVariant
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Icon(
-                                        Icons.Rounded.CheckCircle,
+                                        imageVector = if (adBlockEnabled) Icons.Rounded.VerifiedUser else Icons.Rounded.Shield,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(22.dp)
+                                        tint = if (adBlockEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = if (adBlockEnabled) "Shields Actively Blocking" else "Shields Paused",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "${NumberFormat.getInstance().format(totalBlockedCount)} ads & trackers blocked",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
-                        )
-                    }
-                }
-
-                // ── Section 1: Shield & Anti-Tracking Protection ──
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_shield_anti_tracking),
-                    iconRes = com.petal.browser.R.drawable.layers_filled,
-                    cardId = "privacy_adblock",
-                    targetHighlightId = targetHighlightItemId,
-                    onInfoClick = { showAdBlockExplainer = true }
-                ) {
-                    PetalGroupNavigationRow(
-                        title = "Shields & Filter Subscriptions",
-                        subtitle = "Filter lists, custom rules & site exceptions",
-                        position = PetalGroupPosition.TOP,
-                        onClick = { showAdBlockSettings = true },
-                        leadingIcon = { Icon(Icons.Rounded.Shield, contentDescription = null) }
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = stringResource(R.string.ui_ad_tracker_shield),
-                        subtitle = "Strict tracking protection plus Petal filter lists",
-                        icon = Icons.Rounded.VerifiedUser,
-                        checked = adBlockEnabled,
-                        onCheckedChange = { newValue ->
-                            onAdBlockEnabledChange(newValue)
-                            PetalAdBlockEngine.setAdBlockEnabled(context, newValue)
                         }
-                    )
 
-                    if (adBlockEnabled) {
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.TOP,
+                            title = "Ad & Tracker Shield",
+                            subtitle = "Intercepts ads, analytics, and third-party trackers via WebExtension blocker and Gecko ETP",
+                            icon = Icons.Rounded.Shield,
+                            checked = adBlockEnabled,
+                            onCheckedChange = { newValue ->
+                                onAdBlockEnabledChange(newValue)
+                                PetalAdBlockEngine.setAdBlockEnabled(context, newValue)
+                            }
+                        )
+
                         PetalGroupNavigationRow(
-                            title = stringResource(R.string.ui_whitelisted_domains, whitelistedDomainsState.size),
-                            subtitle = stringResource(R.string.ui_manage_whitelist),
+                            title = "Filter Lists & Rules",
+                            subtitle = "EasyList, uAssets, Hagezi, and custom subscriptions",
                             position = PetalGroupPosition.MIDDLE,
-                            onClick = { showWhitelistDialog = true },
+                            onClick = { showAdBlockSettings = true },
                             leadingIcon = { Icon(Icons.Rounded.FilterList, contentDescription = null) }
                         )
+
+                        PetalGroupNavigationRow(
+                            title = "Site Exceptions (Whitelist)",
+                            subtitle = "${whitelistedDomainsState.size} domains allowed",
+                            position = PetalGroupPosition.BOTTOM,
+                            onClick = { showWhitelistDialog = true },
+                            leadingIcon = { Icon(Icons.Rounded.Rule, contentDescription = null) }
+                        )
                     }
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = "ETP Strict & Total Cookie Protection",
-                        subtitle = "Firefox dynamic first-party cookie isolation and tracker partitioning",
-                        icon = Icons.Rounded.Cookie,
-                        checked = totalCookieProtection,
-                        onCheckedChange = { newValue ->
-                            onTotalCookieProtectionChange(newValue)
-                            onBlockThirdPartyCookiesChange(newValue)
+
+                    // ── 2. Tracking Protection (Standard / Strict + TCP + Session Partitioning) ──
+                    PetalSettingsSection(
+                        title = "Tracking Protection",
+                        icon = Icons.Rounded.Security,
+                        cardId = "privacy_etp",
+                        targetHighlightId = targetHighlightItemId
+                    ) {
+                        val trackingModes = listOf(
+                            Pair(false, Pair("Standard", "Balanced protection: blocks trackers in private windows, isolates third-party cookies")),
+                            Pair(true, Pair("Strict (Recommended)", "Maximum protection: blocks known trackers in all windows, fingerprinters, and cryptominers"))
+                        )
+
+                        PetalGroup(rowCount = trackingModes.size) { index, position ->
+                            val (isStrict, info) = trackingModes[index]
+                            val (title, subtitle) = info
+                            val isSelected = etpStrict == isStrict
+                            PetalGroupListRow(
+                                position = position,
+                                selected = isSelected,
+                                onClick = { onEtpStrictChange(isStrict) },
+                                leading = {
+                                    PetalGroupIconBadge(
+                                        icon = if (isStrict) Icons.Rounded.Security else Icons.Rounded.Shield,
+                                        variant = if (isSelected) PetalBadgeVariant.PRIMARY else PetalBadgeVariant.SURFACE_TONAL
+                                    )
+                                },
+                                content = {
+                                    Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = subtitle,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailing = {
+                                    if (isSelected) {
+                                        Icon(
+                                            Icons.Rounded.CheckCircle,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                }
+                            )
                         }
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = "Auto-Reject Cookie Banners (GDPR)",
-                        subtitle = "GeckoView automatically declines consent modals & cookie popups",
-                        icon = Icons.Rounded.VerifiedUser,
-                        checked = cookieBannerAutoReject,
-                        onCheckedChange = onCookieBannerAutoRejectChange
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = stringResource(R.string.ui_canvas_audio_font_fingerprint_shield),
-                        subtitle = stringResource(R.string.ui_randomize_canvas_webgl_audiocontext_an),
+
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "Total Cookie Protection",
+                            subtitle = "Dynamic first-party cookie jar isolation and state partitioning",
+                            icon = Icons.Rounded.Cookie,
+                            checked = totalCookieProtection,
+                            onCheckedChange = { newValue ->
+                                onTotalCookieProtectionChange(newValue)
+                                onBlockThirdPartyCookiesChange(newValue)
+                            }
+                        )
+
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.BOTTOM,
+                            title = "Unlinkable Session Partitioning",
+                            subtitle = "Isolates client network state per tab session to defeat bounce tracking",
+                            icon = Icons.Rounded.Splitscreen,
+                            checked = sessionPartitioning,
+                            onCheckedChange = onSessionPartitioningChange
+                        )
+                    }
+
+                    // ── 3. Fingerprinting Protection (Gecko RFP / FPP Primary Defense) ──
+                    PetalSettingsSection(
+                        title = "Fingerprinting Protection",
                         icon = Icons.Rounded.Fingerprint,
-                        checked = fingerprintProtection,
-                        onCheckedChange = onFingerprintProtectionChange
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = "Enable WebGL 3D Graphics",
-                        subtitle = "Hardware-accelerated 3D graphics (disabling enhances fingerprint protection)",
-                        icon = Icons.Rounded.VideogameAsset,
-                        checked = webglEnabled,
-                        onCheckedChange = { newValue ->
-                            onWebglEnabledChange(newValue)
-                            (context as? ComponentActivity)?.let { act ->
-                                com.petal.browser.ui.components.PetalConfirmSheetBridge.showRestartConfirmation(act) {
-                                    com.petal.browser.flags.PetalRestartManager.restartApp(context)
+                        cardId = "privacy_fingerprinting",
+                        targetHighlightId = targetHighlightItemId
+                    ) {
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.SINGLE,
+                            title = "Resist Fingerprinting (Gecko RFP)",
+                            subtitle = "Uniform canvas, audio context, hardware metrics, and reduced timer precision",
+                            icon = Icons.Rounded.Fingerprint,
+                            checked = fingerprintProtection,
+                            onCheckedChange = onFingerprintProtectionChange
+                        )
+                    }
+
+                    // ── 4. Connection & DNS (HTTPS-Only, DoH, WebRTC, GPC/DNT, Referrer) ──
+                    PetalSettingsSection(
+                        title = "Connection & DNS",
+                        icon = Icons.Rounded.Lock,
+                        cardId = "privacy_connection",
+                        targetHighlightId = targetHighlightItemId
+                    ) {
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.TOP,
+                            title = "HTTPS-Only Mode",
+                            subtitle = "Automatically upgrade connections to HTTPS and warn on insecure HTTP",
+                            icon = Icons.Rounded.Https,
+                            checked = httpsOnly,
+                            onCheckedChange = onHttpsOnlyChange
+                        )
+
+                        val dnsOptions = listOf(
+                            Triple("OFF", "System Default (Off)", "Use default network DNS"),
+                            Triple("CLOUDFLARE", "Cloudflare (1.1.1.1)", "Fast & private 1.1.1.1 DNS over HTTPS"),
+                            Triple("GOOGLE", "Google Public DNS", "8.8.8.8 high performance resolution"),
+                            Triple("CLEANBROWSING", "CleanBrowsing Family Filter", "Blocks adult & malicious sites"),
+                            Triple("OPENDNS", "OpenDNS Home", "Cisco OpenDNS security protection"),
+                            Triple("NEXTDNS", "NextDNS", "Encrypted DNS with ad & tracker blocking"),
+                            Triple("QUAD9", "Quad9", "Malware blocking and privacy-preserving DNS"),
+                            Triple("CUSTOM", "Custom DNS-over-HTTPS (DoH)", "Enter your preferred DoH resolver endpoint URL")
+                        )
+
+                        PetalGroup(rowCount = dnsOptions.size) { index, position ->
+                            val (mode, name, desc) = dnsOptions[index]
+                            val isSelected = privateDnsMode == mode
+                            PetalGroupListRow(
+                                position = position,
+                                selected = isSelected,
+                                onClick = { onPrivateDnsModeChange(mode) },
+                                leading = {
+                                    PetalGroupIconBadge(
+                                        icon = if (mode == "CUSTOM") Icons.Rounded.Dns else Icons.Rounded.Security,
+                                        variant = if (isSelected) PetalBadgeVariant.PRIMARY else PetalBadgeVariant.SURFACE_TONAL
+                                    )
+                                },
+                                content = {
+                                    Text(
+                                        text = name,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = desc,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailing = {
+                                    if (isSelected) {
+                                        Icon(
+                                            Icons.Rounded.CheckCircle,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                }
+                            )
+                        }
+
+                        if (privateDnsMode == "CUSTOM") {
+                            PetalHeroCard {
+                                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                    TextField(
+                                        value = customDohUrl,
+                                        onValueChange = onCustomDohUrlChange,
+                                        label = { Text(stringResource(R.string.ui_custom_doh_endpoint_url)) },
+                                        placeholder = { Text("https://dns.adguard-dns.com/dns-query") },
+                                        leadingIcon = { Icon(Icons.Rounded.Dns, contentDescription = null) },
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = TextFieldDefaults.colors(
+                                            focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            focusedIndicatorColor = Color.Transparent,
+                                            unfocusedIndicatorColor = Color.Transparent
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
                                 }
                             }
                         }
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = stringResource(R.string.ui_webrtc_ip_leak_shield),
-                        subtitle = stringResource(R.string.ui_prevent_local_public_ip_address),
-                        icon = Icons.Rounded.WifiProtectedSetup,
-                        checked = webrtcProtection,
-                        onCheckedChange = onWebrtcProtectionChange
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = stringResource(R.string.ui_do_not_track_global_privacy),
-                        subtitle = stringResource(R.string.ui_broadcast_dnt_1_and_sec),
-                        icon = Icons.Rounded.Security,
-                        checked = dntGpc,
-                        onCheckedChange = onDntGpcChange
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
-                        title = stringResource(R.string.ui_strict_referrer_trimming),
-                        subtitle = stringResource(R.string.ui_strip_cross_origin_url_paths),
-                        icon = Icons.Rounded.LinkOff,
-                        checked = trimReferrers,
-                        onCheckedChange = onTrimReferrersChange
-                    )
-                }
 
-                // ── Section 2: Security & Authentication ──
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_security_passkeys),
-                    icon = Icons.Rounded.Lock,
-                    cardId = "privacy_security",
-                    targetHighlightId = targetHighlightItemId
-                ) {
-                    com.petal.browser.ui.containment.PetalGroupNavigationRow(
-                        title = stringResource(R.string.ui_password_manager_autofill),
-                        subtitle = stringResource(R.string.ui_encrypted_local_vault_breach_checks),
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
-                        onClick = { showPasswordsScreen = true },
-                        leadingIcon = { Icon(Icons.Rounded.VpnKey, contentDescription = null) },
-                    )
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "WebRTC IP Leak Protection",
+                            subtitle = "Prevents leaking local private IP address via WebRTC peer connections",
+                            icon = Icons.Rounded.WifiProtectedSetup,
+                            checked = webrtcProtection,
+                            onCheckedChange = onWebrtcProtectionChange
+                        )
 
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = "Lock Incognito Tabs with Biometrics",
-                        subtitle = "Require fingerprint or face unlock before displaying private browsing tabs",
-                        icon = Icons.Rounded.Fingerprint,
-                        checked = biometricTabLock,
-                        onCheckedChange = onBiometricTabLockChange
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = "Unlinkable Session Partitioning",
-                        subtitle = "Isolates client state and cookies per tab session to eliminate bounce tracking",
-                        icon = Icons.Rounded.Shield,
-                        checked = sessionPartitioning,
-                        onCheckedChange = onSessionPartitioningChange
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = "Tor Private Window (via Orbot)",
-                        subtitle = "Routes private tab network traffic through Tor local SOCKS5 proxy",
-                        icon = Icons.Rounded.VpnLock,
-                        checked = torPrivateWindow,
-                        onCheckedChange = onTorPrivateWindowChange
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = stringResource(R.string.ui_https_security_enforcer),
-                        subtitle = stringResource(R.string.ui_automatically_upgrade_connections_to_h),
-                        icon = Icons.Rounded.Lock,
-                        checked = httpsOnly,
-                        onCheckedChange = onHttpsOnlyChange
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
-                        title = stringResource(R.string.ui_webauthn_passkey_support),
-                        subtitle = stringResource(R.string.ui_allow_websites_to_authenticate_passwor),
-                        icon = Icons.Rounded.Key,
-                        checked = webauthnEnabled,
-                        onCheckedChange = onWebauthnEnabledChange
-                    )
-                }
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "Privacy Signals (GPC + DNT)",
+                            subtitle = "Broadcasts Global Privacy Control and Do Not Track signals with every HTTP request",
+                            icon = Icons.Rounded.Security,
+                            checked = dntGpc,
+                            onCheckedChange = onDntGpcChange
+                        )
 
-                // ── Section 3: Web Content & Navigation ──
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_web_content_navigation),
-                    icon = Icons.Rounded.Code,
-                    cardId = "privacy_cookies",
-                    targetHighlightId = targetHighlightItemId
-                ) {
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
-                        title = stringResource(R.string.ui_enable_javascript),
-                        subtitle = stringResource(R.string.ui_required_for_modern_web_features),
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.BOTTOM,
+                            title = "Strict Referrer Trimming",
+                            subtitle = "Strips cross-origin URL paths and query parameters from HTTP Referer headers (default on)",
+                            icon = Icons.Rounded.LinkOff,
+                            checked = trimReferrers,
+                            onCheckedChange = onTrimReferrersChange
+                        )
+                    }
+
+                    // ── 5. Site Permissions & Content (Popups, Cookie Banners, JavaScript) ──
+                    PetalSettingsSection(
+                        title = "Site Permissions & Content",
                         icon = Icons.Rounded.Code,
-                        checked = javaScriptEnabled,
-                        onCheckedChange = onJavaScriptEnabledChange
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = stringResource(R.string.ui_block_popup_windows),
-                        subtitle = stringResource(R.string.ui_prevent_unwanted_popups_and_redirect),
-                        icon = Icons.Rounded.OpenInNew,
-                        checked = blockPopups,
-                        onCheckedChange = onBlockPopupsChange
-                    )
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
-                        title = stringResource(R.string.ui_open_redirect_links_in_background),
-                        subtitle = stringResource(R.string.ui_detect_external_redirect_links_and),
-                        icon = Icons.Rounded.TabUnselected,
-                        checked = openRedirectsInBackground,
-                        onCheckedChange = onOpenRedirectsInBackgroundChange
-                    )
-                }
+                        cardId = "privacy_content",
+                        targetHighlightId = targetHighlightItemId
+                    ) {
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.TOP,
+                            title = "Block Pop-up Windows",
+                            subtitle = "Prevents unwanted new windows and intrusive redirects",
+                            icon = Icons.Rounded.OpenInNew,
+                            checked = blockPopups,
+                            onCheckedChange = onBlockPopupsChange
+                        )
 
-                // Private DNS Protection Card
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_private_dns_protection),
-                    iconRes = com.petal.browser.R.drawable.database_filled,
-                    cardId = "privacy_private_dns",
-                    targetHighlightId = targetHighlightItemId
-                ) {
-                    Text(
-                        stringResource(R.string.ui_encrypt_dns_queries_to_prevent),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "Auto-Reject Cookie Banners (GDPR)",
+                            subtitle = "Automatically declines cookie consent popups and modals",
+                            icon = Icons.Rounded.VerifiedUser,
+                            checked = cookieBannerAutoReject,
+                            onCheckedChange = onCookieBannerAutoRejectChange
+                        )
 
-                    val dnsOptions = listOf(
-                        Triple("OFF", "System Default (Off)", "Use default network DNS"),
-                        Triple("CLOUDFLARE", "Cloudflare (1.1.1.1)", "Fast & private 1.1.1.1 DNS over HTTPS"),
-                        Triple("GOOGLE", "Google Public DNS", "8.8.8.8 high performance resolution"),
-                        Triple("CLEANBROWSING", "CleanBrowsing Family Filter", "Blocks adult & malicious sites"),
-                        Triple("OPENDNS", "OpenDNS Home", "Cisco OpenDNS security protection"),
-                        Triple("NEXTDNS", "NextDNS", "Encrypted DNS with ad & tracker blocking"),
-                        Triple("QUAD9", "Quad9", "Malware blocking and privacy-preserving DNS"),
-                        Triple("CUSTOM", "Custom DNS-over-HTTPS (DoH)", "Enter your preferred DoH resolver endpoint URL")
-                    )
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.BOTTOM,
+                            title = "JavaScript",
+                            subtitle = "Enable JavaScript execution for web pages",
+                            icon = Icons.Rounded.Code,
+                            checked = javaScriptEnabled,
+                            onCheckedChange = onJavaScriptEnabledChange
+                        )
+                    }
 
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = dnsOptions.size) { index, position ->
-                        val (mode, name, desc) = dnsOptions[index]
-                        val isSelected = privateDnsMode == mode
-                        com.petal.browser.ui.containment.PetalGroupListRow(
-                            position = position,
-                            selected = isSelected,
-                            onClick = { onPrivateDnsModeChange(mode) },
-                            leading = {
-                                com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                    icon = if (mode == "CUSTOM") Icons.Rounded.Dns else Icons.Rounded.Security,
-                                    variant = if (isSelected) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
-                                )
-                            },
-                            content = {
-                                Text(
-                                    text = name,
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = desc,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            },
-                            trailing = {
-                                if (isSelected) {
-                                    Icon(
-                                        Icons.Rounded.CheckCircle,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
+                    // ── 6. Private Browsing (Biometric Lock, Clear on Exit) ──
+                    PetalSettingsSection(
+                        title = "Private Browsing",
+                        icon = Icons.Rounded.VisibilityOff,
+                        cardId = "privacy_incognito",
+                        targetHighlightId = targetHighlightItemId
+                    ) {
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.TOP,
+                            title = "Biometric Tab Lock",
+                            subtitle = "Require biometric authentication (fingerprint/face) to view incognito tabs",
+                            icon = Icons.Rounded.Fingerprint,
+                            checked = biometricTabLock,
+                            onCheckedChange = onBiometricTabLockChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.BOTTOM,
+                            title = "Clear Data on Exit",
+                            subtitle = "Automatically purge cache, cookies, and browsing sessions when closing Petal",
+                            icon = Icons.Rounded.DeleteSweep,
+                            checked = clearOnExit,
+                            onCheckedChange = { newValue ->
+                                clearOnExit = newValue
+                                sp.edit()
+                                    .putBoolean("sp_clear_quit", newValue)
+                                    .putBoolean("sp_clear_on_exit", newValue)
+                                    .apply()
                             }
                         )
                     }
 
-                    if (privateDnsMode == "CUSTOM") {
-                        com.petal.browser.ui.containment.PetalHeroCard {
-                            Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                                TextField(
-                                    value = customDohUrl,
-                                    onValueChange = onCustomDohUrlChange,
-                                    label = { Text(stringResource(R.string.ui_custom_doh_endpoint_url)) },
-                                    placeholder = { Text("https://dns.adguard-dns.com/dns-query") },
-                                    leadingIcon = { Icon(Icons.Rounded.Dns, contentDescription = null) },
-                                    singleLine = true,
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = TextFieldDefaults.colors(
-                                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                        focusedIndicatorColor = Color.Transparent,
-                                        unfocusedIndicatorColor = Color.Transparent
-                                    ),
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        }
-                    }
-
-                    com.petal.browser.ui.containment.PetalHeroCard {
-                        Column(Modifier.fillMaxWidth().padding(14.dp)) {
-                            FilledTonalButton(
-                                onClick = {
-                                    val intents = listOf(
-                                        Intent("android.settings.PRIVATE_DNS_SETTINGS"),
-                                        Intent(Settings.ACTION_WIRELESS_SETTINGS),
-                                        Intent(Settings.ACTION_SETTINGS)
-                                    )
-                                    for (intent in intents) {
-                                        try {
-                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            context.startActivity(intent)
-                                            break
-                                        } catch (e: Exception) {
-                                            // continue to next fallback
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(50.dp),
-                                colors = ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    contentColor = MaterialTheme.colorScheme.onSurface
-                                )
-                            ) {
-                                Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.ui_configure_android_system_private_dns))
-                            }
-                        }
+                    // ── 7. Passwords & Passkeys (Unified Manager & Vault) ──
+                    PetalSettingsSection(
+                        title = "Passwords & Passkeys",
+                        icon = Icons.Rounded.VpnKey,
+                        cardId = "privacy_passwords",
+                        targetHighlightId = targetHighlightItemId
+                    ) {
+                        PetalGroupNavigationRow(
+                            title = "Password Manager & Autofill Vault",
+                            subtitle = "Encrypted local credentials, passkeys, and breach alert monitoring",
+                            position = PetalGroupPosition.SINGLE,
+                            onClick = { showPasswordsScreen = true },
+                            leadingIcon = { Icon(Icons.Rounded.VpnKey, contentDescription = null) }
+                        )
                     }
                 }
             }
@@ -706,10 +664,10 @@ fun PrivacySettingsScreenContent(
 
         val passwordsActivity = context as? ComponentActivity
         if (passwordsActivity != null) {
-            androidx.compose.animation.AnimatedVisibility(
+            AnimatedVisibility(
                 visible = showPasswordsScreen,
-                enter = com.petal.browser.ui.containment.PetalMotion.forwardEnter(),
-                exit = com.petal.browser.ui.containment.PetalMotion.backExit(),
+                enter = PetalMotion.forwardEnter(),
+                exit = PetalMotion.backExit(),
                 modifier = Modifier.fillMaxSize()
             ) {
                 PetalPasswordsScreen(
@@ -718,7 +676,5 @@ fun PrivacySettingsScreenContent(
                 )
             }
         }
-        }
     }
 }
-

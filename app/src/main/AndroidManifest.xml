@@ -686,15 +686,6 @@
             </intent-filter>
         </service>
 
-        <!-- Samsung Content Blocker Dynamic Update Receiver -->
-        <receiver
-            android:name="com.petal.browser.browser.samsung.SamsungContentBlockerUpdateReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.samsung.android.sbrowser.contentBlocker.ACTION_UPDATE" />
-                <data android:scheme="package" />
-            </intent-filter>
-        </receiver>
 
         <!-- Disable default WorkManager initialization via androidx.startup to prevent WorkDatabase startup crash -->
         <provider

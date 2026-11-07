@@ -538,56 +538,6 @@ fun PetalAdBlockSettingsScreen(
                     )
                 }
 
-                // ── Samsung Internet Content Blockers Bridge ──
-                val samsungBlockers = remember {
-                    com.petal.browser.browser.samsung.SamsungContentBlockerBridge.findInstalledSamsungBlockers(context)
-                }
-                if (samsungBlockers.isNotEmpty()) {
-                    PetalSettingsSection(
-                        title = "Samsung Internet Extensions",
-                        iconRes = com.petal.browser.R.drawable.layers_filled
-                    ) {
-                        samsungBlockers.forEachIndexed { index, blocker ->
-                            var enabled by remember {
-                                mutableStateOf(com.petal.browser.browser.samsung.SamsungContentBlockerBridge.isBlockerEnabled(context, blocker.packageName))
-                            }
-                            val setEnabled: (Boolean) -> Unit = { isChecked ->
-                                enabled = isChecked
-                                com.petal.browser.browser.samsung.SamsungContentBlockerBridge.setBlockerEnabled(
-                                    context,
-                                    blocker.packageName,
-                                    isChecked
-                                )
-                            }
-                            PetalGroupListRow(
-                                position = petalGroupPositionFor(index, samsungBlockers.size),
-                                onClick = { setEnabled(!enabled) },
-                                leading = { PetalGroupIconBadge(Icons.Rounded.Security, variant = PetalBadgeVariant.SECONDARY) },
-                                content = {
-                                    Text(
-                                        text = blocker.appName,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        text = "Samsung Content Blocker (${blocker.packageName})",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                trailing = {
-                                    IconSwitch(
-                                        checked = enabled,
-                                        icon = Icons.Rounded.Check,
-                                        onCheckedChange = setEnabled,
-                                        modifier = Modifier.padding(start = 8.dp)
-                                    )
-                                }
-                            )
-                        }
-                    }
-                }
-
                 // ── Rules & Whitelist Section ──
                 PetalSettingsSection(
                     title = "Rules & Exceptions",

@@ -151,6 +151,27 @@ object PetalSettingsSearchIndex {
             keywords = listOf("adblock", "ads", "block ads", "trackers", "ad blocker", "filters", "advertisement", "ublock")
         ),
         SettingsSearchItem(
+            id = "privacy_etp",
+            title = "Enhanced Tracking Protection (ETP)",
+            subtitle = "Standard and Strict tracking protection, Total Cookie Protection and state partitioning",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("etp", "tracking protection", "strict", "total cookie protection", "tcp", "isolate cookies", "partitioning")
+        ),
+        SettingsSearchItem(
+            id = "privacy_incognito",
+            title = "Private Browsing & Biometric Lock",
+            subtitle = "Biometric lock for incognito tabs and clear browsing data on app exit",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("incognito", "private", "biometric", "fingerprint lock", "clear on exit", "quit")
+        ),
+        SettingsSearchItem(
+            id = "privacy_passwords",
+            title = "Password Manager & Autofill Vault",
+            subtitle = "Encrypted credentials, saved logins, passkeys, and breach alerts",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("passwords", "autofill", "passkeys", "credentials", "vault", "logins")
+        ),
+        SettingsSearchItem(
             id = "privacy_private_dns",
             title = "Secure Private DNS (DoH)",
             subtitle = "DNS-over-HTTPS via Cloudflare, AdGuard, Google, Quad9, Mullvad, or custom DNS",
