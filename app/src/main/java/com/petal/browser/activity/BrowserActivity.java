@@ -1051,6 +1051,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         };
         getOnBackPressedDispatcher().addCallback(this, browserBackCallback);
         setContentView(R.layout.activity_main);
+        // Window background follows the app's resolved theme colour, so any frame where the content
+        // views are hidden or being swapped (opening Settings, predictive-back scale-down) shows the
+        // app colour instead of a white system default.
+        try {
+            getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(
+                    com.google.android.material.color.MaterialColors.getColor(
+                            this, android.R.attr.colorBackground, android.graphics.Color.BLACK)));
+        } catch (Throwable ignored) {}
         contentFrame = findViewById(R.id.main_content);
         if (splashHandsOffToComposeSplash) {
             com.petal.browser.compose.splash.PetalSplashOverlay.show(this, this::onAppLaunchSplashFinished);
@@ -4620,11 +4628,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (!barInsetsKnown || !canCollapseBars()) return;
             isAddressBarCollapsed = true;
             barsHiddenUrl = currentUrl;
-            applyBarsHiddenState(true, true, false);
+            // Pill mode: the page grows under the minimized pill (real site content behind it).
+            applyBarsHiddenState(true, true, com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp));
         } else if (!collapse && isAddressBarCollapsed) {
             isAddressBarCollapsed = false;
             barsHiddenUrl = null;
-            applyBarsHiddenState(false, true, false);
+            applyBarsHiddenState(false, true, com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp));
         }
     }
 
