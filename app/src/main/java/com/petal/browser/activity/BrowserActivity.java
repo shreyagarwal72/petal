@@ -4018,11 +4018,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             PetalAndroidUtils.applyBouncyTouchFeedback(fab_menu);
             fab_menu.setOnClickListener(view -> {
                 String title = currentAlbumController != null ? currentAlbumController.getTitle() : "";
-                String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
+                String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                 showOverflow(null, null, 0, title, url, null, null, 0);
             });
             fab_menu.setOnLongClickListener(view -> {
-                String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
+                String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                 performGesture("setting_gesture_tabButton", url);
                 return true;
             });
@@ -4078,22 +4078,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (fab_overview != null) {
             fab_overview.setOnTouchListener(new SwipeTouchListener(context) {
                 public void onSwipeTop() {
-                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                     performGesture("setting_gesture_tb_up", url);
                     hideOverview();
                 }
                 public void onSwipeBottom() {
-                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                     performGesture("setting_gesture_tb_down", url);
                     hideOverview();
                 }
                 public void onSwipeRight() {
-                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                     performGesture("setting_gesture_tb_right", url);
                     hideOverview();
                 }
                 public void onSwipeLeft() {
-                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                     performGesture("setting_gesture_tb_left", url);
                     hideOverview();
                 }
@@ -4103,22 +4103,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (fab_menu != null) {
             fab_menu.setOnTouchListener(new SwipeTouchListener(context) {
                 public void onSwipeTop() {
-                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                     performGesture("setting_gesture_nav_up", url);
                     hideOverflow();
                 }
                 public void onSwipeBottom() {
-                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                     performGesture("setting_gesture_nav_down", url);
                     hideOverflow();
                 }
                 public void onSwipeRight() {
-                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                     performGesture("setting_gesture_nav_right", url);
                     hideOverflow();
                 }
                 public void onSwipeLeft() {
-                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                     performGesture("setting_gesture_nav_left", url);
                     hideOverflow();
                 }
@@ -4129,7 +4129,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             PetalAndroidUtils.applyBouncyTouchFeedback(fab_overview);
             fab_overview.setOnClickListener(v -> showOverview());
             fab_overview.setOnLongClickListener(v -> {
-                performGesture("setting_gesture_overViewButton", currentAlbumController != null ? currentAlbumController.getUrl() : \"\");
+                performGesture("setting_gesture_overViewButton", currentAlbumController != null ? currentAlbumController.getUrl() : "");
                 return true;
             });
         }
@@ -4276,7 +4276,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 },
                 () -> {
                     com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                    String shareUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (currentAlbumController != null ? currentAlbumController.getUrl() : \"\");
+                    String shareUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (currentAlbumController != null ? currentAlbumController.getUrl() : "");
                     if (shareUrl != null && !shareUrl.isEmpty() && !isHomePage(shareUrl)) {
                         Intent shareIntent = new Intent(Intent.ACTION_SEND);
                         shareIntent.setType("text/plain");
@@ -4286,7 +4286,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 },
                 () -> {
                     com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                    String cUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (currentAlbumController != null ? currentAlbumController.getUrl() : \"\");
+                    String cUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (currentAlbumController != null ? currentAlbumController.getUrl() : "");
                     if (cUrl == null || cUrl.equalsIgnoreCase("about:blank") || cUrl.startsWith("about:") || isHomePage(cUrl)) {
                         cUrl = "";
                     }
