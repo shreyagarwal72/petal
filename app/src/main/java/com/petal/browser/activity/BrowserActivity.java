@@ -1338,7 +1338,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (browserBackCallback != null) browserBackCallback.setEnabled(true);
         super.onResume();
         com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this);
-        com.petal.browser.unit.PetalHighRefreshRateManager.registerDisplayListener(this);
         predictiveBackStartedOnOverlay = false;
         resetRefreshState();
         applyImmersiveFullScreenMode();
@@ -1396,7 +1395,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void onDestroy() {
         com.petal.browser.compose.splash.PetalSplashOverlay.dismiss(this, null);
         try {
-            if (sp != null) sp.unregisterOnSharedPreferenceChangeListener(toolbarPrefsListener);
+            if (sp != null) {
+                sp.unregisterOnSharedPreferenceChangeListener(toolbarPrefsListener);
+                if (desktopTabBarPrefListener != null) {
+                    sp.unregisterOnSharedPreferenceChangeListener(desktopTabBarPrefListener);
+                    desktopTabBarPrefListener = null;
+                }
+            }
         } catch (Throwable t) {
             PetalAppLogger.w(TAG, "Error unregistering preference listener in onDestroy", t);
         }
@@ -3224,6 +3229,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this);
         // Rotation / fold / split-screen resize can cross the tablet threshold: re-evaluate the strip.
         View root = findViewById(R.id.main);
         if (root != null) root.post(this::applyAddressBarPosition);
@@ -8400,7 +8406,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(null);
         }
         super.onPause();
-        com.petal.browser.unit.PetalHighRefreshRateManager.unregisterDisplayListener(this);
         try {
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.view.PetalGeckoView activeGecko = (com.petal.browser.view.PetalGeckoView) currentAlbumController;

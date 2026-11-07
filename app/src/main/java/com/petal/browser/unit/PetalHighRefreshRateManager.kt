@@ -55,24 +55,31 @@ object PetalHighRefreshRateManager {
         }
     }
 
+    @Volatile
+    private var isApplying = false
+
     /**
      * Applies high refresh rate parameters to the given Activity's window if enabled by user settings.
      */
     @JvmStatic
     fun applyHighRefreshRate(activity: Activity?) {
         if (activity == null || activity.isFinishing || activity.isDestroyed) return
-
-        val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-        val isEnabled = sp.getBoolean(PREF_HIGH_REFRESH_RATE, true)
-        if (!isEnabled) {
-            resetRefreshRate(activity)
-            return
-        }
+        if (isApplying) return
+        isApplying = true
 
         try {
+            val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+            val isEnabled = sp.getBoolean(PREF_HIGH_REFRESH_RATE, true)
+            if (!isEnabled) {
+                resetRefreshRate(activity)
+                return
+            }
+
             val window = activity.window ?: return
             val layoutParams = window.attributes ?: return
             val display = getDisplay(activity) ?: return
+
+            var attributesChanged = false
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 val modes = display.supportedModes
@@ -95,7 +102,10 @@ object PetalHighRefreshRateManager {
                     }
 
                     if (bestMode != null && maxRate >= 90f) {
-                        layoutParams.preferredDisplayModeId = bestMode.modeId
+                        if (layoutParams.preferredDisplayModeId != bestMode.modeId) {
+                            layoutParams.preferredDisplayModeId = bestMode.modeId
+                            attributesChanged = true
+                        }
                     }
                 }
             }
@@ -104,17 +114,23 @@ object PetalHighRefreshRateManager {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val maxRate = getMaxSupportedRefreshRate(activity)
                 if (maxRate >= 90f) {
-                    setRefreshRateBounds(layoutParams, maxRate)
+                    if (setRefreshRateBounds(layoutParams, maxRate)) {
+                        attributesChanged = true
+                    }
                 }
             }
 
-            window.attributes = layoutParams
-            Log.d(TAG, "Applied: modeId=${layoutParams.preferredDisplayModeId} max=${getMaxSupportedRefreshRate(activity)}Hz current=${display.refreshRate}Hz")
+            if (attributesChanged) {
+                window.attributes = layoutParams
+                Log.d(TAG, "Applied: modeId=${layoutParams.preferredDisplayModeId} max=${getMaxSupportedRefreshRate(activity)}Hz current=${display.refreshRate}Hz")
+            }
 
             // Apply frame rate hint to decor view surface
             applySurfaceFrameRate(window.decorView, getMaxSupportedRefreshRate(activity))
         } catch (e: Exception) {
             Log.w(TAG, "Failed applying high refresh rate: ${e.message}")
+        } finally {
+            isApplying = false
         }
     }
 
@@ -127,14 +143,22 @@ object PetalHighRefreshRateManager {
         try {
             val window = activity.window ?: return
             val layoutParams = window.attributes ?: return
+            var changed = false
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                layoutParams.preferredDisplayModeId = 0
+                if (layoutParams.preferredDisplayModeId != 0) {
+                    layoutParams.preferredDisplayModeId = 0
+                    changed = true
+                }
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                setRefreshRateBounds(layoutParams, 0f)
+                if (setRefreshRateBounds(layoutParams, 0f)) {
+                    changed = true
+                }
             }
-            window.attributes = layoutParams
+            if (changed) {
+                window.attributes = layoutParams
+            }
         } catch (e: Exception) {
             Log.w(TAG, "Failed resetting refresh rate: ${e.message}")
         }
@@ -142,9 +166,8 @@ object PetalHighRefreshRateManager {
 
     /**
      * Hints the compositor to pace [view] at the high rate.
-     * API 35+: View.setRequestedFrameRate(). Older: Surface.setFrameRate() on any SurfaceView found in the tree
-     * (GeckoView renders into one). The old implementation reflected a non-existent View.setFrameRate and
-     * silently did nothing, which left the app at 60Hz.
+     * API 35+: View.setRequestedFrameRate() on the root view.
+     * Older/SurfaceView: Surface.setFrameRate() on SurfaceView found in tree.
      */
     @JvmStatic
     fun applySurfaceFrameRate(view: View?, targetFrameRate: Float = 120f) {
@@ -152,17 +175,21 @@ object PetalHighRefreshRateManager {
         val rate = if (targetFrameRate >= 90f) targetFrameRate else getMaxSupportedRefreshRate(view.context)
         if (rate < 90f) return
         try {
-            applyFrameRateRecursive(view, rate, 0)
+            if (Build.VERSION.SDK_INT >= 35) {
+                try {
+                    view.requestedFrameRate = rate
+                } catch (_: Throwable) {}
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                paceSurfaceViews(view, rate, 0)
+            }
         } catch (e: Exception) {
             Log.d(TAG, "Frame rate hint failed: ${e.message}")
         }
     }
 
-    private fun applyFrameRateRecursive(view: View, rate: Float, depth: Int) {
-        if (depth > 12) return
-        if (Build.VERSION.SDK_INT >= 35) {
-            view.requestedFrameRate = rate
-        }
+    private fun paceSurfaceViews(view: View, rate: Float, depth: Int) {
+        if (depth > 6) return
         if (view is android.view.SurfaceView && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val surface = view.holder.surface
             if (surface != null && surface.isValid) {
@@ -172,58 +199,62 @@ object PetalHighRefreshRateManager {
                     Log.d(TAG, "Surface.setFrameRate failed: ${e.message}")
                 }
             }
+            return
         }
         if (view is android.view.ViewGroup) {
             for (i in 0 until view.childCount) {
-                applyFrameRateRecursive(view.getChildAt(i), rate, depth + 1)
+                paceSurfaceViews(view.getChildAt(i), rate, depth + 1)
             }
         }
     }
 
-    private var displayListener: DisplayManager.DisplayListener? = null
-
     /**
-     * Re-applies the preferred rate whenever the display mode changes (rotation, fold, system
-     * refresh-rate switch) so a one-time onCreate call can't be silently undone.
+     * DisplayListener registration is made a safe no-op.
+     * Listening to DisplayManager.onDisplayChanged to mutate WindowManager.LayoutParams
+     * triggers severe feedback loops and main-thread ANRs on dynamic refresh rate (LTPO)
+     * devices when refresh rates shift during user touch events.
+     * Window attributes are already persisted by WindowManagerService and re-evaluated
+     * on standard Activity lifecycle events (onResume, onConfigurationChanged, onWindowFocusChanged).
      */
     @JvmStatic
     fun registerDisplayListener(activity: Activity?) {
-        if (activity == null) return
-        unregisterDisplayListener(activity)
-        val dm = activity.getSystemService(Context.DISPLAY_SERVICE) as? DisplayManager ?: return
-        val listener = object : DisplayManager.DisplayListener {
-            override fun onDisplayAdded(displayId: Int) {}
-            override fun onDisplayRemoved(displayId: Int) {}
-            override fun onDisplayChanged(displayId: Int) {
-                applyHighRefreshRate(activity)
-            }
-        }
-        displayListener = listener
-        dm.registerDisplayListener(listener, android.os.Handler(android.os.Looper.getMainLooper()))
+        // Safe no-op to eliminate ANR feedback loop
     }
 
     @JvmStatic
     fun unregisterDisplayListener(activity: Activity?) {
-        val listener = displayListener ?: return
-        val dm = activity?.getSystemService(Context.DISPLAY_SERVICE) as? DisplayManager
-        dm?.unregisterDisplayListener(listener)
-        displayListener = null
+        // Safe no-op
     }
 
-    private fun setRefreshRateBounds(layoutParams: WindowManager.LayoutParams, rate: Float) {
+    private fun setRefreshRateBounds(layoutParams: WindowManager.LayoutParams, rate: Float): Boolean {
+        var changed = false
         try {
             val minField = WindowManager.LayoutParams::class.java.getField("preferredMinDisplayRefreshRate")
             val maxField = WindowManager.LayoutParams::class.java.getField("preferredMaxDisplayRefreshRate")
             // Floor at 60Hz (or 0 on reset) so the system may still drop for battery / static content;
             // pinning min == max forced a single mode and was ignored by many OEM governors.
-            minField.setFloat(layoutParams, if (rate > 0f) 60f else 0f)
-            maxField.setFloat(layoutParams, rate)
+            val targetMin = if (rate > 0f) 60f else 0f
+            val currentMin = minField.getFloat(layoutParams)
+            val currentMax = maxField.getFloat(layoutParams)
+            if (currentMin != targetMin) {
+                minField.setFloat(layoutParams, targetMin)
+                changed = true
+            }
+            if (currentMax != rate) {
+                maxField.setFloat(layoutParams, rate)
+                changed = true
+            }
         } catch (ignored: Exception) {
             try {
                 val prefField = WindowManager.LayoutParams::class.java.getField("preferredRefreshRate")
-                prefField.setFloat(layoutParams, rate)
+                val currentPref = prefField.getFloat(layoutParams)
+                if (currentPref != rate) {
+                    prefField.setFloat(layoutParams, rate)
+                    changed = true
+                }
             } catch (ignored2: Exception) {}
         }
+        return changed
     }
 
     private fun getDisplay(context: Context): Display? {
