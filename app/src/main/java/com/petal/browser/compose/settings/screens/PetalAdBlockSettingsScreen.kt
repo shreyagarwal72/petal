@@ -300,8 +300,8 @@ fun PetalAdBlockSettingsScreen(
 
         Column(modifier = Modifier.fillMaxSize()) {
             ExpressiveHeader(
-                title = "Shields & AdBlock Control",
-                subtitle = "Brave Shields, Cromite subscriptions & GeckoView ETP",
+                title = "Ad & Tracker Blocking",
+                subtitle = "One switch, filter lists and site exceptions",
                 onBack = onNavigateBack
             )
 
@@ -352,7 +352,7 @@ fun PetalAdBlockSettingsScreen(
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Petal Shield Active",
+                                text = if (activeMode == PetalAdBlockMode.DISABLED) "Petal Shield Off" else "Petal Shield Active",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = heroTitleColor
@@ -367,28 +367,18 @@ fun PetalAdBlockSettingsScreen(
                     }
                 }
 
-                // ── Protection Mode Selector (Brave Shields Style) ──
-                Text(
-                    text = "Protection Level",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PetalAdBlockMode.values().forEach { mode ->
-                        ShieldModeCard(
-                            mode = mode,
-                            selected = activeMode == mode,
-                            isGlass = isGlass,
-                            sheen = sheen,
-                            onClick = {
-                                activeMode = mode
-                                PetalAdBlockEngine.setAdBlockMode(context, mode)
-                            }
-                        )
+                // ── Single master switch ──
+                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                    position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                    title = "Block ads & trackers",
+                    subtitle = "Strict tracking protection, filter lists and cookie isolation",
+                    icon = Icons.Rounded.Security,
+                    checked = activeMode != PetalAdBlockMode.DISABLED,
+                    onCheckedChange = { on ->
+                        activeMode = if (on) PetalAdBlockMode.STANDARD else PetalAdBlockMode.DISABLED
+                        PetalAdBlockEngine.setAdBlockMode(context, activeMode)
                     }
-                }
+                )
 
                 // ── Filter Subscriptions Section (Cromite Style) ──
                 val rowTotal = subscriptions.size + 2 // update row + lists + add row
@@ -621,89 +611,6 @@ fun PetalAdBlockSettingsScreen(
 
                 // keep the last row clear of the gesture/nav bar
                 Spacer(Modifier.navigationBarsPadding().height(8.dp))
-            }
-        }
-    }
-}
-
-
-/**
- * One protection-level card. Glass: transparent surface + a single rim (no extra border except the
- * selected outline), text colour set explicitly so it never falls back to black on a see-through
- * card. Non-glass: normal tonal Material card.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun ShieldModeCard(
-    mode: PetalAdBlockMode,
-    selected: Boolean,
-    isGlass: Boolean,
-    sheen: Float,
-    onClick: () -> Unit
-) {
-    val cardShape = RoundedCornerShape(24.dp)
-    val scheme = MaterialTheme.colorScheme
-    Card(
-        onClick = onClick,
-        shape = cardShape,
-        colors = CardDefaults.cardColors(
-            containerColor = when {
-                isGlass -> petalGroupSurfaceColor()
-                selected -> scheme.secondaryContainer
-                else -> scheme.surfaceContainerHigh
-            },
-            contentColor = scheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = null,
-        modifier = Modifier
-            .fillMaxWidth()
-            .liquidGlassChrome(
-                shape = cardShape,
-                enabled = isGlass,
-                sheenIntensity = sheen,
-                tintColor = if (selected) scheme.primaryContainer else Color.Unspecified
-            )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // The whole card is the click target, so the radio is display-only.
-            RadioButton(selected = selected, onClick = null)
-            Spacer(Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = mode.title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = scheme.onSurface
-                    )
-                    if (mode == PetalAdBlockMode.STANDARD) {
-                        Surface(shape = ExpressiveButtonShape, color = scheme.primary) {
-                            Text(
-                                text = "RECOMMENDED",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = scheme.onPrimary,
-                                maxLines = 1,
-                                softWrap = false,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = mode.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = scheme.onSurfaceVariant
-                )
             }
         }
     }

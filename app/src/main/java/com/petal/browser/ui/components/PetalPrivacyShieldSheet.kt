@@ -301,9 +301,6 @@ object PetalPrivacyShieldSheet {
         val initialDomainMode = remember(cleanHost) {
             PetalAdBlockEngine.getEffectiveMode(activity, cleanHost)
         }
-        var siteShieldMode by remember(cleanHost, initialDomainMode) {
-            mutableStateOf(if (initialDomainMode == PetalAdBlockMode.AGGRESSIVE) PetalAdBlockMode.AGGRESSIVE else PetalAdBlockMode.STANDARD)
-        }
         var isHttpsBypassed by remember(cleanHost) {
             mutableStateOf(PetalHttpsOnlyWhitelist.isBypassed(activity, cleanHost))
         }
@@ -573,43 +570,6 @@ object PetalPrivacyShieldSheet {
                             },
                             position = PetalGroupPosition.MIDDLE
                         )
-
-                        // Mode Selector Chips
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Filter Level:",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            PetalFilterChip(
-                                selected = siteShieldMode == PetalAdBlockMode.STANDARD,
-                                onClick = {
-                                    siteShieldMode = PetalAdBlockMode.STANDARD
-                                    PetalAdBlockEngine.setDomainOverride(activity, cleanHost, PetalAdBlockMode.STANDARD)
-                                    PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
-                                    onReloadRequested()
-                                },
-                                label = { Text("Standard", fontSize = 11.sp) },
-                                shape = RoundedCornerShape(10.dp)
-                            )
-                            PetalFilterChip(
-                                selected = siteShieldMode == PetalAdBlockMode.AGGRESSIVE,
-                                onClick = {
-                                    siteShieldMode = PetalAdBlockMode.AGGRESSIVE
-                                    PetalAdBlockEngine.setDomainOverride(activity, cleanHost, PetalAdBlockMode.AGGRESSIVE)
-                                    PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
-                                    onReloadRequested()
-                                },
-                                label = { Text("Aggressive", fontSize = 11.sp) },
-                                shape = RoundedCornerShape(10.dp)
-                            )
-                        }
 
                         // Visual Element Zapper & CSS Filter
                         FilledTonalButton(

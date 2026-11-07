@@ -254,17 +254,6 @@ object PetalAdBlockEngine {
             return true
         }
 
-        // 3. Aggressive mode extra heuristics (Brave-style strict blocking)
-        if (effectiveMode == PetalAdBlockMode.AGGRESSIVE) {
-            val lower = requestUrl.lowercase(Locale.US)
-            if (lower.contains("/telemetry") || lower.contains("/analytics") || 
-                lower.contains("/pixel") || lower.contains("/collect?") ||
-                lower.contains("cookie-banner") || lower.contains("consent.js")) {
-                recordBlock(pageUrl)
-                return true
-            }
-        }
-
         return false
     }
 

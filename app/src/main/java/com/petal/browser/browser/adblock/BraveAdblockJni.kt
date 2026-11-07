@@ -19,11 +19,12 @@ object BraveAdblockJni {
             Log.d(TAG, "Successfully loaded native libadblock_petal.so")
         } catch (t: Throwable) {
             isNativeLoaded = false
-            Log.w(TAG, "libadblock_petal.so not available, using high-speed fallback engine: ${t.message}")
+            Log.e(TAG, "ERROR: libadblock_petal.so not available; engaging high-performance fallback engine: ${t.message}")
         }
     }
 
     fun isAvailable(): Boolean = isNativeLoaded
+    fun isFallbackActive(): Boolean = !isNativeLoaded
 
     external fun nativeCreateEngine(rules: Array<String>): Long
     external fun nativeMatches(enginePtr: Long, url: String, host: String, requestType: String): Boolean

@@ -298,7 +298,7 @@ fun PrivacySettingsScreenContent(
                     type = ExplainerFeatureType.ADBLOCK_TRIE_SHIELD,
                     title = "Ad & Tracker Shield",
                     badge = "PROTECTION",
-                    subtitle = "High-Performance Trie Algorithm",
+                    subtitle = "Block ads, trackers and fingerprinters",
                     bullets = listOf(
                         "Uses compact algorithmic Trie tree indexing for sub-millisecond rule matching.",
                         "Directly intercepts third-party trackers, cryptominers, and malicious popups.",
@@ -399,7 +399,7 @@ fun PrivacySettingsScreenContent(
                 ) {
                     PetalGroupNavigationRow(
                         title = "Shields & Filter Subscriptions",
-                        subtitle = "Brave modes, Cromite filter lists & custom rules",
+                        subtitle = "Filter lists, custom rules & site exceptions",
                         position = PetalGroupPosition.TOP,
                         onClick = { showAdBlockSettings = true },
                         leadingIcon = { Icon(Icons.Rounded.Shield, contentDescription = null) }
@@ -407,7 +407,7 @@ fun PrivacySettingsScreenContent(
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                         title = stringResource(R.string.ui_ad_tracker_shield),
-                        subtitle = stringResource(R.string.ui_ublock_origin_adguard_grade_trie),
+                        subtitle = "Strict tracking protection plus Petal filter lists",
                         icon = Icons.Rounded.VerifiedUser,
                         checked = adBlockEnabled,
                         onCheckedChange = { newValue ->

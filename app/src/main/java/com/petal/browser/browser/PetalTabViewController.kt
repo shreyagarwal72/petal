@@ -1213,8 +1213,7 @@ class PetalTabViewController private constructor(
     fun applyTrackingProtectionMode(mode: com.petal.browser.browser.PetalAdBlockMode) {
         val policy = when (mode) {
             com.petal.browser.browser.PetalAdBlockMode.DISABLED -> EngineSession.TrackingProtectionPolicy.none()
-            com.petal.browser.browser.PetalAdBlockMode.STANDARD -> EngineSession.TrackingProtectionPolicy.recommended()
-            com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE -> EngineSession.TrackingProtectionPolicy.strict()
+            com.petal.browser.browser.PetalAdBlockMode.STANDARD -> EngineSession.TrackingProtectionPolicy.strict()
         }
         observedSession?.updateTrackingProtection(policy)
     }
