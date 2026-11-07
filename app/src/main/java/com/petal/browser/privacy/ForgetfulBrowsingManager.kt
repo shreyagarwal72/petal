@@ -3,7 +3,7 @@ package com.petal.browser.privacy
 import android.content.Context
 import android.util.Log
 import androidx.preference.PreferenceManager
-import com.petal.browser.unit.CacheManager
+import com.petal.browser.unit.PetalCacheManager
 
 /**
  * ForgetfulBrowsingManager
@@ -45,7 +45,7 @@ object ForgetfulBrowsingManager {
         if (isDomainForgetful(context, domain)) {
             Log.i(TAG, "All tabs for forgetful domain $domain closed. Wiping site data.")
             try {
-                CacheManager.clearSiteData(context, domain)
+                PetalCacheManager.clearSiteData(context, domain)
             } catch (t: Throwable) {
                 Log.w(TAG, "Failed to purge forgetful domain $domain: ${t.message}")
             }

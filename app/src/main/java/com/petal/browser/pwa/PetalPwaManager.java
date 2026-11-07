@@ -21,8 +21,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -97,23 +95,16 @@ public class PetalPwaManager {
 
     private final Context context;
     private final com.petal.browser.browser.AlbumController albumController;
-    private final WebView webView;
     private final com.petal.browser.browser.PetalTabViewController tabViewController;
     private PwaInstallPromptListener promptListener;
 
     public PetalPwaManager(Context context, com.petal.browser.browser.AlbumController albumController, PwaInstallPromptListener listener) {
         this.context = context;
         this.albumController = albumController;
-        this.webView = (albumController instanceof WebView) ? (WebView) albumController : null;
         this.tabViewController = (albumController instanceof com.petal.browser.browser.PetalTabViewController) ? (com.petal.browser.browser.PetalTabViewController) albumController : null;
         this.promptListener = listener;
         if (listener != null) {
             sPromptListener = listener;
-        }
-
-        if (this.webView != null) {
-            configurePwaWebSettings(this.webView.getSettings());
-            this.webView.addJavascriptInterface(new PwaJavascriptInterface(), JS_INTERFACE_NAME);
         }
     }
 
@@ -275,22 +266,6 @@ public class PetalPwaManager {
     }
 
     /**
-     * Configures WebSettings required for PWAs: DOM Storage, Database, IndexedDB, JS, Geolocation.
-     */
-    public static void configurePwaWebSettings(WebSettings webSettings) {
-        if (webSettings == null) return;
-        webSettings.setDomStorageEnabled(true);
-        webSettings.setDatabaseEnabled(true);
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
-        webSettings.setGeolocationEnabled(true);
-        webSettings.setAllowFileAccess(true);
-        webSettings.setAllowContentAccess(true);
-        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
-    }
-
-    /**
      * Injects JavaScript to discover link[rel="manifest"], theme-color, apple-touch-icons, and parse web app manifest.
      */
     public void detectPwaManifest() {
@@ -358,9 +333,7 @@ public class PetalPwaManager {
                 "   } catch(e) {}" +
                 "})();";
 
-        if (webView != null) {
-            webView.evaluateJavascript(js, null);
-        } else if (tabViewController != null) {
+        if (tabViewController != null) {
             tabViewController.evaluateJavascript(js, null);
         }
     }
@@ -665,7 +638,7 @@ public class PetalPwaManager {
             targetController = ((com.petal.browser.activity.BrowserActivity) activity).currentAlbumController;
         }
 
-        String pageUrl = targetController != null ? targetController.getUrl() : (webView != null ? webView.getUrl() : null);
+        String pageUrl = targetController != null ? targetController.getUrl() : null;
         if (pageUrl == null || pageUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(pageUrl.trim())) {
             if (activity instanceof com.petal.browser.activity.BrowserActivity) {
                 pageUrl = ((com.petal.browser.activity.BrowserActivity) activity).resolveCurrentTabUrl();
@@ -728,7 +701,7 @@ public class PetalPwaManager {
                     rawTitle = workingManifest.name;
                 }
                 if (rawTitle == null || rawTitle.isEmpty()) {
-                    rawTitle = finalController != null && finalController.getTitle() != null && !finalController.getTitle().isEmpty() ? finalController.getTitle() : (webView != null && webView.getTitle() != null && !webView.getTitle().isEmpty() ? webView.getTitle() : PetalAndroidUtils.domain(finalPageUrl));
+                    rawTitle = finalController != null && finalController.getTitle() != null && !finalController.getTitle().isEmpty() ? finalController.getTitle() : PetalAndroidUtils.domain(finalPageUrl);
                 }
                 if (rawTitle == null || rawTitle.isEmpty()) {
                     rawTitle = "Web App";
@@ -866,10 +839,7 @@ public class PetalPwaManager {
 
                 activity.runOnUiThread(() -> {
                     try {
-                        if (webView != null) {
-                            webView.saveWebArchive(archiveFile.getAbsolutePath(), false, null);
-                            com.petal.browser.engine.gecko.PetalEngineStore.addOfflineArchive(activity, targetUrl, archiveFile.getAbsolutePath(), title);
-                        } else if (tabViewController != null) {
+                        if (tabViewController != null) {
                             try {
                                 java.io.FileOutputStream fos = new java.io.FileOutputStream(archiveFile);
                                 tabViewController.printToPdf(fos, success -> {
@@ -878,7 +848,9 @@ public class PetalPwaManager {
                                     }
                                     return kotlin.Unit.INSTANCE;
                                 });
-                            } catch (Exception ignored) {}
+                            } catch (Exception e) {
+                                com.petal.browser.logger.PetalAppLogger.w(TAG, "Error printing tab to PDF for offline archive", e);
+                            }
                         }
                     } catch (Exception e) {
                         Log.w(TAG, "saveWebArchive: " + e.getMessage());

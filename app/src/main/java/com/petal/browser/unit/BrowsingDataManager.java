@@ -11,6 +11,8 @@ import androidx.webkit.ProfileStore;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
 
+import com.petal.browser.logger.PetalAppLogger;
+
 import java.io.File;
 
 /**
@@ -20,6 +22,7 @@ import java.io.File;
  */
 public class BrowsingDataManager {
 
+    private static final String TAG = "BrowsingDataManager";
     private static final String INCOGNITO_PROFILE_NAME = "PetalIncognitoProfile";
 
     public static void configureWebSettings(WebView webView, boolean isIncognito) {
@@ -41,7 +44,9 @@ public class BrowsingDataManager {
                     Profile profile = ProfileStore.getInstance().getOrCreateProfile(INCOGNITO_PROFILE_NAME);
                     WebViewCompat.setProfile(webView, INCOGNITO_PROFILE_NAME);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w(TAG, "Failed to isolate incognito profile", e);
+            }
         } else {
             settings.setCacheMode(WebSettings.LOAD_DEFAULT);
             settings.setDomStorageEnabled(true);
@@ -55,7 +60,9 @@ public class BrowsingDataManager {
                     ProfileStore.getInstance().getOrCreateProfile(Profile.DEFAULT_PROFILE_NAME);
                     WebViewCompat.setProfile(webView, Profile.DEFAULT_PROFILE_NAME);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w(TAG, "Failed to configure default profile", e);
+            }
         }
     }
 
@@ -72,14 +79,17 @@ public class BrowsingDataManager {
         if (android.os.Looper.myLooper() == mainLooper) {
             try {
                 action.run();
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w(TAG, "Error running action on main thread", e);
+            }
             return;
         }
         final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
         new android.os.Handler(mainLooper).post(() -> {
             try {
                 action.run();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                PetalAppLogger.w(TAG, "Error executing posted main-thread action", e);
             } finally {
                 latch.countDown();
             }

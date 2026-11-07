@@ -28,6 +28,8 @@ import android.widget.Toast;
 import androidx.core.app.NotificationCompat;
 import androidx.preference.PreferenceManager;
 
+import com.petal.browser.logger.PetalAppLogger;
+
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.json.JSONException;
@@ -176,7 +178,11 @@ public class PetalBrowserUtils {
             } else {
                 String selectedEngine = sp.getString("sp_search_engine", "0");
                 int i = 0;
-                try { i = Integer.parseInt(selectedEngine); } catch (Exception ignored) {}
+                try {
+                    i = Integer.parseInt(selectedEngine);
+                } catch (Exception e) {
+                    PetalAppLogger.w("PetalBrowserUtils", "Failed to parse search engine index: " + selectedEngine, e);
+                }
 
                 // Custom engines use ids >= 1000 and are stored as a small JSON array.
                 if (i >= 1000) {
@@ -192,7 +198,9 @@ public class PetalBrowserUtils {
                                 }
                             }
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception e) {
+                        PetalAppLogger.w("PetalBrowserUtils", "Failed to parse custom search engines JSON", e);
+                    }
                 }
 
                 switch (i) {
@@ -285,7 +293,9 @@ public class PetalBrowserUtils {
         if (future != null && !future.isDone()) {
             try {
                 future.get(Math.min(timeoutMs, 300L), java.util.concurrent.TimeUnit.MILLISECONDS);
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Wait for exit cleanup interrupted/failed", e);
+            }
         }
     }
 
@@ -305,7 +315,9 @@ public class PetalBrowserUtils {
             if (waitForCompletion && exitWorkFuture != null) {
                 try {
                     exitWorkFuture.get(300, java.util.concurrent.TimeUnit.MILLISECONDS);
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    PetalAppLogger.w("PetalBrowserUtils", "Wait for exitWorkFuture timed out or failed", e);
+                }
             }
             return;
         }
@@ -376,7 +388,7 @@ public class PetalBrowserUtils {
 
             if (clearCache || clearQuit) {
                 try {
-                    CacheManager.clearAllCache(context, null);
+                    PetalCacheManager.clearAllCache(context, null);
                 } catch (Exception exception) {
                     com.petal.browser.logger.PetalAppLogger.w("browser", "Error clearing cache on exit", exception);
                 }
@@ -385,7 +397,9 @@ public class PetalBrowserUtils {
             try {
                 com.petal.browser.engine.gecko.PetalStorageManager.cleanEphemeralStorage(context);
                 com.petal.browser.engine.gecko.PetalStorageManager.optimizeDatabases(context);
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error optimizing databases or cleaning storage", e);
+            }
         } finally {
             isPerformingClear.set(false);
         }
@@ -403,7 +417,7 @@ public class PetalBrowserUtils {
         if (clearHistory) clearHistory(context);
         if (clearCache)  {
             try {
-                CacheManager.clearAllCache(context, null);
+                PetalCacheManager.clearAllCache(context, null);
             } catch (Exception exception) {
                 Log.w("browser", "Error clearing cache", exception);
             }
@@ -421,7 +435,9 @@ public class PetalBrowserUtils {
                     org.mozilla.geckoview.StorageController.ClearFlags.COOKIES |
                     org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS
                 );
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error clearing cookies in GeckoRuntime", e);
+            }
             com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies();
         }
         if (clearDB) {
@@ -435,10 +451,14 @@ public class PetalBrowserUtils {
                     context,
                     org.mozilla.geckoview.StorageController.ClearFlags.DOM_STORAGES
                 );
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error clearing DOM storages in GeckoRuntime", e);
+            }
             try {
                 WebStorage.getInstance().deleteAllData();
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error deleting WebStorage data", e);
+            }
         }
     }
 
@@ -514,7 +534,9 @@ public class PetalBrowserUtils {
                         }
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error deleting shared_prefs files", e);
+            }
 
             // 2. Clear Databases (Bookmarks, History, Webview DBs)
             try {
@@ -532,7 +554,9 @@ public class PetalBrowserUtils {
                         }
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error deleting database files", e);
+            }
 
             // 3. Clear Cookies and WebStorage
             try {
@@ -542,16 +566,22 @@ public class PetalBrowserUtils {
                     org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS |
                     org.mozilla.geckoview.StorageController.ClearFlags.DOM_STORAGES
                 );
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error clearing Gecko data", e);
+            }
             com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies();
             try {
                 WebStorage.getInstance().deleteAllData();
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error deleting WebStorage data in eraseAppData", e);
+            }
 
             // 4. Clear Caches
             try {
-                CacheManager.clearAllCache(context, null);
-            } catch (Exception ignored) {}
+                PetalCacheManager.clearAllCache(context, null);
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error clearing cache in eraseAppData", e);
+            }
 
             // 5. Clear App Cache and Code Cache directories
             try {
@@ -559,19 +589,25 @@ public class PetalBrowserUtils {
                 deleteRecursive(cacheDir);
                 File codeCacheDir = context.getCodeCacheDir();
                 deleteRecursive(codeCacheDir);
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error clearing app cache/code cache dirs", e);
+            }
 
             // 6. Clear App Internal Files directory (excluding lib)
             try {
                 File filesDir = context.getFilesDir();
                 deleteRecursive(filesDir);
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error clearing files dir", e);
+            }
 
             // 7. Clear WebView internal app_webview data
             try {
                 File webviewDir = new File(context.getApplicationInfo().dataDir, "app_webview");
                 deleteRecursive(webviewDir);
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error clearing app_webview dir", e);
+            }
         } catch (Exception e) {
             Log.e("PetalBrowserUtils", "Error erasing all app data", e);
         }
@@ -693,7 +729,9 @@ public class PetalBrowserUtils {
                     return customUrl.trim();
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            PetalAppLogger.w("PetalBrowserUtils", "Error resolving effective homepage URL", e);
+        }
         return "about:blank";
     }
 
