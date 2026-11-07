@@ -47,6 +47,9 @@ class PetalTabViewController private constructor(
     private var boundTabId: String? = null
     private var observedSession: EngineSession? = null
     private var active = false
+    private var engineScrollDelegate: org.mozilla.geckoview.GeckoSession.ScrollDelegate? = null
+    private var engineHistoryDelegate: org.mozilla.geckoview.GeckoSession.HistoryDelegate? = null
+    private var engineContentBlockingDelegate: org.mozilla.geckoview.ContentBlocking.Delegate? = null
     private var previewRevision = 0L
     @Volatile
     private var capturedPreviewRevision = -1L
@@ -840,8 +843,14 @@ class PetalTabViewController private constructor(
             }
 
             // GeckoSession ScrollDelegate for Tactile Haptics and Address Bar Collapsing on scroll
-            gs.scrollDelegate = object : org.mozilla.geckoview.GeckoSession.ScrollDelegate {
+            // Keep Mozilla's engine delegates alive (captured once, never our own wrapper) so the
+            // BrowserStore still receives scroll / history / content-blocking events.
+            gs.scrollDelegate?.takeIf { it !is PetalOwnedDelegate }?.let { engineScrollDelegate = it }
+            gs.historyDelegate?.takeIf { it !is PetalOwnedDelegate }?.let { engineHistoryDelegate = it }
+            gs.contentBlockingDelegate?.takeIf { it !is PetalOwnedDelegate }?.let { engineContentBlockingDelegate = it }
+            gs.scrollDelegate = object : org.mozilla.geckoview.GeckoSession.ScrollDelegate, PetalOwnedDelegate {
                 override fun onScrollChanged(session: org.mozilla.geckoview.GeckoSession, scrollX: Int, scrollY: Int) {
+                    try { engineScrollDelegate?.onScrollChanged(session, scrollX, scrollY) } catch (_: Throwable) {}
                     currentScrollX = scrollX
                     currentScrollY = scrollY
 
@@ -852,11 +861,12 @@ class PetalTabViewController private constructor(
             }
 
             // Official Mozilla Firefox ContentBlocking Delegate (Enhanced Tracking Protection & AdBlock telemetry)
-            gs.contentBlockingDelegate = object : org.mozilla.geckoview.ContentBlocking.Delegate {
+            gs.contentBlockingDelegate = object : org.mozilla.geckoview.ContentBlocking.Delegate, PetalOwnedDelegate {
                 override fun onContentBlocked(
                     session: org.mozilla.geckoview.GeckoSession,
                     event: org.mozilla.geckoview.ContentBlocking.BlockEvent
                 ) {
+                    try { engineContentBlockingDelegate?.onContentBlocked(session, event) } catch (_: Throwable) {}
                     val atCat = try { event.antiTrackingCategory } catch (_: Throwable) { 0 }
                     val cookieCat = try { event.cookieBehaviorCategory } catch (_: Throwable) { 0 }
                     com.petal.browser.browser.PetalAdBlockEngine.recordBlockWithCategories(pageUrl, atCat, cookieCat)
@@ -864,11 +874,12 @@ class PetalTabViewController private constructor(
             }
 
             // GeckoSession HistoryDelegate to record top-level page visits into Petal history
-            gs.historyDelegate = object : org.mozilla.geckoview.GeckoSession.HistoryDelegate {
+            gs.historyDelegate = object : org.mozilla.geckoview.GeckoSession.HistoryDelegate, PetalOwnedDelegate {
                 override fun onHistoryStateChange(
                     session: org.mozilla.geckoview.GeckoSession,
                     historyList: org.mozilla.geckoview.GeckoSession.HistoryDelegate.HistoryList
                 ) {
+                    try { engineHistoryDelegate?.onHistoryStateChange(session, historyList) } catch (_: Throwable) {}
                     val currentIndex = historyList.currentIndex
                     val size = historyList.size
                     backAvailable = currentIndex > 0
@@ -2378,3 +2389,6 @@ private class SessionStateCapturingProgressDelegate(
         onState(sessionState)
     }
 }
+
+/** Marks delegates installed by Petal so re-binding never mistakes them for Mozilla's engine delegates. */
+private interface PetalOwnedDelegate
