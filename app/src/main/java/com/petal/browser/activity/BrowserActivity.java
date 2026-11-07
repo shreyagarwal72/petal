@@ -7614,16 +7614,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
 
-    public void setWebView(String title, final String url, final boolean foreground) {
-        setWebView(title, url, foreground, false);
+    public void openNewTab(String title, final String url, final boolean foreground) {
+        openNewTab(title, url, foreground, false);
     }
 
+    public void openNewTab(String title, final String url, final boolean foreground, final boolean isIncognito) {
+        openNewTab(title, url, foreground, isIncognito, false);
+    }
+
+    /**
+     * @deprecated Safely renamed to {@link #openNewTab(String, String, boolean)}.
+     */
+    @Deprecated
+    public void setWebView(String title, final String url, final boolean foreground) {
+        openNewTab(title, url, foreground);
+    }
+
+    /**
+     * @deprecated Safely renamed to {@link #openNewTab(String, String, boolean, boolean)}.
+     */
+    @Deprecated
     public void setWebView(String title, final String url, final boolean foreground, final boolean isIncognito) {
-        setWebView(title, url, foreground, isIncognito, false);
+        openNewTab(title, url, foreground, isIncognito);
+    }
+
+    /**
+     * @deprecated Safely renamed to {@link #openNewTab(String, String, boolean, boolean, boolean)}.
+     */
+    @Deprecated
+    public void setWebView(String title, final String url, final boolean foreground, final boolean isIncognito, final boolean isPopup) {
+        openNewTab(title, url, foreground, isIncognito, isPopup);
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    public void setWebView(String title, final String url, final boolean foreground, final boolean isIncognito, final boolean isPopup) {
+    public void openNewTab(String title, final String url, final boolean foreground, final boolean isIncognito, final boolean isPopup) {
         String effectiveTitle = title != null ? title : getString(R.string.app_name);
         String initialUrl = url != null ? url : "about:blank";
         String generatedTabId = "tab_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode());
@@ -7839,15 +7863,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public synchronized void addAlbum(String title, final String url, final boolean foreground) {
-        setWebView(title, url, foreground, false);
+        openNewTab(title, url, foreground, false);
     }
 
     public synchronized void addAlbum(String title, final String url, final boolean foreground, final boolean isIncognito) {
-        setWebView(title, url, foreground, isIncognito);
+        openNewTab(title, url, foreground, isIncognito);
     }
 
     public synchronized AlbumController addAlbumForPopup(String title, final boolean isIncognito) {
-        setWebView(title, null, true, isIncognito, true);
+        openNewTab(title, null, true, isIncognito, true);
         return currentAlbumController;
     }
 
@@ -8070,7 +8094,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public synchronized void addAlbumInGroup(String title, final String url, final boolean foreground, final String groupId, final String groupTitle) {
-        setWebView(title, url, foreground, false);
+        openNewTab(title, url, foreground, false);
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             com.petal.browser.browser.PetalTabViewController surface = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
             surface.setTabGroupId(groupId);

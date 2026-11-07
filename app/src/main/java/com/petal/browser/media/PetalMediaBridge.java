@@ -8,7 +8,6 @@ import android.os.Build;
 import android.util.Rational;
 import android.view.View;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebView;
 import androidx.preference.PreferenceManager;
 
 /**
@@ -100,7 +99,6 @@ public class PetalMediaBridge {
             "})();";
 
     private final Context context;
-    private WebView webView;
     private org.mozilla.geckoview.MediaSession activeGeckoMediaSession;
     private mozilla.components.concept.engine.mediasession.MediaSession.Controller activeEngineMediaController;
     private MediaStateListener listener;
@@ -124,20 +122,8 @@ public class PetalMediaBridge {
     }
 
     public PetalMediaBridge(Context context, MediaStateListener listener) {
-        this(context, (WebView) null, listener);
-    }
-
-    public PetalMediaBridge(Context context, WebView webView, MediaStateListener listener) {
         this.context = context;
         this.listener = listener;
-        attachWebView(webView);
-    }
-
-    public void attachWebView(WebView webView) {
-        this.webView = webView;
-        if (this.webView != null) {
-            this.webView.addJavascriptInterface(new MediaJsInterface(), JS_INTERFACE_NAME);
-        }
     }
 
     private com.petal.browser.browser.PetalTabViewController tabViewController;
@@ -147,9 +133,7 @@ public class PetalMediaBridge {
     }
 
     public void evaluateJavascriptOnTab(String js) {
-        if (webView != null) {
-            webView.evaluateJavascript(js, null);
-        } else if (tabViewController != null) {
+        if (tabViewController != null) {
             tabViewController.evaluateJavascript(js, null);
         } else if (context instanceof Activity) {
             Activity act = (Activity) context;
@@ -432,7 +416,7 @@ public class PetalMediaBridge {
             if (context instanceof Activity) {
                 Activity act = (Activity) context;
                 act.runOnUiThread(() -> {
-                    enterPipIfSupported(act, webView != null ? webView : (tabViewController != null ? tabViewController.getAlbumView() : null));
+                    enterPipIfSupported(act, tabViewController != null ? tabViewController.getAlbumView() : null);
                 });
             }
         }
