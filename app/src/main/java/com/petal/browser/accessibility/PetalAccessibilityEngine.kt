@@ -22,7 +22,7 @@ import android.view.MotionEvent
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.preference.PreferenceManager
-import com.petal.browser.browser.PetalTabController
+import com.petal.browser.browser.PetalTabSurface
 import com.petal.browser.unit.PetalAndroidUtils
 
 object PetalAccessibilityEngine {
@@ -30,30 +30,26 @@ object PetalAccessibilityEngine {
     private const val TAG = "PetalAccessibility"
     const val JS_BRIDGE_NAME = "PetalAccessibilityBridge"
 
-    private fun evaluateJavascript(controller: PetalTabController?, script: String) {
+    private fun evaluateJavascript(controller: PetalTabSurface?, script: String) {
         if (controller == null) return
-        when (controller) {
-            is com.petal.browser.browser.PetalTabViewController -> {
-                controller.evaluateJavascript(script, null)
-            }
-            is WebView -> {
-                controller.evaluateJavascript(script, null)
-            }
+        if (controller is com.petal.browser.browser.PetalTabViewController) {
+            controller.evaluateJavascript(script, null)
         }
     }
 
     // ── Master Accessibility Hook for Tab Controllers ────────────────────────
 
     @JvmStatic
-    fun applyAccessibilitySettings(controller: PetalTabController?) {
+    fun applyAccessibilitySettings(controller: PetalTabSurface?) {
         if (controller == null) return
         val view = controller.albumView ?: return
         val context = view.context ?: return
 
-        // 1. Bypass viewport zoom locks on WebViews if force zoom is enabled
+        // 1. Bypass viewport zoom locks on legacy WebViews if force zoom is enabled
         // (GeckoView surfaces have viewport locks overridden at document_start via defuser.js)
-        if (controller is WebView) {
-            applyForceZoom(controller)
+        val albumView = controller.albumView
+        if (albumView is WebView) {
+            applyForceZoom(albumView)
         }
 
         // 2. Synchronize caret browsing if active
@@ -91,7 +87,7 @@ object PetalAccessibilityEngine {
     }
 
     @JvmStatic
-    fun applyZoom(controller: PetalTabController?, url: String?) {
+    fun applyZoom(controller: PetalTabSurface?, url: String?) {
         if (controller == null) return
         val view = controller.albumView ?: return
         val context = view.context ?: return
@@ -139,39 +135,6 @@ object PetalAccessibilityEngine {
     fun isForceZoomEnabled(context: Context): Boolean {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         return sp.getBoolean("sp_force_enable_zoom", true)
-    }
-
-    @JvmStatic
-    fun applyForceZoom(controller: PetalTabController?) {
-        if (controller == null) return
-        val view = controller.albumView ?: return
-        val context = view.context ?: return
-        if (!isForceZoomEnabled(context)) return
-
-        val host = try { android.net.Uri.parse(controller.url ?: "").host ?: "" } catch (_: Throwable) { "" }
-        val js = if (host.isNotBlank()) {
-            com.petal.browser.engine.petal.blocking.ForcedPageZoomScript.create(listOf(host))
-        } else {
-            """
-                (function() {
-                    try {
-                        var metas = document.querySelectorAll('meta[name="viewport"]');
-                        metas.forEach(function(m) {
-                            m.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes');
-                        });
-                        if (metas.length === 0) {
-                            var m = document.createElement('meta');
-                            m.name = 'viewport';
-                            m.content = 'width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes';
-                            document.head.appendChild(m);
-                        }
-                    } catch(e) {}
-                })();
-            """.trimIndent()
-        }
-        if (js.isNotBlank()) {
-            evaluateJavascript(controller, js)
-        }
     }
 
     @JvmStatic
@@ -250,7 +213,7 @@ object PetalAccessibilityEngine {
     }
 
     @JvmStatic
-    fun toggleCaretBrowsing(context: Context, controller: PetalTabController?): Boolean {
+    fun toggleCaretBrowsing(context: Context, controller: PetalTabSurface?): Boolean {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val current = sp.getBoolean("sp_caret_browsing", false)
         val newState = !current
@@ -260,14 +223,14 @@ object PetalAccessibilityEngine {
     }
 
     @JvmStatic
-    fun setCaretBrowsing(context: Context, controller: PetalTabController?, enabled: Boolean) {
+    fun setCaretBrowsing(context: Context, controller: PetalTabSurface?, enabled: Boolean) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         sp.edit().putBoolean("sp_caret_browsing", enabled).apply()
         applyCaretBrowsing(controller, enabled)
     }
 
     @JvmStatic
-    fun applyCaretBrowsing(controller: PetalTabController?, enabled: Boolean) {
+    fun applyCaretBrowsing(controller: PetalTabSurface?, enabled: Boolean) {
         if (controller == null) return
         val js = if (enabled) {
             "document.designMode = 'on'; window.__petal_caret_mode = true;"
@@ -301,7 +264,7 @@ object PetalAccessibilityEngine {
     private var lastSwipeTime = 0L
 
     @JvmStatic
-    fun handleGenericMotion(controller: PetalTabController?, event: MotionEvent): Boolean {
+    fun handleGenericMotion(controller: PetalTabSurface?, event: MotionEvent): Boolean {
         if (controller == null) return false
         val view = controller.albumView
         val context = view?.context ?: return false

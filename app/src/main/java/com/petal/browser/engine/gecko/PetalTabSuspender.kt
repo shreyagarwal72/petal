@@ -70,7 +70,7 @@ object PetalTabSuspender {
 
         when (controller) {
             is com.petal.browser.browser.PetalTabViewController -> {
-                tabId = controller.getTabId() ?: controller.hashCode().toString()
+                tabId = controller.getTabId().ifBlank { controller.hashCode().toString() }
                 url = controller.url
                 title = controller.title
                 favicon = controller.getFavicon()
@@ -143,7 +143,7 @@ object PetalTabSuspender {
             val controller = BrowserContainer.get(i)
             if (controller === activeController) continue
             if (!canSuspendTab(controller, false)) continue
-            val tabId = (controller as? com.petal.browser.browser.PetalTabViewController)?.getTabId() ?: continue
+            val tabId = (controller as? com.petal.browser.browser.PetalTabViewController)?.getTabId()?.takeIf { it.isNotBlank() } ?: continue
             val lastAccess = getTabLastAccess(tabId)
             if (lastAccess > 0L && (now - lastAccess) >= timeoutMs) {
                 toSuspend.add(Pair(i, controller))
@@ -172,7 +172,7 @@ object PetalTabSuspender {
             val controller = BrowserContainer.get(i)
             if (controller === activeController) continue
             if (!canSuspendTab(controller, false)) continue
-            val tabId = (controller as? com.petal.browser.browser.PetalTabViewController)?.getTabId() ?: continue
+            val tabId = (controller as? com.petal.browser.browser.PetalTabViewController)?.getTabId()?.takeIf { it.isNotBlank() } ?: continue
             val lastAccess = getTabLastAccess(tabId)
             candidates.add(Pair(i, lastAccess))
         }

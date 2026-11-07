@@ -11,7 +11,7 @@ import android.widget.FrameLayout;
  * no GeckoSession/WebView and is replaced by a real controller when activated.
  * Modernized from legacy Lightning Browser PlaceholderAlbumController.
  */
-public class PlaceholderTabController implements PetalTabSurface, AlbumController {
+public class PlaceholderTabController implements PetalTabSurface, PetalTabController, AlbumController {
     private final Context context;
     private final View placeholderView;
     private String title;

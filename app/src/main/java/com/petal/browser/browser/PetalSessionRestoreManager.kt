@@ -102,7 +102,7 @@ object PetalSessionRestoreManager {
                 val controller = BrowserContainer.get(i) ?: continue
                 when (controller) {
                     is PetalTabViewController -> {
-                        val tabId = controller.getTabId() ?: continue
+                        val tabId = controller.getTabId().takeIf { it.isNotBlank() } ?: continue
                         if (isStopping) {
                             try {
                                 val engineSessionState = wrapGeckoState(controller.getSessionState())

@@ -125,23 +125,7 @@ object PetalEngineStore {
             applicationContext = appContext,
             downloadServiceClass = com.petal.browser.download.PetalMozillaDownloadService::class.java,
             downloadFileUtils = DefaultDownloadFileUtils(appContext),
-            deleteFileFromStorage = { download ->
-                try {
-                    val file = download.file
-                    if (file != null && file.exists()) {
-                        file.delete()
-                    } else {
-                        val path = download.filePath ?: download.destinationDirectory
-                        if (!path.isNullOrBlank()) {
-                            val f = java.io.File(path)
-                            if (f.exists()) f.delete() else true
-                        } else true
-                    }
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Failed to delete file from storage: ${t.message}")
-                    false
-                }
-            }
+            deleteFileFromStorage = { true }
         )
         val uploadCleaner = getFileUploadsDirCleaner(appContext)
 

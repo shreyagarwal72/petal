@@ -35,7 +35,7 @@ class PetalTabViewController private constructor(
     context: Context,
     attrs: AttributeSet?,
     private val engineView: EngineView
-) : SwipeRefreshLayout(context, attrs), PetalTabSurface, AlbumController, EngineView by engineView {
+) : SwipeRefreshLayout(context, attrs), PetalTabSurface, PetalTabController, AlbumController, EngineView by engineView {
 
     @JvmOverloads
     constructor(context: Context, attrs: AttributeSet? = null) :
@@ -1307,8 +1307,6 @@ class PetalTabViewController private constructor(
 
     fun canGoForward(): Boolean = forwardAvailable
 
-    fun getTabId(): String? = boundTabId
-
     fun markAdoptedNavigation(url: String?) {
         isAdoptedPopup = true
         val target = url?.trim().orEmpty()
@@ -1318,7 +1316,7 @@ class PetalTabViewController private constructor(
         }
     }
 
-    fun getCachedPreviewBitmap(): Bitmap? = TabThumbnailCache.getMemoryOnly(boundTabId, isIncognito())
+    override fun getCachedPreviewBitmap(): Bitmap? = TabThumbnailCache.getMemoryOnly(boundTabId, isIncognito())
 
     private var lastPreviewCaptureTime = 0L
 
@@ -1798,7 +1796,7 @@ class PetalTabViewController private constructor(
         }
     }
 
-    fun getFavicon(): Bitmap? = tab?.content?.icon
+    override fun getFavicon(): Bitmap? = tab?.content?.icon
 
     fun currentState(): State? = tab?.let {
         State(it.id, pageUrl, pageTitle, progress, loading, backAvailable, forwardAvailable, isSecure, it.content.private)

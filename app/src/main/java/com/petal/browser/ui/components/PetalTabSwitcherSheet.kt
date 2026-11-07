@@ -175,7 +175,7 @@ object PetalTabSwitcherBridge {
                                         id = album.hashCode().toString(),
                                         thumbnailKey = when (album) {
                                             is PlaceholderAlbumController -> album.getTabId()
-                                            is com.petal.browser.browser.PetalTabViewController -> album.getTabId() ?: album.hashCode().toString()
+                                            is com.petal.browser.browser.PetalTabViewController -> album.getTabId().ifBlank { album.hashCode().toString() }
                                             else -> album.hashCode().toString()
                                         },
                                         title = displayTitle,
@@ -227,7 +227,7 @@ object PetalTabSwitcherBridge {
                             if (targetAlbum != null) {
                                 tabItems.removeAll { it.id == tabItem.id }
                                 if (targetAlbum is com.petal.browser.browser.PetalTabViewController) {
-                                    targetAlbum.getTabId()?.let(com.petal.browser.unit.TabThumbnailCache::remove)
+                                    com.petal.browser.unit.TabThumbnailCache.remove(targetAlbum.getTabId())
                                 } else if (targetAlbum is PlaceholderAlbumController) {
                                     com.petal.browser.unit.TabThumbnailCache.remove(targetAlbum.getTabId())
                                 }
