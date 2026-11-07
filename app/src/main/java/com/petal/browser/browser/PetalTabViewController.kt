@@ -2534,6 +2534,3 @@ private class SessionStateCapturingProgressDelegate(
         onState(sessionState)
     }
 }
-
-/** Marks delegates installed by Petal so re-binding never mistakes them for Mozilla's engine delegates. */
-private interface PetalOwnedDelegate
