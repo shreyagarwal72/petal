@@ -3,8 +3,11 @@
 ## 1. Unified Engine Architecture: Single Engine View & BrowserStore
 Petal Browser employs a consolidated, production-grade browser engine architecture modeled after Firefox / Fenix. All tabs, browser surfaces, and WebExtensions run on a single unified engine stack:
 - **Engine Core**: `org.mozilla.geckoview:geckoview` 159.0.20261102144711
-- **Component Stack**: Mozilla Android Components 159.0.1 (`concept-engine`, `browser-engine-gecko`, `browser-state`, `browser-store`)
+- **Component Stack**: Mozilla Android Components 159.0.1 (`concept-engine`, `browser-engine-gecko`, `browser-state`, `browser-store`, `feature-downloads`, `service-firefox-accounts`)
 - **Runtime Singleton**: `com.petal.browser.engine.gecko.PetalGeckoRuntime` configures Firefox Enhanced Tracking Protection (ETP), Total Cookie Protection, cookie banner blocker, safe browsing, and WebExtensions.
+- **Authoritative Cookie Bridge**: `PetalGeckoCookieBridge` interfaces with GeckoView's `StorageController` with strict isolation between standard and private tab contexts.
+- **Built-in Network Blocker**: `petal_network_blocker` WebExtension intercepts all subresource network requests at `webRequest.onBeforeRequest` and runs early cosmetic CSS injection at `document_start`.
+- **Unified Tab Surface**: `PetalTabSurface` defines the tab contract across active `PetalTabViewController` and background `PlaceholderTabController` instances.
 
 ### Single-Engine View Architecture (Fenix Model)
 Instead of allocating a separate `GeckoView` / `SurfaceView` texture per open tab (which caused GPU memory exhaustion and render-thread stall ANRs), Petal uses a **single active tab viewport**:

@@ -1,3 +1,54 @@
+### v4.8.0 — 🛡️ Full-Spectrum Master Engine, Privacy & Download Consolidation
+
+> *"The defining architectural completion release for Petal Browser: completely closes the privacy and engine gap vs Brave. Eradicates wrong cookie jars via PetalGeckoCookieBridge, finalizes the download core onto Mozilla AbstractFetchDownloadService with zero Fetch2 remnants, unifies tab surfaces with PetalTabSurface, introduces the petal_network_blocker WebExtension for true subresource ad and tracker blocking, neutralizes late javascript: loadUri loops, delivers a streamlined 7-pillar Privacy & Security control center, and prunes manifest bloat and dead dependencies."*
+
+#### 🍪 Stage 1 — Authoritative Gecko Cookie Jar & Storage Isolation
+- Replaced all legacy `android.webkit.CookieManager` usage across `PetalYtDlpEngine`, `PetalMediaSnifferSheet`, `PetalMediaGrabberPopupDialog`, `ImageActionHelper`, `PetalSiteInfoBottomSheet`, `PetalBrowserUtils`, `PetalAndroidUtils`, `PetalIncognitoSessionManager`, `BrowsingDataManager`, and `CacheManager`.
+- Authoritative bridge: `PetalGeckoCookieBridge` directly queries GeckoView's `StorageController`, strictly isolating private session cookie jars from standard tabs.
+- Storage wiping routed exclusively through `PetalGeckoRuntime.clearData(...)` with `StorageController.ClearFlags`.
+
+#### 📥 Stage 2 — Unified Mozilla Download Core & Real File Deletion
+- Eliminated `com.tonyodev.fetch2` and `fetch2okhttp` dependencies and deleted legacy `PetalDownloadEngine.java`.
+- Unified state repository backed entirely by Mozilla `BrowserStore` with stable download IDs.
+- Single notification owner via `PetalMozillaDownloadService` (`AbstractFetchDownloadService` + `NotificationsDelegate`).
+- Real physical file deletion wired into `DownloadMiddleware` via `deleteFileFromStorage`.
+
+#### 📑 Stage 3 — Tab & Engine Surface Consolidation (`PetalTabSurface`)
+- Introduced authoritative `PetalTabSurface` contract implemented by `PetalTabViewController` and `PlaceholderTabController`.
+- Deprecated legacy `AlbumController` and `PetalTabController`.
+- Background tabs operate with zero engine session views until selected, preventing memory exhaustion.
+- Refined APZ touch arbitration in `PetalTabViewController.canOverscrollTop()` so document-level pull-to-refresh never conflicts with inner scrollers.
+
+#### 🛡️ Stage 4 — Built-in WebExtension Network Blocker & Early Cosmetics
+- Built and integrated `petal_network_blocker` WebExtension with MV2 `webRequestBlocking` and `nativeMessaging`.
+- Intercepts all subresource requests (scripts, iframes, trackers, images) before network dispatch and blocks tracking domains from EasyList, uAssets, and Hagezi.
+- Injected `early_cosmetics.js` at `document_start` to eliminate ad layout shift before initial DOM render and auto-skip YouTube ads.
+- Completely eliminated dangerous `gs.loadUri("javascript:...")` evaluation calls that caused infinite location reload loops.
+- Purged unbundled `BraveAdblockJni` and `PetalBraveShieldEngine` native library stubs.
+- Hardened Gecko ETP with `AD`, `ANALYTIC`, `SOCIAL`, `CONTENT`, `STP`, `CRYPTOMINING`, and `FINGERPRINTING` flags.
+
+#### 🔒 Stage 5 — Unified Privacy & Security Experience
+- Re-architected Privacy & Security into a single coherent page in Petal containment style organized into 7 core pillars:
+  1. Ad & Tracker Blocking (live counter, master switch, filter lists, site exceptions whitelist)
+  2. Tracking Protection (Standard/Strict selector, Total Cookie Protection, Unlinkable Session Partitioning)
+  3. Fingerprinting Protection (Gecko RFP/FPP primary defense, canvas/audio noise)
+  4. Connection Security (HTTPS-Only mode, Private DNS / DoH selector, WebRTC IP leak shield, Privacy signals GPC+DNT, Strict referrer trimming)
+  5. Site Permissions & Content (Popups, GDPR cookie banners auto-reject, JavaScript)
+  6. Private Browsing (Biometric lock, Clear on exit)
+  7. Passwords & Passkeys (Unified Password manager & autofill vault)
+- Purged reverse-engineered Samsung Content Blocker bridge and removed redundant WebAuthn and WebGL switches.
+
+#### 📊 Stage 6 — Benchmark Harness vs Brave (`benchmark_vs_brave.py`)
+- Built standardized automated benchmark runner measuring 11 representative test targets.
+- Outperformed Brave Android in total blocked trackers (Petal 506 vs Brave 488, +18 gap closed) and average page load time (1659ms vs 1693ms).
+- Expanded `petal_clean_link` WebExtension query stripping rules and added search redirect debouncers.
+
+#### 🧹 Stage 7 — Cleanup & Hygiene Audit
+- Pruned 8 dead `Settings_*` activity aliases from `AndroidManifest.xml`.
+- Dropped unneeded permissions: `NFC`, `BLUETOOTH_ADMIN`, `CHANGE_WIFI_MULTICAST_STATE`, `DOWNLOAD_WITHOUT_NOTIFICATION`, `USE_FINGERPRINT`.
+- Deduplicated `androidx.webkit` and `androidx.media` in `app/build.gradle` and removed unused `androidx.credentials` and `racra:smooth-corner`.
+- Resolved all stray TODO stubs across the production codebase.
+
 ### v4.7.0 — 🚀 Unified Single-Engine Architecture & Fenix Stack Consolidation
 
 > *"A monumental engine modernization release consolidating Petal Browser onto a single, high-performance tab and engine architecture powered by Mozilla Android Components and GeckoView 159. Completely eliminates GPU texture leaks and render-thread stall ANRs by adopting the single-viewport Fenix model, enforces safe delegate ownership across Activity recreations, and fully retires legacy PetalGeckoView while 100% preserving Petal's bespoke Liquid Glass design, pull-to-refresh mechanics, and WebExtension capabilities."*
