@@ -95,19 +95,19 @@ object PetalSplashOverlay {
                         AnimatedVisibility(
                             visible = visible,
                             enter = fadeIn(animationSpec = tween(200)),
-                            exit = fadeOut(animationSpec = tween(400)) + scaleOut(targetScale = 1.08f, animationSpec = tween(400))
+                            exit = fadeOut(animationSpec = tween(220)) + scaleOut(targetScale = 1.05f, animationSpec = tween(220))
                         ) {
                             PetalSplashScreen(
                                 onSplashComplete = {
                                     visible = false
                                 },
-                                durationMs = 1800L
+                                durationMs = 900L
                             )
                         }
 
                         LaunchedEffect(visible) {
                             if (!visible) {
-                                kotlinx.coroutines.delay(420L)
+                                kotlinx.coroutines.delay(230L)
                                 dismiss(activity, onFinish)
                             }
                         }

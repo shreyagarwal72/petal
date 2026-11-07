@@ -66,7 +66,7 @@ class LiquidRippleEffect(view: View) {
         }
     }
 
-    fun animate(cx: Float, cy: Float, durationSec: Float = 3.2f) {
+    fun animate(cx: Float, cy: Float, durationSec: Float = 1.4f) {
         val view = viewRef.get() ?: return
         val displayMetrics = view.resources.displayMetrics
         val density = displayMetrics.density
@@ -120,7 +120,7 @@ class LiquidRippleEffect(view: View) {
     companion object {
         @JvmStatic
         @JvmOverloads
-        fun trigger(view: View?, cx: Float? = null, cy: Float? = null, durationSec: Float = 3.2f) {
+        fun trigger(view: View?, cx: Float? = null, cy: Float? = null, durationSec: Float = 1.4f) {
             if (view == null) return
             val targetView = view.rootView ?: view
             val originX = cx ?: (targetView.width.toFloat().takeIf { it > 0 } ?: targetView.resources.displayMetrics.widthPixels.toFloat()) / 2f

@@ -99,7 +99,7 @@ private val webGlyphIcons = listOf(
 fun PetalSplashScreen(
     onSplashComplete: () -> Unit,
     modifier: Modifier = Modifier,
-    durationMs: Long = 1900L
+    durationMs: Long = 900L
 ) {
     LaunchedEffect(Unit) {
         delay(durationMs)
