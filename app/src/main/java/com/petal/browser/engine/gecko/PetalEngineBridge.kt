@@ -35,6 +35,7 @@ import org.mozilla.geckoview.WebResponse
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.ref.WeakReference
+import java.util.Locale
 import java.util.UUID
 
 /**
@@ -102,22 +103,61 @@ object PetalEngineBridge {
         return "Mozilla/5.0 (X11; Linux x86_64; rv:155.0) Gecko/20100101 Firefox/155.0"
     }
 
+    /**
+     * Complete list of all 15 URI schemes handled internally by Petal Browser.
+     * Web pages and searches with these schemes must load inside Petal and never
+     * trigger an external Intent or open another browser.
+     */
+    @JvmField
+    val INTERNAL_SCHEMES: List<String> = listOf(
+        "http:",
+        "https:",
+        "about:",
+        "petal:",
+        "data:",
+        "blob:",
+        "file:",
+        "javascript:",
+        "view-source:",
+        "resource:",
+        "moz-extension:",
+        "content:",
+        "ws:",
+        "wss:",
+        "ftp:"
+    )
+
+    /**
+     * Returns true if the given [url] begins with one of the 15 internal schemes
+     * recognized by Petal Browser (case-insensitive, ignoring leading whitespace).
+     * Returns false if [url] is null, empty, whitespace-only, or external.
+     */
+    @JvmStatic
+    fun isInternalScheme(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        val trimmedLower = url.trim().lowercase(Locale.ROOT)
+        return INTERNAL_SCHEMES.any { trimmedLower.startsWith(it) }
+    }
+
+    /**
+     * Returns true if the given [url] represents an external scheme intended
+     * for dispatch to external applications (e.g., mailto:, tel:, market:, intent:, geo:, sms:).
+     * Returns false if [url] is null, empty, whitespace-only, or an internal scheme.
+     */
+    @JvmStatic
+    fun isExternalScheme(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        return !isInternalScheme(url)
+    }
+
     @JvmStatic
     fun handleExternalScheme(activity: Activity, url: String?): Boolean {
-        if (url == null) return false
-        val lower = url.lowercase()
-        // Web and in-engine schemes must load inside Petal. Without this guard every
-        // http(s) navigation was handed to Android as ACTION_VIEW (opening another
-        // browser) and then denied in Petal.
-        val internalSchemes = listOf(
-            "http:", "https:", "about:", "petal:", "data:", "blob:", "file:",
-            "javascript:", "view-source:", "resource:", "moz-extension:",
-            "content:", "ws:", "wss:", "ftp:"
-        )
-        if (internalSchemes.any { lower.startsWith(it) }) return false
-        if (url.startsWith("intent:", ignoreCase = true)) {
+        if (url.isNullOrBlank() || isInternalScheme(url)) return false
+
+        val trimmedUrl = url.trim()
+        if (trimmedUrl.startsWith("intent:", ignoreCase = true)) {
             try {
-                val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
+                val intent = Intent.parseUri(trimmedUrl, Intent.URI_INTENT_SCHEME)
                 if (intent != null) {
                     val pm = activity.packageManager
                     if (pm != null && intent.resolveActivity(pm) != null) {
@@ -133,12 +173,12 @@ object PetalEngineBridge {
                     }
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Error handling intent scheme: $url", e)
+                Log.w(TAG, "Error handling intent scheme: $trimmedUrl", e)
             }
             return true
         }
         try {
-            val parsedUri = Uri.parse(url)
+            val parsedUri = Uri.parse(trimmedUrl)
             val intent = Intent(Intent.ACTION_VIEW, parsedUri)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             val pm = activity.packageManager
