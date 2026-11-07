@@ -27,10 +27,9 @@ class PetalCustomTabsService : CustomTabsService() {
     override fun warmup(flags: Long): Boolean {
         java.util.concurrent.Executors.newSingleThreadExecutor().execute {
             try {
-                if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(applicationContext)) {
-                    com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(applicationContext)
-                    com.petal.browser.engine.gecko.PetalEngineStore.getEngine(applicationContext)
-                }
+                val runtime = com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(applicationContext)
+                runtime.warmUp()
+                com.petal.browser.engine.gecko.PetalEngineStore.getEngine(applicationContext)
             } catch (_: Throwable) {}
         }
         return true

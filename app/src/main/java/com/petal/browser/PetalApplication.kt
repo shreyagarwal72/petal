@@ -93,31 +93,36 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
 
         try {
             com.petal.browser.logger.PetalAppLogger.init(this)
-            if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(this)) {
-                com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(this)
-                // Ensure GeckoEngine and WebCompatFeature are created at app start
-                // so WebCompat interventions are active immediately for all tabs.
-                try {
-                    com.petal.browser.engine.gecko.PetalEngineStore.getEngine(this)
-                    Log.i(TAG, "Initialized GeckoEngine at application start for WebCompat")
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Failed to initialize GeckoEngine at application start: ${t.message}")
-                }
-                // Initialize Android Components session persistence alongside the
-                // shared Gecko runtime. PetalEngineStore owns the BrowserStore and
-                // AutoSave lifecycle; touching it here makes state persistence
-                // available before the first tab is materialized, while retaining
-                // the existing Petal tab/session UI as the source of truth.
-                try {
-                    com.petal.browser.engine.gecko.PetalEngineStore.getSessionStorage(this)
-                    // Fenix's three triggers (30 s foreground timer, background, tab/load changes).
-                    // Writes stay blocked until the saved session has been restored into the store.
-                    com.petal.browser.engine.gecko.PetalEngineStore.startAutoSave(this)
-                } catch (t: Throwable) {
-                    Log.w(TAG, "BrowserStore session persistence unavailable", t)
-                }
-                com.petal.browser.media.sniffer.PetalMediaGrabberInstaller.install(this)
+
+            // Stage 4: Startup reflection self-check for GeckoSession extraction
+            com.petal.browser.engine.gecko.PetalEngineBridge.selfCheckReflection(this)
+
+            val runtime = com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(this)
+            // Stage 2: Call GeckoRuntime.warmUp() once on the main process after runtime creation
+            runtime.warmUp()
+
+            // Ensure GeckoEngine and WebCompatFeature are created at app start
+            // so WebCompat interventions are active immediately for all tabs.
+            try {
+                com.petal.browser.engine.gecko.PetalEngineStore.getEngine(this)
+                Log.i(TAG, "Initialized GeckoEngine at application start for WebCompat")
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to initialize GeckoEngine at application start: ${t.message}")
             }
+            // Initialize Android Components session persistence alongside the
+            // shared Gecko runtime. PetalEngineStore owns the BrowserStore and
+            // AutoSave lifecycle; touching it here makes state persistence
+            // available before the first tab is materialized, while retaining
+            // the existing Petal tab/session UI as the source of truth.
+            try {
+                com.petal.browser.engine.gecko.PetalEngineStore.getSessionStorage(this)
+                // Fenix's three triggers (30 s foreground timer, background, tab/load changes).
+                // Writes stay blocked until the saved session has been restored into the store.
+                com.petal.browser.engine.gecko.PetalEngineStore.startAutoSave(this)
+            } catch (t: Throwable) {
+                Log.w(TAG, "BrowserStore session persistence unavailable", t)
+            }
+            com.petal.browser.media.sniffer.PetalMediaGrabberInstaller.install(this)
             com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(this)
             // Initialize yt-dlp through the same synchronized engine used by
             // the Social Downloader. This prevents a first-use race between

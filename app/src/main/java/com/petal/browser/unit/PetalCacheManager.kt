@@ -137,24 +137,22 @@ object PetalCacheManager {
 
         // 1. Mozilla GeckoView StorageController pipeline (Firefox official engine)
         try {
-            if (PetalGeckoRuntime.isGeckoAvailable(appContext)) {
-                var geckoFlags = 0L
-                if ((flags and Flags.NETWORK_CACHE) != 0L) {
-                    geckoFlags = geckoFlags or StorageController.ClearFlags.ALL_CACHES
-                }
-                if ((flags and Flags.IMAGE_MEDIA_CACHE) != 0L) {
-                    geckoFlags = geckoFlags or StorageController.ClearFlags.IMAGE_CACHE
-                }
-                if ((flags and Flags.DOM_WEB_STORAGE) != 0L) {
-                    geckoFlags = geckoFlags or StorageController.ClearFlags.DOM_STORAGES
-                }
-                if ((flags and Flags.COOKIES) != 0L) {
-                    geckoFlags = geckoFlags or StorageController.ClearFlags.COOKIES
-                    geckoFlags = geckoFlags or StorageController.ClearFlags.AUTH_SESSIONS
-                }
-                if (geckoFlags != 0L) {
-                    PetalGeckoRuntime.clearData(appContext, geckoFlags)
-                }
+            var geckoFlags = 0L
+            if ((flags and Flags.NETWORK_CACHE) != 0L) {
+                geckoFlags = geckoFlags or StorageController.ClearFlags.ALL_CACHES
+            }
+            if ((flags and Flags.IMAGE_MEDIA_CACHE) != 0L) {
+                geckoFlags = geckoFlags or StorageController.ClearFlags.IMAGE_CACHE
+            }
+            if ((flags and Flags.DOM_WEB_STORAGE) != 0L) {
+                geckoFlags = geckoFlags or StorageController.ClearFlags.DOM_STORAGES
+            }
+            if ((flags and Flags.COOKIES) != 0L) {
+                geckoFlags = geckoFlags or StorageController.ClearFlags.COOKIES
+                geckoFlags = geckoFlags or StorageController.ClearFlags.AUTH_SESSIONS
+            }
+            if (geckoFlags != 0L) {
+                PetalGeckoRuntime.clearData(appContext, geckoFlags)
             }
         } catch (e: Exception) {
             Log.w(TAG, "Error clearing GeckoView storage", e)
@@ -263,29 +261,27 @@ object PetalCacheManager {
             val colon = cleanHost.indexOf(':')
             if (colon != -1) cleanHost = cleanHost.substring(0, colon)
 
-            if (PetalGeckoRuntime.isGeckoAvailable(appContext)) {
-                var flags = StorageController.ClearFlags.ALL_CACHES or
-                        StorageController.ClearFlags.DOM_STORAGES or
-                        StorageController.ClearFlags.AUTH_SESSIONS
-                if (includeCookies) {
-                    flags = flags or StorageController.ClearFlags.COOKIES
-                }
-                if (includePermissions) {
-                    flags = flags or StorageController.ClearFlags.PERMISSIONS
-                }
+            var flags = StorageController.ClearFlags.ALL_CACHES or
+                    StorageController.ClearFlags.DOM_STORAGES or
+                    StorageController.ClearFlags.AUTH_SESSIONS
+            if (includeCookies) {
+                flags = flags or StorageController.ClearFlags.COOKIES
+            }
+            if (includePermissions) {
+                flags = flags or StorageController.ClearFlags.PERMISSIONS
+            }
 
-                val storageController = PetalGeckoRuntime.getOrCreate(appContext).storageController
-                storageController.clearDataFromHost(cleanHost, flags)
+            val storageController = PetalGeckoRuntime.getOrCreate(appContext).storageController
+            storageController.clearDataFromHost(cleanHost, flags)
 
-                // Also clear base domain if host is a subdomain (e.g., www.example.com -> example.com)
-                // eTLD+1 via the public suffix list ("a.b.example.co.uk" -> "example.co.uk");
-                // the old "last two labels" shortcut cleared "co.uk" instead.
-                val baseDomain = try {
-                    com.petal.browser.engine.petal.blocking.PetalPublicSuffixRules.registrableDomain(cleanHost)
-                } catch (_: Throwable) { null }
-                if (!baseDomain.isNullOrBlank() && baseDomain != cleanHost) {
-                    storageController.clearDataFromBaseDomain(baseDomain, flags)
-                }
+            // Also clear base domain if host is a subdomain (e.g., www.example.com -> example.com)
+            // eTLD+1 via the public suffix list ("a.b.example.co.uk" -> "example.co.uk");
+            // the old "last two labels" shortcut cleared "co.uk" instead.
+            val baseDomain = try {
+                com.petal.browser.engine.petal.blocking.PetalPublicSuffixRules.registrableDomain(cleanHost)
+            } catch (_: Throwable) { null }
+            if (!baseDomain.isNullOrBlank() && baseDomain != cleanHost) {
+                storageController.clearDataFromBaseDomain(baseDomain, flags)
             }
 
             // Chromium WebStorage & CookieManager fallback

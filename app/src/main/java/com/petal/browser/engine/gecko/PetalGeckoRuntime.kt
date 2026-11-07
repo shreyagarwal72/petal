@@ -27,10 +27,21 @@ object PetalGeckoRuntime {
     @Volatile
     private var runtime: GeckoRuntime? = null
 
-    private var geckoAvailable: Boolean? = null
     private var pendingActivityResult: GeckoResult<Intent>? = null
     private var foregroundActivity: WeakReference<Activity>? = null
     private var appContextRef: WeakReference<Context>? = null
+
+    @JvmStatic
+    fun warmUp() {
+        runtime?.warmUp()
+    }
+
+    @Deprecated(
+        message = "Dead fallback removed in Stage 2; GeckoView is the sole browser engine in Petal",
+        replaceWith = ReplaceWith("true")
+    )
+    @JvmStatic
+    fun isGeckoAvailable(context: Context? = null): Boolean = true
 
     @JvmStatic
     fun setForegroundActivity(activity: Activity?) {
@@ -62,57 +73,9 @@ object PetalGeckoRuntime {
     }
 
     @JvmStatic
-    fun isGeckoAvailable(context: Context): Boolean {
-        geckoAvailable?.let { return it }
-        return try {
-            val hasRuntimeClass = try {
-                Class.forName("org.mozilla.geckoview.GeckoRuntime")
-                true
-            } catch (t: Throwable) {
-                false
-            }
-            if (!hasRuntimeClass) {
-                geckoAvailable = false
-                return false
-            }
-            // Check if native libxul is present in the APK's native library path
-            val appInfo = context.applicationInfo
-            val nativeDir = java.io.File(appInfo.nativeLibraryDir)
-            val libXul = java.io.File(nativeDir, "libxul.so")
-            // In stripped/lite builds, libxul.so is excluded
-            val available = if (nativeDir.exists() && nativeDir.isDirectory) {
-                val soFiles = nativeDir.list()
-                if (soFiles != null && soFiles.isNotEmpty()) {
-                    libXul.exists()
-                } else {
-                    // Fallback check
-                    try {
-                        System.loadLibrary("mozglue")
-                        true
-                    } catch (t: Throwable) {
-                        false
-                    }
-                }
-            } else {
-                true
-            }
-            geckoAvailable = available
-            available
-        } catch (t: Throwable) {
-            Log.w(TAG, "GeckoView native libraries not available: ${t.message}")
-            geckoAvailable = false
-            false
-        }
-    }
-
-    @JvmStatic
     @Synchronized
     fun getOrCreate(context: Context): GeckoRuntime {
         runtime?.let { return it }
-
-        if (!isGeckoAvailable(context)) {
-            throw IllegalStateException("GeckoView native libraries are not available in this build (Lite / WebView mode)")
-        }
 
         val appContext = context.applicationContext
         appContextRef = WeakReference(appContext)
@@ -199,6 +162,9 @@ object PetalGeckoRuntime {
             .webManifest(true)
             .extensionsProcessEnabled(!isLowRamDevice)
             .extensionsWebAPIEnabled(true)
+            .isolatedProcessEnabled(!isLowRamDevice)
+            .lowMemoryDetection(true)
+            .crashHandler(PetalCrashHandlerService::class.java)
             // Enable login autofill API so password manager extensions (Bitwarden, etc.) can
             // intercept login forms via the WebExtension loginAutofill API. Without this,
             // extensions receive the form events but cannot fill credentials.
@@ -220,23 +186,14 @@ object PetalGeckoRuntime {
         // unsupported desktop GMP plugins and directing media through native MediaCodec.
         configureMediaAndGmpStability(appContext, settingsBuilder)
 
-        // Firefox official memory and performance optimizations
-        try {
-            // Low-RAM device tuning: constrain content process count and memory caches
-            if (isLowRamDevice) {
-                Log.i(TAG, "Configuring GeckoRuntime for low-RAM device profile (in-process extensions, constrained memory limits)")
-                // Apply low-RAM content process and cache limits reflectively or via config
-                try {
-                    val method = settingsBuilder.javaClass.getMethod("setWebContentIsolationStrategy", Int::class.javaPrimitiveType)
-                    method.invoke(settingsBuilder, 0)
-                } catch (_: Throwable) {}
-                try {
-                    val method = settingsBuilder.javaClass.getMethod("setContentProcessCount", Int::class.javaPrimitiveType)
-                    method.invoke(settingsBuilder, 1)
-                } catch (_: Throwable) {}
-            }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Could not apply optional runtime settings: ${t.message}")
+        // Low-RAM device tuning: real official GeckoView 159 isolatedProcessEnabled & lowMemoryDetection
+        if (isLowRamDevice) {
+            Log.i(TAG, "Configuring GeckoRuntime for low-RAM device profile: isolatedProcessEnabled=false, lowMemoryDetection=true")
+            settingsBuilder.isolatedProcessEnabled(false)
+            settingsBuilder.lowMemoryDetection(true)
+        } else {
+            settingsBuilder.isolatedProcessEnabled(true)
+            settingsBuilder.lowMemoryDetection(true)
         }
 
         val newRuntime = GeckoRuntime.create(appContext, settingsBuilder.build())
@@ -435,11 +392,6 @@ object PetalGeckoRuntime {
 
                 // 9. Theme / Preferred Color Scheme
                 syncTheme(sp)
-
-                // 10. Re-seed profile user.js with updated Arkenfox/WebGL/DRM rules
-                appContextRef?.get()?.let { ctx ->
-                    seedProfileUserJs(ctx)
-                }
             } catch (e: Exception) {
                 Log.w(TAG, "Error synchronizing GeckoRuntime preferences: ${e.message}")
             }
@@ -477,11 +429,9 @@ object PetalGeckoRuntime {
     /**
      * Android 16 (SDK 36) / modern Android media stability configuration.
      * Prevents native crashes (SEGV_ACCERR in GMPThread ConditionVariableImpl::wait) by:
-     * 1. Disabling Gecko Media Plugins (GMP) which are unsupported on Android and cause thread stack overflows.
-     * 2. Directing media playback exclusively to Android's native MediaCodec hardware pipeline.
-     * 3. Pre-seeding user.js into all Gecko profile directories so GMP preferences are applied before GMPThread spawns.
-     * Note: Avoid using GeckoView's configFilePath YAML mechanism as SnakeYAML's static initializer
-     * crashes with NullPointerException on Package.getName() in Android release builds.
+     * 1. Setting MOZ_AVOID_OPENH264=1 to avoid openh264 GMP decoders.
+     * 2. Setting configFilePath("") to disable unsolicited config file loading.
+     * 3. Cleaning up any stale temporary YAML files.
      */
     private fun configureMediaAndGmpStability(appContext: Context, settingsBuilder: GeckoRuntimeSettings.Builder) {
         try {
@@ -492,6 +442,9 @@ object PetalGeckoRuntime {
                 Log.d(TAG, "Failed to setenv MOZ_AVOID_OPENH264: ${t.message}")
             }
 
+            // Stage 3: Disable unsolicited config file loading by explicitly setting an empty path
+            settingsBuilder.configFilePath("")
+
             // Clean up any stale YAML config file to prevent GeckoView DebugConfig from attempting to parse it
             try {
                 val staleYaml = java.io.File(appContext.filesDir, "petal-geckoview-config.yaml")
@@ -499,86 +452,8 @@ object PetalGeckoRuntime {
                     staleYaml.delete()
                 }
             } catch (_: Throwable) {}
-
-            // Pre-seed user.js in all profile directories
-            seedProfileUserJs(appContext)
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to apply media & GMP stability settings: ${t.message}")
         }
-    }
-
-    private fun seedProfileUserJs(appContext: Context) {
-        try {
-            val arkenfoxRules = com.petal.browser.privacy.PetalPrivacyHardening.buildArkenfoxUserJs(appContext)
-            val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
-            val drmEnabled = sp.getBoolean("sp_drm", true)
-            val backgroundPlay = sp.getBoolean("sp_background_play", false)
-
-            val drmPref = if (!drmEnabled) "user_pref(\"media.eme.enabled\", false);\n" else ""
-            val bkgndVideoPref = if (backgroundPlay) "user_pref(\"media.suspend-bkgnd-video.enabled\", false);\n" else ""
-
-            val userJsContent = """
-                // Petal Browser Android 16+ Native Stability & GMP Crash Prevention
-                user_pref("media.gmp-provider.enabled", false);
-                user_pref("media.gmp.decoder.enabled", false);
-                user_pref("media.gmp-manager.url", "");
-                user_pref("media.gmp-manager.updateEnabled", false);
-                user_pref("media.gmp-gmpopenh264.visible", false);
-                user_pref("media.gmp-gmpopenh264.enabled", false);
-                user_pref("media.gmp-gmpopenh264.autoupdate", false);
-                $drmPref
-                $bkgndVideoPref
-                // Firefox Reader Mode engine preferences
-                user_pref("reader.parse-on-load.enabled", true);
-                user_pref("reader.color_scheme", "auto");
-
-                $arkenfoxRules
-            """.trimIndent()
-
-            val possibleDirs = listOf(
-                java.io.File(appContext.filesDir, "mozilla"),
-                appContext.getDir("mozilla", Context.MODE_PRIVATE),
-                java.io.File(appContext.filesDir, "geckoview")
-            )
-
-            for (dir in possibleDirs) {
-                if (!dir.exists()) {
-                    dir.mkdirs()
-                }
-
-                // Deterministically ensure default profile and profiles.ini exist for first launch
-                val profilesIni = java.io.File(dir, "profiles.ini")
-                val defaultProfile = java.io.File(dir, "default.default")
-                if (!profilesIni.exists()) {
-                    defaultProfile.mkdirs()
-                    try {
-                        val iniContent = """
-                            [General]
-                            StartWithLastProfile=1
-                            Version=2
-
-                            [Profile0]
-                            Name=default
-                            IsRelative=1
-                            Path=default.default
-                            Default=1
-                        """.trimIndent()
-                        profilesIni.writeText(iniContent)
-                    } catch (_: Throwable) {}
-                }
-
-                val subdirs = dir.listFiles { f -> f.isDirectory } ?: emptyArray()
-                val targetDirs = if (subdirs.isNotEmpty()) subdirs.toList() + dir else listOf(defaultProfile, dir)
-                for (target in targetDirs) {
-                    try {
-                        if (!target.exists()) target.mkdirs()
-                        val flagsJs = java.io.File(target, "petal-flags.js")
-                        val extraFlags = if (flagsJs.exists()) "\n" + flagsJs.readText() else ""
-                        val userJs = java.io.File(target, "user.js")
-                        userJs.writeText(userJsContent + extraFlags)
-                    } catch (_: Throwable) {}
-                }
-            }
-        } catch (_: Throwable) {}
     }
 }

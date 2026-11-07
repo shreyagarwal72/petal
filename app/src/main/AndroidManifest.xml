@@ -200,6 +200,12 @@
             </intent-filter>
         </service>
 
+        <!-- GeckoView Crash Handler Service (isolated crash handling process) -->
+        <service
+            android:name="com.petal.browser.engine.gecko.PetalCrashHandlerService"
+            android:process=":gecko_crash"
+            android:exported="false" />
+
         <!-- Petal System Autofill Service -->
         <service
             android:name="com.petal.browser.passwords.PetalAutofillService"
