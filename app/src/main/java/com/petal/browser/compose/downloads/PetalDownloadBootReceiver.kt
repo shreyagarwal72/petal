@@ -34,15 +34,15 @@ class PetalDownloadBootReceiver : BroadcastReceiver() {
             try {
                 val appContext = context.applicationContext
                 PetalFetchDownloadBridge.ensureInitialized(appContext)
-                PetalFetchDownloadBridge.fetchInstance(appContext).getDownloads { downloads ->
-                    val hasActive = downloads.any {
-                        it.status == com.tonyodev.fetch2.Status.DOWNLOADING ||
-                        it.status == com.tonyodev.fetch2.Status.QUEUED
-                    }
-                    if (hasActive) {
-                        Log.i("PetalDownloadBoot", "Unfinished downloads found. Starting PetalDownloadService...")
-                        startServiceOrNotify(appContext)
-                    }
+                val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext)
+                store.dispatch(mozilla.components.browser.state.action.DownloadAction.RestoreDownloadsStateAction)
+                val hasActive = store.state.downloads.values.any {
+                    it.status == mozilla.components.browser.state.state.content.DownloadState.Status.DOWNLOADING ||
+                    it.status == mozilla.components.browser.state.state.content.DownloadState.Status.INITIATED
+                }
+                if (hasActive) {
+                    Log.i("PetalDownloadBoot", "Unfinished downloads found. Starting PetalDownloadService...")
+                    startServiceOrNotify(appContext)
                 }
             } catch (t: Throwable) {
                 Log.e("PetalDownloadBoot", "Failed to restore downloads on boot", t)

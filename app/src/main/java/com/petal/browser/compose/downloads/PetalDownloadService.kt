@@ -141,21 +141,18 @@ class PetalDownloadService : Service() {
 
     private fun restoreActiveDownloads() {
         PetalFetchDownloadBridge.ensureInitialized(applicationContext)
-        PetalFetchDownloadBridge.fetchInstance(applicationContext).getDownloads { downloads ->
-            val active = downloads.filter {
-                it.status == com.tonyodev.fetch2.Status.DOWNLOADING ||
-                it.status == com.tonyodev.fetch2.Status.QUEUED ||
-                it.status == com.tonyodev.fetch2.Status.PAUSED
+        try {
+            val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(applicationContext)
+            val active = store.state.downloads.values.filter {
+                it.status == mozilla.components.browser.state.state.content.DownloadState.Status.DOWNLOADING ||
+                it.status == mozilla.components.browser.state.state.content.DownloadState.Status.INITIATED
             }
             if (active.isEmpty()) {
                 stopForegroundAndSelf()
-                return@getDownloads
+                return
             }
-            active.forEach {
-                val name = File(it.file).name.ifBlank { it.url }
-                PetalLiveAlertManager.trackDownload(applicationContext, it.id.toLong(), name, startService = false)
-            }
-            updatePersistentNotification()
+        } catch (_: Throwable) {
+            stopForegroundAndSelf()
         }
     }
 

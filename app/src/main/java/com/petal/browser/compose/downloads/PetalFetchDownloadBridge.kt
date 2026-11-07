@@ -21,14 +21,6 @@ import android.media.MediaScannerConnection
 import android.os.Build
 import android.webkit.MimeTypeMap
 import androidx.core.app.NotificationManagerCompat
-import com.tonyodev.fetch2.AbstractFetchListener
-import com.tonyodev.fetch2.Download
-import com.tonyodev.fetch2.Fetch
-import com.tonyodev.fetch2.Status
-import com.tonyodev.fetch2.EnqueueAction
-import com.tonyodev.fetch2.NetworkType
-import com.tonyodev.fetch2.Priority
-import com.tonyodev.fetch2.Request
 import com.petal.browser.download.SafeDownloadValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -86,83 +78,6 @@ object PetalFetchDownloadBridge {
             if (initialized) return
             val appContext = context.applicationContext
             applicationContext = appContext
-            val fetch = fetchInstance(appContext)
-
-            fetch.addListener(object : AbstractFetchListener() {
-                override fun onQueued(download: Download, waitingOnNetwork: Boolean) {
-                    upsert(download)
-                }
-
-                override fun onProgress(download: Download, etaInMilliSeconds: Long, downloadedBytesPerSecond: Long) {
-                    synchronized(downloadRepository) {
-                        speedMap[download.id] = downloadedBytesPerSecond.coerceAtLeast(0L)
-                        etaMap[download.id] = etaInMilliSeconds.coerceAtLeast(0L)
-                    }
-                    upsert(download)
-                }
-
-                override fun onPaused(download: Download) {
-                    synchronized(downloadRepository) { speedMap[download.id] = 0L }
-                    upsert(download)
-                }
-
-                override fun onResumed(download: Download) {
-                    upsert(download)
-                }
-
-                override fun onCompleted(download: Download) {
-                    synchronized(downloadRepository) {
-                        speedMap[download.id] = 0L
-                        etaMap[download.id] = 0L
-                    }
-                    upsert(download)
-                    registerWithSystemDownloads(appContext, download)
-                    try {
-                        com.petal.browser.account.progress.PetalProgressStore.bump(
-                            appContext,
-                            com.petal.browser.account.progress.PetalCounter.DOWNLOADS,
-                            1L,
-                            xpGain = 5L
-                        )
-                    } catch (_: Throwable) {}
-                }
-
-                override fun onError(download: Download, error: com.tonyodev.fetch2.Error, throwable: Throwable?) {
-                    synchronized(downloadRepository) { speedMap[download.id] = 0L }
-                    upsert(download)
-                }
-
-                override fun onCancelled(download: Download) {
-                    removeEntry(download.id)
-                }
-
-                override fun onRemoved(download: Download) {
-                    removeEntry(download.id)
-                }
-
-                override fun onDeleted(download: Download) {
-                    removeEntry(download.id)
-                }
-            })
-
-            fetch.getDownloads { list ->
-                synchronized(downloadRepository) {
-                    list.forEach { d ->
-                        val item = toDownloadItem(d)
-                        downloadRepository[item.downloadId] = item
-                        if (!createdAtMap.containsKey(d.id)) {
-                            val f = File(d.file)
-                            val t = when {
-                                d.created > 0L -> d.created
-                                f.exists() && f.lastModified() > 0L -> f.lastModified()
-                                else -> System.currentTimeMillis()
-                            }
-                            createdAtMap[d.id] = t
-                        }
-                    }
-                }
-                publish()
-            }
 
             try {
                 // BrowserStore emits on every tab/title/progress change; only react to downloads.
@@ -385,37 +300,15 @@ object PetalFetchDownloadBridge {
     }
 
     @JvmStatic
-    fun fetchInstance(context: Context): Fetch =
-        com.petal.browser.download.PetalDownloadEngine.getInstance(context.applicationContext).fetch
-
-    @JvmStatic
     fun refresh(context: Context) {
         ensureInitialized(context)
-        fetchInstance(context).getDownloads { list ->
-            synchronized(downloadRepository) {
-                list.forEach { d ->
-                    val item = toDownloadItem(d)
-                    downloadRepository[item.downloadId] = item
-                    if (!createdAtMap.containsKey(d.id)) {
-                        val f = File(d.file)
-                        val t = when {
-                            d.created > 0L -> d.created
-                            f.exists() && f.lastModified() > 0L -> f.lastModified()
-                            else -> System.currentTimeMillis()
-                        }
-                        createdAtMap[d.id] = t
-                    }
-                }
-            }
-            publish()
-        }
+        publish()
     }
 
     @JvmStatic
     fun pause(context: Context, id: Long) {
         ensureInitialized(context)
-        if (sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_PAUSE)) return
-        fetchInstance(context).pause(id.toInt())
+        sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_PAUSE)
     }
 
     @JvmStatic
@@ -431,15 +324,13 @@ object PetalFetchDownloadBridge {
     @JvmStatic
     fun resume(context: Context, id: Long) {
         ensureInitialized(context)
-        if (sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_RESUME)) return
-        fetchInstance(context).resume(id.toInt())
+        sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_RESUME)
     }
 
     @JvmStatic
     fun retry(context: Context, id: Long) {
         ensureInitialized(context)
-        if (sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_TRY_AGAIN)) return
-        fetchInstance(context).retry(id.toInt())
+        sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_TRY_AGAIN)
         val item = _downloadItems.value.firstOrNull { it.id == id }
         val fileName = item?.fileName ?: "File"
         PetalLiveAlertManager.trackDownload(context, id, fileName)
@@ -448,9 +339,12 @@ object PetalFetchDownloadBridge {
     @JvmStatic
     fun cancel(context: Context, id: Long) {
         ensureInitialized(context)
-        if (sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_CANCEL)) return
-        fetchInstance(context).cancel(id.toInt())
-        removeEntry(id.toInt())
+        sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_CANCEL)
+        synchronized(downloadRepository) {
+            val key = downloadRepository.entries.firstOrNull { it.value.id == id }?.key
+            if (key != null) downloadRepository.remove(key)
+        }
+        publish()
     }
 
     private fun sendMozillaDownloadAction(context: Context, id: Long, action: String): Boolean {
@@ -489,9 +383,9 @@ object PetalFetchDownloadBridge {
         } catch (_: Throwable) {}
 
         // 2. Check and remove from Mozilla Download Manager / BrowserStore
-        val mozillaId = item.downloadId.takeIf { it.isNotBlank() && !it.startsWith("fetch_") }
+        val mozillaId = item.downloadId.takeIf { it.isNotBlank() }
             ?: synchronized(downloadRepository) {
-                downloadRepository.values.firstOrNull { it.id == item.id }?.downloadId?.takeIf { !it.startsWith("fetch_") }
+                downloadRepository.values.firstOrNull { it.id == item.id }?.downloadId
             }
         if (mozillaId != null) {
             try {
@@ -505,20 +399,7 @@ object PetalFetchDownloadBridge {
             synchronized(downloadRepository) { downloadRepository.remove(mozillaId) }
         }
 
-        // 3. Cancel and delete from Fetch2
-        val fetchId = item.id.toInt()
-        try {
-            val fetch = fetchInstance(appContext)
-            fetch.cancel(fetchId)
-            fetch.delete(fetchId)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
-        // 4. Remove immediately from memory state maps
-        removeEntry(fetchId)
-
-        // 5. Delete local file and any temporary/partial download file
+        // 3. Delete local file and any temporary/partial download file
         try {
             val path = item.localUri?.removePrefix("file://")
             if (!path.isNullOrEmpty()) {
@@ -526,15 +407,15 @@ object PetalFetchDownloadBridge {
                 if (file.exists() && (deleteFile || item.status == DownloadStatus.STATUS_RUNNING || item.status == DownloadStatus.STATUS_PENDING)) {
                     file.delete()
                 }
-                // Also clean up Fetch temporary .download or .tmp files
-                val tempFile = File(path + ".download")
-                if (tempFile.exists()) tempFile.delete()
                 val partFile = File(path + ".part")
                 if (partFile.exists()) partFile.delete()
+                val tempFile = File(path + ".download")
+                if (tempFile.exists()) tempFile.delete()
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
+        publish()
     }
 
     @JvmStatic
@@ -544,25 +425,6 @@ object PetalFetchDownloadBridge {
         deleteFile: Boolean = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_delete_download_file", false)
     ) {
         items.forEach { deleteDownload(context, it, deleteFile) }
-    }
-
-    private fun upsert(download: Download) {
-        val item = toDownloadItem(download)
-        synchronized(downloadRepository) {
-            downloadRepository[item.downloadId] = item
-            if (!createdAtMap.containsKey(download.id)) createdAtMap[download.id] = System.currentTimeMillis()
-        }
-        publish()
-    }
-
-    private fun removeEntry(id: Int) {
-        synchronized(downloadRepository) {
-            downloadRepository.remove("fetch_$id")
-            createdAtMap.remove(id)
-            speedMap.remove(id)
-            etaMap.remove(id)
-        }
-        publish()
     }
 
     private val seenActiveIds = java.util.Collections.synchronizedSet(HashSet<Long>())
@@ -697,58 +559,6 @@ object PetalFetchDownloadBridge {
             }
         } catch (_: Throwable) {
             // BrowserStore may not be available during helper-process startup.
-        }
-    }
-
-    private fun toDownloadItem(d: Download): DownloadItem {
-        val total = d.total.coerceAtLeast(0L)
-        val soFar = d.downloaded.coerceAtLeast(0L)
-        val progress = if (total > 0) (soFar.toFloat() / total.toFloat()).coerceIn(0f, 1f) else null
-        val speed = speedMap[d.id] ?: 0L
-        val etaMsValue = etaMap[d.id] ?: 0L
-        val etaSec = if (etaMsValue > 0) etaMsValue / 1000L else 0L
-        val file = File(d.file)
-        val displayName = if (file.name.isNotEmpty()) file.name else d.url
-
-        val timestamp = when {
-            d.created > 0L -> d.created
-            createdAtMap.containsKey(d.id) -> createdAtMap[d.id]!!
-            file.exists() && file.lastModified() > 0L -> file.lastModified()
-            else -> System.currentTimeMillis()
-        }
-
-        return DownloadItem(
-            id = d.id.toLong(),
-            fileName = displayName,
-            fileUrl = d.url,
-            progress = progress,
-            status = mapStatus(d.status),
-            bytesDownloaded = soFar,
-            totalSize = total,
-            speedBytesPerSec = speed,
-            etaSeconds = etaSec,
-            localUri = "file://" + d.file,
-            timestampMs = timestamp,
-            downloadId = "fetch_${d.id}"
-        )
-    }
-
-    private fun mapStatus(status: Status): Int = when (status) {
-        Status.DOWNLOADING -> DownloadStatus.STATUS_RUNNING
-        Status.PAUSED -> DownloadStatus.STATUS_PAUSED
-        Status.COMPLETED -> DownloadStatus.STATUS_SUCCESSFUL
-        Status.QUEUED, Status.ADDED, Status.NONE -> DownloadStatus.STATUS_PENDING
-        else -> DownloadStatus.STATUS_FAILED // FAILED, CANCELLED, REMOVED, DELETED
-    }
-
-    /** Makes the finished file visible to the system Downloads app / other apps via MediaScanner. */
-    private fun registerWithSystemDownloads(context: Context, download: Download) {
-        try {
-            val file = File(download.file)
-            if (!file.exists()) return
-            MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), null, null)
-        } catch (e: Throwable) {
-            e.printStackTrace()
         }
     }
 }

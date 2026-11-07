@@ -259,8 +259,6 @@ dependencies {
     implementation 'io.coil-kt:coil-gif:2.7.0'
     // Real liquid glass (backdrop blur + lens refraction + specular rim); same library SimpMusic uses
     implementation 'io.github.kyant0:backdrop:2.0.1'
-    implementation 'com.github.tonyofrancis.Fetch:fetch2:3.4.1'
-    implementation 'com.github.tonyofrancis.Fetch:fetch2okhttp:3.4.1'
     // Pure-Java barcode/QR decoding for the FOSS Snap Photo scanner.
     implementation 'com.google.zxing:core:3.5.3'
     // FOSS camera preview and frame analysis for Petal Scanner.

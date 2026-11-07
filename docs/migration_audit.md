@@ -53,3 +53,23 @@ WebExtension delegates (action, tab, message) are set via session.webExtensionCo
 - **STAGE D (DONE & COMMITTED `7e64d22a`)**: Plugins & yt-dlp R8 Keep Rules (`DownloadSource`, `app/proguard-rules.pro`, `PetalTorrentEngineManager`). Defined `DownloadSource` plugin contract (`HTTP_MOZILLA`, `YTDLP`, `TORRENT`, `EXTERNAL`). Added comprehensive R8 keep rules for `com.yausername.**` (youtubedl-android, aria2c, ffmpeg) and Python JNI bridges. Clarified torrent engine descriptors honestly (1DM integration & web seed / external client hand-off). Unit tests in `DownloadStageDTest.kt`.
 - **STAGE E (DONE & COMMITTED `ec9ee348`)**: Quality, Reliability & Android 14+ Hardening (`PetalMozillaDownloadService`, `PetalParallelFetchClient`, `PetalSmartDownloadRouter`). Added pre-flight storage free-space verification before starting downloads. Enforced HTTP `If-Range` validation for every parallel segment. Implemented Android 14+ `dataSync` foreground service `onTimeout` handling to gracefully pause active downloads. Added `MediaStore.Downloads.RELATIVE_PATH` category routing. Unit tests in `DownloadStageETest.kt`.
 - **STAGE F (DONE & COMMITTED)**: Mozilla Source Parity & Full Subsystem Verification (`DownloadStageFParityTest.kt`). Verified official Mozilla `android-components 159.0.1` feature-downloads parity: `AbstractFetchDownloadService`, `DownloadMiddleware`, `RestoreDownloadsStateAction`. Documented intentional UI retentions. Cleaned up 12 dead manager files. Eliminated 999dp render-thread shadow stalls. Unit tests in `DownloadStageFParityTest.kt`.
+
+## Master Remaining All - Execution Log
+- **STAGE 1 - Cookie Jar Elimination (DONE & COMMITTED `f5230a1f`)**:
+  - Replaced all residual `android.webkit.CookieManager` reads, flushes, and clears across `PetalYtDlpEngine`, `PetalMediaSnifferSheet`, `PetalMediaGrabberPopupDialog`, `ImageActionHelper`, `PetalSiteInfoBottomSheet`, `PetalBrowserUtils`, `PetalAndroidUtils`, `PetalIncognitoSessionManager`, `PetalCacheManager`, `BrowsingDataManager`, and `CacheManager`.
+  - Authoritative provider: `PetalGeckoCookieBridge` (Gecko-backed, strictly private-isolated).
+  - Storage clearing: Routed exclusively through `PetalGeckoRuntime.clearData(...)` with `StorageController.ClearFlags.COOKIES | AUTH_SESSIONS`.
+  - Added unit test suite `Stage1CookieBridgeTest.kt`.
+
+- **STAGE 2 - Download Core Finalization (DONE & COMMITTED)**:
+  - Eliminated `com.tonyodev.fetch2` and `fetch2okhttp` dependencies from `app/build.gradle` and `app/proguard-rules.pro`.
+  - Removed dead `PetalDownloadEngine.java` (Fetch2 wrapper).
+  - Single state repository: `downloadRepository` in `PetalFetchDownloadBridge` backed entirely by Mozilla `BrowserStore`.
+  - Single notification owner: `PetalMozillaDownloadService` (inheriting from Mozilla's `AbstractFetchDownloadService` with `NotificationsDelegate`).
+  - Real file deletion: Verified and wired `DownloadMiddleware` in `PetalEngineStore` with `deleteFileFromStorage` implementation.
+  - Subsystem deviations kept on purpose:
+    1. Parallel chunked fetching via `PetalParallelFetchClient` for fast Range-supported multi-connection downloads.
+    2. Dynamic header registry (`PetalDownloadHeaderRegistry`) providing persistent HTTP Referer, Cookie, and User-Agent headers.
+    3. Smart download category routing (`PetalSmartDownloadRouter`) using MediaStore `RELATIVE_PATH`.
+    4. Expressive UI and Liquid Glass notifications via `PetalLiveActionBus` and NowBar.
+  - Added unit test suite `Stage2DownloadCoreTest.kt`.

@@ -44,8 +44,11 @@
 # ---- yt-dlp (youtubedl-android) -------------------------------------------------------------
 # Maps yt-dlp's JSON output onto its model classes with Jackson.
 -keep class com.yausername.** { *; }
+-keepclassmembers class com.yausername.** { *; }
+-keepclassmembers enum com.yausername.** { *; }
 -keep class com.fasterxml.jackson.** { *; }
 -dontwarn com.fasterxml.jackson.databind.**
+-dontwarn com.yausername.**
 
 # ---- Media3 ---------------------------------------------------------------------------------
 # The animated wallpaper switches PlayerView's surface type by reflection.
@@ -53,11 +56,6 @@
     *** setVideoSurfaceViewType(int);
     *** surfaceType;
 }
-
-# ---- Fetch2 (downloads) ---------------------------------------------------------------------
--keep class com.tonyodev.fetch2.** { *; }
--keep class com.tonyodev.fetch2core.** { *; }
--keep class com.tonyodev.fetch2okhttp.** { *; }
 
 # ---- PDFBox ---------------------------------------------------------------------------------
 # JPEG 2000 support is an optional dependency that is not bundled.
