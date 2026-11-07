@@ -69,7 +69,8 @@ import com.petal.browser.ui.containment.liquidGlassChrome
 @Composable
 fun PetalQrScannerScreen(
     onResult: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -230,9 +231,17 @@ fun PetalQrScannerScreen(
         }
     }
 
-    CompositionLocalProvider(
-        com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides (if (isLiquidGlass) glassWallpaper else null)
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onDismiss
     ) {
+        com.petal.browser.predictive.PetalScreenWrapper(
+            backgroundSnapshot = backgroundSnapshot,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            CompositionLocalProvider(
+                com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides (if (isLiquidGlass) glassWallpaper else null)
+            ) {
     // Fully opaque root: the old 95% alpha let the sheet/home underneath ghost through.
     Box(
         modifier = Modifier
@@ -989,6 +998,8 @@ fun PetalQrScannerScreen(
         )
     }
     }
+}
+}
 }
 
 private fun decodePetalBitmap(bitmap: Bitmap): String? {

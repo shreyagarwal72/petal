@@ -1078,7 +1078,9 @@ class PetalTabViewController private constructor(
             } catch (_: Throwable) {
             }
         }
-        observedSession?.reload()
+        try {
+            observedSession?.reload()
+        } catch (_: Throwable) {}
     }
 
     fun captureVideoHandoffState(callback: (com.petal.browser.media.handoff.MediaHandoff?) -> Unit) {

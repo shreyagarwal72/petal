@@ -188,26 +188,31 @@ object PetalOmniboxBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    // No wrapper layer around the page: presentComposeScreen() owns the open animation and
-                    // PetalScreenWrapper owns the back gesture. Any extra alpha/scale layer here also faded
-                    // the snapshot underlay and replayed a fade after the gesture had finished.
-                    PetalOmniboxPage(
-                        backgroundSnapshot = snapshotBitmap,
-                        activity = activity,
-                        initialQuery = initialQuery,
-                        pageTitle = pageTitle,
-                        pageUrl = pageUrl,
-                        favicon = favicon,
-                        isIncognito = isIncognito,
-                        onQuerySubmitted = { query ->
-                            onQuerySubmitted(query)
-                            onBackPress()
-                        },
-                        // The predictive-back surface already animates the page away; a second
-                        // fade/scale here replayed over the finished gesture, so close at once.
-                        onBackPress = { onBackPress() },
-                        onBackGesture = onBackGesture
-                    )
+                    com.petal.browser.predictive.PetalPredictiveBackSurface(
+                        enabled = true,
+                        onBack = { (onBackGesture ?: onBackPress)() }
+                    ) {
+                        com.petal.browser.predictive.PetalScreenWrapper(
+                            backgroundSnapshot = snapshotBitmap,
+                            modifier = androidx.compose.ui.Modifier.fillMaxSize()
+                        ) {
+                            PetalOmniboxPage(
+                                backgroundSnapshot = snapshotBitmap,
+                                activity = activity,
+                                initialQuery = initialQuery,
+                                pageTitle = pageTitle,
+                                pageUrl = pageUrl,
+                                favicon = favicon,
+                                isIncognito = isIncognito,
+                                onQuerySubmitted = { query ->
+                                    onQuerySubmitted(query)
+                                    onBackPress()
+                                },
+                                onBackPress = { onBackPress() },
+                                onBackGesture = onBackGesture
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -565,10 +570,6 @@ fun PetalOmniboxPage(
         } catch (e: Exception) {
             e.printStackTrace()
         }
-    }
-
-    BackHandler(enabled = true) {
-        (onBackGesture ?: onBackPress)()
     }
 
     Scaffold(

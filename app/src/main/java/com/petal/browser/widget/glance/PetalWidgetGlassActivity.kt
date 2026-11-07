@@ -207,15 +207,15 @@ class PetalWidgetGlassActivity : ComponentActivity() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF0F111A))
+                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f))
                 .systemBarsPadding()
                 .padding(24.dp),
             contentAlignment = Alignment.Center
         ) {
             Card(
                 shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2230)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                 modifier = Modifier.fillMaxWidth().wrapContentHeight()
             ) {
                 Column(
@@ -243,7 +243,7 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                         text = stringResource(R.string.widget_glass_not_ready_title),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -252,7 +252,7 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                         text = stringResource(R.string.widget_glass_not_ready_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -286,7 +286,7 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                         ) {
                             Text(
                                 stringResource(android.R.string.cancel),
-                                color = Color.White.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

@@ -121,9 +121,7 @@ object BrowserNavigationDelegate {
                 }
 
                 override fun onDeleteBrowsingData() {
-                    val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
-                    com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
-                    activity.startActivity(Intent(activity, SettingsDataClearActivity::class.java))
+                    activity.showDeleteScreen()
                 }
 
                 override fun onOpenDownloads() {

@@ -53,8 +53,13 @@ import androidx.compose.ui.res.stringResource
 
 object PetalDeleteBridge {
     @JvmStatic
-    fun createDeleteView(activity: ComponentActivity, onBackPress: Runnable): ComposeView {
-        val snapshotBitmap = com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap()
+    @JvmOverloads
+    fun createDeleteView(
+        activity: ComponentActivity,
+        onBackPress: Runnable,
+        backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null
+    ): ComposeView {
+        val snapshotBitmap = backgroundSnapshot ?: com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap()
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
@@ -163,10 +168,10 @@ fun PetalDeleteScreen(
     // (cross-activity predictive back), exactly like Chrome. onBackPress/finish still handles the
     // on-screen back arrow.
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = false,
+        enabled = true,
         onBack = onBackPress,
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = null) {
+    com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),

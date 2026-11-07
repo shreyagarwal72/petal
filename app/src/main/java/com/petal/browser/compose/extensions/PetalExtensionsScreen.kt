@@ -79,6 +79,7 @@ import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import com.petal.browser.ui.components.PetalLiquidButton
 import com.petal.browser.ui.components.PetalButtonVariant
 import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalSectionLabel
@@ -227,16 +228,16 @@ fun PetalExtensionsScreen(
 
     var showStoreScreen by remember { mutableStateOf(false) }
 
-    if (showStoreScreen) {
-        com.petal.browser.compose.store.PetalBrowserStoreScreen(
-            onDismiss = { showStoreScreen = false },
-            backgroundSnapshot = backgroundSnapshot
-        )
-        return
-    }
-
-    com.petal.browser.predictive.PetalPredictiveBackSurface(enabled = true, onBack = onDismiss) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = !showStoreScreen,
+        onBack = onDismiss
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            com.petal.browser.predictive.PetalScreenWrapper(
+                isBehind = showStoreScreen,
+                backgroundSnapshot = if (showStoreScreen) null else backgroundSnapshot,
+                modifier = Modifier.fillMaxSize()
+            ) {
             Scaffold(
                 containerColor = MaterialTheme.colorScheme.background,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -349,7 +350,15 @@ fun PetalExtensionsScreen(
                 }
             }
         }
+
+        if (showStoreScreen) {
+            com.petal.browser.compose.store.PetalBrowserStoreScreen(
+                onDismiss = { showStoreScreen = false },
+                backgroundSnapshot = null
+            )
+        }
     }
+}
 
     var showXpiPicker by remember { mutableStateOf(false) }
     val systemXpiPicker = rememberLauncherForActivityResult(
@@ -1345,13 +1354,12 @@ private fun AddExtensionSheet(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 list.forEach { addon ->
-                                    Card(
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                                    PetalHeroCard(
+                                        shape = RoundedCornerShape(14.dp),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Row(
-                                            modifier = Modifier.padding(10.dp).fillMaxWidth(),
+                                            modifier = Modifier.padding(12.dp).fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {

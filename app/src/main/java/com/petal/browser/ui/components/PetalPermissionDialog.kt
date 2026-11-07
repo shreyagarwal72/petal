@@ -385,13 +385,10 @@ fun PetalPermissionDialog(
                                 color = scheme.onSurfaceVariant
                             )
                         }
-                        val checkThumb: @Composable () -> Unit = {
-                            Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(SwitchDefaults.IconSize))
-                        }
-                        Switch(
+                        PetalSwitch(
                             checked = rememberDecision,
                             onCheckedChange = null,
-                            thumbContent = if (rememberDecision) checkThumb else null
+                            thumbIcon = Icons.Rounded.Check
                         )
                     }
 

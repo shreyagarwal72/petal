@@ -1387,7 +1387,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onResume() {
         com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(this);
-        if (browserBackCallback != null) browserBackCallback.setEnabled(true);
+        updateBackCallbackState();
         super.onResume();
         com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this);
         predictiveBackStartedOnOverlay = false;
@@ -1651,13 +1651,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             closeFindInPage();
             return;
         }
-        if (containerExitInFlight) return; // ignore extra back presses while collapsing
-        if (activeContainerView != null
-                && getTopContentChild() == activeContainerView) {
-            // Omnibox / New tab: collapse the page back into the origin button, then run this same close logic again.
-            collapseOmniboxThen(() -> performBackNavigation(), PB_TRANSITION_DURATION_MS);
-            return;
-        }
         if (isOverlayScreenShowing) {
             isOverlayScreenShowing = false;
             removeOverlayViews();
@@ -1833,13 +1826,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         boolean isWebPageNotHome = !isPetalHomeSurfaceShowing && !isHomePage(curUrl) && curUrl != null && !curUrl.isEmpty() && !curUrl.equalsIgnoreCase("about:blank");
         boolean hasMultipleTabs = BrowserContainer.size() > 1;
 
-        boolean requireConfirmExit = sp != null && sp.getBoolean("sp_double_back_exit", false);
+        boolean requireConfirmExit = sp != null && sp.getBoolean("sp_close_browser_confirm", false);
 
-        // Always keep browserBackCallback enabled while the activity has content.
-        // Android's predictive gesture navigation drops the back gesture if this is false,
-        // prematurely exiting the app. performBackNavigation() handles overlays, fullscreen,
-        // text selection, website history, home fallback, multi-tab closure, and exit dialog.
-        browserBackCallback.setEnabled(true);
+        // Dynamically gate back callback: only intercept when there are internal screens,
+        // web history, tabs, or confirmation dialogs to process. When on the root homepage
+        // with a single tab, letting browserBackCallback stay disabled activates Android 14+
+        // native system predictive back-to-home launcher animation.
+        boolean shouldIntercept = hasOverlay || hasDialog || hasWebBack 
+                || isWebPageNotHome || hasMultipleTabs || requireConfirmExit;
+
+        browserBackCallback.setEnabled(shouldIntercept);
     }
 
     public void resetPredictiveBackVisuals() {
@@ -5373,11 +5369,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         contentFrame.setOnPullListener(progress -> {
             if (finalRefreshView != null) {
                 if (progress > 0f) {
-                    // bringToFront() removes/re-adds the child and requests a relayout of the whole
-                    // window, so do it once when the bar appears, never per MOVE event.
                     if (finalRefreshView.getVisibility() != VISIBLE) {
                         finalRefreshView.setVisibility(VISIBLE);
-                        finalRefreshView.bringToFront();
                     }
                 } else if (!refreshState.isRefreshing()
                         && finalRefreshView.getVisibility() != View.INVISIBLE) {
@@ -5889,35 +5882,32 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 pageUrl != null ? pageUrl : "",
                 favicon,
                 isIncognitoTab,
-                // Taps (back arrow, tapping outside, etc.): collapse into the bar, then close.
+                // Taps (back arrow, tapping outside, etc.):
                 () -> {
-                    collapseOmniboxThen(() -> showAlbum(currentAlbumController), PB_TRANSITION_DURATION_MS);
+                    showAlbum(currentAlbumController);
                     return kotlin.Unit.INSTANCE;
                 },
-                // Submit: collapse (a bit faster), then run the search and close as before.
+                // Submit:
                 result -> {
-                    final boolean[] animated = {false};
-                    animated[0] = collapseOmniboxThen(() -> {
-                        if (result != null && !result.trim().isEmpty()) {
-                            performSearchWithFixerPrompt(result.trim(), isIncognitoTab, targetUrl -> {
-                                if (currentAlbumController != null) {
-                                    showAlbum(currentAlbumController, targetUrl);
-                                } else if (BrowserContainer.size() > 0) {
-                                    AlbumController controller = BrowserContainer.get(0);
-                                    showAlbum(controller, targetUrl);
-                                } else {
-                                    addAlbum(null, targetUrl, true, isIncognitoTab);
-                                }
-                            });
-                        } else if (animated[0]) {
-                            showAlbum(currentAlbumController);
-                        }
-                    }, PB_TRANSITION_DURATION_MS);
+                    if (result != null && !result.trim().isEmpty()) {
+                        performSearchWithFixerPrompt(result.trim(), isIncognitoTab, targetUrl -> {
+                            if (currentAlbumController != null) {
+                                showAlbum(currentAlbumController, targetUrl);
+                            } else if (BrowserContainer.size() > 0) {
+                                AlbumController controller = BrowserContainer.get(0);
+                                showAlbum(controller, targetUrl);
+                            } else {
+                                addAlbum(null, targetUrl, true, isIncognitoTab);
+                            }
+                        });
+                    } else {
+                        showAlbum(currentAlbumController);
+                    }
                     return kotlin.Unit.INSTANCE;
                 },
-                // Swipe-back gesture: collapse symmetrically into the bar as well.
+                // Swipe-back gesture:
                 () -> {
-                    collapseOmniboxThen(() -> showAlbum(currentAlbumController), PB_TRANSITION_DURATION_MS);
+                    showAlbum(currentAlbumController);
                     return kotlin.Unit.INSTANCE;
                 }
             );
@@ -5976,9 +5966,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     showAlbum(currentAlbumController, url);
                 },
                 () -> {
-                    View rootView = findViewById(android.R.id.content) != null ? findViewById(android.R.id.content) : getWindow().getDecorView();
-                    com.petal.browser.predictive.PetalContentSnapshot.capture(rootView);
-                    startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.SettingsDataClearActivity.class));
+                    showDeleteScreen();
                 },
                 () -> {
                     showAlbum(currentAlbumController);
@@ -5986,6 +5974,34 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             );
             presentComposeScreen(historyView);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void showDeleteScreen() {
+        try {
+            captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
+            clearContentFrameKeepingTabs();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble_delete = findViewById(R.id.fab_bubble);
+            if (fab_bubble_delete != null) fab_bubble_delete.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
+            View deleteView = com.petal.browser.compose.settings.PetalDeleteBridge.createDeleteView(
+                BrowserActivity.this,
+                () -> {
+                    showAlbum(currentAlbumController);
+                },
+                previewSnapshot != null ? androidx.compose.ui.graphics.AndroidImageBitmap_androidKt.asImageBitmap(previewSnapshot) : null
+            );
+            presentComposeScreen(deleteView);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -8236,10 +8252,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View fab_bubble_flags = findViewById(R.id.fab_bubble);
             if (fab_bubble_flags != null) fab_bubble_flags.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
-            View flagsView = com.petal.browser.compose.flags.PetalFlagsHubBridge.createFlagsHubView(BrowserActivity.this, () -> {
-                showAlbum(currentAlbumController);
-                return kotlin.Unit.INSTANCE;
-            });
+            View flagsView = com.petal.browser.compose.flags.PetalFlagsHubBridge.createFlagsHubView(
+                BrowserActivity.this,
+                () -> {
+                    showAlbum(currentAlbumController);
+                    return kotlin.Unit.INSTANCE;
+                },
+                previewSnapshot != null ? androidx.compose.ui.graphics.AndroidImageBitmap_androidKt.asImageBitmap(previewSnapshot) : null
+            );
             presentComposeScreen(flagsView);
         } catch (Exception e) {
             android.util.Log.e("BrowserActivity", "Failed to open Flags Hub: " + e.getMessage(), e);

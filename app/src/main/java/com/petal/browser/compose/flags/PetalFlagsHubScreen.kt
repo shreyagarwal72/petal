@@ -107,6 +107,7 @@ import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 @Composable
 fun PetalFlagsHubScreen(
     onDismiss: () -> Unit,
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -138,11 +139,18 @@ fun PetalFlagsHubScreen(
         }
     }
 
-    CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onDismiss
+    ) {
+        com.petal.browser.predictive.PetalScreenWrapper(
+            backgroundSnapshot = backgroundSnapshot,
+            modifier = modifier.fillMaxSize()
         ) {
+            CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                ) {
             M3ExpressiveVariableBackground(
                 pageSeed = "petal_flags_hub",
                 modifier = Modifier
@@ -360,6 +368,8 @@ fun PetalFlagsHubScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
+}
+}
 }
 }
 

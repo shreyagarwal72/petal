@@ -19,10 +19,16 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 object PetalFlagsHubBridge {
 
     @JvmStatic
+    @JvmOverloads
     fun createFlagsHubView(
         activity: ComponentActivity,
-        onBack: () -> Unit
+        onBack: () -> Unit,
+        backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null
     ): ComposeView {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        if (backgroundSnapshot == null) {
+            com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+        }
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
@@ -30,6 +36,14 @@ object PetalFlagsHubBridge {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
             setContent {
+                val snapshot = backgroundSnapshot ?: remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+                androidx.compose.runtime.DisposableEffect(Unit) {
+                    onDispose {
+                        if (backgroundSnapshot == null) {
+                            com.petal.browser.predictive.PetalContentSnapshot.clear()
+                        }
+                    }
+                }
                 val context = LocalContext.current
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
                 val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
@@ -57,7 +71,10 @@ object PetalFlagsHubBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    PetalFlagsHubScreen(onDismiss = onBack)
+                    PetalFlagsHubScreen(
+                        onDismiss = onBack,
+                        backgroundSnapshot = snapshot
+                    )
                 }
             }
         }

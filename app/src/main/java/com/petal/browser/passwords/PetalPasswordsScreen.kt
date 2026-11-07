@@ -64,6 +64,7 @@ import java.util.UUID
 fun PetalPasswordsScreen(
     activity: ComponentActivity,
     onNavigateBack: () -> Unit,
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -218,11 +219,18 @@ fun PetalPasswordsScreen(
         )
     }
 
-    CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onNavigateBack
+    ) {
+        com.petal.browser.predictive.PetalScreenWrapper(
+            backgroundSnapshot = backgroundSnapshot,
+            modifier = modifier.fillMaxSize()
         ) {
+            CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                ) {
             // Sibling wallpaper backdrop recorder as required by petal-liquid-glass skill
             M3ExpressiveVariableBackground(
                 pageSeed = "petal_passwords_screen",
@@ -640,6 +648,8 @@ fun PetalPasswordsScreen(
             }
         }
     }
+}
+}
 }
 
 /**

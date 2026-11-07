@@ -30,6 +30,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.PetalButtonVariant
 import com.petal.browser.ui.components.PetalLiquidButton
+import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalSheet
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
@@ -230,12 +231,8 @@ fun PetalPlayUpdatePopupContent(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // Feature Highlights Card
-                Card(
+                PetalHeroCard(
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(

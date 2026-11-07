@@ -53,7 +53,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import com.petal.browser.ui.components.PetalSlider
+import com.petal.browser.ui.components.PetalSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import com.petal.browser.ui.theme.toShape
@@ -660,7 +661,7 @@ private fun SwitchRow(title: String, subtitle: String?, checked: Boolean, onChan
             }
         }
         Spacer(Modifier.width(12.dp))
-        Switch(checked = checked, onCheckedChange = null)
+        PetalSwitch(checked = checked, onCheckedChange = null)
     }
 }
 
@@ -679,7 +680,7 @@ private fun LabeledSlider(
             Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             Text(valueText, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
         }
-        Slider(value = value, onValueChange = onChange, valueRange = range, steps = steps.coerceAtLeast(0), enabled = enabled)
+        PetalSlider(value = value, onValueChange = onChange, valueRange = range, steps = steps.coerceAtLeast(0), enabled = enabled)
     }
 }
 

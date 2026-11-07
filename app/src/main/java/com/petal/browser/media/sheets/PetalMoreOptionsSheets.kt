@@ -69,7 +69,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import com.petal.browser.ui.components.PetalSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -294,7 +294,7 @@ fun PetalSleepTimerSheet(
                         color = audioPalette.onSurfaceVariant
                     )
                 }
-                Switch(
+                PetalSwitch(
                     checked = endOfSong,
                     onCheckedChange = { endOfSong = it }
                 )

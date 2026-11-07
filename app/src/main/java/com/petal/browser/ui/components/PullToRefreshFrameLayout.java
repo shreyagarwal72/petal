@@ -69,9 +69,12 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     /** True only if the page was already at the top when the finger touched down (Chrome behaviour). */
     private boolean startedAtTop;
 
-    private MotionEvent firstDownEvent;
-    private MotionEvent upEvent;
-    private MotionEvent secondDownEvent;
+    private long firstDownTime = 0L;
+    private float firstDownEventX = 0f;
+    private float firstDownEventY = 0f;
+    private boolean hasFirstDown = false;
+    private long upEventTime = 0L;
+    private boolean hasUpEvent = false;
 
     public PullToRefreshFrameLayout(Context context) {
         this(context, null);
@@ -134,47 +137,54 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     private void maybeAddDoubleTapEvent(MotionEvent event) {
         int action = event.getActionMasked();
         if (action == MotionEvent.ACTION_DOWN) {
-            if (upEvent != null) {
-                if (event.getEventTime() - upEvent.getEventTime() > doubleTapTimeout) {
+            if (hasUpEvent) {
+                if (event.getEventTime() - upEventTime > doubleTapTimeout) {
                     forgetQuickScaleEvents();
-                    firstDownEvent = MotionEvent.obtain(event);
+                    recordFirstDown(event);
                 } else {
-                    secondDownEvent = MotionEvent.obtain(event);
+                    // Potential quick scale double-tap second down
+                    checkSecondDown(event);
                 }
             } else {
                 forgetQuickScaleEvents();
-                firstDownEvent = MotionEvent.obtain(event);
+                recordFirstDown(event);
             }
-        } else if (action == MotionEvent.ACTION_UP && firstDownEvent != null) {
-            upEvent = MotionEvent.obtain(event);
+        } else if (action == MotionEvent.ACTION_UP && hasFirstDown) {
+            upEventTime = event.getEventTime();
+            hasUpEvent = true;
         }
+    }
+
+    private void recordFirstDown(MotionEvent event) {
+        firstDownTime = event.getEventTime();
+        firstDownEventX = event.getX();
+        firstDownEventY = event.getY();
+        hasFirstDown = true;
+    }
+
+    private void checkSecondDown(MotionEvent event) {
+        if (!hasFirstDown || !hasUpEvent) {
+            isQuickScaleInProgress = false;
+            return;
+        }
+        if (event.getEventTime() - upEventTime > doubleTapTimeout) {
+            isQuickScaleInProgress = false;
+            return;
+        }
+        int deltaX = (int) (firstDownEventX - event.getX());
+        int deltaY = (int) (firstDownEventY - event.getY());
+        isQuickScaleInProgress = (deltaX * deltaX + deltaY * deltaY) < doubleTapSlopSquare;
     }
 
     private boolean isQuickScaleGesture() {
-        if (firstDownEvent == null || upEvent == null || secondDownEvent == null) {
-            return false;
-        }
-        if (secondDownEvent.getEventTime() - upEvent.getEventTime() > doubleTapTimeout) {
-            return false;
-        }
-        int deltaX = (int) (firstDownEvent.getX() - secondDownEvent.getX());
-        int deltaY = (int) (firstDownEvent.getY() - secondDownEvent.getY());
-        return (deltaX * deltaX + deltaY * deltaY) < doubleTapSlopSquare;
+        return isQuickScaleInProgress;
     }
 
     private void forgetQuickScaleEvents() {
-        if (firstDownEvent != null) {
-            firstDownEvent.recycle();
-            firstDownEvent = null;
-        }
-        if (upEvent != null) {
-            upEvent.recycle();
-            upEvent = null;
-        }
-        if (secondDownEvent != null) {
-            secondDownEvent.recycle();
-            secondDownEvent = null;
-        }
+        hasFirstDown = false;
+        hasUpEvent = false;
+        firstDownTime = 0L;
+        upEventTime = 0L;
         isQuickScaleInProgress = false;
     }
 
@@ -497,9 +507,13 @@ public class PullToRefreshFrameLayout extends FrameLayout {
             MotionEvent cancelEvent = MotionEvent.obtain(ev);
             cancelEvent.setAction(MotionEvent.ACTION_CANCEL);
             for (int i = 0; i < getChildCount(); i++) {
-                getChildAt(i).dispatchTouchEvent(cancelEvent);
+                try {
+                    getChildAt(i).dispatchTouchEvent(cancelEvent);
+                } catch (Exception ignored) {}
             }
-            cancelEvent.recycle();
+            // Do not manually recycle cancelEvent immediately here: child views (GeckoView /
+            // Compose) may dispatch or queue the event asynchronously across threads.
+            // Android's garbage collector and input pipeline will safely manage its lifecycle.
         } catch (Exception ignored) {}
     }
 

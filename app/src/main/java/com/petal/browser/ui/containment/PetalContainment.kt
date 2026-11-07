@@ -55,8 +55,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -577,7 +575,7 @@ fun PetalGroupToggleRow(
     iconTint: Color = MaterialTheme.colorScheme.onPrimaryContainer,
 ) {
     PetalGroupRow(icon, title, position, { if (enabled) onCheckedChange(!checked) }, modifier.alpha(if (enabled) 1f else 0.38f), subtitle, iconContainer, iconTint, enabled = enabled,
-        trailing = { Switch(checked, if (enabled) onCheckedChange else null, thumbContent = if (checked) ({ Icon(Icons.Rounded.Check, null, Modifier.size(SwitchDefaults.IconSize)) }) else null) })
+        trailing = { com.petal.browser.ui.components.IconSwitch(checked = checked, icon = Icons.Rounded.Check, onCheckedChange = if (enabled) onCheckedChange else null, enabled = enabled) })
 }
 
 @Composable
@@ -635,16 +633,11 @@ fun PetalGroupControlRow(
                     color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
                 if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
-            Switch(
+            com.petal.browser.ui.components.IconSwitch(
                 checked = checked,
+                icon = Icons.Rounded.Check,
                 onCheckedChange = { if (enabled) onCheckedChange(it) },
                 enabled = enabled,
-                thumbContent = {
-                    AnimatedContent(targetState = checked, transitionSpec = { fadeIn(tween(100)) togetherWith fadeOut(tween(100)) }, label = "petalSwitchThumb") { isChecked ->
-                        Icon(if (isChecked) Icons.Rounded.Check else Icons.Rounded.Close, null, Modifier.size(SwitchDefaults.IconSize))
-                    }
-                },
-                colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary, checkedIconColor = MaterialTheme.colorScheme.primary),
             )
         }
     }
@@ -886,17 +879,10 @@ fun PetalSettingsToggleRow(
                     )
                 }
             }
-            Switch(
+            com.petal.browser.ui.components.PetalSwitch(
                 checked = checked,
                 onCheckedChange = if (enabled) onCheckedChange else null,
                 enabled = enabled,
-                thumbContent = if (checked) ({
-                    Icon(
-                        painter = painterResource(iconRes),
-                        contentDescription = null,
-                        modifier = Modifier.size(SwitchDefaults.IconSize)
-                    )
-                }) else null
             )
         }
     }
