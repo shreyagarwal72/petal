@@ -17,8 +17,6 @@ package com.petal.browser.island
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.text.format.Formatter
-import com.petal.browser.account.progress.PetalProfileTarget
-import com.petal.browser.account.progress.PetalProgressStore
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
@@ -887,12 +885,6 @@ private fun ExpandedCard(
                 ) {
                     FilledTonalButton(
                         onClick = {
-                            // Route to the page that matches this notification instead of the generic profile.
-                            when (item.destination) {
-                                "badges" -> PetalProgressStore.requestOpen(PetalProfileTarget.BADGES, item.badgeId)
-                                "rewards" -> PetalProgressStore.requestOpen(PetalProfileTarget.REWARDS)
-                                else -> PetalProgressStore.requestOpen(PetalProfileTarget.PROFILE)
-                            }
                             listener.onOpenProfile()
                             onCollapse()
                         },
