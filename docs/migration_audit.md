@@ -40,4 +40,7 @@ WebExtension delegates (action, tab, message) are set via session.webExtensionCo
 
 ## Status
 - DONE (uncompiled): scroll, history (onHistoryStateChange) and content-blocking delegates in PetalTabViewController now forward to the engine's delegate, captured once and guarded by a PetalOwnedDelegate marker so re-binding never wraps Petal's own wrapper.
-- TODO: promptDelegate and permissionDelegate still replace the engine's (large interfaces; needs compiler-verified forwarding). Then stages 3-5.
+- DONE (uncompiled): promptDelegate — replaced with PetalPromptDelegateWrapper (PetalOwnedDelegate; re-bindable; delegates to PetalGeckoView.createPromptDelegate via volatile supplier lambdas).
+- DONE (uncompiled): permissionDelegate — replaced with PetalPermissionDelegateWrapper (PetalOwnedDelegate; re-bindable; delegates to PetalGeckoPermissionDelegate via volatile supplier lambda).
+- Stage 1 delegate table: every delegate type now has exactly one owner; no double-wrapping on session reuse.
+- TODO: compile + test Stage 1. Then stages 2–5.

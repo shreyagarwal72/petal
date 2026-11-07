@@ -671,12 +671,26 @@ class PetalTabViewController private constructor(
         val geckoSession = getGeckoSession()
         com.petal.browser.extensions.PetalExtensionManager.attachSession(geckoSession)
         geckoSession?.let { gs ->
-            gs.promptDelegate = com.petal.browser.view.PetalGeckoView.createPromptDelegate(
-                gs,
-                context,
-                preferences,
-                { isIncognito() }
-            ) { context as? android.app.Activity }
+            // Prompt Delegate: Petal takes sole ownership (GeckoEngineSession never installs one).
+            // Use PetalPromptDelegateWrapper so the activityProvider / incognitoProvider lambdas
+            // point at THIS view after Activity recreation, without replacing the delegate object
+            // on a live GeckoSession (which would race with any in-flight GeckoResult resolution).
+            val existingPrompt = gs.promptDelegate
+            if (existingPrompt is PetalPromptDelegateWrapper) {
+                // Session outlived its previous view: re-point lambdas at the current context.
+                existingPrompt.rebind(
+                    newIncognitoProvider = { isIncognito() },
+                    newActivityProvider = { resolveActivity(context) }
+                )
+            } else {
+                gs.promptDelegate = PetalPromptDelegateWrapper(
+                    session = gs,
+                    appContext = appContext,
+                    sp = preferences,
+                    incognitoProvider = { isIncognito() },
+                    activityProvider = { resolveActivity(context) }
+                )
+            }
 
             android.util.Log.d("PetalTabNav", "bindTab: gs.navigationDelegate=${gs.navigationDelegate?.javaClass?.name}, gs.contentDelegate=${gs.contentDelegate?.javaClass?.name}")
 
@@ -810,9 +824,17 @@ class PetalTabViewController private constructor(
                 }
             }
 
-            // Universal Live Liquid Glass & Material 3 Expressive Permission Delegate
-            gs.permissionDelegate = com.petal.browser.ui.components.PetalGeckoPermissionDelegate(context) {
-                resolveActivity(context)
+            // Permission Delegate: Petal takes sole ownership (GeckoEngineSession never installs one).
+            // Use PetalPermissionDelegateWrapper with rebind so activitySupplier always points at
+            // the current Activity after a configuration change.
+            val existingPerm = gs.permissionDelegate
+            if (existingPerm is PetalPermissionDelegateWrapper) {
+                existingPerm.rebind { resolveActivity(context) }
+            } else {
+                gs.permissionDelegate = PetalPermissionDelegateWrapper(
+                    context = appContext,
+                    activitySupplier = { resolveActivity(context) }
+                )
             }
 
             gs.selectionActionDelegate = object : org.mozilla.geckoview.GeckoSession.SelectionActionDelegate {
