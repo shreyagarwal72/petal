@@ -32,6 +32,9 @@ class PetalOkHttpFetchClient(
 
     @Throws(IOException::class)
     override fun fetch(request: Request): Response {
+        if (request.private) {
+            throw IOException("PetalOkHttpFetchClient cannot be used for private requests")
+        }
         val builder = okhttp3.Request.Builder().url(request.url)
         request.headers?.forEach { header -> builder.addHeader(header.name, header.value) }
         request.referrerUrl?.let { builder.header("Referer", it) }

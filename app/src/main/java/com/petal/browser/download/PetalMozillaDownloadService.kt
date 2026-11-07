@@ -14,16 +14,25 @@ import mozilla.components.support.utils.DefaultDateTimeProvider
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 
 class PetalFallbackFetchClient(
-    private val primary: Client,
+    private val primary: Client?,
     private val fallback: Client
 ) : Client() {
+    @Throws(java.io.IOException::class)
     override fun fetch(request: mozilla.components.concept.fetch.Request): mozilla.components.concept.fetch.Response {
-        return try {
-            primary.fetch(request)
-        } catch (t: Throwable) {
-            android.util.Log.w("PetalMozillaDownload", "Primary GeckoView fetch failed (${t.message}), falling back to OkHttp", t)
-            fallback.fetch(request)
+        if (primary != null) {
+            // Primary Gecko client is available: execute exclusively through Gecko's network stack.
+            // Never silently fall back mid-stream or swallow network disconnects.
+            return primary.fetch(request)
         }
+
+        // Primary client failed initial construction:
+        if (request.private) {
+            // Strict private-mode isolation: private requests must NEVER leave Gecko's network stack.
+            throw java.io.IOException("GeckoViewFetchClient unavailable; private download aborted to prevent network stack leakage.")
+        }
+
+        android.util.Log.w("PetalMozillaDownload", "Primary GeckoView fetch client unavailable, using OkHttp for non-private request")
+        return fallback.fetch(request)
     }
 }
 
@@ -57,11 +66,7 @@ class PetalMozillaDownloadService : AbstractFetchDownloadService() {
             null
         }
         val okHttpClient = PetalOkHttpFetchClient()
-        val base: Client = if (geckoClient != null) {
-            PetalFallbackFetchClient(primary = geckoClient, fallback = okHttpClient)
-        } else {
-            okHttpClient
-        }
+        val base: Client = PetalFallbackFetchClient(primary = geckoClient, fallback = okHttpClient)
         // Order matters: PetalMozillaFetchClient injects the per-URL Referer/Cookie/UA headers on the
         // original request, then PetalParallelFetchClient splits it into Range segments that all
         // inherit those headers. Parallel mode self-disables for servers without Range support.
