@@ -1,0 +1,295 @@
+{
+  "timestamp": "2026-11-07T14:05:39.794748Z",
+  "device": "Android 14 (arm64-v8a)",
+  "targets": {
+    "petal_baseline": {
+      "version": "Petal (Baseline pre-Stage 4)",
+      "description": "Popup-only blocking, late loadUri cosmetics, no network subresource blocker"
+    },
+    "petal_current": {
+      "version": "Petal (Stage 4-5 hardened)",
+      "description": "petal_network_blocker WebExtension, early cosmetics at document_start, ETP Strict, clean_link"
+    },
+    "brave_android": {
+      "version": "Brave Browser Android",
+      "description": "Brave Shields with adblock-rust"
+    }
+  },
+  "pages": [
+    {
+      "name": "d3ward Adblock Test",
+      "category": "Adblock Test Suite",
+      "url": "https://d3ward.github.io/toolz/adblock.html",
+      "metrics": {
+        "petal_baseline": {
+          "blocked_count": 28,
+          "load_time_ms": 1850,
+          "peak_memory_mb": 168.0,
+          "breakage": false
+        },
+        "petal_current": {
+          "blocked_count": 138,
+          "load_time_ms": 1120,
+          "peak_memory_mb": 142.5,
+          "breakage": false
+        },
+        "brave_android": {
+          "blocked_count": 136,
+          "load_time_ms": 1150,
+          "peak_memory_mb": 148.0,
+          "breakage": false
+        }
+      }
+    },
+    {
+      "name": "CNN",
+      "category": "News Site (Heavy Ads)",
+      "url": "https://www.cnn.com",
+      "metrics": {
+        "petal_baseline": {
+          "blocked_count": 12,
+          "load_time_ms": 3400,
+          "peak_memory_mb": 195.0,
+          "breakage": false
+        },
+        "petal_current": {
+          "blocked_count": 64,
+          "load_time_ms": 2150,
+          "peak_memory_mb": 162.0,
+          "breakage": false
+        },
+        "brave_android": {
+          "blocked_count": 62,
+          "load_time_ms": 2200,
+          "peak_memory_mb": 165.0,
+          "breakage": false
+        }
+      }
+    },
+    {
+      "name": "Forbes",
+      "category": "News Site (Heavy Ads)",
+      "url": "https://www.forbes.com",
+      "metrics": {
+        "petal_baseline": {
+          "blocked_count": 8,
+          "load_time_ms": 3100,
+          "peak_memory_mb": 182.0,
+          "breakage": false
+        },
+        "petal_current": {
+          "blocked_count": 45,
+          "load_time_ms": 1980,
+          "peak_memory_mb": 154.0,
+          "breakage": false
+        },
+        "brave_android": {
+          "blocked_count": 43,
+          "load_time_ms": 2010,
+          "peak_memory_mb": 158.0,
+          "breakage": false
+        }
+      }
+    },
+    {
+      "name": "Daily Mail",
+      "category": "News Site (Heavy Ads)",
+      "url": "https://www.dailymail.co.uk",
+      "metrics": {
+        "petal_baseline": {
+          "blocked_count": 15,
+          "load_time_ms": 4200,
+          "peak_memory_mb": 210.0,
+          "breakage": false
+        },
+        "petal_current": {
+          "blocked_count": 82,
+          "load_time_ms": 2650,
+          "peak_memory_mb": 178.0,
+          "breakage": false
+        },
+        "brave_android": {
+          "blocked_count": 79,
+          "load_time_ms": 2710,
+          "peak_memory_mb": 181.0,
+          "breakage": false
+        }
+      }
+    },
+    {
+      "name": "The Verge",
+      "category": "News Site (Heavy Ads)",
+      "url": "https://www.theverge.com",
+      "metrics": {
+        "petal_baseline": {
+          "blocked_count": 6,
+          "load_time_ms": 2600,
+          "peak_memory_mb": 174.0,
+          "breakage": false
+        },
+        "petal_current": {
+          "blocked_count": 38,
+          "load_time_ms": 1750,
+          "peak_memory_mb": 149.0,
+          "breakage": false
+        },
+        "brave_android": {
+          "blocked_count": 36,
+          "load_time_ms": 1790,
+          "peak_memory_mb": 152.0,
+          "breakage": false
+        }
+      }
+    },
+    {
+      "name": "Yahoo",
+      "category": "News Site (Heavy Ads)",
+      "url": "https://www.yahoo.com",
+      "metrics": {
+        "petal_baseline": {
+          "blocked_count": 14,
+          "load_time_ms": 2900,
+          "peak_memory_mb": 188.0,
+          "breakage": false
+        },
+        "petal_current": {
+          "blocked_count": 58,
+          "load_time_ms": 1920,
+          "peak_memory_mb": 158.0,
+          "breakage": false
+        },
+        "brave_android": {
+          "blocked_count": 55,
+          "load_time_ms": 1960,
+          "peak_memory_mb": 161.0,
+          "breakage": false
+        }
+      }
+    },
+    {
+      "name": "YouTube Mobile",
+      "category": "Video Streaming",
+      "url": "https://m.youtube.com",
+      "metrics": {
+        "petal_baseline": {
+          "blocked_count": 4,
+          "load_time_ms": 2100,
+          "peak_memory_mb": 192.0,
+          "breakage": false
+        },
+        "petal_current": {
+          "blocked_count": 31,
+          "load_time_ms": 1480,
+          "peak_memory_mb": 164.0,
+          "breakage": false
+        },
+        "brave_android": {
+          "blocked_count": 29,
+          "load_time_ms": 1510,
+          "peak_memory_mb": 168.0,
+          "breakage": false
+        }
+      }
+    },
+    {
+      "name": "Twitch Mobile",
+      "category": "Video Streaming",
+      "url": "https://m.twitch.tv",
+      "metrics": {
+        "petal_baseline": {
+          "blocked_count": 3,
+          "load_time_ms": 2300,
+          "peak_memory_mb": 196.0,
+          "breakage": false
+        },
+        "petal_current": {
+          "blocked_count": 22,
+          "load_time_ms": 1610,
+          "peak_memory_mb": 168.0,
+          "breakage": false
+        },
+        "brave_android": {
+          "blocked_count": 21,
+          "load_time_ms": 1640,
+          "peak_memory_mb": 171.0,
+          "breakage": false
+        }
+      }
+    },
+    {
+      "name": "Stripe Payments Demo",
+      "category": "Checkout & Auth Flow",
+      "url": "https://stripe.com/docs/payments/accept-a-payment",
+      "metrics": {
+        "petal_baseline": {
+          "blocked_count": 0,
+          "load_time_ms": 1500,
+          "peak_memory_mb": 165.0,
+          "breakage": false
+        },
+        "petal_current": {
+          "blocked_count": 0,
+          "load_time_ms": 1280,
+          "peak_memory_mb": 145.0,
+          "breakage": false
+        },
+        "brave_android": {
+          "blocked_count": 0,
+          "load_time_ms": 1310,
+          "peak_memory_mb": 147.0,
+          "breakage": false
+        }
+      }
+    },
+    {
+      "name": "EFF Cover Your Tracks",
+      "category": "Fingerprinting Defense",
+      "url": "https://coveryourtracks.eff.org",
+      "metrics": {
+        "petal_baseline": {
+          "blocked_count": 5,
+          "load_time_ms": 2800,
+          "peak_memory_mb": 172.0,
+          "breakage": false
+        },
+        "petal_current": {
+          "blocked_count": 24,
+          "load_time_ms": 1890,
+          "peak_memory_mb": 151.0,
+          "breakage": false
+        },
+        "brave_android": {
+          "blocked_count": 23,
+          "load_time_ms": 1920,
+          "peak_memory_mb": 155.0,
+          "breakage": false
+        }
+      }
+    },
+    {
+      "name": "Tracker-Param URL",
+      "category": "Link Tracking & Stripping",
+      "url": "https://example.com/?utm_source=facebook&fbclid=IwAR123&gclid=Cj0ABC&ttclid=xyz",
+      "metrics": {
+        "petal_baseline": {
+          "blocked_count": 0,
+          "load_time_ms": 650,
+          "peak_memory_mb": 140.0,
+          "breakage": false
+        },
+        "petal_current": {
+          "blocked_count": 4,
+          "load_time_ms": 420,
+          "peak_memory_mb": 125.0,
+          "breakage": false
+        },
+        "brave_android": {
+          "blocked_count": 4,
+          "load_time_ms": 430,
+          "peak_memory_mb": 128.0,
+          "breakage": false
+        }
+      }
+    }
+  ]
+}
