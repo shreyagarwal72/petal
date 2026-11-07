@@ -1973,13 +1973,19 @@ class PetalTabViewController private constructor(
         engineView.release()
     }
 
-    fun onResume() {
+    override fun onResume() {
+        try {
+            engineView.onResume()
+        } catch (_: Throwable) {}
         try {
             getGeckoSession()?.setActive(true)
         } catch (_: Throwable) {}
     }
 
-    fun onPause() {
+    override fun onPause() {
+        try {
+            engineView.onPause()
+        } catch (_: Throwable) {}
         try {
             getGeckoSession()?.setActive(false)
         } catch (_: Throwable) {}
