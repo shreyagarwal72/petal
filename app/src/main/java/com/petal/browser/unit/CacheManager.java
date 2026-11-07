@@ -3,8 +3,6 @@ package com.petal.browser.unit;
 import android.content.Context;
 import android.os.Build;
 import android.util.Log;
-import android.webkit.CookieManager;
-import android.webkit.WebStorage;
 import android.webkit.WebView;
 
 import androidx.annotation.NonNull;

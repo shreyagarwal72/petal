@@ -8,8 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.view.WindowManager
-import android.webkit.CookieManager
-import android.webkit.WebStorage
 import androidx.core.app.NotificationCompat
 import com.petal.browser.R
 
@@ -113,17 +111,21 @@ object PetalIncognitoSessionManager {
                 .remove("sp_incognito_search_history_list")
                 .apply()
 
-            // Purge GeckoView in-memory private session caches & auth sessions
+            // Purge GeckoView in-memory private session caches, cookies & auth sessions
             try {
                 if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(context)) {
                     com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(context).storageController.clearData(
                         org.mozilla.geckoview.StorageController.ClearFlags.ALL_CACHES or
-                        org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS
+                        org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS or
+                        org.mozilla.geckoview.StorageController.ClearFlags.COOKIES
                     )
                 }
             } catch (t: Throwable) {
                 android.util.Log.w("PetalIncognito", "Failed to clear GeckoView private session data: ${t.message}")
             }
+
+            // Purge private cookie cache in PetalGeckoCookieBridge
+            com.petal.browser.download.PetalGeckoCookieBridge.clearPrivateCookies()
 
             // Immediately purge any in-memory private tab thumbnails (Firefox parity)
             com.petal.browser.unit.TabThumbnailCache.clearPrivateCache()

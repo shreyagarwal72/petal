@@ -63,7 +63,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.webkit.CookieManager;
 import android.webkit.URLUtil;
 import android.webkit.WebSettings;
 import android.widget.Button;
@@ -233,8 +232,7 @@ public class PetalAndroidUtils {
                                 });
                             } else {
                                 String userAgent = WebSettings.getDefaultUserAgent(activity);
-                                CookieManager cookieManager = CookieManager.getInstance();
-                                String cookie = cookieManager.getCookie(url);
+                                String cookie = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(url, false);
                                 java.util.Map<String, String> extraHeaders = new java.util.HashMap<>();
                                 extraHeaders.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
                                 extraHeaders.put("Accept-Language", getAcceptLanguage(activity));

@@ -4,7 +4,6 @@ import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslCertificate
-import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
 import android.webkit.WebStorage
 import androidx.compose.foundation.Image
@@ -77,9 +76,7 @@ fun PetalSiteInfoBottomSheet(
     var cookieCount by remember(currentUrl) {
         mutableIntStateOf(
             try {
-                val cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(currentUrl)
-                    ?: CookieManager.getInstance().getCookie(currentUrl)
-                if (!cookies.isNullOrEmpty()) cookies.split(";").size else 0
+                com.petal.browser.download.PetalGeckoCookieBridge.getCookieCount(currentUrl)
             } catch (e: Exception) { 0 }
         )
     }

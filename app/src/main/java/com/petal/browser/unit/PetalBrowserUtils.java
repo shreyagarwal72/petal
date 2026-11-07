@@ -20,7 +20,6 @@ import android.os.Environment;
 import android.os.Parcelable;
 import android.provider.Settings;
 import android.util.Log;
-import android.webkit.CookieManager;
 import android.webkit.WebSettings;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
@@ -420,15 +419,12 @@ public class PetalBrowserUtils {
                 if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(context)) {
                     com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
                         context,
-                        org.mozilla.geckoview.StorageController.ClearFlags.COOKIES
+                        org.mozilla.geckoview.StorageController.ClearFlags.COOKIES |
+                        org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS
                     );
                 }
             } catch (Exception ignored) {}
-            try {
-                CookieManager cookieManager = CookieManager.getInstance();
-                cookieManager.flush();
-                cookieManager.removeAllCookies(value -> {});
-            } catch (Exception ignored) {}
+            com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies();
         }
         if (clearDB) {
             context.deleteDatabase("Ninja4.db");
@@ -544,10 +540,16 @@ public class PetalBrowserUtils {
 
             // 3. Clear Cookies and WebStorage
             try {
-                CookieManager cookieManager = CookieManager.getInstance();
-                cookieManager.flush();
-                cookieManager.removeAllCookies(null);
+                if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(context)) {
+                    com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
+                        context,
+                        org.mozilla.geckoview.StorageController.ClearFlags.COOKIES |
+                        org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS |
+                        org.mozilla.geckoview.StorageController.ClearFlags.DOM_STORAGES
+                    );
+                }
             } catch (Exception ignored) {}
+            com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies();
             try {
                 WebStorage.getInstance().deleteAllData();
             } catch (Exception ignored) {}

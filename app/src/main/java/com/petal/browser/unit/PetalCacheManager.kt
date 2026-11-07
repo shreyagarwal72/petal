@@ -7,7 +7,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.webkit.CookieManager
 import android.webkit.WebStorage
 import android.webkit.WebView
 import androidx.webkit.Profile
@@ -186,8 +185,6 @@ object PetalCacheManager {
                     }
                 }
                 if ((flags and Flags.COOKIES) != 0L) {
-                    CookieManager.getInstance().removeAllCookies(null)
-                    CookieManager.getInstance().flush()
                     com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies()
                 }
             } catch (e: Exception) {

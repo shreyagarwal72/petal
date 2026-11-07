@@ -6,7 +6,6 @@ import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.webkit.CookieManager
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -394,11 +393,6 @@ fun PetalMediaGrabberPopupDialog(
                                                 scope.launch {
                                                     val cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(currentPageUrl)
                                                         ?: PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
-                                                        ?: try {
-                                                            CookieManager.getInstance().getCookie(currentPageUrl)
-                                                        } catch (_: Exception) {
-                                                            null
-                                                        }
 
                                                     val info = PetalYtDlpEngine.fetchInfo(
                                                         context = context,
@@ -504,11 +498,6 @@ fun PetalMediaGrabberPopupDialog(
                                                 onClick = {
                                                     val cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(currentPageUrl)
                                                         ?: PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
-                                                        ?: try {
-                                                            CookieManager.getInstance().getCookie(currentPageUrl)
-                                                        } catch (_: Exception) {
-                                                            null
-                                                        }
 
                                                     if (selFmt.isDirectUrl) {
                                                         val mimeType = if (selFmt.isAudioOnly) "audio/mp4" else "video/mp4"

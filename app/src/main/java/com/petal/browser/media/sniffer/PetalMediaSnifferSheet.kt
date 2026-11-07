@@ -3,7 +3,6 @@ package com.petal.browser.media.sniffer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
-import android.webkit.CookieManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -548,11 +547,6 @@ private fun PetalMediaSheet(
                                             scope.launch {
                                                 val cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(currentPageUrl)
                                                     ?: PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
-                                                    ?: try {
-                                                        CookieManager.getInstance().getCookie(currentPageUrl)
-                                                    } catch (_: Exception) {
-                                                        null
-                                                    }
 
                                                 val info = PetalYtDlpEngine.fetchInfo(
                                                     context = context,
@@ -649,11 +643,6 @@ private fun PetalMediaSheet(
                                             onPrimaryClick = {
                                                 val cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(currentPageUrl)
                                                     ?: PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
-                                                    ?: try {
-                                                        CookieManager.getInstance().getCookie(currentPageUrl)
-                                                    } catch (_: Exception) {
-                                                        null
-                                                    }
 
                                                 when {
                                                     selFmt.isDirectUrl -> {

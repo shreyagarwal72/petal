@@ -4,8 +4,8 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.util.Log
-import android.webkit.CookieManager
 import android.webkit.WebSettings
+import com.petal.browser.download.PetalGeckoCookieBridge
 import com.petal.browser.media.sniffer.YouTubeExtractor
 import com.yausername.aria2c.Aria2c
 import com.yausername.ffmpeg.FFmpeg
@@ -381,69 +381,72 @@ object PetalYtDlpEngine {
 
     private fun prepareCookies(context: Context, targetUrl: String, rawCookies: String?): File? {
         return try {
-            try {
-                val cm = CookieManager.getInstance()
-                if (cm.hasCookies()) cm.flush()
-            } catch (_: Exception) {}
-
             val parsedCookies = mutableListOf<CookieEntry>()
 
-            // 1. Try reading from WebView's SQLite cookie store (matches Seal's implementation)
-            val dbCandidates = listOf(
-                File(context.dataDir, "app_webview/Default/Cookies"),
-                File(context.dataDir, "app_webview/Cookies")
-            )
-            val dbFile = dbCandidates.firstOrNull { it.exists() && it.canRead() }
-            if (dbFile != null) {
-                try {
-                    SQLiteDatabase.openDatabase(dbFile.absolutePath, null, SQLiteDatabase.OPEN_READONLY).use { db ->
-                        val projection = arrayOf("host_key", "expires_utc", "path", "name", "value", "is_secure")
-                        db.query("cookies", projection, null, null, null, null, null).use { cursor ->
-                            val hostIdx = cursor.getColumnIndex("host_key")
-                            val expIdx = cursor.getColumnIndex("expires_utc")
-                            val pathIdx = cursor.getColumnIndex("path")
-                            val nameIdx = cursor.getColumnIndex("name")
-                            val valIdx = cursor.getColumnIndex("value")
-                            val secIdx = cursor.getColumnIndex("is_secure")
+            // 1. Authoritative Gecko cookie bridge / captured session cookies
+            val cookieString = rawCookies?.takeIf { it.isNotBlank() }
+                ?: PetalGeckoCookieBridge.getCookies(targetUrl)
 
-                            while (cursor.moveToNext()) {
-                                val hostKey = if (hostIdx >= 0) cursor.getString(hostIdx) else ""
-                                val expiry = if (expIdx >= 0) cursor.getLong(expIdx) else 0L
-                                val path = if (pathIdx >= 0) cursor.getString(pathIdx) else "/"
-                                val name = if (nameIdx >= 0) cursor.getString(nameIdx) else ""
-                                val value = if (valIdx >= 0) cursor.getString(valIdx) else ""
-                                val isSecure = if (secIdx >= 0) cursor.getLong(secIdx) == 1L else true
-
-                                if (name.isNotBlank()) {
-                                    val domain = if (hostKey.startsWith(".")) hostKey else ".$hostKey"
-                                    parsedCookies.add(CookieEntry(domain, path, isSecure, expiry, name, value))
-                                }
-                            }
+            if (!cookieString.isNullOrBlank()) {
+                val host = try { Uri.parse(targetUrl).host } catch (_: Exception) { null } ?: "youtube.com"
+                val domain = if (host.startsWith(".")) host else ".$host"
+                cookieString.split(";").forEach { pair ->
+                    val eq = pair.indexOf('=')
+                    if (eq > 0) {
+                        val name = pair.substring(0, eq).trim()
+                        val value = pair.substring(eq + 1).trim()
+                        if (name.isNotEmpty()) {
+                            parsedCookies.add(CookieEntry(domain, "/", true, 2147483647L, name, value))
                         }
                     }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to read SQLite cookie db", e)
                 }
             }
 
-            // 2. Authoritative Gecko cookie bridge or CookieManager fallback
+            // 2. Try reading from Gecko or SQLite cookie stores if bridge has no cookies yet
             if (parsedCookies.isEmpty()) {
-                val cookieString = rawCookies?.takeIf { it.isNotBlank() }
-                    ?: com.petal.browser.download.PetalGeckoCookieBridge.getCookies(targetUrl)
-                    ?: try { CookieManager.getInstance().getCookie(targetUrl) } catch (_: Exception) { null }
+                val dbCandidates = listOf(
+                    File(context.filesDir, "mozilla/cookies.sqlite"),
+                    File(context.dataDir, "files/mozilla/cookies.sqlite"),
+                    File(context.dataDir, "app_webview/Default/Cookies"),
+                    File(context.dataDir, "app_webview/Cookies")
+                )
+                val dbFile = dbCandidates.firstOrNull { it.exists() && it.canRead() }
+                if (dbFile != null) {
+                    try {
+                        SQLiteDatabase.openDatabase(dbFile.absolutePath, null, SQLiteDatabase.OPEN_READONLY).use { db ->
+                            // Support Gecko schema (host, expiry, path, name, value, isSecure) & Chromium schema
+                            val isGeckoDb = dbFile.name.contains("cookies.sqlite")
+                            val projection = if (isGeckoDb) {
+                                arrayOf("host", "expiry", "path", "name", "value", "isSecure")
+                            } else {
+                                arrayOf("host_key", "expires_utc", "path", "name", "value", "is_secure")
+                            }
+                            val tableName = if (isGeckoDb) "moz_cookies" else "cookies"
+                            db.query(tableName, projection, null, null, null, null, null).use { cursor ->
+                                val hostIdx = cursor.getColumnIndex(if (isGeckoDb) "host" else "host_key")
+                                val expIdx = cursor.getColumnIndex(if (isGeckoDb) "expiry" else "expires_utc")
+                                val pathIdx = cursor.getColumnIndex("path")
+                                val nameIdx = cursor.getColumnIndex("name")
+                                val valIdx = cursor.getColumnIndex("value")
+                                val secIdx = cursor.getColumnIndex(if (isGeckoDb) "isSecure" else "is_secure")
 
-                if (!cookieString.isNullOrBlank()) {
-                    val host = try { Uri.parse(targetUrl).host } catch (_: Exception) { null } ?: "youtube.com"
-                    val domain = if (host.startsWith(".")) host else ".$host"
-                    cookieString.split(";").forEach { pair ->
-                        val eq = pair.indexOf('=')
-                        if (eq > 0) {
-                            val name = pair.substring(0, eq).trim()
-                            val value = pair.substring(eq + 1).trim()
-                            if (name.isNotEmpty()) {
-                                parsedCookies.add(CookieEntry(domain, "/", true, 2147483647L, name, value))
+                                while (cursor.moveToNext()) {
+                                    val hostKey = if (hostIdx >= 0) cursor.getString(hostIdx) else ""
+                                    val expiry = if (expIdx >= 0) cursor.getLong(expIdx) else 0L
+                                    val path = if (pathIdx >= 0) cursor.getString(pathIdx) else "/"
+                                    val name = if (nameIdx >= 0) cursor.getString(nameIdx) else ""
+                                    val value = if (valIdx >= 0) cursor.getString(valIdx) else ""
+                                    val isSecure = if (secIdx >= 0) cursor.getLong(secIdx) == 1L else true
+
+                                    if (name.isNotBlank()) {
+                                        val domain = if (hostKey.startsWith(".")) hostKey else ".$hostKey"
+                                        parsedCookies.add(CookieEntry(domain, path, isSecure, expiry, name, value))
+                                    }
+                                }
                             }
                         }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to read SQLite cookie db", e)
                     }
                 }
             }

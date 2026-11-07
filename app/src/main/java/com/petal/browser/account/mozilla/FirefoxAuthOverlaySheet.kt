@@ -221,6 +221,14 @@ fun FirefoxAuthOverlaySheet(
                                     if (!title.isNullOrBlank() && !title.contains("http", ignoreCase = true)) {
                                         pageTitle = title
                                     }
+                                    if (url != null) {
+                                        try {
+                                            val c = android.webkit.CookieManager.getInstance().getCookie(url)
+                                            if (!c.isNullOrBlank()) {
+                                                com.petal.browser.download.PetalGeckoCookieBridge.recordCookies(url, c, false)
+                                            }
+                                        } catch (_: Throwable) {}
+                                    }
                                 }
 
                                 private fun handleOAuthIntercept(url: String, context: android.content.Context): Boolean {

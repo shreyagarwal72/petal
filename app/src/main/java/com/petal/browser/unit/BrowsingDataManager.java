@@ -1,7 +1,6 @@
 package com.petal.browser.unit;
 
 import android.content.Context;
-import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.WebSettings;
 import android.webkit.WebStorage;
@@ -121,13 +120,6 @@ public class BrowsingDataManager {
     }
 
     public static void clearCookies() {
-        runOnMainThreadBlocking(() -> {
-            try {
-                CookieManager cookieManager = CookieManager.getInstance();
-                cookieManager.removeAllCookies(null);
-                cookieManager.flush();
-            } catch (Exception ignored) {}
-        });
         com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies();
         try {
             Context ctx = com.petal.browser.PetalApplication.getInstance();
