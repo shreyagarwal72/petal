@@ -21,6 +21,7 @@ import org.mozilla.geckoview.GeckoSession
  * detects existing instances and calls [rebind] instead of wrapping again.
  */
 internal class PetalPromptDelegateWrapper(
+    private val engine: GeckoSession.PromptDelegate? = null,
     private val session: GeckoSession,
     private val appContext: Context,
     private val sp: SharedPreferences,
@@ -37,11 +38,6 @@ internal class PetalPromptDelegateWrapper(
         this.activityProvider = newActivityProvider
     }
 
-    // Delegate every method to the stateless factory on PetalGeckoView, which builds
-    // a fresh anonymous delegate from the suppliers. Because the suppliers are @Volatile
-    // var fields above, each call already reads the current activity.
-    // We re-create the inner delegate lazily to avoid capturing stale lambdas at construction time.
-
     private fun inner(): GeckoSession.PromptDelegate =
         com.petal.browser.view.PetalGeckoView.createPromptDelegate(
             session,
@@ -54,126 +50,168 @@ internal class PetalPromptDelegateWrapper(
     override fun onAlertPrompt(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.AlertPrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> =
-        inner().onAlertPrompt(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
+        val act = activityProvider()
+        return if (act != null) inner().onAlertPrompt(session, prompt)
+               else engine?.onAlertPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+    }
 
     override fun onButtonPrompt(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.ButtonPrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> =
-        inner().onButtonPrompt(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
+        val act = activityProvider()
+        return if (act != null) inner().onButtonPrompt(session, prompt)
+               else engine?.onButtonPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+    }
 
     override fun onAuthPrompt(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.AuthPrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onAuthPrompt(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+        val act = activityProvider()
+        return if (act != null) inner().onAuthPrompt(session, prompt)
+               else engine?.onAuthPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+    }
 
     override fun onTextPrompt(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.TextPrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onTextPrompt(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+        val act = activityProvider()
+        return if (act != null) inner().onTextPrompt(session, prompt)
+               else engine?.onTextPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+    }
 
     override fun onChoicePrompt(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.ChoicePrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onChoicePrompt(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+        val act = activityProvider()
+        return if (act != null) inner().onChoicePrompt(session, prompt)
+               else engine?.onChoicePrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+    }
 
     override fun onColorPrompt(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.ColorPrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onColorPrompt(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+        val act = activityProvider()
+        return if (act != null) inner().onColorPrompt(session, prompt)
+               else engine?.onColorPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+    }
 
     override fun onDateTimePrompt(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.DateTimePrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onDateTimePrompt(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+        val act = activityProvider()
+        return if (act != null) inner().onDateTimePrompt(session, prompt)
+               else engine?.onDateTimePrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+    }
 
     override fun onSharePrompt(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.SharePrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onSharePrompt(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+        val act = activityProvider()
+        return if (act != null) inner().onSharePrompt(session, prompt)
+               else engine?.onSharePrompt(session, prompt) ?: GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.SharePrompt.Result.ABORT))
+    }
 
     override fun onPopupPrompt(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.PopupPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onPopupPrompt(session, prompt)
+        inner().onPopupPrompt(session, prompt) ?: engine?.onPopupPrompt(session, prompt)
 
     override fun onBeforeUnloadPrompt(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.BeforeUnloadPrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onBeforeUnloadPrompt(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+        val act = activityProvider()
+        return if (act != null) inner().onBeforeUnloadPrompt(session, prompt)
+               else engine?.onBeforeUnloadPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.AllowOrDeny.ALLOW))
+    }
 
     override fun onRepostConfirmPrompt(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.RepostConfirmPrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onRepostConfirmPrompt(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+        val act = activityProvider()
+        return if (act != null) inner().onRepostConfirmPrompt(session, prompt)
+               else engine?.onRepostConfirmPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.AllowOrDeny.ALLOW))
+    }
 
     override fun onLoginSave(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSaveOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onLoginSave(session, request)
+        inner().onLoginSave(session, request) ?: engine?.onLoginSave(session, request)
 
     override fun onLoginSelect(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSelectOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onLoginSelect(session, request)
+        inner().onLoginSelect(session, request) ?: engine?.onLoginSelect(session, request)
 
     override fun onFilePrompt(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.FilePrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onFilePrompt(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+        val act = activityProvider()
+        return if (act != null) inner().onFilePrompt(session, prompt)
+               else engine?.onFilePrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+    }
 
     override fun onCreditCardSave(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSaveOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onCreditCardSave(session, request)
+        engine?.onCreditCardSave(session, request) ?: inner().onCreditCardSave(session, request)
 
     override fun onCreditCardSelect(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSelectOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onCreditCardSelect(session, request)
+        engine?.onCreditCardSelect(session, request) ?: inner().onCreditCardSelect(session, request)
 
     override fun onAddressSave(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.AddressSaveOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onAddressSave(session, request)
+        engine?.onAddressSave(session, request) ?: inner().onAddressSave(session, request)
 
     override fun onAddressSelect(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.AddressSelectOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onAddressSelect(session, request)
+        engine?.onAddressSelect(session, request) ?: inner().onAddressSelect(session, request)
 
     override fun onSelectIdentityCredentialProvider(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.IdentityCredential.ProviderSelectorPrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onSelectIdentityCredentialProvider(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+        val act = activityProvider()
+        return if (act != null) inner().onSelectIdentityCredentialProvider(session, prompt)
+               else engine?.onSelectIdentityCredentialProvider(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+    }
 
     override fun onSelectIdentityCredentialAccount(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.IdentityCredential.AccountSelectorPrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onSelectIdentityCredentialAccount(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+        val act = activityProvider()
+        return if (act != null) inner().onSelectIdentityCredentialAccount(session, prompt)
+               else engine?.onSelectIdentityCredentialAccount(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+    }
 
     override fun onShowPrivacyPolicyIdentityCredential(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.IdentityCredential.PrivacyPolicyPrompt
-    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        inner().onShowPrivacyPolicyIdentityCredential(session, prompt)
+    ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+        val act = activityProvider()
+        return if (act != null) inner().onShowPrivacyPolicyIdentityCredential(session, prompt)
+               else engine?.onShowPrivacyPolicyIdentityCredential(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+    }
 }

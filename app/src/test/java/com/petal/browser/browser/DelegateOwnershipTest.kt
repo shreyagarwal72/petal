@@ -120,7 +120,7 @@ class DelegateOwnershipTest {
     }
 
     @Test
-    fun `both wrappers share the same PetalOwnedDelegate marker`() {
+    fun `all Petal delegates share the PetalOwnedDelegate marker`() {
         val promptInterfaces = PetalPromptDelegateWrapper::class.java.interfaces.toSet()
         val permInterfaces = PetalPermissionDelegateWrapper::class.java.interfaces.toSet()
         assertTrue(
@@ -130,6 +130,22 @@ class DelegateOwnershipTest {
         assertTrue(
             "PetalPermissionDelegateWrapper must implement PetalOwnedDelegate",
             permInterfaces.any { it == PetalOwnedDelegate::class.java }
+        )
+        // Check content and navigation delegate wrappers as well
+        val contentWrapperClass = Class.forName("com.petal.browser.browser.PetalContentDelegateWrapper")
+        assertTrue(
+            "PetalContentDelegateWrapper must implement PetalOwnedDelegate",
+            PetalOwnedDelegate::class.java.isAssignableFrom(contentWrapperClass)
+        )
+        val navWrapperClass = Class.forName("com.petal.browser.browser.ExternalSchemeNavigationDelegate")
+        assertTrue(
+            "ExternalSchemeNavigationDelegate must implement PetalOwnedDelegate",
+            PetalOwnedDelegate::class.java.isAssignableFrom(navWrapperClass)
+        )
+        val progressWrapperClass = Class.forName("com.petal.browser.browser.SessionStateCapturingProgressDelegate")
+        assertTrue(
+            "SessionStateCapturingProgressDelegate must implement PetalOwnedDelegate",
+            PetalOwnedDelegate::class.java.isAssignableFrom(progressWrapperClass)
         )
     }
 

@@ -684,6 +684,7 @@ class PetalTabViewController private constructor(
                 )
             } else {
                 gs.promptDelegate = PetalPromptDelegateWrapper(
+                    engine = existingPrompt,
                     session = gs,
                     appContext = appContext,
                     sp = preferences,
@@ -832,6 +833,7 @@ class PetalTabViewController private constructor(
                 existingPerm.rebind { resolveActivity(context) }
             } else {
                 gs.permissionDelegate = PetalPermissionDelegateWrapper(
+                    engine = existingPerm,
                     context = appContext,
                     activitySupplier = { resolveActivity(context) }
                 )
@@ -1912,7 +1914,7 @@ private class PetalContentDelegateWrapper(
     private var onCrashCallback: (() -> Unit)? = null,
     private var pageUrlProvider: () -> String? = { null },
     private var pageTitleProvider: () -> String? = { null }
-) : org.mozilla.geckoview.GeckoSession.ContentDelegate {
+) : org.mozilla.geckoview.GeckoSession.ContentDelegate, PetalOwnedDelegate {
 
     /** Re-points every provider at a newly bound view (the session can outlive its view). */
     fun rebind(
@@ -2069,7 +2071,7 @@ private class ExternalSchemeNavigationDelegate(
     private var onCanGoBackChanged: ((Boolean) -> Unit)? = null,
     private var onCanGoForwardChanged: ((Boolean) -> Unit)? = null,
     private var handleExternal: (String) -> Boolean
-) : org.mozilla.geckoview.GeckoSession.NavigationDelegate {
+) : org.mozilla.geckoview.GeckoSession.NavigationDelegate, PetalOwnedDelegate {
 
     fun updateDependencies(
         newContext: android.content.Context,
@@ -2362,7 +2364,7 @@ private class ExternalSchemeNavigationDelegate(
 private class SessionStateCapturingProgressDelegate(
     private val engine: org.mozilla.geckoview.GeckoSession.ProgressDelegate?,
     @Volatile var onState: (org.mozilla.geckoview.GeckoSession.SessionState) -> Unit
-) : org.mozilla.geckoview.GeckoSession.ProgressDelegate {
+) : org.mozilla.geckoview.GeckoSession.ProgressDelegate, PetalOwnedDelegate {
 
     override fun onPageStart(session: org.mozilla.geckoview.GeckoSession, url: String) {
         try {
