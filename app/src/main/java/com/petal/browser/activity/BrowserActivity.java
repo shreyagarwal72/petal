@@ -255,6 +255,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private long lastOnPausePreviewCaptureTime = 0L;
 
     private com.petal.browser.browser.PetalTabViewController singleTabViewController;
+    private mozilla.components.lib.state.Subscription browserStoreSubscription;
 
     public com.petal.browser.browser.PetalTabViewController getOrCreateTabViewController() {
         if (singleTabViewController == null) {
@@ -1084,6 +1085,31 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 disposeRemovedComposeOverlay(child);
             }
         });
+
+        // Store-driven state (Stage 3): BrowserStore is the source of truth for loading,
+        // refresh status, title, URL, and back/forward navigation.
+        browserStoreSubscription = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this)
+            .observeManually(browserState -> {
+                String selectedId = browserState.getSelectedTabId();
+                if (selectedId == null) return kotlin.Unit.INSTANCE;
+                mozilla.components.browser.state.state.TabSessionState selectedTab = null;
+                for (mozilla.components.browser.state.state.TabSessionState t : browserState.getTabs()) {
+                    if (selectedId.equals(t.getId())) {
+                        selectedTab = t;
+                        break;
+                    }
+                }
+                if (selectedTab == null) return kotlin.Unit.INSTANCE;
+                final boolean isLoading = selectedTab.getContent().getLoading();
+                runOnUiThread(() -> {
+                    if (!isLoading && refreshState != null && refreshState.isRefreshing()) {
+                        resetRefreshState();
+                    }
+                    updateOmniBox();
+                    updateBackCallbackState();
+                });
+                return kotlin.Unit.INSTANCE;
+            });
         // Never allow browser content to reserve the system back edges.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             getWindow().getDecorView().post(() -> {
@@ -1406,6 +1432,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onDestroy() {
+        if (browserStoreSubscription != null) {
+            browserStoreSubscription.unsubscribe();
+            browserStoreSubscription = null;
+        }
         com.petal.browser.compose.splash.PetalSplashOverlay.dismiss(this, null);
         try {
             if (sp != null) {

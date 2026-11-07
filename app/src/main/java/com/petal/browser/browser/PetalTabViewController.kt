@@ -1349,6 +1349,17 @@ class PetalTabViewController private constructor(
         if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
             resetGestureExclusionRects()
         }
+        findGeckoView(engineView.asView())?.let { gv ->
+            try {
+                gv.onTouchEventForDetailResult(event).accept { detail ->
+                    if (detail != null) {
+                        lastInputResult = detail.handledResult()
+                        lastScrollDirections = detail.scrollableDirections()
+                        lastOverscrollDirections = detail.overscrollDirections()
+                    }
+                }
+            } catch (_: Throwable) {}
+        }
         return super.dispatchTouchEvent(event)
     }
 
@@ -1695,12 +1706,27 @@ class PetalTabViewController private constructor(
         State(it.id, pageUrl, pageTitle, progress, loading, backAvailable, forwardAvailable, isSecure, it.content.private)
     }
 
+    private var lastInputResult: Int = org.mozilla.geckoview.PanZoomController.INPUT_RESULT_UNHANDLED
+    private var lastScrollDirections: Int = 0
+    private var lastOverscrollDirections: Int = org.mozilla.geckoview.PanZoomController.OVERSCROLL_FLAG_VERTICAL
+
+    fun canOverscrollTop(): Boolean {
+        val gv = findGeckoView(engineView.asView())
+        if (gv != null && gv.canScrollVertically(-1)) {
+            return false
+        }
+        val atTop = currentScrollY <= (2f * context.resources.displayMetrics.density).toInt()
+        if (!atTop) return false
+        val handledByInner = (lastInputResult == org.mozilla.geckoview.PanZoomController.INPUT_RESULT_HANDLED_CONTENT) &&
+                (lastScrollDirections and org.mozilla.geckoview.PanZoomController.SCROLLABLE_FLAG_TOP != 0)
+        return !handledByInner
+    }
+
     fun isPageAtTop(): Boolean {
         if (pageUrl.isBlank() || pageUrl.equals("about:blank", ignoreCase = true) || com.petal.browser.unit.PetalBrowserUtils.isHomePage(pageUrl)) {
             return true
         }
-        val density = context.resources.displayMetrics.density
-        return currentScrollY <= (2f * density).toInt()
+        return canOverscrollTop()
     }
 
     override fun canChildScrollUp(): Boolean {
