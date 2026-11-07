@@ -62,6 +62,8 @@ import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.containment.PetalBadgeVariant
+import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
@@ -347,20 +349,13 @@ fun SafeLockerScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
-                                    Surface(
-                                        shape = ExpressiveButtonShape,
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        modifier = Modifier.size(96.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                Icons.Rounded.Fingerprint,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(54.dp),
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                    }
+                                    PetalGroupIconBadge(
+                                        icon = Icons.Rounded.Fingerprint,
+                                        container = MaterialTheme.colorScheme.primaryContainer,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        size = 96.dp,
+                                        iconSize = 48.dp
+                                    )
                                     Text(
                                         stringResource(R.string.ui_safe_locker_is_locked),
                                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
@@ -444,20 +439,13 @@ fun SafeLockerScreen(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
-                                        Surface(
-                                            shape = ExpressiveButtonShape,
-                                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                            modifier = Modifier.size(72.dp)
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Icon(
-                                                    if (searchQuery.isNotEmpty()) Icons.Rounded.SearchOff else Icons.Rounded.FolderOff,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(36.dp),
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                        }
+                                        PetalGroupIconBadge(
+                                            icon = if (searchQuery.isNotEmpty()) Icons.Rounded.SearchOff else Icons.Rounded.FolderOff,
+                                            container = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            size = 72.dp,
+                                            iconSize = 36.dp
+                                        )
                                         Text(
                                             if (searchQuery.isNotEmpty()) "No matching files" else "Safe Locker is empty",
                                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -529,28 +517,20 @@ fun SafeLockerScreen(
                                                         }
                                                     )
                                                 } else {
-                                                    Surface(
-                                                        shape = RoundedCornerShape(14.dp),
-                                                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                                        modifier = Modifier.size(46.dp)
-                                                    ) {
-                                                        Box(contentAlignment = Alignment.Center) {
-                                                            val icon = when {
-                                                                item.mimeType.startsWith("image/") -> Icons.Rounded.Image
-                                                                item.mimeType.startsWith("video/") -> Icons.Rounded.Movie
-                                                                item.mimeType.startsWith("audio/") -> Icons.Rounded.GraphicEq
-                                                                item.mimeType.contains("pdf") -> Icons.Rounded.PictureAsPdf
-                                                                item.mimeType.contains("zip") || item.mimeType.contains("tar") -> Icons.Rounded.FolderZip
-                                                                else -> Icons.Rounded.Description
-                                                            }
-                                                            Icon(
-                                                                icon,
-                                                                contentDescription = null,
-                                                                tint = MaterialTheme.colorScheme.primary,
-                                                                modifier = Modifier.size(24.dp)
-                                                            )
-                                                        }
-                                                    }
+                                                val (variant, icon) = when {
+                                                    item.mimeType.startsWith("image/") -> PetalBadgeVariant.PRIMARY to Icons.Rounded.Image
+                                                    item.mimeType.startsWith("video/") -> PetalBadgeVariant.SECONDARY to Icons.Rounded.Movie
+                                                    item.mimeType.startsWith("audio/") -> PetalBadgeVariant.TERTIARY to Icons.Rounded.GraphicEq
+                                                    item.mimeType.contains("pdf") -> PetalBadgeVariant.ERROR to Icons.Rounded.PictureAsPdf
+                                                    item.mimeType.contains("zip") || item.mimeType.contains("tar") -> PetalBadgeVariant.SURFACE_TONAL to Icons.Rounded.FolderZip
+                                                    else -> PetalBadgeVariant.SURFACE_TONAL to Icons.Rounded.Description
+                                                }
+                                                PetalGroupIconBadge(
+                                                    icon = icon,
+                                                    variant = variant,
+                                                    size = 46.dp,
+                                                    iconSize = 22.dp
+                                                )
                                                 }
 
                                                 // Name, Size & Date

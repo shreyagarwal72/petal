@@ -676,7 +676,7 @@ private fun VaultSettingsPage(
     val retentionOptions = listOf(
         Triple("1", "1 day", Icons.Rounded.Today),
         Triple("7", "7 days", Icons.Rounded.DateRange),
-        Triple("14", "14 days", Icons.Rounded.CalendarMonth),
+        Triple("14", "14 days", Icons.Rounded.EventRepeat),
         Triple("30", "30 days", Icons.Rounded.CalendarMonth),
         Triple("never", "Never", Icons.Rounded.AllInclusive),
     )

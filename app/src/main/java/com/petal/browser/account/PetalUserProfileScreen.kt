@@ -538,7 +538,7 @@ private fun RenderUserProfileContent(
                         subtitle = if (isLockActive) "Protection active • Fingerprint or Password" else "Require authentication on app startup",
                         leadingIcon = {
                             Icon(
-                                painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.mobile_vibrate_filled),
+                                imageVector = Icons.Rounded.Lock,
                                 contentDescription = null,
                             )
                         },
@@ -568,7 +568,7 @@ private fun RenderUserProfileContent(
                         variant = com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY,
                         leadingIcon = {
                             Icon(
-                                painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.restore_page_filled),
+                                imageVector = Icons.Rounded.CleaningServices,
                                 contentDescription = null,
                             )
                         }
@@ -587,7 +587,7 @@ private fun RenderUserProfileContent(
                         variant = com.petal.browser.ui.containment.PetalBadgeVariant.TERTIARY,
                         leadingIcon = {
                             Icon(
-                                painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.layers_filled),
+                                imageVector = Icons.Rounded.Https,
                                 contentDescription = null,
                             )
                         }
@@ -674,20 +674,10 @@ private fun RenderUserProfileContent(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(44.dp)
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .background(MaterialTheme.colorScheme.primaryContainer),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.database_filled),
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    }
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                        icon = Icons.Rounded.Storage,
+                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY
+                                    )
                                     Column {
                                         Text(
                                             text = stringResource(R.string.ui_web_cache_app_storage),
@@ -742,7 +732,7 @@ private fun RenderUserProfileContent(
                                     modifier = Modifier.bouncyClickable()
                                 ) {
                                     Icon(
-                                        painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.close_rounded),
+                                        imageVector = Icons.Rounded.Delete,
                                         contentDescription = null,
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -759,7 +749,7 @@ private fun RenderUserProfileContent(
                         subtitle = stringResource(R.string.ui_select_remove_history_cookies_web),
                         leadingIcon = {
                             Icon(
-                                painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.reset_settings_rounded),
+                                imageVector = Icons.Rounded.DeleteSweep,
                                 contentDescription = null,
                             )
                         },

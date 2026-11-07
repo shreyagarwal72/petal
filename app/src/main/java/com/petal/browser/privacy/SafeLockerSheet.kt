@@ -47,6 +47,8 @@ import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.containment.PetalBadgeVariant
+import com.petal.browser.ui.containment.PetalGroupIconBadge
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,19 +118,12 @@ fun SafeLockerSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Surface(
-                        shape = ExpressiveButtonShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                if (isUnlocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
+                    PetalGroupIconBadge(
+                        icon = if (isUnlocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
+                        variant = PetalBadgeVariant.PRIMARY,
+                        size = 44.dp,
+                        iconSize = 22.dp
+                    )
                     Column {
                         Text(
                             stringResource(R.string.ui_safe_locker),
@@ -257,27 +252,19 @@ fun SafeLockerSheet(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        val icon = when {
-                                            item.mimeType.startsWith("image/") -> Icons.Rounded.Image
-                                            item.mimeType.startsWith("video/") -> Icons.Rounded.Movie
-                                            item.mimeType.startsWith("audio/") -> Icons.Rounded.MusicNote
-                                            item.mimeType.contains("pdf") -> Icons.Rounded.PictureAsPdf
-                                            else -> Icons.Rounded.Description
-                                        }
-                                        Icon(
-                                            icon,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    }
+                                val (variant, icon) = when {
+                                    item.mimeType.startsWith("image/") -> PetalBadgeVariant.PRIMARY to Icons.Rounded.Image
+                                    item.mimeType.startsWith("video/") -> PetalBadgeVariant.SECONDARY to Icons.Rounded.Movie
+                                    item.mimeType.startsWith("audio/") -> PetalBadgeVariant.TERTIARY to Icons.Rounded.MusicNote
+                                    item.mimeType.contains("pdf") -> PetalBadgeVariant.ERROR to Icons.Rounded.PictureAsPdf
+                                    else -> PetalBadgeVariant.SURFACE_TONAL to Icons.Rounded.Description
                                 }
+                                PetalGroupIconBadge(
+                                    icon = icon,
+                                    variant = variant,
+                                    size = 40.dp,
+                                    iconSize = 20.dp
+                                )
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(

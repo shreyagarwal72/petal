@@ -5998,8 +5998,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 BrowserActivity.this,
                 () -> {
                     showAlbum(currentAlbumController);
-                },
-                previewSnapshot != null ? androidx.compose.ui.graphics.AndroidImageBitmap_androidKt.asImageBitmap(previewSnapshot) : null
+                    return kotlin.Unit.INSTANCE;
+                }
             );
             presentComposeScreen(deleteView);
         } catch (Exception e) {
@@ -8257,8 +8257,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 () -> {
                     showAlbum(currentAlbumController);
                     return kotlin.Unit.INSTANCE;
-                },
-                previewSnapshot != null ? androidx.compose.ui.graphics.AndroidImageBitmap_androidKt.asImageBitmap(previewSnapshot) : null
+                }
             );
             presentComposeScreen(flagsView);
         } catch (Exception e) {
