@@ -35,7 +35,7 @@ class PetalTabViewController private constructor(
     context: Context,
     attrs: AttributeSet?,
     private val engineView: EngineView
-) : SwipeRefreshLayout(context, attrs), AlbumController, EngineView by engineView {
+) : SwipeRefreshLayout(context, attrs), PetalTabSurface, AlbumController, EngineView by engineView {
 
     @JvmOverloads
     constructor(context: Context, attrs: AttributeSet? = null) :
@@ -1831,7 +1831,9 @@ class PetalTabViewController private constructor(
         return !isPageAtTop()
     }
 
+    override fun getTabView(): View = this
     override fun getAlbumView(): View = this
+    override fun getTabId(): String = boundTabId ?: ""
 
     @MainThread
     override fun activate() {

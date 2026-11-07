@@ -264,6 +264,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return singleTabViewController;
     }
 
+    public com.petal.browser.browser.PetalTabSurface getCurrentTabSurface() {
+        return currentAlbumController;
+    }
+
     public AlbumController getCurrentAlbumController() {
         return currentAlbumController;
     }

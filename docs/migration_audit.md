@@ -61,7 +61,7 @@ WebExtension delegates (action, tab, message) are set via session.webExtensionCo
   - Storage clearing: Routed exclusively through `PetalGeckoRuntime.clearData(...)` with `StorageController.ClearFlags.COOKIES | AUTH_SESSIONS`.
   - Added unit test suite `Stage1CookieBridgeTest.kt`.
 
-- **STAGE 2 - Download Core Finalization (DONE & COMMITTED)**:
+- **STAGE 2 - Download Core Finalization (DONE & COMMITTED `d4b0a8f6`)**:
   - Eliminated `com.tonyodev.fetch2` and `fetch2okhttp` dependencies from `app/build.gradle` and `app/proguard-rules.pro`.
   - Removed dead `PetalDownloadEngine.java` (Fetch2 wrapper).
   - Single state repository: `downloadRepository` in `PetalFetchDownloadBridge` backed entirely by Mozilla `BrowserStore`.
@@ -73,3 +73,12 @@ WebExtension delegates (action, tab, message) are set via session.webExtensionCo
     3. Smart download category routing (`PetalSmartDownloadRouter`) using MediaStore `RELATIVE_PATH`.
     4. Expressive UI and Liquid Glass notifications via `PetalLiveActionBus` and NowBar.
   - Added unit test suite `Stage2DownloadCoreTest.kt`.
+
+- **STAGE 3 - Tab/Engine Consolidation Finalization (DONE & COMMITTED)**:
+  - Unified tab-surface interface: Introduced `PetalTabSurface` backed by `BrowserStore` and `PetalEngineBridge`.
+  - Implemented `PetalTabSurface` on `PetalTabViewController` and `PlaceholderTabController`.
+  - Deprecated legacy `AlbumController` and `PetalTabController` layers and unified active tab access via `BrowserActivity.getCurrentTabSurface()`.
+  - Preserved placeholder (zero-engine-session) background tab memory efficiency.
+  - Hardened pull-to-refresh overscroll check to accurately respect inner DOM scrolling containers.
+  - Confirmed absence of legacy `sp_gecko_engine_experimental`.
+  - Added unit test suite `Stage3TabEngineConsolidationTest.kt`.

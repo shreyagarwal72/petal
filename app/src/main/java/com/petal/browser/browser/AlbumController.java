@@ -1,8 +1,8 @@
 package com.petal.browser.browser;
 
 /**
- * @deprecated Legacy Lightning Browser tab controller interface. Use {@link PetalTabController} instead.
+ * @deprecated Legacy Lightning Browser tab controller interface. Replaced by {@link PetalTabSurface}.
  */
 @Deprecated
-public interface AlbumController extends PetalTabController {
+public interface AlbumController extends PetalTabSurface {
 }
