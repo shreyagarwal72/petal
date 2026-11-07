@@ -358,7 +358,7 @@ fun PetalSiteInfoBottomSheet(
                                 } else {
                                     com.petal.browser.browser.PetalAdBlockEngine.addDomainToWhitelist(context, domain)
                                 }
-                                geckoView?.reloadWithoutInit()
+                                tabViewController?.reload()
                             }
                         )
                     }
@@ -437,7 +437,7 @@ fun PetalSiteInfoBottomSheet(
                                     com.petal.browser.extensions.PetalBuiltInExtensionManager.addDarkWebpageWhitelist(context, domain)
                                     isDarkWhitelisted = true
                                 }
-                                geckoView?.reloadWithoutInit()
+                                tabViewController?.reload()
                             }
                         )
 
@@ -481,7 +481,7 @@ fun PetalSiteInfoBottomSheet(
                                 onConfirm = {
                                     if (customCssSelector.isNotBlank()) {
                                         com.petal.browser.privacy.PetalElementBlocker.addSelector(context, domain, customCssSelector.trim())
-                                        geckoView?.reloadWithoutInit()
+                                        tabViewController?.reload()
                                         showBlockElementDialog = false
                                     }
                                 },
@@ -523,7 +523,7 @@ fun PetalSiteInfoBottomSheet(
                                 onClick = {
                                     siteShieldMode = com.petal.browser.browser.PetalAdBlockMode.STANDARD
                                     com.petal.browser.browser.PetalAdBlockEngine.setDomainOverride(context, domain, com.petal.browser.browser.PetalAdBlockMode.STANDARD)
-                                    geckoView?.reloadWithoutInit()
+                                    tabViewController?.reload()
                                 },
                                 label = { Text("Standard", fontSize = 11.sp) },
                                 shape = RoundedCornerShape(10.dp)
@@ -533,7 +533,7 @@ fun PetalSiteInfoBottomSheet(
                                 onClick = {
                                     siteShieldMode = com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE
                                     com.petal.browser.browser.PetalAdBlockEngine.setDomainOverride(context, domain, com.petal.browser.browser.PetalAdBlockMode.AGGRESSIVE)
-                                    geckoView?.reloadWithoutInit()
+                                    tabViewController?.reload()
                                 },
                                 label = { Text("Aggressive", fontSize = 11.sp) },
                                 shape = RoundedCornerShape(10.dp)
@@ -697,7 +697,7 @@ fun PetalSiteInfoBottomSheet(
                         if (allowed && context is android.app.Activity) {
                             PetalAndroidUtils.grantPermissionsCamera(context)
                         }
-                        geckoView?.reloadWithoutInit()
+                        tabViewController?.reload()
                     },
                     leadingIcon = {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(
@@ -724,7 +724,7 @@ fun PetalSiteInfoBottomSheet(
                         if (allowed && context is android.app.Activity) {
                             PetalAndroidUtils.grantPermissionsMic(context)
                         }
-                        geckoView?.reloadWithoutInit()
+                        tabViewController?.reload()
                     },
                     leadingIcon = {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(
@@ -755,7 +755,7 @@ fun PetalSiteInfoBottomSheet(
                                 GeolocationPermissions.getInstance().clear(domain)
                             } catch (ignored: Exception) {}
                         }
-                        geckoView?.reloadWithoutInit()
+                        tabViewController?.reload()
                     },
                     leadingIcon = {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(
@@ -809,7 +809,7 @@ fun PetalSiteInfoBottomSheet(
                         if (domain.isNotEmpty()) {
                             sp.edit().putBoolean("sp_desktop_site_$domain", allowed).apply()
                         }
-                        geckoView?.setDesktopMode(allowed)
+                        tabViewController?.setDesktopMode(allowed)
                     },
                     leadingIcon = {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(

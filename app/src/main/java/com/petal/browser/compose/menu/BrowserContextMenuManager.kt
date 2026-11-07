@@ -306,8 +306,6 @@ object BrowserContextMenuManager {
                             val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTabs(activity, currentTab, currentTab)
                             currentTabSurface?.setTabGroupId(newGroup.id)
                             currentTabSurface?.setTabGroupTitle(newGroup.title)
-                            currentGeckoView?.setTabGroupId(newGroup.id)
-                            currentGeckoView?.setTabGroupTitle(newGroup.title)
                             activity.addAlbumInGroup(displayTitle, urlResult, true, newGroup.id, newGroup.title)
                         } else {
                             activity.addAlbum(displayTitle, urlResult, true)
@@ -835,8 +833,6 @@ object BrowserContextMenuManager {
                             val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTabs(activity, currentTab, currentTab)
                             currentTabSurface?.setTabGroupId(newGroup.id)
                             currentTabSurface?.setTabGroupTitle(newGroup.title)
-                            currentGeckoView?.setTabGroupId(newGroup.id)
-                            currentGeckoView?.setTabGroupTitle(newGroup.title)
                             activity.addAlbumInGroup(displayTitle, linkUrl, true, newGroup.id, newGroup.title)
                         } else {
                             activity.addAlbum(displayTitle, linkUrl, true)

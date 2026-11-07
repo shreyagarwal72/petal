@@ -92,7 +92,7 @@ object PetalEngineBridge {
     @JvmStatic
     @JvmOverloads
     fun getProfile(context: Context? = null): String {
-        val ctx = context ?: com.petal.browser.PetalApplication.instance
+        val ctx = context ?: com.petal.browser.PetalApplication.instance ?: return "profileStandard"
         val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
         return sp.getString("sp_current_profile", "profileStandard") ?: "profileStandard"
     }
@@ -257,8 +257,8 @@ object PetalEngineBridge {
                 activity, responseUrl, contentDisposition, mimeType, contentLength
             ) { confirmedName ->
                 val finalName = confirmedName.ifBlank { fileName }
-                com.petal.browser.download.PetalDownloadBridge.enqueueDownload(
-                    activity, responseUrl, finalName, mimeType, isPrivate
+                com.petal.browser.download.PetalDownloadEngine.getInstance(activity).enqueueDownload(
+                    activity, responseUrl, finalName, null, null, null
                 )
             }
         }

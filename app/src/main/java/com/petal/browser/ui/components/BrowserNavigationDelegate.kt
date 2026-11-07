@@ -59,16 +59,12 @@ object BrowserNavigationDelegate {
                 override fun onGoBack() {
                     if (tabSurface != null && tabSurface.canGoBack()) {
                         tabSurface.goBack()
-                    } else if (geckoView != null && geckoView.canGoBack()) {
-                        geckoView.goBack()
                     }
                 }
 
                 override fun onGoForward() {
                     if (tabSurface != null && tabSurface.canGoForward()) {
                         tabSurface.goForward()
-                    } else if (geckoView != null && geckoView.canGoForward()) {
-                        geckoView.goForward()
                     }
                 }
 
@@ -89,7 +85,7 @@ object BrowserNavigationDelegate {
                 }
 
                 override fun onReload() {
-                    tabSurface?.reload() ?: geckoView?.reload()
+                    tabSurface?.reload()
                 }
 
                 override fun onToggleDesktopSite(enabled: Boolean) {
@@ -97,7 +93,7 @@ object BrowserNavigationDelegate {
                         .putBoolean("${profile}_desktop", enabled)
                         .putBoolean("profileStandard_desktop", enabled)
                         .apply()
-                    tabSurface?.setDesktopMode(enabled) ?: geckoView?.setDesktopMode(enabled)
+                    tabSurface?.setDesktopMode(enabled)
                     PetalToast.show(activity, if (enabled) "Desktop site requested" else "Mobile site requested")
                 }
 
@@ -107,10 +103,7 @@ object BrowserNavigationDelegate {
                         .putBoolean("${profile}_adBlock", enabled)
                         .putBoolean("profileStandard_adBlock", enabled)
                         .apply()
-                    if (tabSurface != null) tabSurface.reload() else {
-                        geckoView?.initPreferences(url)
-                        geckoView?.reload()
-                    }
+                    tabSurface?.reload()
                     PetalToast.show(activity, if (enabled) "AdBlocker Enabled" else "AdBlocker Disabled")
                 }
 
@@ -195,7 +188,7 @@ object BrowserNavigationDelegate {
                 override fun onViewSource() {
                     if (url.isNotEmpty()) {
                         val sourceUrl = if (url.startsWith("view-source:")) url else "view-source:$url"
-                        geckoView?.loadUrl(sourceUrl)
+                        tabSurface?.loadUrl(sourceUrl)
                     }
                 }
 

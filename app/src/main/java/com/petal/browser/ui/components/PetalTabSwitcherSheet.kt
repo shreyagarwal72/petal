@@ -126,11 +126,11 @@ object PetalTabSwitcherBridge {
                                 BrowserContainer.list().map { album: AlbumController ->
                                     val rawTitle = try {
                                         val t = album.getTitle()
-                                        if (t.isNotBlank() && t != "Petal Start" && t != "Petal Home") t else album.getAlbumTitle()
+                                        if (!t.isNullOrBlank() && t != "Petal Start" && t != "Petal Home") t else "New Tab"
                                     } catch (_: Exception) { null }
                                     val rawUrl = try {
                                         val u = album.getUrl()
-                                        if (u.isNotBlank() && !u.equals("about:blank", ignoreCase = true) && !u.equals("petal://home", ignoreCase = true)) u else album.getAlbumUrl()
+                                        if (!u.isNullOrBlank() && !u.equals("about:blank", ignoreCase = true) && !u.equals("petal://home", ignoreCase = true)) u else ""
                                     } catch (_: Exception) { null }
 
                                     val isIncognitoTab = album.isIncognito()

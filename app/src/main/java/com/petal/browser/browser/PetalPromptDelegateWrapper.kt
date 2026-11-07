@@ -2,6 +2,7 @@ package com.petal.browser.browser
 
 import android.content.Context
 import android.content.SharedPreferences
+import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 
@@ -52,8 +53,8 @@ internal class PetalPromptDelegateWrapper(
         prompt: GeckoSession.PromptDelegate.AlertPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
         val act = activityProvider()
-        return if (act != null) inner().onAlertPrompt(session, prompt)
-               else engine?.onAlertPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+        val res = if (act != null) inner().onAlertPrompt(session, prompt) else null
+        return res ?: engine?.onAlertPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
     }
 
     override fun onButtonPrompt(
@@ -61,8 +62,8 @@ internal class PetalPromptDelegateWrapper(
         prompt: GeckoSession.PromptDelegate.ButtonPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
         val act = activityProvider()
-        return if (act != null) inner().onButtonPrompt(session, prompt)
-               else engine?.onButtonPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+        val res = if (act != null) inner().onButtonPrompt(session, prompt) else null
+        return res ?: engine?.onButtonPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
     }
 
     override fun onAuthPrompt(
@@ -70,8 +71,8 @@ internal class PetalPromptDelegateWrapper(
         prompt: GeckoSession.PromptDelegate.AuthPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
         val act = activityProvider()
-        return if (act != null) inner().onAuthPrompt(session, prompt)
-               else engine?.onAuthPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
+        val res = if (act != null) inner().onAuthPrompt(session, prompt) else null
+        return res ?: engine?.onAuthPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
     }
 
     override fun onTextPrompt(
@@ -131,7 +132,7 @@ internal class PetalPromptDelegateWrapper(
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
         val act = activityProvider()
         return if (act != null) inner().onBeforeUnloadPrompt(session, prompt)
-               else engine?.onBeforeUnloadPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.AllowOrDeny.ALLOW))
+               else engine?.onBeforeUnloadPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
     }
 
     override fun onRepostConfirmPrompt(
@@ -140,7 +141,7 @@ internal class PetalPromptDelegateWrapper(
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
         val act = activityProvider()
         return if (act != null) inner().onRepostConfirmPrompt(session, prompt)
-               else engine?.onRepostConfirmPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.AllowOrDeny.ALLOW))
+               else engine?.onRepostConfirmPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
     }
 
     override fun onLoginSave(

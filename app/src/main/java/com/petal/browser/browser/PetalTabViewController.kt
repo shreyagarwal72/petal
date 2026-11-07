@@ -818,11 +818,14 @@ class PetalTabViewController private constructor(
             // and additionally capture GeckoSession.SessionState so the tab's back/forward history is tracked.
             val engineProgress = gs.progressDelegate
             if (engineProgress is SessionStateCapturingProgressDelegate) {
+                engineProgress.onSecurity = { sec -> currentSecurityInfo = sec }
                 engineProgress.onState = { state -> onGeckoStateChanged(state) }
             } else {
-                gs.progressDelegate = SessionStateCapturingProgressDelegate(engineProgress) { state ->
-                    onGeckoStateChanged(state)
-                }
+                gs.progressDelegate = SessionStateCapturingProgressDelegate(
+                    engine = engineProgress,
+                    onSecurity = { sec -> currentSecurityInfo = sec },
+                    onState = { state -> onGeckoStateChanged(state) }
+                )
             }
 
             // Permission Delegate: Petal takes sole ownership (GeckoEngineSession never installs one).
@@ -1121,7 +1124,7 @@ class PetalTabViewController private constructor(
 
     private var currentSelection: org.mozilla.geckoview.GeckoSession.SelectionActionDelegate.Selection? = null
 
-    fun canClearSelection(): Boolean = currentSelection != null
+    override fun canClearSelection(): Boolean = currentSelection != null
 
     fun clearWebSelection(): Boolean {
         return try {
@@ -1146,7 +1149,7 @@ class PetalTabViewController private constructor(
         try {
             val encodedData = android.util.Base64.encodeToString(data.toByteArray(java.nio.charset.StandardCharsets.UTF_8), android.util.Base64.NO_WRAP)
             val dataUri = "data:${mimeType ?: "text/html"};charset=${encoding ?: "utf-8"};base64,$encodedData"
-            currentUrl = baseUrl ?: dataUri
+            pageUrl = baseUrl ?: dataUri
             loadUrl(dataUri)
         } catch (e: Exception) {
             android.util.Log.e("PetalTabViewController", "Error in loadDataWithBaseURL", e)
@@ -2483,6 +2486,7 @@ private class ExternalSchemeNavigationDelegate(
  */
 private class SessionStateCapturingProgressDelegate(
     private val engine: org.mozilla.geckoview.GeckoSession.ProgressDelegate?,
+    @Volatile var onSecurity: ((org.mozilla.geckoview.GeckoSession.ProgressDelegate.SecurityInformation) -> Unit)? = null,
     @Volatile var onState: (org.mozilla.geckoview.GeckoSession.SessionState) -> Unit
 ) : org.mozilla.geckoview.GeckoSession.ProgressDelegate, PetalOwnedDelegate {
 
@@ -2514,7 +2518,7 @@ private class SessionStateCapturingProgressDelegate(
         session: org.mozilla.geckoview.GeckoSession,
         securityInfo: org.mozilla.geckoview.GeckoSession.ProgressDelegate.SecurityInformation
     ) {
-        this@PetalTabViewController.currentSecurityInfo = securityInfo
+        onSecurity?.invoke(securityInfo)
         try {
             engine?.onSecurityChange(session, securityInfo)
         } catch (t: Throwable) {
