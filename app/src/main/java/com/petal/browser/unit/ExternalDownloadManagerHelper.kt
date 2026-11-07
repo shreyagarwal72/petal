@@ -6,7 +6,6 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.webkit.CookieManager
 import android.webkit.WebSettings
 import androidx.preference.PreferenceManager
 import com.petal.browser.view.PetalToast
@@ -19,7 +18,7 @@ import java.util.Locale
  */
 object ExternalDownloadManagerHelper {
 
-    const val FIREFOX_MOBILE_UA = "Mozilla/5.0 (Android; Mobile; rv:128.0) Gecko/128.0 Firefox/128.0"
+    const val FIREFOX_MOBILE_UA = "Mozilla/5.0 (Android; Mobile; rv:159.0) Gecko/159.0 Firefox/159.0"
 
     // Preference key for download manager mode
     const val PREF_DOWNLOAD_MANAGER_MODE = "sp_download_manager_mode"
@@ -144,8 +143,7 @@ object ExternalDownloadManagerHelper {
 
         val effectiveUa = userAgent?.takeIf { it.isNotBlank() } ?: FIREFOX_MOBILE_UA
         val effectiveCookie = cookie?.takeIf { it.isNotBlank() }
-            ?: com.petal.browser.media.sniffer.PetalMediaSniffer.getCookiesForUrl(verifiedUrl)?.takeIf { it.isNotBlank() }
-            ?: try { CookieManager.getInstance().getCookie(verifiedUrl) } catch (e: Exception) { null }
+            ?: com.petal.browser.download.PetalGeckoCookieBridge.getCookies(verifiedUrl)
 
         // 1. If target is 1DM (or installed and activity available)
         if (targetDownloader == ExternalDownloader.ENGINE_1DM) {

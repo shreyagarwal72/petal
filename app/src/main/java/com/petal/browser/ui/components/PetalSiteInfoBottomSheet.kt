@@ -77,7 +77,8 @@ fun PetalSiteInfoBottomSheet(
     var cookieCount by remember(currentUrl) {
         mutableIntStateOf(
             try {
-                val cookies = CookieManager.getInstance().getCookie(currentUrl)
+                val cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(currentUrl)
+                    ?: CookieManager.getInstance().getCookie(currentUrl)
                 if (!cookies.isNullOrEmpty()) cookies.split(";").size else 0
             } catch (e: Exception) { 0 }
         )

@@ -392,7 +392,8 @@ fun PetalMediaGrabberPopupDialog(
                                             onClick = {
                                                 socialState = GrabberSocialState.Loading
                                                 scope.launch {
-                                                    val cookies = PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
+                                                    val cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(currentPageUrl)
+                                                        ?: PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
                                                         ?: try {
                                                             CookieManager.getInstance().getCookie(currentPageUrl)
                                                         } catch (_: Exception) {
@@ -501,7 +502,8 @@ fun PetalMediaGrabberPopupDialog(
 
                                             Button(
                                                 onClick = {
-                                                    val cookies = PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
+                                                    val cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(currentPageUrl)
+                                                        ?: PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
                                                         ?: try {
                                                             CookieManager.getInstance().getCookie(currentPageUrl)
                                                         } catch (_: Exception) {

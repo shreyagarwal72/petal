@@ -70,30 +70,6 @@ class PetalOkHttpFetchClient(
  * started outside a Gecko page context, e.g. the media sniffer. DownloadState cannot carry
  * arbitrary headers, so [PetalMozillaFetchClient] injects them when the request is sent.
  */
-object PetalDownloadHeaderRegistry {
-    // A download can sit paused for hours and then be resumed; a 10 minute TTL silently dropped
-    // the Referer/Cookie/UA on resume and the CDN answered 403. The TTL is now measured from the
-    // last time the headers were actually used, not from when they were registered.
-    private const val TTL_MS = 12 * 60 * 60 * 1000L
-    private class Entry(val headers: Map<String, String>, @Volatile var at: Long)
-    private val entries = java.util.concurrent.ConcurrentHashMap<String, Entry>()
-
-    @JvmStatic
-    fun put(url: String, headers: Map<String, String>) {
-        if (headers.isEmpty()) return
-        val now = System.currentTimeMillis()
-        entries.entries.removeAll { now - it.value.at > TTL_MS }
-        entries[url] = Entry(headers, now)
-    }
-
-    @JvmStatic
-    fun headersFor(url: String): Map<String, String> {
-        val entry = entries[url] ?: return emptyMap()
-        entry.at = System.currentTimeMillis()
-        return entry.headers
-    }
-}
-
 /**
  * Wraps the real transport (Gecko's network stack, as in Firefox/Fenix) and applies headers
  * registered in [PetalDownloadHeaderRegistry]. All other behaviour (cookies, private mode,
@@ -102,7 +78,7 @@ object PetalDownloadHeaderRegistry {
 class PetalMozillaFetchClient(private val delegate: Client) : Client() {
     @Throws(IOException::class)
     override fun fetch(request: Request): Response {
-        val extra = PetalDownloadHeaderRegistry.headersFor(request.url)
+        val extra = PetalDownloadHeaderRegistry.headersFor(request.url, isPrivate = request.private)
         if (extra.isEmpty()) return delegate.fetch(request)
         val merged = MutableHeaders()
         request.headers?.forEach { header ->

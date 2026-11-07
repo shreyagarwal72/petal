@@ -188,6 +188,7 @@ object PetalCacheManager {
                 if ((flags and Flags.COOKIES) != 0L) {
                     CookieManager.getInstance().removeAllCookies(null)
                     CookieManager.getInstance().flush()
+                    com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies()
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Error clearing Chromium storage", e)

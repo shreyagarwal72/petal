@@ -546,7 +546,8 @@ private fun PetalMediaSheet(
                                         onClick = {
                                             socialState = SocialState.Loading
                                             scope.launch {
-                                                val cookies = PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
+                                                val cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(currentPageUrl)
+                                                    ?: PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
                                                     ?: try {
                                                         CookieManager.getInstance().getCookie(currentPageUrl)
                                                     } catch (_: Exception) {
@@ -646,7 +647,8 @@ private fun PetalMediaSheet(
                                         ExpressiveSplitButton(
                                             label = stringResource(R.string.ui_download_2, selFmt.label),
                                             onPrimaryClick = {
-                                                val cookies = PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
+                                                val cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(currentPageUrl)
+                                                    ?: PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
                                                     ?: try {
                                                         CookieManager.getInstance().getCookie(currentPageUrl)
                                                     } catch (_: Exception) {

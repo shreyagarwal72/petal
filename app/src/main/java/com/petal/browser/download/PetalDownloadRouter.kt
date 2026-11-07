@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.net.Uri
 import android.os.Build
-import android.webkit.CookieManager
 import android.webkit.WebSettings
 import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.media.sniffer.PetalMediaSniffer
@@ -28,7 +27,7 @@ import com.petal.browser.view.PetalToast
  */
 object PetalDownloadRouter {
 
-    const val FIREFOX_MOBILE_UA = "Mozilla/5.0 (Android; Mobile; rv:128.0) Gecko/128.0 Firefox/128.0"
+    const val FIREFOX_MOBILE_UA = "Mozilla/5.0 (Android; Mobile; rv:159.0) Gecko/159.0 Firefox/159.0"
 
     @JvmStatic
     @JvmOverloads
@@ -79,21 +78,16 @@ object PetalDownloadRouter {
         // 3. Resolve context parameters (cookies, user-agent, referer)
         val effectiveUa = userAgent?.takeIf { it.isNotBlank() } ?: FIREFOX_MOBILE_UA
         val effectiveCookie = cookie?.takeIf { it.isNotBlank() }
-            ?: PetalMediaSniffer.getCookiesForUrl(verifiedUrl)?.takeIf { it.isNotBlank() }
-            ?: runCatching { CookieManager.getInstance().getCookie(verifiedUrl) }.getOrNull()
+            ?: PetalGeckoCookieBridge.getCookies(verifiedUrl, isPrivate)
 
         val extraHeaders = LinkedHashMap<String, String>()
-        extraHeaders["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
-        extraHeaders["Accept-Language"] = PetalAndroidUtils.getAcceptLanguage(context)
-        extraHeaders["Connection"] = "keep-alive"
-        extraHeaders["Cache-Control"] = "no-transform"
         if (!referrerUrl.isNullOrBlank()) {
             extraHeaders["Referer"] = referrerUrl
-        } else {
-            extraHeaders["Referer"] = verifiedUrl
         }
         headers.forEach { (k, v) ->
-            if (k.isNotBlank() && v.isNotBlank()) extraHeaders[k] = v
+            if (k.isNotBlank() && v.isNotBlank() && !k.equals("Cookie", ignoreCase = true)) {
+                extraHeaders[k] = v
+            }
         }
 
         val resolvedFileName = SafeDownloadValues.fileName(
@@ -109,7 +103,7 @@ object PetalDownloadRouter {
             url = verifiedUrl,
             fileName = resolvedFileName,
             mimeType = mimeType,
-            referrerUrl = referrerUrl ?: verifiedUrl,
+            referrerUrl = referrerUrl,
             isPrivate = isPrivate,
             userAgent = effectiveUa,
             cookie = effectiveCookie,

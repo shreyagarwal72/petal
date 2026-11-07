@@ -43,7 +43,12 @@ public class ImageActionHelper {
                         if (referrerUrl != null && !referrerUrl.trim().isEmpty()) {
                             headBuilder.header("Referer", referrerUrl.trim());
                         }
-                        String cookies = android.webkit.CookieManager.getInstance().getCookie(imageUrl);
+                        String cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(imageUrl, false);
+                        if (cookies == null || cookies.trim().isEmpty()) {
+                            try {
+                                cookies = android.webkit.CookieManager.getInstance().getCookie(imageUrl);
+                            } catch (Exception ignored) {}
+                        }
                         if (cookies != null && !cookies.trim().isEmpty()) {
                             headBuilder.header("Cookie", cookies.trim());
                         }

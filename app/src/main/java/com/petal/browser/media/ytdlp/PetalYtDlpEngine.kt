@@ -426,9 +426,10 @@ object PetalYtDlpEngine {
                 }
             }
 
-            // 2. Fallback to parsing CookieManager or provided string for the target URL
+            // 2. Authoritative Gecko cookie bridge or CookieManager fallback
             if (parsedCookies.isEmpty()) {
                 val cookieString = rawCookies?.takeIf { it.isNotBlank() }
+                    ?: com.petal.browser.download.PetalGeckoCookieBridge.getCookies(targetUrl)
                     ?: try { CookieManager.getInstance().getCookie(targetUrl) } catch (_: Exception) { null }
 
                 if (!cookieString.isNullOrBlank()) {

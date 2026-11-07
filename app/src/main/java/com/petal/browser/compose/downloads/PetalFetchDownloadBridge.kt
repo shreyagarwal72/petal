@@ -203,15 +203,11 @@ object PetalFetchDownloadBridge {
         isPrivate: Boolean = false
     ) {
         ensureInitialized(context)
-        // responseHeaders are the SERVER'S reply headers; they are only useful for naming (already
+        // ResponseHeaders are the server's reply headers; they are only useful for naming (already
         // resolved by the caller) and must never be copied onto the outgoing request.
+        // GeckoViewFetchClient automatically applies Gecko's internal cookie jar, so we do not
+        // manually inject cookies here.
         val outgoingHeaders = mutableMapOf<String, String>()
-        try {
-            val cookies = android.webkit.CookieManager.getInstance().getCookie(url)
-            if (!cookies.isNullOrBlank()) {
-                outgoingHeaders["Cookie"] = cookies
-            }
-        } catch (_: Exception) {}
         val started = enqueueMozillaDownload(
             context = context,
             url = url,
@@ -252,7 +248,11 @@ object PetalFetchDownloadBridge {
             ).ifBlank { "download" }
             val downloadsDir = com.petal.browser.download.PetalSmartDownloadRouter
                 .resolveDestinationDirectory(appContext, safeName, mimeType)
-            com.petal.browser.download.PetalDownloadHeaderRegistry.put(url, extraHeaders)
+            com.petal.browser.download.PetalDownloadHeaderRegistry.put(
+                url = url,
+                headers = extraHeaders,
+                isPrivate = isPrivate
+            )
             val manager = FetchDownloadManager(
                 applicationContext = appContext,
                 store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext),
@@ -270,6 +270,12 @@ object PetalFetchDownloadBridge {
                 )
             )
             if (id.isNullOrBlank()) return false
+            com.petal.browser.download.PetalDownloadHeaderRegistry.put(
+                url = url,
+                headers = extraHeaders,
+                downloadId = id,
+                isPrivate = isPrivate
+            )
             onEnqueued?.invoke(id.hashCode().toLong())
             true
         } catch (t: Throwable) {
