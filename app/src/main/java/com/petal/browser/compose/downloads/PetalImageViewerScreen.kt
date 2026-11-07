@@ -31,7 +31,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -672,101 +671,60 @@ private fun ZoomableImagePage(
         }
 
     Box(modifier = gestureModifier, contentAlignment = Alignment.Center) {
-        if (entry.isRemote) {
-            // ── Remote / network image via Coil ──
-            SubcomposeAsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(entry.sourceUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = entry.label,
-                contentScale = ContentScale.Fit,
-                modifier = imageModifier,
-                loading = {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 48.dp)
-                            Spacer(Modifier.height(12.dp))
-                            Text(
-                                text     = entry.label,
-                                color    = Color.White.copy(alpha = 0.5f),
-                                style    = MaterialTheme.typography.bodySmall,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(horizontal = 32.dp),
-                            )
-                        }
-                    }
-                },
-                error = {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                shape = ExpressiveButtonShape,
-                                containerColor = Color.White.copy(alpha = 0.12f),
-                                contentColor = Color.White.copy(alpha = 0.7f),
-                                size = 64.dp,
-                                iconSize = 32.dp,
-                            ) {
-                                Icon(Icons.Rounded.BrokenImage, contentDescription = null)
-                            }
-                            Spacer(Modifier.height(8.dp))
-                            Text(stringResource(R.string.ui_failed_to_load_image), color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                },
-            )
-        } else {
-            // ── Local file via BitmapFactory (offline-capable) ──
-            val bitmap by produceState<Bitmap?>(initialValue = null, entry.sourceUrl) {
-                value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    runCatching {
-                        val rawUri = Uri.parse(entry.sourceUrl)
-                        when (rawUri.scheme) {
-                            "content" -> {
-                                context.contentResolver.openInputStream(rawUri)?.use { stream ->
-                                    BitmapFactory.decodeStream(stream)
-                                }
-                            }
-                            "file", null -> {
-                                val path = rawUri.path ?: entry.sourceUrl.removePrefix("file://")
-                                BitmapFactory.decodeFile(path)
-                            }
-                            else -> BitmapFactory.decodeFile(rawUri.path)
-                        }
-                    }.getOrNull()
-                }
+        val imageModel = remember(entry.sourceUrl) {
+            val raw = entry.sourceUrl
+            if (raw.startsWith("content://") || raw.startsWith("file://")) {
+                Uri.parse(raw)
+            } else {
+                raw
             }
+        }
 
-            AnimatedContent(
-                targetState = bitmap,
-                transitionSpec = {
-                    fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.94f) togetherWith fadeOut(tween(150))
-                },
-                label = "local_image_transition",
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) { currentBmp ->
-                if (currentBmp != null) {
-                    Image(
-                        bitmap = currentBmp.asImageBitmap(),
-                        contentDescription = entry.label,
-                        contentScale = ContentScale.Fit,
-                        modifier = imageModifier,
-                    )
-                } else {
+        // Unified high-performance image loading via Coil (handles remote URLs, content://, file://)
+        // Automatically manages downsampling, hardware bitmaps (Bitmap.Config.HARDWARE),
+        // and memory caching to prevent out-of-memory ANRs on large resolution images.
+        SubcomposeAsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(imageModel)
+                .crossfade(true)
+                .build(),
+            contentDescription = entry.label,
+            contentScale = ContentScale.Fit,
+            modifier = imageModifier,
+            loading = {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 48.dp)
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text  = entry.label,
-                            color = Color.White.copy(alpha = 0.5f),
-                            style = MaterialTheme.typography.bodySmall,
+                            text     = entry.label,
+                            color    = Color.White.copy(alpha = 0.5f),
+                            style    = MaterialTheme.typography.bodySmall,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(horizontal = 32.dp),
                         )
                     }
                 }
-            }
-        }
+            },
+            error = {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        com.petal.browser.ui.containment.PetalGroupIconBadge(
+                            shape = ExpressiveButtonShape,
+                            containerColor = Color.White.copy(alpha = 0.12f),
+                            contentColor = Color.White.copy(alpha = 0.7f),
+                            size = 64.dp,
+                            iconSize = 32.dp,
+                        ) {
+                            Icon(Icons.Rounded.BrokenImage, contentDescription = null)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(stringResource(R.string.ui_failed_to_load_image), color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+        )
     }
 }
 
@@ -1190,14 +1148,21 @@ private fun ImageInfoBottomSheet(
                     val file = File(path)
                     val size = formatBytes(file.length())
                     val date = SimpleDateFormat("d MMM yyyy, h:mm a", Locale.getDefault()).format(Date(file.lastModified()))
-                    val bmp  = BitmapFactory.decodeFile(path)
-                    val dims = if (bmp != null) "${bmp.width} × ${bmp.height} px" else "—"
-                    bmp?.recycle()
+                    val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeFile(path, opts)
+                    val dims = if (opts.outWidth > 0 && opts.outHeight > 0) "${opts.outWidth} × ${opts.outHeight} px" else "—"
                     Triple(size, date, dims)
                 } else {
                     val fd = runCatching { context.contentResolver.openFileDescriptor(rawUri, "r") }.getOrNull()
                     val size = if (fd != null) { val s = formatBytes(fd.statSize); fd.close(); s } else "—"
-                    Triple(size, "—", "—")
+                    val dims = runCatching {
+                        context.contentResolver.openInputStream(rawUri)?.use { stream ->
+                            val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            BitmapFactory.decodeStream(stream, null, opts)
+                            if (opts.outWidth > 0 && opts.outHeight > 0) "${opts.outWidth} × ${opts.outHeight} px" else null
+                        }
+                    }.getOrNull() ?: "—"
+                    Triple(size, "—", dims)
                 }
             }.getOrNull()
         }
