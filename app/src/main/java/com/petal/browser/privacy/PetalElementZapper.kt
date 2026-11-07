@@ -2,7 +2,6 @@ package com.petal.browser.privacy
 
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.PetalTabViewController
-import com.petal.browser.view.PetalGeckoView
 
 /**
  * PetalElementZapper
@@ -129,7 +128,6 @@ object PetalElementZapper {
     fun launch(albumController: AlbumController?) {
         val script = getZapperScript()
         when (albumController) {
-            is PetalGeckoView -> albumController.evaluateJavascript(script)
             is PetalTabViewController -> albumController.evaluateJavascript(script)
             else -> {}
         }

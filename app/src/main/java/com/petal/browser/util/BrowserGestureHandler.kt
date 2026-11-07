@@ -19,7 +19,7 @@ object BrowserGestureHandler {
         val prefs = activity.sp ?: return
         val gestureAction = prefs.getString(gestureKey, "0") ?: "0"
         val ctrl = activity.currentAlbumController
-        val geckoView = ctrl as? com.petal.browser.view.PetalGeckoView
+        val geckoView = ctrl as? com.petal.browser.browser.PetalTabViewController ?: activity.getOrCreateTabViewController()
 
         when (gestureAction) {
             "01" -> {} // No-op

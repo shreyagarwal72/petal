@@ -172,7 +172,7 @@ class PetalTabViewController private constructor(
         if (key == null) return@OnSharedPreferenceChangeListener
         when (key) {
             "sp_javascript", "profileStandard_javascript" -> {
-                val profile = com.petal.browser.view.PetalGeckoView.getProfile(appContext)
+                val profile = com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(appContext)
                 val jsEnabled = preferences.getBoolean(
                     "sp_javascript",
                     preferences.getBoolean("${profile}_javascript", preferences.getBoolean("profileStandard_javascript", true))
@@ -189,7 +189,7 @@ class PetalTabViewController private constructor(
                 applyTrackingProtectionMode(effectiveMode)
             }
             "sp_desktop_site" -> {
-                val profile = com.petal.browser.view.PetalGeckoView.getProfile(appContext)
+                val profile = com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(appContext)
                 val host = try { android.net.Uri.parse(pageUrl.orEmpty()).host } catch (_: Throwable) { null }
                 val desktopEnabled = if (!host.isNullOrBlank() && preferences.contains("sp_desktop_site_$host")) {
                     preferences.getBoolean("sp_desktop_site_$host", false)
@@ -786,7 +786,7 @@ class PetalTabViewController private constructor(
             }
             val externalSchemeCallback: (String) -> Boolean = { uri ->
                 val act = resolveActivity(context)
-                act != null && com.petal.browser.view.PetalGeckoView.handleExternalScheme(act, uri)
+                act != null && com.petal.browser.engine.gecko.PetalEngineBridge.handleExternalScheme(act, uri)
             }
             if (engineNavigation !is ExternalSchemeNavigationDelegate) {
                 val inner = engineNavigation ?: object : org.mozilla.geckoview.GeckoSession.NavigationDelegate {}
@@ -844,6 +844,7 @@ class PetalTabViewController private constructor(
                     session: org.mozilla.geckoview.GeckoSession,
                     selection: org.mozilla.geckoview.GeckoSession.SelectionActionDelegate.Selection
                 ) {
+                    this@PetalTabViewController.currentSelection = selection
                     val act = (context as? com.petal.browser.activity.BrowserActivity)
                         ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
                         ?: return
@@ -860,6 +861,7 @@ class PetalTabViewController private constructor(
                 }
 
                 override fun onHideAction(session: org.mozilla.geckoview.GeckoSession, reason: Int) {
+                    this@PetalTabViewController.currentSelection = null
                     val act = (context as? com.petal.browser.activity.BrowserActivity)
                         ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
                     if (act != null) com.petal.browser.ui.selection.PetalPageSelectionToolbar.hide(act)
@@ -1063,6 +1065,98 @@ class PetalTabViewController private constructor(
         observedSession?.reload()
     }
 
+    fun captureVideoHandoffState(callback: (com.petal.browser.media.handoff.MediaHandoff?) -> Unit) {
+        try {
+            val js = """
+                (function() {
+                    try {
+                        var vids = Array.from(document.querySelectorAll('video'));
+                        if (vids.length === 0) return null;
+                        var vid = vids.find(function(v) { return !v.paused; }) || vids[0];
+                        var pos = Math.round((vid.currentTime || 0) * 1000);
+                        var dur = Math.round((vid.duration || 0) * 1000);
+                        var speed = vid.playbackRate || 1.0;
+                        var isPaused = !!vid.paused;
+                        var vol = vid.volume || 1.0;
+                        var src = vid.currentSrc || vid.src || '';
+                        return JSON.stringify({
+                            pos: pos,
+                            dur: dur,
+                            speed: speed,
+                            paused: isPaused,
+                            vol: vol,
+                            src: src
+                        });
+                    } catch(e) {
+                        return null;
+                    }
+                })()
+            """.trimIndent()
+            evaluateJavascript(js) { rawResult ->
+                if (rawResult.isNullOrBlank() || rawResult == "null" || rawResult.startsWith("ERROR:")) {
+                    callback(null)
+                    return@evaluateJavascript
+                }
+                try {
+                    val json = org.json.JSONObject(rawResult)
+                    val pos = json.optLong("pos", 0L)
+                    val dur = json.optLong("dur", 0L)
+                    val speed = json.optDouble("speed", 1.0).toFloat()
+                    val paused = json.optBoolean("paused", false)
+                    val vol = json.optDouble("vol", 1.0).toFloat()
+                    val src = json.optString("src", "").takeIf { it.isNotBlank() } ?: url
+                    callback(com.petal.browser.media.handoff.MediaHandoff(pos, dur, speed, paused, vol, src))
+                } catch (_: Throwable) {
+                    callback(null)
+                }
+            }
+        } catch (_: Throwable) {
+            callback(null)
+        }
+    }
+
+    fun setProfileChanged() {
+        applyPageSettings(url)
+    }
+
+    private var currentSelection: org.mozilla.geckoview.GeckoSession.SelectionActionDelegate.Selection? = null
+
+    fun canClearSelection(): Boolean = currentSelection != null
+
+    fun clearWebSelection(): Boolean {
+        return try {
+            val sel = currentSelection
+            if (sel != null) {
+                currentSelection = null
+                sel.collapseToStart()
+                true
+            } else {
+                false
+            }
+        } catch (_: Throwable) {
+            currentSelection = null
+            false
+        }
+    }
+
+    var isReaderEligible: Boolean = false
+    var currentSecurityInfo: org.mozilla.geckoview.GeckoSession.ProgressDelegate.SecurityInformation? = null
+
+    fun loadDataWithBaseURL(baseUrl: String?, data: String, mimeType: String?, encoding: String?, historyUrl: String?) {
+        try {
+            val encodedData = android.util.Base64.encodeToString(data.toByteArray(java.nio.charset.StandardCharsets.UTF_8), android.util.Base64.NO_WRAP)
+            val dataUri = "data:${mimeType ?: "text/html"};charset=${encoding ?: "utf-8"};base64,$encodedData"
+            currentUrl = baseUrl ?: dataUri
+            loadUrl(dataUri)
+        } catch (e: Exception) {
+            android.util.Log.e("PetalTabViewController", "Error in loadDataWithBaseURL", e)
+        }
+    }
+
+    fun setBrowserController(controller: com.petal.browser.browser.BrowserController?) {
+        com.petal.browser.engine.gecko.PetalEngineBridge.setBrowserController(controller)
+    }
+
     fun loadData(data: String, mimeType: String, encoding: String) {
         observedSession?.loadData(data, mimeType, encoding)
     }
@@ -1085,7 +1179,7 @@ class PetalTabViewController private constructor(
 
     private fun applyPageSettings(url: String?) {
         val session = observedSession ?: return
-        val profile = com.petal.browser.view.PetalGeckoView.getProfile(appContext)
+        val profile = com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(appContext)
         val javascriptEnabled = preferences.getBoolean(
             "sp_javascript",
             preferences.getBoolean("${profile}_javascript", preferences.getBoolean("profileStandard_javascript", true))
@@ -1379,7 +1473,7 @@ class PetalTabViewController private constructor(
 
     /** GeckoView-only integration point used for WebExtension delegates. */
     fun getGeckoSession(): org.mozilla.geckoview.GeckoSession? =
-        com.petal.browser.view.PetalGeckoView.getEngineGeckoSession(observedSession)
+        com.petal.browser.engine.gecko.PetalEngineBridge.getEngineGeckoSession(observedSession)
 
     fun toggleReaderMode(active: Boolean) {
         val id = boundTabId ?: return
@@ -1654,7 +1748,7 @@ class PetalTabViewController private constructor(
 
     fun evaluateJavascript(script: String, callback: ((String?) -> Unit)? = null) {
         try {
-            val session = com.petal.browser.view.PetalGeckoView.getEngineGeckoSession(observedSession)
+            val session = com.petal.browser.engine.gecko.PetalEngineBridge.getEngineGeckoSession(observedSession)
             com.petal.browser.extensions.PetalBuiltInExtensionManager.evaluateJavascript(session, script, callback)
         } catch (t: Throwable) {
             callback?.invoke("ERROR: ${t.message}")
@@ -2059,7 +2153,7 @@ private class PetalContentDelegateWrapper(
     ) {
         val act = resolveActivity()
         if (act != null) {
-            com.petal.browser.view.PetalGeckoView.handleExternalResponse(
+            com.petal.browser.engine.gecko.PetalEngineBridge.handleExternalResponse(
                 act, response, isPrivateProvider(), referrerProvider()
             )
         }
@@ -2420,6 +2514,7 @@ private class SessionStateCapturingProgressDelegate(
         session: org.mozilla.geckoview.GeckoSession,
         securityInfo: org.mozilla.geckoview.GeckoSession.ProgressDelegate.SecurityInformation
     ) {
+        this@PetalTabViewController.currentSecurityInfo = securityInfo
         try {
             engine?.onSecurityChange(session, securityInfo)
         } catch (t: Throwable) {

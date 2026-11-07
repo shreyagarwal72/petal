@@ -184,8 +184,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public String findInPageQuery = "";
     public int findInPageCurrentMatch = 0;
     public int findInPageTotalMatches = 0;
-    @Deprecated
-    public static com.petal.browser.view.PetalGeckoView activeGeckoView = null;
 
     public View customView;
     public WebChromeClient.CustomViewCallback customViewCallback;
@@ -311,15 +309,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void reloadCurrentBrowserTab() {
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).reload();
-        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).reload();
-        } else if (activeGeckoView != null) {
-            activeGeckoView.reload();
+        } else if (singleTabViewController != null) {
+            singleTabViewController.reload();
         }
     }
 
-    public com.petal.browser.view.PetalGeckoView getGeckoView() {
-        return currentAlbumController instanceof com.petal.browser.view.PetalGeckoView ? (com.petal.browser.view.PetalGeckoView) currentAlbumController : null;
+    public com.petal.browser.browser.PetalTabViewController getGeckoView() {
+        return getActivePetalTabSurface();
     }
 
     public void setCurrentAlbumController(AlbumController controller) {
@@ -405,9 +401,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } catch (Exception ignored) {}
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             return ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).getMediaBridge();
-        }
-        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            return ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getMediaBridge();
         }
         return null;
     }
@@ -496,12 +489,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public boolean canBrowserGoBack() {
         com.petal.browser.browser.PetalTabViewController surface = getActivePetalTabSurface();
         if (surface != null) return surface.canGoBack();
-        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            return ((com.petal.browser.view.PetalGeckoView) currentAlbumController).canGoBack();
-        }
-        if (activeGeckoView != null) {
-            return activeGeckoView.canGoBack();
-        }
         return false;
     }
 
@@ -762,11 +749,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             View decor = getWindow().getDecorView();
             decor.setFocusableInTouchMode(true);
-            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                com.petal.browser.view.PetalGeckoView gecko = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                gecko.setVisibility(View.VISIBLE);
-                gecko.onResume();
-                gecko.requestFocus();
+            if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                com.petal.browser.browser.PetalTabViewController tab = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
+                tab.setVisibility(View.VISIBLE);
+                tab.onResume();
+                tab.requestFocus();
             } else if (currentAlbumController != null && currentAlbumController.getAlbumView() != null) {
                 currentAlbumController.getAlbumView().setVisibility(View.VISIBLE);
                 currentAlbumController.getAlbumView().requestFocus();
@@ -867,9 +854,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         }
                         com.petal.browser.extensions.PetalExtensionManager.dismissPopup();
                         // Explicitly reactivate the current browser tab session
-                        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                             try {
-                                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).activate();
+                                ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).activate();
                             } catch (Throwable ignored) {}
                         }
                         // Post focus restoration to ensure window focus queue is idle
@@ -1011,8 +998,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // predictive-back gesture so both websites and the Petal homepage receive it.
                 if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                     ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).resetGestureExclusionRects();
-                } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).resetGestureExclusionRects();
                 }
 
                 predictiveBackStartedOnOverlay = isOverlayScreenShowing && !isDecorOverlayShowing && hasNonTabTopContent();
@@ -1115,8 +1100,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             getWindow().getDecorView().post(() -> {
                 if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                     ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).resetGestureExclusionRects();
-                } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).resetGestureExclusionRects();
                 }
 
             });
@@ -1176,7 +1159,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         initOverview();
         hideSearch();
         // NOTE: dispatchIntent() is deferred to AFTER tab session restoration below.
-        // Calling it here would run before activeGeckoView / currentAlbumController are
+        // Calling it here would run before currentAlbumController are
         // initialized, so ACTION_VIEW would consume the intent (setAction("")) without
         // actually loading the URL — causing the "only opens on 2nd launch" bug.
 
@@ -1186,7 +1169,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         boolean tabsRestored = com.petal.browser.browser.PetalSessionRestoreManager.restoreSession(this);
         rebuildTabsFromBrowserStore(tabsRestored);
 
-        // Now that activeGeckoView and currentAlbumController are fully initialized,
+        // Now that currentAlbumController are fully initialized,
         // dispatch any incoming intent (e.g. ACTION_VIEW from an external link).
         // We flag suppressResumeDispatch so onResume() won't double-dispatch it.
         suppressResumeDispatch = true;
@@ -1381,8 +1364,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         resetRefreshState();
         applyImmersiveFullScreenMode();
         applyAddressBarPosition();
-        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).onResume();
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).onResume();
         }
         try {
             com.petal.browser.engine.gecko.PetalEngineStore.onAppResume(this);
@@ -1448,7 +1431,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } catch (Throwable t) {
             PetalAppLogger.w(TAG, "Error unregistering preference listener in onDestroy", t);
         }
-        activeGeckoView = null;
         com.petal.browser.predictive.PetalLiveUnderlay.detach(liveUnderlayHost);
         try {
             if (isMediaBound) {
@@ -1547,7 +1529,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * is unregistered in the same message-pump pass as its removal, preventing stale
      * back callbacks from swallowing the very next back gesture on the web surface.
      * The parent-not-null guard keeps it safe if the view was re-attached immediately.
-     * Retained tab surfaces (PetalGeckoView) are not ComposeViews and are unaffected.
+     * Retained tab surfaces (PetalTabViewController) are not ComposeViews and are unaffected.
      */
     private void disposeRemovedComposeOverlay(View child) {
         if (!(child instanceof androidx.compose.ui.platform.ComposeView)) return;
@@ -1592,7 +1574,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // gesture/inset transition, navigated correctly every time. isAcceptingText()
                 // reflects the real IME service state rather than a cached insets snapshot, and
                 // (unlike checking for a focused EditText) it still recognizes a focused HTML
-                // input inside PetalGeckoView, so typing-then-back still just closes
+                // input inside PetalTabViewController, so typing-then-back still just closes
                 // the keyboard there as before.
                 InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 boolean imeActuallyServing = imm != null && imm.isAcceptingText();
@@ -1610,9 +1592,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // Calling goBack() in that state navigates to that blank document,
         // which is the blank page seen when Back is pressed on Home. Always
         // handle Home before consulting Gecko's back-history state.
-        String currentUrl = currentAlbumController != null
-                ? currentAlbumController.getUrl()
-                : (activeGeckoView != null ? activeGeckoView.getUrl() : "");
+        String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
 
         // ── Tier 1: Fullscreen / HTML5 Video / Web Custom View ──
         if (fullscreenHolder != null || customView != null || videoView != null) {
@@ -1668,8 +1648,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         // ── Tier 2.5: Clear Web Text Selection (Firefox Parity) ──
-        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            com.petal.browser.browser.PetalTabViewController gv = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
             if (gv.canClearSelection()) {
                 gv.clearWebSelection();
                 return;
@@ -1689,29 +1669,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 });
                 return;
             }
-        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-            if (gv.canGoBack()) sp.edit().putBoolean("backPressed", true).apply();
-            gv.processBackPressed(() -> {
-                runOnUiThread(() -> {
-                    if (currentAlbumController == gv) performPetalTabBackFallback(currentUrl);
-                });
-                return kotlin.Unit.INSTANCE;
-            });
-            updateOmniBox();
-            updateBackCallbackState();
-            return;
-        } else if (activeGeckoView != null) {
-            if (activeGeckoView.canGoBack()) sp.edit().putBoolean("backPressed", true).apply();
-            activeGeckoView.processBackPressed(() -> {
-                runOnUiThread(() -> {
-                    performPetalTabBackFallback(currentUrl);
-                });
-                return kotlin.Unit.INSTANCE;
-            });
-            updateOmniBox();
-            updateBackCallbackState();
-            return;
         }
 
         performPetalTabBackFallback(currentUrl);
@@ -1725,10 +1682,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (homeUrl == null || homeUrl.trim().isEmpty()) homeUrl = "about:blank";
             if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                 ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).stopLoading();
-            } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).stopLoading();
-            } else if (activeGeckoView != null) {
-                activeGeckoView.stopLoading();
             }
             showAlbum(currentAlbumController, homeUrl);
             updateOmniBox();
@@ -1845,11 +1798,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (browserBackCallback == null) return;
         boolean hasOverlay = isOverlayScreenShowing || hasNonTabTopContent();
         boolean hasDialog = (dialogOverview != null && dialogOverview.isShowing()) || isFindInPageShowing || (customView != null) || (fullscreenHolder != null) || (videoView != null);
-        boolean hasWebBack = canBrowserGoBack()
-                || (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView
-                && ((com.petal.browser.view.PetalGeckoView) currentAlbumController).hasBackHistory())
-                || (activeGeckoView != null && activeGeckoView.canGoBack());
-        String curUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (activeGeckoView != null ? activeGeckoView.getUrl() : "");
+        boolean hasWebBack = canBrowserGoBack();
+        String curUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
         boolean isWebPageNotHome = !isPetalHomeSurfaceShowing && !isHomePage(curUrl) && curUrl != null && !curUrl.isEmpty() && !curUrl.equalsIgnoreCase("about:blank");
         boolean hasMultipleTabs = BrowserContainer.size() > 1;
 
@@ -1982,7 +1932,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 showOverflow(null, null, 0, title, url, null, null, 0);
                 return true;
             case KeyEvent.KEYCODE_F7:
-                boolean caretState = com.petal.browser.accessibility.PetalAccessibilityEngine.toggleCaretBrowsing(this, currentAlbumController != null ? currentAlbumController : activeGeckoView);
+                boolean caretState = com.petal.browser.accessibility.PetalAccessibilityEngine.toggleCaretBrowsing(this, currentAlbumController != null ? currentAlbumController : singleTabViewController);
                 com.petal.browser.view.PetalToast.show(this, caretState ? R.string.toast_caret_on : R.string.toast_caret_off);
                 return true;
             case KeyEvent.KEYCODE_BACK:
@@ -1994,7 +1944,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
-        if (com.petal.browser.accessibility.PetalAccessibilityEngine.handleGenericMotion(currentAlbumController != null ? currentAlbumController : activeGeckoView, event)) {
+        if (com.petal.browser.accessibility.PetalAccessibilityEngine.handleGenericMotion(currentAlbumController != null ? currentAlbumController : singleTabViewController, event)) {
             return true;
         }
         return super.onGenericMotionEvent(event);
@@ -2046,10 +1996,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void evaluateJavascriptInActiveTab(String script, android.webkit.ValueCallback<String> callback) {
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).evaluateJavascript(script, callback != null ? res -> { callback.onReceiveValue(res); return kotlin.Unit.INSTANCE; } : null);
-        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).evaluateJavascript(script, callback != null ? res -> { callback.onReceiveValue(res); return kotlin.Unit.INSTANCE; } : null);
-        } else if (activeGeckoView != null) {
-            activeGeckoView.evaluateJavascript(script, callback != null ? res -> { callback.onReceiveValue(res); return kotlin.Unit.INSTANCE; } : null);
+        } else if (singleTabViewController != null) {
+            singleTabViewController.evaluateJavascript(script, callback != null ? res -> { callback.onReceiveValue(res); return kotlin.Unit.INSTANCE; } : null);
         } else if (callback != null) {
             callback.onReceiveValue(null);
         }
@@ -2137,7 +2085,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void onTabUrlStarted(com.petal.browser.browser.AlbumController webView, String url) {
         runOnUiThread(() -> {
-            if (webView != currentAlbumController && webView != activeGeckoView) return;
+            if (webView != currentAlbumController) return;
 
             boolean isHome = isHomePage(url);
             View albumView = webView != null ? webView.getAlbumView() : null;
@@ -2167,7 +2115,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     // ─────────────────────────────────────────────────────────────────────────
     // Retained tab surfaces
     //
-    // Every tab's browser surface (PetalGeckoView album view) is added to
+    // Every tab's browser surface (PetalTabViewController album view) is added to
     // contentFrame exactly once, the first time that tab is shown, and then stays attached
 
     // for the life of the tab. Switching tabs toggles View.VISIBLE / View.GONE and
@@ -2188,7 +2136,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private boolean isTabSurface(View v) {
         return v != null
                 && (v instanceof com.petal.browser.browser.PetalTabViewController
-                || v instanceof com.petal.browser.view.PetalGeckoView
                 || retainedTabSurfaces.contains(v));
     }
 
@@ -2278,7 +2225,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     /**
-     * Mounts an album's view (PetalGeckoView container) in {@code targetFrame} the
+     * Mounts an album's view (PetalTabViewController container) in {@code targetFrame} the
      * first time the tab is shown, defending against the GeckoView "attach before WindowInsets are dispatched" NPE
      * (see the caller for the full explanation) that otherwise leaves the frame with zero
      * children — i.e. a blank web page or blank home surface.
@@ -2308,7 +2255,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // first insets dispatch can leave GeckoView attached without a usable
             // compositor surface, producing a permanent black/blank page. Wait for
             // the actual window insets instead of attaching too early.
-            if (av instanceof com.petal.browser.view.PetalGeckoView) {
+            if (av instanceof com.petal.browser.browser.PetalTabViewController) {
                 android.view.WindowInsets rootInsets = targetFrame.getRootWindowInsets();
                 if (rootInsets == null) {
                     if (attempt < MAX_ATTACH_ATTEMPTS) {
@@ -2367,8 +2314,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     targetFrame.requestLayout();
                     applyAddressBarPosition();
                 }
-                if (av instanceof com.petal.browser.view.PetalGeckoView && av.isShown()) {
-                    ((com.petal.browser.view.PetalGeckoView) av).onResume();
+                if (av instanceof com.petal.browser.browser.PetalTabViewController && av.isShown()) {
+                    ((com.petal.browser.browser.PetalTabViewController) av).onResume();
                     av.invalidate();
                 }
             }, 180L);
@@ -2551,8 +2498,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             String tabId = ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).getTabId();
             if (tabId != null) com.petal.browser.engine.gecko.PetalEngineStore.selectTab(this, tabId);
-        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            com.petal.browser.engine.gecko.PetalEngineStore.selectTab(this, ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getTabId());
         }
         
         currentAlbumController.activate();
@@ -2575,12 +2520,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (bottomNavContainer != null) bottomNavContainer.setTranslationY(0f);
         if (bottomNavCompose != null) bottomNavCompose.setTranslationY(0f);
 
-        String url = overrideUrl != null ? overrideUrl : (currentAlbumController != null ? currentAlbumController.getUrl() : (activeGeckoView != null ? activeGeckoView.getUrl() : ""));
+        String url = overrideUrl != null ? overrideUrl : (currentAlbumController != null ? currentAlbumController.getUrl() : "");
         boolean isAdoptedPopupTab = false;
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             isAdoptedPopupTab = ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).isAdoptedPopup();
-        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            isAdoptedPopupTab = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isAdoptedPopup();
         }
         final android.graphics.Rect newTabOrigin = pendingContainerOrigin;
         final float newTabRadius = pendingContainerRadius;
@@ -2593,9 +2536,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         isPetalHomeSurfaceShowing = !isAdoptedPopupTab && isHomePage(url);
         // Now that we know whether this is home or a website, set the bar accordingly.
         applyBottomBarVisibilityForSurface();
-        boolean isIncognitoTab = currentAlbumController != null
-                ? currentAlbumController.isIncognito()
-                : (activeGeckoView != null && activeGeckoView.isIncognito());
+        boolean isIncognitoTab = currentAlbumController != null && currentAlbumController.isIncognito();
         if (isIncognitoTab) {
             com.petal.browser.compose.incognito.PetalIncognitoSessionManager.enableIncognitoSecurity(this);
         } else {
@@ -2633,11 +2574,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else if (!isAdoptedPopupTab && isHomePage(url)) {
             if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                 ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).stopLoading();
-            } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).resetToHome();
-            } else if (activeGeckoView != null) {
-                activeGeckoView.stopLoading();
-                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl("about:blank");
             }
             View composeView = PetalComposeBridge.createComposeHomeView(this, BrowserContainer.size(), new PetalHomeActionHandler() {
                 @Override
@@ -2646,8 +2582,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         boolean isIncog = currentAlbumController != null && currentAlbumController.isIncognito();
                         performSearchWithFixerPrompt(query.trim(), isIncog, targetUrl -> {
                             if (currentAlbumController != null) {
-                                showAlbum(currentAlbumController, targetUrl);
-                            } else if (activeGeckoView != null) {
                                 showAlbum(currentAlbumController, targetUrl);
                             } else {
                                 addAlbum(null, targetUrl, true, isIncog);
@@ -2672,8 +2606,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                     if (currentAlbumController != null) {
                         showAlbum(currentAlbumController, targetUrl);
-                    } else if (activeGeckoView != null) {
-                        showAlbum(currentAlbumController, targetUrl);
+
                     }
                 }
 
@@ -2692,8 +2625,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                         final EditText inputUrl = new EditText(BrowserActivity.this);
                         inputUrl.setHint("Website URL (e.g. https://google.com)");
-                        String activeU = currentAlbumController != null ? currentAlbumController.getUrl() : (activeGeckoView != null ? activeGeckoView.getUrl() : null);
-                        String activeT = currentAlbumController != null ? currentAlbumController.getTitle() : (activeGeckoView != null ? activeGeckoView.getTitle() : null);
+                        String activeU = currentAlbumController != null ? currentAlbumController.getUrl() : null;
+                        String activeT = currentAlbumController != null ? currentAlbumController.getTitle() : null;
                         if (activeU != null && !isHomePage(activeU)) {
                             inputUrl.setText(activeU);
                             if (activeT != null) {
@@ -2827,7 +2760,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else {
             // Swap tab surfaces by visibility, never by detaching: the outgoing tab's surface
             // goes View.GONE (its session was already setActive(false)), the incoming tab's
-            // surface goes View.VISIBLE. This is the same code path for PetalGeckoView and
+            // surface goes View.VISIBLE. This is the same code path for PetalTabViewController and
             // tabs.
             hideTabSurfacesExcept(av);
             removeOverlayViews();
@@ -2885,64 +2818,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         surface.loadUrl(targetUrl);
                     }
                 }
-            } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                com.petal.browser.view.PetalGeckoView geckoView = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                activeGeckoView = geckoView;
-                geckoView.setBrowserController(this);
-                String currentUrl = geckoView.getUrl();
-                String albumSavedUrl = null;
-                try {
-                    albumSavedUrl = geckoView.getAlbumUrl();
-                } catch (Exception ignored) {}
-
-                String targetUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : (currentUrl != null && !currentUrl.isEmpty() ? currentUrl : albumSavedUrl);
-
-                if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl) && !"about:blank".equalsIgnoreCase(targetUrl)) {
-                    // Only loadUrl if the tab is truly uninitialized, blank, or an explicit override URL was provided.
-                    // If the tab is already on targetUrl or actively loading, do not abort its network request mid-flight.
-                    boolean isDifferentTarget = overrideUrl != null && !overrideUrl.isEmpty() && !overrideUrl.equalsIgnoreCase(currentUrl);
-                    boolean isBlankOrEmpty = currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl);
-                    if (isBlankOrEmpty || isDifferentTarget) {
-                        geckoView.loadUrl(targetUrl);
-                    } else {
-                        geckoView.onResume();
-                    }
-                } else if (currentUrl != null && !currentUrl.isEmpty() && !isHomePage(currentUrl)) {
-                    geckoView.onResume();
-                }
-
-                // One place decides: the same call the other listener (BrowserWebViewController) makes.
-                geckoView.setOnScrollChangeListener(new com.petal.browser.view.PetalGeckoView.OnScrollChangeListener() {
-                    @Override
-                    public void onScrollDown() {
-                        animateAddressBarCollapse(true);
-                    }
-
-                    @Override
-                    public void onScrollUp() {
-                        animateAddressBarCollapse(false);
-                    }
-                });
-            } else if (activeGeckoView != null) {
-                activeGeckoView.setBrowserController(this);
-                String currentUrl = activeGeckoView.getUrl();
-                String albumSavedUrl = null;
-                try {
-                    albumSavedUrl = activeGeckoView.getAlbumUrl();
-                } catch (Exception ignored) {}
-
-                String targetUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : (currentUrl != null && !currentUrl.isEmpty() ? currentUrl : albumSavedUrl);
-
-                if ((currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl)) &&
-                    (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl) && !"about:blank".equalsIgnoreCase(targetUrl))) {
-                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(targetUrl);
-                } else if (overrideUrl != null && !overrideUrl.isEmpty() && !overrideUrl.equalsIgnoreCase(currentUrl) && !isHomePage(overrideUrl) && !"about:blank".equalsIgnoreCase(overrideUrl)) {
-                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(overrideUrl);
-                } else if (currentUrl != null && !currentUrl.isEmpty() && !isHomePage(currentUrl)) {
-                    activeGeckoView.onResume();
-                    activeGeckoView.resumeTimers();
-                }
-
             }
         }
         updateOmniBox();
@@ -2978,9 +2853,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 String currentTabId = String.valueOf(currentAlbumController.hashCode());
                 if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                     String boundId = ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).getTabId();
-                    if (boundId != null && !boundId.isEmpty()) currentTabId = boundId;
-                } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    String boundId = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getTabId();
                     if (boundId != null && !boundId.isEmpty()) currentTabId = boundId;
                 }
                 com.petal.browser.engine.gecko.PetalTabSuspender.recordTabAccess(currentTabId);
@@ -3024,11 +2896,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // Visibility depends on the surface: hidden on home, visible on websites.
             applyBottomBarVisibilityForSurface();
             if (bottomNavCompose != null) {
-                String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (activeGeckoView != null ? activeGeckoView.getUrl() : "");
+                String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                 boolean isHome = isPetalHomeSurfaceShowing || isHomePage(currentUrl);
                 boolean isIncognito = currentAlbumController != null
                         ? currentAlbumController.isIncognito()
-                        : (activeGeckoView != null && activeGeckoView.isIncognito());
+                        : false;
                 int currentTabCount = isIncognito ? BrowserContainer.getIncognitoCount() : BrowserContainer.getNormalCount();
                 com.petal.browser.ui.components.PetalNavTab activeTab = isHome ? com.petal.browser.ui.components.PetalNavTab.HOME : com.petal.browser.ui.components.PetalNavTab.TABS;
 
@@ -3047,10 +2919,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 if (currentAlbumController != null) {
                                     if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                                         ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).loadUrl(effectiveHome);
-                                    } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(effectiveHome);
-                                    } else if (activeGeckoView != null) {
-                                        activeGeckoView.loadUrl(effectiveHome);
                                     }
                                     showAlbum(currentAlbumController, effectiveHome);
                                 } else {
@@ -3070,7 +2938,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                             boolean keepIncognito = currentAlbumController != null
                                     ? currentAlbumController.isIncognito()
-                                    : (activeGeckoView != null && activeGeckoView.isIncognito());
+                                    : false;
                             float[] o = com.petal.browser.ui.components.PetalNewTabOrigin.take();
                             if (o != null) {
                                 int[] dl = new int[2];
@@ -3183,20 +3051,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private void updateDynamicToolbarHeights(int toolbarHeightPx) {
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).setDynamicToolbarMaxHeight(toolbarHeightPx);
-        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).setDynamicToolbarMaxHeight(toolbarHeightPx);
-        } else if (activeGeckoView != null) {
-            activeGeckoView.setDynamicToolbarMaxHeight(toolbarHeightPx);
         }
     }
 
     private void updateVerticalClipping(int clippingHeightPx) {
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).setVerticalClipping(clippingHeightPx);
-        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).setVerticalClipping(clippingHeightPx);
-        } else if (activeGeckoView != null) {
-            activeGeckoView.setVerticalClipping(clippingHeightPx);
         }
     }
 
@@ -3255,9 +3115,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                     @Override
                     public void onNewTab(boolean incognito) {
-                        boolean keepIncognito = currentAlbumController != null
-                                ? currentAlbumController.isIncognito()
-                                : (activeGeckoView != null && activeGeckoView.isIncognito());
+                        boolean keepIncognito = currentAlbumController != null && currentAlbumController.isIncognito();
                         addAlbum(getString(R.string.app_name), "about:blank", true, keepIncognito);
                     }
 
@@ -3335,7 +3193,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
 
             if (addressBar == null) return;
-            String curUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (activeGeckoView != null ? activeGeckoView.getUrl() : null);
+            String curUrl = currentAlbumController != null ? currentAlbumController.getUrl() : null;
             boolean isWebPage = isActualWebPage(curUrl);
             boolean isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
             boolean isNonWebSurface = !isWebPage || isHome || isOverlayScreenShowing || hasNonTabTopContent()
@@ -3673,10 +3531,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (currentUrl != null && !isHomePage(currentUrl) && !currentUrl.equals(homeUrl)) {
                     if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                         ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).loadUrl(homeUrl);
-                    } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(homeUrl);
-                    } else if (activeGeckoView != null) {
-                        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(homeUrl);
                     }
                     showAlbum(currentAlbumController, homeUrl);
                 } else {
@@ -3698,8 +3552,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (controller == currentAlbumController) {
                     if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
                         predecessor = ((com.petal.browser.browser.PetalTabViewController) controller).getPredecessor();
-                    } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                        predecessor = ((com.petal.browser.view.PetalGeckoView) controller).getPredecessor();
                     } else {
                         predecessor = null;
                     }
@@ -3725,10 +3577,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         isIncog = surface.isIncognito();
                         tabGrpId = surface.getTabGroupId();
                         tabGrpTitle = surface.getTabGroupTitle();
-                    } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                        isIncog = ((com.petal.browser.view.PetalGeckoView) controller).isIncognito();
-                        tabGrpId = ((com.petal.browser.view.PetalGeckoView) controller).getTabGroupId();
-                        tabGrpTitle = ((com.petal.browser.view.PetalGeckoView) controller).getTabGroupTitle();
+
                     } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
                         isIncog = ((com.petal.browser.browser.PlaceholderAlbumController) controller).isIncognito();
                         tabGrpId = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabGroupId();
@@ -3753,9 +3602,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             (com.petal.browser.browser.PetalTabViewController) controller;
                     tabIdToRemove = surface.getTabId();
                     surface.destroy();
-                } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                    tabIdToRemove = ((com.petal.browser.view.PetalGeckoView) controller).getTabId();
-                    ((com.petal.browser.view.PetalGeckoView) controller).destroy();
+
                 } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
                     tabIdToRemove = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabId();
                 }
@@ -3796,10 +3643,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     isIncog = surface.isIncognito();
                     tabGrpId = surface.getTabGroupId();
                     tabGrpTitle = surface.getTabGroupTitle();
-                } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                    isIncog = ((com.petal.browser.view.PetalGeckoView) controller).isIncognito();
-                    tabGrpId = ((com.petal.browser.view.PetalGeckoView) controller).getTabGroupId();
-                    tabGrpTitle = ((com.petal.browser.view.PetalGeckoView) controller).getTabGroupTitle();
+
                 } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
                     isIncog = ((com.petal.browser.browser.PlaceholderAlbumController) controller).isIncognito();
                     tabGrpId = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabGroupId();
@@ -3824,9 +3668,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         (com.petal.browser.browser.PetalTabViewController) controller;
                 tabIdToRemove = surface.getTabId();
                 surface.destroy();
-            } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                tabIdToRemove = ((com.petal.browser.view.PetalGeckoView) controller).getTabId();
-                com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, tabIdToRemove);
+
             } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
                 tabIdToRemove = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabId();
             }
@@ -3880,17 +3722,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (BrowserContainer.size() <= 1) return;
         boolean isCurrentIncog = (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController)
                 ? ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).isIncognito()
-                : (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
-                ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
-                : (activeGeckoView != null && activeGeckoView.isIncognito());
+                : (currentAlbumController instanceof com.petal.browser.browser.PlaceholderAlbumController)
+                ? ((com.petal.browser.browser.PlaceholderAlbumController) currentAlbumController).isIncognito()
+                : false;
 
         List<AlbumController> matchingTabs = new ArrayList<>();
         for (AlbumController ac : BrowserContainer.list()) {
             boolean tabIncog = (ac instanceof com.petal.browser.browser.PetalTabViewController)
                     ? ((com.petal.browser.browser.PetalTabViewController) ac).isIncognito()
-                    : (ac instanceof com.petal.browser.view.PetalGeckoView)
-                    ? ((com.petal.browser.view.PetalGeckoView) ac).isIncognito()
-                    : false; // all tabs are GeckoView
+                    : (ac instanceof com.petal.browser.browser.PlaceholderAlbumController)
+                    ? ((com.petal.browser.browser.PlaceholderAlbumController) ac).isIncognito()
+                    : false;
             if (tabIncog == isCurrentIncog) {
                 matchingTabs.add(ac);
             }
@@ -3911,7 +3753,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public synchronized void updateProgress(int progress) {
         androidx.compose.ui.platform.ComposeView progressBarCompose = findViewById(R.id.main_progress_bar_compose);
-        String currentUrl = currentAlbumController != null && currentAlbumController.getUrl() != null ? currentAlbumController.getUrl() : (activeGeckoView != null ? activeGeckoView.getUrl() : "");
+        String currentUrl = currentAlbumController != null && currentAlbumController.getUrl() != null ? currentAlbumController.getUrl() : "";
         boolean isInternalPage = currentUrl != null && (
             currentUrl.startsWith("petal://settings") ||
             currentUrl.startsWith("petal://history") ||
@@ -3963,9 +3805,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (progress >= 100) {
                 updateOmniBox();
                 saveOpenedTabs();
-                FaviconHelper.setFavicon(context, contentView, activeGeckoView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken);
+                FaviconHelper.setFavicon(context, contentView, (currentAlbumController != null ? currentAlbumController.getUrl() : ""), R.id.menu_icon, R.drawable.icon_image_broken);
                 final Handler handler = new Handler();
-                handler.postDelayed(() -> FaviconHelper.setFavicon(context, contentView, activeGeckoView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken), 500);
+                handler.postDelayed(() -> FaviconHelper.setFavicon(context, contentView, (currentAlbumController != null ? currentAlbumController.getUrl() : ""), R.id.menu_icon, R.drawable.icon_image_broken), 500);
             }
         }
     }
@@ -4094,7 +3936,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         // Attach Petal native video player overlay on top of customView (auto-skipped on YouTube & YT embeds)
         try {
-            com.petal.browser.browser.AlbumController activeController = currentAlbumController != null ? currentAlbumController : activeGeckoView;
+            com.petal.browser.browser.AlbumController activeController = currentAlbumController != null ? currentAlbumController : getOrCreateTabViewController();
             videoOverlayBridge = new com.petal.browser.media.PetalVideoPlayerOverlayBridge(
                     this,
                     activeController,
@@ -4175,12 +4017,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (fab_menu != null) {
             PetalAndroidUtils.applyBouncyTouchFeedback(fab_menu);
             fab_menu.setOnClickListener(view -> {
-                String title = activeGeckoView != null ? activeGeckoView.getTitle() : "";
-                String url = activeGeckoView != null ? activeGeckoView.getUrl() : "";
+                String title = currentAlbumController != null ? currentAlbumController.getTitle() : "";
+                String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
                 showOverflow(null, null, 0, title, url, null, null, 0);
             });
             fab_menu.setOnLongClickListener(view -> {
-                String url = activeGeckoView != null ? activeGeckoView.getUrl() : "";
+                String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
                 performGesture("setting_gesture_tabButton", url);
                 return true;
             });
@@ -4190,8 +4032,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (fab_share != null) {
             PetalAndroidUtils.applyBouncyTouchFeedback(fab_share);
             fab_share.setOnClickListener(v -> {
-                if (activeGeckoView != null && activeGeckoView.getUrl() != null) {
-                    shareLink(activeGeckoView.getTitle(), activeGeckoView.getUrl());
+                if (currentAlbumController != null && currentAlbumController.getUrl() != null) {
+                    shareLink(currentAlbumController.getTitle(), (currentAlbumController != null ? currentAlbumController.getUrl() : ""));
                 }
             });
         }
@@ -4200,8 +4042,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (fab_undo != null) {
             PetalAndroidUtils.applyBouncyTouchFeedback(fab_undo);
             fab_undo.setOnClickListener(v -> {
-                if (activeGeckoView != null && activeGeckoView.canGoBack()) {
-                    activeGeckoView.goBack();
+                if (currentAlbumController != null && currentAlbumController.canGoBack()) {
+                    currentAlbumController.goBack();
                 } else {
                     PetalToast.show(BrowserActivity.this, R.string.ui_nothing_to_undo);
                 }
@@ -4236,22 +4078,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (fab_overview != null) {
             fab_overview.setOnTouchListener(new SwipeTouchListener(context) {
                 public void onSwipeTop() {
-                    String url = activeGeckoView != null ? activeGeckoView.getUrl() : "";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
                     performGesture("setting_gesture_tb_up", url);
                     hideOverview();
                 }
                 public void onSwipeBottom() {
-                    String url = activeGeckoView != null ? activeGeckoView.getUrl() : "";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
                     performGesture("setting_gesture_tb_down", url);
                     hideOverview();
                 }
                 public void onSwipeRight() {
-                    String url = activeGeckoView != null ? activeGeckoView.getUrl() : "";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
                     performGesture("setting_gesture_tb_right", url);
                     hideOverview();
                 }
                 public void onSwipeLeft() {
-                    String url = activeGeckoView != null ? activeGeckoView.getUrl() : "";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
                     performGesture("setting_gesture_tb_left", url);
                     hideOverview();
                 }
@@ -4261,22 +4103,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (fab_menu != null) {
             fab_menu.setOnTouchListener(new SwipeTouchListener(context) {
                 public void onSwipeTop() {
-                    String url = activeGeckoView != null ? activeGeckoView.getUrl() : "";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
                     performGesture("setting_gesture_nav_up", url);
                     hideOverflow();
                 }
                 public void onSwipeBottom() {
-                    String url = activeGeckoView != null ? activeGeckoView.getUrl() : "";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
                     performGesture("setting_gesture_nav_down", url);
                     hideOverflow();
                 }
                 public void onSwipeRight() {
-                    String url = activeGeckoView != null ? activeGeckoView.getUrl() : "";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
                     performGesture("setting_gesture_nav_right", url);
                     hideOverflow();
                 }
                 public void onSwipeLeft() {
-                    String url = activeGeckoView != null ? activeGeckoView.getUrl() : "";
+                    String url = currentAlbumController != null ? currentAlbumController.getUrl() : \"\";
                     performGesture("setting_gesture_nav_left", url);
                     hideOverflow();
                 }
@@ -4287,7 +4129,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             PetalAndroidUtils.applyBouncyTouchFeedback(fab_overview);
             fab_overview.setOnClickListener(v -> showOverview());
             fab_overview.setOnLongClickListener(v -> {
-                performGesture("setting_gesture_overViewButton", activeGeckoView != null ? activeGeckoView.getUrl() : "");
+                performGesture("setting_gesture_overViewButton", currentAlbumController != null ? currentAlbumController.getUrl() : \"\");
                 return true;
             });
         }
@@ -4332,8 +4174,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
                 if (currentAlbumController != null) {
                     showAlbum(currentAlbumController, targetUrl);
-                } else if (activeGeckoView != null) {
-                    showAlbum(currentAlbumController, targetUrl);
+
                 } else {
                     addAlbum(null, targetUrl, true, isIncognito);
                 }
@@ -4397,30 +4238,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 isLoading = state.getLoading();
                 currentProgressFraction = state.getProgress() / 100f;
             }
-        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-            currentUrl = gv.getUrl();
-            currentTitle = gv.getTitle();
-            isIncognito = gv.isIncognito();
-            canGoBack = gv.canGoBack();
-            isLoading = gv.getProgress() < 100;
-            currentFavicon = gv.getFavicon();
-            currentProgressFraction = gv.getProgress() / 100f;
-        } else if (activeGeckoView != null) {
-            currentUrl = activeGeckoView.getUrl();
-            currentTitle = activeGeckoView.getTitle();
-            isIncognito = activeGeckoView.isIncognito();
-            canGoBack = activeGeckoView.canGoBack();
-            isLoading = activeGeckoView.getProgress() < 100;
-            currentFavicon = activeGeckoView.getFavicon();
-            currentProgressFraction = activeGeckoView.getProgress() / 100f;
         }
 
         boolean canGoForward = false;
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             canGoForward = ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).canGoForward();
-        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            canGoForward = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).canGoForward();
         }
         int currentTabCount = isIncognito ? BrowserContainer.getIncognitoCount() : BrowserContainer.getNormalCount();
         com.petal.browser.compose.home.PetalAddressBarBridge.updateNavState(canGoForward, currentTabCount);
@@ -4454,7 +4276,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 },
                 () -> {
                     com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                    String shareUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (activeGeckoView != null ? activeGeckoView.getUrl() : "");
+                    String shareUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (currentAlbumController != null ? currentAlbumController.getUrl() : \"\");
                     if (shareUrl != null && !shareUrl.isEmpty() && !isHomePage(shareUrl)) {
                         Intent shareIntent = new Intent(Intent.ACTION_SEND);
                         shareIntent.setType("text/plain");
@@ -4464,7 +4286,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 },
                 () -> {
                     com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                    String cUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (activeGeckoView != null ? activeGeckoView.getUrl() : "");
+                    String cUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (currentAlbumController != null ? currentAlbumController.getUrl() : \"\");
                     if (cUrl == null || cUrl.equalsIgnoreCase("about:blank") || cUrl.startsWith("about:") || isHomePage(cUrl)) {
                         cUrl = "";
                     }
@@ -4501,10 +4323,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     // Hard Refresh (bypass cache)
                     if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                         ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).reloadBypassCache();
-                    } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).reloadBypassCache();
-                    } else if (activeGeckoView != null) {
-                        activeGeckoView.reload();
                     }
                 },
                 isCurrentPageReaderEligible,
@@ -4526,7 +4344,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private boolean isCurrentPageReaderEligible = false;
 
     public void setReaderModeEligible(com.petal.browser.browser.AlbumController controller, boolean eligible) {
-        if (controller == currentAlbumController || controller == activeGeckoView) {
+        if (controller == currentAlbumController) {
             this.isCurrentPageReaderEligible = eligible;
             updateAddressBar();
         }
@@ -4550,16 +4368,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private Runnable aiResearchTimeoutRunnable;
 
     public void showAiResearchSheet() {
-        if (currentAlbumController == null && activeGeckoView == null) return;
+        if (currentAlbumController == null) return;
 
         // Guard against rapid repeated taps queuing up multiple evaluateJavascript
         // calls on the WebView - this is what made the browser appear to hang.
         if (isAiResearchExtracting) return;
 
-        final String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : activeGeckoView.getUrl();
-        final String currentTitle = (currentAlbumController != null && currentAlbumController.getTitle() != null)
-                ? currentAlbumController.getTitle()
-                : (activeGeckoView != null && activeGeckoView.getTitle() != null ? activeGeckoView.getTitle() : "");
+        final String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
+        final String currentTitle = (currentAlbumController != null && currentAlbumController.getTitle() != null) ? currentAlbumController.getTitle() : "";
 
         if (!com.petal.browser.compose.ai.PetalAiResearchEngine.INSTANCE.isProperWebSite(currentUrl)) {
             return;
@@ -4579,10 +4395,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
-        if (currentAlbumController == null && activeGeckoView == null) {
-            isAiResearchExtracting = false;
-            return;
-        }
+
 
         // Safety timeout: if the page's JS engine is busy or the callback never
         // fires (huge/complex DOM, stalled page, cross-origin edge cases), don't
@@ -5136,7 +4949,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void updateOmniBox() {
-        if (currentAlbumController == null && activeGeckoView == null) return;
+        if (currentAlbumController == null) return;
         updateAddressBar();
 
         String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
@@ -5177,17 +4990,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         if (url != null) {
-            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                gv.initPreferences(url);
+            com.petal.browser.browser.PetalTabViewController surface = getActivePetalTabSurface();
+            if (surface != null) {
                 if (progressBar != null) progressBar.setVisibility(GONE);
                 if (fab_menu != null) setProfileIcon(fab_menu, url);
-            } else if (activeGeckoView != null) {
-                activeGeckoView.initPreferences(url);
-                if (activeGeckoView.isForeground()) {
-                    if (progressBar != null) progressBar.setVisibility(GONE);
-                    if (fab_menu != null) setProfileIcon(fab_menu, url);
-                }
             }
         }
     }
@@ -5224,15 +5030,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     updateFindInPageCompose();
                     if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                         ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).clearFindMatches();
-                    } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).clearMatches();
                     }
                 } else {
                     updateFindInPageCompose();
                     if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                         ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).findAllAsync(query, onResult);
-                    } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findAllAsync(query, onResult);
                     }
                 }
             },
@@ -5240,16 +5042,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // Find Next
                 if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                     ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).findNext(true, onResult);
-                } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(true, onResult);
                 }
             },
             () -> {
                 // Find Previous
                 if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                     ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).findNext(false, onResult);
-                } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).findNext(false, onResult);
                 }
             },
             this::closeFindInPage
@@ -5303,10 +5101,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).clearFindMatches();
-        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).clearMatches();
-        } else if (activeGeckoView != null) {
-            activeGeckoView.clearMatches();
+
         }
         if (appBar != null) appBar.setVisibility(VISIBLE);
         updateBackCallbackState();
@@ -5516,7 +5311,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             AlbumController controller = currentAlbumController;
-            String currentUrl = controller != null ? controller.getUrl() : (activeGeckoView != null ? activeGeckoView.getUrl() : null);
+            String currentUrl = controller != null ? controller.getUrl() : (currentAlbumController != null ? currentAlbumController.getUrl() : null);
             if (currentUrl == null) {
                 return false;
             }
@@ -5528,10 +5323,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             boolean isScrolledToTop = false;
             if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
                 isScrolledToTop = ((com.petal.browser.browser.PetalTabViewController) controller).isPageAtTop();
-            } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                isScrolledToTop = ((com.petal.browser.view.PetalGeckoView) controller).isPageAtTop();
-            } else if (activeGeckoView != null) {
-                isScrolledToTop = activeGeckoView.getScrollY() <= 0;
             }
 
             return isScrolledToTop && !refreshState.isRefreshing() && !areBarsAnimating();
@@ -5581,10 +5372,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                 ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).reload();
-            } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).reload();
-            } else if (activeGeckoView != null) {
-                activeGeckoView.reload();
             } else {
                 resetRefreshState();
             }
@@ -5693,9 +5480,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // Never let a slow compositor block opening the tab manager.
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(finish, 450L);
             java.util.function.Consumer<android.graphics.Bitmap> onCaptured = bitmap -> finish.run();
-            if (current instanceof com.petal.browser.view.PetalGeckoView) {
-                ((com.petal.browser.view.PetalGeckoView) current).captureForSwitcher(onCaptured);
-            } else if (current instanceof com.petal.browser.browser.PetalTabViewController) {
+            if (current instanceof com.petal.browser.browser.PetalTabViewController) {
                 ((com.petal.browser.browser.PetalTabViewController) current).captureForSwitcher(onCaptured);
             } else {
                 finish.run();
@@ -6049,17 +5834,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View fab_bubble_omnibox = findViewById(R.id.fab_bubble);
             if (fab_bubble_omnibox != null) fab_bubble_omnibox.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
-            String pageTitle = currentAlbumController != null ? currentAlbumController.getTitle() : (activeGeckoView != null ? activeGeckoView.getTitle() : "");
-            String pageUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (activeGeckoView != null ? activeGeckoView.getUrl() : "");
+            String pageTitle = currentAlbumController != null ? currentAlbumController.getTitle() : "";
+            String pageUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
             Bitmap favicon = null;
-            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                favicon = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getFavicon();
-            } else if (activeGeckoView != null) {
-                favicon = activeGeckoView.getFavicon();
+            if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                favicon = ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).getFavicon();
             }
-            boolean isIncognitoTab = currentAlbumController != null
-                    ? currentAlbumController.isIncognito()
-                    : (activeGeckoView != null && activeGeckoView.isIncognito());
+            boolean isIncognitoTab = currentAlbumController != null && currentAlbumController.isIncognito();
 
             View omniboxView = com.petal.browser.ui.components.PetalOmniboxBridge.createOmniboxView(
                 BrowserActivity.this,
@@ -6149,10 +5930,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View historyView = com.petal.browser.compose.history.PetalHistoryBridge.createHistoryView(
                 BrowserActivity.this,
                 url -> {
-                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(url);
-                    } else if (activeGeckoView != null) {
-                        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(url);
+                    if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                        ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).loadUrl(url);
                     }
                     showAlbum(currentAlbumController, url);
                 },
@@ -6190,10 +5969,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View bookmarksView = com.petal.browser.compose.bookmarks.PetalBookmarksBridge.createBookmarksView(
                 BrowserActivity.this,
                 url -> {
-                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(url);
-                    } else if (activeGeckoView != null) {
-                        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(url);
+                    if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                        ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).loadUrl(url);
                     }
                     showAlbum(currentAlbumController, url);
                 },
@@ -6595,11 +6372,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_images", checkbox_image.isChecked()).apply();
                 }  else if (profile.equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_images", checkbox_image.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_images", checkbox_image.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_images", checkbox_image.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_images", checkbox_image.isChecked()).apply();
                 }
             });
 
@@ -6608,12 +6385,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_java.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_javascript", checkbox_java.isChecked()).apply();
-                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                } else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_javascript", checkbox_java.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_javascript", checkbox_java.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_javascript", checkbox_java.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_javascript", checkbox_java.isChecked()).apply();
                 }
             });
 
@@ -6622,12 +6399,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_javaPopUp.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_javascriptPopUp", checkbox_javaPopUp.isChecked()).apply();
-                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                } else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_javascriptPopUp", checkbox_javaPopUp.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_javascriptPopUp", checkbox_javaPopUp.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_javascriptPopUp", checkbox_javaPopUp.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_javascriptPopUp", checkbox_javaPopUp.isChecked()).apply();
                 }
             });
 
@@ -6636,12 +6413,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_cookies.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_cookies", checkbox_cookies.isChecked()).apply();
-                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                } else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_cookies", checkbox_cookies.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_cookies", checkbox_cookies.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_cookies", checkbox_cookies.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_cookies", checkbox_cookies.isChecked()).apply();
                 }
             });
 
@@ -6650,12 +6427,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_cookiesThirdParty.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_cookiesThirdParty", checkbox_cookiesThirdParty.isChecked()).apply();
-                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                }  else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_cookiesThirdParty", checkbox_cookiesThirdParty.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_cookiesThirdParty", checkbox_cookiesThirdParty.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_cookiesThirdParty", checkbox_cookiesThirdParty.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_cookiesThirdParty", checkbox_cookiesThirdParty.isChecked()).apply();
                 }
             });
 
@@ -6664,12 +6441,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_cookiesBanner.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_deny_cookie_banners", checkbox_cookiesBanner.isChecked()).apply();
-                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                } else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_deny_cookie_banners", checkbox_cookiesBanner.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_deny_cookie_banners", checkbox_cookiesBanner.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_deny_cookie_banners", checkbox_cookiesBanner.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_deny_cookie_banners", checkbox_cookiesBanner.isChecked()).apply();
                 }
             });
 
@@ -6678,12 +6455,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_fingerPrint.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_fingerPrintProtection", checkbox_fingerPrint.isChecked()).apply();
-                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                } else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_fingerPrintProtection", checkbox_fingerPrint.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_fingerPrintProtection", checkbox_fingerPrint.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_fingerPrintProtection", checkbox_fingerPrint.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_fingerPrintProtection", checkbox_fingerPrint.isChecked()).apply();
                 }
             });
 
@@ -6692,12 +6469,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_adBlock.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_adBlock", checkbox_adBlock.isChecked()).apply();
-                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                }  else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_adBlock", checkbox_adBlock.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_adBlock", checkbox_adBlock.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_adBlock", checkbox_adBlock.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_adBlock", checkbox_adBlock.isChecked()).apply();
                 }
             });
 
@@ -6706,12 +6483,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_trackingURL.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_trackingULS", checkbox_trackingURL.isChecked()).apply();
-                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                }  else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_trackingULS", checkbox_trackingURL.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_trackingULS", checkbox_trackingURL.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_trackingULS", checkbox_trackingURL.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_trackingULS", checkbox_trackingURL.isChecked()).apply();
                 }
             });
 
@@ -6720,12 +6497,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_saveData.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_saveData", checkbox_saveData.isChecked()).apply();
-                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                }  else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_saveData", checkbox_saveData.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_saveData", checkbox_saveData.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_saveData", checkbox_saveData.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_saveData", checkbox_saveData.isChecked()).apply();
                 }
             });
 
@@ -6734,12 +6511,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_history.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_saveHistory", checkbox_history.isChecked()).apply();
-                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                }  else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_saveHistory", checkbox_history.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_saveHistory", checkbox_history.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_saveHistory", checkbox_history.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_saveHistory", checkbox_history.isChecked()).apply();
                 }
             });
 
@@ -6748,12 +6525,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_location.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_location", checkbox_location.isChecked()).apply();
-                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                } else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_location", checkbox_location.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_location", checkbox_location.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_location", checkbox_location.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_location", checkbox_location.isChecked()).apply();
                 }
             });
 
@@ -6762,12 +6539,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_mic.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_microphone", checkbox_mic.isChecked()).apply();
-                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                }  else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_microphone", checkbox_mic.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_microphone", checkbox_mic.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_microphone", checkbox_mic.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_microphone", checkbox_mic.isChecked()).apply();
                 }
             });
 
@@ -6776,12 +6553,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_camera.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_camera", checkbox_camera.isChecked()).apply();
-                } else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                } else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_camera", checkbox_camera.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_camera", checkbox_camera.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_camera", checkbox_camera.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_camera", checkbox_camera.isChecked()).apply();
                 }
             });
 
@@ -6790,12 +6567,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_dom.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_dom", checkbox_dom.isChecked()).apply();
-                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                }  else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_dom", checkbox_dom.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_dom", checkbox_dom.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_dom", checkbox_dom.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_dom", checkbox_dom.isChecked()).apply();
                 }
             });
 
@@ -6812,12 +6589,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 checkbox_nightView.setOnClickListener(v -> {
                     if (listStandard.isWhite(url)){
                         sp.edit().putBoolean(profile + "_night", checkbox_nightView.isChecked()).apply();
-                    }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                        activeGeckoView.setProfileChanged();
+                    }  else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                        if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                         setProfileIcon(buttonProfile, url);
-                        sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_night", checkbox_nightView.isChecked()).apply();
+                        sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_night", checkbox_nightView.isChecked()).apply();
                     } else {
-                        sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_night", checkbox_nightView.isChecked()).apply();
+                        sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_night", checkbox_nightView.isChecked()).apply();
                     }
                 });
             }
@@ -6827,12 +6604,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_desktop.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_desktop", checkbox_desktop.isChecked()).apply();
-                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                }  else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_desktop", checkbox_desktop.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_desktop", checkbox_desktop.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_desktop", checkbox_desktop.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_desktop", checkbox_desktop.isChecked()).apply();
                 }
             });
 
@@ -6841,12 +6618,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             checkbox_drm.setOnClickListener(v -> {
                 if (listStandard.isWhite(url)){
                     sp.edit().putBoolean(profile + "_drm", checkbox_drm.isChecked()).apply();
-                }  else if (com.petal.browser.view.PetalGeckoView.getProfile(this).equals("profileStandard")) {
-                    activeGeckoView.setProfileChanged();
+                }  else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
+                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
                     setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_drm", checkbox_drm.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_drm", checkbox_drm.isChecked()).apply();
                 } else {
-                    sp.edit().putBoolean(com.petal.browser.view.PetalGeckoView.getProfile(this) + "_drm", checkbox_drm.isChecked()).apply();
+                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_drm", checkbox_drm.isChecked()).apply();
                 }
             });
 
@@ -6923,21 +6700,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             Button ib_settings = dialogViewFastToggle.findViewById(R.id.ib_settings);
             PetalAndroidUtils.applyBouncyTouchFeedback(ib_settings);
             ib_settings.setOnClickListener(view -> {
-                if (activeGeckoView != null) {
-                    dialogFastToggle.cancel();
-                    Intent settings = new Intent(BrowserActivity.this, SettingsActivity.class);
-                    startActivity(settings);
-                }
+                dialogFastToggle.cancel();
+                Intent settings = new Intent(BrowserActivity.this, SettingsActivity.class);
+                startActivity(settings);
             });
 
             Button button_help = dialogViewFastToggle.findViewById(R.id.button_help);
             PetalAndroidUtils.applyBouncyTouchFeedback(button_help);
             button_help.setOnClickListener(view -> {
                 dialogFastToggle.cancel();
-                if (activeGeckoView != null) {
-                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl("about:blank");
-                    showAlbum(currentAlbumController, "about:blank");
-                }
+                showAlbum(currentAlbumController, "about:blank");
             });
             dialogFastToggle.setOnDismissListener(dialogInterface -> setProfileIcon(floatingActionButton,url));
             dialogFastToggle.show();
@@ -7017,7 +6789,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 boolean isYouTube = com.petal.browser.media.PetalVideoPlayerOverlayBridge.Companion.isYouTubeVideo(currentAlbumController, null);
                 if (nativePlayerEnabled && !isYouTube && videoOverlayBridge == null) {
                     FrameLayout decorView = (FrameLayout) getWindow().getDecorView();
-                    com.petal.browser.browser.AlbumController activeController = currentAlbumController != null ? currentAlbumController : activeGeckoView;
+                    com.petal.browser.browser.AlbumController activeController = currentAlbumController != null ? currentAlbumController : getOrCreateTabViewController();
                     videoOverlayBridge = new com.petal.browser.media.PetalVideoPlayerOverlayBridge(
                             this,
                             activeController,
@@ -7109,7 +6881,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     sp.edit().putString("profile", "profileStandard").apply();
                     this.setProfileIcon(buttonProfile, url);
                     if (!listStandard.isWhite(url)){
-                        activeGeckoView.reload();
+                        reloadCurrentBrowserTab();
                     }return false;
                 });
                 builderTrack.setView(dialogView);
@@ -7244,7 +7016,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
     public void searchOnSite() {
-        String curUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (activeGeckoView != null ? activeGeckoView.getUrl() : "");
+        String curUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
         if (isPetalHomeSurfaceShowing || isHomePage(curUrl) || curUrl == null || curUrl.isEmpty() || curUrl.equalsIgnoreCase("about:blank")) {
             // Find in page is exclusive to websites, not available on home page
             return;
@@ -7577,15 +7349,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     if (localHtmlFile != null && localHtmlFile.exists()) {
                         String localUrl = "file://" + localHtmlFile.getAbsolutePath();
                         addAlbum(fileName, localUrl, true);
-                        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(localUrl);
+                        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                            ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).loadUrl(localUrl);
                         }
                     } else {
                         addAlbum(fileName, "about:blank" , true);
                         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                             ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).loadData(fileContent, "text/html", "UTF-8");
-                        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadDataWithBaseURL(null, fileContent, "text/html", "UTF-8", null);
+                        } else if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                            ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).loadDataWithBaseURL(null, fileContent, "text/html", "UTF-8", null);
                         }
                     }
                 } else {
@@ -7620,7 +7392,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     // HTML-Sonderzeichen maskieren
                     String escapedContent = formattedContent.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
                     // Das universelle HTML-Gerüst mit Dateiname, Pfad und responsivem Code-Block
-                    // NEU: Das <title>-Tag sorgt dafür, dass activeGeckoView.getTitle() den Dateinamen liefert
+                    // NEU: Das <title>-Tag sorgt dafür, dass currentAlbumController.getTitle() den Dateinamen liefert
                     String htmlWrapper = "<html><head>"
                             + "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
                             + "<title>" + fileName + "</title>"
@@ -7644,8 +7416,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     addAlbum(fileName, virtualFileUrl, true);
                     if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                         ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).loadData(htmlWrapper, "text/html", "UTF-8");
-                    } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadDataWithBaseURL(virtualFileUrl, htmlWrapper, "text/html", "UTF-8", null);
                     }
                 }
             } else {
@@ -8300,13 +8070,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.browser.PetalTabViewController surface = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
             surface.setTabGroupId(groupId);
             surface.setTabGroupTitle(groupTitle);
-        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-            gv.setTabGroupId(groupId);
-            gv.setTabGroupTitle(groupTitle);
-        } else if (activeGeckoView != null) {
-            activeGeckoView.setTabGroupId(groupId);
-            activeGeckoView.setTabGroupTitle(groupTitle);
         }
         saveOpenedTabs();
     }
@@ -8342,12 +8105,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if ((url == null || url.isEmpty() || "about:blank".equalsIgnoreCase(url)) && currentAlbumController != null) {
             url = currentAlbumController.getUrl();
         }
-        if ((url == null || url.isEmpty() || "about:blank".equalsIgnoreCase(url)) && currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            url = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getAlbumUrl();
-        }
-        if ((url == null || url.isEmpty() || "about:blank".equalsIgnoreCase(url)) && activeGeckoView != null) {
-            url = activeGeckoView.getUrl();
-        }
+
         if ((url == null || url.isEmpty() || "about:blank".equalsIgnoreCase(url))) {
             try {
                 mozilla.components.browser.state.store.BrowserStore store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this);
@@ -8375,11 +8133,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 return;
             }
             com.petal.browser.pwa.PetalPwaManager manager = null;
-            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                manager = gv.getPwaManager();
-                if (manager == null) { manager = new com.petal.browser.pwa.PetalPwaManager(this, gv, null); gv.setPwaManager(manager); }
-            } else if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                 com.petal.browser.browser.PetalTabViewController tv = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
                 manager = tv.getPwaManager();
                 if (manager == null) { manager = new com.petal.browser.pwa.PetalPwaManager(this, tv, null); tv.setPwaManager(manager); }
@@ -8464,7 +8218,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void createWebPrintJob(WebView webView) {
-        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView || currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             try {
                 java.io.File cacheDir = getCacheDir();
                 java.io.File pdfFile = new java.io.File(cacheDir, "print_temp.pdf");
@@ -8532,9 +8286,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 };
 
-                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).printToPdf(fos, callback);
-                } else {
+                if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                     ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).printToPdf(fos, callback);
                 }
             } catch (Exception e) {
@@ -8562,11 +8314,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         super.onPause();
         try {
-            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                com.petal.browser.view.PetalGeckoView activeGecko = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                activeGecko.updatePreviewCache(false);
-                activeGecko.onPause();
-            } else if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
                 com.petal.browser.browser.PetalTabViewController activeController = (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
                 activeController.updatePreviewCache(false);
             }

@@ -1158,7 +1158,7 @@ private fun openTorraysUrl(context: Context, url: String) {
         val activity = context as? com.petal.browser.activity.BrowserActivity
         if (activity != null) {
             val ctrl = activity.currentAlbumController
-            if (ctrl is com.petal.browser.view.PetalGeckoView) {
+            if (ctrl is com.petal.browser.browser.PetalTabViewController) {
                 ctrl.loadUrl(url)
                 activity.showAlbum(ctrl, url)
             } else {

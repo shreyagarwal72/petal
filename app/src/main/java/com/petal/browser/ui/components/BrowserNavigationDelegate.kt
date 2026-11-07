@@ -13,7 +13,6 @@ import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.unit.PetalBrowserUtils
 import com.petal.browser.view.PetalToast
-import com.petal.browser.view.PetalGeckoView
 
 /**
  * Kotlin delegate handling navigation, overview tab switching, and
@@ -24,12 +23,11 @@ object BrowserNavigationDelegate {
     @JvmStatic
     fun showOverflowMenu(activity: BrowserActivity) {
         val currentController = activity.currentAlbumController
-        val geckoView = currentController as? com.petal.browser.view.PetalGeckoView
-        val tabSurface = currentController as? com.petal.browser.browser.PetalTabViewController
+        val tabSurface = currentController as? com.petal.browser.browser.PetalTabViewController ?: activity.getOrCreateTabViewController()
 
-        val isHome = activity.isPetalHomeSurfaceShowing || activity.isCurrentTabHomeOrBlank || PetalBrowserUtils.isHomePage(geckoView?.url ?: currentController?.url)
-        val title = if (isHome) "Petal Home" else (geckoView?.title ?: currentController?.title ?: "")
-        val url = if (isHome) "petal://home" else (geckoView?.url ?: currentController?.url ?: "")
+        val isHome = activity.isPetalHomeSurfaceShowing || activity.isCurrentTabHomeOrBlank || PetalBrowserUtils.isHomePage(tabSurface?.url ?: currentController?.url)
+        val title = if (isHome) "Petal Home" else (tabSurface?.title ?: currentController?.title ?: "")
+        val url = if (isHome) "petal://home" else (tabSurface?.url ?: currentController?.url ?: "")
 
         var isBookmarked = false
         if (!isHome && url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)) {
@@ -39,9 +37,9 @@ object BrowserNavigationDelegate {
             action.close()
         }
 
-        val canGoBack = tabSurface?.canGoBack() ?: geckoView?.canGoBack() ?: false
-        val canGoForward = tabSurface?.canGoForward() ?: geckoView?.canGoForward() ?: false
-        val profile = PetalGeckoView.getProfile(activity)
+        val canGoBack = tabSurface?.canGoBack() ?: false
+        val canGoForward = tabSurface?.canGoForward() ?: false
+        val profile = com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(activity)
         val prefs = activity.sp ?: PreferenceManager.getDefaultSharedPreferences(activity)
         val isDesktopSite = prefs.getBoolean("${profile}_desktop", false)
         val isAdBlock = prefs.getBoolean("sp_ad_block", prefs.getBoolean("${profile}_adBlock", true))
@@ -230,7 +228,7 @@ object BrowserNavigationDelegate {
                 }
 
                 override fun onOpenDevConsole() {
-                    val geckoView = currentController as? com.petal.browser.view.PetalGeckoView
+                    val tab = currentController as? com.petal.browser.browser.PetalTabViewController ?: activity.getOrCreateTabViewController()
                     val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
                         setViewTreeLifecycleOwner(activity)
                         setViewTreeViewModelStoreOwner(activity)
@@ -239,7 +237,7 @@ object BrowserNavigationDelegate {
                             com.petal.browser.ui.theme.PetalExpressiveTheme {
                                 com.petal.browser.tools.PetalDevConsoleSheet(
                                     onExecuteScript = { script, callback ->
-                                        geckoView?.evaluateJavascript(script, callback)
+                                        tab?.evaluateJavascript(script, callback)
                                             ?: callback("Error: Web session not active")
                                     },
                                     onDismissRequest = {

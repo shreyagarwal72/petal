@@ -58,13 +58,9 @@ import com.petal.browser.R
 
 /**
  * Shows a page preview in a constrained card without navigating the user's
- * actual current tab. Deliberately does NOT use BrowserWebViewController's
- * createAndConfigureGeckoView() - that wires a PetalGeckoView into media/PiP/
- * tab-lifecycle plumbing meant for a real, tracked browser tab, which a
- * disposable preview should never become. This bridge creates a bare
- * PetalGeckoView, loads the URL, and calls its destroy() to tear the session
- * down completely when the preview is dismissed - the preview is never added
- * to BrowserContainer and never becomes a real tab.
+ * actual current tab. Creates an isolated PetalTabViewController session, loads
+ * the URL, and calls its destroy() to tear the session down completely when the preview is
+ * dismissed - the preview is never added to BrowserContainer and never becomes a real tab.
  */
 object PetalPagePreviewBridge {
 

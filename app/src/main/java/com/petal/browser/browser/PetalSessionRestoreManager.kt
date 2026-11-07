@@ -10,7 +10,6 @@ import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.engine.gecko.PetalEngineStore
-import com.petal.browser.view.PetalGeckoView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.action.ContentAction
@@ -123,27 +122,6 @@ object PetalSessionRestoreManager {
                             store.dispatch(ContentAction.UpdateTitleAction(tabId, title))
                         }
                     }
-                    is PetalGeckoView -> {
-                        val tabId = controller.getTabId()
-                        if (isStopping) {
-                            try {
-                                val engineSessionState = wrapGeckoState(controller.getSessionState())
-                                if (engineSessionState != null) {
-                                    store.dispatch(EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState))
-                                }
-                            } catch (t: Throwable) {
-                                Log.w(TAG, "Failed to capture engine state for tab $tabId: ${t.message}")
-                            }
-                        }
-                        val url = controller.url
-                        if (url.isNotBlank() && !isHomeUrl(url) && !url.equals("about:blank", ignoreCase = true)) {
-                            store.dispatch(ContentAction.UpdateUrlAction(tabId, url))
-                        }
-                        val title = controller.title
-                        if (title.isNotBlank()) {
-                            store.dispatch(ContentAction.UpdateTitleAction(tabId, title))
-                        }
-                    }
                     is PlaceholderAlbumController -> {
                         // Already suspended with engineSessionState captured
                     }
@@ -154,7 +132,6 @@ object PetalSessionRestoreManager {
             val activeController = activity.currentAlbumController
             val activeTabId = when (activeController) {
                 is PetalTabViewController -> activeController.getTabId()
-                is PetalGeckoView -> activeController.getTabId()
                 is PlaceholderAlbumController -> activeController.getTabId()
                 else -> null
             }

@@ -6,7 +6,6 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer
 import com.petal.browser.browser.PlaceholderAlbumController
-import com.petal.browser.view.PetalGeckoView
 import mozilla.components.browser.state.action.EngineAction
 import java.util.concurrent.TimeUnit
 
@@ -42,9 +41,7 @@ object PetalTabSuspender {
         if (isForeground) return false
         if (tab is PlaceholderAlbumController) return false
         // Never suspend if playing media/audio
-        if (tab is PetalGeckoView) {
-            if (tab.isPlayingAudio() || tab.hasActiveMediaSession()) return false
-        } else if (tab is com.petal.browser.browser.PetalTabViewController) {
+        if (tab is com.petal.browser.browser.PetalTabViewController) {
             val bridge = tab.getMediaBridge()
             if (bridge != null && bridge.hasActiveMedia()) return false
         }
@@ -72,30 +69,6 @@ object PetalTabSuspender {
         val isIncognito: Boolean
 
         when (controller) {
-            is PetalGeckoView -> {
-                tabId = controller.getTabId()
-                url = if (controller.persistentUrl.isNotBlank()) controller.persistentUrl else controller.url
-                title = controller.title
-                favicon = controller.getFavicon()
-                groupId = controller.getTabGroupId()
-                groupTitle = controller.getTabGroupTitle()
-                isIncognito = controller.isIncognito()
-
-                try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
-                try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
-
-                try {
-                    controller.deactivate()
-                    val session = controller.session
-                    com.petal.browser.extensions.PetalExtensionManager.detachSession(session)
-                    if (session.isOpen) {
-                        controller.geckoView.releaseSession()
-                        session.close()
-                    }
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Error closing GeckoSession during suspension: ${t.message}")
-                }
-            }
             is com.petal.browser.browser.PetalTabViewController -> {
                 tabId = controller.getTabId() ?: controller.hashCode().toString()
                 url = controller.url
@@ -170,11 +143,7 @@ object PetalTabSuspender {
             val controller = BrowserContainer.get(i)
             if (controller === activeController) continue
             if (!canSuspendTab(controller, false)) continue
-            val tabId = when (controller) {
-                is PetalGeckoView -> controller.getTabId()
-                is com.petal.browser.browser.PetalTabViewController -> controller.getTabId()
-                else -> null
-            } ?: continue
+            val tabId = (controller as? com.petal.browser.browser.PetalTabViewController)?.getTabId() ?: continue
             val lastAccess = getTabLastAccess(tabId)
             if (lastAccess > 0L && (now - lastAccess) >= timeoutMs) {
                 toSuspend.add(Pair(i, controller))
@@ -203,11 +172,7 @@ object PetalTabSuspender {
             val controller = BrowserContainer.get(i)
             if (controller === activeController) continue
             if (!canSuspendTab(controller, false)) continue
-            val tabId = when (controller) {
-                is PetalGeckoView -> controller.getTabId()
-                is com.petal.browser.browser.PetalTabViewController -> controller.getTabId()
-                else -> null
-            } ?: continue
+            val tabId = (controller as? com.petal.browser.browser.PetalTabViewController)?.getTabId() ?: continue
             val lastAccess = getTabLastAccess(tabId)
             candidates.add(Pair(i, lastAccess))
         }

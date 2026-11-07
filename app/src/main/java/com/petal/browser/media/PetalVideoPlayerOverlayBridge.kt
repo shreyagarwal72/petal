@@ -20,7 +20,6 @@ import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
-import com.petal.browser.view.PetalGeckoView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
@@ -38,8 +37,7 @@ class PetalVideoPlayerOverlayBridge(
 ) : PetalMediaBridge.MediaStateListener {
 
     private val mediaBridge: PetalMediaBridge?
-        get() = (controller as? PetalGeckoView)?.getMediaBridge()
-            ?: (controller as? PetalTabViewController)?.getMediaBridge()
+        get() = (controller as? PetalTabViewController)?.getMediaBridge()
             ?: (activity as? com.petal.browser.activity.BrowserActivity)?.activeMediaBridge
 
     private var composeView: ComposeView? = null
@@ -192,16 +190,6 @@ class PetalVideoPlayerOverlayBridge(
                             // 2. Query DOM for HTML5 <video> src or currentSrc
                             val queryScript = "(function() { var v = document.querySelector('video'); return v ? (v.currentSrc || v.src || '') : ''; })()"
                             when (currentTab) {
-                                is PetalGeckoView -> {
-                                    currentTab.evaluateJavascript(queryScript) { domSrc ->
-                                        val finalUrl = when {
-                                            !domSrc.isNullOrBlank() && !domSrc.startsWith("blob:") && !domSrc.startsWith("ERROR:") -> domSrc
-                                            !streamCandidate.isNullOrBlank() -> streamCandidate
-                                            else -> pageUrl
-                                        }
-                                        PetalCastManager.castMedia(activity, finalUrl, title)
-                                    }
-                                }
                                 is PetalTabViewController -> {
                                     currentTab.evaluateJavascript(queryScript) { domSrc ->
                                         val finalUrl = when {

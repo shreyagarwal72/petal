@@ -195,7 +195,6 @@ private fun resolveEntries(handler: PetalDesktopTabBarHandler): List<PetalDeskto
             else -> "Petal Home"
         }
         val favicon = when (album) {
-            is com.petal.browser.view.PetalGeckoView -> album.getFavicon()
             is com.petal.browser.browser.PetalTabViewController -> album.getFavicon()
             is com.petal.browser.browser.PlaceholderAlbumController -> album.getFavicon()
             else -> null

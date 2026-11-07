@@ -36,9 +36,6 @@ object PetalAccessibilityEngine {
             is com.petal.browser.browser.PetalTabViewController -> {
                 controller.evaluateJavascript(script, null)
             }
-            is com.petal.browser.view.PetalGeckoView -> {
-                controller.evaluateJavascript(script, null)
-            }
             is WebView -> {
                 controller.evaluateJavascript(script, null)
             }
@@ -319,12 +316,10 @@ object PetalAccessibilityEngine {
 
             val canBack = when (controller) {
                 is com.petal.browser.browser.PetalTabViewController -> controller.canGoBack()
-                is com.petal.browser.view.PetalGeckoView -> controller.canGoBack()
                 else -> false
             }
             val canFwd = when (controller) {
                 is com.petal.browser.browser.PetalTabViewController -> controller.canGoForward()
-                is com.petal.browser.view.PetalGeckoView -> controller.canGoForward()
                 else -> false
             }
 
@@ -332,14 +327,12 @@ object PetalAccessibilityEngine {
                 lastSwipeTime = now
                 when (controller) {
                     is com.petal.browser.browser.PetalTabViewController -> controller.goBack()
-                    is com.petal.browser.view.PetalGeckoView -> controller.goBack()
                 }
                 return true
             } else if (hScroll > 0.65f && canFwd) {
                 lastSwipeTime = now
                 when (controller) {
                     is com.petal.browser.browser.PetalTabViewController -> controller.goForward()
-                    is com.petal.browser.view.PetalGeckoView -> controller.goForward()
                 }
                 return true
             }

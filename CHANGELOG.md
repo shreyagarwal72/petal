@@ -1,3 +1,26 @@
+### v4.7.0 — 🚀 Unified Single-Engine Architecture & Fenix Stack Consolidation
+
+> *"A monumental engine modernization release consolidating Petal Browser onto a single, high-performance tab and engine architecture powered by Mozilla Android Components and GeckoView 159. Completely eliminates GPU texture leaks and render-thread stall ANRs by adopting the single-viewport Fenix model, enforces safe delegate ownership across Activity recreations, and fully retires legacy PetalGeckoView while 100% preserving Petal's bespoke Liquid Glass design, pull-to-refresh mechanics, and WebExtension capabilities."*
+
+#### 🏗️ Single Engine View Architecture (Fenix Model)
+- Consolidated open tab management onto a single active `PetalTabViewController` mounted in `contentFrame`.
+- Demoted background tabs to lightweight `PlaceholderAlbumController` instances with state retained in `BrowserStore`, avoiding multi-SurfaceView texture bloat and GPU memory exhaustion.
+- Dynamic tab switching seamlessly rebinds the selected engine session using `singleTabViewController.render(session)`.
+
+#### 🛡️ Robust Delegate Ownership & Activity Recreation Protection
+- Implemented `PetalOwnedDelegate` contract on `PetalPromptDelegateWrapper`, `PetalPermissionDelegateWrapper`, and `PetalContentDelegateWrapper`.
+- Dynamic `rebind()` pattern updates the volatile Activity provider across configuration changes without re-instantiating delegates on live Gecko sessions.
+- Added graceful fallback forwarding to prevent missed background prompts.
+
+#### ⚡ Store-Driven Reactive State & APZ Touch Arbitration
+- Bound `BrowserActivity` state observation directly to `PetalEngineStore.observeManually()`, driving loading progress, omnibox, and back stack reactively from `BrowserStore`.
+- Integrated Async Pan Zoom (APZ) `PanZoomController` overscroll detection (`canOverscrollTop()`) to accurately differentiate document-level pull-to-refresh from nested scrollable elements.
+
+#### 🧹 Legacy Removal & Engine Bridge Centralization
+- Extracted all static engine helpers, download routing, intent handling, profile lookups, and user-agent generation into `PetalEngineBridge`.
+- Completely removed legacy `PetalGeckoView.kt` and `BrowserWebViewController.kt`.
+- Cleaned all legacy `activeGeckoView` static references and `instanceof PetalGeckoView` branches across `BrowserActivity`.
+
 ### v4.6.0 — ✨ More Expressive & Tactile Layout Controls
 
 > *"The landmark 'More Expressive' release elevates Petal Browser to new heights of Material 3 Expressive design, fluid reactive theming, and tactile user customization: introducing a comprehensive ImageToolbox-style Layout & Controls suite with live component styling, seamless Liquid Glass auto-adaptation, PixelMusic-grade expressive fast-scrollbars, overhauled Mix Palettes with one-tap harmony recipes, bi-directional Send Tab to Device across all connected Firefox instances, and a robust Reader Mode with Read Aloud text-to-speech."*

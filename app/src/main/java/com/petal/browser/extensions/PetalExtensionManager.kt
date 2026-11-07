@@ -25,7 +25,6 @@ import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.petal.browser.view.PetalGeckoView
 import com.petal.browser.activity.BrowserActivity
 
 /**
@@ -861,10 +860,7 @@ object PetalExtensionManager {
                         }
                         if (controller != null) {
                             details.url?.takeIf { it.isNotBlank() }?.let { url ->
-                                when (controller) {
-                                    is PetalGeckoView -> controller.loadUrl(url)
-                                    is com.petal.browser.browser.PetalTabViewController -> controller.loadUrl(url)
-                                }
+                                (controller as? com.petal.browser.browser.PetalTabViewController)?.loadUrl(url)
                             }
                             if (details.active == true) activity.showAlbum(controller)
                         }
@@ -1245,7 +1241,6 @@ object PetalExtensionManager {
     }
 
     private fun geckoSessionFor(controller: AlbumController): GeckoSession? = when (controller) {
-        is PetalGeckoView -> controller.session
         is com.petal.browser.browser.PetalTabViewController -> controller.getGeckoSession()
         else -> null
     }

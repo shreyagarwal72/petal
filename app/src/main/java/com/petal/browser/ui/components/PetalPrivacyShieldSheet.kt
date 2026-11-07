@@ -228,9 +228,6 @@ object PetalPrivacyShieldSheet {
                                                 val current = activity.currentAlbumController
                                                 if (current is com.petal.browser.browser.PetalTabViewController) {
                                                     current.reload()
-                                                } else if (current is com.petal.browser.view.PetalGeckoView) {
-                                                    current.initPreferences(pageUrl)
-                                                    current.reload()
                                                 }
                                             }
                                         },

@@ -6,7 +6,7 @@
  *
  * Uses com.google.android.material.bottomsheet.BottomSheetDialog to guarantee
  * clean window management, prevent decorView pollution, and eliminate activity freezes.
- * Universally supports both PetalTabViewController and PetalGeckoView tabs.
+ * Universally supports PetalTabViewController tabs.
  *
  * Copyright (c) 2026 Petal Browser
  */
@@ -43,7 +43,6 @@ import com.petal.browser.lens.PetalLensBridge
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.view.PetalGeckoView
 import com.petal.browser.view.PetalToast
 import java.net.URLEncoder
 
@@ -56,7 +55,6 @@ object PetalQuickToolsBridge {
     ) {
         when (controller) {
             is PetalTabViewController -> controller.evaluateJavascript(script, callback)
-            is PetalGeckoView -> controller.evaluateJavascript(script, callback)
             else -> callback?.invoke(null)
         }
     }
@@ -67,7 +65,6 @@ object PetalQuickToolsBridge {
     ) {
         when (controller) {
             is PetalTabViewController -> controller.captureFullPageBitmap(callback)
-            is PetalGeckoView -> controller.captureFullPageBitmap(callback)
             else -> callback(null)
         }
     }
@@ -78,7 +75,6 @@ object PetalQuickToolsBridge {
     ) {
         when (controller) {
             is PetalTabViewController -> controller.setUserAgent(userAgent)
-            is PetalGeckoView -> controller.setUserAgent(userAgent)
             else -> {}
         }
     }
@@ -86,7 +82,6 @@ object PetalQuickToolsBridge {
     private fun reloadTab(controller: AlbumController?) {
         when (controller) {
             is PetalTabViewController -> controller.reload()
-            is PetalGeckoView -> controller.reload()
             else -> {}
         }
     }
@@ -94,7 +89,6 @@ object PetalQuickToolsBridge {
     private fun loadUrlInTab(controller: AlbumController?, url: String) {
         when (controller) {
             is PetalTabViewController -> controller.loadUrl(url)
-            is PetalGeckoView -> controller.loadUrl(url)
             else -> {}
         }
     }

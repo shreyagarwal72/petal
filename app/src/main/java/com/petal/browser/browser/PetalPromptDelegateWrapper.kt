@@ -39,7 +39,7 @@ internal class PetalPromptDelegateWrapper(
     }
 
     private fun inner(): GeckoSession.PromptDelegate =
-        com.petal.browser.view.PetalGeckoView.createPromptDelegate(
+        com.petal.browser.engine.gecko.PetalEngineBridge.createPromptDelegate(
             session,
             appContext,
             sp,

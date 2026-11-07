@@ -38,7 +38,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
 import com.petal.browser.unit.PetalAndroidUtils;
-import com.petal.browser.view.PetalGeckoView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -61,7 +60,7 @@ import java.util.regex.Pattern;
 
 /**
  * PetalPwaManager
- * Dynamic Progressive Web App (PWA) manager supporting PetalGeckoView (GeckoView engine),
+ * Dynamic Progressive Web App (PWA) manager supporting PetalTabViewController (GeckoView engine),
  * providing manifest detection & parsing, high-fidelity app icon extraction matching
  * official Firefox for Android, offline webpage web archive saving, and standalone Web App launching.
  */
@@ -99,7 +98,6 @@ public class PetalPwaManager {
     private final Context context;
     private final com.petal.browser.browser.AlbumController albumController;
     private final WebView webView;
-    private final PetalGeckoView geckoView;
     private final com.petal.browser.browser.PetalTabViewController tabViewController;
     private PwaInstallPromptListener promptListener;
 
@@ -107,7 +105,6 @@ public class PetalPwaManager {
         this.context = context;
         this.albumController = albumController;
         this.webView = (albumController instanceof WebView) ? (WebView) albumController : null;
-        this.geckoView = (albumController instanceof PetalGeckoView) ? (PetalGeckoView) albumController : null;
         this.tabViewController = (albumController instanceof com.petal.browser.browser.PetalTabViewController) ? (com.petal.browser.browser.PetalTabViewController) albumController : null;
         this.promptListener = listener;
         if (listener != null) {
@@ -363,8 +360,6 @@ public class PetalPwaManager {
 
         if (webView != null) {
             webView.evaluateJavascript(js, null);
-        } else if (geckoView != null) {
-            geckoView.evaluateJavascript(js, null);
         } else if (tabViewController != null) {
             tabViewController.evaluateJavascript(js, null);
         }
@@ -672,11 +667,6 @@ public class PetalPwaManager {
 
         String pageUrl = targetController != null ? targetController.getUrl() : (webView != null ? webView.getUrl() : null);
         if (pageUrl == null || pageUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(pageUrl.trim())) {
-            if (targetController instanceof com.petal.browser.view.PetalGeckoView) {
-                pageUrl = ((com.petal.browser.view.PetalGeckoView) targetController).getAlbumUrl();
-            }
-        }
-        if (pageUrl == null || pageUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(pageUrl.trim())) {
             if (activity instanceof com.petal.browser.activity.BrowserActivity) {
                 pageUrl = ((com.petal.browser.activity.BrowserActivity) activity).resolveCurrentTabUrl();
             }
@@ -763,9 +753,7 @@ public class PetalPwaManager {
                     }
                 }
 
-                if (rawBitmap == null && finalController instanceof com.petal.browser.view.PetalGeckoView) {
-                    rawBitmap = ((com.petal.browser.view.PetalGeckoView) finalController).getFavicon();
-                } else if (rawBitmap == null && finalController instanceof com.petal.browser.browser.PetalTabViewController) {
+                if (rawBitmap == null && finalController instanceof com.petal.browser.browser.PetalTabViewController) {
                     rawBitmap = ((com.petal.browser.browser.PetalTabViewController) finalController).getFavicon();
                 }
                 if (rawBitmap == null) {
@@ -881,10 +869,10 @@ public class PetalPwaManager {
                         if (webView != null) {
                             webView.saveWebArchive(archiveFile.getAbsolutePath(), false, null);
                             com.petal.browser.engine.gecko.PetalEngineStore.addOfflineArchive(activity, targetUrl, archiveFile.getAbsolutePath(), title);
-                        } else if (geckoView != null) {
+                        } else if (tabViewController != null) {
                             try {
                                 java.io.FileOutputStream fos = new java.io.FileOutputStream(archiveFile);
-                                geckoView.printToPdf(fos, success -> {
+                                tabViewController.printToPdf(fos, success -> {
                                     if (Boolean.TRUE.equals(success)) {
                                         com.petal.browser.engine.gecko.PetalEngineStore.addOfflineArchive(activity, targetUrl, archiveFile.getAbsolutePath(), title);
                                     }

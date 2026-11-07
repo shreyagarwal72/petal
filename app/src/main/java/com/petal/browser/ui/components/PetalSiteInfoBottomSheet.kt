@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
 import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.browser.AlbumController
-import com.petal.browser.view.PetalGeckoView
+import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.ui.glass.captureGlassWallpaper
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.containment.PetalFilterChip
@@ -45,14 +45,14 @@ fun PetalSiteInfoBottomSheet(
     onResetSiteData: () -> Unit
 ) {
     val context = LocalContext.current
-    val geckoView = albumController as? PetalGeckoView
+    val tabViewController = albumController as? PetalTabViewController
     
     val currentUrl = albumController?.url ?: ""
     val domain = remember(currentUrl) { PetalAndroidUtils.domain(currentUrl) }
-    val favicon: Bitmap? = geckoView?.getFavicon()
+    val favicon: Bitmap? = tabViewController?.getFavicon()
 
     // Check GeckoView SecurityInformation if available, plus URL scheme
-    val geckoSecurity = geckoView?.currentSecurityInfo
+    val geckoSecurity = tabViewController?.currentSecurityInfo
     val effectiveUrl = remember(currentUrl) {
         val trimmed = currentUrl.trim()
         if (trimmed.isEmpty()) ""
@@ -85,7 +85,7 @@ fun PetalSiteInfoBottomSheet(
 
     // SharedPreferences for site permission states
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    val profile = remember { PetalGeckoView.getProfile(context) }
+    val profile = remember { com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(context) }
 
     var isCameraAllowed by remember { mutableStateOf(sp.getBoolean(profile + "_camera", false)) }
     var isMicAllowed by remember { mutableStateOf(sp.getBoolean(profile + "_microphone", false)) }

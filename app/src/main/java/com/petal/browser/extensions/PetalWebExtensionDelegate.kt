@@ -6,7 +6,6 @@ import android.os.Looper
 import android.util.Log
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.browser.BrowserContainer
-import com.petal.browser.view.PetalGeckoView
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.webextension.Action
 import mozilla.components.concept.engine.webextension.WebExtension

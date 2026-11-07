@@ -28,7 +28,6 @@ import com.petal.browser.browser.AlbumController
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.PetalAndroidUtils
-import com.petal.browser.view.PetalGeckoView
 
 import java.util.concurrent.ConcurrentHashMap
 
@@ -146,7 +145,6 @@ object PetalReaderBridge {
         """.trimIndent()
 
         when (controller) {
-            is PetalGeckoView -> controller.evaluateJavascript(extractScript)
             is com.petal.browser.browser.PetalTabViewController -> controller.evaluateJavascript(extractScript)
         }
 
@@ -161,12 +159,11 @@ object PetalReaderBridge {
     }
 
     /**
-     * Toggles native GeckoView Reader View (about:reader?url=...) on a PetalGeckoView or PetalTabViewController instance.
+     * Toggles native GeckoView Reader View (about:reader?url=...) on a PetalTabViewController instance.
      */
     @JvmStatic
     fun toggleNativeGeckoReader(controller: AlbumController?, active: Boolean) {
         when (controller) {
-            is PetalGeckoView -> controller.toggleReaderMode(active)
             is com.petal.browser.browser.PetalTabViewController -> controller.toggleReaderMode(active)
         }
     }

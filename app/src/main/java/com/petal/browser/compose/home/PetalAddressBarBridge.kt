@@ -256,8 +256,7 @@ object PetalAddressBarBridge {
                                     val act = activity as? BrowserActivity ?: return@run
                                     val ctrl = act.currentAlbumController
                                     if (ctrl is com.petal.browser.browser.PetalTabViewController) ctrl.goForward()
-                                    else if (ctrl is com.petal.browser.view.PetalGeckoView) ctrl.goForward()
-                                    else BrowserActivity.activeGeckoView?.goForward()
+                                    else act.getOrCreateTabViewController()?.goForward()
                                 }
                             },
                             onReloadClick = {

@@ -86,7 +86,7 @@ public class CustomSearchAdapter extends RecyclerView.Adapter<RedirectsViewHolde
             });
         });
         holder.itemView.setOnClickListener(v -> {
-            com.petal.browser.browser.BrowserController controller = PetalGeckoView.getBrowserController();
+            com.petal.browser.browser.BrowserController controller = com.petal.browser.engine.gecko.PetalEngineBridge.getBrowserController();
             if (controller != null) {
                 controller.hideSearch();
             }
