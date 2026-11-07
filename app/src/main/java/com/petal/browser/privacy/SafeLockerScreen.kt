@@ -227,7 +227,6 @@ fun SafeLockerScreen(
         }
     }
 
-    val isSelectionMode = selectedFileIds.isNotEmpty()
     val hasSubOverlay = isSelectionMode || isSearchActive
     val handleDismiss: () -> Unit = {
         if (isSelectionMode) {

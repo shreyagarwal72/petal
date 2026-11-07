@@ -384,6 +384,7 @@ fun PetalDeleteScreen(
             }
         }
     }
+    }
 
     if (!isStandaloneActivity) {
         com.petal.browser.predictive.PetalPredictiveBackSurface(
