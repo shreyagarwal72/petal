@@ -254,13 +254,26 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private boolean restartPromptDismissedInSession = false;
     private long lastOnPausePreviewCaptureTime = 0L;
 
+    private com.petal.browser.browser.PetalTabViewController singleTabViewController;
+
+    public com.petal.browser.browser.PetalTabViewController getOrCreateTabViewController() {
+        if (singleTabViewController == null) {
+            singleTabViewController = new com.petal.browser.browser.PetalTabViewController(this);
+            singleTabViewController.attachLifecycle(this);
+            observePetalTabSurface(singleTabViewController);
+        }
+        return singleTabViewController;
+    }
+
     public AlbumController getCurrentAlbumController() {
         return currentAlbumController;
     }
 
     private com.petal.browser.browser.PetalTabViewController getActivePetalTabSurface() {
-        return currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController
-                ? (com.petal.browser.browser.PetalTabViewController) currentAlbumController : null;
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            return (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
+        }
+        return singleTabViewController;
     }
 
     public void observePetalTabSurface(com.petal.browser.browser.PetalTabViewController surface) {
@@ -2425,8 +2438,36 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         final long surfaceGeneration = ++albumSurfaceGeneration;
 
-        // Saved background tabs are lightweight placeholders. Materialize exactly
-        // the selected slot when it is first shown, preserving its position/ID.
+        // Single Engine View (Fenix model): demote outgoing tab to a lightweight placeholder
+        // in BrowserContainer and release its session from the shared engine view.
+        if (currentAlbumController != null && currentAlbumController != controller) {
+            if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                com.petal.browser.browser.PetalTabViewController outgoing =
+                        (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
+                int outgoingSlot = BrowserContainer.indexOf(outgoing);
+                if (outgoingSlot >= 0) {
+                    com.petal.browser.browser.PlaceholderAlbumController placeholder =
+                            new com.petal.browser.browser.PlaceholderAlbumController(
+                                    this,
+                                    outgoing.getTitle(),
+                                    outgoing.getUrl(),
+                                    outgoing.getFavicon(),
+                                    outgoing.getTabId(),
+                                    outgoing.getTabGroupId(),
+                                    outgoing.getTabGroupTitle(),
+                                    outgoing.isIncognito()
+                            );
+                    BrowserContainer.replace(outgoingSlot, placeholder);
+                }
+                outgoing.deactivate();
+                outgoing.release();
+            } else {
+                currentAlbumController.deactivate();
+            }
+        }
+
+        // Saved background tabs are lightweight placeholders. Bind the single engine view
+        // to the selected tab session, preserving its position/ID in BrowserContainer.
         if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
             com.petal.browser.browser.PlaceholderAlbumController placeholder =
                     (com.petal.browser.browser.PlaceholderAlbumController) controller;
@@ -2449,24 +2490,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     true
                 );
 
-            com.petal.browser.browser.PetalTabViewController materialized =
-                    new com.petal.browser.browser.PetalTabViewController(this);
-            materialized.bindTab(sessionPair.getFirst());
-            materialized.attachLifecycle(this);
-            observePetalTabSurface(materialized);
+            com.petal.browser.browser.PetalTabViewController activeView = getOrCreateTabViewController();
+            activeView.bindTab(sessionPair.getFirst());
             if (placeholder.getTabGroupId() != null && !placeholder.getTabGroupId().isEmpty()) {
-                materialized.setTabGroupId(placeholder.getTabGroupId());
-                materialized.setTabGroupTitle(placeholder.getTabGroupTitle());
+                activeView.setTabGroupId(placeholder.getTabGroupId());
+                activeView.setTabGroupTitle(placeholder.getTabGroupTitle());
             }
-            BrowserContainer.replace(slot, materialized);
-            controller = materialized;
+            BrowserContainer.replace(slot, activeView);
+            controller = activeView;
 
             if (overrideUrl != null && !overrideUrl.isEmpty() && !isHomePage(overrideUrl)) {
-                materialized.loadUrl(overrideUrl);
+                activeView.loadUrl(overrideUrl);
             } else if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
-                materialized.loadUrl(targetUrl);
+                activeView.loadUrl(targetUrl);
             } else {
-                materialized.loadUrl("about:blank");
+                activeView.loadUrl("about:blank");
             }
         }
 
@@ -2476,15 +2514,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         final AlbumController resolvedController = controller;
 
         View av = controller.getAlbumView();
-        // Suspend the outgoing tab (GeckoSession.setActive(false) via deactivate()) while its
-        // surface is still visible; it is hidden (View.GONE), not detached, further below.
-        // Re-showing the tab that is already current (overlay dismissal, onTabUrlStarted)
-        // must not cycle its session inactive->active: that pauses and resumes compositing
-        // for no reason and is itself a source of visible flicker.
-        if (currentAlbumController != null && currentAlbumController != controller) {
-            
-            currentAlbumController.deactivate();
-        }
         currentAlbumController = controller;
         if (contentFrame != null) {
             contentFrame.setEnabled(true);
@@ -7809,34 +7838,74 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 foreground
             );
 
-        com.petal.browser.browser.PetalTabViewController tabSurface =
-            new com.petal.browser.browser.PetalTabViewController(this);
-        tabSurface.bindTab(sessionPair.getFirst());
-        tabSurface.attachLifecycle(this);
-        observePetalTabSurface(tabSurface);
-        if (currentAlbumController != null) {
-            tabSurface.setPredecessor(currentAlbumController);
-            int index = BrowserContainer.indexOf(currentAlbumController) + 1;
-            BrowserContainer.add(tabSurface, index);
-        } else {
-            BrowserContainer.add(tabSurface);
-        }
-
-        if (!isPopup) {
-            if (url == null || url.trim().isEmpty() || isHomePage(url)) {
-                String effectiveHome = PetalBrowserUtils.getEffectiveHomepageUrl(this);
-                if (effectiveHome != null && !effectiveHome.equalsIgnoreCase("about:blank") && !isHomePage(effectiveHome)) {
-                    tabSurface.loadUrl(effectiveHome);
-                } else {
-                    tabSurface.loadUrl("about:blank");
-                }
-            } else {
-                tabSurface.loadUrl(url);
-            }
-        }
         if (!foreground) {
-            tabSurface.deactivate();
+            // Background tab (Fenix model): session exists in BrowserStore only.
+            com.petal.browser.browser.PlaceholderAlbumController placeholder =
+                new com.petal.browser.browser.PlaceholderAlbumController(
+                    this,
+                    effectiveTitle,
+                    initialUrl,
+                    null,
+                    generatedTabId,
+                    null,
+                    null,
+                    isIncognito
+                );
+            if (currentAlbumController != null) {
+                int index = BrowserContainer.indexOf(currentAlbumController) + 1;
+                BrowserContainer.add(placeholder, index);
+            } else {
+                BrowserContainer.add(placeholder);
+            }
+            if (!isPopup && url != null && !url.trim().isEmpty() && !isHomePage(url)) {
+                sessionPair.getSecond().loadUrl(url);
+            }
         } else {
+            // Demote outgoing active tab to placeholder in BrowserContainer
+            if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                com.petal.browser.browser.PetalTabViewController outgoing =
+                        (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
+                int outgoingSlot = BrowserContainer.indexOf(outgoing);
+                if (outgoingSlot >= 0) {
+                    com.petal.browser.browser.PlaceholderAlbumController placeholder =
+                            new com.petal.browser.browser.PlaceholderAlbumController(
+                                    this,
+                                    outgoing.getTitle(),
+                                    outgoing.getUrl(),
+                                    outgoing.getFavicon(),
+                                    outgoing.getTabId(),
+                                    outgoing.getTabGroupId(),
+                                    outgoing.getTabGroupTitle(),
+                                    outgoing.isIncognito()
+                            );
+                    BrowserContainer.replace(outgoingSlot, placeholder);
+                }
+                outgoing.deactivate();
+                outgoing.release();
+            }
+
+            com.petal.browser.browser.PetalTabViewController tabSurface = getOrCreateTabViewController();
+            tabSurface.bindTab(sessionPair.getFirst());
+            if (currentAlbumController != null) {
+                tabSurface.setPredecessor(currentAlbumController);
+                int index = BrowserContainer.indexOf(currentAlbumController) + 1;
+                BrowserContainer.add(tabSurface, index);
+            } else {
+                BrowserContainer.add(tabSurface);
+            }
+
+            if (!isPopup) {
+                if (url == null || url.trim().isEmpty() || isHomePage(url)) {
+                    String effectiveHome = PetalBrowserUtils.getEffectiveHomepageUrl(this);
+                    if (effectiveHome != null && !effectiveHome.equalsIgnoreCase("about:blank") && !isHomePage(effectiveHome)) {
+                        tabSurface.loadUrl(effectiveHome);
+                    } else {
+                        tabSurface.loadUrl("about:blank");
+                    }
+                } else {
+                    tabSurface.loadUrl(url);
+                }
+            }
             hideOverview();
             tabSurface.activate();
             if (dialogOverview != null) dialogOverview.cancel();
@@ -7921,11 +7990,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 true
                         );
 
-                com.petal.browser.browser.PetalTabViewController activeView =
-                        new com.petal.browser.browser.PetalTabViewController(this);
+                com.petal.browser.browser.PetalTabViewController activeView = getOrCreateTabViewController();
                 activeView.bindTab(sessionPair.getFirst());
-                activeView.attachLifecycle(this);
-                observePetalTabSurface(activeView);
                 if (groupId != null && !groupId.isEmpty()) {
                     activeView.setTabGroupId(groupId);
                     activeView.setTabGroupTitle(groupTitle);
@@ -8034,10 +8100,30 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     );
             tabRegistered = true;
 
-            tabSurface = new com.petal.browser.browser.PetalTabViewController(this);
+            if (currentAlbumController != null && currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                com.petal.browser.browser.PetalTabViewController outgoing =
+                        (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
+                int outgoingSlot = BrowserContainer.indexOf(outgoing);
+                if (outgoingSlot >= 0) {
+                    com.petal.browser.browser.PlaceholderAlbumController placeholder =
+                            new com.petal.browser.browser.PlaceholderAlbumController(
+                                    this,
+                                    outgoing.getTitle(),
+                                    outgoing.getUrl(),
+                                    outgoing.getFavicon(),
+                                    outgoing.getTabId(),
+                                    outgoing.getTabGroupId(),
+                                    outgoing.getTabGroupTitle(),
+                                    outgoing.isIncognito()
+                            );
+                    BrowserContainer.replace(outgoingSlot, placeholder);
+                }
+                outgoing.deactivate();
+                outgoing.release();
+            }
+
+            tabSurface = getOrCreateTabViewController();
             tabSurface.bindTab(popupTab);
-            tabSurface.attachLifecycle(this);
-            observePetalTabSurface(tabSurface);
             tabSurface.setPredecessor(source);
             tabSurface.markAdoptedNavigation(url);
             int sourceIndex = BrowserContainer.indexOf(source);

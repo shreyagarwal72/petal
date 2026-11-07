@@ -456,10 +456,30 @@ object PetalSessionRestoreManager {
             select = !keepOverviewOpen
         )
 
-        val geckoView = PetalTabViewController(activity)
+        if (keepOverviewOpen) {
+            val placeholder = PlaceholderAlbumController(
+                activity,
+                safeTitle,
+                safeUrl,
+                null,
+                tabId,
+                groupId,
+                groupTitle,
+                isIncognito
+            )
+            if (safeUrl.isNotBlank() && !isHomeUrl(safeUrl)) {
+                sessionPair.second.loadUrl(safeUrl)
+            }
+            if (targetIndex >= 0 && targetIndex <= BrowserContainer.size()) {
+                BrowserContainer.add(placeholder, targetIndex)
+            } else {
+                BrowserContainer.add(placeholder)
+            }
+            return placeholder
+        }
+
+        val geckoView = activity.orCreateTabViewController
         geckoView.bindTab(sessionPair.first)
-        geckoView.attachLifecycle(activity)
-        activity.observePetalTabSurface(geckoView)
         if (!groupId.isNullOrBlank()) {
             geckoView.setTabGroupId(groupId)
             geckoView.setTabGroupTitle(groupTitle)
@@ -475,13 +495,8 @@ object PetalSessionRestoreManager {
             BrowserContainer.add(geckoView)
         }
 
-        if (!keepOverviewOpen) {
-            geckoView.activate()
-            activity.showAlbum(geckoView)
-        } else {
-            geckoView.deactivate()
-        }
-
+        geckoView.activate()
+        activity.showAlbum(geckoView)
         return geckoView
     }
 
