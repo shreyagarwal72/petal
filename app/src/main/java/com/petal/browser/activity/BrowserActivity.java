@@ -237,6 +237,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public BottomNavigationView bottom_navigation;
     public String overViewTab;
     public Activity activity;
+    // Non-static instance context so internal methods resolve without static activity leakage
+    public final Context context = this;
     public SharedPreferences sp;
     public StandardDomainWhitelist listStandard;
     public long newIcon;
