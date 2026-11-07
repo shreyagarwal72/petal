@@ -211,4 +211,24 @@ class Stage4GeckoReflectionTest {
                 content.contains("privacy.resistFingerprinting")
         )
     }
+
+    @Test
+    fun issue60_isolatedProcessDisabled_andArtImageExitsFiltered() {
+        val runtimeFile = File("src/main/java/com/petal/browser/engine/gecko/PetalGeckoRuntime.kt")
+            .takeIf { it.exists() } ?: File("app/src/main/java/com/petal/browser/engine/gecko/PetalGeckoRuntime.kt")
+        val content = runtimeFile.readText()
+        assertTrue(
+            "isolatedProcessEnabled must be false to prevent Android 16 isolatedTab ART image crashes",
+            content.contains(".isolatedProcessEnabled(false)") &&
+                content.contains("settingsBuilder.isolatedProcessEnabled(false)")
+        )
+
+        val loggerFile = File("src/main/java/com/petal/browser/logger/PetalAppLogger.kt")
+            .takeIf { it.exists() } ?: File("app/src/main/java/com/petal/browser/logger/PetalAppLogger.kt")
+        val loggerContent = loggerFile.readText()
+        assertTrue(
+            "disable_art_image and isolatedTab exit reasons must be filtered in PetalAppLogger",
+            loggerContent.contains("disable_art_image") && loggerContent.contains("isolatedTab")
+        )
+    }
 }

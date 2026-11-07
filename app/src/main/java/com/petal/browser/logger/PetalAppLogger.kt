@@ -141,6 +141,11 @@ object PetalAppLogger {
                     processName.startsWith(context.packageName + ":")
             if (!belongsToPetal) return@firstOrNull false
 
+            // Do not treat transient ART helper processes or isolated tab helpers as app fatal crashes
+            if (processName.contains("disable_art_image") || processName.contains("isolatedTab")) {
+                return@firstOrNull false
+            }
+
             val isNormalSelfExit = exitInfo.reason == android.app.ApplicationExitInfo.REASON_SIGNALED &&
                     (exitInfo.description?.contains("exit_self", ignoreCase = true) == true ||
                      exitInfo.status == 0 ||

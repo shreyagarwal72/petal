@@ -162,7 +162,7 @@ object PetalGeckoRuntime {
             .webManifest(true)
             .extensionsProcessEnabled(!isLowRamDevice)
             .extensionsWebAPIEnabled(true)
-            .isolatedProcessEnabled(!isLowRamDevice)
+            .isolatedProcessEnabled(false)
             .lowMemoryDetection(true)
             .crashHandler(PetalCrashHandlerService::class.java)
             // Enable login autofill API so password manager extensions (Bitwarden, etc.) can
@@ -186,15 +186,12 @@ object PetalGeckoRuntime {
         // unsupported desktop GMP plugins and directing media through native MediaCodec.
         configureMediaAndGmpStability(appContext, settingsBuilder)
 
-        // Low-RAM device tuning: real official GeckoView 159 isolatedProcessEnabled & lowMemoryDetection
-        if (isLowRamDevice) {
-            Log.i(TAG, "Configuring GeckoRuntime for low-RAM device profile: isolatedProcessEnabled=false, lowMemoryDetection=true")
-            settingsBuilder.isolatedProcessEnabled(false)
-            settingsBuilder.lowMemoryDetection(true)
-        } else {
-            settingsBuilder.isolatedProcessEnabled(true)
-            settingsBuilder.lowMemoryDetection(true)
-        }
+        // Android 16 (SDK 36) & OEM stability tuning:
+        // Android's isolatedProcess feature crashes on Android 16 (SDK 36) and OEM ROMs
+        // (e.g. Realme/Oppo/OnePlus isolatedTab_disable_art_image) due to ART image restrictions in isolated UIDs.
+        // Disabling isolatedProcess keeps tab rendering stable and in-process/shared across all devices.
+        settingsBuilder.isolatedProcessEnabled(false)
+        settingsBuilder.lowMemoryDetection(true)
 
         val newRuntime = GeckoRuntime.create(appContext, settingsBuilder.build())
 
