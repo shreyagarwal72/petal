@@ -12,6 +12,13 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.preference.PreferenceManager
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.PetalTabViewController
@@ -92,6 +99,10 @@ class PetalVideoPlayerOverlayBridge(
         }
 
         val cv = ComposeView(activity).apply {
+            (activity as? LifecycleOwner)?.let { setViewTreeLifecycleOwner(it) }
+            (activity as? ViewModelStoreOwner)?.let { setViewTreeViewModelStoreOwner(it) }
+            (activity as? SavedStateRegistryOwner)?.let { setViewTreeSavedStateRegistryOwner(it) }
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
             setContent {
                 val hostView = this
                 val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"

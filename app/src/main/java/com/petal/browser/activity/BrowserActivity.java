@@ -2911,6 +2911,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             androidx.compose.ui.platform.ComposeView bottomNavCompose = findViewById(R.id.bottom_nav_compose);
             if (bottomNavCompose != null) {
+                setupComposeViewOwners(bottomNavCompose);
                 bottomNavCompose.setTranslationY(0f);
             }
             // Visibility depends on the surface: hidden on home, visible on websites.
@@ -3253,7 +3254,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } else {
                 bottomNavHeight = 0;
             }
-            final int gap = (int) PetalAndroidUtils.convertDpToPixel(2f, this);
+            final int gap = 0; // Fix 2dp artificial gap in M3 Expressive
 
             // Keep main_content as a stable full-screen container and reserve space
             // with padding. This avoids the old circular/async RelativeLayout layout
@@ -3330,7 +3331,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // Glass bars always sample the live page. Padded strips are filled with the page's
             // mirrored edge rows inside GlassBackdrop, so the wallpaper backdrop is never shown.
             View glassBackdropView = findViewById(R.id.glass_wallpaper_backdrop);
-            if (glassBackdropView != null) glassBackdropView.setVisibility(GONE);
+            if (glassBackdropView != null) {
+                boolean samplesWallpaper = liquidGlassOn && com.petal.browser.ui.components.BarInsets.glassSamplesWallpaper(
+                        sp, isBottom, isFloatingNavStyle, true);
+                glassBackdropView.setVisibility(samplesWallpaper ? VISIBLE : GONE);
+            }
             // A floating nav bar (Material 3 Expressive or Liquid Glass) lets the page run
             // edge to edge underneath it without reserving dead space (which causes a black
             // box behind the floating navbar). Docked bars keep their padding so page content
@@ -5128,10 +5133,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         updateBackCallbackState();
     }
 
+    public void setupComposeViewOwners(View view) {
+        if (view == null) return;
+        androidx.lifecycle.ViewTreeLifecycleOwner.set(view, this);
+        androidx.lifecycle.ViewTreeViewModelStoreOwner.set(view, this);
+        androidx.savedstate.ViewTreeSavedStateRegistryOwner.set(view, this);
+    }
+
     public void initPullToRefresh() {
         androidx.compose.ui.platform.ComposeView refreshBarCompose = findViewById(R.id.refresh_bar_compose);
         View addressBarForMargin = findViewById(R.id.compose_address_bar);
         if (refreshBarCompose != null) {
+            setupComposeViewOwners(refreshBarCompose);
             // Remove from RelativeLayout if present and re-add directly to window overlay so WebView hardware layer can never obscure it
             android.view.ViewParent parent = refreshBarCompose.getParent();
             if (parent instanceof android.view.ViewGroup) {
@@ -5444,11 +5457,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * which refuses new pulls while refreshing) stayed stuck until the 8s watchdog fired.
      */
     public void onActivePageLoadFinished() {
-        runOnUiThread(() -> {
-            if (refreshState != null && refreshState.isRefreshing()) {
-                resetRefreshState();
-            }
-        });
+        runOnUiThread(this::resetRefreshState);
     }
 
     public void resetRefreshState() {

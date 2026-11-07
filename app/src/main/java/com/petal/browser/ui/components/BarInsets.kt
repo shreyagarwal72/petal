@@ -30,13 +30,12 @@ object BarInsets {
      * and bend. Kept as a function so every caller reads one rule; always false.
      */
     @JvmStatic
-    @Suppress("UNUSED_PARAMETER")
     fun glassSamplesWallpaper(
         sp: SharedPreferences,
         isBottomAddressBar: Boolean,
         floatingNav: Boolean,
         forNav: Boolean
-    ): Boolean = false
+    ): Boolean = forNav && !floatingNav
 
     /**
      * @param addressHeight measured height of the address bar; it already includes the status
@@ -72,7 +71,7 @@ object BarInsets {
             isImmersive -> 0
             isBottom -> effectiveStatusBarGap
             legacyUnderTop -> effectiveStatusBarGap
-            else -> addressHeight + gap
+            else -> addressHeight
         }
         val bottom = when {
             legacyUnderBottom -> 0
