@@ -129,7 +129,9 @@ data class DownloadItem(
     val localUri: String?,
     val timestampMs: Long = System.currentTimeMillis(),
     /** Parallel HTTP connections currently serving this download (1 = ordinary single stream). */
-    val connections: Int = 1
+    val connections: Int = 1,
+    /** Authoritative stable UUID or identifier from the unified download repository. */
+    val downloadId: String = ""
 )
 
 object PetalDownloadBridge {

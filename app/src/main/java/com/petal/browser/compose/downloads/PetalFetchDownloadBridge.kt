@@ -49,11 +49,11 @@ import kotlin.reflect.KClass
 
 object PetalFetchDownloadBridge {
 
-    private val downloadsMap = LinkedHashMap<Int, Download>()
+    // Unified single download repository keyed by authoritative downloadId
+    private val downloadRepository = LinkedHashMap<String, DownloadItem>()
     private val createdAtMap = LinkedHashMap<Int, Long>()
     private val speedMap = LinkedHashMap<Int, Long>()
     private val etaMap = LinkedHashMap<Int, Long>()
-    private val mozillaDownloadsMap = LinkedHashMap<String, DownloadItem>()
     // Throughput for Mozilla downloads (the store exposes bytes, not speed/ETA). One sliding-window
     // meter per download gives a steady readout that also decays when the transfer stalls.
     private val mozillaMeters = HashMap<String, com.petal.browser.download.PetalSpeedMeter>()
@@ -67,6 +67,17 @@ object PetalFetchDownloadBridge {
 
     @Volatile
     private var initialized = false
+
+    @JvmStatic
+    fun stableId(downloadId: String): Long {
+        if (downloadId.isBlank()) return 0L
+        return try {
+            val uuid = java.util.UUID.fromString(downloadId)
+            uuid.mostSignificantBits and Long.MAX_VALUE
+        } catch (_: Throwable) {
+            downloadId.hashCode().toLong() and 0x7FFFFFFF_FFFFFFFFL
+        }
+    }
 
     @JvmStatic
     fun ensureInitialized(context: Context) {
@@ -83,7 +94,7 @@ object PetalFetchDownloadBridge {
                 }
 
                 override fun onProgress(download: Download, etaInMilliSeconds: Long, downloadedBytesPerSecond: Long) {
-                    synchronized(downloadsMap) {
+                    synchronized(downloadRepository) {
                         speedMap[download.id] = downloadedBytesPerSecond.coerceAtLeast(0L)
                         etaMap[download.id] = etaInMilliSeconds.coerceAtLeast(0L)
                     }
@@ -91,7 +102,7 @@ object PetalFetchDownloadBridge {
                 }
 
                 override fun onPaused(download: Download) {
-                    synchronized(downloadsMap) { speedMap[download.id] = 0L }
+                    synchronized(downloadRepository) { speedMap[download.id] = 0L }
                     upsert(download)
                 }
 
@@ -100,7 +111,7 @@ object PetalFetchDownloadBridge {
                 }
 
                 override fun onCompleted(download: Download) {
-                    synchronized(downloadsMap) {
+                    synchronized(downloadRepository) {
                         speedMap[download.id] = 0L
                         etaMap[download.id] = 0L
                     }
@@ -117,7 +128,7 @@ object PetalFetchDownloadBridge {
                 }
 
                 override fun onError(download: Download, error: com.tonyodev.fetch2.Error, throwable: Throwable?) {
-                    synchronized(downloadsMap) { speedMap[download.id] = 0L }
+                    synchronized(downloadRepository) { speedMap[download.id] = 0L }
                     upsert(download)
                 }
 
@@ -135,9 +146,10 @@ object PetalFetchDownloadBridge {
             })
 
             fetch.getDownloads { list ->
-                synchronized(downloadsMap) {
+                synchronized(downloadRepository) {
                     list.forEach { d ->
-                        downloadsMap[d.id] = d
+                        val item = toDownloadItem(d)
+                        downloadRepository[item.downloadId] = item
                         if (!createdAtMap.containsKey(d.id)) {
                             val f = File(d.file)
                             val t = when {
@@ -223,8 +235,8 @@ object PetalFetchDownloadBridge {
 
     /** True when [id] belongs to a download owned by Mozilla's service (and its notifications). */
     @JvmStatic
-    fun isMozillaOwned(id: Long): Boolean = synchronized(mozillaDownloadsMap) {
-        mozillaDownloadsMap.values.any { it.id == id }
+    fun isMozillaOwned(id: Long): Boolean = synchronized(downloadRepository) {
+        downloadRepository.values.any { it.id == id && it.downloadId.isNotBlank() && !it.downloadId.startsWith("fetch_") }
     }
 
     private fun enqueueMozillaDownload(
@@ -276,7 +288,7 @@ object PetalFetchDownloadBridge {
                 downloadId = id,
                 isPrivate = isPrivate
             )
-            onEnqueued?.invoke(id.hashCode().toLong())
+            onEnqueued?.invoke(stableId(id))
             true
         } catch (t: Throwable) {
             android.util.Log.e("PetalDownloadBridge", "Mozilla download start failed: ${t.message}", t)
@@ -374,9 +386,10 @@ object PetalFetchDownloadBridge {
     fun refresh(context: Context) {
         ensureInitialized(context)
         fetchInstance(context).getDownloads { list ->
-            synchronized(downloadsMap) {
+            synchronized(downloadRepository) {
                 list.forEach { d ->
-                    downloadsMap[d.id] = d
+                    val item = toDownloadItem(d)
+                    downloadRepository[item.downloadId] = item
                     if (!createdAtMap.containsKey(d.id)) {
                         val f = File(d.file)
                         val t = when {
@@ -435,13 +448,20 @@ object PetalFetchDownloadBridge {
     }
 
     private fun sendMozillaDownloadAction(context: Context, id: Long, action: String): Boolean {
-        val uuid = synchronized(mozillaDownloadsMap) {
-            mozillaDownloadsMap.keys.firstOrNull { it.hashCode().toLong() == id }
+        val uuid = synchronized(downloadRepository) {
+            val item = downloadRepository.values.firstOrNull { it.id == id || it.downloadId == id.toString() }
+            item?.downloadId?.takeIf { it.isNotBlank() && !it.startsWith("fetch_") }
         } ?: return false
+        return sendMozillaDownloadAction(context, uuid, action)
+    }
+
+    @JvmStatic
+    fun sendMozillaDownloadAction(context: Context, downloadId: String, action: String): Boolean {
+        if (downloadId.isBlank() || downloadId.startsWith("fetch_")) return false
         return try {
             val intent = Intent(action).apply {
                 setPackage(context.applicationContext.packageName)
-                putExtra(mozilla.components.feature.downloads.INTENT_EXTRA_DOWNLOAD_ID, uuid)
+                putExtra(mozilla.components.feature.downloads.INTENT_EXTRA_DOWNLOAD_ID, downloadId)
             }
             context.applicationContext.sendBroadcast(intent)
             true
@@ -463,19 +483,20 @@ object PetalFetchDownloadBridge {
         } catch (_: Throwable) {}
 
         // 2. Check and remove from Mozilla Download Manager / BrowserStore
-        val mozillaId = synchronized(mozillaDownloadsMap) {
-            mozillaDownloadsMap.keys.firstOrNull { it.hashCode().toLong() == item.id || it == item.id.toString() }
-        }
+        val mozillaId = item.downloadId.takeIf { it.isNotBlank() && !it.startsWith("fetch_") }
+            ?: synchronized(downloadRepository) {
+                downloadRepository.values.firstOrNull { it.id == item.id }?.downloadId?.takeIf { !it.startsWith("fetch_") }
+            }
         if (mozillaId != null) {
             try {
-                sendMozillaDownloadAction(appContext, item.id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_CANCEL)
+                sendMozillaDownloadAction(appContext, mozillaId, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_CANCEL)
             } catch (_: Throwable) {}
             try {
                 com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext).dispatch(
                     mozilla.components.browser.state.action.DownloadAction.RemoveDownloadAction(mozillaId)
                 )
             } catch (_: Throwable) {}
-            synchronized(mozillaDownloadsMap) { mozillaDownloadsMap.remove(mozillaId) }
+            synchronized(downloadRepository) { downloadRepository.remove(mozillaId) }
         }
 
         // 3. Cancel and delete from Fetch2
@@ -520,16 +541,17 @@ object PetalFetchDownloadBridge {
     }
 
     private fun upsert(download: Download) {
-        synchronized(downloadsMap) {
-            downloadsMap[download.id] = download
+        val item = toDownloadItem(download)
+        synchronized(downloadRepository) {
+            downloadRepository[item.downloadId] = item
             if (!createdAtMap.containsKey(download.id)) createdAtMap[download.id] = System.currentTimeMillis()
         }
         publish()
     }
 
     private fun removeEntry(id: Int) {
-        synchronized(downloadsMap) {
-            downloadsMap.remove(id)
+        synchronized(downloadRepository) {
+            downloadRepository.remove("fetch_$id")
             createdAtMap.remove(id)
             speedMap.remove(id)
             etaMap.remove(id)
@@ -542,9 +564,7 @@ object PetalFetchDownloadBridge {
 
     private fun publish() {
         refreshMozillaDownloads()
-        val fetchItems = synchronized(downloadsMap) { downloadsMap.values.toList() }
-            .map { toDownloadItem(it) }
-        val items = fetchItems + synchronized(mozillaDownloadsMap) { mozillaDownloadsMap.values.toList() }
+        val items = synchronized(downloadRepository) { downloadRepository.values.toList() }
             .sortedWith(
                 compareByDescending<DownloadItem> { item ->
                     item.status == DownloadStatus.STATUS_RUNNING ||
@@ -605,8 +625,8 @@ object PetalFetchDownloadBridge {
             val downloads = com.petal.browser.engine.gecko.PetalEngineStore
                 .getStore(context).state.downloads.values
             val nowMs = System.currentTimeMillis()
-            synchronized(mozillaDownloadsMap) {
-                mozillaDownloadsMap.clear()
+            val currentMozillaIds = HashSet<String>()
+            synchronized(downloadRepository) {
                 downloads.forEach { download ->
                     // Filter out stale unhandled INITIATED downloads (0 B stuck items older than 30s) from Mozilla pipeline
                     val isStaleInitiated = download.status == mozilla.components.browser.state.state.content.DownloadState.Status.INITIATED &&
@@ -616,7 +636,8 @@ object PetalFetchDownloadBridge {
                     if (isStaleInitiated) {
                         return@forEach
                     }
-                    val id = download.id.hashCode().toLong()
+                    currentMozillaIds.add(download.id)
+                    val id = stableId(download.id)
                     val status = when (download.status) {
                         mozilla.components.browser.state.state.content.DownloadState.Status.DOWNLOADING -> DownloadStatus.STATUS_RUNNING
                         mozilla.components.browser.state.state.content.DownloadState.Status.PAUSED -> DownloadStatus.STATUS_PAUSED
@@ -642,7 +663,7 @@ object PetalFetchDownloadBridge {
                         val pf = p.toFloat()
                         (if (pf > 1f) pf / 100f else pf).coerceIn(0f, 1f)
                     }
-                    mozillaDownloadsMap[download.id] = DownloadItem(
+                    downloadRepository[download.id] = DownloadItem(
                         id = id,
                         fileName = download.fileName ?: "download",
                         fileUrl = download.url,
@@ -654,11 +675,19 @@ object PetalFetchDownloadBridge {
                         etaSeconds = etaSec,
                         localUri = download.filePath?.let { path -> if (path.startsWith("/")) "file://$path" else path },
                         timestampMs = download.createdTime,
-                        connections = connections
+                        connections = connections,
+                        downloadId = download.id
                     )
                 }
-                // Drop meters for downloads that no longer exist (previously leaked until process death).
-                mozillaMeters.keys.retainAll(mozillaDownloadsMap.keys)
+                // Drop meters and repository rows for Mozilla downloads that no longer exist
+                val toRemove = downloadRepository.keys.filter { key ->
+                    val item = downloadRepository[key]
+                    item != null && item.downloadId.isNotBlank() &&
+                        !item.downloadId.startsWith("fetch_") &&
+                        !currentMozillaIds.contains(key)
+                }
+                toRemove.forEach { downloadRepository.remove(it) }
+                mozillaMeters.keys.retainAll(currentMozillaIds)
             }
         } catch (_: Throwable) {
             // BrowserStore may not be available during helper-process startup.
@@ -693,7 +722,8 @@ object PetalFetchDownloadBridge {
             speedBytesPerSec = speed,
             etaSeconds = etaSec,
             localUri = "file://" + d.file,
-            timestampMs = timestamp
+            timestampMs = timestamp,
+            downloadId = "fetch_${d.id}"
         )
     }
 

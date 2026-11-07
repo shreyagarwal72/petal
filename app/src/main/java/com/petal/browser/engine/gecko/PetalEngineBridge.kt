@@ -257,8 +257,11 @@ object PetalEngineBridge {
                 activity, responseUrl, contentDisposition, mimeType, contentLength
             ) { confirmedName ->
                 val finalName = confirmedName.ifBlank { fileName }
-                com.petal.browser.download.PetalDownloadEngine.getInstance(activity).enqueueDownload(
-                    activity, responseUrl, finalName, null, null, null
+                com.petal.browser.download.PetalDownloadRouter.download(
+                    context = activity,
+                    url = responseUrl,
+                    fileName = finalName,
+                    mimeType = mimeType
                 )
             }
         }
