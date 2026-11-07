@@ -394,6 +394,24 @@ private fun FilePickerBrowserContent(
         list
     }
 
+    val isRoot = roots.any { it.second.absolutePath == currentDir.absolutePath }
+    val canNavigateUp = !isRoot && currentDir.parentFile != null && currentDir.parentFile?.canRead() == true
+    val hasSubOverlay = showSortMenu || isSearching || searchQuery.isNotEmpty() || selectedFiles.isNotEmpty() || canNavigateUp
+
+    androidx.activity.compose.BackHandler(enabled = hasSubOverlay) {
+        haptics.playClick(context)
+        when {
+            showSortMenu -> showSortMenu = false
+            selectedFiles.isNotEmpty() -> selectedFiles.clear()
+            isSearching || searchQuery.isNotEmpty() -> {
+                isSearching = false
+                searchQuery = ""
+            }
+            canNavigateUp -> currentDir = currentDir.parentFile!!
+            else -> onDismissRequest()
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         // Expressive Header
         ExpressiveHeader(
@@ -401,8 +419,14 @@ private fun FilePickerBrowserContent(
             subtitle = currentDir.name.ifEmpty { currentDir.absolutePath },
             onBack = {
                 haptics.playClick(context)
-                val isRoot = roots.any { it.second.absolutePath == currentDir.absolutePath }
-                if (!isRoot && currentDir.parentFile != null && currentDir.parentFile?.canRead() == true) {
+                if (showSortMenu) {
+                    showSortMenu = false
+                } else if (selectedFiles.isNotEmpty()) {
+                    selectedFiles.clear()
+                } else if (isSearching || searchQuery.isNotEmpty()) {
+                    isSearching = false
+                    searchQuery = ""
+                } else if (canNavigateUp) {
                     currentDir = currentDir.parentFile!!
                 } else {
                     onDismissRequest()

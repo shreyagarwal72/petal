@@ -153,7 +153,14 @@ fun PetalBrowserStoreScreen(
         )
     }
 
-    PetalPredictiveBackSurface(enabled = true, onBack = onDismiss) {
+    val hasSubOverlay = searchQuery.isNotEmpty()
+    if (hasSubOverlay) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            searchQuery = ""
+        }
+    }
+
+    PetalPredictiveBackSurface(enabled = !hasSubOverlay, onBack = onDismiss) {
         PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
             Scaffold(
                 containerColor = MaterialTheme.colorScheme.background,
@@ -173,7 +180,7 @@ fun PetalBrowserStoreScreen(
                         ExpressiveHeader(
                             title = stringResource(R.string.ui_browser_store_title),
                             subtitle = stringResource(R.string.ui_browser_store_subtitle),
-                            onBack = onDismiss
+                            onBack = { if (hasSubOverlay) searchQuery = "" else onDismiss() }
                         )
 
                         // Containment Navigation: Connected Button Group

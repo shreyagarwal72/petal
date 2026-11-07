@@ -219,8 +219,30 @@ fun PetalPasswordsScreen(
         )
     }
 
+    val hasSubOverlay = selectedCredentialForDetails != null || isAddingNew || showAddEditDialog != null || showNeverSaveSheet || showImportSheet || showExportDialog || searchQuery.isNotEmpty()
+    val handleBack: () -> Unit = {
+        when {
+            selectedCredentialForDetails != null -> selectedCredentialForDetails = null
+            isAddingNew || showAddEditDialog != null -> {
+                isAddingNew = false
+                showAddEditDialog = null
+            }
+            showNeverSaveSheet -> showNeverSaveSheet = false
+            showImportSheet -> showImportSheet = false
+            showExportDialog -> showExportDialog = false
+            searchQuery.isNotEmpty() -> searchQuery = ""
+            else -> onNavigateBack()
+        }
+    }
+
+    if (hasSubOverlay) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            handleBack()
+        }
+    }
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
+        enabled = !hasSubOverlay,
         onBack = onNavigateBack
     ) {
         com.petal.browser.predictive.PetalScreenWrapper(
@@ -242,7 +264,7 @@ fun PetalPasswordsScreen(
                 ExpressiveHeader(
                     title = "Password Manager",
                     subtitle = "Brave-style encrypted vault & autofill",
-                    onBack = onNavigateBack
+                    onBack = { if (hasSubOverlay) handleBack() else onNavigateBack() }
                 )
 
                 val passwordsListState = rememberLazyListState()

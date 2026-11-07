@@ -92,6 +92,8 @@ import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalSectionLabel
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalBadgeShape
+import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
 import com.petal.browser.ui.glass.captureGlassWallpaper
@@ -139,8 +141,15 @@ fun PetalFlagsHubScreen(
         }
     }
 
+    val hasSubOverlay = searchQuery.isNotEmpty()
+    if (hasSubOverlay) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            searchQuery = ""
+        }
+    }
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
+        enabled = !hasSubOverlay,
         onBack = onDismiss
     ) {
         com.petal.browser.predictive.PetalScreenWrapper(
@@ -164,7 +173,7 @@ fun PetalFlagsHubScreen(
             ExpressiveHeader(
                 title = "Experiments & Flags",
                 subtitle = "about:config • petal://flags",
-                onBack = onDismiss,
+                onBack = { if (hasSubOverlay) searchQuery = "" else onDismiss() },
                 actions = {
                     if (modifiedCount > 0) {
                         HeaderActionIcon(
@@ -410,12 +419,7 @@ private fun FlagRowItem(
         }
     }
 
-    val containerShape = when (position) {
-        PetalGroupPosition.TOP -> RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
-        PetalGroupPosition.MIDDLE -> RoundedCornerShape(4.dp)
-        PetalGroupPosition.BOTTOM -> RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
-        PetalGroupPosition.SINGLE -> RoundedCornerShape(20.dp)
-    }
+    val containerShape = petalGroupShape(position)
 
     Surface(
         modifier = modifier
@@ -440,7 +444,7 @@ private fun FlagRowItem(
                     variant = badgeVariant,
                     size = 40.dp,
                     iconSize = 22.dp,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = petalBadgeShape()
                 )
 
                 Spacer(Modifier.width(12.dp))
@@ -580,12 +584,7 @@ private fun RawPreferencesTab(
                 modifier = Modifier.fillMaxWidth()
             ) { index, position ->
                 val (key, value, type) = filtered[index]
-                val containerShape = when (position) {
-                    PetalGroupPosition.TOP -> RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
-                    PetalGroupPosition.MIDDLE -> RoundedCornerShape(4.dp)
-                    PetalGroupPosition.BOTTOM -> RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 16.dp, bottomEnd = 16.dp)
-                    PetalGroupPosition.SINGLE -> RoundedCornerShape(16.dp)
-                }
+                val containerShape = petalGroupShape(position)
 
                 val isRowGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
                 val rowSheen = rememberGlassSheen(isRowGlass)

@@ -382,8 +382,16 @@ fun PetalImageViewerScreen(
     ) {
         val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
+        val hasSubOverlay = showInfoSheet || showCropDialog
+        if (hasSubOverlay) {
+            androidx.activity.compose.BackHandler(enabled = true) {
+                if (showCropDialog) showCropDialog = false
+                else if (showInfoSheet) showInfoSheet = false
+            }
+        }
+
         com.petal.browser.predictive.PetalPredictiveBackSurface(
-            enabled = true,
+            enabled = !hasSubOverlay,
             onBack = onBackPress
         ) {
             com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {

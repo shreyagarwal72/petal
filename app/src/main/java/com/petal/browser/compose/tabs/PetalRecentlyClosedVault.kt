@@ -93,9 +93,14 @@ fun PetalRecentlyClosedVault(
         records = PetalRecentlyClosedManager.getRecentlyClosedTabs()
     }
 
-    // Back navigation: settings sub-page -> vault page (vault dismissal handled by PetalPredictiveBackSurface)
-    androidx.activity.compose.BackHandler(enabled = showSettingsPage) {
-        showSettingsPage = false
+    // Back navigation: dialog / settings sub-page -> vault page (vault dismissal handled by PetalPredictiveBackSurface)
+    val hasSubOverlay = showForgotLockDialog || showSettingsPage
+    androidx.activity.compose.BackHandler(enabled = hasSubOverlay) {
+        if (showForgotLockDialog) {
+            showForgotLockDialog = false
+        } else if (showSettingsPage) {
+            showSettingsPage = false
+        }
     }
 
     // Trigger biometric if lockType is biometric
@@ -122,7 +127,7 @@ fun PetalRecentlyClosedVault(
     val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
     PetalPredictiveBackSurface(
-        enabled = !showSettingsPage,
+        enabled = !hasSubOverlay,
         onBack = onDismiss
     ) {
         PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
@@ -148,7 +153,7 @@ fun PetalRecentlyClosedVault(
                         isUnlocked -> if (records.size == 1) "1 tab saved" else "${records.size} tabs saved"
                         else -> "Unlock to view closed tabs"
                     },
-                    onBack = { if (showSettingsPage) showSettingsPage = false else onDismiss() },
+                    onBack = { if (showForgotLockDialog) showForgotLockDialog = false else if (showSettingsPage) showSettingsPage = false else onDismiss() },
                     actions = {
                         if (isUnlocked && !showSettingsPage) {
                             HeaderActionIcon(

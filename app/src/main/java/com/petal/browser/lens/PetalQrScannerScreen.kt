@@ -231,8 +231,19 @@ fun PetalQrScannerScreen(
         }
     }
 
+    val hasSubOverlay = showScanProviderDialog || detectedValue != null
+    if (hasSubOverlay) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            if (showScanProviderDialog) showScanProviderDialog = false
+            else if (detectedValue != null) {
+                detectedValue = null
+                scanLocked = false
+            }
+        }
+    }
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
+        enabled = !hasSubOverlay,
         onBack = onDismiss
     ) {
         com.petal.browser.predictive.PetalScreenWrapper(

@@ -546,8 +546,23 @@ fun PetalAudioPlayerScreen(
 
     val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
 
+    val hasSheetOpen = showMoreBottomSheet || showLyricsSheet || showQueueSheet || 
+        showSleepTimerSheet || showSongInfoSheet || showSpeedSheet || showAudioRouteSheet
+
+    if (hasSheetOpen) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            showMoreBottomSheet = false
+            showLyricsSheet = false
+            showQueueSheet = false
+            showSleepTimerSheet = false
+            showSongInfoSheet = false
+            showSpeedSheet = false
+            showAudioRouteSheet = false
+        }
+    }
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
+        enabled = !hasSheetOpen,
         onBack = onClose
     ) {
         com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {

@@ -211,8 +211,27 @@ fun PetalBookmarksScreen(
         }
     }
 
+    val hasSubOverlay = editingRecord != null || optionsRecord != null || showAddDialog || showClearConfirm || showReadingListOnly || searchQuery.isNotEmpty()
+    val handleDismiss: () -> Unit = {
+        when {
+            optionsRecord != null -> optionsRecord = null
+            editingRecord != null -> editingRecord = null
+            showAddDialog -> showAddDialog = false
+            showClearConfirm -> showClearConfirm = false
+            showReadingListOnly -> showReadingListOnly = false
+            searchQuery.isNotEmpty() -> searchQuery = ""
+            else -> onDismiss()
+        }
+    }
+
+    if (hasSubOverlay) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            handleDismiss()
+        }
+    }
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
+        enabled = !hasSubOverlay,
         onBack = onDismiss,
     ) {
     com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
@@ -239,7 +258,7 @@ fun PetalBookmarksScreen(
                 ExpressiveHeader(
                     title = "Bookmarks",
                     subtitle = "${filteredBookmarks.size} saved items",
-                    onBack = onDismiss,
+                    onBack = { if (hasSubOverlay) handleDismiss() else onDismiss() },
                     actions = {
                         HeaderActionIcon(
                             icon = Icons.Rounded.Add,

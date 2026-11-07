@@ -262,8 +262,16 @@ fun PetalSettingsScreen(
         }
     }
 
+    val hasSearchOverlay = isSearchOpen || searchQuery.isNotEmpty()
+    if (hasSearchOverlay) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            isSearchOpen = false
+            searchQuery = ""
+        }
+    }
+
     PetalPredictiveBackSurface(
-        enabled = true,
+        enabled = !hasSearchOverlay,
         onBack = {
             if (pageCategory != null) {
                 // The gesture already slid the page away; remove it without a second animation.
@@ -298,7 +306,7 @@ fun PetalSettingsScreen(
                         searchQuery = searchQuery,
                         onSearchQueryChange = { searchQuery = it },
                         onCategoryClick = { category, highlightId -> openCategory(category, highlightId) },
-                        onNavigateBack = onBackPress,
+                        onNavigateBack = { if (hasSearchOverlay) { isSearchOpen = false; searchQuery = "" } else onBackPress() },
                         isSearchOpen = isSearchOpen,
                         onSearchOpenChange = { isSearchOpen = it }
                     )

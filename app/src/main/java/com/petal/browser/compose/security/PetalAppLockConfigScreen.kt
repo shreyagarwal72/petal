@@ -156,6 +156,20 @@ fun PetalAppLockConfigScreen(
         if (savedPasscode.isBlank()) showPasscodeConfigDialog = true
     }
 
+    val handleBack: () -> Unit = {
+        if (showPasscodeConfigDialog) {
+            showPasscodeConfigDialog = false
+        } else {
+            onBack()
+        }
+    }
+
+    if (showPasscodeConfigDialog) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            showPasscodeConfigDialog = false
+        }
+    }
+
     val content = @Composable {
         Scaffold(
             snackbarHost = { PetalSnackbarHost(snackbarHostState) },
@@ -176,7 +190,7 @@ fun PetalAppLockConfigScreen(
                     ExpressiveHeader(
                         title = "App & Profile Lock",
                         subtitle = "Configure protection and authentication",
-                        onBack = onBack
+                        onBack = handleBack
                     )
 
                     Column(
@@ -386,7 +400,7 @@ fun PetalAppLockConfigScreen(
 
     if (wrapPredictive) {
         com.petal.browser.predictive.PetalPredictiveBackSurface(
-            enabled = true,
+            enabled = !showPasscodeConfigDialog,
             onBack = onBack,
         ) {
             com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {

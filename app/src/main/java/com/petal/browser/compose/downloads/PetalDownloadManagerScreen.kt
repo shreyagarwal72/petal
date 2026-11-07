@@ -532,8 +532,28 @@ fun PetalDownloadManagerScreen(
 
     var isSettingsOpen by remember { mutableStateOf(false) }
 
+    val isSelectionMode = selectedIds.isNotEmpty()
+    val hasSubOverlay = isSelectionMode || searchQuery.isNotEmpty() || showBatteryDialog || showNotificationPermissionDialog || sortMenuExpanded
+    val handleDismiss: () -> Unit = {
+        when {
+            showBatteryDialog -> showBatteryDialog = false
+            showNotificationPermissionDialog -> showNotificationPermissionDialog = false
+            isSelectionMode -> selectedIds = emptySet()
+            sortMenuExpanded -> sortMenuExpanded = false
+            searchQuery.isNotEmpty() -> searchQuery = ""
+            isSettingsOpen -> isSettingsOpen = false
+            else -> onBackPress()
+        }
+    }
+
+    if (hasSubOverlay) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            handleDismiss()
+        }
+    }
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
+        enabled = !hasSubOverlay,
         onBack = {
             if (isSettingsOpen) {
                 isSettingsOpen = false
@@ -573,7 +593,7 @@ fun PetalDownloadManagerScreen(
             ExpressiveHeader(
                 title = if (isSelectionMode) "${selectedIds.size} Selected" else "Downloads",
                 subtitle = if (isSelectionMode) "Selecting Mode" else "${downloadList.size} files",
-                onBack = if (isSelectionMode) { { selectedIds = emptySet() } } else onBackPress,
+                onBack = { if (hasSubOverlay) handleDismiss() else onBackPress() },
                 actions = {
                     if (isSelectionMode) {
                         HeaderActionIcon(

@@ -1089,7 +1089,7 @@ fun FirefoxAccountSyncScreen(
             ) {
                 com.petal.browser.compose.security.PetalAppLockConfigScreen(
                     onBack = { showAppLockConfigPage = false },
-                    wrapPredictive = true
+                    wrapPredictive = false
                 )
             }
         }

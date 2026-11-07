@@ -161,33 +161,32 @@ fun PetalDeleteScreen(
         )
     }
 
-    // This screen lives in its own Activity (SettingsDataClearActivity). Faking predictive back inside the
-    // Compose tree had no screenshot to show behind it (black background) and, once the gesture
-    // finished, snapped back to rest and replayed the Activity's own finish animation. Leave the
-    // gesture to the system instead: it animates this window away over the REAL previous screen
-    // (cross-activity predictive back), exactly like Chrome. onBackPress/finish still handles the
-    // on-screen back arrow.
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = onBackPress,
-    ) {
-    com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            ExpressiveHeader(
-                title = context.getString(R.string.menu_delete),
-                subtitle = "Clear Browsing Data & History",
-                onBack = onBackPress
-            )
+    val isStandaloneActivity = (context as? android.app.Activity) is com.petal.browser.activity.SettingsDataClearActivity
+    val hasSubOverlay = showConfirmDialog
+
+    if (hasSubOverlay) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            showConfirmDialog = false
         }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
+    }
+
+    val content = @Composable {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            topBar = {
+                ExpressiveHeader(
+                    title = context.getString(R.string.menu_delete),
+                    subtitle = "Clear Browsing Data & History",
+                    onBack = { if (showConfirmDialog) showConfirmDialog = false else onBackPress() }
+                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
             M3ExpressiveVariableBackground(pageSeed = "delete_page")
 
             Column(
@@ -385,6 +384,17 @@ fun PetalDeleteScreen(
             }
         }
     }
-}
-}
+
+    if (!isStandaloneActivity) {
+        com.petal.browser.predictive.PetalPredictiveBackSurface(
+            enabled = !hasSubOverlay,
+            onBack = onBackPress,
+        ) {
+            com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+                content()
+            }
+        }
+    } else {
+        content()
+    }
 }

@@ -228,8 +228,25 @@ fun PetalExtensionsScreen(
 
     var showStoreScreen by remember { mutableStateOf(false) }
 
+    val hasSubOverlay = showStoreScreen || showAddSheet || detailExtensionId != null || activeBuiltInSettingsSpec != null
+    val handleDismiss: () -> Unit = {
+        when {
+            showStoreScreen -> showStoreScreen = false
+            showAddSheet -> showAddSheet = false
+            detailExtensionId != null -> detailExtensionId = null
+            activeBuiltInSettingsSpec != null -> activeBuiltInSettingsSpec = null
+            else -> onDismiss()
+        }
+    }
+
+    if (hasSubOverlay) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            handleDismiss()
+        }
+    }
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = !showStoreScreen,
+        enabled = !hasSubOverlay,
         onBack = onDismiss
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -269,7 +286,7 @@ fun PetalExtensionsScreen(
                         ExpressiveHeader(
                             title = "Extensions",
                             subtitle = if (selectedTabIndex == 0) "Petal built-in privacy and web utilities" else "${firefoxExtensions.size} Firefox add-on${if (firefoxExtensions.size == 1) "" else "s"} installed",
-                            onBack = onDismiss,
+                            onBack = { if (hasSubOverlay) handleDismiss() else onDismiss() },
                             actions = {
                                 FilledTonalIconButton(
                                     shape = com.petal.browser.ui.theme.ExpressiveButtonShape,

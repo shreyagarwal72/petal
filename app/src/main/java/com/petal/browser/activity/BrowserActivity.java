@@ -1568,7 +1568,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // ViewGroup.removeView() is safe – Compose checks for re-entrance internally.
         // A synchronous dispose is required so the overlay's OnBackPressedCallback is
         // unregistered before Android can dispatch the next back gesture to this activity.
-        if (composeView.getParent() != null) return;
         try {
             composeView.disposeComposition();
         } catch (Throwable t) {
@@ -1720,7 +1719,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         // Last tab on Home surface: confirm exit or finish task
-        boolean requireConfirm = sp.getBoolean("sp_close_browser_confirm", true);
+        boolean requireConfirm = sp.getBoolean("sp_close_browser_confirm", false);
         if (!requireConfirm) {
             finishAndRemoveTask();
         } else {
@@ -1819,7 +1818,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void updateBackCallbackState() {
         if (browserBackCallback == null) return;
-        boolean hasOverlay = isOverlayScreenShowing || hasNonTabTopContent();
+        View topContent = getTopContentChild();
+        boolean isBrowserView = isTabSurface(topContent);
+        boolean isHomeComposeView = (topContent instanceof androidx.compose.ui.platform.ComposeView) && isPetalHomeSurfaceShowing;
+        boolean hasOverlay = isOverlayScreenShowing || (topContent != null && !isBrowserView && !isHomeComposeView);
         boolean hasDialog = (dialogOverview != null && dialogOverview.isShowing()) || isFindInPageShowing || (customView != null) || (fullscreenHolder != null) || (videoView != null);
         boolean hasWebBack = canBrowserGoBack();
         String curUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
@@ -5814,39 +5816,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      */
     public void showOmniboxPage(String initialQuery) {
         if (omniboxOpenPending) return;
-        // Where the page should grow from: the exact bar/button the user tapped (reported through
-        // PetalOmniboxOrigin), else the visible address bar, else a pill under the status bar.
-        android.graphics.Rect origin = new android.graphics.Rect();
-        float radius = -1f;
-        float[] o = com.petal.browser.ui.components.PetalOmniboxOrigin.take();
-        View bar = composeAddressBar != null ? composeAddressBar : findViewById(R.id.compose_address_bar);
-        float d = getResources().getDisplayMetrics().density;
-        if (o != null) {
-            int[] dl = new int[2];
-            getWindow().getDecorView().getLocationOnScreen(dl); // window -> screen coords
-            origin.set((int) o[0] + dl[0], (int) o[1] + dl[1], (int) o[2] + dl[0], (int) o[3] + dl[1]);
-            radius = o[4];
-        } else if (bar != null && bar.getVisibility() == View.VISIBLE && bar.getWidth() > 0) {
-            int[] l = new int[2];
-            bar.getLocationOnScreen(l);
-            origin.set(l[0], l[1], l[0] + bar.getWidth(), l[1] + bar.getHeight());
-            radius = 20 * d;
-        } else {
-            int sw = getResources().getDisplayMetrics().widthPixels;
-            int top = (int) (56 * d);
-            origin.set((int) (16 * d), top, sw - (int) (16 * d), top + (int) (52 * d));
-        }
-        pendingContainerOrigin = origin;
-        pendingContainerRadius = radius;
-        // Screenshot the screen we are leaving BEFORE it is hidden; show the page as soon as it
-        // arrives (usually the next frame, 100ms at most) so nothing blocks the main thread.
-        omniboxOpenPending = true;
-        final String query = initialQuery;
-        captureWindowAsync(bmp -> {
-            omniboxOpenPending = false;
-            pendingContainerSnapshot = bmp;
-            showOmniboxPageNow(query);
-        });
+        captureBrowserMainPreview();
+        showOmniboxPageNow(initialQuery);
     }
 
     private void showOmniboxPageNow(String initialQuery) {
@@ -5996,10 +5967,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             hideRefreshAndProgressOverlays();
             View deleteView = com.petal.browser.compose.settings.PetalDeleteBridge.createDeleteView(
                 BrowserActivity.this,
-                () -> {
-                    showAlbum(currentAlbumController);
-                    return kotlin.Unit.INSTANCE;
-                }
+                () -> showAlbum(currentAlbumController)
             );
             presentComposeScreen(deleteView);
         } catch (Exception e) {
@@ -6817,7 +6785,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         com.petal.browser.ui.components.BrowserDialogManager.showDialogCustomSearches(this, url);
     }
     public void doubleTapsQuit() {
-        if (!sp.getBoolean("sp_close_browser_confirm", true)) {
+        if (!sp.getBoolean("sp_close_browser_confirm", false)) {
             finishAndRemoveTask();
         } else {
             showExitConfirmationDialog();

@@ -130,8 +130,14 @@ fun PetalReaderScreen(
         else -> selectedTheme.text.copy(alpha = 0.7f)
     }
 
+    if (showAppearanceSheet) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            showAppearanceSheet = false
+        }
+    }
+
     PetalPredictiveBackSurface(
-        enabled = true,
+        enabled = !showAppearanceSheet,
         onBack = onBack,
     ) {
         PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {

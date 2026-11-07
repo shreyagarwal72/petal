@@ -360,8 +360,24 @@ fun PetalHistoryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
+    val hasSubOverlay = showClearConfirm || sortMenuExpanded || searchQuery.isNotEmpty()
+    val handleDismiss: () -> Unit = {
+        when {
+            showClearConfirm -> showClearConfirm = false
+            sortMenuExpanded -> sortMenuExpanded = false
+            searchQuery.isNotEmpty() -> searchQuery = ""
+            else -> onDismiss()
+        }
+    }
+
+    if (hasSubOverlay) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            handleDismiss()
+        }
+    }
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
+        enabled = !hasSubOverlay,
         onBack = onDismiss,
     ) {
     com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
@@ -384,7 +400,7 @@ fun PetalHistoryScreen(
                 ExpressiveHeader(
                     title = "History",
                     subtitle = "${filteredHistory.size} items",
-                    onBack = onDismiss,
+                    onBack = { if (hasSubOverlay) handleDismiss() else onDismiss() },
                     actions = {
                         Box {
                             HeaderActionIcon(

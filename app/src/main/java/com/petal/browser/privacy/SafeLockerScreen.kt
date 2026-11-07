@@ -227,18 +227,28 @@ fun SafeLockerScreen(
         }
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = {
-            if (isSelectionMode) {
-                selectedFileIds = emptySet()
-            } else if (isSearchActive) {
-                isSearchActive = false
-                searchQuery = ""
-            } else {
-                onBackPress()
-            }
+    val isSelectionMode = selectedFileIds.isNotEmpty()
+    val hasSubOverlay = isSelectionMode || isSearchActive
+    val handleDismiss: () -> Unit = {
+        if (isSelectionMode) {
+            selectedFileIds = emptySet()
+        } else if (isSearchActive) {
+            isSearchActive = false
+            searchQuery = ""
+        } else {
+            onBackPress()
         }
+    }
+
+    if (hasSubOverlay) {
+        androidx.activity.compose.BackHandler(enabled = true) {
+            handleDismiss()
+        }
+    }
+
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = !hasSubOverlay,
+        onBack = onBackPress
     ) {
         com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
             Scaffold(
@@ -284,7 +294,7 @@ fun SafeLockerScreen(
                             ExpressiveHeader(
                                 title = "Safe Locker",
                                 subtitle = if (isUnlocked) "${lockedFiles.size} encrypted files" else "Biometric Protected",
-                                onBack = onBackPress,
+                                onBack = { if (isSearchActive) { isSearchActive = false; searchQuery = "" } else onBackPress() },
                                 actions = {
                                     if (isUnlocked) {
                                         HeaderActionIcon(
