@@ -5482,11 +5482,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         contentFrame.setOnPullListener(progress -> {
             if (finalRefreshView != null) {
                 if (progress > 0f) {
+                    // bringToFront() removes/re-adds the child and requests a relayout of the whole
+                    // window, so do it once when the bar appears, never per MOVE event.
                     if (finalRefreshView.getVisibility() != VISIBLE) {
                         finalRefreshView.setVisibility(VISIBLE);
+                        finalRefreshView.bringToFront();
                     }
-                    finalRefreshView.bringToFront();
-                } else if (!refreshState.isRefreshing()) {
+                } else if (!refreshState.isRefreshing()
+                        && finalRefreshView.getVisibility() != View.INVISIBLE) {
                     finalRefreshView.setVisibility(View.INVISIBLE);
                 }
             }
@@ -5565,6 +5568,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (mediaSnifferBanner != null) {
             mediaSnifferBanner.setVisibility(GONE);
         }
+    }
+
+    /**
+     * Called by the active tab when its page finishes loading. Clears the pull-to-refresh
+     * spinner only if a pull-triggered reload is in flight, so a finger that is mid-pull on
+     * a different load is never cancelled. Without this the spinner (and the canPull() guard,
+     * which refuses new pulls while refreshing) stayed stuck until the 8s watchdog fired.
+     */
+    public void onActivePageLoadFinished() {
+        runOnUiThread(() -> {
+            if (refreshState != null && refreshState.isRefreshing()) {
+                resetRefreshState();
+            }
+        });
     }
 
     public void resetRefreshState() {

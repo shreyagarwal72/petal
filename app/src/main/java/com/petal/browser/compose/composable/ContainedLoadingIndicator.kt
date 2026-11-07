@@ -181,7 +181,30 @@ fun RefreshBarLoadingIndicator(
     pullProgress: Float = 1.0f,
     modifier: Modifier = Modifier
 ) {
-    val isVisible = isRefreshing || pullProgress > 0.01f
+    RefreshBarLoadingIndicatorLazy(
+        isRefreshing = isRefreshing,
+        pullProgressProvider = { pullProgress },
+        modifier = modifier
+    )
+}
+
+/**
+ * Same indicator, but the pull progress is read through [pullProgressProvider] only inside
+ * graphicsLayer / derivedStateOf. The touch handler pushes a new progress on every MOVE event; reading
+ * a plain Float here made the whole host composition (theme + preference reads) re-run per event,
+ * which starved the main thread during a pull.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun RefreshBarLoadingIndicatorLazy(
+    isRefreshing: Boolean,
+    pullProgressProvider: () -> Float,
+    modifier: Modifier = Modifier
+) {
+    val currentProvider by androidx.compose.runtime.rememberUpdatedState(pullProgressProvider)
+    val isVisible by remember(isRefreshing) {
+        androidx.compose.runtime.derivedStateOf { isRefreshing || currentProvider() > 0.01f }
+    }
 
     // 0 -> 1 while pulling, 1 once refreshing. Bouncy settle only when it commits to refreshing.
     val refreshFactor by animateFloatAsState(
@@ -216,7 +239,7 @@ fun RefreshBarLoadingIndicator(
                 modifier = Modifier
                     .requiredSize(42.dp)
                     .graphicsLayer {
-                        val p = pullProgress.coerceIn(0f, 1f)
+                        val p = currentProvider().coerceIn(0f, 1f)
                         val r = refreshFactor
                         val dragOffsetDp = 4f + p * 36f
                         val offsetDp = dragOffsetDp + (24f - dragOffsetDp) * r
@@ -275,9 +298,9 @@ object PetalRefreshBarBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    RefreshBarLoadingIndicator(
+                    RefreshBarLoadingIndicatorLazy(
                         isRefreshing = state.isRefreshing,
-                        pullProgress = state.pullProgress
+                        pullProgressProvider = { state.pullProgress }
                     )
                 }
             }

@@ -428,6 +428,10 @@ class PetalTabViewController private constructor(
             tab?.let { browserStore.dispatch(ContentAction.UpdateLoadingStateAction(it.id, loading)) }
             publishState()
             if (!loading) {
+                if (active) {
+                    (resolveActivity(context) as? com.petal.browser.activity.BrowserActivity)
+                        ?.onActivePageLoadFinished()
+                }
                 injectPagePrivacyAndAdBlock()
                 recordHistoryVisit(pageUrl, pageTitle)
                 com.petal.browser.accessibility.PetalAccessibilityEngine.applyAccessibilitySettings(this@PetalTabViewController)

@@ -522,6 +522,13 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         if (isDragging || isIntercepting) {
             return;
         }
+        // GeckoView asks its parents to stay out of the way as soon as a touch lands on content that
+        // might scroll. While the page is still at the top that request must not latch for the whole
+        // gesture, otherwise a downward drag from the top can never start a refresh. The vertical
+        // dominance / still-at-top checks in onInterceptTouchEvent decide instead.
+        if (disallowIntercept && startedAtTop) {
+            return;
+        }
         this.disallowIntercept = disallowIntercept;
     }
 
