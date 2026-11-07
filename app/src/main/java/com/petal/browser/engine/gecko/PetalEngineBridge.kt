@@ -106,6 +106,15 @@ object PetalEngineBridge {
     fun handleExternalScheme(activity: Activity, url: String?): Boolean {
         if (url == null) return false
         val lower = url.lowercase()
+        // Web and in-engine schemes must load inside Petal. Without this guard every
+        // http(s) navigation was handed to Android as ACTION_VIEW (opening another
+        // browser) and then denied in Petal.
+        val internalSchemes = listOf(
+            "http:", "https:", "about:", "petal:", "data:", "blob:", "file:",
+            "javascript:", "view-source:", "resource:", "moz-extension:",
+            "content:", "ws:", "wss:", "ftp:"
+        )
+        if (internalSchemes.any { lower.startsWith(it) }) return false
         if (url.startsWith("intent:", ignoreCase = true)) {
             try {
                 val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
