@@ -5767,6 +5767,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         containerExitInFlight = true;
         PetalAndroidUtils.hideSoftKeyboard(this, getCurrentFocus()); // keyboard leaves with the page
+        // Safety net: if the exit animation is cancelled/detached its end callback never runs and the flag
+        // would swallow every later Back press. Always release it shortly after the animation should end.
+        contentFrame.postDelayed(() -> containerExitInFlight = false, duration + 600);
         final android.widget.ImageView underlay = makeContainerUnderlay(snap);
         if (underlay != null) contentFrame.addView(underlay, Math.max(0, contentFrame.indexOfChild(v)));
         final com.petal.browser.motion.PetalMotion.BarGhost ghost = attachBarGhost(snap, origin, radius);

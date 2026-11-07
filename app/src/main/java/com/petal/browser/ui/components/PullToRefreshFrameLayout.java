@@ -519,9 +519,10 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
         // Match Firefox VerticalSwipeRefreshLayout: disable Pull to Refresh on this layout
         // when requested by child, but do NOT propagate to parent.
-        // Never latch: this layout is the one that decides, using the page's own input result
-        // (canPull). Latching Gecko's early "disallow" breaks the first pull; ignoring page-handled
-        // gestures breaks site touch. canPull() already refuses when content handles the touch.
+        // Mozilla semantics: NestedGeckoView asks us to stay out (true) on DOWN and lifts the request
+        // (false) once Gecko reports the touch as unhandled at the top of the page; after the page has
+        // scrolled down it asks again. Honour it exactly.
+        this.disallowIntercept = disallowIntercept;
     }
 
     @Override

@@ -1456,23 +1456,23 @@ class PetalTabViewController private constructor(
 
     private var touchListenerView: org.mozilla.geckoview.GeckoView? = null
 
-    /** Single delivery path: Gecko gets each event exactly once, with its input-result detail. */
+    /**
+     * Mozilla's NestedGeckoView already feeds every touch to Gecko exactly once and tracks the
+     * input result (EngineView.getInputResultDetail). We must NOT send events to Gecko ourselves.
+     * This only keeps the web surface from reserving edge areas that would block the back gesture.
+     */
     private fun installGeckoTouchListener() {
         val gv = findGeckoView(engineView.asView()) ?: return
         if (touchListenerView === gv) return
         touchListenerView = gv
-        gv.setOnTouchListener { _, ev ->
-            try {
-                gv.onTouchEventForDetailResult(ev).accept { detail ->
-                    if (detail != null) {
-                        lastInputResult = detail.handledResult()
-                        lastScrollDirections = detail.scrollableDirections()
-                        lastOverscrollDirections = detail.overscrollDirections()
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            gv.viewTreeObserver.addOnPreDrawListener {
+                try {
+                    if (gv.systemGestureExclusionRects.isNotEmpty()) {
+                        gv.systemGestureExclusionRects = java.util.Collections.emptyList()
                     }
-                }
+                } catch (_: Throwable) {}
                 true
-            } catch (_: Throwable) {
-                gv.onTouchEvent(ev)
             }
         }
     }
@@ -1480,24 +1480,26 @@ class PetalTabViewController private constructor(
     override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean {
         if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
             resetGestureExclusionRects()
-            lastInputResult = org.mozilla.geckoview.PanZoomController.INPUT_RESULT_UNHANDLED
         }
         installGeckoTouchListener()
         return super.dispatchTouchEvent(event)
     }
 
+    private var lastToolbarMaxHeight = Int.MIN_VALUE
+    private var lastVerticalClipping = Int.MIN_VALUE
+
+    // GeckoEngineView already forwards these to its GeckoView; calling both doubled the
+    // cross-process compositor messages on every toolbar animation frame. Dedupe identical values too.
     override fun setDynamicToolbarMaxHeight(height: Int) {
-        try {
-            engineView.setDynamicToolbarMaxHeight(height)
-            findGeckoView(engineView.asView())?.setDynamicToolbarMaxHeight(height)
-        } catch (_: Throwable) {}
+        if (height == lastToolbarMaxHeight) return
+        lastToolbarMaxHeight = height
+        try { engineView.setDynamicToolbarMaxHeight(height) } catch (_: Throwable) {}
     }
 
     override fun setVerticalClipping(clippingHeight: Int) {
-        try {
-            engineView.setVerticalClipping(clippingHeight)
-            findGeckoView(engineView.asView())?.setVerticalClipping(clippingHeight)
-        } catch (_: Throwable) {}
+        if (clippingHeight == lastVerticalClipping) return
+        lastVerticalClipping = clippingHeight
+        try { engineView.setVerticalClipping(clippingHeight) } catch (_: Throwable) {}
     }
 
     /** GeckoView-only integration point used for WebExtension delegates. */
@@ -1829,19 +1831,11 @@ class PetalTabViewController private constructor(
         State(it.id, pageUrl, pageTitle, progress, loading, backAvailable, forwardAvailable, isSecure, it.content.private)
     }
 
-    private var lastInputResult: Int = org.mozilla.geckoview.PanZoomController.INPUT_RESULT_UNHANDLED
-    private var lastScrollDirections: Int = 0
-    private var lastOverscrollDirections: Int = org.mozilla.geckoview.PanZoomController.OVERSCROLL_FLAG_VERTICAL
-
+    /** Same rule as Mozilla's SwipeRefreshFeature.canChildScrollUp (inverted): page at top and not handling the touch. */
     fun canOverscrollTop(): Boolean {
-        val gv = findGeckoView(engineView.asView())
-        if (gv != null && gv.canScrollVertically(-1)) {
-            return false
-        }
         val atTop = currentScrollY <= (2f * context.resources.displayMetrics.density).toInt()
         if (!atTop) return false
-        val handledByInner = lastInputResult == org.mozilla.geckoview.PanZoomController.INPUT_RESULT_HANDLED_CONTENT
-        return !handledByInner
+        return try { engineView.getInputResultDetail().canOverscrollTop() } catch (_: Throwable) { true }
     }
 
     fun isPageAtTop(): Boolean {
