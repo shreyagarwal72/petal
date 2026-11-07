@@ -21,8 +21,8 @@ import java.io.File
 object PetalTorrentEngineManager {
 
     enum class TorrentEngineMode(val key: String, val title: String, val description: String) {
-        ENGINE_1DM("1DM", "1DM High-Speed", "Fastest multi-threaded engine with 1DM/1DM+ integration & DHT P2P scraping"),
-        ENGINE_EMBEDDED("EMBEDDED", "In-App Downloader", "Direct in-app multi-threaded downloader with Live Alerts & stream support")
+        ENGINE_1DM("1DM", "1DM Torrent Engine", "Integrates with 1DM/1DM+ for full BitTorrent P2P and DHT swarm downloads"),
+        ENGINE_EMBEDDED("EMBEDDED", "WebSeed / Torrent Hand-off", "Fetches .torrent files and web seeds directly; hands magnet links to external torrent clients")
     }
 
     @JvmStatic

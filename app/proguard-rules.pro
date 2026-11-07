@@ -89,5 +89,15 @@
 -dontwarn org.mozilla.experiments.nimbus.**
 -dontwarn mozilla.components.service.nimbus.**
 
+# ---- youtubedl-android, aria2c, ffmpeg & Python JNI -------------------------
+-keep class com.yausername.** { *; }
+-keepclassmembers class com.yausername.** { *; }
+-keep interface com.yausername.** { *; }
+-dontwarn com.yausername.**
+
+-keep class com.chaquo.python.** { *; }
+-keepclassmembers class com.chaquo.python.** { *; }
+-dontwarn com.chaquo.python.**
+
 
 
