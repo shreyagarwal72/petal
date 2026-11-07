@@ -1454,21 +1454,35 @@ class PetalTabViewController private constructor(
         }
     }
 
-    override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean {
-        if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
-            resetGestureExclusionRects()
-        }
-        findGeckoView(engineView.asView())?.let { gv ->
+    private var touchListenerView: org.mozilla.geckoview.GeckoView? = null
+
+    /** Single delivery path: Gecko gets each event exactly once, with its input-result detail. */
+    private fun installGeckoTouchListener() {
+        val gv = findGeckoView(engineView.asView()) ?: return
+        if (touchListenerView === gv) return
+        touchListenerView = gv
+        gv.setOnTouchListener { _, ev ->
             try {
-                gv.onTouchEventForDetailResult(event).accept { detail ->
+                gv.onTouchEventForDetailResult(ev).accept { detail ->
                     if (detail != null) {
                         lastInputResult = detail.handledResult()
                         lastScrollDirections = detail.scrollableDirections()
                         lastOverscrollDirections = detail.overscrollDirections()
                     }
                 }
-            } catch (_: Throwable) {}
+                true
+            } catch (_: Throwable) {
+                gv.onTouchEvent(ev)
+            }
         }
+    }
+
+    override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean {
+        if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
+            resetGestureExclusionRects()
+            lastInputResult = org.mozilla.geckoview.PanZoomController.INPUT_RESULT_UNHANDLED
+        }
+        installGeckoTouchListener()
         return super.dispatchTouchEvent(event)
     }
 
@@ -1826,8 +1840,7 @@ class PetalTabViewController private constructor(
         }
         val atTop = currentScrollY <= (2f * context.resources.displayMetrics.density).toInt()
         if (!atTop) return false
-        val handledByInner = (lastInputResult == org.mozilla.geckoview.PanZoomController.INPUT_RESULT_HANDLED_CONTENT) &&
-                (lastScrollDirections and org.mozilla.geckoview.PanZoomController.SCROLLABLE_FLAG_TOP != 0)
+        val handledByInner = lastInputResult == org.mozilla.geckoview.PanZoomController.INPUT_RESULT_HANDLED_CONTENT
         return !handledByInner
     }
 

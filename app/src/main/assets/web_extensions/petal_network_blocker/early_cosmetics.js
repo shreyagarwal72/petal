@@ -98,6 +98,6 @@
             } catch (_) {}
         }
 
-        setInterval(handleYouTubeAds, 250);
+        setInterval(function(){ if (!document.hidden) handleYouTubeAds(); }, 1000);
     }
 })();
