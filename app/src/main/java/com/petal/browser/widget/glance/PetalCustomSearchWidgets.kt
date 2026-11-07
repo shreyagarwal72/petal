@@ -3,32 +3,18 @@ package com.petal.browser.widget.glance
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.RadialGradient
-import android.graphics.Shader
-import android.graphics.Typeface
-import android.net.Uri
-import android.os.Build
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
+import androidx.glance.action.Action
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
@@ -36,12 +22,11 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.ImageProvider as GlanceUriImageProvider
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxHeight
@@ -51,139 +36,34 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
-import androidx.glance.material3.ColorProviders
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import androidx.graphics.shapes.CornerRounding
-import androidx.graphics.shapes.RoundedPolygon
-import androidx.graphics.shapes.star
-import androidx.graphics.shapes.toPath
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
-import com.petal.browser.ui.theme.ColorStyle
-import com.petal.browser.ui.theme.applyAmoled
-import com.petal.browser.ui.theme.applyStyle
-import com.petal.browser.ui.theme.isDynamicColorSupported
-import com.petal.browser.ui.theme.paletteById
-import com.petal.browser.widget.PetalSearchWidgetProvider
 
-import androidx.compose.ui.graphics.Color
-import androidx.core.content.res.ResourcesCompat
-import com.petal.browser.ui.theme.AppFont
-
-
-/**
- * Never let a bad pref / palette id / dynamic-color failure take the whole widget down:
- * an exception thrown while composing leaves the launcher showing "Can't load widget".
+/*
+ * Petal's three home-screen widgets, in Material 3 Expressive.
+ *
+ * - Petal #1: search pill with a cookie "P" badge and cookie action buttons; grows a row of cookie shortcut tiles
+ *   when resized taller.
+ * - Petal #2: a nested search field next to an island of cookie action buttons.
+ * - Petal #3: a pill with a large cookie badge, an open search prompt and cookie buttons.
+ *
+ * Every color, shape, shortcut and corner is user-customizable per widget (see PetalWidgetModel.kt and
+ * PetalWidgetSettingsActivity), and every widget lays itself out from planLayout() for its exact size.
+ *
+ * Why the drawing looks the way it does (all of these were visibility bugs on real devices):
+ * - Corners are shape drawables, not Glance's cornerRadius(): that modifier does nothing below Android 12, which
+ *   left square, unclipped bars on those phones.
+ * - Sizes are exact (SizeMode.Exact) and the layout drops buttons/badge when narrow instead of squeezing the
+ *   search hint to zero width.
+ * - The nested search field's color is derived from the bar, not read from a surface role, so it can't disappear
+ *   when every surface role is the same white ("expressive colors").
+ * - Shape bitmaps are small and cached so a widget never exceeds the RemoteViews memory budget.
  */
-private fun getWidgetColorScheme(context: Context): androidx.compose.material3.ColorScheme =
-    try {
-        buildWidgetColorScheme(context)
-    } catch (t: Throwable) {
-        android.util.Log.e("PetalWidget", "Falling back to default widget colors", t)
-        val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
-            Configuration.UI_MODE_NIGHT_YES
-        if (night) androidx.compose.material3.darkColorScheme() else androidx.compose.material3.lightColorScheme()
-    }
-
-private fun buildWidgetColorScheme(context: Context): androidx.compose.material3.ColorScheme {
-    val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
-    val isDark = when (themeConfig) {
-        "DARK" -> true
-        "LIGHT" -> false
-        else -> {
-            val flags = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-            flags == Configuration.UI_MODE_NIGHT_YES
-        }
-    }
-    val paletteId = sp.getString("sp_palette_id", "petal") ?: "petal"
-    val useDynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-    val isAmoled = sp.getBoolean("sp_amoled", false)
-    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-    val colorStyle = try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
-    val expressiveColors = sp.getBoolean("sp_expressive_colors", false)
-
-    var scheme = if (useDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    } else {
-        paletteById(paletteId).let { if (isDark) it.dark else it.light }
-    }
-
-    scheme = scheme.applyStyle(colorStyle)
-
-    if (expressiveColors) {
-        scheme = if (isDark) {
-            if (isAmoled) {
-                scheme.copy(
-                    background = Color.Black,
-                    surface = Color.Black,
-                    surfaceContainerLowest = Color.Black,
-                    surfaceContainerLow = Color(0xFF0B0B0B),
-                    surfaceContainer = Color(0xFF181818),
-                    surfaceContainerHigh = Color(0xFF1E1E1E),
-                    surfaceContainerHighest = Color(0xFF262626),
-                    surfaceVariant = Color(0xFF1C1C1C)
-                )
-            } else {
-                scheme.copy(
-                    background = scheme.surfaceContainerLow,
-                    surface = scheme.surfaceContainerLow,
-                    surfaceContainer = scheme.surfaceContainerHigh,
-                    surfaceContainerLow = scheme.surfaceContainerHigh,
-                    surfaceContainerHigh = scheme.surfaceContainerHigh,
-                    surfaceContainerHighest = scheme.surfaceContainerHigh,
-                    surfaceContainerLowest = scheme.surfaceContainerHigh
-                )
-            }
-        } else {
-            scheme.copy(
-                background = scheme.surfaceContainerLow,
-                surface = scheme.surfaceContainerLow,
-                surfaceContainer = Color.White,
-                surfaceContainerLow = Color.White,
-                surfaceContainerHigh = Color.White,
-                surfaceContainerHighest = Color.White,
-                surfaceContainerLowest = Color.White
-            )
-        }
-    } else if (isDark && isAmoled) {
-        scheme = scheme.applyAmoled()
-    }
-
-    val liquidGlassEnabled = PetalGlassWidgets.isLiquidGlassEnabled(context)
-    if (liquidGlassEnabled) {
-        val glassAlpha = sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.20f, 0.95f)
-        val outerAlpha = (glassAlpha * 0.75f).coerceIn(0.40f, 0.90f)
-        val innerAlpha = (glassAlpha * 0.65f).coerceIn(0.35f, 0.85f)
-
-        scheme = scheme.copy(
-            surfaceContainerLow = scheme.surfaceContainerLow.copy(alpha = outerAlpha),
-            surfaceContainer = scheme.surfaceContainer.copy(alpha = innerAlpha),
-            surfaceContainerHigh = scheme.surfaceContainerHigh.copy(alpha = innerAlpha),
-            surfaceContainerHighest = scheme.surfaceContainerHighest.copy(alpha = innerAlpha),
-            surfaceContainerLowest = scheme.surfaceContainerLowest.copy(alpha = outerAlpha)
-        )
-    }
-
-    return scheme
-}
-
-private fun surfaceContainerLowProvider(scheme: androidx.compose.material3.ColorScheme): ColorProvider =
-    ColorProvider(scheme.surfaceContainerLow)
-
-private fun surfaceContainerHighProvider(scheme: androidx.compose.material3.ColorScheme): ColorProvider =
-    ColorProvider(scheme.surfaceContainerHigh)
-
-private fun surfaceContainerHighestProvider(scheme: androidx.compose.material3.ColorScheme): ColorProvider =
-    ColorProvider(scheme.surfaceContainerHighest)
-
-private fun getWidgetTypeface(context: Context): Typeface {
-    return com.petal.browser.ui.theme.PetalFontHelper.getAppTypeface(context)
-}
 
 private fun widgetActionIntent(context: Context, action: String): Intent =
     Intent(context, BrowserActivity::class.java).apply {
@@ -191,63 +71,98 @@ private fun widgetActionIntent(context: Context, action: String): Intent =
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
     }
 
-/**
- * Liquid-glass overlay used by every search widget.
- *
- * Earlier versions decoded the user's wallpaper, box-blurred it and handed a full-size
- * ARGB bitmap to RemoteViews. On most devices that blew the ~1 MB binder limit (or OOM'd the
- * host process), which is what produced the "Can't load widget" / endless-spinner state. It
- * also ignored the real widget size, so the artwork was stretched.
- *
- * Glass is now built from a translucent scheme tint (alpha comes from getWidgetColorScheme)
- * plus a shape-drawable overlay (sheen, caustic, specular rim). Shape drawables scale to any
- * widget size, cost no bitmap memory, and let the real wallpaper show through the translucent
- * tint, which is the closest a home-screen widget can get to genuine glass.
- */
-@Composable
-private fun GlassOverlay(enabled: Boolean, @androidx.annotation.DrawableRes overlayRes: Int, cornerDp: Int) {
-    if (!enabled) return
-    Box(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .cornerRadius(cornerDp.dp)
-            .background(ImageProvider(overlayRes))
-    ) {}
-}
+private fun actionFor(context: Context, action: PetalWidgetAction): Action =
+    actionStartActivity(widgetActionIntent(context, action.intentAction ?: PetalWidgetAction.SEARCH.intentAction!!))
 
-private fun isDarkTheme(context: Context): Boolean {
-    val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
-    return when (themeConfig) {
-        "DARK" -> true
-        "LIGHT" -> false
-        else -> {
-            val flags = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-            flags == Configuration.UI_MODE_NIGHT_YES
+private fun tint(color: Int): ColorFilter = ColorFilter.tint(ColorProvider(Color(color)))
+
+private fun provider(color: Int): ColorProvider = ColorProvider(Color(color))
+
+// ───────────────────────────── widgets ─────────────────────────────
+
+abstract class PetalBaseWidget(private val kind: PetalWidgetKind) : GlanceAppWidget() {
+
+    // Exact: the widget re-lays-out for the real size the launcher gives it, on every Android version.
+    override val sizeMode: SizeMode = SizeMode.Exact
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val appWidgetId = try {
+            GlanceAppWidgetManager(context).getAppWidgetId(id)
+        } catch (_: Throwable) {
+            AppWidgetManager.INVALID_APPWIDGET_ID
+        }
+        // Resolved here, outside composition: a bad pref or palette must not take the whole widget down.
+        val cfg = PetalWidgetConfigStore.load(context, kind)
+        val palette = buildPalette(context, cfg)
+
+        provideContent {
+            PetalWidgetRoot(appWidgetId, cfg, palette)
         }
     }
 }
 
+class PetalSearchPetal1Widget : PetalBaseWidget(PetalWidgetKind.PETAL1)
+class PetalSearchPetal2Widget : PetalBaseWidget(PetalWidgetKind.PETAL2)
+class PetalSearchPetal3Widget : PetalBaseWidget(PetalWidgetKind.PETAL3)
+
+class PetalSearchPetal1WidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = PetalSearchPetal1Widget()
+}
+
+class PetalSearchPetal2WidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = PetalSearchPetal2Widget()
+}
+
+class PetalSearchPetal3WidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = PetalSearchPetal3Widget()
+}
+
+@Composable
+private fun PetalWidgetRoot(appWidgetId: Int, cfg: PetalWidgetConfig, pal: PetalWidgetPalette) {
+    val size = LocalSize.current
+    val plan = planLayout(cfg, size.width.value, size.height.value)
+    PetalWidgetCard(appWidgetId, cfg, pal, plan) {
+        when (cfg.kind) {
+            PetalWidgetKind.PETAL1 -> Petal1Content(cfg, pal, plan)
+            PetalWidgetKind.PETAL2 -> Petal2Content(cfg, pal, plan)
+            PetalWidgetKind.PETAL3 -> Petal3Content(cfg, pal, plan)
+        }
+    }
+}
+
+// ───────────────────────────── surfaces ─────────────────────────────
+
+/** A tinted shape-drawable surface with [content] stacked on top. Works on every API level. */
+@Composable
+private fun Surface(
+    @androidx.annotation.DrawableRes res: Int,
+    color: Int,
+    modifier: GlanceModifier,
+    content: @Composable () -> Unit
+) {
+    Box(modifier = modifier) {
+        Image(
+            provider = ImageProvider(res),
+            contentDescription = null,
+            modifier = GlanceModifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds,
+            colorFilter = tint(color)
+        )
+        content()
+    }
+}
+
 /**
- * Root card container for Petal widgets with liquid glass rendering.
- *
- * When liquid glass is enabled and a calibrated crop rect exists, renders the hardware-blurred,
- * tinted, specular-lit wallpaper slice saved as a PNG file exposed via FileProvider URI —
- * this avoids the RemoteViews binder 1 MB limit that causes blank / "Can't load widget" state
- * when passing raw Bitmap objects.
- *
- * When liquid glass is enabled but no rect is calibrated yet, falls back to a solid opaque
- * surface tint (not translucent — transparent fallback looks broken) and shows the AlignBadge.
- *
- * When liquid glass is disabled, uses the scheme's [fallbackBackground].
+ * The widget's outer card. Normally a tinted rounded fill plus an optional outline ring. With Liquid Glass on it
+ * is the blurred wallpaper slice instead (a FileProvider URI, because raw bitmaps blow the RemoteViews limit),
+ * or an opaque fallback until the glass is aligned, because a transparent fallback looks broken.
  */
 @Composable
-private fun PetalGlassWidgetCard(
+private fun PetalWidgetCard(
     appWidgetId: Int,
-    scheme: androidx.compose.material3.ColorScheme,
-    modifier: GlanceModifier = GlanceModifier,
-    cornerDp: androidx.compose.ui.unit.Dp = 28.dp,
-    fallbackBackground: ColorProvider,
+    cfg: PetalWidgetConfig,
+    pal: PetalWidgetPalette,
+    plan: PetalLayoutPlan,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -256,890 +171,370 @@ private fun PetalGlassWidgetCard(
 
     val widthPx = (size.width.value * density).toInt()
     val heightPx = (size.height.value * density).toInt()
-
-    if (widthPx > 0 && heightPx > 0 && appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+    val validId = appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID
+    if (widthPx > 0 && heightPx > 0 && validId) {
         PetalGlassWidgets.noteSize(context, appWidgetId, widthPx, heightPx)
     }
 
     val isLiquidGlass = PetalGlassWidgets.isLiquidGlassEnabled(context)
-    val rect = if (isLiquidGlass && appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
-        PetalGlassWidgets.getRect(context, appWidgetId)
-    } else {
-        null
-    }
-
-    val isDark = isDarkTheme(context)
+    val rect = if (isLiquidGlass && validId) PetalGlassWidgets.getRect(context, appWidgetId) else null
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
     val refraction = sp.getFloat("sp_liquid_glass_refraction", 1.0f).coerceIn(0f, 2f)
 
-    // Use FileProvider URI to avoid RemoteViews binder 1 MB limit.
-    // Raw Bitmap via ImageProvider(bitmap) silently blows the limit on most phones.
+    // The glass renderer needs a number; "full" is half the widget's shorter side.
+    val cornerDp = if (cfg.cornerRadius >= PETAL_RADIUS_FULL) minOf(size.width.value, size.height.value) / 2f else cfg.cornerRadius.toFloat()
+
     val glassUri = if (isLiquidGlass && rect != null) {
-        val spec = PetalGlassWidgetRenderer.Spec(
-            rect = rect,
-            blurDp = 24f,
-            cornerDp = cornerDp.value,
-            dark = isDark,
-            edge = sheen,
-            refraction = refraction
+        PetalGlassWidgetRenderer.renderUri(
+            context,
+            PetalGlassWidgetRenderer.Spec(
+                rect = rect,
+                blurDp = 24f,
+                cornerDp = cornerDp,
+                dark = pal.isDark,
+                edge = sheen,
+                refraction = refraction
+            ),
+            appWidgetId
         )
-        PetalGlassWidgetRenderer.renderUri(context, spec, appWidgetId)
-    } else {
-        null
-    }
+    } else null
 
-    // Solid opaque fallback: when liquid glass is on but no blurred tile could be generated
-    // (e.g. before calibration, wallpaper permission restricted, or missing cache),
-    // use a rich, solid surface color — NEVER a transparent washed-out color that looks broken.
-    val effectiveFallback: ColorProvider = if (isLiquidGlass && glassUri == null) {
-        ColorProvider(
-            if (isDark) androidx.compose.ui.graphics.Color(0xFF1C1E27)
-            else androidx.compose.ui.graphics.Color(0xFFF0F2FA)
-        )
-    } else {
-        fallbackBackground
-    }
+    Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        when {
+            glassUri != null -> Image(
+                provider = GlanceUriImageProvider(glassUri),
+                contentDescription = null,
+                modifier = GlanceModifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds
+            )
+            isLiquidGlass -> Image(
+                provider = ImageProvider(PetalWidgetDrawables.fill(cfg.cornerRadius)),
+                contentDescription = null,
+                modifier = GlanceModifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds,
+                colorFilter = tint(if (pal.isDark) 0xFF1C1E27.toInt() else 0xFFF0F2FA.toInt())
+            )
+            else -> Image(
+                provider = ImageProvider(PetalWidgetDrawables.fill(cfg.cornerRadius)),
+                contentDescription = null,
+                modifier = GlanceModifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds,
+                colorFilter = tint(pal.bar)
+            )
+        }
 
-    val rootModifier = if (glassUri != null) {
-        modifier
-            .fillMaxSize()
-            .cornerRadius(cornerDp)
-            .background(GlanceUriImageProvider(glassUri))
-    } else {
-        modifier
-            .fillMaxSize()
-            .cornerRadius(cornerDp)
-            .background(effectiveFallback)
-    }
+        if (cfg.outline > 0 && !isLiquidGlass) {
+            Image(
+                provider = ImageProvider(PetalWidgetDrawables.ring(cfg.cornerRadius, cfg.outline)),
+                contentDescription = null,
+                modifier = GlanceModifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds,
+                colorFilter = tint(pal.ring)
+            )
+        }
 
-    Box(
-        modifier = rootModifier,
-        contentAlignment = Alignment.Center
-    ) {
-        // Specular sheen & caustic overlay for genuine liquid glass depth
-        if (isLiquidGlass) {
-            val sheenRes = if (cornerDp >= 26.dp) {
-                R.drawable.widget_glass_sheen_pill
-            } else {
-                R.drawable.widget_glass_sheen_card
-            }
-            GlassOverlay(
-                enabled = true,
-                overlayRes = sheenRes,
-                cornerDp = cornerDp.value.toInt()
+        if (isLiquidGlass && cfg.cornerRadius >= 16) {
+            Image(
+                provider = ImageProvider(
+                    if (cfg.cornerRadius >= 24) R.drawable.widget_glass_sheen_pill else R.drawable.widget_glass_sheen_card
+                ),
+                contentDescription = null,
+                modifier = GlanceModifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds
             )
         }
 
         content()
 
-        if (isLiquidGlass && rect == null && appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
-            val alignIntent = PetalWidgetGlassActivity.intent(context, appWidgetId)
-            val alignAction = actionStartActivity(alignIntent)
+        if (isLiquidGlass && rect == null && validId) {
             Box(
-                modifier = GlanceModifier
-                    .fillMaxSize()
-                    .padding(top = 4.dp, end = 8.dp),
+                modifier = GlanceModifier.fillMaxSize().padding(top = 4.dp, end = 8.dp),
                 contentAlignment = Alignment.TopEnd
             ) {
-                Row(
-                    modifier = GlanceModifier
-                        .cornerRadius(12.dp)
-                        .background(ColorProvider(Color(0xD910121A)))
-                        .clickable(alignAction)
-                        .padding(horizontal = 7.dp, vertical = 3.dp),
-                    verticalAlignment = Alignment.Vertical.CenterVertically
+                Surface(
+                    res = PetalWidgetDrawables.fill(12),
+                    color = 0xD910121A.toInt(),
+                    modifier = GlanceModifier.clickable(actionStartActivity(PetalWidgetGlassActivity.intent(context, appWidgetId)))
                 ) {
-                    Image(
-                        provider = ImageProvider(R.drawable.widget_ic_lens_camera),
-                        contentDescription = context.getString(R.string.widget_glass_align_badge),
-                        modifier = GlanceModifier.size(11.dp),
-                        colorFilter = ColorFilter.tint(ColorProvider(Color.White))
-                    )
-                    Spacer(modifier = GlanceModifier.width(3.dp))
-                    Text(
-                        text = context.getString(R.string.widget_glass_align_badge),
-                        style = TextStyle(
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = ColorProvider(Color.White)
+                    Row(
+                        modifier = GlanceModifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.Vertical.CenterVertically
+                    ) {
+                        Image(
+                            provider = ImageProvider(R.drawable.widget_ic_lens_camera),
+                            contentDescription = context.getString(R.string.widget_glass_align_badge),
+                            modifier = GlanceModifier.size(12.dp),
+                            colorFilter = tint(0xFFFFFFFF.toInt())
                         )
-                    )
+                        Spacer(modifier = GlanceModifier.width(4.dp))
+                        Text(
+                            text = context.getString(R.string.widget_glass_align_badge),
+                            style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Medium, color = provider(0xFFFFFFFF.toInt()))
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-/**
- * Generates an anti-aliased bitmap with an expressive radial gradient and bold letter "P".
- * When Liquid Glass is enabled, renders specular reflective rim stroke and translucent gradient.
- */
-private fun createGoogleStylePBadgeBitmap(
-    sizeDp: Int = 42,
-    primaryColor: Int,
-    containerColor: Int,
-    textColor: Int,
-    context: Context
-): Bitmap {
-    val density = context.resources.displayMetrics.density
-    val px = (sizeDp * density).toInt().coerceAtLeast(1)
-    val bitmap = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(bitmap)
-
-    val centerX = px / 2f
-    val centerY = px / 2f
-    val radius = px / 2f
-
-    val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val isGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
-
-    val gradient = RadialGradient(
-        centerX,
-        centerY * 0.7f,
-        radius,
-        primaryColor,
-        containerColor,
-        Shader.TileMode.CLAMP
-    )
-    val paintBg = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        shader = gradient
-        style = Paint.Style.FILL
-    }
-    canvas.drawCircle(centerX, centerY, radius * 0.94f, paintBg)
-
-    if (isGlass) {
-        val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
-        val rimStrokeWidth = 1.75f * density
-        val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = rimStrokeWidth
-            shader = android.graphics.LinearGradient(
-                0f, 0f, px.toFloat(), px.toFloat(),
-                android.graphics.Color.argb((180 * sheen).toInt().coerceIn(40, 240), 255, 255, 255),
-                android.graphics.Color.argb((40 * sheen).toInt().coerceIn(10, 100), 255, 255, 255),
-                Shader.TileMode.CLAMP
-            )
-        }
-        canvas.drawCircle(centerX, centerY, (radius * 0.94f) - (rimStrokeWidth / 2f), rimPaint)
-    }
-
-    val customTypeface = getWidgetTypeface(context)
-    val paintText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = textColor
-        textSize = px * 0.56f
-        typeface = customTypeface
-        textAlign = Paint.Align.CENTER
-    }
-    val fontMetrics = paintText.fontMetrics
-    val textBaseY = centerY - (fontMetrics.ascent + fontMetrics.descent) / 2f
-    canvas.drawText("P", centerX, textBaseY, paintText)
-
-    return bitmap
-}
-
-/**
- * Generates an anti-aliased bitmap for a shape (Scallop, Circle, Pill) with an embedded
- * centered monogram letter or brand icon.
- * When Liquid Glass is enabled, renders specular reflective rim stroke.
- */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private fun createMonogramBadgeBitmap(
-    isScallop: Boolean,
-    sizeDp: Int = 46,
-    bgColor: Int,
-    textColor: Int,
-    text: String = "P",
-    context: Context
-): Bitmap {
-    val density = context.resources.displayMetrics.density
-    val px = (sizeDp * density).toInt().coerceAtLeast(1)
-    val bitmap = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(bitmap)
-
-    val centerX = px / 2f
-    val centerY = px / 2f
-    val radius = px / 2f
-
-    val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val isGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
-
-    val paintBg = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = bgColor
-        style = Paint.Style.FILL
-    }
-
-    if (isScallop) {
-        val polygon = RoundedPolygon.star(
-            numVerticesPerRadius = 10,
-            radius = radius * 0.98f,
-            innerRadius = radius * 0.82f,
-            rounding = CornerRounding(radius * 0.22f),
-            centerX = centerX,
-            centerY = centerY
-        )
-        val path = polygon.toPath()
-        canvas.drawPath(path, paintBg)
-
-        if (isGlass) {
-            val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
-            val rimStrokeWidth = 1.75f * density
-            val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE
-                strokeWidth = rimStrokeWidth
-                shader = android.graphics.LinearGradient(
-                    0f, 0f, px.toFloat(), px.toFloat(),
-                    android.graphics.Color.argb((180 * sheen).toInt().coerceIn(40, 240), 255, 255, 255),
-                    android.graphics.Color.argb((40 * sheen).toInt().coerceIn(10, 100), 255, 255, 255),
-                    Shader.TileMode.CLAMP
-                )
-            }
-            canvas.drawPath(path, rimPaint)
-        }
-    } else {
-        canvas.drawCircle(centerX, centerY, radius * 0.95f, paintBg)
-        if (isGlass) {
-            val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
-            val rimStrokeWidth = 1.75f * density
-            val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE
-                strokeWidth = rimStrokeWidth
-                shader = android.graphics.LinearGradient(
-                    0f, 0f, px.toFloat(), px.toFloat(),
-                    android.graphics.Color.argb((180 * sheen).toInt().coerceIn(40, 240), 255, 255, 255),
-                    android.graphics.Color.argb((40 * sheen).toInt().coerceIn(10, 100), 255, 255, 255),
-                    Shader.TileMode.CLAMP
-                )
-            }
-            canvas.drawCircle(centerX, centerY, (radius * 0.95f) - (rimStrokeWidth / 2f), rimPaint)
-        }
-    }
-
-    val customTypeface = getWidgetTypeface(context)
-    val paintText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = textColor
-        textSize = px * 0.54f
-        typeface = customTypeface
-        textAlign = Paint.Align.CENTER
-    }
-    val fontMetrics = paintText.fontMetrics
-    val textBaseY = centerY - (fontMetrics.ascent + fontMetrics.descent) / 2f
-    canvas.drawText(text, centerX, textBaseY, paintText)
-
-    return bitmap
-}
-
-/**
- * Petal Search Widget #1:
- * Material 3 Expressive Pill & Expandable Grid
- * - Compact (height < 85dp): Material 3 Expressive Pill with gradient "P" brand badge,
- *   subtle search trigger area, and interactive expressive action circles (AI, Voice, Lens).
- * - Expanded (height >= 85dp): Combines the search pill header with expressive squircle
- *   shortcut tiles with icons and labels (New Tab, Bookmarks, Downloads, Incognito).
- */
-class PetalSearchPetal1Widget : GlanceAppWidget() {
-
-    companion object {
-        private val COMPACT_1X1 = DpSize(200.dp, 48.dp)
-        private val EXPANDED_1X2 = DpSize(240.dp, 90.dp)
-    }
-
-    override val sizeMode: SizeMode = SizeMode.Responsive(
-        setOf(COMPACT_1X1, EXPANDED_1X2)
-    )
-
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val appWidgetId = try {
-            GlanceAppWidgetManager(context).getAppWidgetId(id)
-        } catch (_: Throwable) {
-            AppWidgetManager.INVALID_APPWIDGET_ID
-        }
-
-        provideContent {
-            val scheme = getWidgetColorScheme(context)
-            GlanceTheme(colors = ColorProviders(light = scheme, dark = scheme)) {
-                val size = LocalSize.current
-                val isExpanded = size.height >= 85.dp
-                Petal1Content(appWidgetId = appWidgetId, scheme = scheme, isExpanded = isExpanded)
-            }
-        }
-    }
-}
-
-class PetalSearchPetal1WidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = PetalSearchPetal1Widget()
-}
+// ───────────────────────────── building blocks ─────────────────────────────
 
 @Composable
-private fun Petal1Content(appWidgetId: Int, scheme: androidx.compose.material3.ColorScheme, isExpanded: Boolean) {
+private fun Hint(cfg: PetalWidgetConfig, color: Int, modifier: GlanceModifier) {
     val context = LocalContext.current
-    val searchAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
-    val aiAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
-    val voiceAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_VOICE))
-    val snapCameraAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SNAP_CAMERA))
-    val bookmarksAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_BOOKMARKS))
-    val downloadsAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_DOWNLOADS))
-    val newTabAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_NEW_TAB))
-    val incognitoAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO))
+    val text = cfg.hint.trim().ifEmpty { context.getString(cfg.hintRes()) }
+    Text(
+        text = text,
+        maxLines = 1,
+        modifier = modifier,
+        style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = provider(color))
+    )
+}
 
-    val pPrimary = GlanceTheme.colors.primary.getColor(context).toArgb()
-    val pContainer = GlanceTheme.colors.primaryContainer.getColor(context).toArgb()
-    val pOnPrimary = GlanceTheme.colors.onPrimary.getColor(context).toArgb()
-
-    val pBadgeBitmap = remember(pPrimary, pContainer, pOnPrimary) {
-        createGoogleStylePBadgeBitmap(
-            sizeDp = 42,
-            primaryColor = pPrimary,
-            containerColor = pContainer,
-            textColor = pOnPrimary,
-            context = context
-        )
-    }
-
+/** The cookie "P" badge. The whole [PetalLayoutPlan.badgeSize] box is the touch target. */
+@Composable
+private fun Badge(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, plan: PetalLayoutPlan, action: Action) {
+    val context = LocalContext.current
+    val glass = PetalGlassWidgets.isLiquidGlassEnabled(context)
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val isLiquidGlass = PetalGlassWidgets.isLiquidGlassEnabled(context)
-
-    if (isExpanded) {
-        PetalGlassWidgetCard(
-            appWidgetId = appWidgetId,
-            scheme = scheme,
-            cornerDp = 28.dp,
-            fallbackBackground = surfaceContainerLowProvider(scheme)
-        ) {
-            Column(
-                modifier = GlanceModifier.fillMaxSize().padding(10.dp),
-                verticalAlignment = Alignment.Vertical.CenterVertically
-            ) {
-                // Top Search Pill Row
-                Petal1ExpressiveSearchRow(
-                    modifier = GlanceModifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .cornerRadius(24.dp)
-                        .background(
-                            if (isLiquidGlass) ColorProvider(if (isDarkTheme(context)) Color(0x3D000000) else Color(0x59FFFFFF))
-                            else surfaceContainerHighProvider(scheme)
-                        )
-                        .padding(horizontal = 6.dp),
-                    badgeBitmap = pBadgeBitmap,
-                    searchAction = searchAction,
-                    aiAction = aiAction,
-                    voiceAction = voiceAction,
-                    snapCameraAction = snapCameraAction
-                )
-
-                Spacer(modifier = GlanceModifier.height(8.dp))
-
-                // Bottom Row: Expressive Squircle Shortcuts Grid
-                Row(
-                    modifier = GlanceModifier
-                        .fillMaxWidth()
-                        .defaultWeight(),
-                    verticalAlignment = Alignment.Vertical.CenterVertically
-                ) {
-                    WidgetShortcutTile(
-                        label = context.getString(R.string.ui_new_tab),
-                        iconRes = R.drawable.widget_ic_tab_plus,
-                        bgColor = GlanceTheme.colors.primaryContainer,
-                        iconTint = GlanceTheme.colors.onPrimaryContainer,
-                        action = newTabAction,
-                        modifier = GlanceModifier.defaultWeight(),
-                        isLiquidGlass = isLiquidGlass
-                    )
-
-                    Spacer(modifier = GlanceModifier.width(6.dp))
-
-                    WidgetShortcutTile(
-                        label = context.getString(R.string.ui_bookmarks),
-                        iconRes = R.drawable.widget_ic_bookmark,
-                        bgColor = GlanceTheme.colors.secondaryContainer,
-                        iconTint = GlanceTheme.colors.onSecondaryContainer,
-                        action = bookmarksAction,
-                        modifier = GlanceModifier.defaultWeight(),
-                        isLiquidGlass = isLiquidGlass
-                    )
-
-                    Spacer(modifier = GlanceModifier.width(6.dp))
-
-                    WidgetShortcutTile(
-                        label = context.getString(R.string.ui_downloads),
-                        iconRes = R.drawable.ic_download,
-                        bgColor = GlanceTheme.colors.tertiaryContainer,
-                        iconTint = GlanceTheme.colors.onTertiaryContainer,
-                        action = downloadsAction,
-                        modifier = GlanceModifier.defaultWeight(),
-                        isLiquidGlass = isLiquidGlass
-                    )
-
-                    Spacer(modifier = GlanceModifier.width(6.dp))
-
-                    WidgetShortcutTile(
-                        label = context.getString(R.string.ui_private),
-                        iconRes = R.drawable.widget_ic_incognito,
-                        bgColor = surfaceContainerHighestProvider(scheme),
-                        iconTint = GlanceTheme.colors.onSurface,
-                        action = incognitoAction,
-                        modifier = GlanceModifier.defaultWeight(),
-                        isLiquidGlass = isLiquidGlass
-                    )
-                }
-            }
-        }
-    } else {
-        // Compact Pill Mode
-        PetalGlassWidgetCard(
-            appWidgetId = appWidgetId,
-            scheme = scheme,
-            cornerDp = 28.dp,
-            fallbackBackground = surfaceContainerHighProvider(scheme)
-        ) {
-            Petal1ExpressiveSearchRow(
-                modifier = GlanceModifier
-                    .fillMaxSize()
-                    .padding(horizontal = 6.dp),
-                badgeBitmap = pBadgeBitmap,
-                searchAction = searchAction,
-                aiAction = aiAction,
-                voiceAction = voiceAction,
-                snapCameraAction = snapCameraAction
-            )
-        }
+    val bmp = PetalWidgetShapes.bitmap(
+        context = context,
+        shape = cfg.badgeShape,
+        sizeDp = plan.badgeSize,
+        color = pal.badge.bg,
+        glyph = cfg.badgeText.ifBlank { "P" },
+        glyphColor = pal.badge.fg,
+        rim = if (glass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0f
+    )
+    Box(
+        modifier = GlanceModifier.size(plan.badgeSize.dp).clickable(action),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            provider = ImageProvider(bmp),
+            contentDescription = context.getString(R.string.ui_petal),
+            modifier = GlanceModifier.size(plan.badgeSize.dp)
+        )
     }
 }
 
+/** A cookie-shaped icon button; the touch target is [PetalLayoutPlan.buttonTouch], at least 36dp. */
 @Composable
-private fun Petal1ExpressiveSearchRow(
-    modifier: GlanceModifier,
-    badgeBitmap: Bitmap,
-    searchAction: androidx.glance.action.Action,
-    aiAction: androidx.glance.action.Action,
-    voiceAction: androidx.glance.action.Action,
-    snapCameraAction: androidx.glance.action.Action
+private fun CookieButton(
+    cfg: PetalWidgetConfig,
+    slot: PetalSlot,
+    tone: PetalTone,
+    plan: PetalLayoutPlan
 ) {
     val context = LocalContext.current
-    Row(
-        modifier = modifier,
+    val label = context.getString(slot.action.labelRes)
+    val bmp = PetalWidgetShapes.bitmap(context, cfg.buttonShape, plan.buttonSize, tone.bg, rotationDeg = (slot.index * 15).toFloat())
+    Box(
+        modifier = GlanceModifier.size(plan.buttonTouch.dp).clickable(actionFor(context, slot.action)),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            provider = ImageProvider(bmp),
+            contentDescription = null,
+            modifier = GlanceModifier.size(plan.buttonSize.dp)
+        )
+        Image(
+            provider = ImageProvider(slot.action.iconRes),
+            contentDescription = label,
+            modifier = GlanceModifier.size((plan.buttonSize * 0.56f).dp),
+            colorFilter = tint(tone.fg)
+        )
+    }
+}
+
+/** A shortcut tile: a big cookie with the icon, and the label underneath when there's room. */
+@Composable
+private fun CookieTile(
+    cfg: PetalWidgetConfig,
+    slot: PetalSlot,
+    tone: PetalTone,
+    plan: PetalLayoutPlan,
+    labelColor: Int,
+    modifier: GlanceModifier
+) {
+    val context = LocalContext.current
+    val label = context.getString(slot.action.labelRes)
+    val bmp = PetalWidgetShapes.bitmap(context, cfg.tileShape, plan.tileCookie, tone.bg, rotationDeg = (slot.index * 20).toFloat())
+    Column(
+        modifier = modifier.fillMaxHeight().clickable(actionFor(context, slot.action)),
+        horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
         verticalAlignment = Alignment.Vertical.CenterVertically
     ) {
-        // Left: Google-style Gradient "P" Brand Badge
-        Box(
-            modifier = GlanceModifier
-                .size(42.dp)
-                .clickable(searchAction),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = GlanceModifier.size(plan.tileCookie.dp), contentAlignment = Alignment.Center) {
             Image(
-                provider = ImageProvider(badgeBitmap),
-                contentDescription = context.getString(R.string.ui_petal),
-                modifier = GlanceModifier.size(38.dp)
+                provider = ImageProvider(bmp),
+                contentDescription = null,
+                modifier = GlanceModifier.size(plan.tileCookie.dp)
+            )
+            Image(
+                provider = ImageProvider(slot.action.iconRes),
+                contentDescription = if (plan.showTileLabels) null else label,
+                modifier = GlanceModifier.size((plan.tileCookie * 0.46f).dp),
+                colorFilter = tint(tone.fg)
             )
         }
+        if (plan.showTileLabels) {
+            Spacer(modifier = GlanceModifier.height(2.dp))
+            Text(
+                text = label,
+                maxLines = 1,
+                style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, color = provider(labelColor))
+            )
+        }
+    }
+}
 
-        // Middle: Search Hint / Area
+// ───────────────────────────── Petal #1 ─────────────────────────────
+
+@Composable
+private fun Petal1Content(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, plan: PetalLayoutPlan) {
+    val context = LocalContext.current
+    val searchAction = actionFor(context, PetalWidgetAction.SEARCH)
+
+    if (plan.expanded) {
+        Column(
+            modifier = GlanceModifier.fillMaxSize().padding(plan.padding.dp),
+            verticalAlignment = Alignment.Vertical.CenterVertically
+        ) {
+            // Nested search field on top.
+            Surface(
+                res = PetalWidgetDrawables.fill(plan.fieldRadius),
+                color = pal.field,
+                modifier = GlanceModifier.fillMaxWidth().height((plan.barHeight - 2 * plan.padding).dp)
+            ) {
+                SearchRow(cfg, pal, plan, searchAction, hintColor = pal.onFieldMuted)
+            }
+
+            Spacer(modifier = GlanceModifier.height(6.dp))
+
+            Row(
+                modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+                verticalAlignment = Alignment.Vertical.CenterVertically
+            ) {
+                plan.tiles.forEach { slot ->
+                    CookieTile(
+                        cfg = cfg,
+                        slot = slot,
+                        tone = pal.tileTones[slot.index.coerceIn(0, 3)],
+                        plan = plan,
+                        labelColor = pal.onBar,
+                        modifier = GlanceModifier.defaultWeight()
+                    )
+                }
+            }
+        }
+    } else {
+        SearchRow(
+            cfg, pal, plan, searchAction,
+            hintColor = pal.onBarMuted,
+            modifier = GlanceModifier.fillMaxSize().padding(plan.padding.dp)
+        )
+    }
+}
+
+/** Badge, hint and the cookie buttons that fit: the content of Petal #1's bar and of its nested field. */
+@Composable
+private fun SearchRow(
+    cfg: PetalWidgetConfig,
+    pal: PetalWidgetPalette,
+    plan: PetalLayoutPlan,
+    searchAction: Action,
+    hintColor: Int,
+    modifier: GlanceModifier = GlanceModifier.fillMaxSize().padding(horizontal = 2.dp)
+) {
+    Row(modifier = modifier, verticalAlignment = Alignment.Vertical.CenterVertically) {
+        if (plan.showBadge) {
+            Badge(cfg, pal, plan, searchAction)
+        }
         Box(
             modifier = GlanceModifier
                 .fillMaxHeight()
                 .defaultWeight()
                 .clickable(searchAction)
-                .padding(start = 10.dp),
+                .padding(start = if (plan.showBadge) 10.dp else 14.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Text(
-                text = context.getString(R.string.ui_search),
-                maxLines = 1,
-                style = TextStyle(
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = GlanceTheme.colors.onSurfaceVariant
-                )
-            )
+            Hint(cfg, hintColor, GlanceModifier)
         }
-
-        // Right 1: AI Search Sparkle Icon
-        Box(
-            modifier = GlanceModifier
-                .size(38.dp)
-                .clickable(aiAction),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                provider = ImageProvider(R.drawable.widget_ic_search_sparkle),
-                contentDescription = context.getString(R.string.ui_petal_ai_search),
-                modifier = GlanceModifier.size(24.dp),
-                colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
-            )
-        }
-
-        Spacer(modifier = GlanceModifier.width(2.dp))
-
-        // Right 2: Voice Search Mic Icon
-        Box(
-            modifier = GlanceModifier
-                .size(38.dp)
-                .clickable(voiceAction),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                provider = ImageProvider(R.drawable.widget_ic_mic),
-                contentDescription = context.getString(R.string.ui_voice_search_2),
-                modifier = GlanceModifier.size(24.dp),
-                colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
-            )
-        }
-
-        Spacer(modifier = GlanceModifier.width(2.dp))
-
-        // Right 3: Lens Camera Scanner Icon
-        Box(
-            modifier = GlanceModifier
-                .size(38.dp)
-                .clickable(snapCameraAction),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                provider = ImageProvider(R.drawable.widget_ic_lens_camera),
-                contentDescription = context.getString(R.string.ui_visual_camera_scanner),
-                modifier = GlanceModifier.size(24.dp),
-                colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
-            )
+        plan.buttons.forEach { slot ->
+            CookieButton(cfg, slot, pal.barTones[slot.index.coerceIn(0, 3)], plan)
         }
     }
 }
+
+// ───────────────────────────── Petal #2 ─────────────────────────────
 
 @Composable
-private fun WidgetShortcutTile(
-    label: String,
-    iconRes: Int,
-    bgColor: ColorProvider,
-    iconTint: ColorProvider,
-    action: androidx.glance.action.Action,
-    modifier: GlanceModifier = GlanceModifier,
-    isLiquidGlass: Boolean = false
-) {
-    Box(
-        modifier = modifier
-            .fillMaxHeight()
-            .cornerRadius(20.dp)
-            .background(bgColor)
-            .clickable(action),
-        contentAlignment = Alignment.Center
-    ) {
-        if (isLiquidGlass) {
-            Box(
-                modifier = GlanceModifier
-                    .fillMaxSize()
-                    .cornerRadius(20.dp)
-                    .background(ImageProvider(R.drawable.widget_glass_tile))
-            ) {}
-        }
-        Column(
-            horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
-            verticalAlignment = Alignment.Vertical.CenterVertically,
-            modifier = GlanceModifier.padding(vertical = 6.dp, horizontal = 2.dp)
-        ) {
-            Image(
-                provider = ImageProvider(iconRes),
-                contentDescription = label,
-                modifier = GlanceModifier.size(22.dp),
-                colorFilter = ColorFilter.tint(iconTint)
-            )
-            Spacer(modifier = GlanceModifier.height(3.dp))
-            Text(
-                text = label,
-                maxLines = 1,
-                style = TextStyle(
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = iconTint
-                )
-            )
-        }
-    }
-}
-
-/**
- * Petal Search Widget #2:
- * Material 3 Expressive Search Bar & Action Island
- * - Left: Dedicated nested pill search field inside the container
- * - Right: Expressive squircle action island buttons (AI, Incognito, Visual Camera)
- */
-class PetalSearchPetal2Widget : GlanceAppWidget() {
-    override val sizeMode: SizeMode = SizeMode.Single
-
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val appWidgetId = try {
-            GlanceAppWidgetManager(context).getAppWidgetId(id)
-        } catch (_: Throwable) {
-            AppWidgetManager.INVALID_APPWIDGET_ID
-        }
-
-        provideContent {
-            val scheme = getWidgetColorScheme(context)
-            GlanceTheme(colors = ColorProviders(light = scheme, dark = scheme)) {
-                Petal2Content(appWidgetId = appWidgetId, scheme = scheme)
-            }
-        }
-    }
-}
-
-class PetalSearchPetal2WidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = PetalSearchPetal2Widget()
-}
-
-@Composable
-private fun Petal2Content(appWidgetId: Int, scheme: androidx.compose.material3.ColorScheme) {
+private fun Petal2Content(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, plan: PetalLayoutPlan) {
     val context = LocalContext.current
-    val searchAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
-    val aiAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
-    val incognitoAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO))
-    val snapCameraAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SNAP_CAMERA))
+    val searchAction = actionFor(context, PetalWidgetAction.SEARCH)
 
-    val isLiquidGlass = PetalGlassWidgets.isLiquidGlassEnabled(context)
-
-    PetalGlassWidgetCard(
-        appWidgetId = appWidgetId,
-        scheme = scheme,
-        cornerDp = 28.dp,
-        fallbackBackground = surfaceContainerLowProvider(scheme)
+    Row(
+        modifier = GlanceModifier.fillMaxSize().padding(plan.padding.dp),
+        verticalAlignment = Alignment.Vertical.CenterVertically
     ) {
-        Row(
-            modifier = GlanceModifier.fillMaxSize().padding(6.dp),
-            verticalAlignment = Alignment.Vertical.CenterVertically
+        // Nested search field.
+        Surface(
+            res = PetalWidgetDrawables.fill(plan.fieldRadius),
+            color = pal.field,
+            modifier = GlanceModifier.fillMaxHeight().defaultWeight().clickable(searchAction)
         ) {
-            // Left: Nested Search Input Pill
-            Box(
-                modifier = GlanceModifier
-                    .fillMaxHeight()
-                    .defaultWeight()
-                    .cornerRadius(22.dp)
-                    .background(
-                        if (isLiquidGlass) ColorProvider(if (isDarkTheme(context)) Color(0x3D000000) else Color(0x59FFFFFF))
-                        else surfaceContainerHighProvider(scheme)
-                    )
-                    .clickable(searchAction)
-                    .padding(horizontal = 14.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
-                    Image(
-                        provider = ImageProvider(R.drawable.widget_ic_search),
-                        contentDescription = context.getString(R.string.ui_search),
-                        modifier = GlanceModifier.size(20.dp),
-                        colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
-                    )
-                    Spacer(modifier = GlanceModifier.width(10.dp))
-                    Text(
-                        text = context.getString(R.string.ui_search),
-                        maxLines = 1,
-                        style = TextStyle(
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = GlanceTheme.colors.onSurfaceVariant
-                        )
-                    )
-                }
-            }
-
-            Spacer(modifier = GlanceModifier.width(8.dp))
-
-            // AI Action Squircle Button - primaryContainer
-            SquircleGlanceActionButton(
-                iconRes = R.drawable.widget_ic_auto_awesome,
-                contentDescription = context.getString(R.string.ui_ai_assistant),
-                containerColor = GlanceTheme.colors.primaryContainer,
-                contentColor = GlanceTheme.colors.onPrimaryContainer,
-                action = aiAction,
-                isLiquidGlass = isLiquidGlass
-            )
-
-            Spacer(modifier = GlanceModifier.width(6.dp))
-
-            // Incognito Action Squircle Button - secondaryContainer
-            SquircleGlanceActionButton(
-                iconRes = R.drawable.widget_ic_incognito,
-                contentDescription = context.getString(R.string.ui_incognito_mode),
-                containerColor = GlanceTheme.colors.secondaryContainer,
-                contentColor = GlanceTheme.colors.onSecondaryContainer,
-                action = incognitoAction,
-                isLiquidGlass = isLiquidGlass
-            )
-
-            Spacer(modifier = GlanceModifier.width(6.dp))
-
-            // Camera / Lens Action Squircle Button - tertiaryContainer
-            SquircleGlanceActionButton(
-                iconRes = R.drawable.widget_ic_lens_camera,
-                contentDescription = context.getString(R.string.ui_visual_camera_scanner),
-                containerColor = GlanceTheme.colors.tertiaryContainer,
-                contentColor = GlanceTheme.colors.onTertiaryContainer,
-                action = snapCameraAction,
-                isLiquidGlass = isLiquidGlass
-            )
-        }
-    }
-}
-
-@Composable
-private fun SquircleGlanceActionButton(
-    iconRes: Int,
-    contentDescription: String,
-    containerColor: ColorProvider,
-    contentColor: ColorProvider,
-    action: androidx.glance.action.Action,
-    isLiquidGlass: Boolean = false
-) {
-    Box(
-        modifier = GlanceModifier
-            .size(44.dp)
-            .cornerRadius(18.dp)
-            .background(containerColor)
-            .clickable(action),
-        contentAlignment = Alignment.Center
-    ) {
-        if (isLiquidGlass) {
-            Box(
-                modifier = GlanceModifier
-                    .fillMaxSize()
-                    .cornerRadius(18.dp)
-                    .background(ImageProvider(R.drawable.widget_glass_tile))
-            ) {}
-        }
-        Image(
-            provider = ImageProvider(iconRes),
-            contentDescription = contentDescription,
-            modifier = GlanceModifier.size(22.dp),
-            colorFilter = ColorFilter.tint(contentColor)
-        )
-    }
-}
-
-/**
- * Petal Search Widget #3:
- * Expressive Scalloped Brand Pill Bar
- * - Anchored left: 10-point rounded scallop monogram badge holding "P" in primaryContainer
- * - Open center: Fluid search prompt in onSurfaceVariant
- * - Right: Expressive elevated AI sparkle badge
- */
-class PetalSearchPetal3Widget : GlanceAppWidget() {
-    override val sizeMode: SizeMode = SizeMode.Single
-
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val appWidgetId = try {
-            GlanceAppWidgetManager(context).getAppWidgetId(id)
-        } catch (_: Throwable) {
-            AppWidgetManager.INVALID_APPWIDGET_ID
-        }
-
-        provideContent {
-            val scheme = getWidgetColorScheme(context)
-            GlanceTheme(colors = ColorProviders(light = scheme, dark = scheme)) {
-                Petal3Content(appWidgetId = appWidgetId, scheme = scheme)
-            }
-        }
-    }
-}
-
-class PetalSearchPetal3WidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = PetalSearchPetal3Widget()
-}
-
-@Composable
-private fun Petal3Content(appWidgetId: Int, scheme: androidx.compose.material3.ColorScheme) {
-    val context = LocalContext.current
-    val searchAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
-    val aiAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
-
-    val badgeBgInt = GlanceTheme.colors.primaryContainer.getColor(context).toArgb()
-    val badgeFgInt = GlanceTheme.colors.onPrimaryContainer.getColor(context).toArgb()
-    val badgeBitmap = remember(badgeBgInt, badgeFgInt) {
-        createMonogramBadgeBitmap(
-            isScallop = true,
-            sizeDp = 44,
-            bgColor = badgeBgInt,
-            textColor = badgeFgInt,
-            text = "P",
-            context = context
-        )
-    }
-
-    val isLiquidGlass = PetalGlassWidgets.isLiquidGlassEnabled(context)
-
-    PetalGlassWidgetCard(
-        appWidgetId = appWidgetId,
-        scheme = scheme,
-        cornerDp = 28.dp,
-        fallbackBackground = surfaceContainerHighProvider(scheme)
-    ) {
-        Row(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .padding(start = 6.dp, end = 12.dp),
-            verticalAlignment = Alignment.Vertical.CenterVertically
-        ) {
-            // Anchored Far Left: Expressive Scallop Brand Badge holding "P"
-            Box(
-                modifier = GlanceModifier
-                    .size(44.dp)
-                    .clickable(searchAction),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = GlanceModifier.fillMaxSize().padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Vertical.CenterVertically
             ) {
                 Image(
-                    provider = ImageProvider(badgeBitmap),
-                    contentDescription = context.getString(R.string.ui_petal_home),
-                    modifier = GlanceModifier.fillMaxSize()
+                    provider = ImageProvider(R.drawable.widget_ic_search),
+                    contentDescription = context.getString(R.string.ui_search),
+                    modifier = GlanceModifier.size(20.dp),
+                    colorFilter = tint(pal.primary)
                 )
+                Spacer(modifier = GlanceModifier.width(10.dp))
+                Hint(cfg, pal.onFieldMuted, GlanceModifier)
             }
+        }
 
-            // Open Search Area
-            Box(
-                modifier = GlanceModifier
-                    .fillMaxHeight()
-                    .defaultWeight()
-                    .clickable(searchAction)
-                    .padding(start = 14.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Text(
-                    text = context.getString(R.string.ui_search_or_type_url_2),
-                    maxLines = 1,
-                    style = TextStyle(
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GlanceTheme.colors.onSurfaceVariant
-                    )
-                )
-            }
+        // Action island.
+        plan.buttons.forEach { slot ->
+            Spacer(modifier = GlanceModifier.width(4.dp))
+            CookieButton(cfg, slot, pal.barTones[slot.index.coerceIn(0, 3)], plan)
+        }
+    }
+}
 
-            // Right: Elevated AI Sparkle Shortcut Button
-            Box(
-                modifier = GlanceModifier
-                    .size(40.dp)
-                    .cornerRadius(20.dp)
-                    .background(
-                        if (isLiquidGlass) ColorProvider(if (isDarkTheme(context)) Color(0x3D000000) else Color(0x59FFFFFF))
-                        else GlanceTheme.colors.primaryContainer
-                    )
-                    .clickable(aiAction),
-                contentAlignment = Alignment.Center
-            ) {
-                if (isLiquidGlass) {
-                    Box(
-                        modifier = GlanceModifier
-                            .fillMaxSize()
-                            .cornerRadius(20.dp)
-                            .background(ImageProvider(R.drawable.widget_glass_tile))
-                    ) {}
-                }
-                Image(
-                    provider = ImageProvider(R.drawable.widget_ic_sparkle),
-                    contentDescription = context.getString(R.string.ui_ask_petal_ai),
-                    modifier = GlanceModifier.size(22.dp),
-                    colorFilter = ColorFilter.tint(
-                        if (isLiquidGlass) GlanceTheme.colors.primary
-                        else GlanceTheme.colors.onPrimaryContainer
-                    )
-                )
-            }
+// ───────────────────────────── Petal #3 ─────────────────────────────
+
+@Composable
+private fun Petal3Content(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, plan: PetalLayoutPlan) {
+    val context = LocalContext.current
+    val searchAction = actionFor(context, PetalWidgetAction.SEARCH)
+
+    Row(
+        modifier = GlanceModifier.fillMaxSize().padding(start = plan.padding.dp, end = (plan.padding + 4).dp),
+        verticalAlignment = Alignment.Vertical.CenterVertically
+    ) {
+        if (plan.showBadge) {
+            Badge(cfg, pal, plan, searchAction)
+        }
+        Box(
+            modifier = GlanceModifier
+                .fillMaxHeight()
+                .defaultWeight()
+                .clickable(searchAction)
+                .padding(start = if (plan.showBadge) 14.dp else 16.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Hint(cfg, pal.onBarMuted, GlanceModifier)
+        }
+        plan.buttons.forEach { slot ->
+            CookieButton(cfg, slot, pal.barTones[slot.index.coerceIn(0, 3)], plan)
         }
     }
 }

@@ -1017,6 +1017,42 @@ fun AppearanceSettingsScreenContent(
                     )
                 }
 
+                // Home screen widgets: one row per Petal widget, each opens its own customization screen
+                PetalSettingsSection(
+                    title = "Home Screen Widgets",
+                    icon = Icons.Rounded.Widgets,
+                    cardId = "appearance_search_widget",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    Text(
+                        "Customize colors, cookie shapes, shortcuts, corners and outline for each Petal widget.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    val widgetRows = listOf(
+                        Triple(com.petal.browser.widget.glance.PetalWidgetKind.PETAL1, "Petal #1", "Search pill with cookie badge, buttons and shortcut tiles"),
+                        Triple(com.petal.browser.widget.glance.PetalWidgetKind.PETAL2, "Petal #2", "Search field with a cookie action island"),
+                        Triple(com.petal.browser.widget.glance.PetalWidgetKind.PETAL3, "Petal #3", "Large cookie badge with an open search prompt")
+                    )
+                    widgetRows.forEachIndexed { index, (kind, title, subtitle) ->
+                        com.petal.browser.ui.containment.PetalGroupNavigationRow(
+                            title = title,
+                            subtitle = subtitle,
+                            position = when (index) {
+                                0 -> com.petal.browser.ui.containment.PetalGroupPosition.TOP
+                                widgetRows.lastIndex -> com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM
+                                else -> com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE
+                            },
+                            leadingIcon = { Icon(Icons.Rounded.Widgets, contentDescription = null) },
+                            onClick = {
+                                context.startActivity(
+                                    com.petal.browser.widget.glance.PetalWidgetSettingsActivity.intent(context, kind)
+                                )
+                            }
+                        )
+                    }
+                }
+
                 // Section 2: Custom Fonts & Typography
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_typography_fonts),

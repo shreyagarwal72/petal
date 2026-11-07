@@ -163,11 +163,11 @@
     <string name="app_intro_b">The currently opened website is the WIKI of Petal. This site is also saved as your first Bookmark. On the WIKI you can find helpful tips and links.</string>
 
     <string name="widget_search_petal1_name">Petal #1</string>
-    <string name="widget_search_petal1_desc">Material 3 Expressive pill search bar with gradient P emblem, AI sparkle, voice, and camera scanner. Expands with shortcuts when resized.</string>
+    <string name="widget_search_petal1_desc">Material 3 Expressive search pill with a cookie badge and cookie action buttons. Resize it taller for cookie shortcut tiles. Fully customizable.</string>
     <string name="widget_search_petal2_name">Petal #2</string>
-    <string name="widget_search_petal2_desc">Material 3 Expressive search bar with embedded search pill and action island.</string>
+    <string name="widget_search_petal2_desc">Material 3 Expressive search field with an island of cookie action buttons. Fully customizable.</string>
     <string name="widget_search_petal3_name">Petal #3</string>
-    <string name="widget_search_petal3_desc">Minimalist horizontal pill bar with circular brand badge on left and AI shortcut on right.</string>
+    <string name="widget_search_petal3_desc">Material 3 Expressive pill with a large cookie badge, an open search prompt and cookie buttons. Fully customizable.</string>
     <string name="widget_glass_align_title">Align Liquid Glass</string>
     <string name="widget_glass_align_hint">Drag or tap the frame to match where this widget sits on your home screen, then save.</string>
     <string name="widget_glass_pick_wallpaper">Select Wallpaper</string>
@@ -1795,5 +1795,58 @@
     <string name="dialog_quit_message">Are you sure you want to exit Petal Browser and close your active session?</string>
     <string name="dialog_quit_confirm">Quit</string>
     <string name="dialog_quit_cancel">Stay</string>
+
+    <!-- Petal widget customization -->
+    <string name="pw_loading">Petal</string>
+    <string name="pw_settings_label">Widget settings</string>
+    <string name="pw_action_none">Empty</string>
+    <string name="pw_tab_style">Style</string>
+    <string name="pw_tab_colors">Colors</string>
+    <string name="pw_tab_shortcuts">Shortcuts</string>
+    <string name="pw_tab_shape">Shape</string>
+    <string name="pw_preview_compact">Compact</string>
+    <string name="pw_preview_expanded">Expanded</string>
+    <string name="pw_badge">Badge</string>
+    <string name="pw_show_badge">Show badge</string>
+    <string name="pw_show_badge_desc">The cookie badge at the start of the bar</string>
+    <string name="pw_badge_text">Badge letter (1–2 characters)</string>
+    <string name="pw_badge_shape">Badge shape</string>
+    <string name="pw_button_shape">Button shape</string>
+    <string name="pw_tile_shape">Tile shape</string>
+    <string name="pw_hint_text">Search hint</string>
+    <string name="pw_hint_default">Leave empty for the default</string>
+    <string name="pw_color_mode">Color source</string>
+    <string name="pw_color_app">App theme</string>
+    <string name="pw_color_custom">Custom</string>
+    <string name="pw_hue">Hue</string>
+    <string name="pw_saturation">Saturation</string>
+    <string name="pw_brightness">Brightness</string>
+    <string name="pw_transparency">Background transparency</string>
+    <string name="pw_transparency_glass">Not used while Liquid Glass is on.</string>
+    <string name="pw_element_colors">Element colors</string>
+    <string name="pw_sync_colors">Use one color for every button and tile</string>
+    <string name="pw_color_badge">Badge</string>
+    <string name="pw_color_button">Button %1$d</string>
+    <string name="pw_color_tile">Tile %1$d</string>
+    <string name="pw_color_all">All buttons and tiles</string>
+    <string name="pw_color_theme">Theme</string>
+    <string name="pw_bar_actions">Bar buttons</string>
+    <string name="pw_tiles">Shortcut tiles</string>
+    <string name="pw_tiles_hint">Shown when the widget is resized taller.</string>
+    <string name="pw_slot">Slot %1$d</string>
+    <string name="pw_pick_action">Choose an action</string>
+    <string name="pw_corner_radius">Corner radius</string>
+    <string name="pw_radius_full">Full</string>
+    <string name="pw_outline">Outline</string>
+    <string name="pw_outline_none">None</string>
+    <string name="pw_glass_align">Align Liquid Glass</string>
+    <string name="pw_glass_hint">Match this widget\'s position over your wallpaper.</string>
+    <string name="pw_save">Save</string>
+    <string name="pw_cancel">Cancel</string>
+    <string name="pw_reset">Reset to defaults</string>
+    <string name="pw_add_home">Add to home screen</string>
+    <string name="pw_pick_color">Pick a color</string>
+    <string name="pw_ok">OK</string>
+    <string name="pw_visibility_note">Text and icon colors adjust automatically so they stay readable on any color you pick.</string>
 </resources>
 

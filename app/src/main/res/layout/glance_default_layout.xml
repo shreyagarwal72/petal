@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Shown by the launcher until Glance renders the first frame: a themed rounded bar instead of a transparent,
+     invisible box, so a freshly added widget is always visible. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent" />
+    android:background="@drawable/bg_petal_widget_loading"
+    android:padding="6dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="@string/pw_loading"
+        android:textColor="@color/petal_widget_loading_fg"
+        android:textSize="14sp" />
+</FrameLayout>

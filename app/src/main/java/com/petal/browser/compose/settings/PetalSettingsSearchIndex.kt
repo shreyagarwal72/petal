@@ -129,10 +129,10 @@ object PetalSettingsSearchIndex {
         ),
         SettingsSearchItem(
             id = "appearance_search_widget",
-            title = "Search Widget Styling",
-            subtitle = "Configure home screen search widget style, transparency, and search engine",
+            title = "Home Screen Widgets",
+            subtitle = "Customize Petal widgets: cookie shapes, colors, shortcuts, corner radius, outline and transparency",
             category = SettingsCategory.APPEARANCE,
-            keywords = listOf("widget", "search widget", "home screen", "launcher widget", "transparency")
+            keywords = listOf("widget", "search widget", "home screen", "launcher widget", "transparency", "cookie", "shapes", "shortcuts", "petal widget", "customize widget")
         ),
         SettingsSearchItem(
             id = "appearance_language",
