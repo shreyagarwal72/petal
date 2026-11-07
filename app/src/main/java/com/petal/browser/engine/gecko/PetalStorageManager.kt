@@ -90,10 +90,8 @@ object PetalStorageManager {
     @JvmStatic
     fun clearGeckoStorage(context: Context, flags: Long) {
         try {
-            if (PetalGeckoRuntime.isGeckoAvailable(context)) {
-                PetalGeckoRuntime.clearData(context, flags)
-                Log.i(TAG, "Cleared Gecko storage with flags: $flags")
-            }
+            PetalGeckoRuntime.clearData(context, flags)
+            Log.i(TAG, "Cleared Gecko storage with flags: $flags")
         } catch (t: Throwable) {
             Log.w(TAG, "Failed clearing Gecko storage flags: ${t.message}")
         }

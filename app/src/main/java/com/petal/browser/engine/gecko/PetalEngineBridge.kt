@@ -59,29 +59,62 @@ object PetalEngineBridge {
     }
 
     /**
-     * GeckoEngineSession.geckoSession is `internal` to Mozilla components, so Kotlin
-     * does not expose it directly. Extract reflectively.
+     * GeckoEngineSession.geckoSession is `internal` to Mozilla Android Components,
+     * so it cannot be referenced directly by external modules in Kotlin.
+     * Extracts GeckoSession safely via getter (e.g. `getGeckoSession$browser_engine_gecko`
+     * or `getGeckoSession`) or falls back to declared field `geckoSession`.
      */
-    private fun extractGeckoSession(
+    fun extractGeckoSession(
         engineSession: mozilla.components.concept.engine.EngineSession?
     ): GeckoSession? {
         if (engineSession !is mozilla.components.browser.engine.gecko.GeckoEngineSession) return null
         return try {
             val cls = engineSession.javaClass
             val getter = cls.methods.firstOrNull {
-                it.parameterCount == 0 && it.name.startsWith("getGeckoSession")
+                it.parameterCount == 0 && (it.name == "getGeckoSession" || it.name.startsWith("getGeckoSession$"))
             }
             val fromGetter = getter?.let {
                 it.isAccessible = true
                 it.invoke(engineSession) as? GeckoSession
             }
-            fromGetter ?: cls.getDeclaredField("geckoSession").let {
-                it.isAccessible = true
-                it.get(engineSession) as? GeckoSession
+            fromGetter ?: run {
+                val field = cls.getDeclaredField("geckoSession")
+                field.isAccessible = true
+                field.get(engineSession) as? GeckoSession
             }
         } catch (t: Throwable) {
-            Log.w(TAG, "Could not read GeckoEngineSession.geckoSession: ${t.message}")
+            Log.e(TAG, "Failed to reflectively extract GeckoSession from GeckoEngineSession: ${t.message}", t)
             null
+        }
+    }
+
+    /**
+     * Startup reflection self-check verifying that GeckoEngineSession reflection
+     * contracts (either getter method or declared field) remain intact in the pinned
+     * Mozilla Android Components runtime. Logs loudly if the reflection contract fails.
+     */
+    @JvmStatic
+    fun selfCheckReflection(context: Context? = null): Boolean {
+        return try {
+            val cls = Class.forName("mozilla.components.browser.engine.gecko.GeckoEngineSession")
+            val hasGetter = cls.methods.any {
+                it.parameterCount == 0 && (it.name == "getGeckoSession" || it.name.startsWith("getGeckoSession$"))
+            }
+            val hasField = try {
+                cls.getDeclaredField("geckoSession") != null
+            } catch (_: NoSuchFieldException) {
+                false
+            }
+            if (!hasGetter && !hasField) {
+                Log.e(TAG, "CRITICAL: GeckoEngineSession reflection self-check failed! Neither getter nor geckoSession field found.")
+                false
+            } else {
+                Log.i(TAG, "GeckoEngineSession reflection self-check succeeded (getter=$hasGetter, field=$hasField)")
+                true
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "GeckoEngineSession reflection self-check skipped or warning: ${t.message}")
+            false
         }
     }
 

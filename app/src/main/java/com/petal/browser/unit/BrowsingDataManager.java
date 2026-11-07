@@ -157,12 +157,10 @@ public class BrowsingDataManager {
             }
         });
         try {
-            if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(context)) {
-                com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
-                    context,
-                    org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS
-                );
-            }
+            com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
+                context,
+                org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS
+            );
         } catch (Throwable ignored) {}
     }
 
@@ -255,7 +253,7 @@ public class BrowsingDataManager {
         clearHttpResponseCache();
         try {
             Context appCtx = context != null ? context : com.petal.browser.PetalApplication.getInstance();
-            if (appCtx != null && com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(appCtx)) {
+            if (appCtx != null) {
                 com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
                     appCtx,
                     org.mozilla.geckoview.StorageController.ClearFlags.PERMISSIONS

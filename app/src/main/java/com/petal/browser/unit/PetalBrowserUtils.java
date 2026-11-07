@@ -416,13 +416,11 @@ public class PetalBrowserUtils {
         // ONLY clear cookies and logins if the user explicitly commanded manual cookie deletion
         if (clearCookie) {
             try {
-                if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(context)) {
-                    com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
-                        context,
-                        org.mozilla.geckoview.StorageController.ClearFlags.COOKIES |
-                        org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS
-                    );
-                }
+                com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
+                    context,
+                    org.mozilla.geckoview.StorageController.ClearFlags.COOKIES |
+                    org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS
+                );
             } catch (Exception ignored) {}
             com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies();
         }
@@ -433,12 +431,10 @@ public class PetalBrowserUtils {
         }
         if (clearIndexedDB) {
             try {
-                if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(context)) {
-                    com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
-                        context,
-                        org.mozilla.geckoview.StorageController.ClearFlags.DOM_STORAGES
-                    );
-                }
+                com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
+                    context,
+                    org.mozilla.geckoview.StorageController.ClearFlags.DOM_STORAGES
+                );
             } catch (Exception ignored) {}
             try {
                 WebStorage.getInstance().deleteAllData();
@@ -540,14 +536,12 @@ public class PetalBrowserUtils {
 
             // 3. Clear Cookies and WebStorage
             try {
-                if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(context)) {
-                    com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
-                        context,
-                        org.mozilla.geckoview.StorageController.ClearFlags.COOKIES |
-                        org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS |
-                        org.mozilla.geckoview.StorageController.ClearFlags.DOM_STORAGES
-                    );
-                }
+                com.petal.browser.engine.gecko.PetalGeckoRuntime.clearData(
+                    context,
+                    org.mozilla.geckoview.StorageController.ClearFlags.COOKIES |
+                    org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS |
+                    org.mozilla.geckoview.StorageController.ClearFlags.DOM_STORAGES
+                );
             } catch (Exception ignored) {}
             com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies();
             try {

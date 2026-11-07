@@ -113,13 +113,11 @@ object PetalIncognitoSessionManager {
 
             // Purge GeckoView in-memory private session caches, cookies & auth sessions
             try {
-                if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(context)) {
-                    com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(context).storageController.clearData(
-                        org.mozilla.geckoview.StorageController.ClearFlags.ALL_CACHES or
-                        org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS or
-                        org.mozilla.geckoview.StorageController.ClearFlags.COOKIES
-                    )
-                }
+                com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(context).storageController.clearData(
+                    org.mozilla.geckoview.StorageController.ClearFlags.ALL_CACHES or
+                    org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS or
+                    org.mozilla.geckoview.StorageController.ClearFlags.COOKIES
+                )
             } catch (t: Throwable) {
                 android.util.Log.w("PetalIncognito", "Failed to clear GeckoView private session data: ${t.message}")
             }
