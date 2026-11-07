@@ -80,6 +80,27 @@ object PetalUploadChooser {
         ".mp4", ".mov", ".mkv", ".webm", ".3gp", ".avi", ".m4v"
     )
 
+    private fun sanitizeCallback(
+        cb: ValueCallback<Array<Uri>>?,
+        allowMultiple: Boolean
+    ): ValueCallback<Array<Uri>>? {
+        if (cb == null) return null
+        return ValueCallback { uris ->
+            if (uris == null || uris.isEmpty()) {
+                cb.onReceiveValue(null)
+            } else {
+                val raw = uris.map { it.toString() }
+                val sanitized = com.petal.browser.engine.petal.FileChooserRules.sanitizedUris(raw, allowMultiple)
+                val result = if (sanitized.isNotEmpty()) {
+                    sanitized.map { Uri.parse(it) }.toTypedArray()
+                } else {
+                    uris
+                }
+                cb.onReceiveValue(result)
+            }
+        }
+    }
+
     /**
      * Called from BrowserActivity.showFileChooser(). [onFatalFallback] runs only if BOTH
      * Petal pickers throw while opening (should never happen); it lets the caller cancel cleanly.
@@ -94,19 +115,21 @@ object PetalUploadChooser {
         activity.runOnUiThread {
             dismissActive()
 
+            val allowMultiple = params?.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE
+            val safeCallback = sanitizeCallback(filePathCallback, allowMultiple)
             val kind = classify(params?.acceptTypes)
             val capture = params?.isCaptureEnabled == true
 
             when {
                 // Camera capture is only offered by the Petal photo/video picker.
                 capture && kind != RequestKind.FILES ->
-                    openMedia(activity, filePathCallback, params, onFatalFallback)
+                    openMedia(activity, safeCallback, params, onFatalFallback)
                 kind == RequestKind.MEDIA ->
-                    openMedia(activity, filePathCallback, params, onFatalFallback)
+                    openMedia(activity, safeCallback, params, onFatalFallback)
                 kind == RequestKind.FILES ->
-                    openFiles(activity, filePathCallback, params, onFatalFallback)
+                    openFiles(activity, safeCallback, params, onFatalFallback)
                 else ->
-                    showChoiceSheet(activity, filePathCallback, params, onFatalFallback)
+                    showChoiceSheet(activity, safeCallback, params, onFatalFallback)
             }
         }
     }

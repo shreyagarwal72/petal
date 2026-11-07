@@ -431,6 +431,7 @@ class PetalTabViewController private constructor(
             tab?.let { browserStore.dispatch(ContentAction.UpdateLoadingStateAction(it.id, loading)) }
             publishState()
             if (!loading) {
+                isRefreshing = false
                 if (active) {
                     (resolveActivity(context) as? com.petal.browser.activity.BrowserActivity)
                         ?.onActivePageLoadFinished()

@@ -236,12 +236,40 @@ object PetalFilePickerBridge {
             allowFolderSelection = false,
             allowMultiple = allowMultiple,
             onFileSelected = { file ->
-                val uri = Uri.fromFile(file)
-                filePathCallback?.onReceiveValue(arrayOf(uri))
+                val uri = try {
+                    androidx.core.content.FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", file)
+                } catch (_: Throwable) {
+                    Uri.fromFile(file)
+                }
+                val sanitized = com.petal.browser.engine.petal.FileChooserRules.sanitizedUris(
+                    listOf(uri.toString()),
+                    false
+                )
+                val finalUris = if (sanitized.isNotEmpty()) {
+                    sanitized.map { Uri.parse(it) }.toTypedArray()
+                } else {
+                    arrayOf(uri)
+                }
+                filePathCallback?.onReceiveValue(finalUris)
             },
             onMultipleFilesSelected = { files ->
-                val uris = files.map { Uri.fromFile(it) }.toTypedArray()
-                filePathCallback?.onReceiveValue(uris)
+                val uris = files.map { file ->
+                    try {
+                        androidx.core.content.FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", file)
+                    } catch (_: Throwable) {
+                        Uri.fromFile(file)
+                    }
+                }
+                val sanitized = com.petal.browser.engine.petal.FileChooserRules.sanitizedUris(
+                    uris.map { it.toString() },
+                    true
+                )
+                val finalUris = if (sanitized.isNotEmpty()) {
+                    sanitized.map { Uri.parse(it) }.toTypedArray()
+                } else {
+                    uris.toTypedArray()
+                }
+                filePathCallback?.onReceiveValue(finalUris)
             },
             onDismiss = {
                 filePathCallback?.onReceiveValue(null)

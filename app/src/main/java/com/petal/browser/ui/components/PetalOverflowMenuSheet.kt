@@ -117,12 +117,16 @@ object PetalOverflowBridge {
             val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
             val useBlurBg = sp.getBoolean("sp_overflow_menu_blur_bg", true) && isLiquidGlass
 
+            var pendingDismissAction: (() -> Unit)? = null
             val dialog = android.app.Dialog(activity, com.google.android.material.R.style.Theme_Design_BottomSheetDialog).apply {
                 setCanceledOnTouchOutside(true)
                 setCancelable(true)
             }
             dialog.setOnDismissListener {
                 com.petal.browser.predictive.PetalContentSnapshot.clear()
+                val action = pendingDismissAction
+                pendingDismissAction = null
+                action?.invoke()
             }
 
             val composeView = ComposeView(activity).apply {
@@ -275,12 +279,16 @@ object PetalOverflowBridge {
                                 handler.onOpenExtensions()
                             },
                             onOpenExtensionAction = { extensionId ->
+                                pendingDismissAction = {
+                                    handler.onOpenExtensionAction(extensionId)
+                                }
                                 dialog.dismiss()
-                                handler.onOpenExtensionAction(extensionId)
                             },
                             onOpenExtensionSettings = { extensionId ->
+                                pendingDismissAction = {
+                                    handler.onOpenExtensionSettings(extensionId)
+                                }
                                 dialog.dismiss()
-                                handler.onOpenExtensionSettings(extensionId)
                             },
                             onOpenDevConsole = {
                                 dialog.dismiss()

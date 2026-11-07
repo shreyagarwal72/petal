@@ -28,7 +28,9 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.activity.BrowserActivity
@@ -91,6 +93,7 @@ object PetalPageSelectionToolbar {
         val view = state.view
         view.apply {
             (activity as? LifecycleOwner)?.let { setViewTreeLifecycleOwner(it) }
+            (activity as? ViewModelStoreOwner)?.let { setViewTreeViewModelStoreOwner(it) }
             (activity as? SavedStateRegistryOwner)?.let { setViewTreeSavedStateRegistryOwner(it) }
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
