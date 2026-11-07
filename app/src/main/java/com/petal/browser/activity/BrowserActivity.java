@@ -253,7 +253,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private long lastOnPausePreviewCaptureTime = 0L;
 
     private com.petal.browser.browser.PetalTabViewController singleTabViewController;
-    private mozilla.components.lib.state.Subscription browserStoreSubscription;
+    private mozilla.components.lib.state.Store.Subscription browserStoreSubscription;
 
     public com.petal.browser.browser.PetalTabViewController getOrCreateTabViewController() {
         if (singleTabViewController == null) {
@@ -4042,8 +4042,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (fab_undo != null) {
             PetalAndroidUtils.applyBouncyTouchFeedback(fab_undo);
             fab_undo.setOnClickListener(v -> {
-                if (currentAlbumController != null && currentAlbumController.canGoBack()) {
-                    currentAlbumController.goBack();
+                com.petal.browser.browser.PetalTabViewController surface = getActivePetalTabSurface();
+                if (surface != null && surface.canGoBack()) {
+                    surface.goBack();
                 } else {
                     PetalToast.show(BrowserActivity.this, R.string.ui_nothing_to_undo);
                 }
@@ -7658,7 +7659,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 BrowserContainer.add(placeholder);
             }
             if (!isPopup && url != null && !url.trim().isEmpty() && !isHomePage(url)) {
-                sessionPair.getSecond().loadUrl(url);
+                com.petal.browser.engine.gecko.PetalEngineStore.loadUrl(sessionPair.getSecond(), url);
             }
         } else {
             // Demote outgoing active tab to placeholder in BrowserContainer
@@ -7993,7 +7994,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             String tabId = "tab_popup_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode());
 
             mozilla.components.concept.engine.EngineSession engineSession =
-                    com.petal.browser.engine.gecko.PetalEngineStore.getEngine(this).createSession(isIncognito);
+                    com.petal.browser.engine.gecko.PetalEngineStore.createEngineSession(this, isIncognito);
             mozilla.components.browser.state.state.TabSessionState popupTab =
                     com.petal.browser.engine.gecko.PetalEngineStore.adoptPreparedSession(
                             this, tabId, popupUrl, getString(R.string.app_name),

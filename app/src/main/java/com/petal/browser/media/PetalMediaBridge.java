@@ -149,8 +149,6 @@ public class PetalMediaBridge {
     public void evaluateJavascriptOnTab(String js) {
         if (webView != null) {
             webView.evaluateJavascript(js, null);
-        } else if (geckoView != null) {
-            geckoView.evaluateJavascript(js, null);
         } else if (tabViewController != null) {
             tabViewController.evaluateJavascript(js, null);
         } else if (context instanceof Activity) {
@@ -434,7 +432,7 @@ public class PetalMediaBridge {
             if (context instanceof Activity) {
                 Activity act = (Activity) context;
                 act.runOnUiThread(() -> {
-                    enterPipIfSupported(act, webView != null ? webView : geckoView);
+                    enterPipIfSupported(act, webView != null ? webView : (tabViewController != null ? tabViewController.getAlbumView() : null));
                 });
             }
         }

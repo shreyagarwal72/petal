@@ -293,7 +293,7 @@ public class PetalPwaActivity extends AppCompatActivity {
             @Override
             public void handleOnBackPressed() {
                 if (geckoView != null && geckoView.canGoBack()) {
-                    geckoView.goBack();
+                    geckoView.goBack(true);
                 } else {
                     setEnabled(false);
                     getOnBackPressedDispatcher().onBackPressed();

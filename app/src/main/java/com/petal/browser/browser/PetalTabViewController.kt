@@ -1238,6 +1238,7 @@ class PetalTabViewController private constructor(
         return browserStore.state.tabs.firstOrNull { it.id == id }?.content?.canGoBack == true
     }
 
+    @JvmOverloads
     fun goBack(userInteraction: Boolean = true) {
         val gs = getGeckoSession()
         if (hasBackHistory()) {
@@ -1264,6 +1265,7 @@ class PetalTabViewController private constructor(
         }
     }
 
+    @JvmOverloads
     fun goForward(userInteraction: Boolean = true) {
         val gs = getGeckoSession()
         if (forwardAvailable) {

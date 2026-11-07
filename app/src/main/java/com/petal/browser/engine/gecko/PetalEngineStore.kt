@@ -251,6 +251,17 @@ object PetalEngineStore {
         return getEngine(context).createView(context)
     }
 
+    @JvmStatic
+    @JvmOverloads
+    fun createEngineSession(context: Context, isPrivate: Boolean = false): EngineSession {
+        return getEngine(context).createSession(private = isPrivate)
+    }
+
+    @JvmStatic
+    fun loadUrl(session: EngineSession, url: String) {
+        session.loadUrl(url)
+    }
+
     /**
      * Creates an [mozilla.components.concept.engine.EngineSession] and registers it as a [mozilla.components.browser.state.state.TabSessionState] in [BrowserStore],
      * linking the session so [mozilla.components.browser.state.engine.EngineMiddleware] actively tracks its state.
