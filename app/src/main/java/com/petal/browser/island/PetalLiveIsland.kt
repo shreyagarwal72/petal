@@ -17,6 +17,8 @@ package com.petal.browser.island
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.text.format.Formatter
+import com.petal.browser.account.progress.PetalProfileTarget
+import com.petal.browser.account.progress.PetalProgressStore
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
@@ -56,6 +58,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Download
@@ -75,7 +79,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -264,6 +267,11 @@ fun PetalLiveIsland(
             override fun onOpenDownloads() { listener?.onOpenDownloads() }
             override fun onOpenBrowser() { listener?.onOpenBrowser() }
             override fun onOpenFileViewer() { listener?.onOpenFileViewer() }
+            override fun onOpenProfile() { listener?.onOpenProfile() }
+            override fun onOpenPasswords() { listener?.onOpenPasswords() }
+            override fun onCopyText(text: String, label: String) { touches++; listener?.onCopyText(text, label) }
+            override fun onOpenDownloadedFile(localUri: String, fileName: String) { listener?.onOpenDownloadedFile(localUri, fileName) }
+            override fun onDismiss(id: String) { listener?.onDismiss(id) ?: PetalLiveActionBus.dismiss(id) }
         }
     }
 
@@ -380,24 +388,34 @@ private fun CompactPill(item: LiveActionItem, palette: IslandPalette) {
             is LiveActionItem.Download -> {
                 ProgressBadge(
                     progress = item.progressPercent / 100f,
-                    indeterminate = item.isIndeterminate && !item.isPaused,
-                    icon = if (item.isPaused) Icons.Rounded.Pause else Icons.Rounded.ArrowDownward,
+                    indeterminate = item.isIndeterminate && !item.isPaused && !item.isCompleted,
+                    icon = when {
+                        item.isCompleted -> Icons.Rounded.Check
+                        item.isPaused -> Icons.Rounded.Pause
+                        else -> Icons.Rounded.ArrowDownward
+                    },
                     palette = palette,
                     size = 32
                 )
                 Text(
-                    text = if (item.isIndeterminate) "Downloading" else "${item.progressPercent}%",
+                    text = when {
+                        item.isCompleted -> "Downloaded"
+                        item.isIndeterminate -> "Downloading"
+                        else -> "${item.progressPercent}%"
+                    },
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
                     color = palette.content
                 )
-                if (!item.isPaused && item.speedBytesPerSec > 0) {
+                if (!item.isPaused && !item.isCompleted && item.speedBytesPerSec > 0) {
                     Text(
                         text = item.speedFormatted,
                         style = MaterialTheme.typography.labelMedium,
                         color = palette.accent
                     )
                 }
-                if (item.isPaused) {
+                if (item.isCompleted) {
+                    // nothing: the check icon already says it
+                } else if (item.isPaused) {
                     Text("Paused", style = MaterialTheme.typography.labelMedium, color = palette.contentMuted)
                 } else {
                     PulsingDot(palette.accent)
@@ -480,7 +498,7 @@ private fun CompactPill(item: LiveActionItem, palette: IslandPalette) {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        Icons.Rounded.EmojiEvents,
+                        achievementIcon(item),
                         contentDescription = null,
                         tint = palette.accent,
                         modifier = Modifier.size(18.dp)
@@ -571,7 +589,7 @@ private fun SatelliteBubble(item: LiveActionItem, palette: IslandPalette, onClic
                     Icon(icon, contentDescription = null, tint = palette.accent, modifier = Modifier.size(20.dp))
                 }
                 is LiveActionItem.Achievement -> {
-                    Icon(Icons.Rounded.EmojiEvents, contentDescription = null, tint = palette.accent, modifier = Modifier.size(20.dp))
+                    Icon(achievementIcon(item), contentDescription = null, tint = palette.accent, modifier = Modifier.size(20.dp))
                 }
                 is LiveActionItem.Credential -> {
                     Icon(Icons.Rounded.Lock, contentDescription = null, tint = palette.accent, modifier = Modifier.size(20.dp))
@@ -580,6 +598,10 @@ private fun SatelliteBubble(item: LiveActionItem, palette: IslandPalette, onClic
         }
     }
 }
+
+/** Badge notifications show the badge's own icon; level-ups and milestones keep the trophy. */
+private fun achievementIcon(item: LiveActionItem.Achievement): androidx.compose.ui.graphics.vector.ImageVector =
+    com.petal.browser.account.progress.PETAL_BADGES.firstOrNull { it.id == item.badgeId }?.icon ?: Icons.Rounded.EmojiEvents
 
 /* ───────────────────────────── Expanded card ───────────────────────────── */
 
@@ -605,7 +627,7 @@ private fun ExpandedCard(
                         ProgressBadge(
                             progress = item.progressPercent / 100f,
                             indeterminate = item.isIndeterminate && !item.isPaused && !item.isCompleted,
-                            icon = if (item.isCompleted) Icons.Rounded.Download else Icons.Rounded.Download,
+                            icon = if (item.isCompleted) Icons.Rounded.Check else if (item.isPaused) Icons.Rounded.Pause else Icons.Rounded.Download,
                             palette = palette,
                             size = 44
                         )
@@ -640,6 +662,34 @@ private fun ExpandedCard(
                     }
                 }
 
+                if (item.isCompleted) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(end = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = { listener.onOpenDownloadedFile(item.localUri, item.fileName); onCollapse() },
+                            modifier = Modifier.weight(1f),
+                            shape = ExpressiveButtonShape,
+                            colors = ButtonDefaults.buttonColors(containerColor = palette.accent, contentColor = palette.onAccent)
+                        ) {
+                            Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Open file", fontWeight = FontWeight.SemiBold)
+                        }
+                        FilledTonalButton(
+                            onClick = { listener.onOpenDownloads(); onCollapse() },
+                            modifier = Modifier.weight(1f),
+                            shape = ExpressiveButtonShape,
+                            colors = ButtonDefaults.filledTonalButtonColors(containerColor = palette.accentSoft, contentColor = palette.content)
+                        ) {
+                            Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Downloads", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                } else {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(end = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -675,6 +725,7 @@ private fun ExpandedCard(
                         onClick = { listener.onOpenDownloads(); onCollapse() },
                         colors = ButtonDefaults.textButtonColors(contentColor = palette.accent)
                     ) { Text("Open downloads") }
+                }
                 }
             }
 
@@ -814,7 +865,7 @@ private fun ExpandedCard(
                                 .background(palette.accent.copy(alpha = 0.25f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Rounded.EmojiEvents, contentDescription = null, tint = palette.accent, modifier = Modifier.size(26.dp))
+                            Icon(achievementIcon(item), contentDescription = null, tint = palette.accent, modifier = Modifier.size(26.dp))
                         }
                     },
                     title = item.title,
@@ -835,12 +886,27 @@ private fun ExpandedCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     FilledTonalButton(
-                        onClick = { listener.onOpenProfile(); onCollapse() },
+                        onClick = {
+                            // Route to the page that matches this notification instead of the generic profile.
+                            when (item.destination) {
+                                "badges" -> PetalProgressStore.requestOpen(PetalProfileTarget.BADGES, item.badgeId)
+                                "rewards" -> PetalProgressStore.requestOpen(PetalProfileTarget.REWARDS)
+                                else -> PetalProgressStore.requestOpen(PetalProfileTarget.PROFILE)
+                            }
+                            listener.onOpenProfile()
+                            onCollapse()
+                        },
                         colors = ButtonDefaults.filledTonalButtonColors(containerColor = palette.accent, contentColor = palette.onAccent)
                     ) {
-                        Icon(Icons.Rounded.EmojiEvents, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(achievementIcon(item), contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("View in Profile")
+                        Text(
+                            when (item.destination) {
+                                "badges" -> "View badge"
+                                "rewards" -> "View rewards"
+                                else -> "View in Profile"
+                            }
+                        )
                     }
                 }
             }
@@ -1040,12 +1106,14 @@ private fun ProgressBadge(
                 trackColor = palette.track
             )
         }
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size((size * 0.46f).dp),
-            tint = palette.content
-        )
+        androidx.compose.animation.Crossfade(targetState = icon, animationSpec = tween(220), label = "badgeIcon") { ic ->
+            Icon(
+                imageVector = ic,
+                contentDescription = null,
+                modifier = Modifier.size((size * 0.46f).dp),
+                tint = palette.content
+            )
+        }
     }
 }
 

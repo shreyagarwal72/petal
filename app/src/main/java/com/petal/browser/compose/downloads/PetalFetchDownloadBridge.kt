@@ -531,6 +531,9 @@ object PetalFetchDownloadBridge {
         publish()
     }
 
+    private val seenActiveIds = java.util.Collections.synchronizedSet(HashSet<Long>())
+    private val announcedDoneIds = java.util.Collections.synchronizedSet(HashSet<Long>())
+
     private fun publish() {
         refreshMozillaDownloads()
         val fetchItems = synchronized(downloadsMap) { downloadsMap.values.toList() }
@@ -547,14 +550,21 @@ object PetalFetchDownloadBridge {
 
         // Forward to Petal Live Actions & Petal NowBar Hub
         try {
-            val active = items.firstOrNull {
+            val bus = com.petal.browser.live.PetalLiveActionBus
+            val active = items.filter {
                 it.status == DownloadStatus.STATUS_RUNNING || it.status == DownloadStatus.STATUS_PAUSED
             }
-            if (active != null) {
-                com.petal.browser.live.PetalLiveActionBus.updateDownload(active)
-            } else {
-                items.filter { it.status == DownloadStatus.STATUS_SUCCESSFUL || it.status == DownloadStatus.STATUS_FAILED }
-                    .forEach { com.petal.browser.live.PetalLiveActionBus.dismiss("dl_${it.id}") }
+            active.forEach { seenActiveIds.add(it.id) }
+            // Cancelled/removed downloads must not stay stuck on the island.
+            bus.pruneDownloads(active.take(2).map { it.id }.toSet())
+            active.take(2).forEach { bus.updateDownload(it) }
+            items.forEach {
+                if (it.id !in seenActiveIds) return@forEach
+                if (it.status == DownloadStatus.STATUS_SUCCESSFUL && announcedDoneIds.add(it.id)) {
+                    bus.updateDownload(it) // shows the "complete" card, auto-dismisses itself
+                } else if (it.status == DownloadStatus.STATUS_FAILED) {
+                    bus.dismiss("dl_${it.id}")
+                }
             }
         } catch (ignored: Throwable) {}
 

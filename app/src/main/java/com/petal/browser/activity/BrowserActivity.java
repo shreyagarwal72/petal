@@ -5310,6 +5310,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         }
 
                         @Override
+                        public void onOpenDownloadedFile(String localUri, String fileName) {
+                            com.petal.browser.compose.downloads.PetalDownloadBannerKt.openDownloadedFileByUri(BrowserActivity.this, localUri, fileName);
+                        }
+
+                        @Override
                         public void onOpenBrowser() {
                             // Active in browser
                         }
@@ -7181,6 +7186,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             intent.removeExtra("open_downloads");
             setIntent(new Intent(Intent.ACTION_MAIN));
             showDownloads();
+            return;
+        }
+
+        if (intent.getBooleanExtra("open_profile", false)) {
+            intent.removeExtra("open_profile");
+            setIntent(new Intent(Intent.ACTION_MAIN));
+            showAccountSyncScreen();
+            return;
+        }
+        if (intent.getBooleanExtra("open_passwords", false)) {
+            intent.removeExtra("open_passwords");
+            setIntent(new Intent(Intent.ACTION_MAIN));
+            openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.PRIVACY);
             return;
         }
 

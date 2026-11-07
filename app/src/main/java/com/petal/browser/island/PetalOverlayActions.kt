@@ -37,6 +37,22 @@ class PetalOverlayActions(context: Context) : LiveActionActionListener {
 
     override fun onOpenBrowser() = launch { }
 
+    override fun onOpenFileViewer() = launch { }
+
+    override fun onOpenProfile() = launch { putExtra("open_profile", true) }
+
+    override fun onOpenPasswords() = launch { putExtra("open_passwords", true) }
+
+    override fun onOpenDownloadedFile(localUri: String, fileName: String) = onOpenDownloads()
+
+    override fun onCopyText(text: String, label: String) {
+        try {
+            val cm = app.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            cm.setPrimaryClip(android.content.ClipData.newPlainText(label, text))
+        } catch (_: Exception) {
+        }
+    }
+
     private fun sendMedia(action: String) {
         try {
             app.startService(Intent(app, PetalMediaSessionService::class.java).setAction(action))

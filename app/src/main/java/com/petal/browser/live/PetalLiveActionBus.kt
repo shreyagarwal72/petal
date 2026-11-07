@@ -35,7 +35,8 @@ sealed class LiveActionItem(open val id: String) {
         val etaSeconds: Long,
         val isPaused: Boolean,
         val isIndeterminate: Boolean,
-        val isCompleted: Boolean = false
+        val isCompleted: Boolean = false,
+        val localUri: String = ""
     ) : LiveActionItem("dl_$downloadId")
 
     data class Media(
@@ -67,7 +68,9 @@ sealed class LiveActionItem(open val id: String) {
         val subtitle: String,
         val badgeId: String? = null,
         val isMilestone: Boolean = false,
-        val level: Int = 0
+        val level: Int = 0,
+        /** Where the Open button goes: "badges", "rewards" or "profile". */
+        val destination: String? = null
     ) : LiveActionItem("ach_${achievementId}")
 
     data class Credential(
@@ -98,6 +101,8 @@ interface LiveActionActionListener {
     fun onOpenProfile() {}
     fun onOpenPasswords() {}
     fun onCopyText(text: String, label: String = "Text") {}
+    /** Opens a finished download with the system/Petal file opener. */
+    fun onOpenDownloadedFile(localUri: String, fileName: String) { onOpenDownloads() }
     fun onDismiss(id: String) {
         PetalLiveActionBus.dismiss(id)
     }
@@ -146,12 +151,13 @@ object PetalLiveActionBus {
                 etaSeconds = 0L,
                 isPaused = false,
                 isIndeterminate = false,
-                isCompleted = true
+                isCompleted = true,
+                localUri = item.localUri ?: ""
             )
             promoteOrUpdate(completedAction)
             // Auto dismiss after 5 seconds
             scope.launch {
-                delay(5_000L)
+                delay(8_000L)
                 dismiss("dl_${item.id}")
             }
             return
@@ -173,7 +179,8 @@ object PetalLiveActionBus {
             etaSeconds = item.etaSeconds,
             isPaused = isPaused,
             isIndeterminate = isIndeterminate,
-            isCompleted = false
+            isCompleted = false,
+            localUri = item.localUri ?: ""
         )
 
         promoteOrUpdate(downloadAction)
@@ -234,7 +241,8 @@ object PetalLiveActionBus {
         subtitle: String,
         badgeId: String? = null,
         isMilestone: Boolean = false,
-        level: Int = 0
+        level: Int = 0,
+        destination: String? = null
     ) {
         val uniqueId = "${System.currentTimeMillis()}"
         val achievement = LiveActionItem.Achievement(
@@ -243,7 +251,8 @@ object PetalLiveActionBus {
             subtitle = subtitle,
             badgeId = badgeId,
             isMilestone = isMilestone,
-            level = level
+            level = level,
+            destination = destination
         )
         promoteOrUpdate(achievement)
         // Auto-dismiss transient achievement from Petal NowBar after 8 seconds
@@ -282,6 +291,19 @@ object PetalLiveActionBus {
                 current.secondary?.id == id -> current.copy(secondary = null)
                 else -> current
             }
+        }
+    }
+
+    /** Removes unfinished download cards whose id is no longer active (cancelled / removed). */
+    @JvmStatic
+    fun pruneDownloads(activeIds: Set<Long>) {
+        _state.update { cur ->
+            fun stale(i: LiveActionItem?) =
+                i is LiveActionItem.Download && !i.isCompleted && i.downloadId !in activeIds
+            val p = cur.primary.takeUnless { stale(it) }
+            val s = cur.secondary.takeUnless { stale(it) }
+            if (p === cur.primary && s === cur.secondary) cur
+            else LiveActionBusState(primary = p ?: s, secondary = if (p == null) null else s)
         }
     }
 
