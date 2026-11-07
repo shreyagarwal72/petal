@@ -2279,19 +2279,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // the actual window insets instead of attaching too early.
             if (av instanceof com.petal.browser.browser.PetalTabViewController) {
                 android.view.WindowInsets rootInsets = targetFrame.getRootWindowInsets();
-                if (rootInsets == null) {
-                    if (attempt < MAX_ATTACH_ATTEMPTS) {
-                        targetFrame.postDelayed(() ->
-                                attachAlbumViewSafely(targetFrame, av, targetController, attempt + 1), 32L);
-                    } else {
-                        android.util.Log.w("BrowserActivity", "GeckoView attach deferred: root WindowInsets still unavailable");
-                        targetFrame.post(() -> {
-                            if (currentAlbumController == targetController && targetFrame == contentFrame) {
-                                attachAlbumViewSafely(targetFrame, av, targetController, 0);
-                            }
-                        });
-                    }
+                if (rootInsets == null && !targetFrame.isAttachedToWindow() && attempt < MAX_ATTACH_ATTEMPTS) {
+                    targetFrame.postDelayed(() ->
+                            attachAlbumViewSafely(targetFrame, av, targetController, attempt + 1), 32L);
                     return;
+                }
+                if (rootInsets == null) {
+                    targetFrame.requestApplyInsets();
                 }
             }
 
@@ -3326,9 +3320,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             boolean liquidGlassTopOn = sp.getBoolean("sp_liquid_glass_enabled", false) &&
                     (!isBottom && sp.getBoolean("sp_liquid_glass_address_bar", true));
             final boolean legacyUnder = com.petal.browser.ui.components.BarInsets.legacyPageUnderBars(sp);
-            // Firefox / Fenix approach: For top address bar, GeckoView owns the dynamic toolbar offset
-            // via setDynamicToolbarMaxHeight, keeping fixed page view size.
-            updateDynamicToolbarHeights(!isBottom ? addressHeight : 0);
+            // Firefox / Fenix approach: When the page runs under the top bar, GeckoView owns
+            // the dynamic toolbar offset. When mainContent already reserves space via top padding,
+            // dynamic toolbar height is 0 to avoid double-offsetting the web content.
+            boolean pageUnderTop = isImmersive || (legacyUnder && liquidGlassTopOn);
+            updateDynamicToolbarHeights(!isBottom && pageUnderTop ? addressHeight : 0);
             boolean reserveBarSpace = !isNonWebSurface;
             // Glass bars always sample the live page. Padded strips are filled with the page's
             // mirrored edge rows inside GlassBackdrop, so the wallpaper backdrop is never shown.
@@ -8110,7 +8106,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 hideOverview();
                 tabSurface.activate();
                 if (dialogOverview != null) dialogOverview.cancel();
-                showAlbum(tabSurface);
+                showAlbum(tabSurface, popupUrl);
+            }
+
+            if (popupSession != null && popupSession.isOpen()) {
+                try { popupSession.close(); } catch (Throwable ignored) {}
             }
 
             updateOmniBox();

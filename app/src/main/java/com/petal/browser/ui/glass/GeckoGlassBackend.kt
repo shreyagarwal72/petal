@@ -31,29 +31,28 @@ object GeckoGlassBackend {
 
     @JvmStatic
     fun applyBackend(geckoView: GeckoView, context: Context) {
-        // Enforce TextureView backend across Petal Browser.
-        // SurfaceView punches a hole through the view hierarchy, breaking container transforms,
-        // predictive back gestures, and depth blur. Most critically, on Android 12+ (SDK 31+,
-        // especially MIUI/HyperOS on Xiaomi devices), SurfaceView's RenderNode PositionUpdateListener
-        // triggers a fatal SIGSEGV null pointer dereference inside libgui.so
-        // (SurfaceComposerClient::Transaction::registerSurfaceControlForCallback) during layout
-        // transitions and view removals. TextureView runs cleanly through HWUI with zero native crashes.
-        useTextureView(geckoView)
+        // Match official Mozilla GeckoView standard: default to BACKEND_SURFACE_VIEW
+        // for optimal hardware composition and reliable web page rendering.
+        // Switch to BACKEND_TEXTURE_VIEW only when Liquid Glass requires sampling the page.
+        if (shouldSamplePage(context)) {
+            useTextureView(geckoView)
+        } else {
+            useSurfaceView(geckoView)
+        }
     }
 
     @JvmStatic
     fun useSurfaceView(geckoView: GeckoView) {
-        // Safely redirect to TextureView to eliminate native SurfaceControl SIGSEGV crashes
-        useTextureView(geckoView)
+        try {
+            geckoView.setViewBackend(GeckoView.BACKEND_SURFACE_VIEW)
+        } catch (_: Throwable) {}
     }
 
     @JvmStatic
     fun useTextureView(geckoView: GeckoView) {
-        geckoView.setViewBackend(GeckoView.BACKEND_TEXTURE_VIEW)
-        val texture = findTextureView(geckoView) ?: return
-        val inner = texture.surfaceTextureListener ?: return
-        if (inner is FrameQuietListener) return
-        texture.surfaceTextureListener = FrameQuietListener(inner)
+        try {
+            geckoView.setViewBackend(GeckoView.BACKEND_TEXTURE_VIEW)
+        } catch (_: Throwable) {}
     }
 
     private fun findTextureView(root: View): TextureView? {

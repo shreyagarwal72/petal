@@ -561,9 +561,9 @@ class PetalTabViewController private constructor(
             isEnabled = false
         }
         // Tab pages are drawn by android-components' GeckoEngineView, whose inner GeckoView
-        // defaults to a SurfaceView. A SurfaceView cannot be recorded, so the bars' glass saw a
-        // hole and showed the live page through unblurred. Switch it to the TextureView backend.
-        if (isHostedByBrowserActivity()) {
+        // defaults to a SurfaceView (official Mozilla GeckoView default). Switch to TextureView
+        // only if Liquid Glass is active and requires page sampling.
+        if (isHostedByBrowserActivity() && com.petal.browser.ui.glass.GeckoGlassBackend.shouldSamplePage(context)) {
             findGeckoView(engineView.asView())?.let {
                 try { com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(it, context) } catch (_: Throwable) {}
             }
@@ -661,7 +661,7 @@ class PetalTabViewController private constructor(
         currentScrollX = 0; currentScrollY = 0; lastProcessedScrollY = 0; accumulatedScrollY = 0; consecutiveDirectionSteps = 0
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
         engineView.render(session)
-        if (isHostedByBrowserActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+        if (isHostedByBrowserActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && com.petal.browser.ui.glass.GeckoGlassBackend.shouldSamplePage(context)) {
             post {
                 findGeckoView(engineView.asView())?.let {
                     try { com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(it, context) } catch (_: Throwable) {}
@@ -1022,7 +1022,19 @@ class PetalTabViewController private constructor(
             "sp_https_only",
             preferences.getBoolean("profileStandard_httpsOnly", false)
         )
-        if (httpsOnly && targetUrl.startsWith("http://", ignoreCase = true)) {
+        val host = try { android.net.Uri.parse(targetUrl).host } catch (_: Throwable) { null }
+        val isLocalHost = host != null && (
+            host.equals("localhost", ignoreCase = true) ||
+            host.endsWith(".local", ignoreCase = true) ||
+            host == "127.0.0.1" || host == "::1" ||
+            host.startsWith("192.168.") || host.startsWith("10.") ||
+            (host.startsWith("172.") && try {
+                val second = host.split(".")[1].toInt()
+                second in 16..31
+            } catch (_: Throwable) { false })
+        )
+        val isBypassed = host != null && com.petal.browser.privacy.PetalHttpsOnlyWhitelist.isBypassed(appContext, host)
+        if (httpsOnly && !isLocalHost && !isBypassed && targetUrl.startsWith("http://", ignoreCase = true)) {
             targetUrl = "https://" + targetUrl.substring(7)
         }
         if (com.petal.browser.unit.PetalBrowserUtils.isHomePage(targetUrl) ||
@@ -1946,6 +1958,18 @@ class PetalTabViewController private constructor(
             preferences.unregisterOnSharedPreferenceChangeListener(prefChangeListener)
         } catch (_: Throwable) {}
         engineView.release()
+    }
+
+    fun onResume() {
+        try {
+            getGeckoSession()?.setActive(true)
+        } catch (_: Throwable) {}
+    }
+
+    fun onPause() {
+        try {
+            getGeckoSession()?.setActive(false)
+        } catch (_: Throwable) {}
     }
 
     private fun injectPagePrivacyAndAdBlock() {
