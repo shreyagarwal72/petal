@@ -138,6 +138,9 @@ object PetalSetupBridge {
         sp.edit().putBoolean("sp_setup_v2_done", true).apply()
         activeActivity = null
         setupView = null
+        activity.window.decorView.postDelayed({
+            activity.maybePromptDefaultBrowser()
+        }, 1000L)
     }
 
     internal fun refreshStage(activity: BrowserActivity) = showStage(activity)

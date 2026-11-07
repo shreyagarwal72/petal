@@ -237,8 +237,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public BottomNavigationView bottom_navigation;
     public String overViewTab;
     public Activity activity;
-    @SuppressLint("StaticFieldLeak")
-    public static Context context;
     public SharedPreferences sp;
     public StandardDomainWhitelist listStandard;
     public long newIcon;
@@ -485,8 +483,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     };
 
+    @Deprecated
     public static Context getAppContext() {
-        return context;
+        return com.petal.browser.PetalApplication.getAppContext();
     }
 
     
@@ -778,7 +777,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         com.petal.browser.unit.PetalBrowserUtils.setLiveSessionActive(true);
-        context = this;
         activity = this;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             getWindow().getAttributes().layoutInDisplayCutoutMode =
@@ -797,7 +795,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
         
-        sp = PreferenceManager.getDefaultSharedPreferences(context);
+        sp = PreferenceManager.getDefaultSharedPreferences(this);
         try {
             sp.registerOnSharedPreferenceChangeListener(toolbarPrefsListener);
         } catch (Throwable ignored) {}
@@ -837,8 +835,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         splashScreen.setOnExitAnimationListener(this::playSplashExit);
 
         com.petal.browser.unit.PetalSessionHistoryManager.initSession();
-        com.petal.browser.extensions.PetalExtensionManager.attach(context);
-        com.petal.browser.extensions.PetalBuiltInExtensionManager.installAll(context);
+        com.petal.browser.extensions.PetalExtensionManager.attach(getApplicationContext());
+        com.petal.browser.extensions.PetalBuiltInExtensionManager.installAll(getApplicationContext());
 
         // Wire the extension-popup listener so browser/page-action popups (uBlock Origin,
         // Bitwarden, etc.) are shown as a full-screen overlay when the extension's toolbar
@@ -963,7 +961,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         try {
-            com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(context);
+            com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(getApplicationContext());
         } catch (Exception ignored) {}
         PetalAndroidUtils.initTheme(activity);
         com.petal.browser.account.PetalUserProfileManager.INSTANCE.init(this);
@@ -1250,8 +1248,26 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (!sp.getBoolean("sp_setup_v2_done", false)) {
                 getWindow().getDecorView().post(() ->
                         com.petal.browser.setup.PetalSetupBridge.showSetup(this));
+            } else {
+                getWindow().getDecorView().postDelayed(this::maybePromptDefaultBrowser, 1500L);
             }
         }
+    }
+
+    public boolean isPageLoading() {
+        if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+            com.petal.browser.browser.PetalTabViewController surface = getActivePetalTabSurface();
+            com.petal.browser.browser.PetalTabViewController.State state = surface != null ? surface.currentState() : null;
+            if (state != null) {
+                return state.getLoading();
+            }
+        }
+        return false;
+    }
+
+    public void maybePromptDefaultBrowser() {
+        if (isFinishing() || isDestroyed()) return;
+        com.petal.browser.ui.components.PetalBrowserPermissionDialog.maybePromptDefaultBrowser(this, isPageLoading());
     }
 
     @Override
@@ -1392,12 +1408,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
         if (sp != null && sp.getInt("restart_changed", 1) == 1) {
-            triggerRebirth(context);
+            triggerRebirth(this);
         }
         if (sp != null && sp.getBoolean("pdf_create", false)) {
             sp.edit().putBoolean("pdf_create", false).apply();
             String text = getString(R.string.app_done) + ". " + getString(R.string.menu_download) +"?";
-            com.petal.browser.view.PetalToast.show(context, text, com.petal.browser.view.PetalToast.LENGTH_SHORT, context.getString(R.string.app_ok), () -> showDownloads());
+            com.petal.browser.view.PetalToast.show(this, text, com.petal.browser.view.PetalToast.LENGTH_SHORT, getString(R.string.app_ok), () -> showDownloads());
         }
         // Skip the first post-onCreate resume — dispatchIntent() already ran at the
         // end of onCreate() once all tabs were ready. Every subsequent resume (coming
@@ -3209,7 +3225,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addressBar.setVisibility(VISIBLE);
             }
 
-            final int addressHeight = addressBar.getVisibility() == GONE ? 0 : (addressBar.getHeight() > 0 ? addressBar.getHeight() : (int) PetalAndroidUtils.convertDpToPixel(60f, context));
+            final int addressHeight = addressBar.getVisibility() == GONE ? 0 : (addressBar.getHeight() > 0 ? addressBar.getHeight() : (int) PetalAndroidUtils.convertDpToPixel(60f, this));
             // Use the actual Compose bottom-nav height, NOT the container height.
             // The bottom_nav_container (a RelativeLayout with wrap_content height) can
             // incorrectly measure at the full screen height when RelativeLayout resolves
@@ -3233,11 +3249,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // Guard: if the container is suspiciously tall (> half screen height),
                 // fall back to the compose view height which is the ground-truth.
                 int screenH = getResources().getDisplayMetrics().heightPixels;
-                bottomNavHeight = (containerH > screenH / 2) ? composeH : (containerH > 0 ? containerH : (int) PetalAndroidUtils.convertDpToPixel(64f, context));
+                bottomNavHeight = (containerH > screenH / 2) ? composeH : (containerH > 0 ? containerH : (int) PetalAndroidUtils.convertDpToPixel(64f, this));
             } else {
                 bottomNavHeight = 0;
             }
-            final int gap = (int) PetalAndroidUtils.convertDpToPixel(2f, context);
+            final int gap = (int) PetalAndroidUtils.convertDpToPixel(2f, this);
 
             // Keep main_content as a stable full-screen container and reserve space
             // with padding. This avoids the old circular/async RelativeLayout layout
@@ -3282,7 +3298,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     progressBarCompose.setVisibility(GONE);
                 } else {
                     boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
-                    int hMargin = isFloating ? (int) PetalAndroidUtils.convertDpToPixel(16f, context) : 0;
+                    int hMargin = isFloating ? (int) PetalAndroidUtils.convertDpToPixel(16f, this) : 0;
                     progParams.leftMargin = hMargin;
                     progParams.rightMargin = hMargin;
                     if (isBottom) {
@@ -3325,7 +3341,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     && !com.petal.browser.ui.components.BarPrefs.isMergeStyle(sp))
                     || isFloatingMergeBottom;
             boolean isPillCollapse = com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp);
-            int pillHeightPx = (int) PetalAndroidUtils.convertDpToPixel(40f, context);
+            int pillHeightPx = (int) PetalAndroidUtils.convertDpToPixel(40f, this);
             com.petal.browser.ui.components.BarInsets.Result insets = com.petal.browser.ui.components.BarInsets.compute(
                     isBottom, reserveBarSpace, addressHeight, bottomNavHeight, gap, resolvedStatusBarGap,
                     legacyUnder && liquidGlassTopOn,
@@ -3379,7 +3395,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     lp.bottomMargin = 0;
                 }
                 progressBarCompose.setLayoutParams(lp);
-                progressBarCompose.setElevation(PetalAndroidUtils.convertDpToPixel(30f, context));
+                progressBarCompose.setElevation(PetalAndroidUtils.convertDpToPixel(30f, this));
                 progressBarCompose.setTranslationY(0f);
                 progressBarCompose.bringToFront();
             }
@@ -3392,7 +3408,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 if (isBottom) {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) PetalAndroidUtils.convertDpToPixel(8f, context);
+                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) PetalAndroidUtils.convertDpToPixel(8f, this);
                     lp.topMargin = 0;
                 } else {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
@@ -3412,11 +3428,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 if (isBottom) {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) PetalAndroidUtils.convertDpToPixel(8f, context);
+                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) PetalAndroidUtils.convertDpToPixel(8f, this);
                     lp.topMargin = 0;
                 } else {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    lp.topMargin = addressHeight + (int) PetalAndroidUtils.convertDpToPixel(6f, context);
+                    lp.topMargin = addressHeight + (int) PetalAndroidUtils.convertDpToPixel(6f, this);
                     lp.bottomMargin = 0;
                 }
                 networkStatusBanner.setLayoutParams(lp);
@@ -3432,11 +3448,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 if (isBottom) {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) PetalAndroidUtils.convertDpToPixel(8f, context);
+                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) PetalAndroidUtils.convertDpToPixel(8f, this);
                     lp.topMargin = 0;
                 } else {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    lp.topMargin = addressHeight + (int) PetalAndroidUtils.convertDpToPixel(6f, context);
+                    lp.topMargin = addressHeight + (int) PetalAndroidUtils.convertDpToPixel(6f, this);
                     lp.bottomMargin = 0;
                 }
                 mediaSnifferBanner.setLayoutParams(lp);
@@ -3449,11 +3465,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 if (isBottom) {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    lp.bottomMargin = bottomNavHeight + addressHeight + (int) PetalAndroidUtils.convertDpToPixel(12f, context);
+                    lp.bottomMargin = bottomNavHeight + addressHeight + (int) PetalAndroidUtils.convertDpToPixel(12f, this);
                     lp.topMargin = 0;
                 } else {
                     lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    lp.topMargin = addressHeight + (int) PetalAndroidUtils.convertDpToPixel(16f, context);
+                    lp.topMargin = addressHeight + (int) PetalAndroidUtils.convertDpToPixel(16f, this);
                     lp.bottomMargin = 0;
                 }
                 fabBubble.setLayoutParams(lp);
@@ -3481,7 +3497,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.removeRule(RelativeLayout.ABOVE);
                 lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
                 lp.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
-                lp.bottomMargin = isFloating ? (int) PetalAndroidUtils.convertDpToPixel(6f, context) : 0;
+                lp.bottomMargin = isFloating ? (int) PetalAndroidUtils.convertDpToPixel(6f, this) : 0;
                 bottomNav.setLayoutParams(lp);
                 bottomNav.bringToFront();
             }
@@ -3809,9 +3825,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (progress >= 100) {
                 updateOmniBox();
                 saveOpenedTabs();
-                FaviconHelper.setFavicon(context, contentView, (currentAlbumController != null ? currentAlbumController.getUrl() : ""), R.id.menu_icon, R.drawable.icon_image_broken);
+                FaviconHelper.setFavicon(this, contentView, (currentAlbumController != null ? currentAlbumController.getUrl() : ""), R.id.menu_icon, R.drawable.icon_image_broken);
                 final Handler handler = new Handler();
-                handler.postDelayed(() -> FaviconHelper.setFavicon(context, contentView, (currentAlbumController != null ? currentAlbumController.getUrl() : ""), R.id.menu_icon, R.drawable.icon_image_broken), 500);
+                handler.postDelayed(() -> FaviconHelper.setFavicon(this, contentView, (currentAlbumController != null ? currentAlbumController.getUrl() : ""), R.id.menu_icon, R.drawable.icon_image_broken), 500);
             }
         }
     }
@@ -3930,7 +3946,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         customView = view;
         customViewCallback = callback;
-        fullscreenHolder = new FrameLayout(context);
+        fullscreenHolder = new FrameLayout(this);
         fullscreenHolder.addView(
                 customView,
                 new FrameLayout.LayoutParams(
@@ -4069,19 +4085,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 parent.addView(fancyProgress, index);
             }
         }
-        badgeDrawable = BadgeDrawable.create(context);
+        badgeDrawable = BadgeDrawable.create(this);
 
         TypedValue typedValue = new TypedValue();
-        context.getTheme().resolveAttribute(R.attr.colorPrimaryInverse, typedValue, true);
+        getTheme().resolveAttribute(R.attr.colorPrimaryInverse, typedValue, true);
         int color = typedValue.data;
         TypedValue typedValue2 = new TypedValue();
-        context.getTheme().resolveAttribute(R.attr.colorOnSurface, typedValue2, true);
+        getTheme().resolveAttribute(R.attr.colorOnSurface, typedValue2, true);
         int color2 = typedValue2.data;
         badgeDrawable.setBackgroundColor(color);
         badgeDrawable.setBadgeTextColor(color2);
 
         if (fab_overview != null) {
-            fab_overview.setOnTouchListener(new SwipeTouchListener(context) {
+            fab_overview.setOnTouchListener(new SwipeTouchListener(this) {
                 public void onSwipeTop() {
                     String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                     performGesture("setting_gesture_tb_up", url);
@@ -4106,7 +4122,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         if (fab_menu != null) {
-            fab_menu.setOnTouchListener(new SwipeTouchListener(context) {
+            fab_menu.setOnTouchListener(new SwipeTouchListener(this) {
                 public void onSwipeTop() {
                     String url = currentAlbumController != null ? currentAlbumController.getUrl() : "";
                     performGesture("setting_gesture_nav_up", url);
@@ -4631,17 +4647,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
         boolean isPillMode = com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp);
-        float dp16 = PetalAndroidUtils.convertDpToPixel(16f, context);
+        float dp16 = PetalAndroidUtils.convertDpToPixel(16f, this);
         int screenH = getResources().getDisplayMetrics().heightPixels;
 
-        float addrH = addressBar.getHeight() > 0 ? addressBar.getHeight() : PetalAndroidUtils.convertDpToPixel(56f, context);
+        float addrH = addressBar.getHeight() > 0 ? addressBar.getHeight() : PetalAndroidUtils.convertDpToPixel(56f, this);
         View navTarget = (navContainer != null && navContainer.getVisibility() != GONE) ? navContainer : null;
         float navH = 0f;
         if (navTarget != null) {
             int h = navTarget.getHeight();
             // Guard against the container measuring at full-screen height (see applyAddressBarPosition).
             if (h > screenH / 2 && navCompose != null) h = navCompose.getHeight();
-            navH = h > 0 ? h : PetalAndroidUtils.convertDpToPixel(64f, context);
+            navH = h > 0 ? h : PetalAndroidUtils.convertDpToPixel(64f, this);
         }
 
         float addrOff = 0f, navOff = 0f, dockedOff = 0f;
@@ -4649,14 +4665,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             navOff = navTarget != null ? navH + dp16 : 0f;
             if (isPillMode) {
                 addrOff = 0f;
-                dockedOff = isBottom ? addrH + navH + dp16 : -(addrH + PetalAndroidUtils.convertDpToPixel(40f, context));
+                dockedOff = isBottom ? addrH + navH + dp16 : -(addrH + PetalAndroidUtils.convertDpToPixel(40f, this));
             } else if (isBottom) {
                 addrOff = addrH + navH + dp16;
                 dockedOff = addrOff;
             } else {
                 boolean isImmersive = (sp != null && sp.getBoolean("sp_immersive_fullscreen", false)) || isCustomFullscreenState;
                 int statusGap = isImmersive ? 0 : (statusBarTopInset > 0 ? statusBarTopInset : PetalAndroidUtils.getStatusBarHeight(this));
-                addrOff = -(addrH + PetalAndroidUtils.convertDpToPixel(40f, context));
+                addrOff = -(addrH + PetalAndroidUtils.convertDpToPixel(40f, this));
                 dockedOff = -Math.max(0f, addrH - statusGap);
             }
         } else {
@@ -4767,15 +4783,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (hiddenState) {
             alignBottom = true;
             top = 0;
-            bottom = navigationBarBottomInset + (int) PetalAndroidUtils.convertDpToPixel(20f, context);
+            bottom = navigationBarBottomInset + (int) PetalAndroidUtils.convertDpToPixel(20f, this);
         } else if (isBottom) {
             alignBottom = true;
             top = 0;
-            bottom = (int) (navH + addrH + PetalAndroidUtils.convertDpToPixel(12f, context));
+            bottom = (int) (navH + addrH + PetalAndroidUtils.convertDpToPixel(12f, this));
         } else {
             alignBottom = false;
             bottom = 0;
-            top = (int) (addrH + PetalAndroidUtils.convertDpToPixel(16f, context));
+            top = (int) (addrH + PetalAndroidUtils.convertDpToPixel(16f, this));
         }
         int[] rules = lp.getRules();
         boolean sameAlign = alignBottom

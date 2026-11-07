@@ -72,6 +72,12 @@ object PetalBrowserPermissionDialog {
     @JvmStatic
     fun isDefaultBrowser(context: Context): Boolean {
         return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val roleManager = context.getSystemService(android.app.role.RoleManager::class.java)
+                if (roleManager != null && roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_BROWSER)) {
+                    return roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_BROWSER)
+                }
+            }
             val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com"))
             val resolveInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 context.packageManager.resolveActivity(
@@ -156,6 +162,21 @@ object PetalBrowserPermissionDialog {
     }
 
     @JvmStatic
+    fun maybePromptDefaultBrowser(activity: ComponentActivity, isPageLoading: Boolean) {
+        if (activity.isFinishing || (Build.VERSION.SDK_INT >= 17 && activity.isDestroyed)) return
+        if (isPageLoading) return
+
+        val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+        val welcomeShown = sp.getBoolean("sp_welcome_shown", false)
+        val setupDone = sp.getBoolean("sp_setup_v2_done", false)
+        if (!welcomeShown || !setupDone) return
+
+        if (shouldShow(activity)) {
+            show(activity)
+        }
+    }
+
+    @JvmStatic
     fun show(activity: ComponentActivity) {
         if (activity.isFinishing || (Build.VERSION.SDK_INT >= 17 && activity.isDestroyed)) return
 
@@ -183,6 +204,12 @@ object PetalBrowserPermissionDialog {
                         ) {
                             BrowserPermissionSheet(
                                 onDone = {
+                                    try {
+                                        dialog.dismiss()
+                                    } catch (_: Exception) {}
+                                },
+                                onNotNow = {
+                                    markShown(activity)
                                     try {
                                         dialog.dismiss()
                                     } catch (_: Exception) {}
@@ -220,7 +247,10 @@ private data class PermissionEntry(
 )
 
 @Composable
-private fun BrowserPermissionSheet(onDone: () -> Unit) {
+private fun BrowserPermissionSheet(
+    onDone: () -> Unit,
+    onNotNow: () -> Unit = onDone
+) {
     val context = LocalContext.current
     val activity = context as? Activity
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -502,6 +532,22 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                     text = if (allGranted) "Everything is ready" else "Continue",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 )
+            }
+
+            if (!allGranted) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onNotNow,
+                    shape = RoundedCornerShape(50.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                ) {
+                    Text(
+                        text = "Not now",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    )
+                }
             }
 
             Spacer(Modifier.height(8.dp))

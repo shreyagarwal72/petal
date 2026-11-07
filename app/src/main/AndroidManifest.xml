@@ -214,10 +214,11 @@
                 android:resource="@xml/petal_autofill_service_config" />
         </service>
 
+        <!-- Stage 6: PetalAutofillAuthActivity is started internally via Petal's own PendingIntent for dataset auth; must NOT be exported to third-party apps -->
         <activity
             android:name="com.petal.browser.passwords.PetalAutofillAuthActivity"
             android:theme="@style/Theme.AppCompat.Translucent"
-            android:exported="true"
+            android:exported="false"
             android:excludeFromRecents="true" />
 
         <activity
