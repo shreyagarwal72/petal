@@ -5136,7 +5136,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ((android.view.ViewGroup) parentView).setClipToPadding(false);
             }
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                float elevationPx = PetalAndroidUtils.convertDpToPixel(999f, this);
+                float elevationPx = PetalAndroidUtils.convertDpToPixel(12f, this);
                 refreshBarCompose.setElevation(elevationPx);
                 refreshBarCompose.setTranslationZ(elevationPx);
             }

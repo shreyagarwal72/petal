@@ -122,10 +122,13 @@ public class BrowsingDataManager {
 
     public static void clearCookies() {
         runOnMainThreadBlocking(() -> {
-            CookieManager cookieManager = CookieManager.getInstance();
-            cookieManager.removeAllCookies(null);
-            cookieManager.flush();
+            try {
+                CookieManager cookieManager = CookieManager.getInstance();
+                cookieManager.removeAllCookies(null);
+                cookieManager.flush();
+            } catch (Exception ignored) {}
         });
+        com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies();
         try {
             Context ctx = com.petal.browser.PetalApplication.getInstance();
             if (ctx != null) {
