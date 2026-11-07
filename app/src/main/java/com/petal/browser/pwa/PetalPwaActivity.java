@@ -31,7 +31,8 @@ import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
 import com.petal.browser.unit.PetalAndroidUtils;
 import com.petal.browser.view.PetalToast;
-import com.petal.browser.view.PetalGeckoView;
+import com.petal.browser.browser.PetalTabViewController;
+import com.petal.browser.engine.gecko.PetalEngineStore;
 
 import java.io.File;
 
@@ -57,7 +58,7 @@ public class PetalPwaActivity extends AppCompatActivity {
     private View progressBarComposeView;
     private View fabBubbleView;
     private int fabBaseMarginPx = 0;
-    private PetalGeckoView geckoView;
+    private PetalTabViewController geckoView;
     private String pwaUrl = "about:blank";
     private String pwaTitle = "Web App";
     private String themeColorHex = "#FFFFFF";
@@ -251,13 +252,6 @@ public class PetalPwaActivity extends AppCompatActivity {
     private void setupGeckoView() {
         if (contentFrame == null) return;
 
-        geckoView = new PetalGeckoView(this);
-        geckoView.setLayoutParams(new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-        ));
-        contentFrame.addView(geckoView);
-
         // Load offline archive or target web app URL
         String targetUrl = pwaUrl;
         if (offlineArchivePath != null && !PetalAndroidUtils.isNetworkAvailable(this)) {
@@ -267,8 +261,30 @@ public class PetalPwaActivity extends AppCompatActivity {
             }
         }
 
-        if (targetUrl != null && !targetUrl.isEmpty() && !"about:blank".equalsIgnoreCase(targetUrl)) {
-            geckoView.loadUrl(targetUrl);
+        String effectiveUrl = (targetUrl != null && !targetUrl.isEmpty() && !"about:blank".equalsIgnoreCase(targetUrl))
+                ? targetUrl : "about:blank";
+        String tabId = "pwa_" + System.currentTimeMillis();
+        kotlin.Pair<mozilla.components.browser.state.state.TabSessionState, mozilla.components.concept.engine.EngineSession> sessionPair =
+            PetalEngineStore.createTabSession(
+                this,
+                tabId,
+                effectiveUrl,
+                pwaTitle != null ? pwaTitle : "Petal PWA",
+                false,
+                true
+            );
+
+        geckoView = new PetalTabViewController(this);
+        geckoView.bindTab(sessionPair.getFirst());
+        geckoView.attachLifecycle(this);
+        geckoView.setLayoutParams(new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+        contentFrame.addView(geckoView);
+
+        if (!"about:blank".equalsIgnoreCase(effectiveUrl)) {
+            geckoView.loadUrl(effectiveUrl);
         }
     }
 
@@ -334,7 +350,7 @@ public class PetalPwaActivity extends AppCompatActivity {
     protected void onResume() {
         com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(this);
         super.onResume();
-        if (geckoView != null) geckoView.onResume();
+        if (geckoView != null) geckoView.activate();
     }
 
     @Override
@@ -343,7 +359,7 @@ public class PetalPwaActivity extends AppCompatActivity {
             com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(null);
         }
         super.onPause();
-        if (geckoView != null) geckoView.onPause();
+        if (geckoView != null) geckoView.deactivate();
     }
 
     @Override

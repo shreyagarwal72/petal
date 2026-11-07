@@ -8220,50 +8220,72 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             String popupUrl = targetUrl == null || targetUrl.trim().isEmpty()
                     ? "about:blank" : targetUrl;
-            // Pass popupSession directly as adoptedSession so no throwaway GeckoSession is constructed or closed
-            com.petal.browser.view.PetalGeckoView geckoView =
-                com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
-                    this, getString(R.string.app_name), popupUrl, activate, isIncognito, popupSession, null
-                );
+            String tabId = "tab_popup_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode());
 
-            geckoView.setBrowserController(this);
-            // Gecko has already started loading the requested popup URL. Keep that URL in
-            // the tab metadata without calling loadUrl again, which would race the adopted
-            // session and could replace the destination with the home page.
-            geckoView.setAlbumTitle(getString(R.string.app_name), popupUrl);
-            // Tell the tab its real URL (no reload). Without this its URL stays
-            // "about:blank", showAlbum() treats it as the home page and resets it,
-            // cancelling the link that Gecko was loading.
-            geckoView.markAdoptedNavigation(popupUrl);
+            mozilla.components.concept.engine.EngineSession engineSession =
+                    com.petal.browser.engine.gecko.PetalEngineStore.getEngine(this).createSession(isIncognito);
+            mozilla.components.browser.state.state.TabSessionState popupTab =
+                    com.petal.browser.engine.gecko.PetalEngineStore.adoptPreparedSession(
+                            this, tabId, popupUrl, getString(R.string.app_name),
+                            isIncognito, engineSession, activate
+                    );
 
-            if (currentAlbumController != null) {
-                geckoView.setPredecessor(currentAlbumController);
-                int index = com.petal.browser.browser.BrowserContainer.indexOf(currentAlbumController) + 1;
-                com.petal.browser.browser.BrowserContainer.add(geckoView, index);
+            if (!activate) {
+                com.petal.browser.browser.PlaceholderAlbumController placeholder =
+                        new com.petal.browser.browser.PlaceholderAlbumController(
+                                this,
+                                getString(R.string.app_name),
+                                popupUrl,
+                                null,
+                                tabId,
+                                null,
+                                null,
+                                isIncognito
+                        );
+                if (currentAlbumController != null) {
+                    int index = com.petal.browser.browser.BrowserContainer.indexOf(currentAlbumController) + 1;
+                    com.petal.browser.browser.BrowserContainer.add(placeholder, index);
+                } else {
+                    com.petal.browser.browser.BrowserContainer.add(placeholder);
+                }
             } else {
-                com.petal.browser.browser.BrowserContainer.add(geckoView);
-            }
+                if (currentAlbumController != null && currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                    com.petal.browser.browser.PetalTabViewController outgoing =
+                            (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
+                    int outgoingSlot = BrowserContainer.indexOf(outgoing);
+                    if (outgoingSlot >= 0) {
+                        com.petal.browser.browser.PlaceholderAlbumController placeholder =
+                                new com.petal.browser.browser.PlaceholderAlbumController(
+                                        this,
+                                        outgoing.getTitle(),
+                                        outgoing.getUrl(),
+                                        outgoing.getFavicon(),
+                                        outgoing.getTabId(),
+                                        outgoing.getTabGroupId(),
+                                        outgoing.getTabGroupTitle(),
+                                        outgoing.isIncognito()
+                                );
+                        BrowserContainer.replace(outgoingSlot, placeholder);
+                    }
+                    outgoing.deactivate();
+                    outgoing.release();
+                }
 
-            geckoView.setBrowserController(this);
-            if (activate) {
+                com.petal.browser.browser.PetalTabViewController tabSurface = getOrCreateTabViewController();
+                tabSurface.bindTab(popupTab);
+                if (currentAlbumController != null) {
+                    tabSurface.setPredecessor(currentAlbumController);
+                    int index = com.petal.browser.browser.BrowserContainer.indexOf(currentAlbumController) + 1;
+                    com.petal.browser.browser.BrowserContainer.add(tabSurface, index);
+                } else {
+                    com.petal.browser.browser.BrowserContainer.add(tabSurface);
+                }
+                tabSurface.markAdoptedNavigation(popupUrl);
                 hideOverview();
-                geckoView.activate();
+                tabSurface.activate();
                 if (dialogOverview != null) dialogOverview.cancel();
-                showAlbum(geckoView);
-            } else {
-                geckoView.deactivate();
+                showAlbum(tabSurface);
             }
-
-            try {
-                com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
-                    this,
-                    geckoView.getTabId(),
-                    popupUrl,
-                    getString(R.string.app_name),
-                    isIncognito,
-                    activate
-                );
-            } catch (Throwable ignored) {}
 
             updateOmniBox();
             updatePersistentBottomNav();

@@ -69,31 +69,8 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
                 val act = findBrowserActivity() ?: return@post
                 val title = extension.getMetadata()?.name ?: act.getString(com.petal.browser.R.string.app_name)
                 val targetUrl = url.ifBlank { "about:blank" }
-                val tabId = "tab_ext_${System.currentTimeMillis()}_${Math.abs(targetUrl.hashCode())}"
-
-                com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
-                    context = act,
-                    tabId = tabId,
-                    url = targetUrl,
-                    title = title,
-                    isIncognito = isPrivate,
-                    select = active
-                )
-
-                val geckoView = com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
-                    activity = act,
-                    title = title,
-                    url = targetUrl,
-                    foreground = active,
-                    isIncognito = isPrivate,
-                    adoptedSession = null,
-                    engineSession = engineSession
-                )
-                geckoView.setTabId(tabId)
-                geckoView.setBrowserController(act)
-                BrowserContainer.add(geckoView)
-                if (active) {
-                    act.showAlbum(geckoView)
+                act.runOnUiThread {
+                    act.addAlbum(title, targetUrl, active, isPrivate)
                 }
             } catch (t: Throwable) {
                 Log.e(TAG, "Failed to handle onNewTab from extension ${extension.id}: ${t.message}", t)

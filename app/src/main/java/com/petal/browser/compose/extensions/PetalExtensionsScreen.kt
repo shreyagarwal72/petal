@@ -1816,6 +1816,9 @@ fun PetalExtensionPopupScreen(
                 AndroidView(
                     factory = { ctx ->
                         GeckoView(ctx).apply {
+                            try {
+                                com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(this, ctx)
+                            } catch (_: Throwable) {}
                             layoutParams = ViewGroup.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT

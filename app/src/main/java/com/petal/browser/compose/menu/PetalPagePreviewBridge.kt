@@ -51,7 +51,8 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.PetalAndroidUtils
-import com.petal.browser.view.PetalGeckoView
+import com.petal.browser.browser.PetalTabViewController
+import com.petal.browser.engine.gecko.PetalEngineStore
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -119,15 +120,26 @@ private fun PetalPagePreviewSheet(
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
 
-    // Bare PetalGeckoView, not routed through BrowserWebViewController - never
-    // added to BrowserContainer, never made the activity's currentAlbumController,
-    // so it never becomes a real tab. destroy() in the DisposableEffect below
-    // tears the GeckoSession down completely when this composable leaves.
-    val previewGeckoView = remember { PetalGeckoView(context) }
+    // Standalone PetalTabViewController with isolated EngineSession — never added
+    // to BrowserContainer or tracked as a main tab. destroy() tears it down on dismiss.
+    val previewTabId = remember { "preview_${System.currentTimeMillis()}" }
+    val previewView = remember {
+        val sessionPair = PetalEngineStore.createTabSession(
+            context = context,
+            tabId = previewTabId,
+            url = url,
+            title = "Preview",
+            isIncognito = false,
+            select = false
+        )
+        PetalTabViewController(context).apply {
+            bindTab(sessionPair.first)
+        }
+    }
 
     DisposableEffect(url) {
         onDispose {
-            previewGeckoView.destroy()
+            previewView.destroy()
         }
     }
 
@@ -211,7 +223,7 @@ private fun PetalPagePreviewSheet(
             ) {
                 AndroidView(
                     factory = {
-                        previewGeckoView.apply {
+                        previewView.apply {
                             layoutParams = ViewGroup.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT
