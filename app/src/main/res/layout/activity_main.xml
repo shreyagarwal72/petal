@@ -34,6 +34,15 @@
         android:layout_alignParentTop="true"
         android:elevation="0dp" />
 
+    <!-- Desktop-style tab strip (tablets / opt-in). Positioned and sized by BrowserActivity.updateDesktopTabBar() -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/desktop_tab_bar_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:elevation="1dp"
+        android:visibility="gone" />
+
     <!-- Persistent Bottom Navigation Container with Reserved Height -->
     <RelativeLayout
         android:id="@+id/bottom_nav_container"

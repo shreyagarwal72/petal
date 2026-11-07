@@ -986,6 +986,11 @@
     <string name="ui_petal_signature_design_preset">Petal Signature Design Preset:</string>
     <string name="ui_browse">Browse</string>
     <string name="ui_layout_expressive_motion">Layout &amp; Expressive Motion</string>
+    <string name="ui_desktop_tab_bar">Desktop tab bar</string>
+    <string name="ui_desktop_tab_bar_subtitle">Show open tabs as a strip with favicons, close buttons and a + button</string>
+    <string name="ui_desktop_tab_bar_auto">Auto</string>
+    <string name="ui_desktop_tab_bar_always">Always</string>
+    <string name="ui_desktop_tab_bar_never">Never</string>
     <string name="ui_floating_tab_bar">Floating Tab Bar</string>
     <string name="ui_show_the_bottom_bar_as">Show the bottom bar as a floating pill instead of a flat bar</string>
     <string name="ui_m3_expressive_morphing_shapes">M3 Expressive Morphing Shapes</string>

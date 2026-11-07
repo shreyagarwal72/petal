@@ -15,6 +15,7 @@
 
 package com.petal.browser.island
 
+import com.petal.browser.live.PetalLiveActionBus
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedContent
@@ -598,8 +599,11 @@ private fun SatelliteBubble(item: LiveActionItem, palette: IslandPalette, onClic
 }
 
 /** Badge notifications show the badge's own icon; level-ups and milestones keep the trophy. */
-private fun achievementIcon(item: LiveActionItem.Achievement): androidx.compose.ui.graphics.vector.ImageVector =
-    com.petal.browser.account.progress.PETAL_BADGES.firstOrNull { it.id == item.badgeId }?.icon ?: Icons.Rounded.EmojiEvents
+private fun achievementIcon(item: LiveActionItem.Achievement): androidx.compose.ui.graphics.vector.ImageVector = when (item.badgeId) {
+    "downloader", "hoarder" -> Icons.Rounded.Download
+    "first_steps", "tab_juggler", "tab_titan" -> Icons.Rounded.AutoAwesome
+    else -> Icons.Rounded.EmojiEvents
+}
 
 /* ───────────────────────────── Expanded card ───────────────────────────── */
 

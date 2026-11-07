@@ -86,8 +86,9 @@ object PetalHighRefreshRateManager {
                         val isSameResolution = (mode.physicalWidth == currentMode.physicalWidth &&
                                 mode.physicalHeight == currentMode.physicalHeight)
                         val rate = mode.refreshRate
+                        if (!isSameResolution) continue
 
-                        if (rate > maxRate || (rate == maxRate && isSameResolution)) {
+                        if (rate > maxRate) {
                             maxRate = rate
                             bestMode = mode
                         }
@@ -108,6 +109,7 @@ object PetalHighRefreshRateManager {
             }
 
             window.attributes = layoutParams
+            Log.d(TAG, "Applied: modeId=${layoutParams.preferredDisplayModeId} max=${getMaxSupportedRefreshRate(activity)}Hz current=${display.refreshRate}Hz")
 
             // Apply frame rate hint to decor view surface
             applySurfaceFrameRate(window.decorView, getMaxSupportedRefreshRate(activity))
@@ -139,29 +141,82 @@ object PetalHighRefreshRateManager {
     }
 
     /**
-     * Hints SurfaceFlinger on Android 11+ (API 30+) to pace view surface frame generation at the high rate.
+     * Hints the compositor to pace [view] at the high rate.
+     * API 35+: View.setRequestedFrameRate(). Older: Surface.setFrameRate() on any SurfaceView found in the tree
+     * (GeckoView renders into one). The old implementation reflected a non-existent View.setFrameRate and
+     * silently did nothing, which left the app at 60Hz.
      */
     @JvmStatic
     fun applySurfaceFrameRate(view: View?, targetFrameRate: Float = 120f) {
         if (view == null) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            try {
-                val rate = if (targetFrameRate >= 90f) targetFrameRate else getMaxSupportedRefreshRate(view.context)
-                if (rate >= 90f) {
-                    val method = View::class.java.getMethod("setFrameRate", Float::class.javaPrimitiveType, Int::class.javaPrimitiveType)
-                    method.invoke(view, rate, Surface.FRAME_RATE_COMPATIBILITY_DEFAULT)
+        val rate = if (targetFrameRate >= 90f) targetFrameRate else getMaxSupportedRefreshRate(view.context)
+        if (rate < 90f) return
+        try {
+            applyFrameRateRecursive(view, rate, 0)
+        } catch (e: Exception) {
+            Log.d(TAG, "Frame rate hint failed: ${e.message}")
+        }
+    }
+
+    private fun applyFrameRateRecursive(view: View, rate: Float, depth: Int) {
+        if (depth > 12) return
+        if (Build.VERSION.SDK_INT >= 35) {
+            view.requestedFrameRate = rate
+        }
+        if (view is android.view.SurfaceView && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val surface = view.holder.surface
+            if (surface != null && surface.isValid) {
+                try {
+                    surface.setFrameRate(rate, Surface.FRAME_RATE_COMPATIBILITY_DEFAULT)
+                } catch (e: Exception) {
+                    Log.d(TAG, "Surface.setFrameRate failed: ${e.message}")
                 }
-            } catch (e: Exception) {
-                Log.d(TAG, "Surface frame rate hint not supported or failed: ${e.message}")
             }
         }
+        if (view is android.view.ViewGroup) {
+            for (i in 0 until view.childCount) {
+                applyFrameRateRecursive(view.getChildAt(i), rate, depth + 1)
+            }
+        }
+    }
+
+    private var displayListener: DisplayManager.DisplayListener? = null
+
+    /**
+     * Re-applies the preferred rate whenever the display mode changes (rotation, fold, system
+     * refresh-rate switch) so a one-time onCreate call can't be silently undone.
+     */
+    @JvmStatic
+    fun registerDisplayListener(activity: Activity?) {
+        if (activity == null) return
+        unregisterDisplayListener(activity)
+        val dm = activity.getSystemService(Context.DISPLAY_SERVICE) as? DisplayManager ?: return
+        val listener = object : DisplayManager.DisplayListener {
+            override fun onDisplayAdded(displayId: Int) {}
+            override fun onDisplayRemoved(displayId: Int) {}
+            override fun onDisplayChanged(displayId: Int) {
+                applyHighRefreshRate(activity)
+            }
+        }
+        displayListener = listener
+        dm.registerDisplayListener(listener, android.os.Handler(android.os.Looper.getMainLooper()))
+    }
+
+    @JvmStatic
+    fun unregisterDisplayListener(activity: Activity?) {
+        val listener = displayListener ?: return
+        val dm = activity?.getSystemService(Context.DISPLAY_SERVICE) as? DisplayManager
+        dm?.unregisterDisplayListener(listener)
+        displayListener = null
     }
 
     private fun setRefreshRateBounds(layoutParams: WindowManager.LayoutParams, rate: Float) {
         try {
             val minField = WindowManager.LayoutParams::class.java.getField("preferredMinDisplayRefreshRate")
             val maxField = WindowManager.LayoutParams::class.java.getField("preferredMaxDisplayRefreshRate")
-            minField.setFloat(layoutParams, rate)
+            // Floor at 60Hz (or 0 on reset) so the system may still drop for battery / static content;
+            // pinning min == max forced a single mode and was ignored by many OEM governors.
+            minField.setFloat(layoutParams, if (rate > 0f) 60f else 0f)
             maxField.setFloat(layoutParams, rate)
         } catch (ignored: Exception) {
             try {
@@ -174,7 +229,7 @@ object PetalHighRefreshRateManager {
     private fun getDisplay(context: Context): Display? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             try {
-                context.display
+                context.display ?: (context.getSystemService(Context.DISPLAY_SERVICE) as? DisplayManager)?.getDisplay(Display.DEFAULT_DISPLAY)
             } catch (e: Exception) {
                 val dm = context.getSystemService(Context.DISPLAY_SERVICE) as? DisplayManager
                 dm?.getDisplay(Display.DEFAULT_DISPLAY)

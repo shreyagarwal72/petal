@@ -1337,6 +1337,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(this);
         if (browserBackCallback != null) browserBackCallback.setEnabled(true);
         super.onResume();
+        com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this);
+        com.petal.browser.unit.PetalHighRefreshRateManager.registerDisplayListener(this);
         predictiveBackStartedOnOverlay = false;
         resetRefreshState();
         applyImmersiveFullScreenMode();
@@ -3149,6 +3151,84 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    private android.content.SharedPreferences.OnSharedPreferenceChangeListener desktopTabBarPrefListener;
+
+    /**
+     * Shows / hides / positions the desktop tab strip and returns the height (px) it reserves above the page.
+     * Top address bar: the strip sits directly below it. Bottom address bar: under the status bar.
+     */
+    private int updateDesktopTabBar(boolean isBottom, boolean isNonWebSurface, int statusBarGap) {
+        View strip = findViewById(R.id.desktop_tab_bar_compose);
+        if (strip == null) return 0;
+        if (!(strip instanceof androidx.compose.ui.platform.ComposeView)) return 0;
+        if (desktopTabBarPrefListener == null && sp != null) {
+            desktopTabBarPrefListener = (prefs, key) -> {
+                if (com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.PREF_KEY.equals(key)) {
+                    runOnUiThread(this::applyAddressBarPosition);
+                }
+            };
+            sp.registerOnSharedPreferenceChangeListener(desktopTabBarPrefListener);
+        }
+        boolean show = !isNonWebSurface
+                && com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.shouldShow(this);
+        if (!show) {
+            strip.setVisibility(GONE);
+            strip.setTranslationY(0f);
+            return 0;
+        }
+        com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.bind(
+                (androidx.compose.ui.platform.ComposeView) strip, this,
+                new com.petal.browser.compose.tabs.PetalDesktopTabBarHandler() {
+                    @Override
+                    public void onTabSelect(AlbumController controller) {
+                        selectTab(controller);
+                    }
+
+                    @Override
+                    public void onTabClose(AlbumController controller) {
+                        closeTab(controller);
+                    }
+
+                    @Override
+                    public void onNewTab(boolean incognito) {
+                        boolean keepIncognito = currentAlbumController != null
+                                ? currentAlbumController.isIncognito()
+                                : (activeGeckoView != null && activeGeckoView.isIncognito());
+                        addAlbum(getString(R.string.app_name), "about:blank", true, keepIncognito);
+                    }
+
+                    @Override
+                    public AlbumController currentController() {
+                        return currentAlbumController;
+                    }
+                });
+        if (strip.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+            RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) strip.getLayoutParams();
+            lp.removeRule(RelativeLayout.BELOW);
+            lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+            if (isBottom) {
+                lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                lp.topMargin = statusBarGap;
+                strip.setTranslationY(0f);
+            } else {
+                lp.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                lp.topMargin = 0;
+            }
+            strip.setLayoutParams(lp);
+        }
+        strip.setVisibility(VISIBLE);
+        int h = com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.barHeightPx(this);
+        return h;
+    }
+
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Rotation / fold / split-screen resize can cross the tablet threshold: re-evaluate the strip.
+        View root = findViewById(R.id.main);
+        if (root != null) root.post(this::applyAddressBarPosition);
+    }
+
     public void applyAddressBarPosition() {
         android.os.Trace.beginSection("BrowserActivity:applyAddressBarPosition");
         try {
@@ -3324,7 +3404,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     legacyUnder && liquidGlassTopOn,
                     (legacyUnder && liquidGlassOn) || isFloatingNav,
                     isPillCollapse, pillHeightPx, navigationBarBottomInset, isImmersive);
-            int topInset = insets.getTop();
+            final int desktopStripH = updateDesktopTabBar(isBottom, isNonWebSurface, resolvedStatusBarGap);
+            int topInset = insets.getTop() + desktopStripH;
             int bottomInset = insets.getBottom();
             mainContent.setPadding(0, topInset, 0, bottomInset);
             layoutFindInPageBar(isBottom, bottomNavHeight, isNonWebSurface);
@@ -3334,7 +3415,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // Remember where the page area sits with the bars shown and with them minimized.
             barsShownTop = topInset;
             barsShownBottom = bottomInset;
-            barsHiddenTop = insets.getHiddenTop();
+            barsHiddenTop = insets.getHiddenTop() + (isBottom ? desktopStripH : 0);
             barsHiddenBottom = insets.getHiddenBottom();
             barInsetsKnown = true;
 
@@ -4723,6 +4804,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             setBarTranslationNow(addressBar, addrOff);
             if (navTarget != null) setBarTranslationNow(navTarget, navOff);
             for (View v : docked) if (v != null) setBarTranslationNow(v, dockedOff);
+        }
+
+        View desktopStrip = findViewById(R.id.desktop_tab_bar_compose);
+        if (desktopStrip != null && desktopStrip.getVisibility() == VISIBLE && !isBottom) {
+            if (animate) springTranslateY(desktopStrip, addrOff, 550f, 0.88f);
+            else setBarTranslationNow(desktopStrip, addrOff);
         }
 
         if (adjustContent && mainContent != null && barInsetsKnown) {
@@ -7661,6 +7748,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
+            com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this);
             applyImmersiveFullScreenMode();
             if (!isAppLockLocked && pendingWidgetAction != null && contentFrame != null) {
                 contentFrame.post(this::consumePendingWidgetAction);
@@ -8312,6 +8400,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(null);
         }
         super.onPause();
+        com.petal.browser.unit.PetalHighRefreshRateManager.unregisterDisplayListener(this);
         try {
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.view.PetalGeckoView activeGecko = (com.petal.browser.view.PetalGeckoView) currentAlbumController;

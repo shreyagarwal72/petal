@@ -1403,6 +1403,7 @@ fun AppearanceSettingsScreenContent(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                         onCheckedChange = onFloatingTabBarChange
                     )
+                    PetalDesktopTabBarModeRow()
                     // Stride-style liquid glass on the floating bar (Android 12+). Web pages
                     // switch renderer to show through it, so it applies to tabs opened after.
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
@@ -2380,6 +2381,54 @@ private fun GSFlexVariableSlider(
             valueRange = range,
             modifier = Modifier.fillMaxWidth()
         )
+    }
+}
+
+/**
+ * Auto / Always / Never choice for the desktop-style tab strip. Auto shows it on tablets and wide
+ * landscape windows (>= 600dp), Always forces it on phones too, Never hides it.
+ */
+@androidx.compose.runtime.Composable
+private fun PetalDesktopTabBarModeRow() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var mode by androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf(
+            com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.getMode(context)
+        )
+    }
+    androidx.compose.foundation.layout.Column(
+        modifier = androidx.compose.ui.Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        androidx.compose.material3.Text(
+            text = stringResource(R.string.ui_desktop_tab_bar),
+            style = androidx.compose.material3.MaterialTheme.typography.titleMedium
+        )
+        androidx.compose.material3.Text(
+            text = stringResource(R.string.ui_desktop_tab_bar_subtitle),
+            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        androidx.compose.foundation.layout.Row(
+            modifier = androidx.compose.ui.Modifier.padding(top = 8.dp),
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+        ) {
+            listOf(
+                com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.MODE_AUTO to R.string.ui_desktop_tab_bar_auto,
+                com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.MODE_ALWAYS to R.string.ui_desktop_tab_bar_always,
+                com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.MODE_NEVER to R.string.ui_desktop_tab_bar_never
+            ).forEach { (value, label) ->
+                androidx.compose.material3.FilterChip(
+                    selected = mode == value,
+                    onClick = {
+                        mode = value
+                        com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.setMode(context, value)
+                    },
+                    label = { androidx.compose.material3.Text(stringResource(label)) }
+                )
+            }
+        }
     }
 }
 
