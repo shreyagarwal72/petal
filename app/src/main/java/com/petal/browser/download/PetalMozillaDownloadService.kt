@@ -84,4 +84,26 @@ class PetalMozillaDownloadService : AbstractFetchDownloadService() {
     override val downloadFileUtils = DefaultDownloadFileUtils(this)
 
     override val downloadFileWriter = DefaultDownloadFileWriter(this, downloadFileUtils)
+
+    override fun onTimeout(startId: Int) {
+        android.util.Log.w("PetalMozillaDownload", "Service timed out by system (dataSync limit reached). Pausing active downloads.")
+        try {
+            val active = store.state.downloads.values.filter {
+                it.status == mozilla.components.browser.state.state.content.DownloadState.Status.DOWNLOADING
+            }
+            active.forEach { dl ->
+                val intent = android.content.Intent(ACTION_PAUSE).apply {
+                    setPackage(packageName)
+                    putExtra(mozilla.components.feature.downloads.INTENT_EXTRA_DOWNLOAD_ID, dl.id)
+                }
+                sendBroadcast(intent)
+            }
+        } catch (_: Throwable) {}
+        super.onTimeout(startId)
+    }
+
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        android.util.Log.w("PetalMozillaDownload", "Service timed out for fgsType $fgsType (startId $startId). Pausing active downloads.")
+        onTimeout(startId)
+    }
 }

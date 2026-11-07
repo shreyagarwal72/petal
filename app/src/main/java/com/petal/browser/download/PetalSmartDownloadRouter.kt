@@ -34,6 +34,24 @@ object PetalSmartDownloadRouter {
     private val PACKAGE_EXTENSIONS = setOf("apk", "xapk", "apks", "zip", "tar", "gz", "7z", "rar", "xpi")
 
     @JvmStatic
+    fun getCategory(fileName: String, mimeType: String?): Category {
+        val ext = fileName.substringAfterLast('.', "").lowercase(Locale.ROOT)
+        return when {
+            IMAGE_EXTENSIONS.contains(ext) || mimeType?.startsWith("image/") == true -> Category.IMAGES
+            VIDEO_EXTENSIONS.contains(ext) || mimeType?.startsWith("video/") == true -> Category.VIDEO
+            AUDIO_EXTENSIONS.contains(ext) || mimeType?.startsWith("audio/") == true -> Category.AUDIO
+            DOCUMENT_EXTENSIONS.contains(ext) || mimeType?.contains("pdf") == true || mimeType?.contains("document") == true -> Category.DOCUMENTS
+            PACKAGE_EXTENSIONS.contains(ext) || mimeType?.contains("android.package-archive") == true -> Category.PACKAGES
+            else -> Category.GENERAL
+        }
+    }
+
+    @JvmStatic
+    fun getRelativePath(fileName: String, mimeType: String?): String {
+        return "Download/${getCategory(fileName, mimeType).subfolder}/"
+    }
+
+    @JvmStatic
     fun resolveDestinationDirectory(context: Context, fileName: String, mimeType: String?): File {
         val baseDownloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         // On Android 10+ (API 29+), Scoped Storage requires writing through MediaStore.Downloads.
@@ -52,16 +70,7 @@ object PetalSmartDownloadRouter {
             return baseDownloads
         }
 
-        val ext = fileName.substringAfterLast('.', "").lowercase(Locale.ROOT)
-        val category = when {
-            IMAGE_EXTENSIONS.contains(ext) || mimeType?.startsWith("image/") == true -> Category.IMAGES
-            VIDEO_EXTENSIONS.contains(ext) || mimeType?.startsWith("video/") == true -> Category.VIDEO
-            AUDIO_EXTENSIONS.contains(ext) || mimeType?.startsWith("audio/") == true -> Category.AUDIO
-            DOCUMENT_EXTENSIONS.contains(ext) || mimeType?.contains("pdf") == true || mimeType?.contains("document") == true -> Category.DOCUMENTS
-            PACKAGE_EXTENSIONS.contains(ext) || mimeType?.contains("android.package-archive") == true -> Category.PACKAGES
-            else -> Category.GENERAL
-        }
-
+        val category = getCategory(fileName, mimeType)
         val targetDir = File(baseDownloads, category.subfolder)
         if (!targetDir.exists()) {
             if (!targetDir.mkdirs()) {

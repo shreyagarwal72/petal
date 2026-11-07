@@ -260,6 +260,12 @@ object PetalFetchDownloadBridge {
             ).ifBlank { "download" }
             val downloadsDir = com.petal.browser.download.PetalSmartDownloadRouter
                 .resolveDestinationDirectory(appContext, safeName, mimeType)
+            // Pre-flight storage check: ensure device has sufficient free space
+            val freeSpace = downloadsDir.usableSpace
+            if (freeSpace < 20L * 1024 * 1024) { // Minimum safety threshold: 20MB
+                android.util.Log.e("PetalDownloadBridge", "Insufficient storage space ($freeSpace bytes free) to start download")
+                return false
+            }
             com.petal.browser.download.PetalDownloadHeaderRegistry.put(
                 url = url,
                 headers = extraHeaders,

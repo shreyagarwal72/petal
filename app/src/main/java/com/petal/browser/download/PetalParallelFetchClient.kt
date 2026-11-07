@@ -172,12 +172,17 @@ class PetalParallelFetchClient(
         private val OPEN_RANGE = Regex("""bytes=(\d+)-""", RegexOption.IGNORE_CASE)
         internal val CONTENT_RANGE = Regex("""bytes\s+(\d+)-(\d+)/(\d+|\*)""", RegexOption.IGNORE_CASE)
 
-        internal fun rangeHeadersFor(request: Request, from: Long, to: Long): MutableHeaders {
+        internal fun rangeHeadersFor(request: Request, from: Long, to: Long, etag: String? = null): MutableHeaders {
             val h = MutableHeaders()
             request.headers?.forEach { header ->
-                if (!header.name.equals("Range", ignoreCase = true)) h.append(header.name, header.value)
+                if (!header.name.equals("Range", ignoreCase = true) && !header.name.equals("If-Range", ignoreCase = true)) {
+                    h.append(header.name, header.value)
+                }
             }
             h.append("Range", "bytes=$from-$to")
+            if (!etag.isNullOrBlank()) {
+                h.append("If-Range", etag.trim())
+            }
             return h
         }
 
@@ -445,7 +450,7 @@ internal class PetalParallelRangeStream(
                 if (response == null) {
                     val url = if (failures >= 2) request.url else finalUrl
                     response = client.fetch(
-                        request.copy(url = url, headers = PetalParallelFetchClient.rangeHeadersFor(request, pos, to))
+                        request.copy(url = url, headers = PetalParallelFetchClient.rangeHeadersFor(request, pos, to, etag))
                     )
                 }
                 val status = response.status
