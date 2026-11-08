@@ -2392,6 +2392,15 @@ private class ExternalSchemeNavigationDelegate(
         uri: String
     ): org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.GeckoSession>? {
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onNewSession uri=$uri")
+        try {
+            val engineResult = engine.onNewSession(session, uri)
+            if (engineResult != null) {
+                return engineResult
+            }
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabNav", "engine.onNewSession threw or not handled: ${t.message}")
+        }
+
         val act = resolveActivity() as? com.petal.browser.activity.BrowserActivity
         if (act == null || act.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && act.isDestroyed)) {
             return try {
