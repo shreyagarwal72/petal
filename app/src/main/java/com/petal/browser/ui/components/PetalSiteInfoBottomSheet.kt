@@ -96,7 +96,7 @@ fun PetalSiteInfoBottomSheet(
             if (domain.isNotEmpty() && sp.contains("sp_desktop_site_$domain")) {
                 sp.getBoolean("sp_desktop_site_$domain", false)
             } else {
-                sp.getBoolean("${profile}_desktop", false)
+                sp.getBoolean("sp_desktop_site", false)
             }
         )
     }

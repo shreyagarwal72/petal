@@ -194,7 +194,7 @@ class PetalTabViewController private constructor(
                 val desktopEnabled = if (!host.isNullOrBlank() && preferences.contains("sp_desktop_site_$host")) {
                     preferences.getBoolean("sp_desktop_site_$host", false)
                 } else {
-                    preferences.getBoolean("${profile}_desktop", preferences.getBoolean("sp_desktop_site", false))
+                    preferences.getBoolean("sp_desktop_site", false)
                 }
                 observedSession?.toggleDesktopMode(desktopEnabled, reload = false)
             }
@@ -1236,7 +1236,7 @@ class PetalTabViewController private constructor(
         val desktopEnabled = if (!host.isNullOrBlank() && preferences.contains("sp_desktop_site_$host")) {
             preferences.getBoolean("sp_desktop_site_$host", false)
         } else {
-            preferences.getBoolean("${profile}_desktop", preferences.getBoolean("sp_desktop_site", false))
+            preferences.getBoolean("sp_desktop_site", false)
         }
         session.toggleDesktopMode(desktopEnabled, reload = false)
 
@@ -1854,7 +1854,7 @@ class PetalTabViewController private constructor(
                 gs.settings.userAgentOverride = customUserAgent
             } else {
                 gs.settings.userAgentOverride = null
-                val desktopEnabled = preferences.getBoolean("sp_desktop_site", preferences.getBoolean("sp_desktop", false))
+                val desktopEnabled = preferences.getBoolean("sp_desktop_site", false)
                 gs.settings.userAgentMode = if (desktopEnabled) {
                     org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
                 } else {
@@ -2447,11 +2447,7 @@ private class ExternalSchemeNavigationDelegate(
 
         val isPrivate = isIncognitoSupplier()
         val popupSession = org.mozilla.geckoview.GeckoSession(
-            org.mozilla.geckoview.GeckoSessionSettings.Builder()
-                .usePrivateMode(isPrivate)
-                .allowJavascript(androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).let { it.getBoolean("sp_javascript", it.getBoolean("profileStandard_javascript", true)) })
-                .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
-                .build()
+            com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(context, isPrivate)
         )
         val result = org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.GeckoSession>()
         result.complete(popupSession)

@@ -721,11 +721,7 @@ object PetalExtensionManager {
                 act.runOnUiThread {
                     try {
                         val newSession = GeckoSession(
-                            org.mozilla.geckoview.GeckoSessionSettings.Builder()
-                                .usePrivateMode(isPrivate)
-                                .allowJavascript(true)
-                                .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
-                                .build()
+                            com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(context, isPrivate)
                         )
                         // Attach SessionTabDelegate immediately so browser.tabs.query()/update()/remove()
                         // work correctly as soon as Gecko registers this session as a tab.
@@ -964,11 +960,9 @@ object PetalExtensionManager {
         val ctx = appContext ?: return null
         val isPrivateTab = sourceSession?.settings?.usePrivateMode
             ?: (currentBrowserSession(ctx)?.settings?.usePrivateMode ?: false)
-        val popupSettings = org.mozilla.geckoview.GeckoSessionSettings.Builder()
-            .usePrivateMode(isPrivateTab && extension.metaData.allowedInPrivateBrowsing)
-            .allowJavascript(true)
-            .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
-            .build()
+        val popupSettings = com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(
+            ctx, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
+        )
         val popupSession = GeckoSession(popupSettings)
 
         // Firefox Android installs a prompt delegate on extension popup sessions.
@@ -1163,11 +1157,9 @@ object PetalExtensionManager {
             } catch (ignored: Exception) {}
         }
         val isPrivateTab = currentBrowserSession(context)?.settings?.usePrivateMode ?: false
-        val popupSettings = org.mozilla.geckoview.GeckoSessionSettings.Builder()
-            .usePrivateMode(isPrivateTab && extension.metaData.allowedInPrivateBrowsing)
-            .allowJavascript(true)
-            .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
-            .build()
+        val popupSettings = com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(
+            ctx, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
+        )
         val popupSession = GeckoSession(popupSettings)
         popupSession.promptDelegate = object : GeckoSession.PromptDelegate {
             override fun onAlertPrompt(

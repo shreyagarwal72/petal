@@ -47,6 +47,53 @@ import java.util.UUID
 object PetalEngineBridge {
     private const val TAG = "PetalEngineBridge"
 
+    /** Canonical desktop site preference key. */
+    const val PREF_DESKTOP_SITE = "sp_desktop_site"
+
+    /** One-time migration from legacy sp_desktop and ${profile}_desktop to sp_desktop_site. */
+    @JvmStatic
+    fun migrateDesktopKeys(sp: SharedPreferences) {
+        if (!sp.contains(PREF_DESKTOP_SITE)) {
+            val legacy = sp.getBoolean("sp_desktop",
+                sp.getBoolean("profileStandard_desktop",
+                    sp.getBoolean("profileIncognito_desktop", false)))
+            sp.edit().putBoolean(PREF_DESKTOP_SITE, legacy).apply()
+        }
+    }
+
+    /**
+     * Unified GeckoSessionSettings builder for popup, extension-popup, and PWA sessions.
+     * Prevents divergence across session types.
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun createSessionSettings(
+        context: Context,
+        isPrivate: Boolean,
+        isExtensionPopup: Boolean = false,
+        overrideDesktop: Boolean? = null
+    ): org.mozilla.geckoview.GeckoSessionSettings {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        migrateDesktopKeys(sp)
+        val jsAllowed = if (isExtensionPopup) {
+            true
+        } else {
+            sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
+        }
+        val desktopEnabled = overrideDesktop ?: sp.getBoolean(PREF_DESKTOP_SITE, false)
+        val agentMode = if (desktopEnabled) {
+            org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
+        } else {
+            org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_MOBILE
+        }
+        return org.mozilla.geckoview.GeckoSessionSettings.Builder()
+            .usePrivateMode(isPrivate)
+            .allowJavascript(jsAllowed)
+            .userAgentMode(agentMode)
+            .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
+            .build()
+    }
+
     @Volatile
     private var globalBrowserControllerRef: WeakReference<BrowserController>? = null
 

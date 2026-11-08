@@ -1060,6 +1060,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             this, android.R.attr.colorBackground, android.graphics.Color.BLACK)));
         } catch (Throwable ignored) {}
         contentFrame = findViewById(R.id.main_content);
+        if (sp != null) {
+            com.petal.browser.engine.gecko.PetalEngineBridge.migrateDesktopKeys(sp);
+        }
         if (splashHandsOffToComposeSplash) {
             com.petal.browser.compose.splash.PetalSplashOverlay.show(this, this::onAppLaunchSplashFinished);
         }
@@ -6726,17 +6729,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             CheckBox checkbox_desktop = dialogViewFastToggle.findViewById(R.id.checkbox_desktop);
-            checkbox_desktop.setChecked(sp.getBoolean(profile + "_desktop", false));
+            checkbox_desktop.setChecked(sp.getBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.PREF_DESKTOP_SITE, false));
             checkbox_desktop.setOnClickListener(v -> {
-                if (listStandard.isWhite(url)){
-                    sp.edit().putBoolean(profile + "_desktop", checkbox_desktop.isChecked()).apply();
-                }  else if (com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this).equals("profileStandard")) {
-                    if (singleTabViewController != null) singleTabViewController.setProfileChanged();
-                    setProfileIcon(buttonProfile, url);
-                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_desktop", checkbox_desktop.isChecked()).apply();
-                } else {
-                    sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(this) + "_desktop", checkbox_desktop.isChecked()).apply();
-                }
+                sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalEngineBridge.PREF_DESKTOP_SITE, checkbox_desktop.isChecked()).apply();
             });
 
             CheckBox checkbox_drm = dialogViewFastToggle.findViewById(R.id.checkbox_drm);

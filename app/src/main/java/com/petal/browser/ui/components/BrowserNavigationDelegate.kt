@@ -41,7 +41,7 @@ object BrowserNavigationDelegate {
         val canGoForward = tabSurface?.canGoForward() ?: false
         val profile = com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(activity)
         val prefs = activity.sp ?: PreferenceManager.getDefaultSharedPreferences(activity)
-        val isDesktopSite = prefs.getBoolean("${profile}_desktop", false)
+        val isDesktopSite = prefs.getBoolean("sp_desktop_site", false)
         val isAdBlock = prefs.getBoolean("sp_ad_block", prefs.getBoolean("${profile}_adBlock", true))
         val isMediaActive = activity.isMediaPlaying || (activity.customView != null || activity.fullscreenHolder != null || activity.videoView != null)
 
@@ -90,6 +90,7 @@ object BrowserNavigationDelegate {
 
                 override fun onToggleDesktopSite(enabled: Boolean) {
                     prefs.edit()
+                        .putBoolean("sp_desktop_site", enabled)
                         .putBoolean("${profile}_desktop", enabled)
                         .putBoolean("profileStandard_desktop", enabled)
                         .apply()
