@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -186,12 +187,10 @@ fun PetalWorkspaceCarousel(
                         Box(
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .then(
-                                    if (isActive) {
-                                        Modifier.backgroundBadge(wsColor.copy(alpha = 0.25f))
-                                    } else {
-                                        Modifier.backgroundBadge(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
-                                    }
+                                .background(
+                                    if (isActive) wsColor.copy(alpha = 0.25f)
+                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                    CircleShape
                                 )
                                 .padding(horizontal = 5.dp, vertical = 1.dp),
                             contentAlignment = Alignment.Center
@@ -238,16 +237,5 @@ fun PetalWorkspaceCarousel(
                 )
             }
         }
-    }
-}
-
-/**
- * Modifier helper to draw a background color on a composable without adding extra layout nodes.
- */
-private fun Modifier.backgroundBadge(color: Color): Modifier = this.then(
-    Modifier.padding(0.dp)
-).let { mod ->
-    androidx.compose.ui.draw.drawBehind {
-        drawCircle(color = color)
     }
 }

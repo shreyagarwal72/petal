@@ -155,7 +155,7 @@ fun PetalPinnedTabsShelf(
                         Column(
                             modifier = Modifier
                                 .padding(horizontal = 4.dp, vertical = 6.dp),
-                            horizontalAlignment = Alignment.CenterVertically,
+                            horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
                             Box(

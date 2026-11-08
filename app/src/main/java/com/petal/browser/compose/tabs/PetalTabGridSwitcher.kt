@@ -257,6 +257,12 @@ fun PetalTabGridSwitcher(
         }
     }
 
+    // Sync tab group definitions
+    var tabGroups by remember { mutableStateOf(PetalTabGroupManager.getAllGroups(context)) }
+    fun refreshGroups() {
+        tabGroups = PetalTabGroupManager.getAllGroups(context)
+    }
+
     fun moveToGroup(tab: PetalTabItem, groupId: String?) {
         if (groupId == null) {
             tab.groupId?.let { gid ->
@@ -283,12 +289,6 @@ fun PetalTabGridSwitcher(
         if (tabs.any { it.isSelected && it.isIncognito }) TabCategory.INCOGNITO else TabCategory.REGULAR
     }
     var selectedCategory by remember { mutableStateOf(initialCategory) }
-
-    // Sync tab group definitions
-    var tabGroups by remember { mutableStateOf(PetalTabGroupManager.getAllGroups(context)) }
-    fun refreshGroups() {
-        tabGroups = PetalTabGroupManager.getAllGroups(context)
-    }
 
     LaunchedEffect(tabs) {
         val openTabIds = tabs.map { it.id }.toSet()
