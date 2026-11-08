@@ -171,19 +171,27 @@ object PetalTabSwitcherBridge {
                                         else -> false
                                     }
 
+                                    val albumHashId = album.hashCode().toString()
+                                    val persistentTabId = when (album) {
+                                        is PlaceholderAlbumController -> album.getTabId()
+                                        is com.petal.browser.browser.PetalTabViewController -> album.getTabId().ifBlank { albumHashId }
+                                        else -> albumHashId
+                                    }
+                                    val tabMeta = com.petal.browser.browser.PetalTabMetadataStore.get(context, albumHashId)
+                                        ?: com.petal.browser.browser.PetalTabMetadataStore.get(context, persistentTabId)
+
                                     com.petal.browser.compose.tabs.PetalTabItem(
-                                        id = album.hashCode().toString(),
-                                        thumbnailKey = when (album) {
-                                            is PlaceholderAlbumController -> album.getTabId()
-                                            is com.petal.browser.browser.PetalTabViewController -> album.getTabId().ifBlank { album.hashCode().toString() }
-                                            else -> album.hashCode().toString()
-                                        },
+                                        id = albumHashId,
+                                        thumbnailKey = persistentTabId,
                                         title = displayTitle,
                                         url = displayUrl,
                                         faviconBitmap = faviconBitmap,
                                         previewBitmap = previewBitmap,
                                         isIncognito = isIncognitoTab,
                                         isSelected = (album == currentAlbum),
+                                        isPinned = tabMeta?.isPinned ?: false,
+                                        isPinnedGlobal = tabMeta?.isPinnedGlobal ?: true,
+                                        workspaceId = tabMeta?.workspaceId ?: com.petal.browser.compose.tabs.PetalWorkspaceManager.DEFAULT_WORKSPACE_ID,
                                         isMuted = isMutedState,
                                         groupId = effectiveGroupId,
                                         groupTitle = effectiveGroupTitle,

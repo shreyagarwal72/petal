@@ -13,7 +13,9 @@ data class PetalTabGroup(
     val title: String,
     val colorHex: String,
     val isIncognito: Boolean = false,
-    val tabIds: List<String> = emptyList()
+    val tabIds: List<String> = emptyList(),
+    val workspaceId: String? = null,
+    val isCollapsed: Boolean = false
 ) {
     fun parseColor(): Color {
         return try {
@@ -205,6 +207,33 @@ object PetalTabGroupManager {
         init(context)
         groupsMap[group.id] = group
         persist(context)
+    }
+
+    @Synchronized
+    fun toggleCollapse(context: Context, groupId: String): Boolean {
+        init(context)
+        val group = groupsMap[groupId] ?: return false
+        val newState = !group.isCollapsed
+        groupsMap[groupId] = group.copy(isCollapsed = newState)
+        persist(context)
+        return newState
+    }
+
+    @Synchronized
+    fun setGroupWorkspace(context: Context, groupId: String, workspaceId: String?) {
+        init(context)
+        val group = groupsMap[groupId] ?: return
+        groupsMap[groupId] = group.copy(workspaceId = workspaceId)
+        group.tabIds.forEach { tabId ->
+            com.petal.browser.browser.PetalTabMetadataStore.setWorkspace(context, tabId, workspaceId)
+        }
+        persist(context)
+    }
+
+    @Synchronized
+    fun isGroupCollapsed(context: Context, groupId: String): Boolean {
+        init(context)
+        return groupsMap[groupId]?.isCollapsed ?: false
     }
 
     @Synchronized

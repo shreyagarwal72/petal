@@ -47,6 +47,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -150,6 +151,8 @@ data class PetalTabItem(
     val isIncognito: Boolean = false,
     val isSelected: Boolean = false,
     val isPinned: Boolean = false,
+    val isPinnedGlobal: Boolean = true,
+    val workspaceId: String? = null,
     val isMuted: Boolean = false,
     val groupId: String? = null,
     val groupTitle: String? = null,
@@ -164,6 +167,14 @@ data class ClosedTabEntry(
     val originalIndex: Int = -1,
     val timestamp: Long = System.currentTimeMillis()
 )
+
+/**
+ * Item union for the tab manager grid/list, supporting collapsible folder headers and individual tab cards.
+ */
+sealed interface SwitcherGridItem {
+    data class FolderHeader(val group: PetalTabGroup, val count: Int, val isCollapsed: Boolean) : SwitcherGridItem
+    data class Tab(val item: PetalTabItem) : SwitcherGridItem
+}
 
 /**
  * Full-screen, Chrome-style tab manager with drag-to-merge Tab Groups.
@@ -205,6 +216,17 @@ fun PetalTabGridSwitcher(
         }
     }
 
+    // ── Zen Browser Workspace and Glance State ──
+    val workspaces by PetalWorkspaceManager.workspaces.collectAsState()
+    val activeWorkspaceId by PetalWorkspaceManager.activeWorkspaceId.collectAsState()
+    var editingWorkspace by remember { mutableStateOf<PetalWorkspace?>(null) }
+    var creatingWorkspace by remember { mutableStateOf(false) }
+    var glanceTab by remember { mutableStateOf<PetalTabItem?>(null) }
+
+    LaunchedEffect(Unit) {
+        PetalWorkspaceManager.init(context)
+    }
+
     // State for the "Add selected tabs to group" dialog
     var showAddToGroupDialog by remember { mutableStateOf(false) }
 
@@ -215,8 +237,35 @@ fun PetalTabGridSwitcher(
         sp.edit().putStringSet("sp_pinned_tab_ids", pinnedTabIds.toSet()).apply()
     }
     fun togglePinned(tab: PetalTabItem) {
-        if (pinnedTabIds.contains(tab.id)) pinnedTabIds.remove(tab.id) else pinnedTabIds.add(tab.id)
+        val willPin = !pinnedTabIds.contains(tab.id) && !tab.isPinned
+        if (willPin) {
+            if (!pinnedTabIds.contains(tab.id)) pinnedTabIds.add(tab.id)
+        } else {
+            pinnedTabIds.remove(tab.id)
+        }
         persistPinnedTabs()
+        com.petal.browser.browser.PetalTabMetadataStore.setPinned(context, tab.id, willPin)
+        if (tab.thumbnailKey.isNotBlank() && tab.thumbnailKey != tab.id) {
+            com.petal.browser.browser.PetalTabMetadataStore.setPinned(context, tab.thumbnailKey, willPin)
+        }
+    }
+
+    fun moveToWorkspace(tab: PetalTabItem, workspaceId: String) {
+        com.petal.browser.browser.PetalTabMetadataStore.setWorkspace(context, tab.id, workspaceId)
+        if (tab.thumbnailKey.isNotBlank() && tab.thumbnailKey != tab.id) {
+            com.petal.browser.browser.PetalTabMetadataStore.setWorkspace(context, tab.thumbnailKey, workspaceId)
+        }
+    }
+
+    fun moveToGroup(tab: PetalTabItem, groupId: String?) {
+        if (groupId == null) {
+            tab.groupId?.let { gid ->
+                PetalTabGroupManager.removeTabFromGroup(context, gid, tab.id)
+            }
+        } else {
+            PetalTabGroupManager.addTabToGroup(context, groupId, tab.id)
+        }
+        refreshGroups()
     }
     fun enterSelection(tab: PetalTabItem) {
         selectionMode = true
@@ -457,15 +506,38 @@ fun PetalTabGridSwitcher(
     val incognitoTabCount = tabs.count { it.isIncognito }
     val groupsCount = tabGroups.size
 
+    val regularTabs = remember(tabs, pendingRemovalIds) {
+        tabs.filter { !it.isIncognito && it.id !in pendingRemovalIds }
+    }
+    val tabCountsByWorkspace = remember(regularTabs, workspaces) {
+        workspaces.associate { ws ->
+            ws.id to regularTabs.count { tab ->
+                (tab.workspaceId == ws.id) || (tab.workspaceId == null && ws.isDefault)
+            }
+        }
+    }
+    val currentPinnedTabs = remember(regularTabs, pinnedTabIds, activeWorkspaceId) {
+        regularTabs.filter { tab ->
+            (pinnedTabIds.contains(tab.id) || tab.isPinned) &&
+            (tab.isPinnedGlobal || tab.workspaceId == activeWorkspaceId || (tab.workspaceId == null && activeWorkspaceId == PetalWorkspaceManager.DEFAULT_WORKSPACE_ID))
+        }
+    }
+
     // Category tabs & filtering
     val categoryTabs = when (selectedCategory) {
-        TabCategory.REGULAR -> tabs.filter { !it.isIncognito }
+        TabCategory.REGULAR -> {
+            regularTabs.filter { tab ->
+                (tab.workspaceId == activeWorkspaceId) ||
+                (tab.workspaceId == null && activeWorkspaceId == PetalWorkspaceManager.DEFAULT_WORKSPACE_ID) ||
+                (tab.isPinned && tab.isPinnedGlobal)
+            }
+        }
         TabCategory.INCOGNITO -> tabs.filter { it.isIncognito }
-        TabCategory.GROUPS -> tabs.filter { !it.isIncognito }
+        TabCategory.GROUPS -> regularTabs
     }
     val visibleTabs = categoryTabs.filter { it.id !in pendingRemovalIds }
     val filteredTabs = visibleTabs
-        .sortedWith(compareByDescending { pinnedTabIds.contains(it.id) })
+        .sortedWith(compareByDescending { pinnedTabIds.contains(it.id) || it.isPinned })
         .filter { tab ->
             searchQuery.isBlank() ||
                 tab.title.contains(searchQuery, ignoreCase = true) ||
@@ -795,6 +867,25 @@ fun PetalTabGridSwitcher(
                         }
                     )
 
+                    // ── Zen Browser Workspace Carousel (Regular Tabs) ──
+                    if (selectedCategory == TabCategory.REGULAR) {
+                        Spacer(Modifier.height(8.dp))
+                        PetalWorkspaceCarousel(
+                            workspaces = workspaces,
+                            activeWorkspaceId = activeWorkspaceId,
+                            tabCountsByWorkspace = tabCountsByWorkspace,
+                            onSelectWorkspace = { wsId ->
+                                PetalWorkspaceManager.setActiveWorkspace(context, wsId)
+                            },
+                            onEditWorkspace = { ws ->
+                                editingWorkspace = ws
+                            },
+                            onCreateWorkspace = {
+                                creatingWorkspace = true
+                            }
+                        )
+                    }
+
                     Spacer(Modifier.height(10.dp))
 
                     // ── Real-time tab & group search ─────────────
@@ -842,6 +933,17 @@ fun PetalTabGridSwitcher(
                             .fillMaxWidth()
                             .liquidGlassChrome(shape = tabSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
                     )
+
+                    // ── Zen Essentials Pinned Tabs Shelf ──
+                    if (selectedCategory == TabCategory.REGULAR && currentPinnedTabs.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        PetalPinnedTabsShelf(
+                            pinnedTabs = currentPinnedTabs,
+                            selectedTabId = tabs.find { it.isSelected }?.id,
+                            onTabSelect = { tab -> heroSelect(tab) },
+                            onTabLongClick = { tab -> glanceTab = tab }
+                        )
+                    }
                 }
 
                 // ── Body: Grid / List / Groups / Recently Closed / Empty states ──
@@ -948,18 +1050,45 @@ fun PetalTabGridSwitcher(
                             modifier = Modifier.fillMaxSize()
                         ) { currentCategory ->
                             val currentCategoryTabs = when (currentCategory) {
-                                TabCategory.REGULAR -> tabs.filter { !it.isIncognito }
+                                TabCategory.REGULAR -> {
+                                    regularTabs.filter { tab ->
+                                        (tab.workspaceId == activeWorkspaceId) ||
+                                        (tab.workspaceId == null && activeWorkspaceId == PetalWorkspaceManager.DEFAULT_WORKSPACE_ID) ||
+                                        (tab.isPinned && tab.isPinnedGlobal)
+                                    }
+                                }
                                 TabCategory.INCOGNITO -> tabs.filter { it.isIncognito }
-                                TabCategory.GROUPS -> tabs.filter { !it.isIncognito }
+                                TabCategory.GROUPS -> regularTabs
                             }
                             val currentVisibleTabs = currentCategoryTabs.filter { it.id !in pendingRemovalIds }
                             val currentFilteredTabs = currentVisibleTabs
-                                .sortedWith(compareByDescending { pinnedTabIds.contains(it.id) })
+                                .sortedWith(compareByDescending { pinnedTabIds.contains(it.id) || it.isPinned })
                                 .filter { tab ->
                                     searchQuery.isBlank() ||
                                         tab.title.contains(searchQuery, ignoreCase = true) ||
                                         tab.url.contains(searchQuery, ignoreCase = true)
                                 }
+
+                            val currentDisplayItems = remember(currentFilteredTabs, tabGroups, currentCategory, searchQuery) {
+                                if (searchQuery.isNotBlank() || currentCategory != TabCategory.REGULAR || tabGroups.isEmpty()) {
+                                    currentFilteredTabs.map { SwitcherGridItem.Tab(it) }
+                                } else {
+                                    val groupedIds = tabGroups.flatMap { it.tabIds }.toSet()
+                                    val result = mutableListOf<SwitcherGridItem>()
+                                    for (group in tabGroups) {
+                                        val memberTabs = currentFilteredTabs.filter { it.groupId == group.id || it.id in group.tabIds }
+                                        if (memberTabs.isNotEmpty()) {
+                                            result.add(SwitcherGridItem.FolderHeader(group, memberTabs.size, group.isCollapsed))
+                                            if (!group.isCollapsed) {
+                                                memberTabs.forEach { result.add(SwitcherGridItem.Tab(it)) }
+                                            }
+                                        }
+                                    }
+                                    val standaloneTabs = currentFilteredTabs.filter { it.groupId == null && it.id !in groupedIds }
+                                    standaloneTabs.forEach { result.add(SwitcherGridItem.Tab(it)) }
+                                    result
+                                }
+                            }
 
                             when {
 
@@ -1047,133 +1176,163 @@ fun PetalTabGridSwitcher(
                                 .fillMaxSize()
                                 .scrollMotionBlur(gridState)
                         ) {
-                            items(currentFilteredTabs, key = { it.id }) { tab ->
-                                LaunchedEffect(tab.id) { onTabVisible(tab) }
-                                val isCurrentDragging = (draggingTabId == tab.id)
-                                val isTargetHovered = (hoverTargetTabId == tab.id)
-
-                                val isClosing = closingTabIds.contains(tab.id)
-                                val cardCloseScale by animateFloatAsState(
-                                    targetValue = if (isClosing) 0.65f else 1f,
-                                    animationSpec = PetalSpring.exit(),
-                                    label = "tab_close_scale"
-                                )
-                                val cardCloseAlpha by animateFloatAsState(
-                                    targetValue = if (isClosing) 0f else 1f,
-                                    animationSpec = PetalSpring.fadeOut(),
-                                    label = "tab_close_alpha"
-                                )
-
-                                val dismissState = rememberSwipeToDismissBoxState(
-                                    confirmValueChange = { dismissValue ->
-                                        if (dismissValue != SwipeToDismissBoxValue.Settled) {
-                                            com.petal.browser.motion.MotionGate.withMotion("tab_swipe_close") {
-                                                requestOptimisticClose(tab)
-                                            }
-                                            true
-                                        } else false
+                            items(
+                                items = currentDisplayItems,
+                                key = { item ->
+                                    when (item) {
+                                        is SwitcherGridItem.FolderHeader -> "folder_${item.group.id}"
+                                        is SwitcherGridItem.Tab -> "tab_${item.item.id}"
                                     }
-                                )
+                                },
+                                span = { item ->
+                                    when (item) {
+                                        is SwitcherGridItem.FolderHeader -> GridItemSpan(2)
+                                        is SwitcherGridItem.Tab -> GridItemSpan(1)
+                                    }
+                                }
+                            ) { item ->
+                                when (item) {
+                                    is SwitcherGridItem.FolderHeader -> {
+                                        PetalTabFolderHeader(
+                                            group = item.group,
+                                            isCollapsed = item.isCollapsed,
+                                            tabCount = item.count,
+                                            onToggleCollapse = {
+                                                PetalTabGroupManager.toggleCollapse(context, item.group.id)
+                                                refreshGroups()
+                                            }
+                                        )
+                                    }
+                                    is SwitcherGridItem.Tab -> {
+                                        val tab = item.item
+                                        LaunchedEffect(tab.id) { onTabVisible(tab) }
+                                        val isCurrentDragging = (draggingTabId == tab.id)
+                                        val isTargetHovered = (hoverTargetTabId == tab.id)
 
-                                Box(
-                                    modifier = Modifier
-                                        .animateItem(
-                                            fadeInSpec = PetalSpring.fadeIn(),
-                                            fadeOutSpec = PetalSpring.fadeOut(),
-                                            placementSpec = PetalSpring.listReorder()
+                                        val isClosing = closingTabIds.contains(tab.id)
+                                        val cardCloseScale by animateFloatAsState(
+                                            targetValue = if (isClosing) 0.65f else 1f,
+                                            animationSpec = PetalSpring.exit(),
+                                            label = "tab_close_scale"
                                         )
-                                        .graphicsLayer {
-                                            scaleX = cardCloseScale
-                                            scaleY = cardCloseScale
-                                            // Real tile fades in as the hero docks onto it.
-                                            alpha = cardCloseAlpha * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
-                                        }
-                                        .onGloballyPositioned { coordinates ->
-                                            tabCardBounds[tab.id] = coordinates.boundsInWindow()
-                                        }
-                                        .pointerInput(tab.id) {
-                                            detectDragGesturesAfterLongPress(
-                                                onDragStart = {
-                                                    draggingTabId = tab.id
-                                                    dragOffset = Offset.Zero
-                                                },
-                                                onDrag = { change, dragAmount ->
-                                                    change.consume()
-                                                    draggingTabId = tab.id
-                                                    dragOffset += dragAmount
-                                                    val myBounds = tabCardBounds[tab.id]
-                                                    if (myBounds != null) {
-                                                        val currentCenter = myBounds.center + dragOffset
-                                                        val hovered = tabCardBounds.entries.find { (id, bounds) ->
-                                                            id != tab.id && bounds.contains(currentCenter)
-                                                        }
-                                                        hoverTargetTabId = hovered?.key
-                                                    }
-                                                },
-                                                onDragEnd = {
-                                                    val targetId = hoverTargetTabId
-                                                    if (targetId != null) {
-                                                        val targetTab = tabs.find { it.id == targetId }
-                                                        if (targetTab != null) {
-                                                            PetalTabGroupManager.createGroupWithTabs(context, tab, targetTab)
-                                                            refreshGroups()
-                                                        }
-                                                    }
-                                                    draggingTabId = null
-                                                    hoverTargetTabId = null
-                                                    dragOffset = Offset.Zero
-                                                },
-                                                onDragCancel = {
-                                                    draggingTabId = null
-                                                    hoverTargetTabId = null
-                                                    dragOffset = Offset.Zero
-                                                }
-                                            )
-                                        }
-                                ) {
-                                    SwipeToDismissBox(
-                                        state = dismissState,
-                                        enableDismissFromStartToEnd = draggingTabId == null,
-                                        enableDismissFromEndToStart = draggingTabId == null,
-                                        backgroundContent = {
-                                            SwipeToCloseBackground(
-                                                dismissState = dismissState,
-                                                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 10.dp, bottomEnd = 24.dp, bottomStart = 10.dp)
-                                            )
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        PetalTabCard(
-                                            tab = tab,
-                                            accentColor = accentColor,
-                                            isDragging = isCurrentDragging,
-                                            dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
-                                            isHoveredForMerge = isTargetHovered,
-                                            onTabSelect = {
-                                                if (selectionMode) {
-                                                    if (selectedTabIds.contains(tab.id)) selectedTabIds.remove(tab.id) else selectedTabIds.add(tab.id)
-                                                    if (selectedTabIds.isEmpty()) selectionMode = false
-                                                } else {
-                                                    commitPendingRemovals()
-                                                    heroSelect(tab)
-                                                }
-                                            },
-                                            onTabClose = { initiateTabClose(tab) },
-                                            onLongPress = { contextMenuTabId = tab.id },
-                                            contextMenuExpanded = contextMenuTabId == tab.id,
-                                            onDismissContextMenu = { if (contextMenuTabId == tab.id) contextMenuTabId = null },
-                                            onBookmark = { onBookmarkTab(tab) },
-                                            onShare = { onShareTab(tab) },
-                                            onMute = { muted -> onMuteTab(tab, muted) },
-                                            onCreateGroup = { onCreateGroup(tab); refreshGroups() },
-                                            isPinned = pinnedTabIds.contains(tab.id),
-                                            isSelectionMode = selectionMode,
-                                            isSelectedForSelection = selectedTabIds.contains(tab.id),
-                                            onSelectForSelection = { enterSelection(tab) },
-                                            onTogglePin = { togglePinned(tab) },
-                                            onDuplicateTab = { onDuplicateTab(tab) },
-                                            onCloseOtherTabs = { onCloseOtherTabs(tab) }
+                                        val cardCloseAlpha by animateFloatAsState(
+                                            targetValue = if (isClosing) 0f else 1f,
+                                            animationSpec = PetalSpring.fadeOut(),
+                                            label = "tab_close_alpha"
                                         )
+
+                                        val dismissState = rememberSwipeToDismissBoxState(
+                                            confirmValueChange = { dismissValue ->
+                                                if (dismissValue != SwipeToDismissBoxValue.Settled) {
+                                                    com.petal.browser.motion.MotionGate.withMotion("tab_swipe_close") {
+                                                        requestOptimisticClose(tab)
+                                                    }
+                                                    true
+                                                } else false
+                                            }
+                                        )
+
+                                        Box(
+                                            modifier = Modifier
+                                                .animateItem(
+                                                    fadeInSpec = PetalSpring.fadeIn(),
+                                                    fadeOutSpec = PetalSpring.fadeOut(),
+                                                    placementSpec = PetalSpring.listReorder()
+                                                )
+                                                .graphicsLayer {
+                                                    scaleX = cardCloseScale
+                                                    scaleY = cardCloseScale
+                                                    // Real tile fades in as the hero docks onto it.
+                                                    alpha = cardCloseAlpha * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
+                                                }
+                                                .onGloballyPositioned { coordinates ->
+                                                    tabCardBounds[tab.id] = coordinates.boundsInWindow()
+                                                }
+                                                .pointerInput(tab.id) {
+                                                    detectDragGesturesAfterLongPress(
+                                                        onDragStart = {
+                                                            draggingTabId = tab.id
+                                                            dragOffset = Offset.Zero
+                                                        },
+                                                        onDrag = { change, dragAmount ->
+                                                            change.consume()
+                                                            draggingTabId = tab.id
+                                                            dragOffset += dragAmount
+                                                            val myBounds = tabCardBounds[tab.id]
+                                                            if (myBounds != null) {
+                                                                val currentCenter = myBounds.center + dragOffset
+                                                                val hovered = tabCardBounds.entries.find { (id, bounds) ->
+                                                                    id != tab.id && bounds.contains(currentCenter)
+                                                                }
+                                                                hoverTargetTabId = hovered?.key
+                                                            }
+                                                        },
+                                                        onDragEnd = {
+                                                            val targetId = hoverTargetTabId
+                                                            if (targetId != null) {
+                                                                val targetTab = tabs.find { it.id == targetId }
+                                                                if (targetTab != null) {
+                                                                    PetalTabGroupManager.createGroupWithTabs(context, tab, targetTab)
+                                                                    refreshGroups()
+                                                                }
+                                                            }
+                                                            draggingTabId = null
+                                                            hoverTargetTabId = null
+                                                            dragOffset = Offset.Zero
+                                                        },
+                                                        onDragCancel = {
+                                                            draggingTabId = null
+                                                            hoverTargetTabId = null
+                                                            dragOffset = Offset.Zero
+                                                        }
+                                                    )
+                                                }
+                                        ) {
+                                            SwipeToDismissBox(
+                                                state = dismissState,
+                                                enableDismissFromStartToEnd = draggingTabId == null,
+                                                enableDismissFromEndToStart = draggingTabId == null,
+                                                backgroundContent = {
+                                                    SwipeToCloseBackground(
+                                                        dismissState = dismissState,
+                                                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 10.dp, bottomEnd = 24.dp, bottomStart = 10.dp)
+                                                    )
+                                                },
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                PetalTabCard(
+                                                    tab = tab,
+                                                    accentColor = accentColor,
+                                                    isDragging = isCurrentDragging,
+                                                    dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
+                                                    isHoveredForMerge = isTargetHovered,
+                                                    onTabSelect = {
+                                                        if (selectionMode) {
+                                                            if (selectedTabIds.contains(tab.id)) selectedTabIds.remove(tab.id) else selectedTabIds.add(tab.id)
+                                                            if (selectedTabIds.isEmpty()) selectionMode = false
+                                                        } else {
+                                                            commitPendingRemovals()
+                                                            heroSelect(tab)
+                                                        }
+                                                    },
+                                                    onTabClose = { initiateTabClose(tab) },
+                                                    onLongPress = { glanceTab = tab },
+                                                    contextMenuExpanded = contextMenuTabId == tab.id,
+                                                    onDismissContextMenu = { if (contextMenuTabId == tab.id) contextMenuTabId = null },
+                                                    onBookmark = { onBookmarkTab(tab) },
+                                                    onShare = { onShareTab(tab) },
+                                                    onMute = { muted -> onMuteTab(tab, muted) },
+                                                    onCreateGroup = { onCreateGroup(tab); refreshGroups() },
+                                                    isPinned = pinnedTabIds.contains(tab.id),
+                                                    isSelectionMode = selectionMode,
+                                                    isSelectedForSelection = selectedTabIds.contains(tab.id),
+                                                    onSelectForSelection = { enterSelection(tab) },
+                                                    onTogglePin = { togglePinned(tab) },
+                                                    onDuplicateTab = { onDuplicateTab(tab) },
+                                                    onCloseOtherTabs = { onCloseOtherTabs(tab) }
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1188,133 +1347,157 @@ fun PetalTabGridSwitcher(
                                 .fillMaxSize()
                                 .scrollMotionBlur(listState)
                         ) {
-                            items(currentFilteredTabs, key = { it.id }) { tab ->
-                                LaunchedEffect(tab.id) { onTabVisible(tab) }
-                                val isCurrentDragging = (draggingTabId == tab.id)
-                                val isTargetHovered = (hoverTargetTabId == tab.id)
-
-                                val isClosing = closingTabIds.contains(tab.id)
-                                val cardCloseScale by animateFloatAsState(
-                                    targetValue = if (isClosing) 0.65f else 1f,
-                                    animationSpec = PetalSpring.exit(),
-                                    label = "tab_close_scale"
-                                )
-                                val cardCloseAlpha by animateFloatAsState(
-                                    targetValue = if (isClosing) 0f else 1f,
-                                    animationSpec = PetalSpring.fadeOut(),
-                                    label = "tab_close_alpha"
-                                )
-
-                                val dismissState = rememberSwipeToDismissBoxState(
-                                    confirmValueChange = { dismissValue ->
-                                        if (dismissValue != SwipeToDismissBoxValue.Settled) {
-                                            com.petal.browser.motion.MotionGate.withMotion("tab_swipe_close") {
-                                                requestOptimisticClose(tab)
-                                            }
-                                            true
-                                        } else false
+                            items(
+                                items = currentDisplayItems,
+                                key = { item ->
+                                    when (item) {
+                                        is SwitcherGridItem.FolderHeader -> "folder_${item.group.id}"
+                                        is SwitcherGridItem.Tab -> "tab_${item.item.id}"
                                     }
-                                )
+                                }
+                            ) { item ->
+                                when (item) {
+                                    is SwitcherGridItem.FolderHeader -> {
+                                        PetalTabFolderHeader(
+                                            group = item.group,
+                                            isCollapsed = item.isCollapsed,
+                                            tabCount = item.count,
+                                            onToggleCollapse = {
+                                                PetalTabGroupManager.toggleCollapse(context, item.group.id)
+                                                refreshGroups()
+                                            }
+                                        )
+                                    }
+                                    is SwitcherGridItem.Tab -> {
+                                        val tab = item.item
+                                        LaunchedEffect(tab.id) { onTabVisible(tab) }
+                                        val isCurrentDragging = (draggingTabId == tab.id)
+                                        val isTargetHovered = (hoverTargetTabId == tab.id)
 
-                                Box(
-                                    modifier = Modifier
-                                        .animateItem(
-                                            fadeInSpec = PetalSpring.fadeIn(),
-                                            fadeOutSpec = PetalSpring.fadeOut(),
-                                            placementSpec = PetalSpring.listReorder()
+                                        val isClosing = closingTabIds.contains(tab.id)
+                                        val cardCloseScale by animateFloatAsState(
+                                            targetValue = if (isClosing) 0.65f else 1f,
+                                            animationSpec = PetalSpring.exit(),
+                                            label = "tab_close_scale"
                                         )
-                                        .graphicsLayer {
-                                            scaleX = cardCloseScale
-                                            scaleY = cardCloseScale
-                                            // Real tile fades in as the hero docks onto it.
-                                            alpha = cardCloseAlpha * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
-                                        }
-                                        .onGloballyPositioned { coordinates ->
-                                            tabCardBounds[tab.id] = coordinates.boundsInWindow()
-                                        }
-                                        .pointerInput(tab.id) {
-                                            detectDragGesturesAfterLongPress(
-                                                onDragStart = {
-                                                    draggingTabId = tab.id
-                                                    dragOffset = Offset.Zero
-                                                },
-                                                onDrag = { change, dragAmount ->
-                                                    change.consume()
-                                                    draggingTabId = tab.id
-                                                    dragOffset += dragAmount
-                                                    val myBounds = tabCardBounds[tab.id]
-                                                    if (myBounds != null) {
-                                                        val currentCenter = myBounds.center + dragOffset
-                                                        val hovered = tabCardBounds.entries.find { (id, bounds) ->
-                                                            id != tab.id && bounds.contains(currentCenter)
-                                                        }
-                                                        hoverTargetTabId = hovered?.key
-                                                    }
-                                                },
-                                                onDragEnd = {
-                                                    val targetId = hoverTargetTabId
-                                                    if (targetId != null) {
-                                                        val targetTab = tabs.find { it.id == targetId }
-                                                        if (targetTab != null) {
-                                                            PetalTabGroupManager.createGroupWithTabs(context, tab, targetTab)
-                                                            refreshGroups()
-                                                        }
-                                                    }
-                                                    draggingTabId = null
-                                                    hoverTargetTabId = null
-                                                    dragOffset = Offset.Zero
-                                                },
-                                                onDragCancel = {
-                                                    draggingTabId = null
-                                                    hoverTargetTabId = null
-                                                    dragOffset = Offset.Zero
-                                                }
-                                            )
-                                        }
-                                ) {
-                                    SwipeToDismissBox(
-                                        state = dismissState,
-                                        enableDismissFromStartToEnd = draggingTabId == null,
-                                        enableDismissFromEndToStart = draggingTabId == null,
-                                        backgroundContent = {
-                                            SwipeToCloseBackground(
-                                                dismissState = dismissState,
-                                                shape = RoundedCornerShape(18.dp)
-                                            )
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        PetalTabListItem(
-                                            tab = tab,
-                                            accentColor = accentColor,
-                                            isDragging = isCurrentDragging,
-                                            dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
-                                            isHoveredForMerge = isTargetHovered,
-                                            onTabSelect = {
-                                                if (selectionMode) {
-                                                    if (selectedTabIds.contains(tab.id)) selectedTabIds.remove(tab.id) else selectedTabIds.add(tab.id)
-                                                    if (selectedTabIds.isEmpty()) selectionMode = false
-                                                } else {
-                                                    commitPendingRemovals()
-                                                    heroSelect(tab)
-                                                }
-                                            },
-                                            onTabClose = { initiateTabClose(tab) },
-                                            onLongPress = { contextMenuTabId = tab.id },
-                                            contextMenuExpanded = contextMenuTabId == tab.id,
-                                            onDismissContextMenu = { if (contextMenuTabId == tab.id) contextMenuTabId = null },
-                                            onBookmark = { onBookmarkTab(tab) },
-                                            onShare = { onShareTab(tab) },
-                                            onMute = { muted -> onMuteTab(tab, muted) },
-                                            onCreateGroup = { onCreateGroup(tab); refreshGroups() },
-                                            isPinned = pinnedTabIds.contains(tab.id),
-                                            isSelectionMode = selectionMode,
-                                            isSelectedForSelection = selectedTabIds.contains(tab.id),
-                                            onSelectForSelection = { enterSelection(tab) },
-                                            onTogglePin = { togglePinned(tab) },
-                                            onDuplicateTab = { onDuplicateTab(tab) },
-                                            onCloseOtherTabs = { onCloseOtherTabs(tab) }
+                                        val cardCloseAlpha by animateFloatAsState(
+                                            targetValue = if (isClosing) 0f else 1f,
+                                            animationSpec = PetalSpring.fadeOut(),
+                                            label = "tab_close_alpha"
                                         )
+
+                                        val dismissState = rememberSwipeToDismissBoxState(
+                                            confirmValueChange = { dismissValue ->
+                                                if (dismissValue != SwipeToDismissBoxValue.Settled) {
+                                                    com.petal.browser.motion.MotionGate.withMotion("tab_swipe_close") {
+                                                        requestOptimisticClose(tab)
+                                                    }
+                                                    true
+                                                } else false
+                                            }
+                                        )
+
+                                        Box(
+                                            modifier = Modifier
+                                                .animateItem(
+                                                    fadeInSpec = PetalSpring.fadeIn(),
+                                                    fadeOutSpec = PetalSpring.fadeOut(),
+                                                    placementSpec = PetalSpring.listReorder()
+                                                )
+                                                .graphicsLayer {
+                                                    scaleX = cardCloseScale
+                                                    scaleY = cardCloseScale
+                                                    // Real tile fades in as the hero docks onto it.
+                                                    alpha = cardCloseAlpha * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
+                                                }
+                                                .onGloballyPositioned { coordinates ->
+                                                    tabCardBounds[tab.id] = coordinates.boundsInWindow()
+                                                }
+                                                .pointerInput(tab.id) {
+                                                    detectDragGesturesAfterLongPress(
+                                                        onDragStart = {
+                                                            draggingTabId = tab.id
+                                                            dragOffset = Offset.Zero
+                                                        },
+                                                        onDrag = { change, dragAmount ->
+                                                            change.consume()
+                                                            draggingTabId = tab.id
+                                                            dragOffset += dragAmount
+                                                            val myBounds = tabCardBounds[tab.id]
+                                                            if (myBounds != null) {
+                                                                val currentCenter = myBounds.center + dragOffset
+                                                                val hovered = tabCardBounds.entries.find { (id, bounds) ->
+                                                                    id != tab.id && bounds.contains(currentCenter)
+                                                                }
+                                                                hoverTargetTabId = hovered?.key
+                                                            }
+                                                        },
+                                                        onDragEnd = {
+                                                            val targetId = hoverTargetTabId
+                                                            if (targetId != null) {
+                                                                val targetTab = tabs.find { it.id == targetId }
+                                                                if (targetTab != null) {
+                                                                    PetalTabGroupManager.createGroupWithTabs(context, tab, targetTab)
+                                                                    refreshGroups()
+                                                                }
+                                                            }
+                                                            draggingTabId = null
+                                                            hoverTargetTabId = null
+                                                            dragOffset = Offset.Zero
+                                                        },
+                                                        onDragCancel = {
+                                                            draggingTabId = null
+                                                            hoverTargetTabId = null
+                                                            dragOffset = Offset.Zero
+                                                        }
+                                                    )
+                                                }
+                                        ) {
+                                            SwipeToDismissBox(
+                                                state = dismissState,
+                                                enableDismissFromStartToEnd = draggingTabId == null,
+                                                enableDismissFromEndToStart = draggingTabId == null,
+                                                backgroundContent = {
+                                                    SwipeToCloseBackground(
+                                                        dismissState = dismissState,
+                                                        shape = RoundedCornerShape(18.dp)
+                                                    )
+                                                },
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                PetalTabListItem(
+                                                    tab = tab,
+                                                    accentColor = accentColor,
+                                                    isDragging = isCurrentDragging,
+                                                    dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
+                                                    isHoveredForMerge = isTargetHovered,
+                                                    onTabSelect = {
+                                                        if (selectionMode) {
+                                                            if (selectedTabIds.contains(tab.id)) selectedTabIds.remove(tab.id) else selectedTabIds.add(tab.id)
+                                                            if (selectedTabIds.isEmpty()) selectionMode = false
+                                                        } else {
+                                                            commitPendingRemovals()
+                                                            heroSelect(tab)
+                                                        }
+                                                    },
+                                                    onTabClose = { initiateTabClose(tab) },
+                                                    onLongPress = { glanceTab = tab },
+                                                    contextMenuExpanded = contextMenuTabId == tab.id,
+                                                    onDismissContextMenu = { if (contextMenuTabId == tab.id) contextMenuTabId = null },
+                                                    onBookmark = { onBookmarkTab(tab) },
+                                                    onShare = { onShareTab(tab) },
+                                                    onMute = { muted -> onMuteTab(tab, muted) },
+                                                    onCreateGroup = { onCreateGroup(tab); refreshGroups() },
+                                                    isPinned = pinnedTabIds.contains(tab.id),
+                                                    isSelectionMode = selectionMode,
+                                                    isSelectedForSelection = selectedTabIds.contains(tab.id),
+                                                    onSelectForSelection = { enterSelection(tab) },
+                                                    onTogglePin = { togglePinned(tab) },
+                                                    onDuplicateTab = { onDuplicateTab(tab) },
+                                                    onCloseOtherTabs = { onCloseOtherTabs(tab) }
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1680,6 +1863,67 @@ fun PetalTabGridSwitcher(
                 commitPendingRemovals()
                 onCloseAllTabs()
             },
+        )
+    }
+
+    // ── Zen Tab Glance Peek Sheet ──
+    glanceTab?.let { tab ->
+        PetalTabGlanceSheet(
+            tab = tab,
+            availableWorkspaces = workspaces,
+            availableGroups = tabGroups,
+            onDismiss = { glanceTab = null },
+            onSelectTab = { selectedTab ->
+                heroSelect(selectedTab)
+            },
+            onSplitTab = { splitTab ->
+                heroSelect(splitTab)
+            },
+            onTogglePin = { pinTab ->
+                togglePinned(pinTab)
+            },
+            onMoveToWorkspace = { moveTab, wsId ->
+                moveToWorkspace(moveTab, wsId)
+            },
+            onMoveToGroup = { moveTab, grpId ->
+                moveToGroup(moveTab, grpId)
+            },
+            onToggleMute = { muteTab ->
+                onMuteTab(muteTab, !muteTab.isMuted)
+            },
+            onDuplicateTab = { dupTab ->
+                onDuplicateTab(dupTab)
+            },
+            onCloseTab = { closeTab ->
+                initiateTabClose(closeTab)
+            }
+        )
+    }
+
+    // ── Zen Workspace Creation & Editing Sheet ──
+    if (creatingWorkspace || editingWorkspace != null) {
+        PetalWorkspaceSheet(
+            targetWorkspace = editingWorkspace,
+            onDismiss = {
+                creatingWorkspace = false
+                editingWorkspace = null
+            },
+            onSave = { name, iconName, colorHex ->
+                val ws = editingWorkspace
+                if (ws != null) {
+                    PetalWorkspaceManager.updateWorkspace(context, ws.id, name, iconName, colorHex)
+                } else {
+                    val created = PetalWorkspaceManager.createWorkspace(context, name, iconName, colorHex)
+                    PetalWorkspaceManager.setActiveWorkspace(context, created.id)
+                }
+                creatingWorkspace = false
+                editingWorkspace = null
+            },
+            onDelete = { wsToDelete ->
+                PetalWorkspaceManager.deleteWorkspace(context, wsToDelete.id)
+                creatingWorkspace = false
+                editingWorkspace = null
+            }
         )
     }
 

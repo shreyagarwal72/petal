@@ -6,8 +6,10 @@
   - **Milestone 2**: Deep Mozilla Upstream Parity & Component Integration (Phases 7-12: COMPLETE & VERIFIED)
   - **Milestone 3**: Official Firefox WebExtensions Parity (Phases 13-18: COMPLETE & VERIFIED)
   - **Milestone 4**: App-Wide Architectural Parity & Anti-Pattern Remediation (Phases 19-23: COMPLETE & VERIFIED)
-- **Active Phase**: All Phases (Phase 1 through Phase 23) Complete, Documented, and Verified
+  - **Milestone 5**: Zen Browser-Style Tab Organization (Phases 24-28: COMPLETE; Phase 29: IN PROGRESS)
+- **Active Phase**: Phase 29: End-to-End Integration, Anti-Slop Audit & CI Verification
 - **Completed Deliverables**:
+  - **Phases 24-28**: Built Zen Workspaces (`PetalWorkspaceManager`, `PetalWorkspaceCarousel`, `PetalWorkspaceSheet`), Zen Essentials (`PetalPinnedTabsShelf`), Collapsible Tab Folders (`PetalTabFolderHeader`, `PetalTabGroupManager`), and Zen Glance Peek Sheet (`PetalTabGlanceSheet`). Integrated with `PetalTabMetadataStore` and `PetalTabGridSwitcher`.
   - **Phase 1**: Verified R8 keep rules, audited reflection targets, and completed preference fingerprint keys in `PetalGeckoRuntime.kt`.
   - **Phase 2**: Fixed history wiping in `rebuildTabsFromBrowserStore` and `showAlbum`; gated Mozilla session restore (`sp_mozilla_session_restore`); connected `goBack` to `BrowserStore.canGoBack` and eliminated premature 4-second timeout drop to Home.
   - **Phase 3**: Enforced dark mode precedence; eliminated white flash on tab open/switch by styling `GeckoView` surface with `colorSurface` before first paint; added status bar `theme-color` meta tinting; debounced `capturePixels` during active scrolling (<400ms).

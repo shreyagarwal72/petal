@@ -101,3 +101,29 @@
   - [x] Remove out-of-band Java `HttpURLConnection` HEAD probes in `PetalNativeSnifferEngine.kt` that bypass Gecko's network stack and trigger anti-bot CAPTCHAs
   - [x] Wire PWA discovery directly to GeckoView's native `ContentDelegate.onWebAppManifest` instead of DOM scraping in `media_grabber`
 
+## Milestone 5: Zen Browser-Style Tab Organization
+- [x] **Phase 24: Workspaces Data Architecture & Metadata Persistence**
+  - [x] Define `PetalWorkspace` data class and presets (General, Personal, Work, Research)
+  - [x] Implement `PetalWorkspaceManager.kt` with thread-safe JSON persistence and active workspace StateFlow
+  - [x] Update `PetalTabMetadataStore.kt` with `workspaceId`, `isPinned`, `isPinnedGlobal`, and default workspace fallback
+- [x] **Phase 25: Zen Workspace Carousel & Management Sheet**
+  - [x] Build `PetalWorkspaceCarousel.kt` with segmented pills, vector icons, and Liquid Glass container
+  - [x] Build `PetalWorkspaceSheet.kt` for creating, editing, recoloring, and deleting workspaces
+  - [x] Connect active workspace switching with haptic feedback and spring transitions
+- [x] **Phase 26: Zen Essentials / Pinned Tabs Shelf**
+  - [x] Implement `PetalPinnedTabsShelf.kt` with compact icon tiles and active indicators
+  - [x] Support Global vs Workspace-specific pinned tabs
+  - [x] Add 1-tap switching and long-press pin/unpin toggles
+- [x] **Phase 27: Collapsible Tab Folders within Workspaces**
+  - [x] Upgrade `PetalTabGroupManager.kt` with `workspaceId` and `isCollapsed` state
+  - [x] Render collapsible accordion headers in `PetalTabGridSwitcher.kt` (`PetalTabFolderHeader.kt`)
+  - [x] Add folder batch actions and smooth spring expand/collapse
+- [x] **Phase 28: Zen Tab Glance / Peek Sheet**
+  - [x] Build `PetalTabGlanceSheet.kt` with live preview, metadata header, and 8-action grid
+  - [x] Wire split-view launcher, workspace transfer, group assignment, mute audio, and duplicate tab actions
+- [ ] **Phase 29: End-to-End Integration, Anti-Slop Audit & CI Verification**
+  - [x] Connect workspace filtering in `PetalTabSwitcherSheet.kt` and `PetalTabGridSwitcher.kt`
+  - [x] Verify persistence across cold restarts
+  - [ ] Verify GitHub Actions remote CI build passes
+
+
