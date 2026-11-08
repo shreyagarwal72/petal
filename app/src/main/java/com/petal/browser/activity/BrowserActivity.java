@@ -2505,7 +2505,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             if (overrideUrl != null && !overrideUrl.isEmpty() && !isHomePage(overrideUrl)) {
                 activeView.loadUrl(overrideUrl);
-            } else if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
+            } else if (activeView.needsReloadOrRecovery() && targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
                 activeView.loadUrl(targetUrl);
             } else {
                 activeView.loadUrl("about:blank");
@@ -3647,6 +3647,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
                     tabIdToRemove = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabId();
                 }
+                if (tabIdToRemove != null && !tabIdToRemove.isEmpty()) {
+                    com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, tabIdToRemove);
+                }
                 com.petal.browser.unit.TabThumbnailCache.removeAllIdentifiers(tabIdToRemove, String.valueOf(controller.hashCode()));
                 if ((predecessor != null) && (BrowserContainer.indexOf(predecessor) != -1)) {
                     //if predecessor is stored and has not been closed in the meantime
@@ -3712,6 +3715,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
                 tabIdToRemove = ((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabId();
+            }
+            if (tabIdToRemove != null && !tabIdToRemove.isEmpty()) {
+                com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, tabIdToRemove);
             }
             
             // Forgetful Browsing: If no remaining open tabs have this domain, purge its data

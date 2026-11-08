@@ -1348,7 +1348,7 @@ class PetalTabViewController private constructor(
             if (now - lastPreviewCaptureTime < 1500L) return
         }
         lastPreviewCaptureTime = now
-        capturePreviewBitmapAsync { }
+        capturePreview(force) { }
     }
 
     /**
@@ -1911,7 +1911,7 @@ class PetalTabViewController private constructor(
 
     @MainThread
     override fun deactivate() {
-        updatePreviewCache()
+        updatePreviewCache(true)
         stopThumbnails()
         active = false
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(getGeckoSession(), null)
