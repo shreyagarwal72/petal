@@ -95,23 +95,22 @@ object PetalGeckoRuntime {
         val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
         val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", true))
         val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
-        val etpStrict = sp.getBoolean("sp_etp_strict", true) || isStrictOrHardened
-        val defaultCookieBehavior = if (totalCookieProtection || blockThirdPartyCookies || adBlockEnabled || etpStrict) {
+        val etpStrict = sp.getBoolean("sp_etp_strict", false) || (privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT)
+        val defaultCookieBehavior = if (totalCookieProtection || blockThirdPartyCookies || isStrictOrHardened) {
             ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
         } else {
             ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
         }
 
         var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT
-        if (adBlockEnabled || etpStrict) {
+        if (etpStrict || privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT) {
             antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or
                     ContentBlocking.AntiTracking.ANALYTIC or ContentBlocking.AntiTracking.SOCIAL or
                     ContentBlocking.AntiTracking.CONTENT or ContentBlocking.AntiTracking.STP or
                     ContentBlocking.AntiTracking.CRYPTOMINING or ContentBlocking.AntiTracking.FINGERPRINTING
         }
-        // Match official Firefox default: STRICT when strict/ad-blocking is requested,
-        // or DEFAULT (standard tracking protection) baseline instead of NONE.
-        val etpLevel = if (etpStrict || adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.DEFAULT
+        // Match official Firefox standard: DEFAULT for standard browsing, STRICT when strictly requested.
+        val etpLevel = if (etpStrict) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.DEFAULT
 
         val privateDnsMode = sp.getString("sp_private_dns_mode", com.petal.browser.unit.PetalPrivateDnsHelper.DNS_OFF)
         val dohUri = com.petal.browser.unit.PetalPrivateDnsHelper.getDnsEndpointUrl(sp)
@@ -334,16 +333,16 @@ object PetalGeckoRuntime {
 
                 // 2. Enhanced Tracking Protection & AdBlock
                 val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
-                val etpStrict = sp.getBoolean("sp_etp_strict", true) || isStrictOrHardened
-                val etpLevel = if (etpStrict || adBlockEnabled) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.DEFAULT
+                val etpStrict = sp.getBoolean("sp_etp_strict", false) || (privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT)
+                val etpLevel = if (etpStrict) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.DEFAULT
                 rt.settings.contentBlocking.setEnhancedTrackingProtectionLevel(etpLevel)
-                rt.settings.contentBlocking.setStrictSocialTrackingProtection(adBlockEnabled || etpStrict)
+                rt.settings.contentBlocking.setStrictSocialTrackingProtection(etpStrict)
 
                 // 3. Block Third-Party / Tracking Cookies (Firefox ETP Cookie Isolation & Total Cookie Protection)
                 val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
                 val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", true))
                 val sessionPartitioning = sp.getBoolean("sp_session_partitioning", true)
-                val cookieBehavior = if (sessionPartitioning || totalCookieProtection || blockThirdPartyCookies || adBlockEnabled || etpStrict) {
+                val cookieBehavior = if (sessionPartitioning || totalCookieProtection || blockThirdPartyCookies || isStrictOrHardened) {
                     ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
                 } else {
                     ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
@@ -352,7 +351,7 @@ object PetalGeckoRuntime {
 
                 // 4. Anti-Tracking Flags (STP, Social, Cryptominers, Ads)
                 var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT
-                if (adBlockEnabled || etpStrict) {
+                if (etpStrict || privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT) {
                     antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or
                             ContentBlocking.AntiTracking.ANALYTIC or ContentBlocking.AntiTracking.SOCIAL or
                             ContentBlocking.AntiTracking.CONTENT or ContentBlocking.AntiTracking.STP or

@@ -41,11 +41,11 @@ object PetalPrivacyHardening {
 
     @JvmStatic
     fun getPrivacyProfile(sp: SharedPreferences): PrivacyProfile {
-        val str = sp.getString(PREF_PRIVACY_PROFILE, PrivacyProfile.HARDENED.name) ?: PrivacyProfile.HARDENED.name
+        val str = sp.getString(PREF_PRIVACY_PROFILE, PrivacyProfile.STANDARD.name) ?: PrivacyProfile.STANDARD.name
         return try {
             PrivacyProfile.valueOf(str.uppercase())
         } catch (_: Exception) {
-            PrivacyProfile.HARDENED
+            PrivacyProfile.STANDARD
         }
     }
 

@@ -1233,7 +1233,7 @@ class PetalTabViewController private constructor(
     fun applyTrackingProtectionMode(mode: com.petal.browser.browser.PetalAdBlockMode) {
         val policy = when (mode) {
             com.petal.browser.browser.PetalAdBlockMode.DISABLED -> EngineSession.TrackingProtectionPolicy.none()
-            com.petal.browser.browser.PetalAdBlockMode.STANDARD -> EngineSession.TrackingProtectionPolicy.strict()
+            com.petal.browser.browser.PetalAdBlockMode.STANDARD -> EngineSession.TrackingProtectionPolicy.recommended()
         }
         observedSession?.updateTrackingProtection(policy)
     }
@@ -1848,6 +1848,14 @@ class PetalTabViewController private constructor(
         if (pageUrl.isBlank() || pageUrl.equals("about:blank", ignoreCase = true) || com.petal.browser.unit.PetalBrowserUtils.isHomePage(pageUrl)) {
             return true
         }
+        if (currentScrollY <= 2) {
+            return true
+        }
+        try {
+            if (!engineView.asView().canScrollVertically(-1)) {
+                return true
+            }
+        } catch (_: Throwable) {}
         return canOverscrollTop()
     }
 
