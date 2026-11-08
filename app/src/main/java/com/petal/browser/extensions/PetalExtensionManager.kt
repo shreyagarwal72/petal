@@ -76,6 +76,16 @@ object PetalExtensionManager {
         val sourceSession: GeckoSession? = null
     )
 
+    /** State of an extension's browser or page action for the active tab (badge, icon, enabled). */
+    data class ExtensionActionState(
+        val title: String? = null,
+        val badgeText: String? = null,
+        val badgeBackgroundColor: Int? = null,
+        val badgeTextColor: Int? = null,
+        val enabled: Boolean = true,
+        val icon: Bitmap? = null
+    )
+
     data class InstalledExtension(
         val id: String,
         val name: String,
@@ -509,6 +519,38 @@ object PetalExtensionManager {
     /** All currently active/opened tab GeckoSessions registered with the extension manager. */
     private val openSessions = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<GeckoSession, Boolean>())
 
+    @Volatile
+    private var currentActiveSession: GeckoSession? = null
+
+    private val _activeTabActionStates = MutableStateFlow<Map<String, ExtensionActionState>>(emptyMap())
+    /** Reactive map of extension ID -> [ExtensionActionState] for the currently active tab session. */
+    val activeTabActionStates: StateFlow<Map<String, ExtensionActionState>> = _activeTabActionStates.asStateFlow()
+
+    private fun extractActionState(
+        action: WebExtension.Action,
+        onIconLoaded: ((Bitmap) -> Unit)? = null
+    ): ExtensionActionState {
+        val title = action.title?.takeIf { it.isNotBlank() }
+        val badgeText = action.badgeText?.takeIf { it.isNotBlank() }
+        val badgeBg = action.badgeBackgroundColor
+        val badgeFg = action.badgeTextColor
+        val enabled = action.enabled ?: true
+        if (onIconLoaded != null) {
+            try {
+                action.icon?.getBitmap(48)?.accept({ bmp ->
+                    if (bmp != null) onIconLoaded(bmp)
+                }, { /* icon optional */ })
+            } catch (ignored: Throwable) {}
+        }
+        return ExtensionActionState(
+            title = title,
+            badgeText = badgeText,
+            badgeBackgroundColor = badgeBg,
+            badgeTextColor = badgeFg,
+            enabled = enabled
+        )
+    }
+
     private fun rememberAction(extension: WebExtension, session: GeckoSession?, action: WebExtension.Action) {
         // GeckoView may deliver the action with the originating tab session. Keep the
         // per-session action authoritative so a stale action from another tab cannot be
@@ -519,6 +561,50 @@ object PetalExtensionManager {
         } else {
             synchronized(actionByExtensionId) { actionByExtensionId[extension.id] = action }
         }
+
+        val active = currentActiveSession
+        if (session == null || session === active) {
+            val state = extractActionState(action) { bmp ->
+                Handler(Looper.getMainLooper()).post {
+                    val current = _activeTabActionStates.value.toMutableMap()
+                    val prev = current[extension.id]
+                    if (prev != null) {
+                        current[extension.id] = prev.copy(icon = bmp)
+                        _activeTabActionStates.value = current
+                    }
+                }
+            }
+            Handler(Looper.getMainLooper()).post {
+                val current = _activeTabActionStates.value.toMutableMap()
+                current[extension.id] = state
+                _activeTabActionStates.value = current
+            }
+        }
+    }
+
+    private fun updateActiveTabActionStates(session: GeckoSession?) {
+        val map = mutableMapOf<String, ExtensionActionState>()
+        val tabActions = if (session != null) sessionActionByExtensionId[session] else null
+        val allExtIds = _extensions.value.map { it.id }.toSet()
+
+        for (extId in allExtIds) {
+            val action = tabActions?.get(extId) ?: synchronized(actionByExtensionId) { actionByExtensionId[extId] }
+            if (action != null) {
+                map[extId] = extractActionState(action) { bmp ->
+                    Handler(Looper.getMainLooper()).post {
+                        val current = _activeTabActionStates.value.toMutableMap()
+                        val prev = current[extId]
+                        if (prev != null) {
+                            current[extId] = prev.copy(icon = bmp)
+                            _activeTabActionStates.value = current
+                        }
+                    }
+                }
+            }
+        }
+        Handler(Looper.getMainLooper()).post {
+            _activeTabActionStates.value = map
+        }
     }
 
     /**
@@ -527,6 +613,9 @@ object PetalExtensionManager {
      */
     @JvmStatic
     fun setActiveBrowserSession(oldSession: GeckoSession?, newSession: GeckoSession?) {
+        currentActiveSession = newSession
+        updateActiveTabActionStates(newSession)
+
         val ctx = appContext ?: return
         val controller = try {
             PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
@@ -930,6 +1019,10 @@ object PetalExtensionManager {
     fun detachSession(session: GeckoSession?) {
         if (session == null) return
         try {
+            if (currentActiveSession === session) {
+                currentActiveSession = null
+                _activeTabActionStates.value = emptyMap()
+            }
             openSessions.remove(session)
             sessionActionByExtensionId.remove(session)
             // Periodic hygiene cleanup of closed sessions
@@ -1516,6 +1609,7 @@ object PetalExtensionManager {
             synchronized(actionByExtensionId) {
                 actionByExtensionId.keys.retainAll(items.map { it.id }.toSet())
             }
+            updateActiveTabActionStates(currentActiveSession)
             // Re-bind all open sessions on main thread so tabs created during cold start
             // (before the asynchronous extension list finished loading) get delegates attached.
             Handler(Looper.getMainLooper()).post {
