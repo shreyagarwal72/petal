@@ -229,7 +229,7 @@ object PetalCacheManager {
     fun clearCache(
         context: Context,
         flags: Long,
-        activeWebView: WebView?,
+        activeWebView: Any?,
         onCompleted: Runnable?
     ) {
         clearCache(context, flags, onCompleted)
