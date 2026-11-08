@@ -549,6 +549,13 @@ class PetalTabViewController private constructor(
     }
 
     init {
+        val themeSurfaceColor = com.google.android.material.color.MaterialColors.getColor(
+            context,
+            com.google.android.material.R.attr.colorSurface,
+            android.graphics.Color.WHITE
+        )
+        setBackgroundColor(themeSurfaceColor)
+        try { engineView.asView().setBackgroundColor(themeSurfaceColor) } catch (_: Throwable) {}
         isNestedScrollingEnabled = true
         addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
             if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) {
@@ -660,6 +667,14 @@ class PetalTabViewController private constructor(
         navUrls.clear(); navIndex = -1; navFallbackEligible = false
         currentScrollX = 0; currentScrollY = 0; lastProcessedScrollY = 0; accumulatedScrollY = 0; consecutiveDirectionSteps = 0
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
+        val themeSurfaceColor = com.google.android.material.color.MaterialColors.getColor(
+            context,
+            com.google.android.material.R.attr.colorSurface,
+            android.graphics.Color.WHITE
+        )
+        setBackgroundColor(themeSurfaceColor)
+        try { engineView.asView().setBackgroundColor(themeSurfaceColor) } catch (_: Throwable) {}
+        findGeckoView(engineView.asView())?.setBackgroundColor(themeSurfaceColor)
         engineView.render(session)
         if (isHostedByBrowserActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && com.petal.browser.ui.glass.GeckoGlassBackend.shouldSamplePage(context)) {
             post {
@@ -883,6 +898,7 @@ class PetalTabViewController private constructor(
                     try { engineScrollDelegate?.onScrollChanged(session, scrollX, scrollY) } catch (_: Throwable) {}
                     currentScrollX = scrollX
                     currentScrollY = scrollY
+                    lastScrollTime = android.os.SystemClock.uptimeMillis()
 
                     if (pendingScrollUpdate.compareAndSet(false, true)) {
                         post(scrollDispatcher)
@@ -1351,12 +1367,18 @@ class PetalTabViewController private constructor(
 
     override fun getCachedPreviewBitmap(): Bitmap? = TabThumbnailCache.getMemoryOnly(boundTabId, isIncognito())
 
+    @Volatile
     private var lastPreviewCaptureTime = 0L
+    @Volatile
+    private var lastScrollTime = 0L
 
     @JvmOverloads
     fun updatePreviewCache(force: Boolean = false) {
         val currentRev = previewRevision
         val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastScrollTime < 400L) {
+            return
+        }
         if (!force && capturedPreviewRevision == currentRev) {
             if (now - lastPreviewCaptureTime < 1500L) return
         }

@@ -1098,7 +1098,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
                 if (selectedTab == null) return kotlin.Unit.INSTANCE;
                 final boolean isLoading = selectedTab.getContent().getLoading();
+                final Integer themeColor = selectedTab.getContent().getThemeColor();
                 runOnUiThread(() -> {
+                    applyStatusBarThemeColor(themeColor);
                     // Like Firefox's SwipeRefreshFeature: react to the loading state CHANGING,
                     // not to every store update (which hid the spinner before the reload began).
                     boolean wasLoading = lastSelectedLoading;
@@ -1227,6 +1229,34 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             checkStartupDialogs();
         });
+    }
+
+    private void applyStatusBarThemeColor(Integer themeColor) {
+        if (isFinishing() || isDestroyed()) return;
+        WindowInsetsControllerCompat insetsController =
+                WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        if (isPetalHomeSurfaceShowing || themeColor == null) {
+            String themeConfig = sp != null ? sp.getString("sp_theme_config", "FOLLOW_SYSTEM") : "FOLLOW_SYSTEM";
+            boolean isDark;
+            if ("DARK".equalsIgnoreCase(themeConfig)) {
+                isDark = true;
+            } else if ("LIGHT".equalsIgnoreCase(themeConfig)) {
+                isDark = false;
+            } else {
+                int nightMode = getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+                isDark = nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+            }
+            if (insetsController != null) {
+                insetsController.setAppearanceLightStatusBars(!isDark);
+            }
+            return;
+        }
+        int color = themeColor;
+        getWindow().setStatusBarColor(color);
+        boolean isDarkColor = androidx.core.graphics.ColorUtils.calculateLuminance(color) < 0.5;
+        if (insetsController != null) {
+            insetsController.setAppearanceLightStatusBars(!isDarkColor);
+        }
     }
 
     private void checkStartupDialogs() {
@@ -2518,6 +2548,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         View av = controller.getAlbumView();
         currentAlbumController = controller;
         if (contentFrame != null) {
+            int surfaceColor = com.google.android.material.color.MaterialColors.getColor(
+                    this, com.google.android.material.R.attr.colorSurface, android.graphics.Color.WHITE);
+            contentFrame.setBackgroundColor(surfaceColor);
             contentFrame.setEnabled(true);
         }
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
