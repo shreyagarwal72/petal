@@ -336,7 +336,7 @@ fun AddressBarSettingsScreen(
                                         pressFx = true
                                     ) else Modifier
                                 ),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp), glass = false
                             ) {
                                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
@@ -416,7 +416,7 @@ fun AddressBarSettingsScreen(
                                         pressFx = true
                                     ) else Modifier
                                 ),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp), glass = false
                             ) {
                                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))

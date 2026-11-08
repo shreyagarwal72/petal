@@ -204,7 +204,7 @@ fun PetalFlagsHubScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .then(if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(18.dp), enabled = true, sheenIntensity = 0.4f) else Modifier)
+                        .then(if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(18.dp), enabled = true, sheenIntensity = 0.4f) else Modifier), glass = false
                 ) {
                     Row(
                         modifier = Modifier.padding(14.dp),
@@ -256,7 +256,7 @@ fun PetalFlagsHubScreen(
                         unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                         focusedIndicatorColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
                         unfocusedIndicatorColor = Color.Transparent
-                    )
+                    ), glass = false
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -315,7 +315,7 @@ fun PetalFlagsHubScreen(
                                         selectedLabelColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer
                                     ),
                                     border = null,
-                                    modifier = if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(12.dp), enabled = true, sheenIntensity = 0.3f) else Modifier
+                                    modifier = if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(12.dp), enabled = true, sheenIntensity = 0.3f) else Modifier, glass = false
                                 )
                             }
                         }

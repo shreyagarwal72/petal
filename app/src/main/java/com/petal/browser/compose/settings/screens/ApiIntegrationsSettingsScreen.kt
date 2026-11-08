@@ -248,7 +248,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                 colors = ButtonDefaults.filledTonalButtonColors(
                                     containerColor = if (isGlass) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f) else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
                                 ),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp), glass = false
                             ) {
                                 Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
@@ -285,7 +285,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                 colors = ButtonDefaults.filledTonalButtonColors(
                                     containerColor = if (isGlass) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f) else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
                                 ),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp), glass = false
                             ) {
                                 if (isFetchingModels) {
                                     com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 14.dp)
@@ -327,7 +327,7 @@ fun ApiIntegrationsSettingsScreenContent(
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.primaryContainer
                             ),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp), glass = false
                         ) {
                             if (isTestingKey) {
                                 com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 14.dp)

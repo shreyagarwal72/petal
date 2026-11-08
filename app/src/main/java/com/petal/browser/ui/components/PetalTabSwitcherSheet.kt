@@ -595,7 +595,7 @@ fun PetalTabSwitcherContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .liquidGlassChrome(shape = tabSearchPillShape, enabled = isGlass, sheenIntensity = 0.45f)
+                        .liquidGlassChrome(shape = tabSearchPillShape, enabled = isGlass, sheenIntensity = 0.45f), glass = false
                 )
 
                 Spacer(Modifier.height(4.dp))

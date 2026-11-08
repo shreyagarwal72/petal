@@ -318,7 +318,7 @@ fun PetalFloatingStatusCard(
                                 colors = ButtonDefaults.filledTonalButtonColors(
                                     containerColor = if (isGlass) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.secondaryContainer,
                                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
+                                ), glass = false
                             ) {
                                 Text(
                                     text = data.secondaryActionLabel,
@@ -341,7 +341,7 @@ fun PetalFloatingStatusCard(
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary,
                                     contentColor = MaterialTheme.colorScheme.onPrimary
-                                )
+                                ), glass = false
                             ) {
                                 Text(
                                     text = data.primaryActionLabel,

@@ -479,7 +479,7 @@ private fun ShapeTab(cfg: PetalWidgetConfig, appWidgetId: Int, onChange: (PetalW
     }
     if (PetalGlassWidgets.isLiquidGlassEnabled(context) && appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
         SectionCard(stringResource(R.string.pw_glass_align), stringResource(R.string.pw_glass_hint)) {
-            FilledTonalButton(onClick = { context.startActivity(PetalWidgetGlassActivity.intent(context, appWidgetId)) }) {
+            FilledTonalButton(onClick = { context.startActivity(PetalWidgetGlassActivity.intent(context, appWidgetId)) }, glass = false) {
                 Text(stringResource(R.string.pw_glass_align))
             }
         }

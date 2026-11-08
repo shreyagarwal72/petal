@@ -864,7 +864,7 @@ private fun CircularIconButton(
                 if (isGlass) {
                     Modifier.background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
                 } else Modifier
-            )
+            ), glass = false
     ) {
         val iconTint = if (enabled) {
             tint

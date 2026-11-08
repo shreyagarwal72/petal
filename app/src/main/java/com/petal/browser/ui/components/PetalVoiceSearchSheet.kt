@@ -318,7 +318,7 @@ fun PetalVoiceSearchSheet(
                         val closeShape = ExpressiveButtonShape
                         IconButton(
                             onClick = onDismiss,
-                            modifier = if (isLiquidGlass) Modifier.liquidGlassChrome(closeShape, enabled = true, sheenIntensity = 0.5f) else Modifier
+                            modifier = if (isLiquidGlass) Modifier.liquidGlassChrome(closeShape, enabled = true, sheenIntensity = 0.5f) else Modifier, glass = false
                         ) {
                             Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                         }

@@ -754,7 +754,7 @@ fun PetalOmniboxPage(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .liquidGlassChrome(shape = RoundedCornerShape(50), enabled = isGlass, sheenIntensity = sheen)
-                                    .focusRequester(focusRequester)
+                                    .focusRequester(focusRequester), glass = false
                             )
                         }
 

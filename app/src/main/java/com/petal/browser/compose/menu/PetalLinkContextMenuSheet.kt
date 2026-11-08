@@ -715,7 +715,7 @@ private fun PetalMenuRow(
             .petalStaggerIn(enterIndex)
             .scale(pressScale)
             .alpha(contentAlpha)
-            .then(if (rowGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.45f) else Modifier),
+            .then(if (rowGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.45f) else Modifier), glass = false
     ) {
         Row(
             modifier = Modifier

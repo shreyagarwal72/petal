@@ -319,7 +319,7 @@ fun PetalSummaryBoxDialog(
                         onClick = onAskQuestion,
                         shape = RoundedCornerShape(50.dp),
                         modifier = if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(50.dp), enabled = true, sheenIntensity = 0.65f, pressFx = true) else Modifier,
-                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)
+                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp), glass = false
                     ) {
                         Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))

@@ -274,7 +274,7 @@ fun PetalProfileSwitchSheet(
                         containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                         contentColor = MaterialTheme.colorScheme.onSurface
                     ),
-                    shape = RoundedCornerShape(14.dp)
+                    shape = RoundedCornerShape(14.dp), glass = false
                 ) {
                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))

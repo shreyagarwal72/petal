@@ -495,7 +495,7 @@ fun PetalHistoryScreen(
                         focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                         unfocusedIndicatorColor = Color.Transparent,
                         disabledIndicatorColor = Color.Transparent
-                    )
+                    ), glass = false
                 )
 
                 // ── Material 3 Expressive Liquid Glass Sort Chips ──
@@ -553,7 +553,7 @@ fun PetalHistoryScreen(
                             border = null,
                             modifier = Modifier
                                 .graphicsLayer(scaleX = chipScale, scaleY = chipScale)
-                                .liquidGlassChrome(shape = chipShape, enabled = isGlass, sheenIntensity = 0.35f)
+                                .liquidGlassChrome(shape = chipShape, enabled = isGlass, sheenIntensity = 0.35f), glass = false
                         )
                     }
                 }

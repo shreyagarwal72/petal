@@ -142,7 +142,7 @@ fun MiscSettingsScreenContent(
                                     shape = rowShape,
                                     enabled = isGlass,
                                     sheenIntensity = sheen
-                                )
+                                ), glass = false
                         ) {
                             Row(
                                 modifier = Modifier

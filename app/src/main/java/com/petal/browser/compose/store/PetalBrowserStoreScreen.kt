@@ -231,7 +231,7 @@ fun PetalBrowserStoreScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 4.dp)
-                                .liquidGlassChrome(shape = storeSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
+                                .liquidGlassChrome(shape = storeSearchShape, enabled = isGlass, sheenIntensity = 0.45f), glass = false
                         )
 
                         // Content Pages Area with weight(1f) to ensure full layout reach

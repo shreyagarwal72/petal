@@ -1081,7 +1081,7 @@ fun PetalChangelogHistorySheetContent(
                                 .fillMaxWidth()
                                 .scale(pressScale)
                                 .then(if (isGlass) Modifier.liquidGlassChrome(petalGroupShape(position), enabled = true) else Modifier)
-                                .animateContentSize()
+                                .animateContentSize(), glass = false
                         ) {
                             Column(
                                 modifier = Modifier

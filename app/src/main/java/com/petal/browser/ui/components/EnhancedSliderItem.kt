@@ -75,7 +75,7 @@ fun EnhancedSliderItem(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier
             .fillMaxWidth()
-            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = glassSheen)
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = glassSheen), glass = false
     ) {
         Column(
             modifier = Modifier

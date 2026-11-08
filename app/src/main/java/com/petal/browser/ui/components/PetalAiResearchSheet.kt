@@ -802,7 +802,7 @@ private fun AiFieldRow(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (glass) Modifier.liquidGlassChrome(rowShape, enabled = true, sheenIntensity = 0.5f) else Modifier)
+            .then(if (glass) Modifier.liquidGlassChrome(rowShape, enabled = true, sheenIntensity = 0.5f) else Modifier), glass = false
     ) {
         Column(
             modifier = Modifier

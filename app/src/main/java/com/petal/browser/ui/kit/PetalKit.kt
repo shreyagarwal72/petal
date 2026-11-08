@@ -31,9 +31,11 @@ import androidx.compose.material3.ButtonElevation
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.SelectableChipBorder
 import androidx.compose.material3.SelectableChipColors
 import androidx.compose.material3.SelectableChipElevation
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -48,6 +50,16 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalChipShape
+import com.petal.browser.ui.containment.petalContainmentShape
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.theme.layout.PetalLayoutState
+import com.petal.browser.ui.theme.layout.PetalShapeType
+import com.petal.browser.ui.theme.layout.cornerShape
+import com.petal.browser.ui.theme.layout.pillShape
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.material3.Button as M3Button
 import androidx.compose.material3.FilledTonalButton as M3FilledTonalButton
 import androidx.compose.material3.Card as M3Card
@@ -59,35 +71,67 @@ import androidx.compose.material3.TextButton as M3TextButton
 /*
  * Petal Material 3 Expressive kit.
  *
- * Drop-in replacements for the raw Material 3 controls with IDENTICAL names and parameters, so a
- * screen adopts them by changing one import (androidx.compose.material3.X -> com.petal.browser.ui.kit.X).
- * They add the expressive behaviour the stock controls lack:
- *   - buttons are pills that morph their corners on press (shape spring from PetalSpring.press)
- *   - icon buttons are circles that squircle on press
- *   - filter chips use the expressive 12dp shape and show a check when selected
- * A caller that passes an explicit `shape` keeps it. This file never touches liquid glass: glass
- * modifiers are applied by callers/containers and keep working unchanged around these controls.
+ * Drop-in replacements for the raw Material 3 controls with IDENTICAL names and parameters (plus an
+ * optional `glass` flag), so a screen adopts them by changing one import
+ * (androidx.compose.material3.X -> com.petal.browser.ui.kit.X). They add:
+ *   - live Appearance settings: Shapes Type and Corners Size (PetalLayoutState) drive every default
+ *     shape; buttons are pills that morph their corners on press (PetalSpring.press)
+ *   - live Liquid Glass, same switches containments use: glass surface + liquidGlassChrome when on
+ *   - filter chips with the containment chip shape and an automatic check mark
+ * A caller that passes an explicit `shape`/`colors` keeps it. Calls whose caller already draws glass
+ * itself are marked `glass = false` so the effect is never doubled.
  */
 
-private const val PILL_PERCENT = 50
-private const val PRESSED_PERCENT = 28
+/**
+ * Set to false around a subtree whose parent already draws liquid glass for these controls, so the
+ * effect is never applied twice. Individual calls can also pass `glass = false`.
+ */
+val LocalPetalKitGlass = compositionLocalOf { true }
 
+/** Live liquid-glass state for kit controls (same switch containments use). */
+@Composable
+private fun kitGlass(requested: Boolean): Boolean =
+    requested && LocalPetalKitGlass.current && isLiquidGlassEnabled("sp_liquid_glass_containments")
+
+/**
+ * Shape that follows the live Appearance settings (Shapes Type + Corners Size) and morphs on press.
+ * ROUNDED animates a pill -> squarer corner; other styles (cut, squircle, wavy, scoop...) swap between a
+ * pill and a tighter corner in their own style, since those paths cannot interpolate.
+ */
 @Composable
 private fun morphingShape(
     source: MutableInteractionSource,
     explicit: Shape?,
-    restPercent: Int = PILL_PERCENT,
-    pressedPercent: Int = PRESSED_PERCENT,
+    pressedFactor: Float = 0.56f,
 ): Shape {
     if (explicit != null) return explicit
+    val type = PetalLayoutState.settings.shapeType
+    val scale = PetalLayoutState.displayCorners
     val pressed by source.collectIsPressedAsState()
+    val restPercent = (50f * scale).toInt().coerceIn(8, 50)
+    val pressedPercent = (restPercent * pressedFactor).toInt().coerceIn(6, restPercent)
     val percent by animateIntAsState(
         targetValue = if (pressed) pressedPercent else restPercent,
         animationSpec = PetalSpring.press(),
         label = "PetalKitShapeMorph",
     )
-    return RoundedCornerShape(percent = percent.coerceIn(0, 50))
+    return if (type == PetalShapeType.ROUNDED) {
+        RoundedCornerShape(percent = percent.coerceIn(0, 50))
+    } else if (pressed) {
+        type.cornerShape(14.dp, multiplier = scale)
+    } else {
+        type.pillShape()
+    }
 }
+
+/** Container for a filled kit control: glass surface when liquid glass is on, otherwise the given colour. */
+@Composable
+private fun glassContainer(glass: Boolean, normal: Color): Color =
+    if (glass) petalGroupSurfaceColor() else normal
+
+@Composable
+private fun Modifier.kitGlassChrome(glass: Boolean, shape: Shape, sheen: Float = 0.45f): Modifier =
+    if (glass) this.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = sheen, pressFx = true) else this
 
 @Composable
 fun Button(
@@ -100,16 +144,19 @@ fun Button(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource? = null,
+    glass: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
     val source = interactionSource ?: remember { MutableInteractionSource() }
+    val resolved = morphingShape(source, shape)
+    val useGlass = kitGlass(glass)
     M3Button(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.kitGlassChrome(useGlass, resolved),
         enabled = enabled,
-        shape = morphingShape(source, shape),
-        colors = colors,
-        elevation = elevation,
+        shape = resolved,
+        colors = if (useGlass) colors.copy(containerColor = glassContainer(true, colors.containerColor)) else colors,
+        elevation = if (useGlass) null else elevation,
         border = border,
         contentPadding = contentPadding,
         interactionSource = source,
@@ -128,16 +175,19 @@ fun FilledTonalButton(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource? = null,
+    glass: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
     val source = interactionSource ?: remember { MutableInteractionSource() }
+    val resolved = morphingShape(source, shape)
+    val useGlass = kitGlass(glass)
     M3FilledTonalButton(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.kitGlassChrome(useGlass, resolved),
         enabled = enabled,
-        shape = morphingShape(source, shape),
-        colors = colors,
-        elevation = elevation,
+        shape = resolved,
+        colors = if (useGlass) colors.copy(containerColor = glassContainer(true, colors.containerColor)) else colors,
+        elevation = if (useGlass) null else elevation,
         border = border,
         contentPadding = contentPadding,
         interactionSource = source,
@@ -156,17 +206,20 @@ fun OutlinedButton(
     border: BorderStroke? = ButtonDefaults.outlinedButtonBorder(enabled),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource? = null,
+    glass: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
     val source = interactionSource ?: remember { MutableInteractionSource() }
+    val resolved = morphingShape(source, shape)
+    val useGlass = kitGlass(glass)
     M3OutlinedButton(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.kitGlassChrome(useGlass, resolved),
         enabled = enabled,
-        shape = morphingShape(source, shape),
-        colors = colors,
-        elevation = elevation,
-        border = border,
+        shape = resolved,
+        colors = if (useGlass) colors.copy(containerColor = glassContainer(true, colors.containerColor)) else colors,
+        elevation = if (useGlass) null else elevation,
+        border = if (useGlass) null else border,
         contentPadding = contentPadding,
         interactionSource = source,
         content = content,
@@ -184,6 +237,7 @@ fun TextButton(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.TextButtonContentPadding,
     interactionSource: MutableInteractionSource? = null,
+    glass: Boolean = true, // accepted for API symmetry; text buttons have no container to glass
     content: @Composable RowScope.() -> Unit,
 ) {
     val source = interactionSource ?: remember { MutableInteractionSource() }
@@ -209,16 +263,20 @@ fun IconButton(
     enabled: Boolean = true,
     colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
     interactionSource: MutableInteractionSource? = null,
+    glass: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val source = interactionSource ?: remember { MutableInteractionSource() }
-    val shape = morphingShape(source, null, restPercent = 50, pressedPercent = 30)
-    val container = if (enabled) colors.containerColor else colors.disabledContainerColor
+    val shape = morphingShape(source, null, pressedFactor = 0.6f)
+    // Only filled icon buttons (non-transparent container) become glass; plain ones stay transparent.
+    val useGlass = kitGlass(glass) && colors.containerColor != Color.Transparent
+    val container = if (useGlass) Color.Transparent else if (enabled) colors.containerColor else colors.disabledContainerColor
     val contentColor = if (enabled) colors.contentColor else colors.disabledContentColor
     Box(
         modifier = modifier
             .minimumInteractiveComponentSize()
             .size(40.dp)
+            .kitGlassChrome(useGlass, shape, 0.35f)
             .clip(shape)
             .background(container, shape)
             .clickable(
@@ -244,12 +302,18 @@ fun FilterChip(
     enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    shape: Shape = RoundedCornerShape(12.dp),
+    shape: Shape = petalChipShape(),
     colors: SelectableChipColors = FilterChipDefaults.filterChipColors(),
     elevation: SelectableChipElevation? = FilterChipDefaults.filterChipElevation(),
-    border: BorderStroke? = FilterChipDefaults.filterChipBorder(enabled, selected),
+    border: SelectableChipBorder? = FilterChipDefaults.filterChipBorder(enabled, selected),
     interactionSource: MutableInteractionSource? = null,
+    glass: Boolean = true,
 ) {
+    val useGlass = kitGlass(glass)
+    val glassColors = if (useGlass) colors.copy(
+        containerColor = petalGroupSurfaceColor(),
+        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
+    ) else colors
     val check: @Composable (() -> Unit)? = leadingIcon ?: if (selected) {
         { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
     } else null
@@ -257,14 +321,14 @@ fun FilterChip(
         selected = selected,
         onClick = onClick,
         label = label,
-        modifier = modifier,
+        modifier = modifier.kitGlassChrome(useGlass, shape, 0.3f),
         enabled = enabled,
         leadingIcon = check,
         trailingIcon = trailingIcon,
         shape = shape,
-        colors = colors,
-        elevation = elevation,
-        border = border,
+        colors = glassColors,
+        elevation = if (useGlass) null else elevation,
+        border = if (useGlass) null else border,
         interactionSource = interactionSource,
     )
 }
@@ -273,15 +337,19 @@ fun FilterChip(
 
 /** Expressive filled field: 16dp shape, no indicator line, tonal container. Callers may override. */
 @Composable
-fun petalTextFieldColors(): TextFieldColors = TextFieldDefaults.colors(
-    focusedContainerColor = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainerHigh,
-    unfocusedContainerColor = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainerHigh,
-    disabledContainerColor = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainerLow,
+fun petalTextFieldColors(glass: Boolean = true): TextFieldColors {
+    val useGlass = kitGlass(glass)
+    val glassFill = if (useGlass) petalGroupSurfaceColor() else null
+    return TextFieldDefaults.colors(
+    focusedContainerColor = glassFill ?: MaterialTheme.colorScheme.surfaceContainerHigh,
+    unfocusedContainerColor = glassFill ?: MaterialTheme.colorScheme.surfaceContainerHigh,
+    disabledContainerColor = glassFill ?: MaterialTheme.colorScheme.surfaceContainerLow,
     focusedIndicatorColor = Color.Transparent,
     unfocusedIndicatorColor = Color.Transparent,
     disabledIndicatorColor = Color.Transparent,
     errorIndicatorColor = Color.Transparent,
-)
+    )
+}
 
 @Composable
 fun TextField(
@@ -306,11 +374,12 @@ fun TextField(
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     minLines: Int = 1,
     interactionSource: MutableInteractionSource? = null,
-    shape: Shape = RoundedCornerShape(16.dp),
+    shape: Shape = petalContainmentShape(16.dp),
     colors: TextFieldColors = petalTextFieldColors(),
+    glass: Boolean = true,
 ) {
     M3TextField(
-        value = value, onValueChange = onValueChange, modifier = modifier, enabled = enabled,
+        value = value, onValueChange = onValueChange, modifier = modifier.kitGlassChrome(kitGlass(glass), shape, 0.3f), enabled = enabled,
         readOnly = readOnly, textStyle = textStyle, label = label, placeholder = placeholder,
         leadingIcon = leadingIcon, trailingIcon = trailingIcon, prefix = prefix, suffix = suffix,
         supportingText = supportingText, isError = isError, visualTransformation = visualTransformation,
@@ -343,11 +412,12 @@ fun TextField(
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     minLines: Int = 1,
     interactionSource: MutableInteractionSource? = null,
-    shape: Shape = RoundedCornerShape(16.dp),
+    shape: Shape = petalContainmentShape(16.dp),
     colors: TextFieldColors = petalTextFieldColors(),
+    glass: Boolean = true,
 ) {
     M3TextField(
-        value = value, onValueChange = onValueChange, modifier = modifier, enabled = enabled,
+        value = value, onValueChange = onValueChange, modifier = modifier.kitGlassChrome(kitGlass(glass), shape, 0.3f), enabled = enabled,
         readOnly = readOnly, textStyle = textStyle, label = label, placeholder = placeholder,
         leadingIcon = leadingIcon, trailingIcon = trailingIcon, prefix = prefix, suffix = suffix,
         supportingText = supportingText, isError = isError, visualTransformation = visualTransformation,
@@ -359,18 +429,25 @@ fun TextField(
 
 // ── Cards ───────────────────────────────────────────────────────────────────────────────────
 
-private val ExpressiveCardShape = RoundedCornerShape(24.dp)
-
 @Composable
 fun Card(
     modifier: Modifier = Modifier,
-    shape: Shape = ExpressiveCardShape,
+    shape: Shape = petalContainmentShape(24.dp),
     colors: CardColors = CardDefaults.cardColors(),
     elevation: CardElevation = CardDefaults.cardElevation(),
     border: BorderStroke? = null,
+    glass: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    M3Card(modifier = modifier, shape = shape, colors = colors, elevation = elevation, border = border, content = content)
+    val useGlass = kitGlass(glass)
+    M3Card(
+        modifier = modifier.kitGlassChrome(useGlass, shape, 0.5f),
+        shape = shape,
+        colors = if (useGlass) colors.copy(containerColor = petalGroupSurfaceColor()) else colors,
+        elevation = if (useGlass) CardDefaults.cardElevation(defaultElevation = 0.dp) else elevation,
+        border = if (useGlass) null else border,
+        content = content,
+    )
 }
 
 @Composable
@@ -378,15 +455,24 @@ fun Card(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = ExpressiveCardShape,
+    shape: Shape = petalContainmentShape(24.dp),
     colors: CardColors = CardDefaults.cardColors(),
     elevation: CardElevation = CardDefaults.cardElevation(),
     border: BorderStroke? = null,
     interactionSource: MutableInteractionSource? = null,
+    glass: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val useGlass = kitGlass(glass)
     M3Card(
-        onClick = onClick, modifier = modifier, enabled = enabled, shape = shape, colors = colors,
-        elevation = elevation, border = border, interactionSource = interactionSource, content = content,
+        onClick = onClick,
+        modifier = modifier.kitGlassChrome(useGlass, shape, 0.5f),
+        enabled = enabled,
+        shape = shape,
+        colors = if (useGlass) colors.copy(containerColor = petalGroupSurfaceColor()) else colors,
+        elevation = if (useGlass) CardDefaults.cardElevation(defaultElevation = 0.dp) else elevation,
+        border = if (useGlass) null else border,
+        interactionSource = interactionSource,
+        content = content,
     )
 }

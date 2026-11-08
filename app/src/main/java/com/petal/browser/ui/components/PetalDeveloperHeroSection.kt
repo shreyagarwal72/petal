@@ -41,6 +41,8 @@ import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.PetalBadgeVariant
+import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.toShape
@@ -163,114 +165,63 @@ fun PetalDeveloperHeroSection(
                 lineHeight = 22.sp
             )
 
-            // Segmented 3-Pill Contact Row (Website, Email, Telegram)
-            Box(
+            // Connected contact group (M3 Expressive): outer corners pill, inner corners 6dp,
+            // one colour role per action (primary / secondary / tertiary).
+            val scheme = MaterialTheme.colorScheme
+            val contactBg = if (isGlass) Color.Transparent else null
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    // In glass mode the pill is see-through (the glass panel supplies the tint);
-                    // before the backdrop is ready it falls back to a translucent tonal fill.
-                    val pillContainerColor = if (isGlass) {
-                        petalGroupSurfaceColor().let { c ->
-                            if (c == Color.Transparent) Color.Transparent
-                            else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
-                        }
-                    } else {
-                        MaterialTheme.colorScheme.primaryContainer
-                    }
-                    val pillTint = MaterialTheme.colorScheme.primaryContainer
-
-                    // Petal Official Website Pill
-                    val webShape = RoundedCornerShape(
-                        topStart = 50.dp,
-                        bottomStart = 50.dp,
-                        topEnd = 6.dp,
-                        bottomEnd = 6.dp
+                val contacts = listOf(
+                    Triple(Icons.Rounded.Language, "Website", Pair(scheme.primaryContainer, scheme.onPrimaryContainer)),
+                    Triple(Icons.Rounded.Mail, "Email", Pair(scheme.secondaryContainer, scheme.onSecondaryContainer)),
+                    Triple(Icons.Rounded.Send, "Telegram", Pair(scheme.tertiaryContainer, scheme.onTertiaryContainer)),
+                )
+                contacts.forEachIndexed { i, (icon, label, colors) ->
+                    val shape = RoundedCornerShape(
+                        topStart = if (i == 0) 50.dp else 6.dp,
+                        bottomStart = if (i == 0) 50.dp else 6.dp,
+                        topEnd = if (i == contacts.lastIndex) 50.dp else 6.dp,
+                        bottomEnd = if (i == contacts.lastIndex) 50.dp else 6.dp,
                     )
                     Button(
                         onClick = {
                             haptics.playClick(context)
-                            onOpenUrl("https://my-petal-browser.vercel.app/")
-                        },
-                        shape = webShape,
-                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-                        modifier = if (isGlass) Modifier.liquidGlassChrome(shape = webShape, enabled = true, sheenIntensity = 0.4f, tintColor = pillTint) else Modifier,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = pillContainerColor,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Language,
-                            contentDescription = "Website",
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-
-                    // Contact Email Pill (hereyourchampion@gmail.com)
-                    val emailShape = RoundedCornerShape(6.dp)
-                    Button(
-                        onClick = {
-                            haptics.playClick(context)
-                            val mailUri = Uri.parse("mailto:hereyourchampion@gmail.com")
-                            val emailIntent = Intent(Intent.ACTION_SENDTO, mailUri).apply {
-                                putExtra(Intent.EXTRA_SUBJECT, "Hello from Petal Browser")
-                            }
-                            try {
-                                context.startActivity(Intent.createChooser(emailIntent, "Send Email"))
-                            } catch (e: ActivityNotFoundException) {
-                                Toast.makeText(context, "No email client installed", Toast.LENGTH_SHORT).show()
+                            when (i) {
+                                0 -> onOpenUrl("https://my-petal-browser.vercel.app/")
+                                1 -> {
+                                    val mailUri = Uri.parse("mailto:hereyourchampion@gmail.com")
+                                    val emailIntent = Intent(Intent.ACTION_SENDTO, mailUri).apply {
+                                        putExtra(Intent.EXTRA_SUBJECT, "Hello from Petal Browser")
+                                    }
+                                    try {
+                                        context.startActivity(Intent.createChooser(emailIntent, "Send Email"))
+                                    } catch (e: ActivityNotFoundException) {
+                                        Toast.makeText(context, "No email client installed", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                else -> onOpenUrl("https://t.me/hereyourchampion")
                             }
                         },
-                        shape = emailShape,
-                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-                        modifier = if (isGlass) Modifier.liquidGlassChrome(shape = emailShape, enabled = true, sheenIntensity = 0.4f, tintColor = pillTint) else Modifier,
+                        shape = shape,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 14.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .then(if (isGlass) Modifier.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = 0.4f, tintColor = colors.first) else Modifier),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = pillContainerColor,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                            containerColor = contactBg ?: colors.first,
+                            contentColor = colors.second
+                        ), glass = false
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Mail,
-                            contentDescription = "Contact",
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-
-                    // Telegram Pill (t.me/hereyourchampion)
-                    val tgShape = RoundedCornerShape(
-                        topStart = 6.dp,
-                        bottomStart = 6.dp,
-                        topEnd = 50.dp,
-                        bottomEnd = 50.dp
-                    )
-                    Button(
-                        onClick = {
-                            haptics.playClick(context)
-                            onOpenUrl("https://t.me/hereyourchampion")
-                        },
-                        shape = tgShape,
-                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-                        modifier = if (isGlass) Modifier.liquidGlassChrome(shape = tgShape, enabled = true, sheenIntensity = 0.4f, tintColor = pillTint) else Modifier,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = pillContainerColor,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Send,
-                            contentDescription = "Telegram",
-                            modifier = Modifier.size(22.dp)
-                        )
+                        Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     }
                 }
             }
 
-            // Secondary Buttons: Support & Other Apps
+            // Secondary actions: Support (tertiary role) + Projects (secondary role, toggles drawer)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -281,14 +232,11 @@ fun PetalDeveloperHeroSection(
                         onOpenUrl(com.petal.browser.util.PetalWebLinks.SUPPORT)
                     },
                     isGlass = isGlass,
+                    container = scheme.tertiaryContainer,
+                    content = scheme.onTertiaryContainer,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Favorite,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                    Icon(Icons.Rounded.Favorite, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text("Support", fontWeight = FontWeight.SemiBold, maxLines = 1)
                 }
@@ -299,13 +247,11 @@ fun PetalDeveloperHeroSection(
                         isOtherAppsExpanded = !isOtherAppsExpanded
                     },
                     isGlass = isGlass,
+                    container = scheme.secondaryContainer,
+                    content = scheme.onSecondaryContainer,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Apps,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
+                    Icon(Icons.Rounded.Apps, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("Projects", fontWeight = FontWeight.SemiBold, maxLines = 1)
                     Spacer(Modifier.width(2.dp))
@@ -317,192 +263,141 @@ fun PetalDeveloperHeroSection(
                 }
             }
 
-            // Expandable Other Apps / Projects Drawer (full-width, same size rows)
+            // Projects drawer: one connected list group (outer 22dp, inner 6dp corners)
             AnimatedVisibility(
                 visible = isOtherAppsExpanded,
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    HeroGlassButton(
-                        onClick = {
-                            haptics.playClick(context)
-                            onOpenUrl(com.petal.browser.util.PetalWebLinks.WEBSITE)
-                        },
-                        isGlass = isGlass,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.Public, null, Modifier.size(16.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Petal Browser", style = MaterialTheme.typography.labelLarge)
-                    }
-
-                    HeroGlassButton(
-                        onClick = {
-                            haptics.playClick(context)
-                            onOpenUrl("https://github.com/shreyagarwal72/switcher5G")
-                        },
-                        isGlass = isGlass,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.NetworkCheck, null, Modifier.size(16.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Switcher5G", style = MaterialTheme.typography.labelLarge)
-                    }
-
-                    HeroGlassButton(
-                        onClick = {
-                            haptics.playClick(context)
-                            onOpenUrl("https://nextup-resource.vercel.app/")
-                        },
-                        isGlass = isGlass,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.AutoStories, null, Modifier.size(16.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Nextup Resources", style = MaterialTheme.typography.labelLarge)
+                val projects = listOf(
+                    HeroLink(Icons.Rounded.Public, "Petal Browser", "Official website", PetalBadgeVariant.PRIMARY, com.petal.browser.util.PetalWebLinks.WEBSITE),
+                    HeroLink(Icons.Rounded.NetworkCheck, "Switcher5G", "Quick 5G / LTE switching", PetalBadgeVariant.SECONDARY, "https://github.com/shreyagarwal72/switcher5G"),
+                    HeroLink(Icons.Rounded.AutoStories, "Nextup Resources", "Study resources", PetalBadgeVariant.TERTIARY, "https://nextup-resource.vercel.app/"),
+                )
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    projects.forEachIndexed { i, link ->
+                        HeroListRow(
+                            link = link,
+                            shape = heroGroupShape(i, projects.size),
+                            isGlass = isGlass,
+                            onClick = { haptics.playClick(context); onOpenUrl(link.url) }
+                        )
                     }
                 }
             }
 
-            // Website badge (live link to the Petal site) + GitHub repository badge
-            HeroLinkBadge(
-                label = "my-petal-browser.vercel.app",
-                chip = "Website",
-                leadingIcon = Icons.Rounded.Language,
-                chipIcon = Icons.Rounded.Public,
-                isGlass = isGlass,
-                onClick = {
-                    haptics.playClick(context)
-                    onOpenUrl(com.petal.browser.util.PetalWebLinks.WEBSITE)
-                }
+            // Links (website + GitHub) as a connected list group
+            val links = listOf(
+                HeroLink(Icons.Rounded.Language, "my-petal-browser.vercel.app", "Website", PetalBadgeVariant.PRIMARY, com.petal.browser.util.PetalWebLinks.WEBSITE),
+                HeroLink(Icons.Rounded.Code, "shreyagarwal72/petal", "GitHub", PetalBadgeVariant.SECONDARY, "https://github.com/shreyagarwal72/petal"),
             )
-
-            HeroLinkBadge(
-                label = "shreyagarwal72/petal",
-                chip = "GitHub",
-                leadingIcon = Icons.Rounded.Code,
-                chipIcon = Icons.Rounded.Star,
-                isGlass = isGlass,
-                onClick = {
-                    haptics.playClick(context)
-                    onOpenUrl("https://github.com/shreyagarwal72/petal")
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                links.forEachIndexed { i, link ->
+                    HeroListRow(
+                        link = link,
+                        shape = heroGroupShape(i, links.size),
+                        isGlass = isGlass,
+                        onClick = { haptics.playClick(context); onOpenUrl(link.url) }
+                    )
                 }
-            )
+            }
         }
     }
 }
 
-/** Tonal action button that becomes a single-rim glass pill when Liquid Glass is on. */
+private data class HeroLink(
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val title: String,
+    val subtitle: String,
+    val variant: PetalBadgeVariant,
+    val url: String,
+)
+
+private fun heroGroupShape(index: Int, count: Int): RoundedCornerShape {
+    val outer = 22.dp
+    val inner = 6.dp
+    return RoundedCornerShape(
+        topStart = if (index == 0) outer else inner,
+        topEnd = if (index == 0) outer else inner,
+        bottomStart = if (index == count - 1) outer else inner,
+        bottomEnd = if (index == count - 1) outer else inner,
+    )
+}
+
+/** Tonal action button (role colours) that becomes a single-rim glass pill when Liquid Glass is on. */
 @Composable
 private fun HeroGlassButton(
     onClick: () -> Unit,
     isGlass: Boolean,
+    container: Color,
+    content: Color,
     modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit
+    body: @Composable RowScope.() -> Unit
 ) {
     val shape = ExpressiveButtonShape
     FilledTonalButton(
         onClick = onClick,
         shape = shape,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
         colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-            contentColor = MaterialTheme.colorScheme.onSurface
+            containerColor = if (isGlass) petalGroupSurfaceColor() else container,
+            contentColor = if (isGlass) MaterialTheme.colorScheme.onSurface else content
         ),
         modifier = modifier.then(
             if (isGlass) Modifier.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = 0.5f) else Modifier
         ),
-        content = content
+        content = body, glass = false
     )
 }
 
-/** Tappable link row (website / GitHub) rendered as a glass capsule. */
+/** M3 Expressive list row: colour-role icon badge, title + subtitle, trailing open-in-new. */
 @Composable
-private fun HeroLinkBadge(
-    label: String,
-    chip: String,
-    leadingIcon: androidx.compose.ui.graphics.vector.ImageVector,
-    chipIcon: androidx.compose.ui.graphics.vector.ImageVector,
+private fun HeroListRow(
+    link: HeroLink,
+    shape: RoundedCornerShape,
     isGlass: Boolean,
     onClick: () -> Unit
 ) {
-    val badgeShape = RoundedCornerShape(22.dp)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (isGlass) Modifier.liquidGlassChrome(shape = badgeShape, enabled = true, sheenIntensity = 0.5f) else Modifier)
-            .clip(badgeShape)
+            .then(if (isGlass) Modifier.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = 0.5f) else Modifier)
+            .clip(shape)
             .clickable(onClick = onClick),
-        shape = badgeShape,
-        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLowest
+        shape = shape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.weight(1f, fill = false)
-            ) {
-                Icon(
-                    imageVector = leadingIcon,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+            PetalGroupIconBadge(icon = link.icon, variant = link.variant, size = 44.dp, iconSize = 22.dp)
+            Column(Modifier.weight(1f)) {
                 Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
+                    text = link.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            }
-
-            Spacer(Modifier.width(12.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Surface(
-                    shape = ExpressiveButtonShape,
-                    color = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-                            else MaterialTheme.colorScheme.surfaceContainerHigh
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = chipIcon,
-                            contentDescription = null,
-                            modifier = Modifier.size(13.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = chip,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-                Icon(
-                    imageVector = Icons.Rounded.OpenInNew,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                Text(
+                    text = link.subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
+            Icon(
+                imageVector = Icons.Rounded.OpenInNew,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

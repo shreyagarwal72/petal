@@ -544,7 +544,7 @@ fun PrivacySettingsScreenContent(
                                             focusedIndicatorColor = Color.Transparent,
                                             unfocusedIndicatorColor = Color.Transparent
                                         ),
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier.fillMaxWidth(), glass = false
                                     )
                                 }
                             }

@@ -347,7 +347,7 @@ fun SafeLockerScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                                    .liquidGlassChrome(shape = lockerSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
+                                    .liquidGlassChrome(shape = lockerSearchShape, enabled = isGlass, sheenIntensity = 0.45f), glass = false
                             )
                         }
 

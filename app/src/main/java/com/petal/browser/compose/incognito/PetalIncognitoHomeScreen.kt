@@ -298,7 +298,7 @@ fun PetalIncognitoHomeScreen(
                                         .then(
                                             if (isGlass) Modifier.liquidGlassChrome(shape = shape, enabled = true)
                                             else Modifier
-                                        )
+                                        ), glass = false
                                 ) {
                                     Row(
                                         modifier = Modifier

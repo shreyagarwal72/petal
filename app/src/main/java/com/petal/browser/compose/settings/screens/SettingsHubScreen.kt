@@ -152,7 +152,7 @@ fun SettingsHubScreen(
                         unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
-                    )
+                    ), glass = false
                 )
             }
 

@@ -940,7 +940,7 @@ fun PetalTabGridSwitcher(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .liquidGlassChrome(shape = tabSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
+                            .liquidGlassChrome(shape = tabSearchShape, enabled = isGlass, sheenIntensity = 0.45f), glass = false
                     )
 
                     // ── Zen Essentials Pinned Tabs Shelf ──

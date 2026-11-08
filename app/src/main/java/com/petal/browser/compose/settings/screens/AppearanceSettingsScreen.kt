@@ -414,7 +414,7 @@ fun AppearanceSettingsScreenContent(
                                     shape = quickLangShape,
                                     enabled = isGlass,
                                     sheenIntensity = glassSheen
-                                )
+                                ), glass = false
                         ) {
                             Column(
                                 modifier = Modifier
@@ -1920,7 +1920,7 @@ fun AppearanceSettingsScreenContent(
                                                     RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp)
                                                 } else {
                                                     RoundedCornerShape(50.dp)
-                                                }
+                                                }, glass = false
                                             ) {
                                                 Icon(Icons.Rounded.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(18.dp))
                                                 Spacer(Modifier.width(6.dp))
@@ -1937,7 +1937,7 @@ fun AppearanceSettingsScreenContent(
                                                     colors = ButtonDefaults.filledTonalButtonColors(
                                                         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                                         contentColor = MaterialTheme.colorScheme.onSurface
-                                                    )
+                                                    ), glass = false
                                                 ) {
                                                     Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                                                     Spacer(Modifier.width(4.dp))
@@ -2173,7 +2173,7 @@ fun AppearanceSettingsScreenContent(
                             unfocusedContainerColor = if (isSheetGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
-                        )
+                        ), glass = false
                     )
 
                     Spacer(Modifier.height(12.dp))

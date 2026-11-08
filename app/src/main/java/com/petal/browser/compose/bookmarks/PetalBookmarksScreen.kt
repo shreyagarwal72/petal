@@ -378,7 +378,7 @@ fun PetalBookmarksScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 6.dp)
-                        .liquidGlassChrome(shape = searchShape, enabled = isGlass, sheenIntensity = 0.45f)
+                        .liquidGlassChrome(shape = searchShape, enabled = isGlass, sheenIntensity = 0.45f), glass = false
                 )
 
                 Spacer(Modifier.height(8.dp))
