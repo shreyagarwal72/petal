@@ -347,7 +347,8 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     if (getParent() != null) {
                         getParent().requestDisallowInterceptTouchEvent(true);
                     }
-                    sendCancelEvent(ev);
+                    // Android itself sends ACTION_CANCEL to the child when we return true here.
+                    // A second, manual cancel confused Gecko's touch state (frozen page after a pull).
                     return true;
                 } else {
                     startedAtTop = false;
@@ -391,6 +392,7 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
+                hasMultiTouch = false;
                 activePointerId = event.getPointerId(0);
                 initialDownX = event.getX();
                 initialDownY = event.getY();
@@ -439,14 +441,6 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     if (overscrollTop > 0) {
                         float progress = calculateProgress(overscrollTop);
 
-                        if (progress >= TRIGGER_THRESHOLD && !hasTriggeredHaptic) {
-                            hasTriggeredHaptic = true;
-                            try {
-                                com.petal.browser.haptics.PetalHapticEngine.getInstance(getContext()).playClick(getContext());
-                            } catch (Exception ignored) {}
-                        } else if (progress < TRIGGER_THRESHOLD) {
-                            hasTriggeredHaptic = false;
-                        }
 
                         if (onPullListener != null) {
                             onPullListener.onPull(progress);
@@ -477,9 +471,14 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     isIntercepting = false;
                     hasTriggeredHaptic = false;
 
+                    // A CANCEL (back swipe, shade pull, palm, system gesture) must never refresh.
+                    boolean cancelled = event.getActionMasked() == MotionEvent.ACTION_CANCEL;
                     if (onReleaseListener != null) {
-                        onReleaseListener.onRelease(progress >= TRIGGER_THRESHOLD);
+                        onReleaseListener.onRelease(!cancelled && progress >= TRIGGER_THRESHOLD);
                     }
+                }
+                if (getParent() != null) {
+                    getParent().requestDisallowInterceptTouchEvent(false);
                 }
                 forgetQuickScaleEvents();
                 break;
@@ -502,19 +501,12 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         }
     }
 
-    private void sendCancelEvent(MotionEvent ev) {
-        try {
-            MotionEvent cancelEvent = MotionEvent.obtain(ev);
-            cancelEvent.setAction(MotionEvent.ACTION_CANCEL);
-            for (int i = 0; i < getChildCount(); i++) {
-                try {
-                    getChildAt(i).dispatchTouchEvent(cancelEvent);
-                } catch (Exception ignored) {}
-            }
-            // Do not manually recycle cancelEvent immediately here: child views (GeckoView /
-            // Compose) may dispatch or queue the event asynchronously across threads.
-            // Android's garbage collector and input pipeline will safely manage its lifecycle.
-        } catch (Exception ignored) {}
+    @Override
+    protected void onDetachedFromWindow() {
+        // A drag cannot survive losing the window (tab switch, overlay, rotation): drop it so the
+        // spinner and the touch state are never left half-open.
+        reset();
+        super.onDetachedFromWindow();
     }
 
     @Override

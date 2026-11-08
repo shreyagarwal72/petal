@@ -202,7 +202,8 @@ private fun Modifier.liquidGlassChromeBase(
     val tuning = com.petal.browser.ui.glass.rememberRefractionTuning(refractionOverride, refractionWidthOverride)
     val masterGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
     if (!enabled || !masterGlass) return this
-    if (com.petal.browser.motion.MotionGate.isAnimating.value || com.petal.browser.motion.MotionGate.isLowEndDevice(context)) {
+    // See liquidGlass(): never drop to a flat fill mid-transition, that causes the glass flash.
+    if (com.petal.browser.motion.MotionGate.isLowEndDevice(context)) {
         val dark = isDark || (MaterialTheme.colorScheme.background.luminance() < .5f)
         val tint = if (tintColor != Color.Unspecified) tintColor else MaterialTheme.colorScheme.surfaceContainerHigh
         val fillAlpha = if (dark) 0.50f else 0.65f

@@ -788,11 +788,22 @@ fun PetalSheet(
             ) {
                 if (isGlass && containerColor == null) {
                     if (ownsGlassBackdrop) PetalSheetGlassBackdrop(ownWallpaper, Modifier.matchParentSize())
-                    val ready = activeWallpaper?.ready == true
+                    val ready = activeWallpaper?.ready == true && activeWallpaper.hasRecorded
+                    // Cross-fade the stand-in out instead of cutting it: the wallpaper becomes
+                    // ready a frame or two after the sheet appears, and a hard swap read as a flash.
+                    val standInAlpha by androidx.compose.animation.core.animateFloatAsState(
+                        targetValue = if (ready) 0f else 1f,
+                        animationSpec = androidx.compose.animation.core.tween(if (ready) 180 else 0),
+                        label = "sheet_glass_standin"
+                    )
                     Box(
                         Modifier
                             .matchParentSize()
-                            .then(if (!ready) Modifier.background(fallbackColor, sheetShape) else Modifier)
+                            .then(
+                                if (standInAlpha > 0.01f)
+                                    Modifier.background(fallbackColor.copy(alpha = fallbackColor.alpha * standInAlpha), sheetShape)
+                                else Modifier
+                            )
                             .liquidGlassChrome(shape = sheetShape, enabled = true, sheenIntensity = sheen)
                     )
                 }

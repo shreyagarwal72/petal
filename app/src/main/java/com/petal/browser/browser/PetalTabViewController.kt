@@ -1058,29 +1058,34 @@ class PetalTabViewController private constructor(
         publishState()
     }
 
-    fun reload() {
-        reloadInternal(org.mozilla.geckoview.GeckoSession.LOAD_FLAGS_NONE)
-    }
+    /** @return true if a reload was actually issued (callers reset any refresh UI when false). */
+    fun reload(): Boolean = reloadInternal(org.mozilla.geckoview.GeckoSession.LOAD_FLAGS_NONE)
 
-    fun reloadBypassCache() {
-        reloadInternal(org.mozilla.geckoview.GeckoSession.LOAD_FLAGS_BYPASS_CACHE)
-    }
+    fun reloadBypassCache(): Boolean = reloadInternal(org.mozilla.geckoview.GeckoSession.LOAD_FLAGS_BYPASS_CACHE)
 
-    private fun reloadInternal(flags: Int) {
-        applyPageSettings(pageUrl)
+    private fun reloadInternal(flags: Int): Boolean {
+        // Runs inside the touch-release callback of pull-to-refresh: nothing here may throw.
+        // (Firefox's SwipeRefreshFeature just calls the reload use case.)
+        try {
+            applyPageSettings(pageUrl)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabViewController", "applyPageSettings failed before reload", t)
+        }
         // Reload the live GeckoSession so we always refresh the page currently shown, not the
         // engine session's original (initial) load request.
         val live = getGeckoSession()
         if (live != null) {
             try {
                 live.reload(flags)
-                return
+                return true
             } catch (_: Throwable) {
             }
         }
-        try {
-            observedSession?.reload()
-        } catch (_: Throwable) {}
+        return try {
+            val s = observedSession
+            s?.reload()
+            s != null
+        } catch (_: Throwable) { false }
     }
 
     fun captureVideoHandoffState(callback: (com.petal.browser.media.handoff.MediaHandoff?) -> Unit) {
@@ -1468,13 +1473,12 @@ class PetalTabViewController private constructor(
         if (touchListenerView === gv) return
         touchListenerView = gv
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            gv.viewTreeObserver.addOnPreDrawListener {
+            gv.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
                 try {
                     if (gv.systemGestureExclusionRects.isNotEmpty()) {
                         gv.systemGestureExclusionRects = java.util.Collections.emptyList()
                     }
                 } catch (_: Throwable) {}
-                true
             }
         }
     }
@@ -1835,8 +1839,8 @@ class PetalTabViewController private constructor(
 
     /** Same rule as Mozilla's SwipeRefreshFeature.canChildScrollUp (inverted): page at top and not handling the touch. */
     fun canOverscrollTop(): Boolean {
-        val atTop = currentScrollY <= (2f * context.resources.displayMetrics.density).toInt()
-        if (!atTop) return false
+        // Same as Firefox's SwipeRefreshFeature.canChildScrollUp: trust Gecko's input result only.
+        // The old currentScrollY check went stale across navigations and blocked valid pulls.
         return try { engineView.getInputResultDetail().canOverscrollTop() } catch (_: Throwable) { true }
     }
 
@@ -1906,6 +1910,8 @@ class PetalTabViewController private constructor(
         refreshFeature?.stop()
         fullScreenFeature?.stop()
         isRefreshing = false
+        // A refresh belongs to the tab being left; don't leave the next tab blocked behind it.
+        (resolveActivity(context) as? com.petal.browser.activity.BrowserActivity)?.resetRefreshState()
     }
 
     override fun getTitle(): String = pageTitle

@@ -72,7 +72,9 @@ private fun isAncestor(ancestor: View, descendant: View): Boolean {
 @Composable
 fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?, pressFx: Boolean = true): Modifier {
     val context = androidx.compose.ui.platform.LocalContext.current
-    if (com.petal.browser.motion.MotionGate.isAnimating.value || com.petal.browser.motion.MotionGate.isLowEndDevice(context)) {
+    // Glass stays on during transitions: swapping to a flat fill while anything animates and back
+    // afterwards is what produced the visible "glass not ready" frame. Only low-end devices skip it.
+    if (com.petal.browser.motion.MotionGate.isLowEndDevice(context)) {
         return this.background(tint.copy(alpha = 0.52f), shape)
     }
     val fx = rememberGlassFx()

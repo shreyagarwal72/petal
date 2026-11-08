@@ -1099,7 +1099,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (selectedTab == null) return kotlin.Unit.INSTANCE;
                 final boolean isLoading = selectedTab.getContent().getLoading();
                 runOnUiThread(() -> {
-                    if (!isLoading && refreshState != null && refreshState.isRefreshing()) {
+                    // Like Firefox's SwipeRefreshFeature: react to the loading state CHANGING,
+                    // not to every store update (which hid the spinner before the reload began).
+                    boolean wasLoading = lastSelectedLoading;
+                    lastSelectedLoading = isLoading;
+                    if (isLoading) pullReloadSawLoading = true;
+                    if (wasLoading && !isLoading && refreshState != null && refreshState.isRefreshing()) {
                         resetRefreshState();
                     }
                     updateOmniBox();
@@ -5364,7 +5369,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 isScrolledToTop = ((com.petal.browser.browser.PetalTabViewController) controller).isPageAtTop();
             }
 
-            return isScrolledToTop && !refreshState.isRefreshing() && !areBarsAnimating();
+            // Firefox disables pull-to-refresh in fullscreen; bar animations no longer veto a
+            // gesture at touch-down (that made pulls fail at random).
+            return isScrolledToTop && !refreshState.isRefreshing() && !isCustomFullscreenState;
         });
 
         final androidx.compose.ui.platform.ComposeView finalRefreshView = refreshBarCompose;
@@ -5399,6 +5406,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 .playIfEnabled(BrowserActivity.this, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f);
             refreshState.setRefreshing(true);
             refreshState.setPullProgress(1.0f);
+            pullReloadSawLoading = false;
 
             // Firefox safety watchdog: reset refreshing indicator after 8 seconds if page load hangs
             if (contentFrame != null) {
@@ -5406,15 +5414,32 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 contentFrame.postDelayed(refreshTimeoutWatchdog, 8000L);
             }
 
-            if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
-                ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).reload();
-            } else {
+            boolean started = false;
+            try {
+                if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
+                    started = ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).reload();
+                }
+            } catch (Throwable t) {
+                android.util.Log.w("BrowserActivity", "Pull-to-refresh reload failed", t);
+            }
+            if (!started) {
                 resetRefreshState();
+            } else if (contentFrame != null) {
+                contentFrame.removeCallbacks(refreshStartCheck);
+                contentFrame.postDelayed(refreshStartCheck, 2500L);
             }
         });
     }
 
     private final Runnable refreshTimeoutWatchdog = this::resetRefreshState;
+    private boolean lastSelectedLoading = false;
+    private boolean pullReloadSawLoading = false;
+    /** If the reload never starts loading (blank/offline/failed), don't hold the spinner. */
+    private final Runnable refreshStartCheck = () -> {
+        if (!pullReloadSawLoading && refreshState != null && refreshState.isRefreshing()) {
+            resetRefreshState();
+        }
+    };
 
     /**
      * Hides both the pull-to-refresh spinner and the top page-loading progress bar.
@@ -5466,6 +5491,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         runOnUiThread(() -> {
             if (contentFrame != null) {
                 contentFrame.removeCallbacks(refreshTimeoutWatchdog);
+                contentFrame.removeCallbacks(refreshStartCheck);
                 contentFrame.reset();
             }
             if (refreshState != null) {
