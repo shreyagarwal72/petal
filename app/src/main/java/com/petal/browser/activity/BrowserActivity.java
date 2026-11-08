@@ -1101,7 +1101,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
                 if (selectedTab == null) return kotlin.Unit.INSTANCE;
                 final boolean isLoading = selectedTab.getContent().getLoading();
-                final Integer themeColor = selectedTab.getContent().getThemeColor();
+                final Integer themeColor = null;
                 runOnUiThread(() -> {
                     applyStatusBarThemeColor(themeColor);
                     // Like Firefox's SwipeRefreshFeature: react to the loading state CHANGING,
