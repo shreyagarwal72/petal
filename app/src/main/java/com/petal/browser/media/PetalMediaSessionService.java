@@ -267,6 +267,12 @@ public class PetalMediaSessionService extends Service {
     }
 
     public static void startMediaSession(Context context, String title, String artist, boolean playing, long positionMs, long durationMs, Bitmap artwork, Class<?> targetActivity, MediaControlListener listener) {
+        if (context != null) {
+            android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+            if (!sp.getBoolean("sp_mozilla_media_session", true)) {
+                return;
+            }
+        }
         setGlobalControlListener(listener);
         if (activeInstance != null) {
             activeInstance.updateMediaState(title, artist, playing, positionMs, durationMs, artwork, targetActivity);
