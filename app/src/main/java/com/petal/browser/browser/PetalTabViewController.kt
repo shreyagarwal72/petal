@@ -1596,6 +1596,13 @@ class PetalTabViewController private constructor(
 
     @JvmOverloads
     fun findAllAsync(query: String, callback: ((current: Int, total: Int) -> Unit)? = null) {
+        val useMozillaFind = preferences.getBoolean("sp_mozilla_find_in_page", false)
+        val session = observedSession
+        if (useMozillaFind && session != null) {
+            session.findAll(query)
+            callback?.invoke(0, 0)
+            return
+        }
         val gs = getGeckoSession()
         if (gs != null) {
             gs.finder.find(query, 0).then({ result ->
@@ -1616,6 +1623,13 @@ class PetalTabViewController private constructor(
 
     @JvmOverloads
     fun findNext(forward: Boolean, callback: ((current: Int, total: Int) -> Unit)? = null) {
+        val useMozillaFind = preferences.getBoolean("sp_mozilla_find_in_page", false)
+        val session = observedSession
+        if (useMozillaFind && session != null) {
+            session.findNext(forward)
+            callback?.invoke(0, 0)
+            return
+        }
         val gs = getGeckoSession()
         if (gs != null) {
             val flags = if (forward) 0 else org.mozilla.geckoview.GeckoSession.FINDER_FIND_BACKWARDS
