@@ -88,6 +88,7 @@ interface PetalOverflowMenuActionHandler {
     fun onTriggerMediaMode() {}
     fun onOpenPetalAi() {}
     fun onOpenExtensions() {}
+    fun onOpenExtensionsMenu() { onOpenExtensions() }
     fun onOpenExtensionAction(extensionId: String) {}
     fun onOpenExtensionSettings(extensionId: String) {}
     fun onOpenDevConsole() {}
@@ -278,6 +279,12 @@ object PetalOverflowBridge {
                                 dialog.dismiss()
                                 handler.onOpenExtensions()
                             },
+                            onOpenExtensionsMenu = {
+                                pendingDismissAction = {
+                                    handler.onOpenExtensionsMenu()
+                                }
+                                dialog.dismiss()
+                            },
                             onOpenExtensionAction = { extensionId ->
                                 pendingDismissAction = {
                                     handler.onOpenExtensionAction(extensionId)
@@ -366,6 +373,7 @@ fun PetalOverflowMenuSheet(
     onTriggerMediaMode: () -> Unit = {},
     onOpenPetalAi: () -> Unit = {},
     onOpenExtensions: () -> Unit = {},
+    onOpenExtensionsMenu: () -> Unit = onOpenExtensions,
     onOpenExtensionAction: (String) -> Unit = {},
     onOpenExtensionSettings: (String) -> Unit = {},
     onOpenDevConsole: () -> Unit = {},
@@ -731,50 +739,23 @@ fun PetalOverflowMenuSheet(
                 val enabledExtensions = remember(extensions) {
                     extensions.filter { it.enabled && !PetalBuiltInExtensionManager.isBuiltIn(it.id) }
                 }
-                var isExtensionsExpanded by remember { mutableStateOf(false) }
 
-                if (enabledExtensions.isEmpty()) {
-                    MenuRowItem(
-                        icon = Icons.Rounded.Extension,
-                        title = stringResource(R.string.ui_extensions),
-                        subtitle = stringResource(R.string.ui_install_firefox_add_ons),
-                        onClick = onOpenExtensions
-                    )
+                val extSubtitle = if (enabledExtensions.isEmpty()) {
+                    stringResource(R.string.ui_install_firefox_add_ons)
+                } else if (enabledExtensions.size == 1) {
+                    enabledExtensions.first().name
                 } else {
-                    val firstExtName = enabledExtensions.first().name
-                    val subtitleText = if (enabledExtensions.size == 1) firstExtName else "$firstExtName..."
-                    MenuRowItem(
-                        icon = Icons.Rounded.Extension,
-                        title = stringResource(R.string.ui_extensions),
-                        subtitle = subtitleText,
-                        badgeCount = enabledExtensions.size,
-                        trailingIcon = if (isExtensionsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                        onClick = { isExtensionsExpanded = !isExtensionsExpanded }
-                    )
-
-                    AnimatedVisibility(
-                        visible = isExtensionsExpanded,
-                        enter = expandVertically(),
-                        exit = shrinkVertically()
-                    ) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            enabledExtensions.forEach { ext ->
-                                ExtensionMenuRowItem(
-                                    extension = ext,
-                                    onClick = { isExtensionsExpanded = false; onOpenExtensionAction(ext.id) },
-                                    onSettingsClick = { onOpenExtensionSettings(ext.id) }
-                                )
-                            }
-                            MenuRowItem(
-                                icon = Icons.Rounded.Tune,
-                                title = stringResource(R.string.ui_manage_extensions),
-                                subtitle = stringResource(R.string.ui_install_or_configure_add_ons),
-                                isSubItem = true,
-                                onClick = { isExtensionsExpanded = false; onOpenExtensions() }
-                            )
-                        }
-                    }
+                    "${enabledExtensions.size} active add-ons"
                 }
+
+                MenuRowItem(
+                    icon = Icons.Rounded.Extension,
+                    title = stringResource(R.string.ui_extensions),
+                    subtitle = extSubtitle,
+                    badgeCount = if (enabledExtensions.isNotEmpty()) enabledExtensions.size else null,
+                    trailingIcon = Icons.Rounded.ChevronRight,
+                    onClick = onOpenExtensionsMenu
+                )
 
                 // Tier 6: Advanced & Quick Tools (Quarantined power tools)
                 MenuRowItem(

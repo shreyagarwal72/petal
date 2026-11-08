@@ -203,6 +203,12 @@ object BrowserNavigationDelegate {
                     activity.showExtensionsScreen()
                 }
 
+                override fun onOpenExtensionsMenu() {
+                    com.petal.browser.compose.extensions.PetalExtensionsMenuSheet.show(activity, url) {
+                        activity.showExtensionsScreen()
+                    }
+                }
+
                 override fun onOpenExtensionAction(extensionId: String) {
                     // The overflow menu is a separate android.app.Dialog window. It must be
                     // fully gone before we trigger the popup, or the extension popup view
