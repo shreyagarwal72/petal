@@ -111,10 +111,91 @@ object PetalReaderBridge {
 
         pendingCallbacks[url] = callback
 
-        // Robust self-contained Readability extractor:
-        // Extracts article elements, removes noisy tags (script, style, nav, aside),
-        // grabs lead images and byline, and dispatches via native WebExtension messaging and window.postMessage.
-        val extractScript = """
+        val context = (controller as? View)?.context
+        val useMozillaReadability = if (context != null) {
+            PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_mozilla_readability", true)
+        } else {
+            true
+        }
+
+        // Robust Readability extractor (Mozilla Readability principles):
+        // Stage 1 extracts OpenGraph/Twitter/Schema.org metadata (title, author, lead image).
+        // Stage 2 clones candidate nodes, strips noise (scripts, styles, ads, nav, sidebars),
+        // and collects structured paragraphs, headings, blockquotes, and lists.
+        val extractScript = if (useMozillaReadability) {
+            """
+            (function() {
+                try {
+                    var getMeta = function(prop, name) {
+                        var m = document.querySelector('meta[property="' + prop + '"]') || document.querySelector('meta[name="' + name + '"]');
+                        return m ? (m.content || m.getAttribute('content') || '').trim() : '';
+                    };
+
+                    var title = getMeta('og:title', 'twitter:title');
+                    if (!title) {
+                        var h1 = document.querySelector('h1');
+                        title = (h1 ? h1.innerText.trim() : document.title.trim()) || '';
+                    }
+
+                    var author = getMeta('article:author', 'author');
+                    if (!author) {
+                        var byEl = document.querySelector('[rel="author"], [itemprop="author"], .author, .byline, .article-author, .story-byline');
+                        author = byEl ? byEl.innerText.trim() : '';
+                    }
+
+                    var leadImg = getMeta('og:image', 'twitter:image');
+                    if (!leadImg) {
+                        var firstImg = document.querySelector('article img, [itemprop="articleBody"] img, main img, .post-content img');
+                        if (firstImg && firstImg.src && !firstImg.src.startsWith('data:')) {
+                            leadImg = firstImg.src;
+                        }
+                    }
+
+                    var unwanted = 'script, style, noscript, iframe, svg, nav, footer, header, aside, form, button, input, [role="banner"], [role="navigation"], [aria-hidden="true"], .advertisement, .ad-container, .social-share, .comments, .cookie-banner';
+                    var sourceNode = document.querySelector('article, [itemprop="articleBody"], .entry-content, .post-content, main, .article-body, #content, .story-body, .article__body, .content') || document.body;
+                    var clone = sourceNode.cloneNode(true);
+
+                    var removeList = clone.querySelectorAll(unwanted);
+                    for (var i = 0; i < removeList.length; i++) {
+                        if (removeList[i].parentNode) {
+                            removeList[i].parentNode.removeChild(removeList[i]);
+                        }
+                    }
+
+                    var blocks = Array.from(clone.querySelectorAll('p, h2, h3, h4, blockquote, li'))
+                        .map(function(node) {
+                            var txt = (node.innerText || node.textContent || '').trim();
+                            if (txt.length < 15) return '';
+                            if (/^(share this|follow us|copyright|all rights reserved|sign up for|advertisement)/i.test(txt)) return '';
+                            return txt;
+                        })
+                        .filter(function(txt) { return txt.length > 0; });
+
+                    var cleanBlocks = [];
+                    for (var b = 0; b < blocks.length; b++) {
+                        if (b === 0 || blocks[b] !== blocks[b - 1]) {
+                            cleanBlocks.push(blocks[b]);
+                        }
+                    }
+
+                    var bodyText = cleanBlocks.length > 0 ? cleanBlocks.join('\n\n') : (clone.innerText || '');
+                    var art = { title: title, author: author, lead: leadImg, text: bodyText };
+
+                    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                        chrome.runtime.sendMessage({
+                            type: 'READER_ARTICLE_DATA',
+                            article: art,
+                            pageUrl: window.location.href
+                        }).catch(function() {});
+                    }
+                    window.postMessage({ type: 'PETAL_EXTRACT_ARTICLE', article: art }, '*');
+                } catch(e) {
+                    console.error('Petal Mozilla Readability error:', e);
+                }
+            })();
+            """.trimIndent()
+        } else {
+            """
             (function() {
                 try {
                     var el = document.querySelector('article, [itemprop="articleBody"], .entry-content, .post-content, main, .article-body, #content, .story-body, .article__body, .content') || document.body;
@@ -142,7 +223,8 @@ object PetalReaderBridge {
                     console.error('Reader extraction error:', e);
                 }
             })();
-        """.trimIndent()
+            """.trimIndent()
+        }
 
         when (controller) {
             is com.petal.browser.browser.PetalTabViewController -> controller.evaluateJavascript(extractScript)
