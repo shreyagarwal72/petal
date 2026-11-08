@@ -307,8 +307,9 @@ object PetalGeckoRuntime {
             "sp_javascript", "profileStandard_javascript", "sp_font_size_scale", "sp_ad_block",
             "profileStandard_adBlock", "sp_etp_strict", "sp_block_third_party_cookies",
             "sp_total_cookie_protection", "sp_cookies_isolate", "sp_session_partitioning",
-            "sp_login_autofill_enabled", "sp_private_dns_mode", "sp_https_only",
-            "profileStandard_httpsOnly", "sp_theme_config", "sp_force_dark_mode"
+            "sp_login_autofill_enabled", "sp_private_dns_mode", "sp_custom_doh_url",
+            "sp_private_dns_custom_url", "sp_privacy_profile", "sp_security_slider",
+            "sp_https_only", "profileStandard_httpsOnly", "sp_theme_config", "sp_force_dark_mode"
         )
         val sb = StringBuilder()
         for (k in keys) sb.append(k).append('=').append(sp.all[k]).append(';')
