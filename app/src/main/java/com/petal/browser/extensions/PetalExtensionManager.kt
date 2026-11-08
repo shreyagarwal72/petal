@@ -1054,7 +1054,7 @@ object PetalExtensionManager {
         val isPrivateTab = sourceSession?.settings?.usePrivateMode
             ?: (currentBrowserSession(ctx)?.settings?.usePrivateMode ?: false)
         val popupSettings = com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(
-            context, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
+            ctx, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
         )
         val popupSession = GeckoSession(popupSettings)
 
@@ -1237,7 +1237,7 @@ object PetalExtensionManager {
         }
     }
 
-    private fun openDirectPopup(extension: WebExtension, popupUrl: String, context: Context) {
+    private fun openDirectPopup(extension: WebExtension, popupUrl: String, activityContext: Context) {
         val previousPopup = _pendingPopup.value
         _pendingPopup.value = null
         previousPopup?.sourceSession?.let { source ->
@@ -1249,9 +1249,9 @@ object PetalExtensionManager {
                 existing.close()
             } catch (ignored: Exception) {}
         }
-        val isPrivateTab = currentBrowserSession(context)?.settings?.usePrivateMode ?: false
+        val isPrivateTab = currentBrowserSession(activityContext)?.settings?.usePrivateMode ?: false
         val popupSettings = com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(
-            context, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
+            activityContext, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
         )
         val popupSession = GeckoSession(popupSettings)
         popupSession.promptDelegate = object : GeckoSession.PromptDelegate {
@@ -1267,7 +1267,7 @@ object PetalExtensionManager {
             ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
                 GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE))
         }
-        val runtime = PetalGeckoRuntime.getOrCreate(context.applicationContext)
+        val runtime = PetalGeckoRuntime.getOrCreate(activityContext.applicationContext)
         if (!popupSession.isOpen) {
             popupSession.open(runtime)
         }
