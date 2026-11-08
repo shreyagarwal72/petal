@@ -122,7 +122,7 @@ fun PetalFeaturedCarousel(
         listOf(
             PetalFeaturedItem(
                 title = "Ad & Tracker Shield",
-                description = "uBlock Origin-grade content filter engine",
+                description = "AdGuard-grade content filter engine",
                 icon = Icons.Rounded.Shield,
                 onClick = { onCategoryClick(SettingsCategory.PRIVACY, "privacy_adblock") }
             ),

@@ -88,6 +88,16 @@ fun PetalAdBlockSettingsScreen(
     var whitelistDomainInput by remember { mutableStateOf("") }
     var whitelistedDomains by remember { mutableStateOf(PetalAdBlockEngine.getWhitelistedDomains()) }
 
+    val installedExtensions by com.petal.browser.extensions.PetalExtensionManager.extensions.collectAsState()
+    val adguardExt = remember(installedExtensions) {
+        installedExtensions.firstOrNull {
+            it.id.equals("adguardadblocker@adguard.com", ignoreCase = true) ||
+            it.id.equals("adguard-adblocker", ignoreCase = true) ||
+            it.name.contains("AdGuard", ignoreCase = true)
+        }
+    }
+    var isInstallingAdGuard by remember { mutableStateOf(false) }
+
     // Dialog: Add Custom Filter Subscription
     if (showAddCustomListDialog) {
         PetalMaterialAlertDialog(
@@ -383,6 +393,101 @@ fun PetalAdBlockSettingsScreen(
                         PetalAdBlockEngine.setAdBlockMode(context, activeMode)
                     }
                 )
+
+                // ── AdGuard AdBlocker Extension Section ──
+                PetalSettingsSection(
+                    title = "AdGuard AdBlocker Extension",
+                    icon = Icons.Rounded.Extension
+                ) {
+                    if (adguardExt != null) {
+                        PetalGroupListRow(
+                            position = PetalGroupPosition.FIRST,
+                            leading = { PetalGroupIconBadge(Icons.Rounded.Shield, variant = PetalBadgeVariant.TONAL) },
+                            content = {
+                                Text(
+                                    text = "AdGuard Protection",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = if (adguardExt.enabled) "Active — full cosmetic filtering & element blocking" else "Disabled in Add-on Manager",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            trailing = {
+                                IconSwitch(
+                                    checked = adguardExt.enabled,
+                                    onCheckedChange = { enabled ->
+                                        com.petal.browser.extensions.PetalExtensionManager.setEnabled(adguardExt.raw, enabled)
+                                    }
+                                )
+                            }
+                        )
+                        PetalGroupListRow(
+                            position = PetalGroupPosition.LAST,
+                            onClick = {
+                                com.petal.browser.extensions.PetalExtensionManager.triggerBrowserAction(adguardExt.id, context)
+                            },
+                            leading = { PetalGroupIconBadge(Icons.Rounded.DashboardCustomize) },
+                            content = {
+                                Text(
+                                    text = "AdGuard Dashboard & Settings",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = "Configure user rules, whitelists, and element filtering",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            trailing = {
+                                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        )
+                    } else {
+                        PetalGroupListRow(
+                            position = PetalGroupPosition.SINGLE,
+                            leading = { PetalGroupIconBadge(Icons.Rounded.AddModerator, variant = PetalBadgeVariant.TONAL) },
+                            content = {
+                                Text(
+                                    text = "AdGuard AdBlocker Add-on",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = "Connect AdGuard's Firefox WebExtension for advanced cosmetic filtering and scriptlets",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            trailing = {
+                                Button(
+                                    onClick = {
+                                        if (!isInstallingAdGuard) {
+                                            isInstallingAdGuard = true
+                                            val entry = com.petal.browser.extensions.PetalExtensionManager.catalog.firstOrNull { it.id == "adguard-adblocker" }
+                                            val url = entry?.downloadUrl ?: "https://addons.mozilla.org/firefox/downloads/latest/adguard-adblocker/latest.xpi"
+                                            com.petal.browser.extensions.PetalExtensionManager.install(url) { success, msg ->
+                                                isInstallingAdGuard = false
+                                                android.widget.Toast.makeText(context, msg ?: if (success) "AdGuard AdBlocker installed" else "Install failed", android.widget.Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    },
+                                    enabled = !isInstallingAdGuard,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    if (isInstallingAdGuard) {
+                                        com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 18.dp)
+                                    } else {
+                                        Text("1-Tap Connect")
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
 
                 // ── Filter Subscriptions Section (Cromite Style) ──
                 val rowTotal = subscriptions.size + 2 // update row + lists + add row

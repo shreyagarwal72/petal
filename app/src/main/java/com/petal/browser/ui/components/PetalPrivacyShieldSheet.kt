@@ -299,13 +299,15 @@ object PetalPrivacyShieldSheet {
         }
 
         val installedExtensions by com.petal.browser.extensions.PetalExtensionManager.extensions.collectAsState()
-        val isUBlockInstalled = remember(installedExtensions) {
-            installedExtensions.any {
-                it.id.equals("uBlock0@raymondhill.net", ignoreCase = true) ||
-                it.name.contains("uBlock Origin", ignoreCase = true)
+        val adguardExt = remember(installedExtensions) {
+            installedExtensions.firstOrNull {
+                it.id.equals("adguardadblocker@adguard.com", ignoreCase = true) ||
+                it.id.equals("adguard-adblocker", ignoreCase = true) ||
+                it.name.contains("AdGuard", ignoreCase = true)
             }
         }
-        var isInstallingUBlock by remember { mutableStateOf(false) }
+        val isAdGuardInstalled = adguardExt != null
+        var isInstallingAdGuard by remember { mutableStateOf(false) }
 
         val categoryCounts = remember(cleanHost) {
             PetalAdBlockEngine.getCategoryCountsForDomain(cleanHost)
@@ -618,22 +620,22 @@ object PetalPrivacyShieldSheet {
                         }
                     }
 
-                    // ── uBlock Origin Recommended Extension Section ─────────
+                    // ── AdGuard AdBlocker Recommended Extension Section ─────
                     PetalSettingsSection(
                         title = "Firefox WebExtension Add-on",
                         icon = Icons.Rounded.Extension,
-                        cardId = "shield_ublock_origin"
+                        cardId = "shield_adguard_adblocker"
                     ) {
-                        if (isUBlockInstalled) {
+                        if (isAdGuardInstalled && adguardExt != null) {
                             PetalGroupRow(
                                 icon = Icons.Rounded.Verified,
-                                title = "uBlock Origin Active",
+                                title = "AdGuard AdBlocker Active",
                                 position = PetalGroupPosition.SINGLE,
                                 onClick = {
                                     onDismiss()
-                                    com.petal.browser.extensions.PetalExtensionManager.triggerBrowserAction("uBlock0@raymondhill.net", activity)
+                                    com.petal.browser.extensions.PetalExtensionManager.triggerBrowserAction(adguardExt.id, activity)
                                 },
-                                subtitle = "Full cosmetic filtering & scriptlet injection running alongside Petal shields"
+                                subtitle = "Comprehensive cosmetic filtering & tracker defense running alongside Petal shields"
                             )
                         } else {
                             Column(
@@ -642,34 +644,34 @@ object PetalPrivacyShieldSheet {
                                     .padding(14.dp)
                             ) {
                                 Text(
-                                    text = "uBlock Origin (Recommended)",
+                                    text = "AdGuard AdBlocker (Recommended)",
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Text(
-                                    text = "Enhance Petal's built-in Trie blocker with Mozilla's wide-spectrum content blocker for cosmetic filtering and anti-adblock circumvention.",
+                                    text = "Enhance Petal's built-in Trie blocker with AdGuard's premier content blocker for cosmetic filtering, tracker removal, and anti-adblock defense.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(Modifier.height(10.dp))
                                 FilledTonalButton(
                                     onClick = {
-                                        isInstallingUBlock = true
-                                        val ublockEntry = com.petal.browser.extensions.PetalExtensionManager.catalog.firstOrNull { it.id == "ublock-origin" }
-                                        val url = ublockEntry?.downloadUrl ?: "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
+                                        isInstallingAdGuard = true
+                                        val adguardEntry = com.petal.browser.extensions.PetalExtensionManager.catalog.firstOrNull { it.id == "adguard-adblocker" }
+                                        val url = adguardEntry?.downloadUrl ?: "https://addons.mozilla.org/firefox/downloads/latest/adguard-adblocker/latest.xpi"
                                         com.petal.browser.extensions.PetalExtensionManager.install(url) { success, msg ->
-                                            isInstallingUBlock = false
-                                            Toast.makeText(activity, msg ?: if (success) "uBlock Origin installed" else "Install failed", Toast.LENGTH_SHORT).show()
+                                            isInstallingAdGuard = false
+                                            Toast.makeText(activity, msg ?: if (success) "AdGuard AdBlocker installed" else "Install failed", Toast.LENGTH_SHORT).show()
                                         }
                                     },
-                                    enabled = !isInstallingUBlock,
+                                    enabled = !isInstallingAdGuard,
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Icon(Icons.Rounded.Extension, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(8.dp))
-                                    Text(if (isInstallingUBlock) "Installing uBlock Origin..." else "1-Tap Install uBlock Origin")
+                                    Text(if (isInstallingAdGuard) "Installing AdGuard AdBlocker..." else "1-Tap Install AdGuard AdBlocker")
                                 }
                             }
                         }

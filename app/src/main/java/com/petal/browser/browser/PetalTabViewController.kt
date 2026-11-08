@@ -1985,7 +1985,7 @@ class PetalTabViewController private constructor(
                     android.graphics.Color.WHITE
                 }
             )
-            var arc = resolveOpaqueThemeColor(com.google.android.material.R.attr.colorPrimary, onSurface)
+            var arc = resolveOpaqueThemeColor(android.R.attr.colorPrimary, onSurface)
             if (androidx.core.graphics.ColorUtils.calculateContrast(arc, disc) < 3.0) {
                 arc = onSurface
             }

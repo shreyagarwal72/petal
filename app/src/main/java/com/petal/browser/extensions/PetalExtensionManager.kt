@@ -1166,6 +1166,36 @@ object PetalExtensionManager {
     }
 
     /**
+     * Resolves an installed extension by exact ID, AMO slug, or case-insensitive name.
+     * Guarantees seamless resolution for curated extensions like AdGuard AdBlocker.
+     */
+    fun findInstalledExtension(idOrSlug: String): InstalledExtension? {
+        val clean = idOrSlug.trim()
+        val all = _extensions.value
+        return all.find { it.id.equals(clean, ignoreCase = true) }
+            ?: all.find { ext ->
+                val slug = com.petal.browser.compose.extensions.PetalCuratedExtensionsData.slugForExtensionId(ext.id)
+                slug != null && slug.equals(clean, ignoreCase = true)
+            }
+            ?: if (clean.contains("adguard", ignoreCase = true)) {
+                all.find { it.id.contains("adguard", ignoreCase = true) || it.name.contains("AdGuard", ignoreCase = true) }
+            } else null
+            ?: all.find { it.name.equals(clean, ignoreCase = true) }
+    }
+
+    /** Returns the installed AdGuard AdBlocker extension if present. */
+    fun getAdGuardExtension(): InstalledExtension? =
+        findInstalledExtension("adguard-adblocker")
+
+    /** Whether the AdGuard AdBlocker extension is currently installed in Petal. */
+    fun isAdGuardInstalled(): Boolean =
+        getAdGuardExtension() != null
+
+    /** Whether the AdGuard AdBlocker extension is installed and enabled. */
+    fun isAdGuardEnabled(): Boolean =
+        getAdGuardExtension()?.enabled == true
+
+    /**
      * Manually triggers the browser-action (toolbar popup) for an installed extension from the UI.
      *
      * In Firefox/Fennec, clicking an extension triggers its Action.click(), opening the
@@ -1175,7 +1205,7 @@ object PetalExtensionManager {
      */
     @JvmOverloads
     fun triggerBrowserAction(extensionId: String, context: Context? = null) {
-        val extItem = _extensions.value.find { it.id == extensionId } ?: run {
+        val extItem = findInstalledExtension(extensionId) ?: run {
             _lastError.value = "Extension not found."
             return
         }
@@ -1183,10 +1213,11 @@ object PetalExtensionManager {
         val rawExt = extItem.raw
         val ctx = context ?: appContext ?: return
 
+        val actionExtId = extItem.id
         // 1. Try action.click() if an action was captured and registered
         val activeSession = currentBrowserSession(ctx)
-        val sessionAction = activeSession?.let { sessionActionByExtensionId[it]?.get(extensionId) }
-        val fallbackAction = synchronized(actionByExtensionId) { actionByExtensionId[extensionId] }
+        val sessionAction = activeSession?.let { sessionActionByExtensionId[it]?.get(actionExtId) }
+        val fallbackAction = synchronized(actionByExtensionId) { actionByExtensionId[actionExtId] }
 
         // Prefer the action belonging to the visible tab. Only use the global action when
         // there is no live active tab action at all (for example during very early startup).
@@ -1206,14 +1237,14 @@ object PetalExtensionManager {
                                     if (!directUrl.isNullOrBlank()) openDirectPopup(rawExt, directUrl, ctx)
                                 }
                             } catch (t: Throwable) {
-                                Log.d(TAG, "Delayed extension popup fallback failed for $extensionId", t)
+                                Log.d(TAG, "Delayed extension popup fallback failed for $actionExtId", t)
                             }
                         }
                     }, 700L)
                 }
                 return
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to click extension action for $extensionId, falling back to direct popup load", e)
+                Log.w(TAG, "Failed to click extension action for $actionExtId, falling back to direct popup load", e)
             }
         }
 
@@ -1293,7 +1324,7 @@ object PetalExtensionManager {
      * If no separate settings page exists, gracefully falls back to opening its popup.
      */
     fun openOptionsPage(extensionId: String, context: Context) {
-        val extItem = _extensions.value.find { it.id == extensionId } ?: run {
+        val extItem = findInstalledExtension(extensionId) ?: run {
             _lastError.value = "Extension not found."
             return
         }
@@ -1301,7 +1332,7 @@ object PetalExtensionManager {
         if (optionsUrl.isNullOrBlank()) {
             val popupUrl = resolveExtensionPopupUrl(extItem.raw)
             if (popupUrl != null) {
-                triggerBrowserAction(extensionId, context)
+                triggerBrowserAction(extItem.id, context)
             } else {
                 val msg = "No settings page available for ${extItem.name}."
                 _lastError.value = msg

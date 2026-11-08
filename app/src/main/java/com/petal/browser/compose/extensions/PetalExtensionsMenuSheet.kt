@@ -290,7 +290,7 @@ private fun ExtensionsMenuContent(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Install powerful Firefox extensions like uBlock Origin, Dark Reader, and Bitwarden to customize your browsing.",
+                        text = "Install powerful Firefox extensions like AdGuard, Dark Reader, and Bitwarden to customize your browsing.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
