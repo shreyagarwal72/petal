@@ -121,9 +121,9 @@
 - [x] **Phase 28: Zen Tab Glance / Peek Sheet**
   - [x] Build `PetalTabGlanceSheet.kt` with live preview, metadata header, and 8-action grid
   - [x] Wire split-view launcher, workspace transfer, group assignment, mute audio, and duplicate tab actions
-- [ ] **Phase 29: End-to-End Integration, Anti-Slop Audit & CI Verification**
+- [x] **Phase 29: End-to-End Integration, Anti-Slop Audit & CI Verification**
   - [x] Connect workspace filtering in `PetalTabSwitcherSheet.kt` and `PetalTabGridSwitcher.kt`
   - [x] Verify persistence across cold restarts
-  - [ ] Verify GitHub Actions remote CI build passes
+  - [x] Verify GitHub Actions remote CI build passes (Build `42479669304` green)
 
 
