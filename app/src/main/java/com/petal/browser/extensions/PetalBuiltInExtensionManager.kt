@@ -258,21 +258,6 @@ object PetalBuiltInExtensionManager {
             prefKey     = "petal_builtin_webcompat"
         ),
         BuiltInSpec(
-            assetPath   = "web_extensions/petal_dark_webpages/",
-            extensionId = "petal-dark-webpages@petalbrowser.app",
-            label       = "Petal Smart Dark Mode",
-            description = "Intelligent website dark mode that inverts bright canvases while preserving images and videos.",
-            prefKey     = "petal_builtin_dark_webpages",
-            defaultOn   = false
-        ),
-        BuiltInSpec(
-            assetPath   = "web_extensions/petal_clean_link/",
-            extensionId = "petal-clean-link@petalbrowser.app",
-            label       = "Petal Clean Link",
-            description = "Strips tracking parameters (UTM, fbclid, gclid, etc.) from clicked links in real time.",
-            prefKey     = "petal_builtin_clean_link"
-        ),
-        BuiltInSpec(
             assetPath   = "web_extensions/google_search_fixer/",
             extensionId = "google-search-fixer@petalbrowser.app",
             label       = "Google Search Fixer",
@@ -361,14 +346,6 @@ object PetalBuiltInExtensionManager {
                 session.webExtensionController.setMessageDelegate(mediaGrabber, mediaMessageDelegate, NATIVE_APP)
             } catch (t: Throwable) {
                 Log.w(TAG, "Failed to attach media grabber delegate to session", t)
-            }
-        }
-        val darkWebpages = installedExtensions[DARK_WEBPAGES_ID]
-        if (darkWebpages != null) {
-            try {
-                session.webExtensionController.setMessageDelegate(darkWebpages, darkMessageDelegate, NATIVE_APP)
-            } catch (t: Throwable) {
-                Log.w(TAG, "Failed to attach dark webpages delegate to session", t)
             }
         }
         val scriptletDefuser = installedExtensions[SCRIPTLET_DEFUSER_ID]
@@ -472,21 +449,6 @@ object PetalBuiltInExtensionManager {
                             session.webExtensionController.setMessageDelegate(ext, mediaMessageDelegate, NATIVE_APP)
                         } catch (t: Throwable) {
                             Log.w(TAG, "Failed to retroactively attach media grabber delegate to active session", t)
-                        }
-                    }
-                }
-                if (spec.extensionId == DARK_WEBPAGES_ID) {
-                    try {
-                        ext.setMessageDelegate(darkMessageDelegate, NATIVE_APP)
-                    } catch (t: Throwable) {
-                        Log.w(TAG, "Failed to set global message delegate for dark webpages", t)
-                    }
-                    val sessions = synchronized(activeSessions) { activeSessions.toList() }
-                    for (session in sessions) {
-                        try {
-                            session.webExtensionController.setMessageDelegate(ext, darkMessageDelegate, NATIVE_APP)
-                        } catch (t: Throwable) {
-                            Log.w(TAG, "Failed to retroactively attach dark webpages delegate to active session", t)
                         }
                     }
                 }

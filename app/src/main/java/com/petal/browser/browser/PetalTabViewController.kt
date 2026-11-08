@@ -1205,6 +1205,9 @@ class PetalTabViewController private constructor(
     }
 
     fun clearFindMatches() {
+        try {
+            getGeckoSession()?.finder?.clear()
+        } catch (_: Throwable) {}
         observedSession?.clearFindMatches()
     }
 

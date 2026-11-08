@@ -136,39 +136,8 @@ object PetalNativeSnifferEngine {
     }
 
     private fun probeResourceSize(tabId: String, resource: SniffedResource) {
-        scope.launch {
-            try {
-                val conn = URL(resource.url).openConnection() as? HttpURLConnection ?: return@launch
-                conn.requestMethod = "HEAD"
-                conn.connectTimeout = 4000
-                conn.readTimeout = 4000
-                conn.instanceFollowRedirects = true
-                resource.cookies?.let { conn.setRequestProperty("Cookie", it) }
-                resource.referrer?.let { conn.setRequestProperty("Referer", it) }
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36")
-
-                val length = conn.contentLengthLong
-                val contentType = conn.contentType
-                conn.disconnect()
-
-                if (length > 0L) {
-                    val list = tabResourcesMap[tabId] ?: return@launch
-                    synchronized(list) {
-                        val index = list.indexOfFirst { it.id == resource.id }
-                        if (index != -1) {
-                            val updated = list[index].copy(
-                                sizeBytes = length,
-                                mimeType = list[index].mimeType ?: contentType
-                            )
-                            list[index] = updated
-                            if (activeTabId.value == tabId) {
-                                _currentTabResources.value = ArrayList(list)
-                            }
-                        }
-                    }
-                }
-            } catch (_: Exception) {}
-        }
+        // Out-of-band HttpURLConnection HEAD probes removed to prevent bypassing GeckoView's
+        // network stack (DoH, proxy, HTTP/3, Gecko cookie jar) and triggering anti-bot CAPTCHAs.
     }
 
     private fun deriveFilename(url: String, category: PetalResourceCategory): String {

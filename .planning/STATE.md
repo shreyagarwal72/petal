@@ -5,7 +5,32 @@
   - **Milestone 1**: Core GeckoView Stabilization & Parity (Phases 1-6: COMPLETE & VERIFIED)
   - **Milestone 2**: Deep Mozilla Upstream Parity & Component Integration (Phases 7-12: COMPLETE & VERIFIED)
   - **Milestone 3**: Official Firefox WebExtensions Parity (Phases 13-18: COMPLETE & VERIFIED)
-- **Active Phase**: All Phases (Phase 1 through Phase 18) Complete, Documented, and Verified
+  - **Milestone 4**: App-Wide Architectural Parity & Anti-Pattern Remediation (Phases 19-23: COMPLETE & VERIFIED)
+- **Active Phase**: All Phases (Phase 1 through Phase 23) Complete, Documented, and Verified
+- **Completed Deliverables**:
+  - **Phase 1**: Verified R8 keep rules, audited reflection targets, and completed preference fingerprint keys in `PetalGeckoRuntime.kt`.
+  - **Phase 2**: Fixed history wiping in `rebuildTabsFromBrowserStore` and `showAlbum`; gated Mozilla session restore (`sp_mozilla_session_restore`); connected `goBack` to `BrowserStore.canGoBack` and eliminated premature 4-second timeout drop to Home.
+  - **Phase 3**: Enforced dark mode precedence; eliminated white flash on tab open/switch by styling `GeckoView` surface with `colorSurface` before first paint; added status bar `theme-color` meta tinting; debounced `capturePixels` during active scrolling (<400ms).
+  - **Phase 4**: Generated Fenix parity matrix; unified session settings builder in `PetalEngineBridge.createSessionSettings`; canonicalized desktop mode to `sp_desktop_site` with automatic legacy key migration.
+  - **Phase 5**: Fixed unhandled `GeckoResult.then()` in finder; removed dead `WebView` parameters from `PetalCacheManager` and `BrowsingDataManager`; rethrown `CancellationException` in coroutines; migrated `commit()` to `apply()`.
+  - **Phase 6**: Evaluated Mozilla components substitution order; prepared comprehensive Findings Table, Diff Log, Needs-Decision List, and Verification Test Scripts in `REPORT.md`.
+  - **Phase 7**: Eliminated PWA tab session leak in `PetalPwaActivity.onDestroy()`; supported incognito custom tabs via `isIncognitoCustomTab` intent parsing; verified cross-activity WebAuthn passkey handling.
+  - **Phase 8**: Upgraded article parsing in `PetalReaderBridge.kt` with Mozilla Readability algorithms (metadata parsing, clone sanitization, readable block collection); gated behind `sp_mozilla_readability`.
+  - **Phase 9**: Retained built-in Trie blocker as high-speed default baseline; added 1-tap uBlock Origin recommendation and dashboard launcher in Privacy Shield sheet.
+  - **Phase 10**: Gated Mozilla `EngineSession` find abstraction behind `sp_mozilla_find_in_page` with zero edits to address bar/padding logic.
+  - **Phase 11**: Verified `PetalMediaSessionService` `MediaSessionCompat` controls and gated foreground session startup behind `sp_mozilla_media_session`.
+  - **Phase 12**: Added reflection-safe W3C `WebNotification.actions` parsing and action buttons; hooked native Gecko content process crashes and OS kills into `PetalAppLogger`.
+  - **Phase 13**: Created `ExtensionActionState` with reactive badges, colors, and titles; exposed `activeTabActionStates` in `PetalExtensionManager.kt`.
+  - **Phase 14**: Built `PetalExtensionsMenuSheet.kt` with live action badges, 1-tap browser action popup triggers, and options page shortcuts; connected browser overflow menu.
+  - **Phase 15**: Purged legacy faux-extensions and custom dialogs from `PetalExtensionsScreen.kt`; implemented pure 3-tab Firefox manager (Installed, Explore, Tweaks).
+  - **Phase 16**: Upgraded `ExtensionDetailSheet` with full permissions inspector mapping host and API patterns, "Run in Private Windows" toggle, and options page button.
+  - **Phase 17**: Added local `.xpi` file import via system file picker, Custom AMO Collections loader via Mozilla API, and Developer Mode with formatted `manifest.json` inspector.
+  - **Phase 18**: Verified responsive popup scaling, complete password manager `PromptDelegate` handling, and parent tab focus restoration.
+  - **Phase 19**: Deleted insecure `petal_password_autofill` WebExtension; relied exclusively on GeckoView native `Autocomplete.StorageDelegate` and Android System Autofill.
+  - **Phase 20**: Purged Chromium `WebStorage`, `WebView`, and AndroidX webkit dependencies from `PetalCacheManager.kt` and `BrowsingDataManager.java`, saving 30–50MB memory.
+  - **Phase 21**: Deleted `petal_dark_webpages` content script; transitioned dark mode entirely to GeckoView native `preferredColorScheme` and user-installed extensions (Dark Reader).
+  - **Phase 22**: Fixed `GeckoSession.Finder.clear()` highlight leak in `clearFindMatches()`; deleted `petal_universal_copy` and `petal_clean_link` DOM-mutating scripts to protect web editors and SPAs.
+  - **Phase 23**: Removed out-of-band `HttpURLConnection` HEAD probes in `PetalNativeSnifferEngine.kt`; wired PWA discovery directly to GeckoView native `ContentDelegate.onWebAppManifest`.
 - **Completed Deliverables**:
   - **Phase 1**: Verified R8 keep rules, audited reflection targets, and completed preference fingerprint keys in `PetalGeckoRuntime.kt`.
   - **Phase 2**: Fixed history wiping in `rebuildTabsFromBrowserStore` and `showAlbum`; gated Mozilla session restore (`sp_mozilla_session_restore`); connected `goBack` to `BrowserStore.canGoBack` and eliminated premature 4-second timeout drop to Home.

@@ -14,9 +14,7 @@ import org.mozilla.geckoview.GeckoResult
  *  • onLoginFetch  – returns matching credentials when GeckoView loads a login form,
  *                    so Gecko can offer them in the browser's own suggestion UI.
  *  • onLoginSave   – called by Gecko after the user fills in and submits a form;
- *                    saves or updates the credential silently (Petal's own
- *                    "save?" snackbar is shown by the in-browser web extension
- *                    via the system autofill save prompt).
+ *                    saves or updates the credential directly in Petal's secure AES-256 vault.
  *  • onLoginUsed   – updates the credential's lastUsed timestamp.
  *
  * Register with: GeckoRuntime.autocompleteStorageDelegate = PetalAutofillGeckoDelegate(ctx)

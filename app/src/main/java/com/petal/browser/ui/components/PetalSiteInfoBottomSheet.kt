@@ -4,8 +4,6 @@ import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslCertificate
-import android.webkit.GeolocationPermissions
-import android.webkit.WebStorage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -606,7 +604,6 @@ fun PetalSiteInfoBottomSheet(
                                     siteResetExpanded = false
                                     try {
                                         com.petal.browser.unit.PetalCacheManager.clearSiteData(context, domain, includeCookies = false, includePermissions = true)
-                                        GeolocationPermissions.getInstance().clear(domain)
                                         sp.edit()
                                             .remove(profile + "_camera")
                                             .remove(profile + "_microphone")
@@ -716,7 +713,7 @@ fun PetalSiteInfoBottomSheet(
                             PetalAndroidUtils.grantPermissionsLoc(context)
                         } else if (!allowed) {
                             try {
-                                GeolocationPermissions.getInstance().clear(domain)
+                                com.petal.browser.unit.PetalCacheManager.clearSiteData(context, domain, includeCookies = false, includePermissions = true)
                             } catch (ignored: Exception) {}
                         }
                         tabViewController?.reload()

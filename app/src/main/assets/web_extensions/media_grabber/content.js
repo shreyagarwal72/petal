@@ -48,30 +48,6 @@ setTimeout(refreshTabMedia, 1200);
 setTimeout(refreshTabMedia, 3000);
 setTimeout(refreshTabMedia, 6000);
 
-// Progressive Web App (PWA) manifest discovery for GeckoView native bridge
-function detectPwaManifest() {
-    try {
-        if (window.top !== window) return;
-        const manifestLink = document.querySelector('link[rel="manifest"], link[rel="alternate"][type="application/manifest+json"]');
-        if (manifestLink && manifestLink.href) {
-            chrome.runtime.sendMessage({
-                type: 'PWA_MANIFEST_FOUND',
-                manifestUrl: manifestLink.href,
-                pageUrl: window.location.href,
-                pageTitle: document.title || ''
-            }).catch(() => {});
-        }
-    } catch (e) {}
-}
-
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    detectPwaManifest();
-} else {
-    document.addEventListener('DOMContentLoaded', detectPwaManifest);
-}
-window.addEventListener('load', detectPwaManifest);
-setTimeout(detectPwaManifest, 1500);
-setTimeout(detectPwaManifest, 4000);
 
 // Reader Mode article eligibility detector
 function checkArticleEligibility() {

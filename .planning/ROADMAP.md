@@ -80,3 +80,24 @@
   - [x] Verify mobile-responsive viewport CSS injection bypassing content CSP
   - [x] Support full prompt delegate suite (alert, button, text, share) for password managers
   - [x] Ensure reliable focus cleanup and parent tab reactivation on dismiss
+
+## Milestone 4: App-Wide Architectural Parity & Anti-Pattern Remediation
+- [x] **Phase 19: Security & Credential Protection (P0)**
+  - [x] Delete insecure `petal_password_autofill` WebExtension (prevent plaintext credentials leaking via DOM `petal:login_submitted` events)
+  - [x] Rely exclusively on GeckoView's native C++ `Autocomplete.StorageDelegate` via `PetalAutofillGeckoDelegate` and Android System Autofill Framework
+  - [x] Remove `petal_password_autofill` registration from `PetalBuiltInExtensionManager`
+- [x] **Phase 20: Memory & Zombie Runtime Cleanup (P1)**
+  - [x] Purge `android.webkit.*` (`WebStorage`, `WebView`) and `androidx.webkit.*` (`ProfileStore`, `WebViewFeature`) from `PetalCacheManager.kt`
+  - [x] Unify storage and browsing data clearing exclusively under GeckoView's asynchronous `StorageController.clearData()`
+  - [x] Save 30–50MB native RAM per process by preventing Chromium `libmonochrome.so` background initialization
+- [x] **Phase 21: Native Dark Mode & Content Script De-escalation (P1)**
+  - [x] Migrate dark theme completely to GeckoView native engine settings (`preferredColorScheme` and `forceUserSpecifiedColors`)
+  - [x] De-escalate and remove `petal_dark_webpages` content script to eliminate double-inversion white flashes when running Dark Reader or visiting dark-native pages
+- [x] **Phase 22: Search, Copy & Web Compatibility Fixes (P2)**
+  - [x] Fix `GeckoSession.Finder.clear()` highlight leak in `PetalTabViewController.clearFindMatches()`
+  - [x] De-escalate `petal_universal_copy` from global capture-phase injection to an on-demand contextual action to protect Google Docs, Google Sheets, and web code editors
+  - [x] De-escalate `petal_clean_link` from click-time `href` mutation to GeckoView's native Enhanced Tracking Protection query stripping (`privacy.query_stripping.enabled`)
+- [x] **Phase 23: Media Sniffing & Downloader Network Architecture (P2)**
+  - [x] Remove out-of-band Java `HttpURLConnection` HEAD probes in `PetalNativeSnifferEngine.kt` that bypass Gecko's network stack and trigger anti-bot CAPTCHAs
+  - [x] Wire PWA discovery directly to GeckoView's native `ContentDelegate.onWebAppManifest` instead of DOM scraping in `media_grabber`
+

@@ -7,11 +7,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.webkit.WebStorage
-import android.webkit.WebView
-import androidx.webkit.Profile
-import androidx.webkit.ProfileStore
-import androidx.webkit.WebViewFeature
 import com.petal.browser.engine.gecko.PetalGeckoRuntime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -21,8 +16,7 @@ import java.util.concurrent.Executors
 
 /**
  * PetalCacheManager: High-grade website & application cache manager implementing
- * the official Mozilla Firefox (GeckoView StorageController) and Chromium (WebView / WebStorage)
- * caching standards.
+ * the official Mozilla Firefox (GeckoView StorageController) caching architecture.
  */
 object PetalCacheManager {
 
@@ -127,7 +121,7 @@ object PetalCacheManager {
 
     @Deprecated("Legacy WebView parameter no longer used in GeckoView architecture")
     @JvmStatic
-    fun clearAllCache(context: Context, activeWebView: WebView?) {
+    fun clearAllCache(context: Context, activeWebView: Any?) {
         clearCache(context, Flags.ALL_CACHES, null)
     }
 
@@ -185,25 +179,9 @@ object PetalCacheManager {
             }
         }
 
-        // 3. Chromium WebStorage & Multi-profile fallback (Chromium official engine)
-        runOnMainThread {
-            try {
-                if ((flags and Flags.DOM_WEB_STORAGE) != 0L) {
-                    WebStorage.getInstance().deleteAllData()
-                    if (WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) {
-                        try {
-                            ProfileStore.getInstance().getOrCreateProfile(Profile.DEFAULT_PROFILE_NAME)?.webStorage?.deleteAllData()
-                        } catch (e: Exception) {
-                            Log.w(TAG, "Error clearing web storage: ${e.message}")
-                        }
-                    }
-                }
-                if ((flags and Flags.COOKIES) != 0L) {
-                    com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies()
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Error clearing Chromium storage", e)
-            }
+        // 3. Cookies cleanup
+        if ((flags and Flags.COOKIES) != 0L) {
+            com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies()
         }
 
         // 4. Legacy HTTP response cache: only when the network cache was requested
@@ -309,18 +287,6 @@ object PetalCacheManager {
             } catch (_: Throwable) { null }
             if (!baseDomain.isNullOrBlank() && baseDomain != cleanHost) {
                 storageController.clearDataFromBaseDomain(baseDomain, flags)
-            }
-
-            // Chromium WebStorage & CookieManager fallback
-            try {
-                android.webkit.WebStorage.getInstance().deleteOrigin("https://$cleanHost")
-                android.webkit.WebStorage.getInstance().deleteOrigin("http://$cleanHost")
-            } catch (_: Exception) {}
-
-            if (includePermissions) {
-                try {
-                    android.webkit.GeolocationPermissions.getInstance().clear(cleanHost)
-                } catch (_: Exception) {}
             }
         } catch (e: Exception) {
             Log.w(TAG, "Error clearing site data for host: $host", e)
