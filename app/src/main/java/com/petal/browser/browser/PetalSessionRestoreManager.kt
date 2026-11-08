@@ -361,13 +361,34 @@ object PetalSessionRestoreManager {
 
             if (restoredState != null && restoredState.tabs.isNotEmpty()) {
                 Log.i(TAG, "Restoring ${restoredState.tabs.size} tabs into empty BrowserStore")
-                store.dispatch(
-                    TabListAction.RestoreAction(
-                        tabs = restoredState.tabs,
-                        selectedTabId = restoredState.selectedTabId,
-                        restoreLocation = TabListAction.RestoreAction.RestoreLocation.END
+                val mozillaRestore = sp.getBoolean("sp_mozilla_session_restore", false)
+                if (mozillaRestore) {
+                    try {
+                        val tabsUseCases = mozilla.components.feature.tabs.TabsUseCases(store)
+                        tabsUseCases.restore.invoke(
+                            tabs = restoredState.tabs,
+                            selectTabId = restoredState.selectedTabId,
+                            restoreLocation = TabListAction.RestoreAction.RestoreLocation.END
+                        )
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Mozilla TabsUseCases restore failed, falling back to direct dispatch: ${t.message}")
+                        store.dispatch(
+                            TabListAction.RestoreAction(
+                                tabs = restoredState.tabs,
+                                selectedTabId = restoredState.selectedTabId,
+                                restoreLocation = TabListAction.RestoreAction.RestoreLocation.END
+                            )
+                        )
+                    }
+                } else {
+                    store.dispatch(
+                        TabListAction.RestoreAction(
+                            tabs = restoredState.tabs,
+                            selectedTabId = restoredState.selectedTabId,
+                            restoreLocation = TabListAction.RestoreAction.RestoreLocation.END
+                        )
                     )
-                )
+                }
                 PetalEngineStore.markRestoreComplete(activity)
                 // Thumbnails live exactly as long as their tab: drop files of tabs that no longer
                 // exist (closed while the process was dead, crashes). Safe here: no tab has produced
@@ -424,11 +445,11 @@ object PetalSessionRestoreManager {
             PetalTabMetadataStore.setGroup(activity, tabId, groupId, groupTitle, groupColorHex)
         }
 
-        val sessionPair = PetalEngineStore.createTabSession(
+        val sessionPair = PetalEngineStore.materializeTabSession(
             context = activity,
             tabId = tabId,
-            url = safeUrl,
-            title = safeTitle,
+            fallbackUrl = safeUrl,
+            fallbackTitle = safeTitle,
             isIncognito = isIncognito,
             select = !keepOverviewOpen
         )
@@ -444,7 +465,7 @@ object PetalSessionRestoreManager {
                 groupTitle,
                 isIncognito
             )
-            if (safeUrl.isNotBlank() && !isHomeUrl(safeUrl)) {
+            if (!sessionPair.first.engineState.engineSessionState?.let { true } ?: false && safeUrl.isNotBlank() && !isHomeUrl(safeUrl)) {
                 sessionPair.second.loadUrl(safeUrl)
             }
             if (targetIndex >= 0 && targetIndex <= BrowserContainer.size()) {
@@ -462,7 +483,7 @@ object PetalSessionRestoreManager {
             geckoView.setTabGroupTitle(groupTitle)
         }
 
-        if (safeUrl.isNotBlank() && !isHomeUrl(safeUrl)) {
+        if (!geckoView.isHistoryRestoring() && safeUrl.isNotBlank() && !isHomeUrl(safeUrl)) {
             geckoView.loadUrl(safeUrl)
         }
 

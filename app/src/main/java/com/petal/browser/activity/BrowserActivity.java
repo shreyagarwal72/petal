@@ -2505,10 +2505,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             if (overrideUrl != null && !overrideUrl.isEmpty() && !isHomePage(overrideUrl)) {
                 activeView.loadUrl(overrideUrl);
-            } else if (activeView.needsReloadOrRecovery() && targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
+            } else if (!activeView.isHistoryRestoring() && activeView.needsReloadOrRecovery() && targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
                 activeView.loadUrl(targetUrl);
-            } else {
-                activeView.loadUrl("about:blank");
             }
         }
 
@@ -7916,7 +7914,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     activeView.setTabGroupTitle(groupTitle);
                 }
 
-                if (url != null && !url.isEmpty() && !com.petal.browser.browser.PetalSessionRestoreManager.INSTANCE.isHomeUrl(url)) {
+                if (!activeView.isHistoryRestoring() && url != null && !url.isEmpty() && !com.petal.browser.browser.PetalSessionRestoreManager.INSTANCE.isHomeUrl(url)) {
                     activeView.loadUrl(url);
                 }
 

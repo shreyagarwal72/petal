@@ -1250,17 +1250,30 @@ class PetalTabViewController private constructor(
         attachedLifecycle?.addObserver(engineLifecycleObserver)
     }
 
+    /** Returns true while the session is actively restoring its history from saved engine state. */
+    fun isHistoryRestoring(): Boolean = historyPending
+
     /** Same source Mozilla's SessionFeature.onBackPressed uses: the store's canGoBack, plus our live flag. */
     private fun hasBackHistory(): Boolean {
-        if (backAvailable || isHistoryPending()) return true
+        if (backAvailable || historyPending) return true
         val id = boundTabId ?: return false
         return browserStore.state.tabs.firstOrNull { it.id == id }?.content?.canGoBack == true
     }
 
     @JvmOverloads
     fun goBack(userInteraction: Boolean = true) {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+        val useMozillaUseCase = sp.getBoolean("sp_mozilla_session_restore", false)
         val gs = getGeckoSession()
         if (hasBackHistory()) {
+            if (useMozillaUseCase) {
+                tab?.let { current ->
+                    try {
+                        mozilla.components.feature.session.SessionUseCases(browserStore).goBack.invoke(current.id, userInteraction)
+                        return
+                    } catch (_: Throwable) {}
+                }
+            }
             try {
                 if (gs != null) {
                     gs.goBack(userInteraction)
