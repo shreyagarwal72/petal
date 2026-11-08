@@ -987,66 +987,46 @@ object BrowserContextMenuManager {
     }
 
     /**
-     * Unified entry point for GeckoSession.ContentDelegate.onContextMenu.
-     * Dynamically determines whether the targeted element is an image, link, image-in-link,
-     * video, audio, phone, email, sms, or page context menu.
+     * Routes a Mozilla [mozilla.components.concept.engine.HitResult] (already classified by
+     * GeckoEngineSession) to Petal's own Compose menus. [hitResult] == null means a press on empty
+     * page area, which shows the page menu.
      */
     @JvmStatic
     @JvmOverloads
     fun handleContextMenu(
         activity: BrowserActivity,
-        elemType: Int,
-        linkUri: String?,
-        srcUri: String?,
-        linkText: String? = null,
-        title: String? = null,
-        alt: String? = null,
+        hitResult: mozilla.components.concept.engine.HitResult?,
         pageUrl: String? = null,
         pageTitle: String? = null,
     ) {
-        val hasLink = !linkUri.isNullOrBlank()
-        val hasSrc = !srcUri.isNullOrBlank()
-        val effectiveText = linkText?.trim()?.takeIf { it.isNotEmpty() }
-            ?: title?.trim()?.takeIf { it.isNotEmpty() }
-            ?: alt?.trim()?.takeIf { it.isNotEmpty() }
-
-        when {
-            // Combined Image inside a Link (<a href="..."><img src="..."></a>)
-            hasLink && (hasSrc || elemType == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_IMAGE) -> {
-                showImageLinkContextMenu(activity, linkUri!!, srcUri ?: linkUri, effectiveText)
+        when (hitResult) {
+            is mozilla.components.concept.engine.HitResult.IMAGE ->
+                showImageContextMenu(activity, hitResult.src, hitResult.title)
+            is mozilla.components.concept.engine.HitResult.IMAGE_SRC ->
+                showImageLinkContextMenu(activity, hitResult.uri, hitResult.src, null)
+            is mozilla.components.concept.engine.HitResult.VIDEO ->
+                showVideoContextMenu(activity, hitResult.src)
+            is mozilla.components.concept.engine.HitResult.AUDIO ->
+                showAudioContextMenu(activity, hitResult.src)
+            is mozilla.components.concept.engine.HitResult.UNKNOWN,
+            is mozilla.components.concept.engine.HitResult.PHONE,
+            is mozilla.components.concept.engine.HitResult.EMAIL,
+            is mozilla.components.concept.engine.HitResult.GEO -> {
+                val target = hitResult.src
+                if (target.startsWith("sms:") || target.startsWith("smsto:")) {
+                    showSmsContextMenu(activity, target)
+                } else {
+                    showLinkContextMenu(activity, target, null)
+                }
             }
-            // Explicit Image or non-empty image source
-            elemType == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_IMAGE || (hasSrc && elemType != org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_VIDEO && elemType != org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_AUDIO) -> {
-                showImageContextMenu(activity, srcUri ?: linkUri.orEmpty(), effectiveText)
-            }
-            // Video element
-            elemType == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_VIDEO -> {
-                showVideoContextMenu(activity, srcUri ?: linkUri.orEmpty())
-            }
-            // Audio element
-            elemType == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_AUDIO -> {
-                showAudioContextMenu(activity, srcUri ?: linkUri.orEmpty())
-            }
-            // SMS scheme (sms: or smsto:)
-            hasLink && (linkUri!!.startsWith("sms:") || linkUri.startsWith("smsto:")) -> {
-                showSmsContextMenu(activity, linkUri)
-            }
-            // Plain Link
-            hasLink -> {
-                showLinkContextMenu(activity, linkUri!!, effectiveText)
-            }
-            // Fallback if srcUri is present
-            hasSrc -> {
-                showImageContextMenu(activity, srcUri!!, effectiveText)
-            }
-            // Blank / Page Context Menu (Firefox parity: long press on empty web area)
-            else -> {
+            null -> {
                 val effectivePageUrl = pageUrl?.takeIf { it.isNotBlank() }
                     ?: activity.currentAlbumController?.url.orEmpty()
                 val effectivePageTitle = pageTitle?.takeIf { it.isNotBlank() }
                     ?: activity.currentAlbumController?.title.orEmpty()
                 showPageContextMenu(activity, effectivePageUrl, effectivePageTitle)
             }
+            else -> Unit
         }
     }
 }

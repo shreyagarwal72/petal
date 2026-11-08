@@ -8,6 +8,7 @@ import mozilla.components.browser.session.storage.AutoSave
 import mozilla.components.browser.session.storage.SessionStorage
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.engine.EngineMiddleware
+import mozilla.components.browser.state.engine.middleware.SessionPrioritizationMiddleware
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.downloads.DownloadMiddleware
@@ -135,7 +136,7 @@ object PetalEngineStore {
                 downloadMiddleware,
                 PromptMiddleware(),
                 FileUploadsDirCleanerMiddleware(uploadCleaner),
-                PetalSessionPrioritizationMiddleware(),
+                SessionPrioritizationMiddleware(),
                 PetalThumbnailsMiddleware()
             ) + engineMiddleware
         )

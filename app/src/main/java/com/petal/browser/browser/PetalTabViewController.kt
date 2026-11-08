@@ -1960,6 +1960,42 @@ class PetalTabViewController private constructor(
         refreshFeature?.start()
         fullScreenFeature?.start()
         startThumbnails()
+        startContextMenuObserver()
+    }
+
+    private var contextMenuSubscription: mozilla.components.lib.state.Store.Subscription<
+        mozilla.components.browser.state.state.BrowserState,
+        mozilla.components.browser.state.action.BrowserAction>? = null
+
+    /**
+     * Same flow as Mozilla's ContextMenuFeature, minus its UI: watch the selected tab's
+     * HitResult in the BrowserStore, consume it, and show Petal's own Compose menu.
+     */
+    private fun startContextMenuObserver() {
+        if (contextMenuSubscription != null) return
+        contextMenuSubscription = browserStore.observeManually { state ->
+            val id = boundTabId ?: return@observeManually
+            if (state.selectedTabId != id) return@observeManually
+            val hit = state.tabs.firstOrNull { it.id == id }?.content?.hitResult ?: return@observeManually
+            // Consume first so the same long-press can never open the menu twice.
+            browserStore.dispatch(mozilla.components.browser.state.action.ContentAction.ConsumeHitResultAction(id))
+            post {
+                val act = resolveActivity(context)
+                if (act is com.petal.browser.activity.BrowserActivity && active) {
+                    com.petal.browser.compose.menu.BrowserContextMenuManager.handleContextMenu(
+                        activity = act,
+                        hitResult = hit,
+                        pageUrl = pageUrl,
+                        pageTitle = pageTitle
+                    )
+                }
+            }
+        }.also { it.resume() }
+    }
+
+    private fun stopContextMenuObserver() {
+        contextMenuSubscription?.unsubscribe()
+        contextMenuSubscription = null
     }
 
     /**
@@ -1998,6 +2034,7 @@ class PetalTabViewController private constructor(
     override fun deactivate() {
         updatePreviewCache(true)
         stopThumbnails()
+        stopContextMenuObserver()
         active = false
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(getGeckoSession(), null)
         refreshFeature?.stop()
@@ -2047,6 +2084,7 @@ class PetalTabViewController private constructor(
     @MainThread
     override fun release() {
         stopThumbnails()
+        stopContextMenuObserver()
         active = false
         val gs = getGeckoSession()
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(gs, null)
@@ -2250,37 +2288,21 @@ private class PetalContentDelegateWrapper(
         screenY: Int,
         element: org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement
     ) {
+        // Long-press parsing is Mozilla's: forwarding to the engine session lets GeckoEngineSession
+        // turn the element into a HitResult in the BrowserStore, and observeContextMenu() below
+        // shows Petal's own menu for it. No manual element parsing here.
+        //
+        // Mozilla produces no HitResult for a press on empty page area (no link, no media), so
+        // that single case keeps Petal's page menu.
         val act = resolveActivity()
-        if (act is com.petal.browser.activity.BrowserActivity) {
-            val baseUri = runCatching { element.baseUri }.getOrNull()
-            fun resolveUri(uri: String?): String? {
-                if (uri.isNullOrBlank()) return null
-                if (baseUri.isNullOrBlank() || uri.contains("://") || uri.startsWith("data:") || uri.startsWith("blob:") || uri.startsWith("javascript:")) {
-                    return uri
-                }
-                return runCatching { java.net.URI(baseUri).resolve(uri).toString() }.getOrDefault(uri)
-            }
-
-            val linkUri = resolveUri(element.linkUri)
-            val srcUri = resolveUri(element.srcUri)
-            val elemType = element.type
-            val linkText = runCatching { element.linkText }.getOrNull()?.takeIf { it.isNotBlank() }
-                ?: runCatching { element.title }.getOrNull()?.takeIf { it.isNotBlank() }
-                ?: runCatching { element.javaClass.getField("alt").get(element) as? String }.getOrNull()?.takeIf { it.isNotBlank() }
-                ?: runCatching { element.javaClass.getField("textContent").get(element) as? String }.getOrNull()
-            val elementTitle = runCatching { element.title }.getOrNull()?.takeIf { it.isNotBlank() }
-            val elementAlt = runCatching { element.javaClass.getField("alt").get(element) as? String }.getOrNull()?.takeIf { it.isNotBlank() }
-                ?: runCatching { element.javaClass.getField("altText").get(element) as? String }.getOrNull()?.takeIf { it.isNotBlank() }
-
+        if (act is com.petal.browser.activity.BrowserActivity &&
+            element.linkUri.isNullOrBlank() && element.srcUri.isNullOrBlank() &&
+            element.type == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_NONE
+        ) {
             act.runOnUiThread {
                 com.petal.browser.compose.menu.BrowserContextMenuManager.handleContextMenu(
                     activity = act,
-                    elemType = elemType,
-                    linkUri = linkUri,
-                    srcUri = srcUri,
-                    linkText = linkText,
-                    title = elementTitle,
-                    alt = elementAlt,
+                    hitResult = null,
                     pageUrl = pageUrlProvider(),
                     pageTitle = pageTitleProvider()
                 )
