@@ -400,81 +400,46 @@ fun PetalAdBlockSettingsScreen(
                     icon = Icons.Rounded.Extension
                 ) {
                     if (adguardExt != null) {
-                        PetalGroupListRow(
-                            position = PetalGroupPosition.FIRST,
-                            leading = { PetalGroupIconBadge(Icons.Rounded.Shield, variant = PetalBadgeVariant.TONAL) },
-                            content = {
-                                Text(
-                                    text = "AdGuard Protection",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = if (adguardExt.enabled) "Active — full cosmetic filtering & element blocking" else "Disabled in Add-on Manager",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            },
-                            trailing = {
-                                IconSwitch(
-                                    checked = adguardExt.enabled,
-                                    onCheckedChange = { enabled ->
-                                        com.petal.browser.extensions.PetalExtensionManager.setEnabled(adguardExt.raw, enabled)
-                                    }
-                                )
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
+                            title = "AdGuard Protection",
+                            subtitle = if (adguardExt.enabled) "Active — full cosmetic filtering & scriptlets" else "Disabled in Add-on Manager",
+                            icon = Icons.Rounded.Shield,
+                            checked = adguardExt.enabled,
+                            onCheckedChange = { enabled ->
+                                com.petal.browser.extensions.PetalExtensionManager.setEnabled(adguardExt.raw, enabled)
                             }
                         )
-                        PetalGroupListRow(
-                            position = PetalGroupPosition.LAST,
+                        com.petal.browser.ui.containment.PetalGroupRow(
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                            icon = Icons.Rounded.DashboardCustomize,
+                            title = "AdGuard Dashboard & Settings",
+                            subtitle = "Configure user rules, whitelists, and element filtering",
                             onClick = {
                                 com.petal.browser.extensions.PetalExtensionManager.triggerBrowserAction(adguardExt.id, context)
-                            },
-                            leading = { PetalGroupIconBadge(Icons.Rounded.DashboardCustomize) },
-                            content = {
-                                Text(
-                                    text = "AdGuard Dashboard & Settings",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = "Configure user rules, whitelists, and element filtering",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            },
-                            trailing = {
-                                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         )
                     } else {
-                        PetalGroupListRow(
-                            position = PetalGroupPosition.SINGLE,
-                            leading = { PetalGroupIconBadge(Icons.Rounded.AddModerator, variant = PetalBadgeVariant.TONAL) },
-                            content = {
-                                Text(
-                                    text = "AdGuard AdBlocker Add-on",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = "Connect AdGuard's Firefox WebExtension for advanced cosmetic filtering and scriptlets",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            },
+                        val connectAction = {
+                            if (!isInstallingAdGuard) {
+                                isInstallingAdGuard = true
+                                val entry = com.petal.browser.extensions.PetalExtensionManager.catalog.firstOrNull { it.id == "adguard-adblocker" }
+                                val url = entry?.downloadUrl ?: "https://addons.mozilla.org/firefox/downloads/latest/adguard-adblocker/latest.xpi"
+                                com.petal.browser.extensions.PetalExtensionManager.install(url) { success, msg ->
+                                    isInstallingAdGuard = false
+                                    android.widget.Toast.makeText(context, msg ?: if (success) "AdGuard AdBlocker installed" else "Install failed", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                        com.petal.browser.ui.containment.PetalGroupRow(
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                            icon = Icons.Rounded.Extension,
+                            title = "AdGuard AdBlocker Add-on",
+                            subtitle = "Connect AdGuard's Firefox WebExtension for advanced cosmetic filtering and scriptlets",
+                            onClick = { connectAction() },
                             trailing = {
                                 Button(
-                                    onClick = {
-                                        if (!isInstallingAdGuard) {
-                                            isInstallingAdGuard = true
-                                            val entry = com.petal.browser.extensions.PetalExtensionManager.catalog.firstOrNull { it.id == "adguard-adblocker" }
-                                            val url = entry?.downloadUrl ?: "https://addons.mozilla.org/firefox/downloads/latest/adguard-adblocker/latest.xpi"
-                                            com.petal.browser.extensions.PetalExtensionManager.install(url) { success, msg ->
-                                                isInstallingAdGuard = false
-                                                android.widget.Toast.makeText(context, msg ?: if (success) "AdGuard AdBlocker installed" else "Install failed", android.widget.Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
-                                    },
+                                    onClick = { connectAction() },
                                     enabled = !isInstallingAdGuard,
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
