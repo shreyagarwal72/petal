@@ -19,7 +19,7 @@
         android:importantForAccessibility="no" />
 
     <!-- Main Web Content Container: fills viewport (top and bottom aligned), and dynamically offset by address bar / bottom bar via paddings and layout rules -->
-    <com.petal.browser.ui.components.PullToRefreshFrameLayout
+    <FrameLayout
         android:id="@+id/main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

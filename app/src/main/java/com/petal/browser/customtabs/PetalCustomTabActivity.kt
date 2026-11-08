@@ -48,7 +48,6 @@ import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.compose.composable.PetalRefreshBarState
 import com.petal.browser.compose.composable.RefreshBarLoadingIndicator
-import com.petal.browser.ui.components.PullToRefreshFrameLayout
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
@@ -153,22 +152,11 @@ class PetalCustomTabActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
-                        // Native PullToRefreshFrameLayout wrapping the GeckoView surface
+                        // PetalTabViewController is a SwipeRefreshLayout driven by Mozilla's
+                        // SwipeRefreshFeature, so it supplies pull-to-refresh and its spinner itself.
                         AndroidView(
                             factory = { ctx ->
-                                PullToRefreshFrameLayout(ctx).also { p2r ->
-                                    p2r.setCanPull { tabSurface?.isPageAtTop() == true }
-                                    p2r.setOnPullListener { progress ->
-                                        refreshState.pullProgress = progress
-                                    }
-                                    p2r.setOnReleaseListener { triggered ->
-                                        if (triggered) {
-                                            refreshState.isRefreshing = true
-                                            tabSurface?.reload()
-                                        }
-                                        refreshState.pullProgress = 0f
-                                    }
-
+                                FrameLayout(ctx).also { p2r ->
                                     val tabId = "tab_custom_${System.currentTimeMillis()}"
                                     val sessionPair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
                                         context = ctx,
@@ -214,15 +202,6 @@ class PetalCustomTabActivity : ComponentActivity() {
                                 }
                             },
                             modifier = Modifier.fillMaxSize()
-                        )
-
-                        // Authentic Petal pull-to-refresh loading indicator matching BrowserActivity
-                        RefreshBarLoadingIndicator(
-                            isRefreshing = refreshState.isRefreshing,
-                            pullProgress = refreshState.pullProgress,
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .zIndex(500f)
                         )
                     }
                 }

@@ -195,7 +195,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     // Layouts
     public LinearProgressIndicator progressBar;
-    public com.petal.browser.ui.components.PullToRefreshFrameLayout contentFrame;
+    public android.widget.FrameLayout contentFrame;
     public boolean isOverlayScreenShowing = false;
     public boolean isCustomFullscreenState = false;
     /**
@@ -5265,7 +5265,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // Keep the host view GONE while idle. Compose's AnimatedVisibility only
             // hides its content; the ComposeView itself would otherwise remain as a
             // transparent touch surface above the WebView and steal the next
-            // pull gesture. It is made visible only after PullToRefreshFrameLayout
+            // pull gesture. It is no longer shown by any pull (Mozilla's SwipeRefreshLayout draws its own spinner)
             // has already captured a real pull gesture.
             refreshBarCompose.setVisibility(View.INVISIBLE);
             refreshBarCompose.bringToFront();
@@ -5417,97 +5417,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (contentFrame == null) return;
 
-        // Pull distance 80dp with 120dp top touch area threshold matching omni-browser
-        contentFrame.setPullDistanceDp(80f);
-        contentFrame.setEdgeThresholdDp(120f);
-        contentFrame.setCanPull(() -> {
-            if (com.petal.browser.compose.splash.PetalSplashState.splashActive.getValue()) {
-                return false;
-            }
-            // Strictly exclusive to websites: never allow on home, settings, history, or internal surfaces
-            if (isPetalHomeSurfaceShowing || isOverlayScreenShowing || hasNonTabTopContent()) {
-                return false;
-            }
-            View top = getTopContentChild();
-            if (top != null && !isTabSurface(top)) {
-                return false;
-            }
-
-            AlbumController controller = currentAlbumController;
-            String currentUrl = controller != null ? controller.getUrl() : (currentAlbumController != null ? currentAlbumController.getUrl() : null);
-            if (currentUrl == null) {
-                return false;
-            }
-            String trimmedUrl = currentUrl.trim().toLowerCase(java.util.Locale.ROOT);
-            if (!trimmedUrl.startsWith("http://") && !trimmedUrl.startsWith("https://")) {
-                return false;
-            }
-
-            boolean isScrolledToTop = false;
-            if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
-                isScrolledToTop = ((com.petal.browser.browser.PetalTabViewController) controller).isPageAtTop();
-            }
-
-            // Firefox disables pull-to-refresh in fullscreen; bar animations no longer veto a
-            // gesture at touch-down (that made pulls fail at random).
-            return isScrolledToTop && !refreshState.isRefreshing() && !isCustomFullscreenState;
-        });
-
-        final androidx.compose.ui.platform.ComposeView finalRefreshView = refreshBarCompose;
-        contentFrame.setOnPullListener(progress -> {
-            if (finalRefreshView != null) {
-                if (progress > 0f) {
-                    if (finalRefreshView.getVisibility() != VISIBLE) {
-                        finalRefreshView.setVisibility(VISIBLE);
-                    }
-                } else if (!refreshState.isRefreshing()
-                        && finalRefreshView.getVisibility() != View.INVISIBLE) {
-                    finalRefreshView.setVisibility(View.INVISIBLE);
-                }
-            }
-            float prevProgress = refreshState.getPullProgress();
-            refreshState.setPullProgress(progress);
-            if (progress >= 0.75f && prevProgress < 0.75f) {
-                com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this)
-                    .playIfEnabled(BrowserActivity.this, com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.6f);
-            }
-        });
-
-        contentFrame.setOnReleaseListener(triggered -> {
-            if (!triggered) {
-                refreshState.setPullProgress(0f);
-                if (finalRefreshView != null) {
-                    finalRefreshView.setVisibility(View.INVISIBLE);
-                }
-                return;
-            }
-            com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this)
-                .playIfEnabled(BrowserActivity.this, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f);
-            refreshState.setRefreshing(true);
-            refreshState.setPullProgress(1.0f);
-            pullReloadSawLoading = false;
-
-            // Firefox safety watchdog: reset refreshing indicator after 8 seconds if page load hangs
-            if (contentFrame != null) {
-                contentFrame.removeCallbacks(refreshTimeoutWatchdog);
-                contentFrame.postDelayed(refreshTimeoutWatchdog, 8000L);
-            }
-
-            boolean started = false;
-            try {
-                if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
-                    started = ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).reload();
-                }
-            } catch (Throwable t) {
-                android.util.Log.w("BrowserActivity", "Pull-to-refresh reload failed", t);
-            }
-            if (!started) {
-                resetRefreshState();
-            } else if (contentFrame != null) {
-                contentFrame.removeCallbacks(refreshStartCheck);
-                contentFrame.postDelayed(refreshStartCheck, 2500L);
-            }
-        });
+        // Pull-to-refresh is handled by Mozilla's SwipeRefreshFeature inside each
+        // PetalTabViewController (a SwipeRefreshLayout), exactly like Fenix.
     }
 
     private final Runnable refreshTimeoutWatchdog = this::resetRefreshState;
@@ -5532,7 +5443,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (isFindInPageShowing) closeFindInPage();
         if (contentFrame != null) {
             contentFrame.removeCallbacks(refreshTimeoutWatchdog);
-            contentFrame.reset();
         }
         if (refreshState != null) {
             refreshState.setRefreshing(false);
@@ -5571,7 +5481,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (contentFrame != null) {
                 contentFrame.removeCallbacks(refreshTimeoutWatchdog);
                 contentFrame.removeCallbacks(refreshStartCheck);
-                contentFrame.reset();
             }
             if (refreshState != null) {
                 refreshState.setRefreshing(false);

@@ -178,7 +178,7 @@
 <p>Rather than rewriting the entire application into a single-activity Compose navigation graph, Petal embeds Jetpack Compose modular screens into <code>BrowserActivity</code> using dynamic <code>ComposeView</code> bridging.</p>
 <h3>Presentation Workflow</h3>
 <ul>
-<li>The primary container is <code>PullToRefreshFrameLayout contentFrame</code> inside <code>activity_main.xml</code>.</li>
+<li>The primary container is a plain <code>FrameLayout contentFrame</code> inside <code>activity_main.xml</code>; pull-to-refresh is Mozilla's <code>SwipeRefreshFeature</code> on each <code>PetalTabViewController</code>.</li>
 <li>Sub-screens (Settings, Tab Switcher, Downloads, History, Bookmarks, Omnibox, Credits, Reader, Incognito Home) are generated via companion bridge objects (e.g., <code>PetalSettingsBridge</code>, <code>PetalVideoPlayerOverlayBridge</code>).</li>
 <li>Screens are presented via <code>BrowserActivity.presentComposeScreen(View screen, boolean animate)</code>.</li>
 </ul>

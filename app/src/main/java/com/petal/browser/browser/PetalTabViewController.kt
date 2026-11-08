@@ -562,11 +562,19 @@ class PetalTabViewController private constructor(
                 lastLayoutChangeTime = android.os.SystemClock.uptimeMillis()
             }
         }
-        // Petal's own PullToRefreshFrameLayout owns the pull gesture inside BrowserActivity;
-        // disable the Mozilla SwipeRefreshLayout so it never intercepts or draws its spinner.
-        if (isHostedByBrowserActivity()) {
-            isEnabled = false
-        }
+        // Pull-to-refresh is Mozilla's own: this view is a SwipeRefreshLayout driven by
+        // android-components' SwipeRefreshFeature (see bindTab), the same stack Fenix uses.
+        // Only the spinner colours are themed here.
+        try {
+            val primary = com.google.android.material.color.MaterialColors.getColor(
+                this, com.google.android.material.R.attr.colorPrimary, android.graphics.Color.parseColor("#6750A4")
+            )
+            val surface = com.google.android.material.color.MaterialColors.getColor(
+                this, com.google.android.material.R.attr.colorSurfaceContainerHigh, android.graphics.Color.WHITE
+            )
+            setColorSchemeColors(primary)
+            setProgressBackgroundColorSchemeColor(surface)
+        } catch (_: Throwable) {}
         // Tab pages are drawn by android-components' GeckoEngineView, whose inner GeckoView
         // defaults to a SurfaceView (official Mozilla GeckoView default). Switch to TextureView
         // only if Liquid Glass is active and requires page sampling.
@@ -988,7 +996,7 @@ class PetalTabViewController private constructor(
                 }
             }
         }
-        refreshFeature = if (isHostedByBrowserActivity()) null else SwipeRefreshFeature(
+        refreshFeature = SwipeRefreshFeature(
             store = browserStore,
             reloadUrlUseCase = SessionUseCases(browserStore).reload,
             swipeRefreshLayout = this,
@@ -1919,8 +1927,25 @@ class PetalTabViewController private constructor(
         return canOverscrollTop()
     }
 
-    override fun canChildScrollUp(): Boolean {
-        return !isPageAtTop()
+    /**
+     * Mozilla's SwipeRefreshFeature registers an OnChildScrollUpCallback that asks Gecko
+     * (InputResultDetail.canOverscrollTop) whether the page can still scroll up. Do not override
+     * canChildScrollUp(): that would bypass the callback and re-introduce Petal's own heuristics.
+     *
+     * The feature installs its own OnRefreshListener, so wrap it to keep Petal's per-page
+     * settings (desktop mode, user agent) applied before every pull-triggered reload.
+     */
+    override fun setOnRefreshListener(listener: OnRefreshListener?) {
+        super.setOnRefreshListener(
+            if (listener == null) null else OnRefreshListener {
+                try {
+                    applyPageSettings(pageUrl)
+                } catch (t: Throwable) {
+                    android.util.Log.w("PetalTabViewController", "applyPageSettings failed before pull reload", t)
+                }
+                listener.onRefresh()
+            }
+        )
     }
 
     override fun getTabView(): View = this

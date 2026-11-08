@@ -59,7 +59,7 @@ State synchronization is strictly unidirectional and reactive:
 
 ## 4. ComposeView Bridging Pattern & ViewTree Requirements
 Petal embeds Jetpack Compose modular screens into `BrowserActivity` using dynamic `ComposeView` bridging:
-- Primary container is `PullToRefreshFrameLayout contentFrame` in `activity_main.xml`.
+- Primary container is a plain `FrameLayout contentFrame` in `activity_main.xml`; pull-to-refresh is Mozilla's `SwipeRefreshFeature` on each `PetalTabViewController`.
 - Sub-screens (Settings, Tab Switcher, Downloads, History, Bookmarks, Omnibox, Credits, Reader, Incognito Home) are generated via companion bridge objects.
 - ViewTree lifecycle, ViewModel store, and saved state registry owners are explicitly wired:
 ```kotlin
