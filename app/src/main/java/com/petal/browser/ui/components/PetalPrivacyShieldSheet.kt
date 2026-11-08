@@ -41,6 +41,7 @@ import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Cookie
+import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
@@ -58,7 +59,10 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import com.petal.browser.ui.containment.PetalFilterChip
+import com.petal.browser.ui.containment.PetalGroupRow
 import com.petal.browser.ui.containment.PetalSuggestionChip
+import android.widget.Toast
+import androidx.compose.runtime.collectAsState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -293,6 +297,15 @@ object PetalPrivacyShieldSheet {
         var httpsOnly by remember {
             mutableStateOf(sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false)))
         }
+
+        val installedExtensions by com.petal.browser.extensions.PetalExtensionManager.extensions.collectAsState()
+        val isUBlockInstalled = remember(installedExtensions) {
+            installedExtensions.any {
+                it.id.equals("uBlock0@raymondhill.net", ignoreCase = true) ||
+                it.name.contains("uBlock Origin", ignoreCase = true)
+            }
+        }
+        var isInstallingUBlock by remember { mutableStateOf(false) }
 
         val categoryCounts = remember(cleanHost) {
             PetalAdBlockEngine.getCategoryCountsForDomain(cleanHost)
@@ -602,6 +615,63 @@ object PetalPrivacyShieldSheet {
                             Icon(Icons.Rounded.Block, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
                             Text("Block Page Element (CSS Selector)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+
+                    // ── uBlock Origin Recommended Extension Section ─────────
+                    PetalSettingsSection(
+                        title = "Firefox WebExtension Add-on",
+                        icon = Icons.Rounded.Extension,
+                        cardId = "shield_ublock_origin"
+                    ) {
+                        if (isUBlockInstalled) {
+                            PetalGroupRow(
+                                icon = Icons.Rounded.Verified,
+                                title = "uBlock Origin Active",
+                                position = PetalGroupPosition.SOLO,
+                                onClick = {
+                                    onDismiss()
+                                    com.petal.browser.extensions.PetalExtensionManager.triggerAction(activity, "uBlock0@raymondhill.net")
+                                },
+                                subtitle = "Full cosmetic filtering & scriptlet injection running alongside Petal shields"
+                            )
+                        } else {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp)
+                            ) {
+                                Text(
+                                    text = "uBlock Origin (Recommended)",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = "Enhance Petal's built-in Trie blocker with Mozilla's wide-spectrum content blocker for cosmetic filtering and anti-adblock circumvention.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                FilledTonalButton(
+                                    onClick = {
+                                        isInstallingUBlock = true
+                                        val ublockEntry = com.petal.browser.extensions.PetalExtensionManager.catalog.firstOrNull { it.id == "ublock-origin" }
+                                        val url = ublockEntry?.downloadUrl ?: "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
+                                        com.petal.browser.extensions.PetalExtensionManager.install(url) { success, msg ->
+                                            isInstallingUBlock = false
+                                            Toast.makeText(activity, msg ?: if (success) "uBlock Origin installed" else "Install failed", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    enabled = !isInstallingUBlock,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Extension, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(if (isInstallingUBlock) "Installing uBlock Origin..." else "1-Tap Install uBlock Origin")
+                                }
+                            }
                         }
                     }
 
