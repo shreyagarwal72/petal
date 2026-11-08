@@ -89,6 +89,33 @@ object PetalEngineBridge {
     }
 
     /**
+     * Replaces the internal GeckoSession in a GeckoEngineSession with an already-created
+     * GeckoSession (e.g. from NavigationDelegate.onNewSession), ensuring live popup
+     * tabs render the actual session provided by Gecko.
+     */
+    @JvmStatic
+    fun attachGeckoSessionToEngineSession(
+        engineSession: mozilla.components.concept.engine.EngineSession?,
+        geckoSession: GeckoSession
+    ): Boolean {
+        if (engineSession !is mozilla.components.browser.engine.gecko.GeckoEngineSession) return false
+        return try {
+            val cls = engineSession.javaClass
+            val field = cls.getDeclaredField("geckoSession")
+            field.isAccessible = true
+            val oldSession = field.get(engineSession) as? GeckoSession
+            if (oldSession != null && oldSession !== geckoSession && oldSession.isOpen) {
+                try { oldSession.close() } catch (_: Throwable) {}
+            }
+            field.set(engineSession, geckoSession)
+            true
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to attach GeckoSession to GeckoEngineSession: ${t.message}", t)
+            false
+        }
+    }
+
+    /**
      * Startup reflection self-check verifying that GeckoEngineSession reflection
      * contracts (either getter method or declared field) remain intact in the pinned
      * Mozilla Android Components runtime. Logs loudly if the reflection contract fails.
@@ -133,7 +160,7 @@ object PetalEngineBridge {
 
     @JvmStatic
     fun getDerivedDesktopUserAgent(context: Context): String {
-        return "Mozilla/5.0 (X11; Linux x86_64; rv:155.0) Gecko/20100101 Firefox/155.0"
+        return "Mozilla/5.0 (X11; Linux x86_64; rv:159.0) Gecko/20100101 Firefox/159.0"
     }
 
     /**

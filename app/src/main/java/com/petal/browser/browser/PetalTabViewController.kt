@@ -2260,11 +2260,15 @@ private class ExternalSchemeNavigationDelegate(
     ) {
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLocationChange (4-arg): url=$url gesture=$hasUserGesture")
         if (!url.isNullOrBlank()) {
-            val unbouncedUrl = com.petal.browser.privacy.PetalBounceTrackingProtection.detectAndUnwrapBounceUrl(url)
-            if (unbouncedUrl != null && !unbouncedUrl.equals(url, ignoreCase = true)) {
-                android.util.Log.i("PetalTabNav", "Bounce Tracking detected: bypassing $url -> $unbouncedUrl")
-                loadReplacingHistory(session, unbouncedUrl)
-                return
+            val bounceProtectionEnabled = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean("sp_bounce_tracking", false)
+            if (bounceProtectionEnabled) {
+                val unbouncedUrl = com.petal.browser.privacy.PetalBounceTrackingProtection.detectAndUnwrapBounceUrl(url)
+                if (unbouncedUrl != null && !unbouncedUrl.equals(url, ignoreCase = true)) {
+                    android.util.Log.i("PetalTabNav", "Bounce Tracking detected: bypassing $url -> $unbouncedUrl")
+                    loadReplacingHistory(session, unbouncedUrl)
+                    return
+                }
             }
 
             val deAmpUrl = com.petal.browser.privacy.PetalDeAmpEngine.unwrapAmpUrl(url)

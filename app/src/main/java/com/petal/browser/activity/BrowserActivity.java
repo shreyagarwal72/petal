@@ -8107,6 +8107,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             mozilla.components.concept.engine.EngineSession engineSession =
                     com.petal.browser.engine.gecko.PetalEngineStore.createEngineSession(this, isIncognito);
+            if (popupSession != null) {
+                com.petal.browser.engine.gecko.PetalEngineBridge.attachGeckoSessionToEngineSession(engineSession, popupSession);
+            }
             mozilla.components.browser.state.state.TabSessionState popupTab =
                     com.petal.browser.engine.gecko.PetalEngineStore.adoptPreparedSession(
                             this, tabId, popupUrl, getString(R.string.app_name),
