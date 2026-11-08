@@ -2183,11 +2183,25 @@ private class PetalContentDelegateWrapper(
     }
 
     override fun onCrash(session: org.mozilla.geckoview.GeckoSession) {
+        val targetPage = pageUrl ?: "unknown URL"
+        com.petal.browser.logger.PetalAppLogger.recordProcessCrash(
+            appContext,
+            "GeckoEngine",
+            "GeckoSession content process crashed on $targetPage",
+            "Tab ID: ${tab?.id ?: boundTabId}, URL: $targetPage"
+        )
         engine?.onCrash(session)
         onCrashCallback?.invoke()
     }
 
     override fun onKill(session: org.mozilla.geckoview.GeckoSession) {
+        val targetPage = pageUrl ?: "unknown URL"
+        com.petal.browser.logger.PetalAppLogger.recordProcessCrash(
+            appContext,
+            "GeckoEngine",
+            "GeckoSession content process was killed by OS on $targetPage",
+            "Tab ID: ${tab?.id ?: boundTabId}, URL: $targetPage"
+        )
         engine?.onKill(session)
         onCrashCallback?.invoke()
     }

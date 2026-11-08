@@ -29,7 +29,9 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
         const val CHANNEL_ID = "petal_web_notifications"
         const val ACTION_CLICK = "com.petal.browser.action.WEB_NOTIFICATION_CLICK"
         const val ACTION_DISMISS = "com.petal.browser.action.WEB_NOTIFICATION_DISMISS"
+        const val ACTION_BUTTON_CLICK = "com.petal.browser.action.WEB_NOTIFICATION_BUTTON_CLICK"
         const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
+        const val EXTRA_ACTION_NAME = "extra_action_name"
 
         private val activeNotifications = ConcurrentHashMap<Int, WebNotification>()
 
@@ -40,6 +42,25 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
                 notification?.click()
             } catch (t: Throwable) {
                 Log.w(TAG, "Failed calling notification.click(): ${t.message}")
+            }
+        }
+
+        @JvmStatic
+        fun handleActionClick(notificationId: Int, actionName: String) {
+            val notification = activeNotifications.remove(notificationId)
+            try {
+                if (notification != null) {
+                    val clickMethod = runCatching {
+                        notification.javaClass.getMethod("click", String::class.java)
+                    }.getOrNull()
+                    if (clickMethod != null && actionName.isNotEmpty()) {
+                        clickMethod.invoke(notification, actionName)
+                    } else {
+                        notification.click()
+                    }
+                }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed calling notification.click(action): ${t.message}")
             }
         }
 
@@ -132,6 +153,39 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
                 showMethod.invoke(notification)
             }
 
+            // Attach interactive W3C notification action buttons
+            val actions = runCatching {
+                val field = notification.javaClass.getField("actions")
+                field.get(notification) as? Array<*>
+            }.getOrNull()
+
+            if (actions != null) {
+                for ((index, act) in actions.withIndex()) {
+                    if (act == null) continue
+                    val actionTitle = runCatching {
+                        val titleField = act.javaClass.getField("title")
+                        titleField.get(act) as? String
+                    }.getOrNull() ?: continue
+                    val actionName = runCatching {
+                        val nameField = act.javaClass.getField("name")
+                        nameField.get(act) as? String
+                    }.getOrNull() ?: ""
+
+                    val buttonIntent = Intent(context, WebNotificationActionReceiver::class.java).apply {
+                        action = ACTION_BUTTON_CLICK
+                        putExtra(EXTRA_NOTIFICATION_ID, id)
+                        putExtra(EXTRA_ACTION_NAME, actionName)
+                    }
+                    val buttonPending = PendingIntent.getBroadcast(
+                        context,
+                        id + 200000 + index,
+                        buttonIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                    builder.addAction(0, actionTitle, buttonPending)
+                }
+            }
+
             nm.notify(tag, id, builder.build())
             Log.i(TAG, "Displayed web notification: $displayTitle (id=$id)")
         } catch (t: Throwable) {
@@ -171,6 +225,12 @@ class WebNotificationActionReceiver : BroadcastReceiver() {
             }
             PetalWebNotificationDelegate.ACTION_DISMISS -> {
                 PetalWebNotificationDelegate.handleDismiss(id)
+            }
+            PetalWebNotificationDelegate.ACTION_BUTTON_CLICK -> {
+                val actionName = intent.getStringExtra(PetalWebNotificationDelegate.EXTRA_ACTION_NAME) ?: ""
+                PetalWebNotificationDelegate.handleActionClick(id, actionName)
+                val nm = NotificationManagerCompat.from(context)
+                nm.cancel(id)
             }
         }
     }
