@@ -94,9 +94,10 @@ object PetalGeckoRuntime {
 
         val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
         val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", true))
-        val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
         val etpStrict = sp.getBoolean("sp_etp_strict", false) || (privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT)
-        val defaultCookieBehavior = if (totalCookieProtection || blockThirdPartyCookies || isStrictOrHardened) {
+        // Same rule as syncPreferences() so startup and later syncs never disagree.
+        val sessionPartitioningAtStart = sp.getBoolean("sp_session_partitioning", true)
+        val defaultCookieBehavior = if (sessionPartitioningAtStart || totalCookieProtection || blockThirdPartyCookies || isStrictOrHardened) {
             ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
         } else {
             ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
@@ -185,12 +186,8 @@ object PetalGeckoRuntime {
         // unsupported desktop GMP plugins and directing media through native MediaCodec.
         configureMediaAndGmpStability(appContext, settingsBuilder)
 
-        // Android 16 (SDK 36) & OEM stability tuning:
-        // Android's isolatedProcess feature crashes on Android 16 (SDK 36) and OEM ROMs
-        // (e.g. Realme/Oppo/OnePlus isolatedTab_disable_art_image) due to ART image restrictions in isolated UIDs.
-        // Disabling isolatedProcess keeps tab rendering stable and in-process/shared across all devices.
-        settingsBuilder.isolatedProcessEnabled(false)
-        settingsBuilder.lowMemoryDetection(true)
+        // isolatedProcessEnabled(false) and lowMemoryDetection(true) are already set on the builder above
+        // (isolated processes crash on Android 16 / some OEM ROMs due to ART image restrictions).
 
         val newRuntime = GeckoRuntime.create(appContext, settingsBuilder.build())
 
@@ -301,10 +298,33 @@ object PetalGeckoRuntime {
         }
     }
 
+    /** Fingerprint of the last applied runtime settings; avoids re-writing ~15 Gecko prefs on every navigation. */
+    @Volatile
+    private var lastSyncFingerprint: String? = null
+
+    private fun syncFingerprint(sp: SharedPreferences): String {
+        val keys = listOf(
+            "sp_javascript", "profileStandard_javascript", "sp_font_size_scale", "sp_ad_block",
+            "profileStandard_adBlock", "sp_etp_strict", "sp_block_third_party_cookies",
+            "sp_total_cookie_protection", "sp_cookies_isolate", "sp_session_partitioning",
+            "sp_login_autofill_enabled", "sp_private_dns_mode", "sp_https_only",
+            "profileStandard_httpsOnly", "sp_theme_config", "sp_force_dark_mode"
+        )
+        val sb = StringBuilder()
+        for (k in keys) sb.append(k).append('=').append(sp.all[k]).append(';')
+        sb.append("profile=").append(com.petal.browser.privacy.PetalPrivacyHardening.getPrivacyProfile(sp))
+        sb.append(";sec=").append(com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp))
+        sb.append(";doh=").append(com.petal.browser.unit.PetalPrivateDnsHelper.getDnsEndpointUrl(sp))
+        return sb.toString()
+    }
+
     @JvmStatic
     fun syncPreferences(sp: SharedPreferences) {
         runtime?.let { rt ->
             try {
+                val fingerprint = syncFingerprint(sp)
+                if (fingerprint == lastSyncFingerprint) return
+                lastSyncFingerprint = fingerprint
                 val privacyProfile = com.petal.browser.privacy.PetalPrivacyHardening.getPrivacyProfile(sp)
                 val securityLevel = com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp)
                 val isStrictOrHardened = privacyProfile != com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STANDARD
@@ -332,7 +352,6 @@ object PetalGeckoRuntime {
                 }
 
                 // 2. Enhanced Tracking Protection & AdBlock
-                val adBlockEnabled = sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
                 val etpStrict = sp.getBoolean("sp_etp_strict", false) || (privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT)
                 val etpLevel = if (etpStrict) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.DEFAULT
                 rt.settings.contentBlocking.setEnhancedTrackingProtectionLevel(etpLevel)

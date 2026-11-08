@@ -18,7 +18,7 @@ import java.util.Locale
  */
 object ExternalDownloadManagerHelper {
 
-    const val FIREFOX_MOBILE_UA = "Mozilla/5.0 (Android; Mobile; rv:159.0) Gecko/159.0 Firefox/159.0"
+    val FIREFOX_MOBILE_UA: String = "Mozilla/5.0 (Android ${android.os.Build.VERSION.RELEASE}; Mobile; rv:159.0) Gecko/159.0 Firefox/159.0"
 
     // Preference key for download manager mode
     const val PREF_DOWNLOAD_MANAGER_MODE = "sp_download_manager_mode"
@@ -141,7 +141,9 @@ object ExternalDownloadManagerHelper {
             url
         }
 
-        val effectiveUa = userAgent?.takeIf { it.isNotBlank() } ?: FIREFOX_MOBILE_UA
+        // Cookies come from Gecko, so never send the Chromium WebView default UA with them.
+        val webViewDefaultUa = try { android.webkit.WebSettings.getDefaultUserAgent(context) } catch (_: Throwable) { null }
+        val effectiveUa = userAgent?.takeIf { it.isNotBlank() && it != webViewDefaultUa } ?: FIREFOX_MOBILE_UA
         val effectiveCookie = cookie?.takeIf { it.isNotBlank() }
             ?: com.petal.browser.download.PetalGeckoCookieBridge.getCookies(verifiedUrl)
 

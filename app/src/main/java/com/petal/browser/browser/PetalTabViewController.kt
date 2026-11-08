@@ -1819,7 +1819,7 @@ class PetalTabViewController private constructor(
                 gs.settings.userAgentOverride = customUserAgent
             } else {
                 gs.settings.userAgentOverride = null
-                val desktopEnabled = preferences.getBoolean("sp_desktop", false)
+                val desktopEnabled = preferences.getBoolean("sp_desktop_site", preferences.getBoolean("sp_desktop", false))
                 gs.settings.userAgentMode = if (desktopEnabled) {
                     org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
                 } else {
@@ -2414,7 +2414,8 @@ private class ExternalSchemeNavigationDelegate(
         val popupSession = org.mozilla.geckoview.GeckoSession(
             org.mozilla.geckoview.GeckoSessionSettings.Builder()
                 .usePrivateMode(isPrivate)
-                .allowJavascript(true)
+                .allowJavascript(androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).let { it.getBoolean("sp_javascript", it.getBoolean("profileStandard_javascript", true)) })
+                .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
                 .build()
         )
         val result = org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.GeckoSession>()

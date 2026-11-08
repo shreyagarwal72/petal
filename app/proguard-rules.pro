@@ -26,6 +26,12 @@
 # Ships no consumer rules. Petal reads GeckoEngineSession's geckoSession by reflection
 # (PetalGeckoView.extractGeckoSession), so nothing here may be renamed.
 -keep,allowshrinking class mozilla.components.** { *; }
+# Reached ONLY by reflection (PetalSessionRestoreManager.wrapGeckoState, PetalEngineBridge).
+# allowshrinking above lets R8 delete unreferenced classes, which made wrapGeckoState return
+# null in release builds, so tab history was never saved and Back fell through to Home after
+# a cold restart. Keep these hard (no shrinking).
+-keep class mozilla.components.browser.engine.gecko.GeckoEngineSessionState { *; }
+-keep class mozilla.components.browser.engine.gecko.GeckoEngineSession { *; }
 
 # ---- GeckoView ------------------------------------------------------------------------------
 # Native code calls into these by name; ContextElement.textContent is read by reflection.

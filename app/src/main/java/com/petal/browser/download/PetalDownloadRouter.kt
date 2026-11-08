@@ -27,7 +27,20 @@ import com.petal.browser.view.PetalToast
  */
 object PetalDownloadRouter {
 
-    const val FIREFOX_MOBILE_UA = "Mozilla/5.0 (Android; Mobile; rv:159.0) Gecko/159.0 Firefox/159.0"
+    /** Real Firefox for Android format: "Android <release>" is part of the platform token. */
+    @JvmField
+    val FIREFOX_MOBILE_UA: String =
+        "Mozilla/5.0 (Android ${Build.VERSION.RELEASE}; Mobile; rv:159.0) Gecko/159.0 Firefox/159.0"
+
+    /**
+     * Pages are loaded by Gecko, so cookies (e.g. Cloudflare clearance) and CDN tokens are bound to
+     * the Gecko UA. Callers that pass the Chromium WebView default UA would get 403s; swap it.
+     */
+    private fun effectiveUserAgent(context: Context, userAgent: String?): String {
+        val ua = userAgent?.takeIf { it.isNotBlank() } ?: return FIREFOX_MOBILE_UA
+        val webViewDefault = try { WebSettings.getDefaultUserAgent(context) } catch (_: Throwable) { null }
+        return if (ua == webViewDefault) FIREFOX_MOBILE_UA else ua
+    }
 
     @JvmStatic
     @JvmOverloads
@@ -76,7 +89,7 @@ object PetalDownloadRouter {
         }
 
         // 3. Resolve context parameters (cookies, user-agent, referer)
-        val effectiveUa = userAgent?.takeIf { it.isNotBlank() } ?: FIREFOX_MOBILE_UA
+        val effectiveUa = effectiveUserAgent(context, userAgent)
         val effectiveCookie = cookie?.takeIf { it.isNotBlank() }
             ?: PetalGeckoCookieBridge.getCookies(verifiedUrl, isPrivate)
 

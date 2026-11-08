@@ -7,6 +7,25 @@
     let currentContrast = 90;
     let isWhitelisted = false;
     let isExtensionEnabled = true;
+    let domReady = false;
+    let rafPending = false;
+    let bodyObserved = false;
+    let observeBodyFn = null;
+
+    // When the engine already reports prefers-color-scheme: dark, sites that support it render
+    // dark natively. At document_start their styles are not parsed yet, so inverting now would
+    // turn them light (double inversion). Wait for the DOM before deciding in that case.
+    function engineIsDark() {
+        try { return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); }
+        catch (_) { return false; }
+    }
+
+    function scheduleApply() {
+        if (rafPending) return;
+        rafPending = true;
+        const run = function() { rafPending = false; applyDarkStyle(); };
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run); else setTimeout(run, 16);
+    }
 
     // Detect if page is natively dark or already styled with dark colors
     function isPageAlreadyDark() {
@@ -109,6 +128,10 @@
             return;
         }
 
+        if (!domReady && engineIsDark()) {
+            return;
+        }
+
         if (isPageAlreadyDark()) {
             removeDarkStyle();
             return;
@@ -191,12 +214,17 @@
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
+            domReady = true;
+            observeBody();
             // Re-evaluate once full DOM and styles are available
             setTimeout(applyDarkStyle, 60);
         }, { once: true });
+    } else {
+        domReady = true;
     }
 
     window.addEventListener('load', function() {
+        domReady = true;
         // Final re-evaluation on window load
         setTimeout(applyDarkStyle, 100);
     });
@@ -207,7 +235,7 @@
             for (let i = 0; i < mutations.length; i++) {
                 const m = mutations[i];
                 if (m.type === 'attributes' && (m.attributeName === 'class' || m.attributeName === 'data-theme' || m.attributeName === 'data-color-mode' || m.attributeName === 'style')) {
-                    applyDarkStyle();
+                    scheduleApply();
                     break;
                 }
             }
@@ -215,5 +243,21 @@
         if (document.documentElement) {
             observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'data-color-mode', 'style'] });
         }
+        // Many sites (GitHub, Reddit, YouTube) toggle their theme on <body>, not <html>.
+        observeBodyFn = function() {
+            if (bodyObserved || !document.body) return;
+            bodyObserved = true;
+            observer.observe(document.body, { attributes: true, attributeFilter: ['class', 'data-theme', 'data-color-mode'] });
+        };
+    } catch (_) {}
+
+    function observeBody() { try { if (observeBodyFn) observeBodyFn(); } catch (_) {} }
+    observeBody();
+
+    // Follow engine color-scheme changes (theme switched in Petal settings) without a reload.
+    try {
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        const onChange = function() { scheduleApply(); };
+        if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
     } catch (_) {}
 })();
