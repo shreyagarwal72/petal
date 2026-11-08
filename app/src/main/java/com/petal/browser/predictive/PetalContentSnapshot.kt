@@ -79,6 +79,9 @@ object PetalContentSnapshot {
 
     private const val PREVIEW_MAX_AGE_MS = 1500L
 
+    /** Max time the main thread waits for the pre-hide PixelCopy (typically a few ms). */
+    private const val PREVIEW_WAIT_MS = 60L
+
     /** Cleanups that land right after a new capture belong to the screen that was just replaced. */
     private const val CLEAR_GRACE_MS = 600L
 
@@ -99,6 +102,13 @@ object PetalContentSnapshot {
             if (window != null) {
                 try {
                     val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+                    // The host hides the page right after this call and the overlay's bridge calls
+                    // capture() immediately. With a purely async copy, capture() found no preview and
+                    // fell back to grab() on the ALREADY-HIDDEN view tree, producing a blank (white)
+                    // snapshot that the tab-switcher hero and the overlay underlay then displayed.
+                    // PixelCopy completes on its own thread without needing the main thread, so wait
+                    // briefly for the real pre-hide frame.
+                    val done = java.util.concurrent.CountDownLatch(1)
                     PixelCopy.request(window, bitmap, { result ->
                         if (result == PixelCopy.SUCCESS) {
                             preview = bitmap
@@ -107,7 +117,13 @@ object PetalContentSnapshot {
                         } else {
                             bitmap.recycle()
                         }
+                        done.countDown()
                     }, copyHandler)
+                    try {
+                        done.await(PREVIEW_WAIT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+                    } catch (_: InterruptedException) {
+                        Thread.currentThread().interrupt()
+                    }
                     return
                 } catch (t: Throwable) {
                     // Fall back to immediate grab
@@ -145,6 +161,13 @@ object PetalContentSnapshot {
 
         return try {
             val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+            // A software draw skips hardware surfaces and hidden views; start from the app's
+            // background colour so a degraded snapshot is never a blank/white card.
+            bmp.eraseColor(
+                com.google.android.material.color.MaterialColors.getColor(
+                    rootView, android.R.attr.colorBackground, android.graphics.Color.BLACK
+                )
+            )
             val canvas = Canvas(bmp)
             canvas.scale(SNAPSHOT_SCALE, SNAPSHOT_SCALE)
             rootView.draw(canvas)
