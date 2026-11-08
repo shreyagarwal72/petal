@@ -1,34 +1,54 @@
 # Roadmap: Petal Browser GeckoView Stabilization
 
 ## Milestone 1: Core GeckoView Stabilization & Parity
+- [x] **Phase 1: Verification of Done Items**
+  - [x] Audit R8 / ProGuard rules for reflection survival
+  - [x] Audit codebase for unkept reflection targets
+  - [x] Complete fingerprint coverage in `PetalGeckoRuntime.kt`
+- [x] **Phase 2: Cold-Restart History Preservation**
+  - [x] Fix `rebuildTabsFromBrowserStore` and `showAlbum` so `loadUrl` doesn't overwrite restored `EngineSessionState`
+  - [x] Implement gated Mozilla session restore (`sp_mozilla_session_restore`)
+  - [x] Connect `goBack` to `BrowserStore.canGoBack` to prevent Home drops
+- [x] **Phase 3: Website Rendering & Theming**
+  - [x] Enforce theme precedence contract & extension suppression on dark-native pages
+  - [x] Fix white flash during tab launch and tab switching
+  - [x] Support web `theme-color` meta tinting on status bar
+  - [x] Check surface modes and eliminate main-thread per-frame allocations
+- [x] **Phase 4: Runtime & Settings Parity with Fenix**
+  - [x] Generate Gecko settings comparison matrix vs Fenix
+  - [x] Migrate desktop site preference keys to `sp_desktop_site`
+  - [x] Unify session settings builder across popups and PWAs
+- [x] **Phase 5: Error Handling & Dead Code Cleanup**
+  - [x] Triage silent catch blocks across engine and browser controllers
+  - [x] Attach error handlers to naked `GeckoResult` promises
+  - [x] Clean unused WebView parameters
+  - [x] Migrate main-thread `SharedPreferences.commit()` to asynchronous `apply()`
+- [x] **Phase 6: Mozilla Components Migration & Packaging**
+  - [x] Evaluate candidate Mozilla features and sequence replacement roadmap
+  - [x] Document Findings Table, Decisions Needed, and Verification Scripts
 
-### Phase 1: Verification of Done Items
-- [x] Audit R8 / ProGuard rules for reflection survival
-- [x] Audit codebase for unkept reflection targets
-- [x] Complete fingerprint coverage in `PetalGeckoRuntime.kt`
-
-### Phase 2: Cold-Restart History Preservation
-- [x] Fix `rebuildTabsFromBrowserStore` and `showAlbum` so `loadUrl` doesn't overwrite restored `EngineSessionState`
-- [x] Implement gated Mozilla session restore (`sp_mozilla_session_restore`)
-- [x] Connect `goBack` to `BrowserStore.canGoBack` to prevent Home drops
-
-### Phase 3: Website Rendering & Theming
-- [x] Enforce theme precedence contract & extension suppression on dark-native pages
-- [x] Fix white flash during tab launch and tab switching
-- [x] Support web `theme-color` meta tinting on status bar
-- [x] Check surface modes and eliminate main-thread per-frame allocations
-
-### Phase 4: Runtime & Settings Parity with Fenix
-- [x] Generate Gecko settings comparison matrix vs Fenix
-- [x] Migrate desktop site preference keys to `sp_desktop_site`
-- [x] Unify session settings builder across popups and PWAs
-
-### Phase 5: Error Handling & Dead Code Cleanup
-- [x] Triage silent catch blocks across engine and browser controllers
-- [x] Attach error handlers to naked `GeckoResult` promises
-- [x] Clean unused WebView parameters
-- [x] Migrate main-thread `SharedPreferences.commit()` to asynchronous `apply()`
-
-### Phase 6: Mozilla Components Migration & Packaging
-- [x] Evaluate candidate Mozilla features and sequence replacement roadmap
-- [x] Document Findings Table, Decisions Needed, and Verification Scripts
+## Milestone 2: Deep Mozilla Upstream Parity & Component Integration
+- [x] **Phase 7: PWA, Custom Tabs & WebAuthn Cross-Activity Parity**
+  - [x] Eliminate PWA tab session leak in `PetalPwaActivity.onDestroy()`
+  - [x] Support incognito custom tabs via `isIncognitoCustomTab` intent parsing
+  - [x] Verify WebAuthn / Passkey `ActivityDelegate` across all activity hosts
+- [x] **Phase 8: Reader Mode Parity (Mozilla Readability Integration)**
+  - [x] Integrate Mozilla Readability metadata parsing (OpenGraph, Twitter, Schema.org)
+  - [x] Add DOM clone sanitization and noise tag pruning
+  - [x] Structure readable headings, paragraphs, blockquotes, and lists
+  - [x] Gate with `sp_mozilla_readability` (default `true`) while preserving Compose UI
+- [x] **Phase 9: Ad Blocking Synergy & uBlock Origin Recommended Flow**
+  - [x] Retain built-in Trie blocker as high-speed default baseline
+  - [x] Add 1-tap uBlock Origin recommendation card in Privacy Shield sheet
+  - [x] Add uBlock Origin active indicator and dashboard popup launcher
+- [x] **Phase 10: Find In Page Headless Integration**
+  - [x] Gate Mozilla `EngineSession` find abstraction behind `sp_mozilla_find_in_page`
+  - [x] Strictly preserve `BrowserActivity.java` address bar and bottom-nav padding calculations
+- [x] **Phase 11: Background Media Playback & Controls**
+  - [x] Confirm `PetalMediaSessionService` `MediaSessionCompat` controls & actions
+  - [x] Gate foreground session startup behind `sp_mozilla_media_session` (default `true`)
+  - [x] Maintain tab media state synchronization with `BrowserStore`
+- [x] **Phase 12: W3C Web Notification Actions & Native Crash Log Hook**
+  - [x] Add reflection-safe `WebNotification.actions` parsing and `NotificationCompat.Action` buttons
+  - [x] Handle action button clicks via `ACTION_BUTTON_CLICK`
+  - [x] Hook Gecko native crashes/kills into `PetalAppLogger` for local diagnostics & GitHub issues
