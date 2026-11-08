@@ -116,6 +116,7 @@ import com.petal.browser.unit.PetalRecentlyClosedManager
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -1721,7 +1722,7 @@ fun PetalTabGridSwitcher(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = stringResource(R.string.ui_add_tabs_to_group, selectedTabs.size),
+                        text = pluralStringResource(R.plurals.plural_add_tabs_to_group, selectedTabs.size, selectedTabs.size),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -1770,7 +1771,7 @@ fun PetalTabGridSwitcher(
                                 },
                                 trailing = {
                                     Text(
-                                        text = stringResource(R.string.ui_tabs_2, group.tabIds.size),
+                                        text = pluralStringResource(R.plurals.plural_tabs, group.tabIds.size, group.tabIds.size),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

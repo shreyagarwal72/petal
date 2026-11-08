@@ -99,6 +99,7 @@ import org.json.JSONObject
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -772,7 +773,7 @@ fun PetalHomeScreen(
                                                                 color = MaterialTheme.colorScheme.onSurface
                                                             )
                                                             Text(
-                                                                text = stringResource(R.string.ui_tabs_3, col.items.size),
+                                                                text = "• " + pluralStringResource(R.plurals.plural_tabs, col.items.size, col.items.size),
                                                                 style = MaterialTheme.typography.bodySmall,
                                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                                             )
