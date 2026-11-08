@@ -3375,6 +3375,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             barsHiddenTop = insets.getHiddenTop() + (isBottom ? desktopStripH : 0);
             barsHiddenBottom = insets.getHiddenBottom();
             barInsetsKnown = true;
+            if (!isNonWebSurface && isPillCollapse
+                    && com.petal.browser.ui.components.BarCollapseState.INSTANCE.isCollapsed()) {
+                mainContent.setPadding(0, barsHiddenTop, 0, barsHiddenBottom);
+                pillContentCollapsed = true;
+            } else {
+                pillContentCollapsed = false;
+            }
 
             // The strip above the page (status bar + top address bar) has no page content, so
             // the window's black showed behind the glass bar. Give it the theme surface colour.
@@ -4527,7 +4534,38 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     };
 
+    /** True while the page area has been grown to the minimized-pill size (scroll-driven pill mode). */
+    private boolean pillContentCollapsed = false;
+
+    /**
+     * Scroll-driven pill mode only moved the bars (via BarCollapseState); it never resized the page
+     * area, so the page kept the "bars shown" top/bottom padding and left empty bands above and
+     * below it once the pill and the bottom nav had gone. Grow / shrink the page area to match,
+     * using the same one-layout-pass-plus-eased-translation path the other collapse modes use.
+     */
+    private void syncPillContentInsets(boolean collapsed, boolean animate) {
+        if (collapsed == pillContentCollapsed) return;
+        if (!barInsetsKnown) return;
+        if (!com.petal.browser.ui.components.BarPrefs.isPillCollapse(sp)) return;
+        final View mainContent = findViewById(R.id.main_content);
+        if (mainContent == null) return;
+        pillContentCollapsed = collapsed;
+        int targetTop = collapsed ? barsHiddenTop : barsShownTop;
+        int targetBottom = collapsed ? barsHiddenBottom : barsShownBottom;
+        if (animate) {
+            animateContentPadding(targetTop, targetBottom);
+        } else {
+            if (contentPaddingAnimator != null) contentPaddingAnimator.cancel();
+            if (contentOffsetApplied != 0f && mainContent instanceof android.view.ViewGroup) {
+                shiftContentChildren((android.view.ViewGroup) mainContent, -contentOffsetApplied);
+                contentOffsetApplied = 0f;
+            }
+            mainContent.setPadding(mainContent.getPaddingLeft(), targetTop, mainContent.getPaddingRight(), targetBottom);
+        }
+    }
+
     private void animatePillFraction(boolean collapse, boolean animate) {
+        syncPillContentInsets(collapse, animate);
         if (pillMorphAnimator != null) {
             pillMorphAnimator.cancel();
             pillMorphAnimator = null;
@@ -4573,6 +4611,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         float next = Math.max(0f, Math.min(1f, current + deltaY / collapseRange));
         com.petal.browser.ui.components.BarCollapseState.INSTANCE.setFraction(next);
         isAddressBarCollapsed = next >= 0.5f;
+        syncPillContentInsets(isAddressBarCollapsed, true);
     }
 
     public void settlePillFraction(float target) {
