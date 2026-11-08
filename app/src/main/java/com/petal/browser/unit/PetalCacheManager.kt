@@ -206,17 +206,6 @@ object PetalCacheManager {
             }
         }
 
-    @Deprecated("Legacy WebView parameter no longer used in GeckoView architecture")
-    @JvmStatic
-    fun clearCache(
-        context: Context,
-        flags: Long,
-        activeWebView: WebView?,
-        onCompleted: Runnable?
-    ) {
-        clearCache(context, flags, onCompleted)
-    }
-
         // 4. Legacy HTTP response cache: only when the network cache was requested
         // (a cookies-only clear used to throw it away as well).
         if ((flags and Flags.NETWORK_CACHE) != 0L) {
@@ -255,6 +244,17 @@ object PetalCacheManager {
                 }
             }
         }
+    }
+
+    @Deprecated("Legacy WebView parameter no longer used in GeckoView architecture")
+    @JvmStatic
+    fun clearCache(
+        context: Context,
+        flags: Long,
+        activeWebView: WebView?,
+        onCompleted: Runnable?
+    ) {
+        clearCache(context, flags, onCompleted)
     }
 
     /**

@@ -1365,14 +1365,17 @@ private fun extractExtensionPermissions(extension: WebExtension): List<Permissio
         }
     }
 
-    val meta = extension.metaData
     val rawList = mutableListOf<String>()
-    meta?.permissions?.let { rawList.addAll(it) }
-    meta?.origins?.let { rawList.addAll(it) }
 
     try {
         val manifest = PetalExtensionManager.getManifest(extension)
         manifest?.optJSONArray("permissions")?.let { arr ->
+            for (i in 0 until arr.length()) {
+                val p = arr.optString(i)
+                if (p.isNotBlank()) rawList.add(p)
+            }
+        }
+        manifest?.optJSONArray("optional_permissions")?.let { arr ->
             for (i in 0 until arr.length()) {
                 val p = arr.optString(i)
                 if (p.isNotBlank()) rawList.add(p)

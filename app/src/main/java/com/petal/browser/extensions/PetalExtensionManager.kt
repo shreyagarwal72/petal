@@ -1054,7 +1054,7 @@ object PetalExtensionManager {
         val isPrivateTab = sourceSession?.settings?.usePrivateMode
             ?: (currentBrowserSession(ctx)?.settings?.usePrivateMode ?: false)
         val popupSettings = com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(
-            ctx, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
+            context, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
         )
         val popupSession = GeckoSession(popupSettings)
 
@@ -1251,7 +1251,7 @@ object PetalExtensionManager {
         }
         val isPrivateTab = currentBrowserSession(context)?.settings?.usePrivateMode ?: false
         val popupSettings = com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(
-            ctx, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
+            context, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
         )
         val popupSession = GeckoSession(popupSettings)
         popupSession.promptDelegate = object : GeckoSession.PromptDelegate {

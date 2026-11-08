@@ -628,10 +628,10 @@ object PetalPrivacyShieldSheet {
                             PetalGroupRow(
                                 icon = Icons.Rounded.Verified,
                                 title = "uBlock Origin Active",
-                                position = PetalGroupPosition.SOLO,
+                                position = PetalGroupPosition.SINGLE,
                                 onClick = {
                                     onDismiss()
-                                    com.petal.browser.extensions.PetalExtensionManager.triggerAction(activity, "uBlock0@raymondhill.net")
+                                    com.petal.browser.extensions.PetalExtensionManager.triggerBrowserAction("uBlock0@raymondhill.net", activity)
                                 },
                                 subtitle = "Full cosmetic filtering & scriptlet injection running alongside Petal shields"
                             )

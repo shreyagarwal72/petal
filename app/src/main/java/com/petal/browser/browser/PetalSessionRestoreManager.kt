@@ -465,7 +465,7 @@ object PetalSessionRestoreManager {
                 groupTitle,
                 isIncognito
             )
-            if (!sessionPair.first.engineState.engineSessionState?.let { true } ?: false && safeUrl.isNotBlank() && !isHomeUrl(safeUrl)) {
+            if (sessionPair.first.engineState.engineSessionState == null && safeUrl.isNotBlank() && !isHomeUrl(safeUrl)) {
                 sessionPair.second.loadUrl(safeUrl)
             }
             if (targetIndex >= 0 && targetIndex <= BrowserContainer.size()) {
