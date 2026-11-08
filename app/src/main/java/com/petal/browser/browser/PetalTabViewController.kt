@@ -567,7 +567,7 @@ class PetalTabViewController private constructor(
         // Only the spinner colours are themed here.
         try {
             val primary = com.google.android.material.color.MaterialColors.getColor(
-                this, com.google.android.material.R.attr.colorPrimary, android.graphics.Color.parseColor("#6750A4")
+                this, android.R.attr.colorPrimary, android.graphics.Color.parseColor("#6750A4")
             )
             val surface = com.google.android.material.color.MaterialColors.getColor(
                 this, com.google.android.material.R.attr.colorSurfaceContainerHigh, android.graphics.Color.WHITE
