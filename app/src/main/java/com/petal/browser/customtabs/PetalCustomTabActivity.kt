@@ -82,6 +82,7 @@ class PetalCustomTabActivity : ComponentActivity() {
     // CustomTabsIntent customizations
     private var customToolbarColor: Color? = null
     private var customCloseButtonBitmap: Bitmap? = null
+    private var isIncognitoCustomTab: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -174,7 +175,7 @@ class PetalCustomTabActivity : ComponentActivity() {
                                         tabId = tabId,
                                         url = targetUrl.ifBlank { "about:blank" },
                                         title = "",
-                                        isIncognito = false,
+                                        isIncognito = isIncognitoCustomTab,
                                         select = true
                                     )
                                     val surface = PetalTabViewController(ctx).also { sfc ->
@@ -272,6 +273,9 @@ class PetalCustomTabActivity : ComponentActivity() {
     private fun parseCustomTabsIntentExtras(intent: Intent?) {
         if (intent == null) return
         try {
+            isIncognitoCustomTab = intent.getBooleanExtra("androidx.browser.customtabs.extra.INCOGNITO", false)
+                || intent.getBooleanExtra("org.mozilla.fenix.EXTRA_IS_PRIVATE", false)
+                || intent.getBooleanExtra("com.google.android.apps.chrome.EXTRA_OPEN_NEW_INCOGNITO_TAB", false)
             if (intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR)) {
                 val colorInt = intent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0)
                 if (colorInt != 0) {

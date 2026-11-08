@@ -64,6 +64,7 @@ public class PetalPwaActivity extends AppCompatActivity {
     private String themeColorHex = "#FFFFFF";
     private String displayMode = "standalone";
     private String offlineArchivePath = null;
+    private String pwaTabId = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -263,11 +264,11 @@ public class PetalPwaActivity extends AppCompatActivity {
 
         String effectiveUrl = (targetUrl != null && !targetUrl.isEmpty() && !"about:blank".equalsIgnoreCase(targetUrl))
                 ? targetUrl : "about:blank";
-        String tabId = "pwa_" + System.currentTimeMillis();
+        pwaTabId = "pwa_" + System.currentTimeMillis();
         kotlin.Pair<mozilla.components.browser.state.state.TabSessionState, mozilla.components.concept.engine.EngineSession> sessionPair =
             PetalEngineStore.createTabSession(
                 this,
-                tabId,
+                pwaTabId,
                 effectiveUrl,
                 pwaTitle != null ? pwaTitle : "Petal PWA",
                 false,
@@ -398,6 +399,10 @@ public class PetalPwaActivity extends AppCompatActivity {
                 geckoView.destroy();
             } catch (Exception ignored) {}
             geckoView = null;
+        }
+        if (pwaTabId != null) {
+            com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, pwaTabId);
+            pwaTabId = null;
         }
         super.onDestroy();
     }
