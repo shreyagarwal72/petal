@@ -52,3 +52,31 @@
   - [x] Add reflection-safe `WebNotification.actions` parsing and `NotificationCompat.Action` buttons
   - [x] Handle action button clicks via `ACTION_BUTTON_CLICK`
   - [x] Hook Gecko native crashes/kills into `PetalAppLogger` for local diagnostics & GitHub issues
+
+## Milestone 3: Official Firefox WebExtensions Parity
+- [x] **Phase 13: WebExtension Action Reactive State & Live Toolbar Badges**
+  - [x] Define `ExtensionActionState` with reactive badges, titles, icons, and colors
+  - [x] Expose `activeTabActionStates` StateFlow in `PetalExtensionManager`
+  - [x] Maintain tab-session action synchronization on tab switch and reload
+- [x] **Phase 14: Dedicated In-Browser Extensions Menu Sheet**
+  - [x] Create `PetalExtensionsMenuSheet` with Liquid Glass containment and M3 styling
+  - [x] Render active tab extensions with live action badges (e.g. uBlock blocked counts)
+  - [x] Wire 1-tap browser action popup triggers and direct options page shortcuts
+  - [x] Connect browser overflow menu "Extensions" item directly to `PetalExtensionsMenuSheet`
+- [x] **Phase 15: Replace Faux-Extensions & Overhaul Add-ons Manager**
+  - [x] Purge legacy Petal faux-extension lists and custom dialogs from `PetalExtensionsScreen`
+  - [x] Structure pure 3-tab Firefox manager: Installed, Explore (Curated Catalog), and Tweaks
+  - [x] Keep silent engine background extensions running without polluting UI
+- [x] **Phase 16: Extension Details, Settings & Permissions Inspector**
+  - [x] Build comprehensive permissions inspector mapping host patterns and WebExtension APIs
+  - [x] Expose dedicated "Run in Private Windows" toggle backed by `WebExtensionController`
+  - [x] Add direct "Settings" launcher opening extension options pages in real browser tabs
+  - [x] Add safe uninstall flow with confirmation dialog
+- [x] **Phase 17: Firefox Power Tweaks — Local XPI Loader, Custom Collections & Dev Mode**
+  - [x] Add system file picker import for local `.xpi` packages via `installFromContentUri`
+  - [x] Support Custom AMO Add-on Collections via Mozilla AMO v4 API (Fenix feature)
+  - [x] Implement WebExtension Developer Mode with formatted `manifest.json` inspector
+- [x] **Phase 18: Extension Popup Host & Focus Polish**
+  - [x] Verify mobile-responsive viewport CSS injection bypassing content CSP
+  - [x] Support full prompt delegate suite (alert, button, text, share) for password managers
+  - [x] Ensure reliable focus cleanup and parent tab reactivation on dismiss

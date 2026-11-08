@@ -4,7 +4,8 @@
 - **Milestones**:
   - **Milestone 1**: Core GeckoView Stabilization & Parity (Phases 1-6: COMPLETE & VERIFIED)
   - **Milestone 2**: Deep Mozilla Upstream Parity & Component Integration (Phases 7-12: COMPLETE & VERIFIED)
-- **Active Phase**: All Phases (Phase 1 through Phase 12) Complete, Documented, and Verified
+  - **Milestone 3**: Official Firefox WebExtensions Parity (Phases 13-18: COMPLETE & VERIFIED)
+- **Active Phase**: All Phases (Phase 1 through Phase 18) Complete, Documented, and Verified
 - **Completed Deliverables**:
   - **Phase 1**: Verified R8 keep rules, audited reflection targets, and completed preference fingerprint keys in `PetalGeckoRuntime.kt`.
   - **Phase 2**: Fixed history wiping in `rebuildTabsFromBrowserStore` and `showAlbum`; gated Mozilla session restore (`sp_mozilla_session_restore`); connected `goBack` to `BrowserStore.canGoBack` and eliminated premature 4-second timeout drop to Home.
@@ -18,3 +19,9 @@
   - **Phase 10**: Gated Mozilla `EngineSession` find abstraction behind `sp_mozilla_find_in_page` with zero edits to address bar/padding logic.
   - **Phase 11**: Verified `PetalMediaSessionService` `MediaSessionCompat` controls and gated foreground session startup behind `sp_mozilla_media_session`.
   - **Phase 12**: Added reflection-safe W3C `WebNotification.actions` parsing and action buttons; hooked native Gecko content process crashes and OS kills into `PetalAppLogger`.
+  - **Phase 13**: Created `ExtensionActionState` with reactive badges, colors, and titles; exposed `activeTabActionStates` in `PetalExtensionManager.kt`.
+  - **Phase 14**: Built `PetalExtensionsMenuSheet.kt` with live action badges, 1-tap browser action popup triggers, and options page shortcuts; connected browser overflow menu.
+  - **Phase 15**: Purged legacy faux-extensions and custom dialogs from `PetalExtensionsScreen.kt`; implemented pure 3-tab Firefox manager (Installed, Explore, Tweaks).
+  - **Phase 16**: Upgraded `ExtensionDetailSheet` with full permissions inspector mapping host and API patterns, "Run in Private Windows" toggle, and options page button.
+  - **Phase 17**: Added local `.xpi` file import via system file picker, Custom AMO Collections loader via Mozilla API, and Developer Mode with formatted `manifest.json` inspector.
+  - **Phase 18**: Verified responsive popup scaling, complete password manager `PromptDelegate` handling, and parent tab focus restoration.
