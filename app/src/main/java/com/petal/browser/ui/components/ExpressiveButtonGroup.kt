@@ -1,6 +1,7 @@
 package com.petal.browser.ui.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -83,7 +86,15 @@ fun ExpressiveButtonGroup(
         val count = items.size
         items.forEachIndexed { index, item ->
             val isSelected = (item.id == selectedId)
-            val shape = expressiveButtonShape(index, count)
+            // Material 3 Expressive connected group (pattern from PixelMusic): the selected segment
+            // morphs into a full pill while its neighbours keep tight inner corners.
+            val baseShape = expressiveButtonShape(index, count)
+            val pillCorner by animateDpAsState(
+                targetValue = if (isSelected && count > 1) 50.dp else 0.dp,
+                animationSpec = PetalSpring.segment(),
+                label = "ExpressiveSegmentPill"
+            )
+            val shape: Shape = if (isSelected && count > 1) RoundedCornerShape(pillCorner.coerceAtLeast(6.dp)) else baseShape
             val interactionSource = remember { MutableInteractionSource() }
             val isPressed by interactionSource.collectIsPressedAsState()
             val isActive = isSelected || isPressed
@@ -145,6 +156,15 @@ fun ExpressiveButtonGroup(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    if (isSelected && item.icon == null) {
+                        Icon(
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = null,
+                            tint = contentColor,
+                            modifier = Modifier.size(if (compact) 16.dp else 18.dp)
+                        )
+                        Spacer(Modifier.width(if (compact) 4.dp else 6.dp))
+                    }
                     if (item.icon != null) {
                         Icon(
                             imageVector = item.icon,

@@ -16,6 +16,8 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.RotateRight
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier

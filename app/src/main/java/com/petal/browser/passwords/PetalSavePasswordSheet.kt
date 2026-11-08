@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -338,7 +340,7 @@ private fun SavePasswordSheetContent(
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             // Username field
-                            androidx.compose.material3.TextField(
+                            com.petal.browser.ui.kit.TextField(
                                 value = username,
                                 onValueChange = { username = it },
                                 label = { Text("Username or Email") },
@@ -356,7 +358,7 @@ private fun SavePasswordSheetContent(
                             )
 
                             // Password field
-                            androidx.compose.material3.TextField(
+                            com.petal.browser.ui.kit.TextField(
                                 value = password,
                                 onValueChange = { password = it },
                                 label = { Text("Password") },
@@ -393,7 +395,7 @@ private fun SavePasswordSheetContent(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         // Secondary action: "Never for this site"
-                        androidx.compose.material3.FilledTonalButton(
+                        com.petal.browser.ui.kit.FilledTonalButton(
                             onClick = {
                                 if (!isMorphing && !isClosing) {
                                     haptic.playClick(context)

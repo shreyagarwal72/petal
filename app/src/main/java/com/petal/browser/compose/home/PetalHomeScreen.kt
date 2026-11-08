@@ -43,6 +43,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.TextField
+import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import com.petal.browser.ui.glass.captureGlassWallpaper
 import androidx.compose.runtime.saveable.rememberSaveable

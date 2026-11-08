@@ -31,6 +31,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.Card
+import com.petal.browser.ui.kit.TextField
+import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.kit.TextButton
+import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -1790,7 +1796,7 @@ fun AppearanceSettingsScreenContent(
                                     )
                                 }
 
-                                androidx.compose.material3.TextButton(
+                                com.petal.browser.ui.kit.TextButton(
                                     onClick = {
                                         liveAlpha = 0.70f
                                         liveSheen = 0.60f
@@ -2396,38 +2402,39 @@ private fun PetalDesktopTabBarModeRow() {
             com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.getMode(context)
         )
     }
-    androidx.compose.foundation.layout.Column(
-        modifier = androidx.compose.ui.Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        androidx.compose.material3.Text(
-            text = stringResource(R.string.ui_desktop_tab_bar),
-            style = androidx.compose.material3.MaterialTheme.typography.titleMedium
-        )
-        androidx.compose.material3.Text(
-            text = stringResource(R.string.ui_desktop_tab_bar_subtitle),
-            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        androidx.compose.foundation.layout.Row(
-            modifier = androidx.compose.ui.Modifier.padding(top = 8.dp),
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+    val modeItems = listOf(
+        com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.MODE_AUTO to R.string.ui_desktop_tab_bar_auto,
+        com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.MODE_ALWAYS to R.string.ui_desktop_tab_bar_always,
+        com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.MODE_NEVER to R.string.ui_desktop_tab_bar_never
+    ).map { (value, label) -> com.petal.browser.ui.components.ExpressiveSegmentItem(id = value, label = stringResource(label)) }
+    com.petal.browser.ui.containment.PetalHeroCard {
+        androidx.compose.foundation.layout.Column(
+            modifier = androidx.compose.ui.Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)
         ) {
-            listOf(
-                com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.MODE_AUTO to R.string.ui_desktop_tab_bar_auto,
-                com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.MODE_ALWAYS to R.string.ui_desktop_tab_bar_always,
-                com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.MODE_NEVER to R.string.ui_desktop_tab_bar_never
-            ).forEach { (value, label) ->
-                androidx.compose.material3.FilterChip(
-                    selected = mode == value,
-                    onClick = {
-                        mode = value
-                        com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.setMode(context, value)
-                    },
-                    label = { androidx.compose.material3.Text(stringResource(label)) }
-                )
-            }
+            // The title previously had no colour, so outside a Surface it inherited black and was
+            // invisible on dark themes, leaving the subtitle orphaned.
+            androidx.compose.material3.Text(
+                text = stringResource(R.string.ui_desktop_tab_bar),
+                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
+            )
+            androidx.compose.material3.Text(
+                text = stringResource(R.string.ui_desktop_tab_bar_subtitle),
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            com.petal.browser.ui.components.ExpressiveButtonGroup(
+                items = modeItems,
+                selectedId = mode,
+                onItemSelected = { value ->
+                    mode = value
+                    com.petal.browser.compose.tabs.PetalDesktopTabBarBridge.setMode(context, value)
+                },
+                modifier = androidx.compose.ui.Modifier.fillMaxWidth().padding(top = 8.dp)
+            )
         }
     }
 }

@@ -40,6 +40,9 @@ import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.TextButton
+import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier

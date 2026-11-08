@@ -16,9 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Animation
-import androidx.compose.material3.Card
+import com.petal.browser.ui.kit.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
+import com.petal.browser.ui.kit.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text

@@ -37,7 +37,7 @@ import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Work
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
