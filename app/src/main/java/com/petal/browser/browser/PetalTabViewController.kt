@@ -1603,6 +1603,10 @@ class PetalTabViewController private constructor(
                 val tot = result?.total ?: 0
                 callback?.invoke(cur, tot)
                 org.mozilla.geckoview.GeckoResult.fromValue(result)
+            }, { throwable ->
+                android.util.Log.w("PetalTabViewController", "Find all failed: ${throwable.message}")
+                callback?.invoke(0, 0)
+                org.mozilla.geckoview.GeckoResult.fromValue(null)
             })
         } else {
             findAll(query)
@@ -1620,6 +1624,10 @@ class PetalTabViewController private constructor(
                 val tot = result?.total ?: 0
                 callback?.invoke(cur, tot)
                 org.mozilla.geckoview.GeckoResult.fromValue(result)
+            }, { throwable ->
+                android.util.Log.w("PetalTabViewController", "Find next failed: ${throwable.message}")
+                callback?.invoke(0, 0)
+                org.mozilla.geckoview.GeckoResult.fromValue(null)
             })
         } else {
             observedSession?.findNext(forward)

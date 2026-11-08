@@ -124,9 +124,14 @@ public class BrowsingDataManager {
         });
     }
 
-    public static void clearCache(final Context context, final WebView webView) {
+    public static void clearCache(final Context context) {
         if (context == null) return;
-        PetalCacheManager.clearCache(context, PetalCacheManager.Flags.ALL_CACHES, webView, null);
+        PetalCacheManager.clearCache(context, PetalCacheManager.Flags.ALL_CACHES, null);
+    }
+
+    @Deprecated
+    public static void clearCache(final Context context, final WebView webView) {
+        clearCache(context);
     }
 
     public static void clearCookies() {
@@ -274,7 +279,6 @@ public class BrowsingDataManager {
 
     public static void clearBrowsingDataAsync(
         final Context context,
-        final WebView webView,
         final boolean cache,
         final boolean cookies,
         final boolean webStorage,
@@ -294,8 +298,22 @@ public class BrowsingDataManager {
             if (autofill) clearAutofillData(context);
             if (permissions) clearPermissions(context);
 
-            PetalCacheManager.clearCache(context, flags, webView, onCompleted);
+            PetalCacheManager.clearCache(context, flags, onCompleted);
         });
+    }
+
+    @Deprecated
+    public static void clearBrowsingDataAsync(
+        final Context context,
+        final WebView webView,
+        final boolean cache,
+        final boolean cookies,
+        final boolean webStorage,
+        final boolean autofill,
+        final boolean permissions,
+        final Runnable onCompleted
+    ) {
+        clearBrowsingDataAsync(context, cache, cookies, webStorage, autofill, permissions, onCompleted);
     }
 
     public static void deleteDirContents(File dir) {

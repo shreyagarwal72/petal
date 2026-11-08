@@ -1022,7 +1022,7 @@ fun FirefoxAccountSyncScreen(
                                                 Button(
                                                     onClick = {
                                                         try {
-                                                            com.petal.browser.unit.BrowsingDataManager.clearCache(context, null)
+                                                            com.petal.browser.unit.BrowsingDataManager.clearCache(context)
                                                             cacheSizeMb = "0.0 MB"
                                                             coroutineScope.launch {
                                                                 snackbarHostState.showSnackbar("Temporary web cache cleared")
@@ -1320,7 +1320,6 @@ fun FirefoxAccountSyncScreen(
                 showClearDataDialog = false
                 com.petal.browser.unit.BrowsingDataManager.clearBrowsingDataAsync(
                     context,
-                    null,
                     cache,
                     cookies,
                     storage,

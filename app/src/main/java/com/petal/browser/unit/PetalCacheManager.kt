@@ -68,7 +68,10 @@ object PetalCacheManager {
                 map["app_cache"] = size
                 total += size
             }
-        } catch (_: Exception) {}
+        } catch (e: Throwable) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.w(TAG, "Failed calculating app cache size: ${e.message}")
+        }
 
         // 2. External Cache Dir
         try {
@@ -78,7 +81,10 @@ object PetalCacheManager {
                 map["external_cache"] = size
                 total += size
             }
-        } catch (_: Exception) {}
+        } catch (e: Throwable) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.w(TAG, "Failed calculating external cache size: ${e.message}")
+        }
 
         // 3. Tab Thumbnails Dir
         try {
@@ -88,7 +94,10 @@ object PetalCacheManager {
                 map["thumbnails"] = size
                 total += size
             }
-        } catch (_: Exception) {}
+        } catch (e: Throwable) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.w(TAG, "Failed calculating thumbnail cache size: ${e.message}")
+        }
 
         // 4. Code Cache Dir
         try {
@@ -98,7 +107,10 @@ object PetalCacheManager {
                 map["code_cache"] = size
                 total += size
             }
-        } catch (_: Exception) {}
+        } catch (e: Throwable) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.w(TAG, "Failed calculating code cache size: ${e.message}")
+        }
 
         CacheSizeInfo(total, formatBytes(total), map)
     }
@@ -109,8 +121,14 @@ object PetalCacheManager {
      */
     @JvmStatic
     @JvmOverloads
-    fun clearAllCache(context: Context, activeWebView: WebView? = null) {
-        clearCache(context, Flags.ALL_CACHES, activeWebView, null)
+    fun clearAllCache(context: Context) {
+        clearCache(context, Flags.ALL_CACHES, null)
+    }
+
+    @Deprecated("Legacy WebView parameter no longer used in GeckoView architecture")
+    @JvmStatic
+    fun clearAllCache(context: Context, activeWebView: WebView?) {
+        clearCache(context, Flags.ALL_CACHES, null)
     }
 
     /**
@@ -119,7 +137,7 @@ object PetalCacheManager {
      */
     @JvmStatic
     fun clearAllWebsiteData(context: Context) {
-        clearCache(context, Flags.ALL_WEBSITE_DATA, null, null)
+        clearCache(context, Flags.ALL_WEBSITE_DATA, null)
     }
 
     /**
@@ -130,7 +148,6 @@ object PetalCacheManager {
     fun clearCache(
         context: Context,
         flags: Long = Flags.ALL_CACHES,
-        activeWebView: WebView? = null,
         onCompleted: Runnable? = null
     ) {
         val appContext = context.applicationContext
@@ -171,15 +188,14 @@ object PetalCacheManager {
         // 3. Chromium WebStorage & Multi-profile fallback (Chromium official engine)
         runOnMainThread {
             try {
-                if ((flags and Flags.NETWORK_CACHE) != 0L) {
-                    activeWebView?.clearCache(true)
-                }
                 if ((flags and Flags.DOM_WEB_STORAGE) != 0L) {
                     WebStorage.getInstance().deleteAllData()
                     if (WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) {
                         try {
                             ProfileStore.getInstance().getOrCreateProfile(Profile.DEFAULT_PROFILE_NAME)?.webStorage?.deleteAllData()
-                        } catch (_: Exception) {}
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Error clearing web storage: ${e.message}")
+                        }
                     }
                 }
                 if ((flags and Flags.COOKIES) != 0L) {
@@ -189,6 +205,17 @@ object PetalCacheManager {
                 Log.w(TAG, "Error clearing Chromium storage", e)
             }
         }
+
+    @Deprecated("Legacy WebView parameter no longer used in GeckoView architecture")
+    @JvmStatic
+    fun clearCache(
+        context: Context,
+        flags: Long,
+        activeWebView: WebView?,
+        onCompleted: Runnable?
+    ) {
+        clearCache(context, flags, onCompleted)
+    }
 
         // 4. Legacy HTTP response cache: only when the network cache was requested
         // (a cookies-only clear used to throw it away as well).

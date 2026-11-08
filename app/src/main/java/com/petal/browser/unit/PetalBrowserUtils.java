@@ -521,7 +521,7 @@ public class PetalBrowserUtils {
         try {
             // 1. Clear SharedPreferences completely
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-            sp.edit().clear().commit();
+            sp.edit().clear().apply();
 
             // Clear any other shared preference files
             try {

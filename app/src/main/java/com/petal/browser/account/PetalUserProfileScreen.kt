@@ -625,7 +625,6 @@ private fun RenderUserProfileContent(
                         showClearDataDialog = false
                         com.petal.browser.unit.BrowsingDataManager.clearBrowsingDataAsync(
                             context,
-                            null,
                             cache,
                             cookies,
                             storage,
@@ -712,7 +711,7 @@ private fun RenderUserProfileContent(
                                 Button(
                                     onClick = {
                                         try {
-                                            com.petal.browser.unit.BrowsingDataManager.clearCache(context, null)
+                                            com.petal.browser.unit.BrowsingDataManager.clearCache(context)
                                             cacheSizeMb = "0.0 MB"
                                             coroutineScope.launch {
                                                 snackbarHostState.showSnackbar("Temporary web cache cleared")
