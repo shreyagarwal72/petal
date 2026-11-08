@@ -90,28 +90,41 @@ public class PetalUpdateUtils {
                     final String latestTag = json.optString("tag_name", currentVersion);
                     final String releaseNotes = json.optString("body", "Performance polish, security enhancements, and stability improvements.");
 
-                    // Locate direct APK asset download URL: ALWAYS prioritize universal release
+                    // Locate direct APK asset download URL. Prefer the APK built for this device's own CPU
+                    // ABI (several times smaller: it carries one copy of GeckoView/ffmpeg/python instead
+                    // of four), then the universal APK, then any APK.
                     String apkDownloadUrl = json.optString("html_url", GITHUB_RELEASES_PAGE);
                     JSONArray assets = json.optJSONArray("assets");
                     if (assets != null && assets.length() > 0) {
+                        String abiUrl = null;
+                        int abiRank = Integer.MAX_VALUE;
                         String universalUrl = null;
                         String fallbackApkUrl = null;
+                        String[] abis = android.os.Build.SUPPORTED_ABIS;
                         for (int i = 0; i < assets.length(); i++) {
                             JSONObject asset = assets.getJSONObject(i);
                             String assetName = asset.optString("name", "");
-                            if (assetName.endsWith(".apk")) {
-                                String downloadUrl = asset.optString("browser_download_url", "");
-                                if (!downloadUrl.isEmpty()) {
-                                    if (assetName.toLowerCase().contains("universal")) {
-                                        universalUrl = downloadUrl;
-                                        break; // Found universal, use it immediately
-                                    } else if (fallbackApkUrl == null) {
-                                        fallbackApkUrl = downloadUrl;
-                                    }
+                            if (!assetName.endsWith(".apk")) continue;
+                            String downloadUrl = asset.optString("browser_download_url", "");
+                            if (downloadUrl.isEmpty()) continue;
+                            String lower = assetName.toLowerCase();
+                            if (lower.contains("universal")) {
+                                if (universalUrl == null) universalUrl = downloadUrl;
+                                continue;
+                            }
+                            // Match "-<abi>-" so x86 never matches x86_64; lower index = more preferred ABI.
+                            for (int a = 0; abis != null && a < abis.length && a < abiRank; a++) {
+                                if (lower.contains("-" + abis[a].toLowerCase() + "-")) {
+                                    abiUrl = downloadUrl;
+                                    abiRank = a;
+                                    break;
                                 }
                             }
+                            if (fallbackApkUrl == null) fallbackApkUrl = downloadUrl;
                         }
-                        if (universalUrl != null) {
+                        if (abiUrl != null) {
+                            apkDownloadUrl = abiUrl;
+                        } else if (universalUrl != null) {
                             apkDownloadUrl = universalUrl;
                         } else if (fallbackApkUrl != null) {
                             apkDownloadUrl = fallbackApkUrl;
