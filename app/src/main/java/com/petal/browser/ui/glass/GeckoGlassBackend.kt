@@ -34,7 +34,15 @@ object GeckoGlassBackend {
         // Match official Mozilla GeckoView standard: default to BACKEND_SURFACE_VIEW
         // for optimal hardware composition and reliable web page rendering.
         // Switch to BACKEND_TEXTURE_VIEW only when Liquid Glass requires sampling the page.
-        if (shouldSamplePage(context)) {
+        val wantTexture = shouldSamplePage(context)
+        val hasTexture = findTextureView(geckoView) != null
+        // Already correct: never rebuild the surface for nothing (every rebuild drops the frame).
+        if (wantTexture == hasTexture) return
+        // GeckoView.setViewBackend() removes the current surface view and adds a new one. While a
+        // session is attached the compositor keeps drawing to the removed surface and the page
+        // stays black, so only switch while no session is shown. The next bind retries.
+        if (geckoView.session != null) return
+        if (wantTexture) {
             useTextureView(geckoView)
         } else {
             useSurfaceView(geckoView)

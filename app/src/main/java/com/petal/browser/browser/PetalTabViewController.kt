@@ -25,6 +25,9 @@ import mozilla.components.feature.session.SwipeRefreshFeature
 import mozilla.components.feature.tabs.TabsUseCases
 import kotlinx.coroutines.launch
 
+/** How long after a pull-to-refresh the spinner may stay up while the tab is not loading. */
+private const val REFRESH_WATCHDOG_MS = 5_000L
+
 /**
  * A browser tab surface backed by Android Components' engine abstractions.
  *
@@ -35,7 +38,7 @@ class PetalTabViewController private constructor(
     context: Context,
     attrs: AttributeSet?,
     private val engineView: EngineView
-) : SwipeRefreshLayout(context, attrs), PetalTabSurface, PetalTabController, AlbumController, EngineView by engineView {
+) : PetalVerticalSwipeRefreshLayout(context, attrs), PetalTabSurface, PetalTabController, AlbumController, EngineView by engineView {
 
     @JvmOverloads
     constructor(context: Context, attrs: AttributeSet? = null) :
@@ -562,23 +565,15 @@ class PetalTabViewController private constructor(
                 lastLayoutChangeTime = android.os.SystemClock.uptimeMillis()
             }
         }
-        // Pull-to-refresh is Mozilla's own: this view is a SwipeRefreshLayout driven by
+        // Pull-to-refresh is Mozilla's own: this view is a vertical-only SwipeRefreshLayout
+        // (PetalVerticalSwipeRefreshLayout, a port of Fenix's VerticalSwipeRefreshLayout) driven by
         // android-components' SwipeRefreshFeature (see bindTab), the same stack Fenix uses.
         // Only the spinner colours are themed here.
-        try {
-            val primary = com.google.android.material.color.MaterialColors.getColor(
-                this, android.R.attr.colorPrimary, android.graphics.Color.parseColor("#6750A4")
-            )
-            val surface = com.google.android.material.color.MaterialColors.getColor(
-                this, com.google.android.material.R.attr.colorSurfaceContainerHigh, android.graphics.Color.WHITE
-            )
-            setColorSchemeColors(primary)
-            setProgressBackgroundColorSchemeColor(surface)
-        } catch (_: Throwable) {}
+        applyRefreshSpinnerTheme()
         // Tab pages are drawn by android-components' GeckoEngineView, whose inner GeckoView
         // defaults to a SurfaceView (official Mozilla GeckoView default). Switch to TextureView
         // only if Liquid Glass is active and requires page sampling.
-        if (isHostedByBrowserActivity() && com.petal.browser.ui.glass.GeckoGlassBackend.shouldSamplePage(context)) {
+        if (isHostedByBrowserActivity()) {
             findGeckoView(engineView.asView())?.let {
                 try { com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(it, context) } catch (_: Throwable) {}
             }
@@ -641,6 +636,9 @@ class PetalTabViewController private constructor(
         observedSession?.unregister(observer)
         refreshFeature?.stop()
         refreshFeature = null
+        // A spinner left over from the previously bound tab must not be shown on this one.
+        removeCallbacks(refreshWatchdog)
+        isRefreshing = false
         if (observedSession !== session) latestGeckoState = null
         observedSession = session
         this.tab = tab
@@ -682,15 +680,14 @@ class PetalTabViewController private constructor(
         )
         setBackgroundColor(themeSurfaceColor)
         try { engineView.asView().setBackgroundColor(themeSurfaceColor) } catch (_: Throwable) {}
-        findGeckoView(engineView.asView())?.setBackgroundColor(themeSurfaceColor)
-        engineView.render(session)
-        if (isHostedByBrowserActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && com.petal.browser.ui.glass.GeckoGlassBackend.shouldSamplePage(context)) {
-            post {
-                findGeckoView(engineView.asView())?.let {
-                    try { com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(it, context) } catch (_: Throwable) {}
-                }
-            }
+        val geckoView = findGeckoView(engineView.asView())
+        geckoView?.setBackgroundColor(themeSurfaceColor)
+        // Choose SurfaceView / TextureView BEFORE a session is attached. Swapping the backend while
+        // a session is rendering throws away the surface it draws to and leaves a black page.
+        if (isHostedByBrowserActivity() && geckoView != null) {
+            try { com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(geckoView, context) } catch (_: Throwable) {}
         }
+        engineView.render(session)
         session.register(observer)
         val geckoSession = getGeckoSession()
         com.petal.browser.extensions.PetalExtensionManager.attachSession(geckoSession)
@@ -1935,17 +1932,92 @@ class PetalTabViewController private constructor(
      * The feature installs its own OnRefreshListener, so wrap it to keep Petal's per-page
      * settings (desktop mode, user agent) applied before every pull-triggered reload.
      */
-    override fun setOnRefreshListener(listener: OnRefreshListener?) {
+    override fun setOnRefreshListener(listener: SwipeRefreshLayout.OnRefreshListener?) {
         super.setOnRefreshListener(
-            if (listener == null) null else OnRefreshListener {
+            if (listener == null) null else SwipeRefreshLayout.OnRefreshListener {
+                if (observedSession == null) {
+                    // Nothing to reload (view released / no session yet): never leave the spinner up.
+                    isRefreshing = false
+                    return@OnRefreshListener
+                }
                 try {
                     applyPageSettings(pageUrl)
                 } catch (t: Throwable) {
                     android.util.Log.w("PetalTabViewController", "applyPageSettings failed before pull reload", t)
                 }
                 listener.onRefresh()
+                scheduleRefreshWatchdog()
             }
         )
+    }
+
+    /**
+     * SwipeRefreshFeature only hides the spinner when the tab's `loading` flag CHANGES. If the reload
+     * finishes between two store updates (cached page, error page) or never starts, the flag never
+     * changes and the spinner would stay on screen forever. Firefox has the same listener, so this is
+     * only a safety net: if the page is not loading a few seconds after a pull, drop the spinner.
+     */
+    private val refreshWatchdog = Runnable {
+        if (isRefreshing && !loading) isRefreshing = false
+    }
+
+    private fun scheduleRefreshWatchdog() {
+        removeCallbacks(refreshWatchdog)
+        postDelayed(refreshWatchdog, REFRESH_WATCHDOG_MS)
+    }
+
+    /**
+     * Spinner colours, same idea as Fenix (on-surface arc on a surface-container disc) but with a
+     * contrast guarantee so the arc can never be drawn in the same colour as the disc, which looks
+     * like an empty white circle stuck on screen.
+     */
+    private fun applyRefreshSpinnerTheme() {
+        try {
+            val disc = resolveOpaqueThemeColor(
+                com.google.android.material.R.attr.colorSurfaceContainerHigh,
+                resolveOpaqueThemeColor(com.google.android.material.R.attr.colorSurface, android.graphics.Color.WHITE)
+            )
+            val onSurface = resolveOpaqueThemeColor(
+                com.google.android.material.R.attr.colorOnSurface,
+                if (androidx.core.graphics.ColorUtils.calculateLuminance(disc) > 0.5) {
+                    android.graphics.Color.BLACK
+                } else {
+                    android.graphics.Color.WHITE
+                }
+            )
+            var arc = resolveOpaqueThemeColor(com.google.android.material.R.attr.colorPrimary, onSurface)
+            if (androidx.core.graphics.ColorUtils.calculateContrast(arc, disc) < 3.0) {
+                arc = onSurface
+            }
+            setColorSchemeColors(arc)
+            setProgressBackgroundColorSchemeColor(disc)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabViewController", "Could not theme the pull-to-refresh spinner", t)
+        }
+    }
+
+    private fun resolveOpaqueThemeColor(attr: Int, fallback: Int): Int =
+        com.google.android.material.color.MaterialColors.getColor(context, attr, fallback) or 0xFF000000.toInt()
+
+    /**
+     * android-components' GeckoEngineView calls release() from onDetachedFromWindow(), which removes
+     * the GeckoSession from the GeckoView: the tab keeps loading but the surface stays black.
+     * Fenix recovers because SessionFeature.start() renders the session again when the view comes
+     * back. Petal binds sessions itself, so do the same here. render() is a no-op when the session is
+     * already shown.
+     */
+    private fun ensureSessionRendered() {
+        val session = observedSession ?: return
+        try {
+            engineView.render(session)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabViewController", "Could not (re)attach the engine session to the view", t)
+        }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        ensureSessionRendered()
     }
 
     override fun getTabView(): View = this
@@ -1957,6 +2029,8 @@ class PetalTabViewController private constructor(
         active = true
         tab?.let { PetalEngineStore.selectTab(appContext, it.id) }
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(null, getGeckoSession())
+        // Same as SessionFeature.start() in Fenix: make sure the session is on screen.
+        ensureSessionRendered()
         refreshFeature?.start()
         fullScreenFeature?.start()
         startThumbnails()
@@ -2091,6 +2165,8 @@ class PetalTabViewController private constructor(
         com.petal.browser.extensions.PetalExtensionManager.detachSession(gs)
         refreshFeature?.stop()
         refreshFeature = null
+        removeCallbacks(refreshWatchdog)
+        isRefreshing = false
         fullScreenFeature?.stop()
         fullScreenFeature = null
         observedSession?.unregister(observer)
@@ -2119,9 +2195,23 @@ class PetalTabViewController private constructor(
         try {
             engineView.onPause()
         } catch (_: Throwable) {}
+        // Firefox never deactivates a session that is still on screen. In split-screen / freeform
+        // the activity is paused while its page stays visible: deactivating it would freeze or
+        // blank the page, so only deactivate when the page really left the screen.
+        if (isStillVisibleWhilePaused()) return
         try {
             getGeckoSession()?.setActive(false)
         } catch (_: Throwable) {}
+    }
+
+    private fun isStillVisibleWhilePaused(): Boolean {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) return false
+        val act = resolveActivity(context) ?: return false
+        return try {
+            act.isInMultiWindowMode || act.isInPictureInPictureMode
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     private fun injectPagePrivacyAndAdBlock() {
@@ -2274,8 +2364,18 @@ private class PetalContentDelegateWrapper(
         onCrashCallback?.invoke()
     }
 
+    override fun onFirstComposite(session: org.mozilla.geckoview.GeckoSession) {
+        engine?.onFirstComposite(session)
+    }
+
     override fun onFirstContentfulPaint(session: org.mozilla.geckoview.GeckoSession) {
         engine?.onFirstContentfulPaint(session)
+    }
+
+    // Mozilla's GeckoEngineSession turns this into onPreviewImageChange (page preview / og:image
+    // for the tab). Without forwarding it the callback was silently dropped.
+    override fun onPreviewImage(session: org.mozilla.geckoview.GeckoSession, previewImageUrl: String) {
+        engine?.onPreviewImage(session, previewImageUrl)
     }
 
     override fun onPaintStatusReset(session: org.mozilla.geckoview.GeckoSession) {
