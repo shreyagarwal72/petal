@@ -175,6 +175,18 @@ class PetalBrowserViewModel @Inject constructor(
         viewModelScope.launch {
             if (browserStore.state.tabs.isEmpty()) {
                 openNewTab("about:home", selectTab = true)
+            } else {
+                val currentTab = activeTab.value
+                if (currentTab != null && currentTab.engineState.engineSession == null) {
+                    PetalEngineStore.materializeTabSession(
+                        context = context,
+                        tabId = currentTab.id,
+                        fallbackUrl = currentTab.content.url,
+                        fallbackTitle = currentTab.content.title,
+                        isIncognito = currentTab.content.private,
+                        select = true
+                    )
+                }
             }
         }
     }
@@ -182,10 +194,23 @@ class PetalBrowserViewModel @Inject constructor(
     // ── Core Navigation Actions ─────────────────────────────────────────────
 
     fun loadUrl(url: String) {
+        val trimmed = url.trim()
+        if (trimmed.isBlank()) return
+        val formattedUrl = PetalBrowserUtils.queryWrapper(context, trimmed)
         val targetTab = activeTab.value
-        val formattedUrl = PetalBrowserUtils.queryWrapper(context, url.trim())
         if (targetTab != null) {
-            sessionUseCases.loadUrl(formattedUrl, targetTab.id)
+            val session = targetTab.engineState.engineSession ?: run {
+                val pair = PetalEngineStore.materializeTabSession(
+                    context = context,
+                    tabId = targetTab.id,
+                    fallbackUrl = formattedUrl,
+                    isIncognito = targetTab.content.private,
+                    select = true
+                )
+                pair.second
+            }
+            browserStore.dispatch(ContentAction.UpdateUrlAction(targetTab.id, formattedUrl))
+            session.loadUrl(formattedUrl)
         } else {
             openNewTab(formattedUrl, selectTab = true)
         }
@@ -196,10 +221,15 @@ class PetalBrowserViewModel @Inject constructor(
         selectTab: Boolean = true,
         private: Boolean = false
     ) {
-        tabsUseCases.addTab(
-            url = url,
-            selectTab = selectTab,
-            private = private
+        val tabId = java.util.UUID.randomUUID().toString()
+        val formattedUrl = if (url.isBlank()) "about:home" else PetalBrowserUtils.queryWrapper(context, url.trim())
+        PetalEngineStore.createTabSession(
+            context = context,
+            tabId = tabId,
+            url = formattedUrl,
+            title = if (PetalBrowserUtils.isHomePage(formattedUrl)) "Petal Home" else "",
+            isIncognito = private,
+            select = selectTab
         )
         if (_isTabSwitcherOpen.value) {
             _isTabSwitcherOpen.value = false
@@ -207,7 +237,19 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun selectTab(tabId: String) {
-        tabsUseCases.selectTab(tabId)
+        val tab = browserStore.state.tabs.firstOrNull { it.id == tabId }
+        if (tab != null && tab.engineState.engineSession == null) {
+            PetalEngineStore.materializeTabSession(
+                context = context,
+                tabId = tabId,
+                fallbackUrl = tab.content.url,
+                fallbackTitle = tab.content.title,
+                isIncognito = tab.content.private,
+                select = true
+            )
+        } else {
+            tabsUseCases.selectTab(tabId)
+        }
         _isTabSwitcherOpen.value = false
     }
 

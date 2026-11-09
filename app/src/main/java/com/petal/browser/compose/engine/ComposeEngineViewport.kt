@@ -73,7 +73,23 @@ fun ComposeEngineViewport(
 
     // Bind current active tab session
     LaunchedEffect(tab?.id, tab?.engineState?.engineSession) {
-        val session = tab?.engineState?.engineSession
+        if (tab == null) return@LaunchedEffect
+        var session = tab.engineState.engineSession
+        if (session == null) {
+            try {
+                val pair = PetalEngineStore.materializeTabSession(
+                    context = context,
+                    tabId = tab.id,
+                    fallbackUrl = tab.content.url,
+                    fallbackTitle = tab.content.title,
+                    isIncognito = tab.content.private,
+                    select = true
+                )
+                session = pair.second
+            } catch (t: Throwable) {
+                android.util.Log.e("ComposeEngineViewport", "Failed to materialize tab session", t)
+            }
+        }
         if (session != null) {
             try {
                 engineView.render(session)
@@ -128,6 +144,12 @@ fun ComposeEngineViewport(
                     frameLayout
                 },
                 update = {
+                    val session = tab?.engineState?.engineSession
+                    if (session != null) {
+                        try {
+                            engineView.render(session)
+                        } catch (_: Throwable) {}
+                    }
                     // Update layout and backend if required
                     findGeckoView(engineView.asView())?.let { gv ->
                         try {

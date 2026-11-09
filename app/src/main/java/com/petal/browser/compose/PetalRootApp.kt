@@ -150,6 +150,7 @@ fun PetalRootApp(
     // Synchronize page state with BarCollapseState
     LaunchedEffect(activeUrl, isIncognito) {
         BarCollapseState.updatePage(activeUrl, isIncognito)
+        BarCollapseState.setFraction(0f)
     }
     LaunchedEffect(Unit) {
         BarCollapseState.onExpandRequested = {
@@ -174,8 +175,7 @@ fun PetalRootApp(
             isSettingsOpen ||
             isExtensionsOpen ||
             isAccountSyncOpen ||
-            pendingExtensionPopup != null ||
-            settingsCategory != null
+            pendingExtensionPopup != null
 
     val isBottomBarVisible = !isOverlayShowing
 
@@ -238,7 +238,11 @@ fun PetalRootApp(
             if (isHome) {
                 PetalHomeScreen(
                     onSearch = { query ->
-                        viewModel.loadUrl(query)
+                        if (query.isBlank()) {
+                            isOmniboxOpen = true
+                        } else {
+                            viewModel.loadUrl(query)
+                        }
                     },
                     onOpenShortcutUrl = { url ->
                         viewModel.loadUrl(url)
