@@ -997,6 +997,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         browserBackCallback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackStarted(@NonNull androidx.activity.BackEventCompat backEvent) {
+                Log.d("PetalBack", "browserBackCallback STARTED (activity callback got the gesture)");
                 // Web content (especially GeckoView) may update gesture-exclusion rects
                 // while a page is loading. Clear them immediately when Android starts the
                 // predictive-back gesture so both websites and the Petal homepage receive it.
@@ -1018,6 +1019,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             @Override
             public void handleOnBackPressed() {
+                Log.d("PetalBack", "browserBackCallback PRESSED");
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                 boolean overlayDismissedByGesture = predictiveBackStartedOnOverlay;
                 predictiveBackStartedOnOverlay = false;
@@ -1876,6 +1878,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 || isWebPageNotHome || hasMultipleTabs || requireConfirmExit;
 
         browserBackCallback.setEnabled(shouldIntercept);
+        Log.d("PetalBack", "state intercept=" + shouldIntercept + " overlay=" + hasOverlay + " dialog=" + hasDialog
+                + " webBack=" + hasWebBack + " webNotHome=" + isWebPageNotHome + " tabs=" + BrowserContainer.size()
+                + " top=" + (topContent == null ? "null" : topContent.getClass().getSimpleName())
+                + " isOverlayFlag=" + isOverlayScreenShowing);
     }
 
     public void resetPredictiveBackVisuals() {
