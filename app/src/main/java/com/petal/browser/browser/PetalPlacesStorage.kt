@@ -23,9 +23,9 @@ object PetalPlacesStorage {
             val action = HistoryBookmarkRepository(context)
             action.open(true)
             val record = Record().apply {
-                setTitle(title.ifBlank { url })
-                setURL(url)
-                setTime(System.currentTimeMillis())
+                this.title = title.ifBlank { url }
+                this.url = url
+                this.time = System.currentTimeMillis()
             }
             action.addHistory(record)
             action.close()
