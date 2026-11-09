@@ -16,7 +16,7 @@ import org.mozilla.geckoview.MediaSession
  * Connects WebView HTML5 media elements (audio/video) with MediaSessionService and PiP mode.
  * Provides JavaScript injection to monitor play, pause, timeupdate, and fullscreen video state.
  */
-class PetalMediaBridge(private val context: Context, private var listener: MediaStateListener?) {
+class PetalMediaBridge(private val context: Context, var listener: MediaStateListener?) {
 
     companion object {
         private const val JS_INTERFACE_NAME = "PetalMediaInterface"
@@ -156,7 +156,7 @@ class PetalMediaBridge(private val context: Context, private var listener: Media
         if (tabViewController != null) {
             tabViewController?.evaluateJavascript(js, null)
         } else if (context is MainActivity) {
-            val controller: AlbumController? = context.getCurrentAlbumController()
+            val controller: AlbumController? = context.currentAlbumController
             if (controller is PetalTabViewController) {
                 controller.evaluateJavascript(js, null)
             }
@@ -185,7 +185,7 @@ class PetalMediaBridge(private val context: Context, private var listener: Media
         evaluateJavascriptOnTab(MEDIA_JS_INJECTION)
     }
 
-    fun updatePositionState(positionSec: double, durationSec: double) {
+    fun updatePositionState(positionSec: Double, durationSec: Double) {
         this.lastKnownPositionSec = positionSec
         this.lastKnownDurationSec = durationSec
     }

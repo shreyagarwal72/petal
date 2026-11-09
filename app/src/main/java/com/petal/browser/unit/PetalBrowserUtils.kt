@@ -642,7 +642,7 @@ object PetalBrowserUtils {
 
     @JvmStatic
     fun redirectURL(sp: SharedPreferences?, url: String?): String? {
-        if (url == null) return null
+        if (url == null || sp == null) return url
         try {
             val redirects: List<CustomRedirect> = CustomRedirectsHelper.getRedirects(sp)
             for (redirect in redirects) {

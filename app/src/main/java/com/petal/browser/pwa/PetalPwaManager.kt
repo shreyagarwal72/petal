@@ -1,6 +1,7 @@
 package com.petal.browser.pwa
 
 import android.app.Activity
+import com.petal.browser.activity.MainActivity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -602,7 +603,7 @@ class PetalPwaManager(
 
         var targetController: AlbumController? = this.albumController
         if (targetController == null && activity is MainActivity) {
-            targetController = activity.getCurrentAlbumController()
+            targetController = activity.currentAlbumController
         }
 
         var pageUrl = targetController?.url

@@ -288,6 +288,9 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             private set
 
         @JvmStatic
+        fun getInstance(): PetalApplication? = instance
+
+        @JvmStatic
         fun getAppContext(): Context? = instance?.applicationContext ?: instance
     }
 }

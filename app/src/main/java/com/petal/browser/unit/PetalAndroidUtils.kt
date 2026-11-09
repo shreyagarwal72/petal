@@ -353,18 +353,18 @@ object PetalAndroidUtils {
     @JvmStatic
     fun addFilterItems(activity: Activity, gridList: MutableList<GridItem>) {
         val currentSp = sp ?: PreferenceManager.getDefaultSharedPreferences(activity)
-        val item01 = GridItem(currentSp.getString("icon_01", activity.resources.getString(R.string.color_red)), 11)
-        val item02 = GridItem(currentSp.getString("icon_02", activity.resources.getString(R.string.color_pink)), 10)
-        val item03 = GridItem(currentSp.getString("icon_03", activity.resources.getString(R.string.color_purple)), 9)
-        val item04 = GridItem(currentSp.getString("icon_04", activity.resources.getString(R.string.color_blue)), 8)
-        val item05 = GridItem(currentSp.getString("icon_05", activity.resources.getString(R.string.color_teal)), 7)
-        val item06 = GridItem(currentSp.getString("icon_06", activity.resources.getString(R.string.color_green)), 6)
-        val item07 = GridItem(currentSp.getString("icon_07", activity.resources.getString(R.string.color_lime)), 5)
-        val item08 = GridItem(currentSp.getString("icon_08", activity.resources.getString(R.string.color_yellow)), 4)
-        val item09 = GridItem(currentSp.getString("icon_09", activity.resources.getString(R.string.color_orange)), 3)
-        val item10 = GridItem(currentSp.getString("icon_10", activity.resources.getString(R.string.color_brown)), 2)
-        val item11 = GridItem(currentSp.getString("icon_11", activity.resources.getString(R.string.color_grey)), 1)
-        val item12 = GridItem(currentSp.getString("icon_12", activity.resources.getString(R.string.setting_theme_system)), 0)
+        val item01 = GridItem(currentSp.getString("icon_01", activity.resources.getString(R.string.color_red)) ?: "", 11)
+        val item02 = GridItem(currentSp.getString("icon_02", activity.resources.getString(R.string.color_pink)) ?: "", 10)
+        val item03 = GridItem(currentSp.getString("icon_03", activity.resources.getString(R.string.color_purple)) ?: "", 9)
+        val item04 = GridItem(currentSp.getString("icon_04", activity.resources.getString(R.string.color_blue)) ?: "", 8)
+        val item05 = GridItem(currentSp.getString("icon_05", activity.resources.getString(R.string.color_teal)) ?: "", 7)
+        val item06 = GridItem(currentSp.getString("icon_06", activity.resources.getString(R.string.color_green)) ?: "", 6)
+        val item07 = GridItem(currentSp.getString("icon_07", activity.resources.getString(R.string.color_lime)) ?: "", 5)
+        val item08 = GridItem(currentSp.getString("icon_08", activity.resources.getString(R.string.color_yellow)) ?: "", 4)
+        val item09 = GridItem(currentSp.getString("icon_09", activity.resources.getString(R.string.color_orange)) ?: "", 3)
+        val item10 = GridItem(currentSp.getString("icon_10", activity.resources.getString(R.string.color_brown)) ?: "", 2)
+        val item11 = GridItem(currentSp.getString("icon_11", activity.resources.getString(R.string.color_grey)) ?: "", 1)
+        val item12 = GridItem(currentSp.getString("icon_12", activity.resources.getString(R.string.setting_theme_system)) ?: "", 0)
 
         if (currentSp.getBoolean("filter_01", true)) gridList.add(item01)
         if (currentSp.getBoolean("filter_02", true)) gridList.add(item02)
@@ -523,7 +523,8 @@ object PetalAndroidUtils {
     }
 
     @JvmStatic
-    fun setHighLightedText(context: Context, tv: TextView, url: String?, textToHighlight: String) {
+    fun setHighLightedText(context: Context, tv: TextView?, url: String?, textToHighlight: String) {
+        if (tv == null) return
         val tvt = tv.text.toString().lowercase(Locale.ROOT)
         var ofe = tvt.indexOf(textToHighlight.lowercase(Locale.ROOT))
         val wordToSpan: Spannable = SpannableString(tv.text)
@@ -558,7 +559,8 @@ object PetalAndroidUtils {
     }
 
     @JvmStatic
-    fun setHighLightedTextSearch(context: Context, tv: TextView, textToHighlight: String) {
+    fun setHighLightedTextSearch(context: Context, tv: TextView?, textToHighlight: String) {
+        if (tv == null) return
         val tvt = tv.text.toString().lowercase(Locale.ROOT)
         var ofe = tvt.indexOf(textToHighlight.lowercase(Locale.ROOT))
         val wordToSpan: Spannable = SpannableString(tv.text)
