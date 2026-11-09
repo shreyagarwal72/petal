@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import com.petal.browser.browser.PetalBrowserFeatures
 import com.petal.browser.browser.viewmodel.PetalBrowserViewModel
@@ -30,7 +31,7 @@ class MainActivity : FragmentActivity() {
     private var browserFeatures: PetalBrowserFeatures? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        androidx.core.splashscreen.SplashScreen.installSplashScreen(this)
+        installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 

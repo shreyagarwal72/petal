@@ -1,8 +1,10 @@
 package com.petal.browser.compose
 
 import android.app.Activity
+import androidx.activity.BackEventCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -13,19 +15,26 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlin.coroutines.cancellation.CancellationException
 import com.petal.browser.browser.viewmodel.PetalBrowserViewModel
 import com.petal.browser.compose.bookmarks.PetalBookmarksScreen
 import com.petal.browser.compose.downloads.PetalDownloadManagerScreen
@@ -83,12 +92,24 @@ fun PetalRootApp(
 
     val isHome = activeUrl.isBlank() || PetalBrowserUtils.isHomePage(activeUrl)
 
-    // ── Single Authoritative Back Handler ───────────────────────────────────
-    BackHandler(enabled = true) {
-        when {
-            isOmniboxOpen -> isOmniboxOpen = false
-            viewModel.hasOpenOverlay -> viewModel.dismissTopOverlay()
-            !viewModel.goBack() -> activity?.finish()
+    var backProgress by remember { mutableFloatStateOf(0f) }
+    var backSwipeEdge by remember { mutableIntStateOf(BackEventCompat.EDGE_LEFT) }
+
+    // ── Single Authoritative Predictive Back Handler ────────────────────────
+    PredictiveBackHandler(enabled = true) { progressFlow ->
+        try {
+            progressFlow.collect { backEvent ->
+                backProgress = backEvent.progress
+                backSwipeEdge = backEvent.swipeEdge
+            }
+            backProgress = 0f
+            when {
+                isOmniboxOpen -> isOmniboxOpen = false
+                viewModel.hasOpenOverlay -> viewModel.dismissTopOverlay()
+                !viewModel.goBack() -> activity?.finish()
+            }
+        } catch (_: CancellationException) {
+            backProgress = 0f
         }
     }
 
@@ -105,6 +126,8 @@ fun PetalRootApp(
                     onTabsClick = { viewModel.toggleTabSwitcher() },
                     onMenuClick = { viewModel.toggleMenu() },
                     onSearchClick = { isOmniboxOpen = true },
+                    onSwipeTabLeft = { viewModel.switchToNextTab() },
+                    onSwipeTabRight = { viewModel.switchToPreviousTab() },
                     showSearch = !isHome,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -112,10 +135,24 @@ fun PetalRootApp(
         },
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
+        val density = LocalDensity.current
+        val predictiveScale = 1f - (0.08f * backProgress)
+        val predictiveTranslationX = with(density) {
+            (if (backSwipeEdge == BackEventCompat.EDGE_RIGHT) -24f else 24f) * backProgress
+        }
+        val predictiveCornerRadius = (28 * backProgress).dp
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .graphicsLayer {
+                    scaleX = predictiveScale
+                    scaleY = predictiveScale
+                    translationX = predictiveTranslationX
+                    clip = backProgress > 0f
+                    shape = RoundedCornerShape(predictiveCornerRadius)
+                }
                 .background(MaterialTheme.colorScheme.background)
         ) {
             // ── Primary Viewport (Home vs Gecko Engine) ─────────────────────
@@ -159,6 +196,8 @@ fun PetalRootApp(
                     },
                     onAddressClick = { isOmniboxOpen = true },
                     onHardRefresh = { viewModel.reload() },
+                    onSwipeNextTab = { viewModel.switchToNextTab() },
+                    onSwipePrevTab = { viewModel.switchToPreviousTab() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.TopCenter)

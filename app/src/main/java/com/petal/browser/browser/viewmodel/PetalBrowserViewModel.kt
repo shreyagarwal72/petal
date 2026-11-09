@@ -213,6 +213,24 @@ class PetalBrowserViewModel @Inject constructor(
         }
     }
 
+    fun switchToNextTab() {
+        val state = browserStore.state
+        val tabs = state.tabs
+        if (tabs.size <= 1) return
+        val currentIndex = tabs.indexOfFirst { it.id == state.selectedTabId }
+        val nextIndex = if (currentIndex != -1) (currentIndex + 1) % tabs.size else 0
+        selectTab(tabs[nextIndex].id)
+    }
+
+    fun switchToPreviousTab() {
+        val state = browserStore.state
+        val tabs = state.tabs
+        if (tabs.size <= 1) return
+        val currentIndex = tabs.indexOfFirst { it.id == state.selectedTabId }
+        val prevIndex = if (currentIndex > 0) currentIndex - 1 else tabs.size - 1
+        selectTab(tabs[prevIndex].id)
+    }
+
     // ── Overlay / Modal Toggles ─────────────────────────────────────────────
 
     fun toggleTabSwitcher() {

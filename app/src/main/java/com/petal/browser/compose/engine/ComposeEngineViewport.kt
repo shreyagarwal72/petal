@@ -14,7 +14,10 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -42,9 +45,9 @@ fun ComposeEngineViewport(
 ) {
     val context = LocalContext.current
     val pullRefreshState = rememberPullToRefreshState()
-    var isPullRefreshing by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var isPullRefreshing by remember { mutableStateOf(false) }
 
-    androidx.compose.runtime.LaunchedEffect(isLoading) {
+    LaunchedEffect(isLoading) {
         if (!isLoading) {
             isPullRefreshing = false
         }
