@@ -1056,7 +1056,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         webPredictiveMotion.settleCommit(() -> {
                             performBackNavigation();
                             resetPredictiveBackVisuals();
-                            return kotlin.Unit.INSTANCE;
                         });
                         return;
                     }
@@ -1092,7 +1091,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     if (webPredictiveMotion != null) {
                         webPredictiveMotion.settleCancel(() -> {
                             resetPredictiveBackVisuals();
-                            return kotlin.Unit.INSTANCE;
                         });
                         return;
                     }

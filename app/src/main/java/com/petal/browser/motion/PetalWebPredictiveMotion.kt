@@ -65,12 +65,12 @@ class PetalWebPredictiveMotion(private val hostView: View) {
         }
     }
 
-    fun settleCancel(onComplete: (() -> Unit)? = null) {
+    fun settleCancel(onComplete: Runnable? = null) {
         cancelActiveAnimation()
         val startProgress = currentProgress
         if (startProgress <= 0.01f) {
             resetVisuals()
-            onComplete?.invoke()
+            onComplete?.run()
             return
         }
 
@@ -83,7 +83,7 @@ class PetalWebPredictiveMotion(private val hostView: View) {
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
                     resetVisuals()
-                    onComplete?.invoke()
+                    onComplete?.run()
                 }
             })
         }
@@ -91,7 +91,7 @@ class PetalWebPredictiveMotion(private val hostView: View) {
         anim.start()
     }
 
-    fun settleCommit(onComplete: () -> Unit) {
+    fun settleCommit(onComplete: Runnable) {
         cancelActiveAnimation()
         val startProgress = currentProgress
         val anim = ValueAnimator.ofFloat(startProgress, 1f).apply {
@@ -103,7 +103,7 @@ class PetalWebPredictiveMotion(private val hostView: View) {
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
                     resetVisuals()
-                    onComplete()
+                    onComplete.run()
                 }
             })
         }

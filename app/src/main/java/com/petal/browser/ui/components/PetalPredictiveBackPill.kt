@@ -50,7 +50,7 @@ class PetalPredictiveBackPill(context: Context) : FrameLayout(context) {
         )
         val primaryColor = MaterialColors.getColor(
             this,
-            com.google.android.material.R.attr.colorPrimary,
+            android.R.attr.colorPrimary,
             Color.WHITE
         )
 
