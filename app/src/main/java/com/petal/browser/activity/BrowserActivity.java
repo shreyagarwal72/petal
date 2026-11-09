@@ -2554,7 +2554,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         View av = controller.getAlbumView();
         currentAlbumController = controller;
         if (contentFrame != null) {
-            if (isHomePage(url)) {
+            String activeUrl = (controller instanceof com.petal.browser.browser.PetalTabViewController)
+                    ? ((com.petal.browser.browser.PetalTabViewController) controller).getUrl()
+                    : overrideUrl;
+            if (activeUrl != null && isHomePage(activeUrl)) {
                 int surfaceColor = com.google.android.material.color.MaterialColors.getColor(
                         this, com.google.android.material.R.attr.colorSurface, android.graphics.Color.WHITE);
                 contentFrame.setBackgroundColor(surfaceColor);
