@@ -58,8 +58,16 @@ class PetalBrowserViewModel @Inject constructor(
             ?: state.tabs.firstOrNull()
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val tabCount: StateFlow<Int> = browserState.map { it.tabs.size }
+    val tabCount: StateFlow<Int> = browserState.map { it.tabs.size.coerceAtLeast(1) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+
+    init {
+        viewModelScope.launch {
+            if (browserStore.state.tabs.isEmpty()) {
+                openNewTab("about:home", selectTab = true)
+            }
+        }
+    }
 
     val activeUrl: StateFlow<String> = activeTab.map { it?.content?.url.orEmpty() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")

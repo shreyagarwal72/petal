@@ -487,7 +487,7 @@ fun PetalHomeScreen(
     }
 
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    var isWelcomeShown by remember { mutableStateOf(sp.getBoolean("sp_welcome_shown", true)) }
+    var isWelcomeShown by remember { mutableStateOf(sp.getBoolean("sp_welcome_shown", false)) }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -685,10 +685,11 @@ fun PetalHomeScreen(
                             ) {
                                 Spacer(Modifier.height(20.dp))
 
-                                // ── Greeting Tagline (replaces removed quick shortcuts row) ──
-                                PetalGreetingTagline(profile = profile)
-
-                                Spacer(Modifier.height(18.dp))
+                                if (isWelcomeShown) {
+                                    // ── Greeting Tagline (replaces removed quick shortcuts row) ──
+                                    PetalGreetingTagline(profile = profile)
+                                    Spacer(Modifier.height(18.dp))
+                                }
 
                                 // ── Hero Search Bar (moved down into former quick-actions slot) ──
                                 PetalSearchBar(onSearch = onSearch)

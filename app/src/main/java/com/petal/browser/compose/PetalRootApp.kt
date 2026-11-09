@@ -105,6 +105,7 @@ fun PetalRootApp(
                     onTabsClick = { viewModel.toggleTabSwitcher() },
                     onMenuClick = { viewModel.toggleMenu() },
                     onSearchClick = { isOmniboxOpen = true },
+                    showSearch = !isHome,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

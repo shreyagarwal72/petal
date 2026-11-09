@@ -30,6 +30,7 @@ class MainActivity : FragmentActivity() {
     private var browserFeatures: PetalBrowserFeatures? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        androidx.core.splashscreen.SplashScreen.installSplashScreen(this)
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
