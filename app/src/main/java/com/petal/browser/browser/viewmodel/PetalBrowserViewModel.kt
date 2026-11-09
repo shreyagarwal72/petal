@@ -74,14 +74,6 @@ class PetalBrowserViewModel @Inject constructor(
     val tabCount: StateFlow<Int> = browserState.map { it.tabs.size.coerceAtLeast(1) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
-    init {
-        viewModelScope.launch {
-            if (browserStore.state.tabs.isEmpty()) {
-                openNewTab("about:home", selectTab = true)
-            }
-        }
-    }
-
     val activeUrl: StateFlow<String> = activeTab.map { it?.content?.url.orEmpty() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
@@ -172,6 +164,14 @@ class PetalBrowserViewModel @Inject constructor(
 
     private val _findInPageQuery = MutableStateFlow("")
     val findInPageQuery: StateFlow<String> = _findInPageQuery.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            if (browserStore.state.tabs.isEmpty()) {
+                openNewTab("about:home", selectTab = true)
+            }
+        }
+    }
 
     // ── Core Navigation Actions ─────────────────────────────────────────────
 
