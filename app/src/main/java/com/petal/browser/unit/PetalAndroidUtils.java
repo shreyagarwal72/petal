@@ -97,7 +97,6 @@ import java.util.function.BooleanSupplier;
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
 import com.petal.browser.activity.MainActivity;
-import com.petal.browser.activity.SettingsMenuActivity;
 import com.petal.browser.browser.BrowserController;
 import com.petal.browser.browser.DataURIParser;
 import com.petal.browser.browser.StandardDomainWhitelist;
@@ -583,8 +582,8 @@ public class PetalAndroidUtils {
         tv.setSingleLine(true);
     }
     public static void initAndLoadMenu(Context context) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences(SettingsMenuActivity.PREF_NAME, Context.MODE_PRIVATE);
-        String json = sharedPreferences.getString(SettingsMenuActivity.KEY_LIST, null);
+        SharedPreferences sharedPreferences = context.getSharedPreferences("MenuPreferences", Context.MODE_PRIVATE);
+        String json = sharedPreferences.getString("MenuList", null);
         Type type = new TypeToken<ArrayList<MenuItem>>() {}.getType();
         List<MenuItem> list = new Gson().fromJson(json, type);
         if (list == null || list.isEmpty()) {
@@ -613,7 +612,7 @@ public class PetalAndroidUtils {
             list.add(new MenuItem(context.getString(R.string.menu_delete_entry), R.drawable.icon_delete, true));
             list.add(new MenuItem(context.getString(R.string.app_help), R.drawable.icon_help, true));
             SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString(SettingsMenuActivity.KEY_LIST, new Gson().toJson(list));
+            editor.putString("MenuList", new Gson().toJson(list));
             editor.apply();
         }
     }

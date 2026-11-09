@@ -163,7 +163,7 @@ fun PetalDeleteScreen(
         )
     }
 
-    val isStandaloneActivity = (context as? android.app.Activity) is com.petal.browser.activity.SettingsDataClearActivity
+    val isStandaloneActivity = (context as? android.app.Activity) is com.petal.browser.activity.SettingsActivity
     val hasSubOverlay = showConfirmDialog
 
     if (hasSubOverlay) {

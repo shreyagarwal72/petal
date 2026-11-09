@@ -8,7 +8,6 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
-import com.petal.browser.activity.SettingsDataClearActivity
 import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.unit.PetalBrowserUtils

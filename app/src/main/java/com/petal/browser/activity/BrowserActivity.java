@@ -159,7 +159,6 @@ import com.petal.browser.unit.PetalAndroidUtils;
 import com.petal.browser.unit.PetalBackupManager;
 import com.petal.browser.unit.PetalBrowserUtils;
 import com.petal.browser.view.CustomSearchAdapter;
-import com.petal.browser.view.BrowserMenuAdapter;
 import com.petal.browser.view.GridAdapter;
 import com.petal.browser.view.GridItem;
 import com.petal.browser.view.MenuItem;
@@ -5751,8 +5750,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     // Hilfsmethode, um nur ausgewählte Items aus dem lokalen Speicher zu holen
     private List<MenuItem> loadSelectedFromStorage() {
-        SharedPreferences prefs = getSharedPreferences(SettingsMenuActivity.PREF_NAME, Context.MODE_PRIVATE);
-        String json = prefs.getString(SettingsMenuActivity.KEY_LIST, null);
+        SharedPreferences prefs = getSharedPreferences("MenuPreferences", Context.MODE_PRIVATE);
+        String json = prefs.getString("MenuList", null);
         List<MenuItem> selected = new ArrayList<>();
         if (json != null) {
             Type type = new TypeToken<ArrayList<MenuItem>>() {}.getType();
@@ -5766,23 +5765,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return selected;
     }
 
-    public void removeItemByName(String name, List<MenuItem> selectedItemsList, BrowserMenuAdapter adapter) {
-        int indexToRemove = -1;
-        // 1. Position des Elements in der aktuellen Grid-Liste finden
-        for (int i = 0; i < selectedItemsList.size(); i++) {
-            if (selectedItemsList.get(i).getTitle().equalsIgnoreCase(name)) {
-                indexToRemove = i;
-                break;
-            }
-        }
-        // Wenn das Element im aktuellen Grid existiert
-        if (indexToRemove != -1) {
-            // 2. Aus der Liste für die Anzeige entfernen
-            selectedItemsList.remove(indexToRemove);
-            // 3. Den Adapter über das Entfernen informieren (zeigt eine schöne Animation)
-            adapter.notifyItemRemoved(indexToRemove);
-        }
-    }
+
 
     public void showOverflowMenu(View anchorView) {
         com.petal.browser.ui.components.BrowserNavigationDelegate.showOverflowMenu(this);
