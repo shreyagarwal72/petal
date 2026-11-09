@@ -643,9 +643,8 @@ object PetalLiveLogEngine {
                 val process = Runtime.getRuntime().exec(arrayOf("logcat", "-v", "time", "*:V"))
                 val reader = BufferedReader(InputStreamReader(process.inputStream))
 
-                var line: String?
-                while (isRunning.get() && reader.readLine().also { line = it } != null) {
-                    val l = line ?: continue
+                while (isRunning.get()) {
+                    val l = reader.readLine() ?: break
                     // Filter to our PID or key browser tags
                     val isMyPid = l.contains(myPid)
                     val isGeckoTag = l.contains("Gecko") || l.contains("Petal") || l.contains("BrowserActivity") || l.contains("libxul")

@@ -2794,7 +2794,8 @@ private class SessionStateCapturingProgressDelegate(
     override fun onPageStop(session: org.mozilla.geckoview.GeckoSession, success: Boolean) {
         com.petal.browser.logger.PetalLiveLogEngine.isLoading = false
         com.petal.browser.logger.PetalLiveLogEngine.lastPageStopTimeMs = System.currentTimeMillis()
-        com.petal.browser.logger.PetalLiveLogEngine.logNav("PageStop", session.loadRequest?.uri ?: pageUrl, "success=$success")
+        val currentStopUrl = com.petal.browser.logger.PetalLiveLogEngine.currentUrl ?: ""
+        com.petal.browser.logger.PetalLiveLogEngine.logNav("PageStop", currentStopUrl, "success=$success")
         com.petal.browser.logger.PetalLiveLogEngine.checkBlankPageCondition(2000L)
         try {
             engine?.onPageStop(session, success)
