@@ -687,7 +687,7 @@ class PetalPwaManager(
                 }
 
                 if (rawBitmap == null && finalController is PetalTabViewController) {
-                    rawBitmap = finalController.getFavicon()
+                    rawBitmap = finalController.favicon
                 }
                 if (rawBitmap == null) {
                     val helper = FaviconHelper(activity)

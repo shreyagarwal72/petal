@@ -287,8 +287,8 @@ object BrowserContextMenuManager {
 
                 override fun onOpenInNewTabInGroup() {
                     val currentAlbum = activity.currentAlbumController
-                    val currentTabSurface = currentAlbum as? com.petal.browser.browser.PetalTabViewController
-                    val currentTabId = currentTabSurface?.getTabId()
+                    val currentTabSurface = currentAlbum as? com.petal.browser.browser.PetalTabSurface
+                    val currentTabId = currentTabSurface?.tabId
                         ?: currentAlbum?.hashCode()?.toString()
                     val existingGroup = if (currentTabId != null) {
                         com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(activity, currentTabId)
@@ -814,8 +814,8 @@ object BrowserContextMenuManager {
 
                 override fun onOpenInNewTabInGroup() {
                     val currentAlbum = activity.currentAlbumController
-                    val currentTabSurface = currentAlbum as? com.petal.browser.browser.PetalTabViewController
-                    val currentTabId = currentTabSurface?.getTabId()
+                    val currentTabSurface = currentAlbum as? com.petal.browser.browser.PetalTabSurface
+                    val currentTabId = currentTabSurface?.tabId
                         ?: currentAlbum?.hashCode()?.toString()
                     val existingGroup = if (currentTabId != null) {
                         com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(activity, currentTabId)

@@ -173,6 +173,8 @@ class MorphShape(
  * travels naturally from the hero tab into its action — identical to Relay's
  * Hero card design intent.
  */
+typealias PetalSmoothShapes = PetalBrowserShapes
+
 object PetalBrowserShapes {
 
     // ── Cards ─────────────────────────────────────────────────────────────────

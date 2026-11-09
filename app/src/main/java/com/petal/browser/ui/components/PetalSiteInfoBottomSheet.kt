@@ -48,7 +48,7 @@ fun PetalSiteInfoBottomSheet(
     
     val currentUrl = albumController?.url ?: ""
     val domain = remember(currentUrl) { PetalAndroidUtils.domain(currentUrl) }
-    val favicon: Bitmap? = tabViewController?.getFavicon()
+    val favicon: Bitmap? = tabViewController?.favicon
 
     // Check GeckoView SecurityInformation if available, plus URL scheme
     val geckoSecurity = tabViewController?.currentSecurityInfo

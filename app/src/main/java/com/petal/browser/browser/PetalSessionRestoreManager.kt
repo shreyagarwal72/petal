@@ -102,7 +102,7 @@ object PetalSessionRestoreManager {
                 val controller = BrowserContainer.get(i) ?: continue
                 when (controller) {
                     is PetalTabViewController -> {
-                        val tabId = controller.getTabId().takeIf { it.isNotBlank() } ?: continue
+                        val tabId = controller.tabId.takeIf { it.isNotBlank() } ?: continue
                         if (isStopping) {
                             try {
                                 val engineSessionState = wrapGeckoState(controller.getSessionState())
@@ -130,11 +130,7 @@ object PetalSessionRestoreManager {
 
             // 2. Update selected tab in store to match active album
             val activeController = activity.currentAlbumController
-            val activeTabId = when (activeController) {
-                is PetalTabViewController -> activeController.getTabId()
-                is PlaceholderAlbumController -> activeController.getTabId()
-                else -> null
-            }
+            val activeTabId = (activeController as? PetalTabSurface)?.tabId
             if (activeTabId != null) {
                 store.dispatch(TabListAction.SelectTabAction(activeTabId))
             }

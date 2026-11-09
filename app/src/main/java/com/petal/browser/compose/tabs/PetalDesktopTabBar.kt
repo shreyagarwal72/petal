@@ -194,16 +194,13 @@ private fun resolveEntries(handler: PetalDesktopTabBarHandler): List<PetalDeskto
                 !rawUrl.startsWith("file:///android_asset/") && !rawUrl.equals("petal://home", true) -> rawUrl
             else -> "Petal Home"
         }
-        val favicon = when (album) {
-            is com.petal.browser.browser.PetalTabViewController -> album.getFavicon()
-            is com.petal.browser.browser.PlaceholderAlbumController -> album.getFavicon()
-            else -> null
-        }
+        val tabSurface = album as? com.petal.browser.browser.PetalTabSurface
+        val favicon = tabSurface?.favicon
         PetalDesktopTabEntry(
             key = System.identityHashCode(album),
             title = title,
             favicon = favicon,
-            incognito = try { album.isIncognito() } catch (_: Exception) { false },
+            incognito = tabSurface?.isIncognito ?: false,
             selected = album === selected,
             controller = album
         )

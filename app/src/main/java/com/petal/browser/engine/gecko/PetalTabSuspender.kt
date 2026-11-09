@@ -70,13 +70,13 @@ object PetalTabSuspender {
 
         when (controller) {
             is com.petal.browser.browser.PetalTabViewController -> {
-                tabId = controller.getTabId().ifBlank { controller.hashCode().toString() }
+                tabId = controller.tabId.ifBlank { controller.hashCode().toString() }
                 url = controller.url
                 title = controller.title
-                favicon = controller.getFavicon()
+                favicon = controller.favicon
                 groupId = controller.getTabGroupId()
                 groupTitle = controller.getTabGroupTitle()
-                isIncognito = controller.isIncognito()
+                isIncognito = controller.isIncognito
 
                 try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
                 try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
@@ -143,7 +143,7 @@ object PetalTabSuspender {
             val controller = BrowserContainer.get(i)
             if (controller === activeController) continue
             if (!canSuspendTab(controller, false)) continue
-            val tabId = (controller as? com.petal.browser.browser.PetalTabViewController)?.getTabId()?.takeIf { it.isNotBlank() } ?: continue
+            val tabId = (controller as? com.petal.browser.browser.PetalTabSurface)?.tabId?.takeIf { it.isNotBlank() } ?: continue
             val lastAccess = getTabLastAccess(tabId)
             if (lastAccess > 0L && (now - lastAccess) >= timeoutMs) {
                 toSuspend.add(Pair(i, controller))
@@ -172,7 +172,7 @@ object PetalTabSuspender {
             val controller = BrowserContainer.get(i)
             if (controller === activeController) continue
             if (!canSuspendTab(controller, false)) continue
-            val tabId = (controller as? com.petal.browser.browser.PetalTabViewController)?.getTabId()?.takeIf { it.isNotBlank() } ?: continue
+            val tabId = (controller as? com.petal.browser.browser.PetalTabSurface)?.tabId?.takeIf { it.isNotBlank() } ?: continue
             val lastAccess = getTabLastAccess(tabId)
             candidates.add(Pair(i, lastAccess))
         }

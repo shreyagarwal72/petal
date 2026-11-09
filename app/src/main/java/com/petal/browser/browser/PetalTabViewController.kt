@@ -2207,13 +2207,10 @@ class PetalTabViewController private constructor(
     }
 
     override val title: String get() = pageTitle
-    override fun getTitle(): String = title
 
     override val url: String get() = pageUrl
-    override fun getUrl(): String = url
 
     override val isIncognito: Boolean get() = tab?.content?.private ?: false
-    override fun isIncognito(): Boolean = isIncognito
 
     /** Permanently closes the tab: removes it from BrowserStore and deletes its thumbnail. */
     override fun destroy() = destroy(keepThumbnail = false)
