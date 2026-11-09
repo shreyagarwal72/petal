@@ -330,7 +330,7 @@ class PetalBrowserViewModel @Inject constructor(
             putExtra(Intent.EXTRA_SUBJECT, title)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
-        val chooser = Intent.createChooser(intent, context.getString(R.string.menu_share)).apply {
+        val chooser = Intent.createChooser(intent, context.getString(R.string.menu_share_link)).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
         context.startActivity(chooser)
