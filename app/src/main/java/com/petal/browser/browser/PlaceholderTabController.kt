@@ -29,27 +29,20 @@ open class PlaceholderTabController(
 
     override val tabView: View get() = placeholderView
     override val albumView: View get() = placeholderView
-    override fun getTabView(): View = placeholderView
-    override fun getAlbumView(): View = placeholderView
 
     override fun activate() {}
     override fun deactivate() {}
 
     override val title: String get() = _title.orEmpty()
     override val url: String get() = if (_url.isNullOrEmpty()) "about:blank" else _url!!
-    override fun getTitle(): String = title
-    override fun getUrl(): String = url
 
     override val favicon: Bitmap? get() = _favicon
-    override fun getFavicon(): Bitmap? = _favicon
 
     override val tabId: String get() = _tabId.orEmpty()
-    override fun getTabId(): String = tabId
 
     fun getTabGroupId(): String? = _tabGroupId
     fun getTabGroupTitle(): String? = _tabGroupTitle
     override val isIncognito: Boolean get() = incognito
-    override fun isIncognito(): Boolean = incognito
 
     fun setTitle(title: String?) { _title = title.orEmpty() }
     fun setUrl(url: String?) { _url = if (url.isNullOrEmpty()) "about:blank" else url }
@@ -64,6 +57,4 @@ open class PlaceholderTabController(
             if (id.isNullOrEmpty()) return null
             return TabThumbnailCache.getMemoryOnly(id, incognito)
         }
-
-    override fun getCachedPreviewBitmap(): Bitmap? = cachedPreviewBitmap
 }

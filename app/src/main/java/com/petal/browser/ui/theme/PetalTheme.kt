@@ -356,6 +356,7 @@ fun PetalExpressiveTheme(
         LocalPetalBlurEffectEnabled provides blurEffectEnabled,
         LocalExpressiveShapesEnabled provides expressiveShapesState,
         com.petal.browser.ui.theme.layout.LocalPetalLayoutSettings provides layoutSettingsState,
+        LocalPetalShapes provides PetalShapes,
         com.petal.browser.haptics.LocalHapticEnabled provides hapticsEnabled,
         com.petal.browser.haptics.LocalVibrationIntensity provides com.petal.browser.haptics.VibrationIntensity.LIGHT,
         androidx.compose.ui.platform.LocalHapticFeedback provides hapticFeedback

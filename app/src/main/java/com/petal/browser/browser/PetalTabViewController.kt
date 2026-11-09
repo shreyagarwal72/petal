@@ -1399,7 +1399,6 @@ class PetalTabViewController private constructor(
     }
 
     override val cachedPreviewBitmap: Bitmap? get() = TabThumbnailCache.getMemoryOnly(boundTabId, isIncognito())
-    override fun getCachedPreviewBitmap(): Bitmap? = cachedPreviewBitmap
 
     @Volatile
     private var lastPreviewCaptureTime = 0L
@@ -1983,7 +1982,6 @@ class PetalTabViewController private constructor(
     }
 
     override val favicon: Bitmap? get() = tab?.content?.icon
-    override fun getFavicon(): Bitmap? = favicon
 
     fun currentState(): State? = tab?.let {
         State(it.id, pageUrl, pageTitle, progress, loading, backAvailable, forwardAvailable, isSecure, it.content.private)
@@ -2109,10 +2107,7 @@ class PetalTabViewController private constructor(
 
     override val tabView: View get() = this
     override val albumView: View get() = this
-    override fun getTabView(): View = tabView
-    override fun getAlbumView(): View = albumView
     override val tabId: String get() = boundTabId ?: ""
-    override fun getTabId(): String = tabId
 
     @MainThread
     override fun activate() {

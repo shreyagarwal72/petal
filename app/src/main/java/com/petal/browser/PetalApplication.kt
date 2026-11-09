@@ -283,9 +283,8 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
 
     companion object {
         private const val TAG = "PetalApplication"
-        @JvmStatic
+        @JvmField
         var instance: PetalApplication? = null
-            private set
 
         @JvmStatic
         fun getInstance(): PetalApplication? = instance
