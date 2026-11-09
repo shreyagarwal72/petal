@@ -39,15 +39,15 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import com.petal.browser.ui.kit.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
+import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.kit.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextField
+import com.petal.browser.ui.kit.TextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -56,7 +56,7 @@ import androidx.compose.material3.Surface
 import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.PetalSwitch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.petal.browser.ui.kit.TextButton
 import com.petal.browser.ui.theme.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -479,7 +479,7 @@ private fun ShapeTab(cfg: PetalWidgetConfig, appWidgetId: Int, onChange: (PetalW
     }
     if (PetalGlassWidgets.isLiquidGlassEnabled(context) && appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
         SectionCard(stringResource(R.string.pw_glass_align), stringResource(R.string.pw_glass_hint)) {
-            FilledTonalButton(onClick = { context.startActivity(PetalWidgetGlassActivity.intent(context, appWidgetId)) }) {
+            FilledTonalButton(onClick = { context.startActivity(PetalWidgetGlassActivity.intent(context, appWidgetId)) }, glass = false) {
                 Text(stringResource(R.string.pw_glass_align))
             }
         }

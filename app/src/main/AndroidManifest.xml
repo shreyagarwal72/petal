@@ -228,7 +228,7 @@
             android:excludeFromRecents="true" />
 
         <activity
-            android:name="com.petal.browser.activity.BrowserActivity"
+            android:name="com.petal.browser.activity.MainActivity"
             android:theme="@style/Theme.Petal.Splash"
             android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
             android:supportsPictureInPicture="true"
@@ -238,6 +238,15 @@
             android:resizeableActivity="true"
             android:launchMode="singleTask">
 
+            <!-- Launcher-Eintrag & Systemweite Websuche -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.WEB_SEARCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Standard Web Navigation (HTTP/HTTPS/PETAL) -->
             <intent-filter android:priority="999" android:order="1">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -246,6 +255,25 @@
                 <data android:scheme="https" />
                 <data android:scheme="petal" />
             </intent-filter>
+
+            <!-- Text über das Android 'Teilen'-Menü empfangen -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.petal.browser.activity.BrowserActivity"
+            android:theme="@style/Theme.Petal.Splash"
+            android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
+            android:supportsPictureInPicture="true"
+            android:windowSoftInputMode="adjustResize"
+            android:fitsSystemWindows="false"
+            android:exported="false"
+            android:resizeableActivity="true"
+            android:launchMode="singleTask">
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -309,21 +337,6 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="content" android:mimeType="application/vnd.petal.password-vault" />
                 <data android:scheme="file" android:mimeType="application/vnd.petal.password-vault" />
-            </intent-filter>
-
-            <!-- Text über das Android 'Teilen'-Menü empfangen -->
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
-
-            <!-- Launcher-Eintrag & Systemweite Websuche -->
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <action android:name="android.intent.action.WEB_SEARCH" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
             <!-- Allow opening highlighted text from other apps directly in Petal Browser (Firefox GeckoView) -->

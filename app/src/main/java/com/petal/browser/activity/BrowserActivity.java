@@ -526,6 +526,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private OnBackPressedCallback browserBackCallback;
     private boolean predictiveBackGestureActive = false;
     private float predictiveBackProgress = 0f;
+    private com.petal.browser.motion.PetalWebPredictiveMotion webPredictiveMotion;
+    private com.petal.browser.ui.components.PetalPredictiveBackPill predictiveBackPill;
+    private com.petal.browser.browser.rules.PetalBackTarget currentWebBackTarget = com.petal.browser.browser.rules.PetalBackTarget.DELEGATE_TO_SYSTEM;
     // Which edge the in-flight gesture started from - must be remembered so the
     // cancel/commit settle animation keeps sliding the same direction the finger
     // was already moving in. Previously this was hardcoded to EDGE_LEFT in the
@@ -997,30 +1000,66 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         browserBackCallback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackStarted(@NonNull androidx.activity.BackEventCompat backEvent) {
+                Log.d("PetalBack", "browserBackCallback STARTED (edge=" + backEvent.getSwipeEdge() + ")");
                 // Web content (especially GeckoView) may update gesture-exclusion rects
-                // while a page is loading. Clear them immediately when Android starts the
-                // predictive-back gesture so both websites and the Petal homepage receive it.
+                // while a page is loading. Clear them and cancel touch stream immediately.
                 if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
-                    ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).resetGestureExclusionRects();
+                    com.petal.browser.browser.PetalTabViewController gv =
+                            (com.petal.browser.browser.PetalTabViewController) currentAlbumController;
+                    gv.resetGestureExclusionRects();
+                    gv.cancelActiveTouch();
                 }
 
+                predictiveBackSwipeEdge = backEvent.getSwipeEdge();
                 predictiveBackStartedOnOverlay = isOverlayScreenShowing && !isDecorOverlayShowing && hasNonTabTopContent();
-                if (predictiveBackStartedOnOverlay) {
-                    predictiveBackSwipeEdge = backEvent.getSwipeEdge();
-                    // Compose owns the overlay animation; do not also transform the Activity root.
+
+                if (!predictiveBackStartedOnOverlay) {
+                    currentWebBackTarget = resolveCurrentBackTarget();
+                    if (currentWebBackTarget != com.petal.browser.browser.rules.PetalBackTarget.DELEGATE_TO_SYSTEM) {
+                        predictiveBackGestureActive = true;
+                        if (webPredictiveMotion != null) {
+                            webPredictiveMotion.beginGesture(backEvent.getSwipeEdge());
+                        }
+                        if (predictiveBackPill != null) {
+                            predictiveBackPill.show(currentWebBackTarget, backEvent.getTouchY(), backEvent.getSwipeEdge());
+                        }
+                    }
                 }
             }
 
             @Override
             public void handleOnBackProgressed(@NonNull androidx.activity.BackEventCompat backEvent) {
-                // Compose PredictiveBackHandler owns overlay progress; Activity root remains stable.
+                if (predictiveBackGestureActive) {
+                    if (webPredictiveMotion != null) {
+                        webPredictiveMotion.applyProgress(backEvent.getProgress());
+                    }
+                    if (predictiveBackPill != null) {
+                        predictiveBackPill.updateProgress(backEvent.getProgress(), backEvent.getTouchY());
+                    }
+                }
             }
 
             @Override
             public void handleOnBackPressed() {
+                Log.d("PetalBack", "browserBackCallback PRESSED (active=" + predictiveBackGestureActive + ")");
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                 boolean overlayDismissedByGesture = predictiveBackStartedOnOverlay;
                 predictiveBackStartedOnOverlay = false;
+
+                if (predictiveBackGestureActive) {
+                    predictiveBackGestureActive = false;
+                    if (predictiveBackPill != null) {
+                        predictiveBackPill.playCommitHaptic();
+                        predictiveBackPill.dismiss(true);
+                    }
+                    if (webPredictiveMotion != null) {
+                        webPredictiveMotion.settleCommit(() -> {
+                            performBackNavigation();
+                            resetPredictiveBackVisuals();
+                        });
+                        return;
+                    }
+                }
 
                 // Check if an actual overlay screen is still showing in contentFrame
                 // Tab surfaces are retained (hidden, not detached), so the child at index 0 may be
@@ -1040,8 +1079,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             @Override
             public void handleOnBackCancelled() {
+                Log.d("PetalBack", "browserBackCallback CANCELLED");
                 boolean wasOverlay = predictiveBackStartedOnOverlay;
                 predictiveBackStartedOnOverlay = false;
+
+                if (predictiveBackGestureActive) {
+                    predictiveBackGestureActive = false;
+                    if (predictiveBackPill != null) {
+                        predictiveBackPill.dismiss(true);
+                    }
+                    if (webPredictiveMotion != null) {
+                        webPredictiveMotion.settleCancel(() -> {
+                            resetPredictiveBackVisuals();
+                        });
+                        return;
+                    }
+                }
+
                 if (wasOverlay) {
                     settlePredictiveBackGesture(false);
                 } else {
@@ -1060,6 +1114,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             this, android.R.attr.colorBackground, android.graphics.Color.BLACK)));
         } catch (Throwable ignored) {}
         contentFrame = findViewById(R.id.main_content);
+        if (contentFrame != null) {
+            webPredictiveMotion = new com.petal.browser.motion.PetalWebPredictiveMotion(contentFrame);
+        }
+        android.view.ViewGroup rootMain = findViewById(R.id.main);
+        if (rootMain != null) {
+            predictiveBackPill = com.petal.browser.ui.components.PetalPredictiveBackPill.attachToRoot(rootMain);
+        }
         if (sp != null) {
             com.petal.browser.engine.gecko.PetalEngineBridge.migrateDesktopKeys(sp);
         }
@@ -1854,33 +1915,54 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         commitAnim.start();
     }
 
-    public void updateBackCallbackState() {
-        if (browserBackCallback == null) return;
+    public com.petal.browser.browser.rules.PetalBackTarget resolveCurrentBackTarget() {
         View topContent = getTopContentChild();
         boolean isBrowserView = isTabSurface(topContent);
         boolean isHomeComposeView = (topContent instanceof androidx.compose.ui.platform.ComposeView) && isPetalHomeSurfaceShowing;
         boolean hasOverlay = isOverlayScreenShowing || (topContent != null && !isBrowserView && !isHomeComposeView);
         boolean hasDialog = (dialogOverview != null && dialogOverview.isShowing()) || isFindInPageShowing || (customView != null) || (fullscreenHolder != null) || (videoView != null);
+        boolean isFullscreen = (fullscreenHolder != null) || (customView != null) || (videoView != null);
         boolean hasWebBack = canBrowserGoBack();
         String curUrl = currentAlbumController != null ? currentAlbumController.getUrl() : "";
-        boolean isWebPageNotHome = !isPetalHomeSurfaceShowing && !isHomePage(curUrl) && curUrl != null && !curUrl.isEmpty() && !curUrl.equalsIgnoreCase("about:blank");
-        boolean hasMultipleTabs = BrowserContainer.size() > 1;
+        boolean isHome = isPetalHomeSurfaceShowing || isHomePage(curUrl) || curUrl == null || curUrl.isEmpty() || curUrl.equalsIgnoreCase("about:blank");
+        int totalTabs = BrowserContainer.size();
+        boolean hasOpener = (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController)
+                && ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).isAdoptedPopup();
+        boolean isPinned = false;
+        boolean confirmExit = sp != null && sp.getBoolean("sp_close_browser_confirm", false);
 
-        boolean requireConfirmExit = sp != null && sp.getBoolean("sp_close_browser_confirm", false);
+        return com.petal.browser.browser.rules.PetalRootTabBackRules.decide(
+                hasOverlay,
+                isFullscreen,
+                hasDialog,
+                hasWebBack,
+                isHome,
+                totalTabs,
+                hasOpener,
+                isPinned,
+                confirmExit
+        );
+    }
 
-        // Dynamically gate back callback: only intercept when there are internal screens,
-        // web history, tabs, or confirmation dialogs to process. When on the root homepage
-        // with a single tab, letting browserBackCallback stay disabled activates Android 14+
-        // native system predictive back-to-home launcher animation.
-        boolean shouldIntercept = hasOverlay || hasDialog || hasWebBack 
-                || isWebPageNotHome || hasMultipleTabs || requireConfirmExit;
+    public void updateBackCallbackState() {
+        if (browserBackCallback == null) return;
+        currentWebBackTarget = resolveCurrentBackTarget();
+        boolean shouldIntercept = (currentWebBackTarget != com.petal.browser.browser.rules.PetalBackTarget.DELEGATE_TO_SYSTEM);
 
         browserBackCallback.setEnabled(shouldIntercept);
+        Log.d("PetalBack", "state target=" + currentWebBackTarget + " intercept=" + shouldIntercept + " tabs=" + BrowserContainer.size());
     }
 
     public void resetPredictiveBackVisuals() {
+        predictiveBackGestureActive = false;
         predictiveBackProgress = 0f;
         predictiveBackSwipeEdge = BackEventCompat.EDGE_LEFT;
+        if (webPredictiveMotion != null) {
+            webPredictiveMotion.resetVisuals();
+        }
+        if (predictiveBackPill != null) {
+            predictiveBackPill.dismiss(false);
+        }
         if (predictiveBackRoot != null) {
             predictiveBackRoot.setScaleX(1f);
             predictiveBackRoot.setScaleY(1f);
@@ -2370,6 +2452,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             targetFrame.postDelayed(() -> {
                 if (currentAlbumController != targetController || av.getParent() != targetFrame) return;
                 if (av.getWidth() == 0 || av.getHeight() == 0) {
+                    com.petal.browser.logger.PetalLiveLogEngine.logBlankWarning(
+                            "View measured to 0 dimension (" + av.getWidth() + "x" + av.getHeight() + ") in attachAlbumViewSafely",
+                            "Re-applying position and layout");
                     av.requestLayout();
                     targetFrame.requestLayout();
                     applyAddressBarPosition();
@@ -2551,9 +2636,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         View av = controller.getAlbumView();
         currentAlbumController = controller;
         if (contentFrame != null) {
-            int surfaceColor = com.google.android.material.color.MaterialColors.getColor(
-                    this, com.google.android.material.R.attr.colorSurface, android.graphics.Color.WHITE);
-            contentFrame.setBackgroundColor(surfaceColor);
+            String activeUrl = (controller instanceof com.petal.browser.browser.PetalTabViewController)
+                    ? ((com.petal.browser.browser.PetalTabViewController) controller).getUrl()
+                    : overrideUrl;
+            if (activeUrl != null && isHomePage(activeUrl)) {
+                int surfaceColor = com.google.android.material.color.MaterialColors.getColor(
+                        this, com.google.android.material.R.attr.colorSurface, android.graphics.Color.WHITE);
+                contentFrame.setBackgroundColor(surfaceColor);
+            } else {
+                contentFrame.setBackground(null);
+            }
             contentFrame.setEnabled(true);
         }
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
@@ -2819,6 +2911,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             hideRefreshAndProgressOverlays();
             updatePersistentBottomNav();
         } else {
+            if (contentFrame != null) {
+                contentFrame.setBackground(null);
+            }
             // Swap tab surfaces by visibility, never by detaching: the outgoing tab's surface
             // goes View.GONE (its session was already setActive(false)), the incoming tab's
             // surface goes View.VISIBLE. This is the same code path for PetalTabViewController and
@@ -3113,6 +3208,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private void updateDynamicToolbarHeights(int toolbarHeightPx) {
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).setDynamicToolbarMaxHeight(toolbarHeightPx);
+            ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).setRefreshSpinnerTopOffset(toolbarHeightPx);
         }
     }
 

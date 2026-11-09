@@ -7,50 +7,50 @@
     if (window.__petal_early_cosmetics_injected__) return;
     window.__petal_early_cosmetics_injected__ = true;
 
-    // 1. Generic cosmetic hiding stylesheet applied immediately at document_start
+    // 1. Generic cosmetic hiding stylesheet applied immediately at document_start.
+    //
+    // Selectors match WHOLE class tokens / id prefixes only. Substring selectors such as
+    // [class*="ad-container"] also match "head-container", "download-wrapper" or "load-banner" and
+    // blanked real page layouts. html/body are never hidden, whatever a site names them.
     const GENERIC_COSMETIC_CSS = `
-        /* Generic ad slots, banners & containers */
-        [id*="google_ads_"],
-        [id*="banner-ad"],
-        [id*="advertisement"],
-        [class*="ad-banner"],
-        [class*="ad-container"],
-        [class*="ad-wrapper"],
-        [class*="sponsored-post"],
-        [class*="sponsored-content"],
-        [data-ad-unit],
-        [data-ad-client],
-        [data-ad-slot],
-        .adsbygoogle,
-        .ad-slot,
-        .ad_wrapper,
-        .ad-zone,
-        .advertisement,
-        .ad-box,
-        .native-ad,
-        .outbrain,
-        .taboola,
-        .trc_related_container,
+        :not(html):not(body):is(
+            /* Generic ad slots, banners & containers */
+            [id^="google_ads_"],
+            #banner-ad,
+            #advertisement,
+            .ad-banner,
+            .ad-container,
+            .ad-wrapper,
+            .sponsored-post,
+            .sponsored-content,
+            [data-ad-unit],
+            [data-ad-client],
+            [data-ad-slot],
+            .adsbygoogle,
+            .ad-slot,
+            .ad_wrapper,
+            .ad-zone,
+            .advertisement,
+            .ad-box,
+            .native-ad,
+            .outbrain,
+            .taboola,
+            .trc_related_container,
 
-        /* Video & YouTube ad overlays & companion cards */
-        .ytp-ad-overlay-container,
-        .ytp-ad-message-container,
-        .ytp-ad-action-interstitial,
-        ytd-promoted-sparkles-web-renderer,
-        ytd-compact-promoted-item-renderer,
-        ytd-promoted-video-renderer,
-        #masthead-ad,
-        rendered-ad-background,
-        .ytd-in-feed-ad-layout-renderer,
-        ytd-ad-slot-renderer,
-        #player-ads {
+            /* Video & YouTube ad overlays & companion cards */
+            .ytp-ad-overlay-container,
+            .ytp-ad-message-container,
+            .ytp-ad-action-interstitial,
+            ytd-promoted-sparkles-web-renderer,
+            ytd-compact-promoted-item-renderer,
+            ytd-promoted-video-renderer,
+            #masthead-ad,
+            rendered-ad-background,
+            .ytd-in-feed-ad-layout-renderer,
+            ytd-ad-slot-renderer,
+            #player-ads
+        ) {
             display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            height: 0 !important;
-            min-height: 0 !important;
-            max-height: 0 !important;
-            pointer-events: none !important;
         }
     `;
 
@@ -75,11 +75,15 @@
     if (isYouTube) {
         function handleYouTubeAds() {
             try {
-                const video = document.querySelector("video");
-                const adContainer = document.querySelector(".ad-container, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-module, ytd-promoted-sparkles-web-renderer, #player-ads");
+                // .ytp-ad-module, #player-ads and .ad-container exist in the player even when no ad
+                // is playing, so they must NOT count as "an ad is showing". YouTube marks the player
+                // with ad-showing / ad-interrupting only while an ad really plays.
+                const player = document.querySelector(".html5-video-player");
+                const adShowing = !!(player && (player.classList.contains("ad-showing") || player.classList.contains("ad-interrupting")));
                 const skipBtn = document.querySelector(".ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, .ytp-ad-skip-button-slot");
 
-                if (adContainer || skipBtn || (video && document.querySelector(".ytp-ad-text"))) {
+                if (adShowing || skipBtn) {
+                    const video = (player && player.querySelector("video")) || document.querySelector("video");
                     if (video) {
                         video.muted = true;
                         video.playbackRate = 16.0;

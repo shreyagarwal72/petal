@@ -54,6 +54,15 @@ object PetalBuiltInExtensionManager {
                 } else {
                     cb?.invoke(result)
                 }
+            } else if (json.optString("type") == "LIVE_LOG") {
+                val level = json.optString("level", "INFO")
+                val message = json.optString("message", "")
+                val url = json.optString("url", null)
+                com.petal.browser.logger.PetalLiveLogEngine.logWeb(level, message, url)
+            } else if (json.optString("type") == "BLANK_PAGE_ALERT") {
+                val reason = json.optString("reason", "DOM reported blank page")
+                val details = json.optString("details", null)
+                com.petal.browser.logger.PetalLiveLogEngine.logBlankWarning(reason, details)
             }
         }
 

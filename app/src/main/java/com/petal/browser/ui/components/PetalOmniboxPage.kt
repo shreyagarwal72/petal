@@ -61,6 +61,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CenterFocusWeak
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.TextField
+import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
@@ -204,9 +208,13 @@ object PetalOmniboxBridge {
                                 pageUrl = pageUrl,
                                 favicon = favicon,
                                 isIncognito = isIncognito,
+                                // The submit handler already navigates via showAlbum(tab, url)
+                                // (or showAlbum(tab) for empty input). Calling onBackPress() here
+                                // ran a second showAlbum(tab) with no URL while the tab still
+                                // reported about:blank, which stopped the just-started load and
+                                // rebuilt the surface, leaving a black page after every search.
                                 onQuerySubmitted = { query ->
                                     onQuerySubmitted(query)
-                                    onBackPress()
                                 },
                                 onBackPress = { onBackPress() },
                                 onBackGesture = onBackGesture
@@ -746,7 +754,7 @@ fun PetalOmniboxPage(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .liquidGlassChrome(shape = RoundedCornerShape(50), enabled = isGlass, sheenIntensity = sheen)
-                                    .focusRequester(focusRequester)
+                                    .focusRequester(focusRequester), glass = false
                             )
                         }
 

@@ -20,6 +20,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.TextField
+import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.kit.TextButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,6 +87,21 @@ fun PetalAdBlockSettingsScreen(
     var showWhitelistDialog by remember { mutableStateOf(false) }
     var whitelistDomainInput by remember { mutableStateOf("") }
     var whitelistedDomains by remember { mutableStateOf(PetalAdBlockEngine.getWhitelistedDomains()) }
+
+    val installedExtensions by com.petal.browser.extensions.PetalExtensionManager.extensions.collectAsState()
+    val pendingPrompt by com.petal.browser.extensions.PetalExtensionManager.pendingPrompt.collectAsState()
+    val adguardExt = remember(installedExtensions) {
+        installedExtensions.firstOrNull {
+            it.id.equals("adguardadblocker@adguard.com", ignoreCase = true) ||
+            it.id.equals("adguard-adblocker", ignoreCase = true) ||
+            it.name.contains("AdGuard", ignoreCase = true)
+        }
+    }
+    var isInstallingAdGuard by remember { mutableStateOf(false) }
+
+    pendingPrompt?.let { prompt ->
+        com.petal.browser.compose.extensions.InstallPermissionDialog(prompt = prompt)
+    }
 
     // Dialog: Add Custom Filter Subscription
     if (showAddCustomListDialog) {
@@ -379,6 +398,87 @@ fun PetalAdBlockSettingsScreen(
                         PetalAdBlockEngine.setAdBlockMode(context, activeMode)
                     }
                 )
+
+                // ── AdGuard AdBlocker Extension Section ──
+                PetalSettingsSection(
+                    title = "AdGuard AdBlocker Extension",
+                    icon = Icons.Rounded.Extension
+                ) {
+                    if (adguardExt != null) {
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
+                            title = "AdGuard Protection",
+                            subtitle = if (adguardExt.enabled) "Active — cosmetic filtering, scriptlets & element blocking" else "Disabled in Add-on Manager",
+                            icon = Icons.Rounded.Shield,
+                            checked = adguardExt.enabled,
+                            onCheckedChange = { enabled ->
+                                com.petal.browser.extensions.PetalExtensionManager.setEnabled(adguardExt.raw, enabled)
+                            }
+                        )
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            title = "Allow in Private Browsing",
+                            subtitle = if (adguardExt.allowedInPrivateBrowsing) "Enabled — protecting incognito tabs" else "Disabled — incognito tabs unprotected by AdGuard",
+                            icon = Icons.Rounded.Lock,
+                            checked = adguardExt.allowedInPrivateBrowsing,
+                            onCheckedChange = { allowed ->
+                                com.petal.browser.extensions.PetalExtensionManager.setAllowedInPrivateBrowsing(adguardExt.raw, allowed)
+                            }
+                        )
+                        com.petal.browser.ui.containment.PetalGroupRow(
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            icon = Icons.Rounded.DashboardCustomize,
+                            title = "AdGuard Dashboard & Filters",
+                            subtitle = "Manage filter subscriptions, user rules, and stealth mode",
+                            onClick = {
+                                onNavigateBack()
+                                com.petal.browser.extensions.PetalExtensionManager.openOptionsPage(adguardExt.id, context)
+                            }
+                        )
+                        com.petal.browser.ui.containment.PetalGroupRow(
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                            icon = Icons.Rounded.Widgets,
+                            title = "AdGuard Quick Popup",
+                            subtitle = "Open interactive tab shield to block elements or pause on current site",
+                            onClick = {
+                                onNavigateBack()
+                                com.petal.browser.extensions.PetalExtensionManager.triggerBrowserAction(adguardExt.id, context)
+                            }
+                        )
+                    } else {
+                        val connectAction = {
+                            if (!isInstallingAdGuard) {
+                                isInstallingAdGuard = true
+                                val entry = com.petal.browser.extensions.PetalExtensionManager.catalog.firstOrNull { it.id == "adguard-adblocker" }
+                                val url = entry?.downloadUrl ?: "https://addons.mozilla.org/firefox/downloads/latest/adguard-adblocker/latest.xpi"
+                                com.petal.browser.extensions.PetalExtensionManager.install(url, autoConfirm = true) { success, msg ->
+                                    isInstallingAdGuard = false
+                                    android.widget.Toast.makeText(context, msg ?: if (success) "AdGuard AdBlocker connected" else "Install failed", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                        com.petal.browser.ui.containment.PetalGroupRow(
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                            icon = Icons.Rounded.Extension,
+                            title = "AdGuard AdBlocker Add-on",
+                            subtitle = "Connect AdGuard's Firefox WebExtension for advanced cosmetic filtering and scriptlets",
+                            onClick = { connectAction() },
+                            trailing = {
+                                Button(
+                                    onClick = { connectAction() },
+                                    enabled = !isInstallingAdGuard,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    if (isInstallingAdGuard) {
+                                        com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 18.dp)
+                                    } else {
+                                        Text("1-Tap Connect")
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
 
                 // ── Filter Subscriptions Section (Cromite Style) ──
                 val rowTotal = subscriptions.size + 2 // update row + lists + add row

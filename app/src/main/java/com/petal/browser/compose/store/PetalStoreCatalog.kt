@@ -744,7 +744,7 @@ object PetalStoreCatalog {
             id = "adguard-base",
             name = "AdGuard Base Filter",
             description = "Powerful mobile-optimized ad and banner blocker with comprehensive CSS cosmetic rules.",
-            url = "https://filters.adtidy.org/extension/ublock/filters/2.txt",
+            url = "https://filters.adtidy.org/windows/filters/2.txt",
             ruleCount = "50,000+",
             maintainer = "AdGuard Team"
         ),
@@ -752,7 +752,7 @@ object PetalStoreCatalog {
             id = "adguard-mobile",
             name = "AdGuard Mobile Filter",
             description = "Specifically targeted at blocking advertisements, interstitials, and banners on mobile web browsers.",
-            url = "https://filters.adtidy.org/extension/ublock/filters/11.txt",
+            url = "https://filters.adtidy.org/windows/filters/11.txt",
             ruleCount = "20,000+",
             maintainer = "AdGuard Team"
         ),

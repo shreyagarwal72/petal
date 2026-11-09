@@ -55,7 +55,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.Card
+import com.petal.browser.ui.kit.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -122,7 +122,7 @@ fun PetalFeaturedCarousel(
         listOf(
             PetalFeaturedItem(
                 title = "Ad & Tracker Shield",
-                description = "uBlock Origin-grade content filter engine",
+                description = "AdGuard-grade content filter engine",
                 icon = Icons.Rounded.Shield,
                 onClick = { onCategoryClick(SettingsCategory.PRIVACY, "privacy_adblock") }
             ),

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.MicOff
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -317,7 +318,7 @@ fun PetalVoiceSearchSheet(
                         val closeShape = ExpressiveButtonShape
                         IconButton(
                             onClick = onDismiss,
-                            modifier = if (isLiquidGlass) Modifier.liquidGlassChrome(closeShape, enabled = true, sheenIntensity = 0.5f) else Modifier
+                            modifier = if (isLiquidGlass) Modifier.liquidGlassChrome(closeShape, enabled = true, sheenIntensity = 0.5f) else Modifier, glass = false
                         ) {
                             Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
                         }

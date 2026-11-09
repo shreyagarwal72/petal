@@ -49,11 +49,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material3.Button
+import com.petal.browser.ui.kit.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -318,7 +318,7 @@ fun PetalFloatingStatusCard(
                                 colors = ButtonDefaults.filledTonalButtonColors(
                                     containerColor = if (isGlass) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.secondaryContainer,
                                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
+                                ), glass = false
                             ) {
                                 Text(
                                     text = data.secondaryActionLabel,
@@ -341,7 +341,7 @@ fun PetalFloatingStatusCard(
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary,
                                     contentColor = MaterialTheme.colorScheme.onPrimary
-                                )
+                                ), glass = false
                             ) {
                                 Text(
                                     text = data.primaryActionLabel,

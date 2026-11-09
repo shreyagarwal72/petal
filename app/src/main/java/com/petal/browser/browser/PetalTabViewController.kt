@@ -25,6 +25,9 @@ import mozilla.components.feature.session.SwipeRefreshFeature
 import mozilla.components.feature.tabs.TabsUseCases
 import kotlinx.coroutines.launch
 
+/** How long after a pull-to-refresh the spinner may stay up while the tab is not loading. */
+private const val REFRESH_WATCHDOG_MS = 5_000L
+
 /**
  * A browser tab surface backed by Android Components' engine abstractions.
  *
@@ -35,7 +38,7 @@ class PetalTabViewController private constructor(
     context: Context,
     attrs: AttributeSet?,
     private val engineView: EngineView
-) : SwipeRefreshLayout(context, attrs), PetalTabSurface, PetalTabController, AlbumController, EngineView by engineView {
+) : PetalVerticalSwipeRefreshLayout(context, attrs), PetalTabSurface, PetalTabController, AlbumController, EngineView by engineView {
 
     @JvmOverloads
     constructor(context: Context, attrs: AttributeSet? = null) :
@@ -549,36 +552,25 @@ class PetalTabViewController private constructor(
     }
 
     init {
-        val themeSurfaceColor = com.google.android.material.color.MaterialColors.getColor(
-            context,
-            com.google.android.material.R.attr.colorSurface,
-            android.graphics.Color.WHITE
-        )
-        setBackgroundColor(themeSurfaceColor)
-        try { engineView.asView().setBackgroundColor(themeSurfaceColor) } catch (_: Throwable) {}
+        // Transparent backgrounds ensure SurfaceView transparent region punches through to the hardware
+        // compositor surface. An opaque background here draws over the punch-hole and causes blank screens.
+        background = null
+        try { engineView.asView().background = null } catch (_: Throwable) {}
         isNestedScrollingEnabled = true
         addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
             if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) {
                 lastLayoutChangeTime = android.os.SystemClock.uptimeMillis()
             }
         }
-        // Pull-to-refresh is Mozilla's own: this view is a SwipeRefreshLayout driven by
+        // Pull-to-refresh is Mozilla's own: this view is a vertical-only SwipeRefreshLayout
+        // (PetalVerticalSwipeRefreshLayout, a port of Fenix's VerticalSwipeRefreshLayout) driven by
         // android-components' SwipeRefreshFeature (see bindTab), the same stack Fenix uses.
         // Only the spinner colours are themed here.
-        try {
-            val primary = com.google.android.material.color.MaterialColors.getColor(
-                this, android.R.attr.colorPrimary, android.graphics.Color.parseColor("#6750A4")
-            )
-            val surface = com.google.android.material.color.MaterialColors.getColor(
-                this, com.google.android.material.R.attr.colorSurfaceContainerHigh, android.graphics.Color.WHITE
-            )
-            setColorSchemeColors(primary)
-            setProgressBackgroundColorSchemeColor(surface)
-        } catch (_: Throwable) {}
+        applyRefreshSpinnerTheme()
         // Tab pages are drawn by android-components' GeckoEngineView, whose inner GeckoView
         // defaults to a SurfaceView (official Mozilla GeckoView default). Switch to TextureView
         // only if Liquid Glass is active and requires page sampling.
-        if (isHostedByBrowserActivity() && com.petal.browser.ui.glass.GeckoGlassBackend.shouldSamplePage(context)) {
+        if (isHostedByBrowserActivity()) {
             findGeckoView(engineView.asView())?.let {
                 try { com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(it, context) } catch (_: Throwable) {}
             }
@@ -641,6 +633,9 @@ class PetalTabViewController private constructor(
         observedSession?.unregister(observer)
         refreshFeature?.stop()
         refreshFeature = null
+        // A spinner left over from the previously bound tab must not be shown on this one.
+        removeCallbacks(refreshWatchdog)
+        isRefreshing = false
         if (observedSession !== session) latestGeckoState = null
         observedSession = session
         this.tab = tab
@@ -675,22 +670,20 @@ class PetalTabViewController private constructor(
         navUrls.clear(); navIndex = -1; navFallbackEligible = false
         currentScrollX = 0; currentScrollY = 0; lastProcessedScrollY = 0; accumulatedScrollY = 0; consecutiveDirectionSteps = 0
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
-        val themeSurfaceColor = com.google.android.material.color.MaterialColors.getColor(
-            context,
-            com.google.android.material.R.attr.colorSurface,
-            android.graphics.Color.WHITE
-        )
-        setBackgroundColor(themeSurfaceColor)
-        try { engineView.asView().setBackgroundColor(themeSurfaceColor) } catch (_: Throwable) {}
-        findGeckoView(engineView.asView())?.setBackgroundColor(themeSurfaceColor)
-        engineView.render(session)
-        if (isHostedByBrowserActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && com.petal.browser.ui.glass.GeckoGlassBackend.shouldSamplePage(context)) {
-            post {
-                findGeckoView(engineView.asView())?.let {
-                    try { com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(it, context) } catch (_: Throwable) {}
-                }
-            }
+        // Keep view hierarchy backgrounds transparent so SurfaceView's transparent region
+        // punches through to GeckoView's hardware compositor surface. Setting an opaque background
+        // on PetalTabViewController, engineView, or GeckoView covers the SurfaceView punch-hole
+        // and produces a blank white/dark screen on websites.
+        background = null
+        try { engineView.asView().background = null } catch (_: Throwable) {}
+        val geckoView = findGeckoView(engineView.asView())
+        geckoView?.background = null
+        // Choose SurfaceView / TextureView BEFORE a session is attached. Swapping the backend while
+        // a session is rendering throws away the surface it draws to and leaves a black page.
+        if (isHostedByBrowserActivity() && geckoView != null) {
+            try { com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(geckoView, context) } catch (_: Throwable) {}
         }
+        engineView.render(session)
         session.register(observer)
         val geckoSession = getGeckoSession()
         com.petal.browser.extensions.PetalExtensionManager.attachSession(geckoSession)
@@ -1507,6 +1500,29 @@ class PetalTabViewController private constructor(
         }
     }
 
+    /**
+     * Cancels any active touch stream on GeckoView.
+     *
+     * Injected immediately when a predictive back gesture begins (handleOnBackStarted),
+     * preventing Gecko from misinterpreting the initial edge touch as a link tap, long-press,
+     * or link-peek preview while the user is swiping from the screen edge.
+     */
+    fun cancelActiveTouch(): Boolean {
+        val gv = findGeckoView(engineView.asView()) ?: return false
+        val now = android.os.SystemClock.uptimeMillis()
+        val cancelEvent = android.view.MotionEvent.obtain(
+            now, now, android.view.MotionEvent.ACTION_CANCEL, 0f, 0f, 0
+        )
+        return try {
+            gv.dispatchTouchEvent(cancelEvent)
+            true
+        } catch (_: Throwable) {
+            false
+        } finally {
+            cancelEvent.recycle()
+        }
+    }
+
     private var touchListenerView: org.mozilla.geckoview.GeckoView? = null
 
     /**
@@ -1518,8 +1534,16 @@ class PetalTabViewController private constructor(
         val gv = findGeckoView(engineView.asView()) ?: return
         if (touchListenerView === gv) return
         touchListenerView = gv
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            gv.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+        gv.addOnLayoutChangeListener { _, left, top, right, bottom, _, _, _, _ ->
+            val w = right - left
+            val h = bottom - top
+            com.petal.browser.logger.PetalLiveLogEngine.logSurface(
+                backend = if (com.petal.browser.ui.glass.GeckoGlassBackend.shouldSamplePage(context)) "TextureView" else "SurfaceView",
+                width = w,
+                height = h,
+                attached = gv.isAttachedToWindow
+            )
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                 try {
                     if (gv.systemGestureExclusionRects.isNotEmpty()) {
                         gv.systemGestureExclusionRects = java.util.Collections.emptyList()
@@ -1537,6 +1561,16 @@ class PetalTabViewController private constructor(
         return super.dispatchTouchEvent(event)
     }
 
+    override fun gatherTransparentRegion(region: android.graphics.Region?): Boolean {
+        val superResult = super.gatherTransparentRegion(region)
+        val gv = findGeckoView(engineView.asView())
+        return if (gv != null && region != null) {
+            gv.gatherTransparentRegion(region)
+        } else {
+            superResult
+        }
+    }
+
     private var lastToolbarMaxHeight = Int.MIN_VALUE
     private var lastVerticalClipping = Int.MIN_VALUE
 
@@ -1552,6 +1586,25 @@ class PetalTabViewController private constructor(
         if (clippingHeight == lastVerticalClipping) return
         lastVerticalClipping = clippingHeight
         try { engineView.setVerticalClipping(clippingHeight) } catch (_: Throwable) {}
+    }
+
+    private var lastRefreshSpinnerOffset = Int.MIN_VALUE
+
+    /**
+     * SwipeRefreshLayout draws its spinner from the top edge of this view. When the page runs
+     * underneath a top bar (glass / immersive modes) the spinner was hidden behind that bar, so
+     * pull-to-refresh looked like it did nothing. Push the spinner down by the bar height.
+     */
+    fun setRefreshSpinnerTopOffset(offsetPx: Int) {
+        if (offsetPx == lastRefreshSpinnerOffset) return
+        lastRefreshSpinnerOffset = offsetPx
+        val density = resources.displayMetrics.density
+        try {
+            // 40dp = default spinner diameter, 64dp = default pull distance (SwipeRefreshLayout).
+            setProgressViewOffset(false, offsetPx - (40 * density).toInt(), offsetPx + (64 * density).toInt())
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabViewController", "Could not move the pull-to-refresh spinner", t)
+        }
     }
 
     /** GeckoView-only integration point used for WebExtension delegates. */
@@ -1935,17 +1988,92 @@ class PetalTabViewController private constructor(
      * The feature installs its own OnRefreshListener, so wrap it to keep Petal's per-page
      * settings (desktop mode, user agent) applied before every pull-triggered reload.
      */
-    override fun setOnRefreshListener(listener: OnRefreshListener?) {
+    override fun setOnRefreshListener(listener: SwipeRefreshLayout.OnRefreshListener?) {
         super.setOnRefreshListener(
-            if (listener == null) null else OnRefreshListener {
+            if (listener == null) null else SwipeRefreshLayout.OnRefreshListener {
+                if (observedSession == null) {
+                    // Nothing to reload (view released / no session yet): never leave the spinner up.
+                    isRefreshing = false
+                    return@OnRefreshListener
+                }
                 try {
                     applyPageSettings(pageUrl)
                 } catch (t: Throwable) {
                     android.util.Log.w("PetalTabViewController", "applyPageSettings failed before pull reload", t)
                 }
                 listener.onRefresh()
+                scheduleRefreshWatchdog()
             }
         )
+    }
+
+    /**
+     * SwipeRefreshFeature only hides the spinner when the tab's `loading` flag CHANGES. If the reload
+     * finishes between two store updates (cached page, error page) or never starts, the flag never
+     * changes and the spinner would stay on screen forever. Firefox has the same listener, so this is
+     * only a safety net: if the page is not loading a few seconds after a pull, drop the spinner.
+     */
+    private val refreshWatchdog = Runnable {
+        if (isRefreshing && !loading) isRefreshing = false
+    }
+
+    private fun scheduleRefreshWatchdog() {
+        removeCallbacks(refreshWatchdog)
+        postDelayed(refreshWatchdog, REFRESH_WATCHDOG_MS)
+    }
+
+    /**
+     * Spinner colours, same idea as Fenix (on-surface arc on a surface-container disc) but with a
+     * contrast guarantee so the arc can never be drawn in the same colour as the disc, which looks
+     * like an empty white circle stuck on screen.
+     */
+    private fun applyRefreshSpinnerTheme() {
+        try {
+            val disc = resolveOpaqueThemeColor(
+                com.google.android.material.R.attr.colorSurfaceContainerHigh,
+                resolveOpaqueThemeColor(com.google.android.material.R.attr.colorSurface, android.graphics.Color.WHITE)
+            )
+            val onSurface = resolveOpaqueThemeColor(
+                com.google.android.material.R.attr.colorOnSurface,
+                if (androidx.core.graphics.ColorUtils.calculateLuminance(disc) > 0.5) {
+                    android.graphics.Color.BLACK
+                } else {
+                    android.graphics.Color.WHITE
+                }
+            )
+            var arc = resolveOpaqueThemeColor(android.R.attr.colorPrimary, onSurface)
+            if (androidx.core.graphics.ColorUtils.calculateContrast(arc, disc) < 3.0) {
+                arc = onSurface
+            }
+            setColorSchemeColors(arc)
+            setProgressBackgroundColorSchemeColor(disc)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabViewController", "Could not theme the pull-to-refresh spinner", t)
+        }
+    }
+
+    private fun resolveOpaqueThemeColor(attr: Int, fallback: Int): Int =
+        com.google.android.material.color.MaterialColors.getColor(context, attr, fallback) or 0xFF000000.toInt()
+
+    /**
+     * android-components' GeckoEngineView calls release() from onDetachedFromWindow(), which removes
+     * the GeckoSession from the GeckoView: the tab keeps loading but the surface stays black.
+     * Fenix recovers because SessionFeature.start() renders the session again when the view comes
+     * back. Petal binds sessions itself, so do the same here. render() is a no-op when the session is
+     * already shown.
+     */
+    private fun ensureSessionRendered() {
+        val session = observedSession ?: return
+        try {
+            engineView.render(session)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabViewController", "Could not (re)attach the engine session to the view", t)
+        }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        ensureSessionRendered()
     }
 
     override fun getTabView(): View = this
@@ -1957,6 +2085,8 @@ class PetalTabViewController private constructor(
         active = true
         tab?.let { PetalEngineStore.selectTab(appContext, it.id) }
         com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(null, getGeckoSession())
+        // Same as SessionFeature.start() in Fenix: make sure the session is on screen.
+        ensureSessionRendered()
         refreshFeature?.start()
         fullScreenFeature?.start()
         startThumbnails()
@@ -2017,6 +2147,9 @@ class PetalTabViewController private constructor(
             val signal = "${content.loading}|${content.firstContentfulPaint}|${content.url}"
             if (signal == lastThumbnailSignal) return@observeManually
             lastThumbnailSignal = signal
+            if (content.firstContentfulPaint) {
+                com.petal.browser.logger.PetalLiveLogEngine.logPaint(content.url)
+            }
             if (!content.loading && content.firstContentfulPaint) {
                 com.petal.browser.motion.MotionGate.postAfterTransition {
                     post { try { capturePreviewBitmapAsync { } } catch (_: Throwable) {} }
@@ -2091,6 +2224,8 @@ class PetalTabViewController private constructor(
         com.petal.browser.extensions.PetalExtensionManager.detachSession(gs)
         refreshFeature?.stop()
         refreshFeature = null
+        removeCallbacks(refreshWatchdog)
+        isRefreshing = false
         fullScreenFeature?.stop()
         fullScreenFeature = null
         observedSession?.unregister(observer)
@@ -2119,9 +2254,23 @@ class PetalTabViewController private constructor(
         try {
             engineView.onPause()
         } catch (_: Throwable) {}
+        // Firefox never deactivates a session that is still on screen. In split-screen / freeform
+        // the activity is paused while its page stays visible: deactivating it would freeze or
+        // blank the page, so only deactivate when the page really left the screen.
+        if (isStillVisibleWhilePaused()) return
         try {
             getGeckoSession()?.setActive(false)
         } catch (_: Throwable) {}
+    }
+
+    private fun isStillVisibleWhilePaused(): Boolean {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) return false
+        val act = resolveActivity(context) ?: return false
+        return try {
+            act.isInMultiWindowMode || act.isInPictureInPictureMode
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     private fun injectPagePrivacyAndAdBlock() {
@@ -2274,8 +2423,18 @@ private class PetalContentDelegateWrapper(
         onCrashCallback?.invoke()
     }
 
+    override fun onFirstComposite(session: org.mozilla.geckoview.GeckoSession) {
+        engine?.onFirstComposite(session)
+    }
+
     override fun onFirstContentfulPaint(session: org.mozilla.geckoview.GeckoSession) {
         engine?.onFirstContentfulPaint(session)
+    }
+
+    // Mozilla's GeckoEngineSession turns this into onPreviewImageChange (page preview / og:image
+    // for the tab). Without forwarding it the callback was silently dropped.
+    override fun onPreviewImage(session: org.mozilla.geckoview.GeckoSession, previewImageUrl: String) {
+        engine?.onPreviewImage(session, previewImageUrl)
     }
 
     override fun onPaintStatusReset(session: org.mozilla.geckoview.GeckoSession) {
@@ -2457,6 +2616,7 @@ private class ExternalSchemeNavigationDelegate(
         error: org.mozilla.geckoview.WebRequestError
     ): org.mozilla.geckoview.GeckoResult<String>? {
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLoadError uri=$uri error=${error.code}")
+        com.petal.browser.logger.PetalLiveLogEngine.logLoadError(uri, error.code, error.category)
         if (uri != null && uri.startsWith("https://", ignoreCase = true)) {
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
             val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
@@ -2662,6 +2822,10 @@ private class SessionStateCapturingProgressDelegate(
 ) : org.mozilla.geckoview.GeckoSession.ProgressDelegate, PetalOwnedDelegate {
 
     override fun onPageStart(session: org.mozilla.geckoview.GeckoSession, url: String) {
+        com.petal.browser.logger.PetalLiveLogEngine.isLoading = true
+        com.petal.browser.logger.PetalLiveLogEngine.firstContentfulPaint = false
+        com.petal.browser.logger.PetalLiveLogEngine.currentUrl = url
+        com.petal.browser.logger.PetalLiveLogEngine.logNav("PageStart", url)
         try {
             engine?.onPageStart(session, url)
         } catch (t: Throwable) {
@@ -2670,6 +2834,11 @@ private class SessionStateCapturingProgressDelegate(
     }
 
     override fun onPageStop(session: org.mozilla.geckoview.GeckoSession, success: Boolean) {
+        com.petal.browser.logger.PetalLiveLogEngine.isLoading = false
+        com.petal.browser.logger.PetalLiveLogEngine.lastPageStopTimeMs = System.currentTimeMillis()
+        val currentStopUrl = com.petal.browser.logger.PetalLiveLogEngine.currentUrl ?: ""
+        com.petal.browser.logger.PetalLiveLogEngine.logNav("PageStop", currentStopUrl, "success=$success")
+        com.petal.browser.logger.PetalLiveLogEngine.checkBlankPageCondition(2000L)
         try {
             engine?.onPageStop(session, success)
         } catch (t: Throwable) {
@@ -2678,6 +2847,7 @@ private class SessionStateCapturingProgressDelegate(
     }
 
     override fun onProgressChange(session: org.mozilla.geckoview.GeckoSession, progress: Int) {
+        com.petal.browser.logger.PetalLiveLogEngine.currentProgress = progress
         try {
             engine?.onProgressChange(session, progress)
         } catch (t: Throwable) {

@@ -20,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.TextButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -956,7 +958,7 @@ fun PetalXpBackupRestoreDialog(
                     }
                 } else if (mode == "export") {
                     Text("Enter a dedicated password to encrypt your .pt backup file:", style = MaterialTheme.typography.bodyMedium)
-                    androidx.compose.material3.TextField(
+                    com.petal.browser.ui.kit.TextField(
                         value = password,
                         onValueChange = { password = it; errorMessage = null },
                         label = { Text("Backup Password") },
@@ -965,7 +967,7 @@ fun PetalXpBackupRestoreDialog(
                         singleLine = true,
     colors = com.petal.browser.ui.containment.petalFilledTextFieldColors()
 )
-                    androidx.compose.material3.TextField(
+                    com.petal.browser.ui.kit.TextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it; errorMessage = null },
                         label = { Text("Confirm Password") },
@@ -976,7 +978,7 @@ fun PetalXpBackupRestoreDialog(
 )
                 } else if (mode == "restore") {
                     Text("Enter the password used when this .pt backup was created:", style = MaterialTheme.typography.bodyMedium)
-                    androidx.compose.material3.TextField(
+                    com.petal.browser.ui.kit.TextField(
                         value = password,
                         onValueChange = { password = it; errorMessage = null },
                         label = { Text("Password") },

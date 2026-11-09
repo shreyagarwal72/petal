@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -863,7 +864,7 @@ private fun CircularIconButton(
                 if (isGlass) {
                     Modifier.background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
                 } else Modifier
-            )
+            ), glass = false
     ) {
         val iconTint = if (enabled) {
             tint

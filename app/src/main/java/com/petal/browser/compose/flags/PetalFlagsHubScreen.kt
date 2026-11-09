@@ -40,20 +40,20 @@ import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Warning
-import androidx.compose.material3.Card
+import com.petal.browser.ui.kit.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
+import com.petal.browser.ui.kit.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextField
+import com.petal.browser.ui.kit.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.petal.browser.ui.kit.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -204,7 +204,7 @@ fun PetalFlagsHubScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .then(if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(18.dp), enabled = true, sheenIntensity = 0.4f) else Modifier)
+                        .then(if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(18.dp), enabled = true, sheenIntensity = 0.4f) else Modifier), glass = false
                 ) {
                     Row(
                         modifier = Modifier.padding(14.dp),
@@ -256,7 +256,7 @@ fun PetalFlagsHubScreen(
                         unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                         focusedIndicatorColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.primary,
                         unfocusedIndicatorColor = Color.Transparent
-                    )
+                    ), glass = false
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -315,7 +315,7 @@ fun PetalFlagsHubScreen(
                                         selectedLabelColor = if (isGlass) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer
                                     ),
                                     border = null,
-                                    modifier = if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(12.dp), enabled = true, sheenIntensity = 0.3f) else Modifier
+                                    modifier = if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(12.dp), enabled = true, sheenIntensity = 0.3f) else Modifier, glass = false
                                 )
                             }
                         }

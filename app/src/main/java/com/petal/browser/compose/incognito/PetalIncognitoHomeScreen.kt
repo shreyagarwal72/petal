@@ -20,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.Card
+import com.petal.browser.ui.kit.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -296,7 +298,7 @@ fun PetalIncognitoHomeScreen(
                                         .then(
                                             if (isGlass) Modifier.liquidGlassChrome(shape = shape, enabled = true)
                                             else Modifier
-                                        )
+                                        ), glass = false
                                 ) {
                                     Row(
                                         modifier = Modifier

@@ -226,6 +226,7 @@ object PetalAdBlockEngine {
                 val blocked = blocker.shouldBlock(requestUrl, pageUrl)
                 if (blocked) {
                     recordBlock(pageUrl)
+                    com.petal.browser.logger.PetalLiveLogEngine.logBlock("ContentBlocker", requestUrl, "Page: $pageUrl")
                     return true
                 }
             } catch (_: Throwable) {
@@ -237,6 +238,7 @@ object PetalAdBlockEngine {
         val trieBlocked = trieEngine.containsSubstring(requestUrl)
         if (trieBlocked) {
             recordBlock(pageUrl)
+            com.petal.browser.logger.PetalLiveLogEngine.logBlock("TrieFilter", requestUrl, "Page: $pageUrl")
             return true
         }
 

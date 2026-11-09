@@ -41,9 +41,9 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.LinearScale
 import androidx.compose.material.icons.rounded.Waves
-import androidx.compose.material3.Button
+import com.petal.browser.ui.kit.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
+import com.petal.browser.ui.kit.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -640,7 +640,7 @@ private fun ChoiceCard(
             .fillMaxWidth()
             .scale(pressScale)
             .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true)
-            .border(1.5.dp, outline, shape)
+            .border(1.5.dp, outline, shape), glass = false
     ) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

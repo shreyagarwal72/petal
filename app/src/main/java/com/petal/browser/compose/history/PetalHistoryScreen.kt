@@ -31,6 +31,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.TextField
+import com.petal.browser.ui.kit.FilterChip
+import com.petal.browser.ui.kit.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -492,7 +495,7 @@ fun PetalHistoryScreen(
                         focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                         unfocusedIndicatorColor = Color.Transparent,
                         disabledIndicatorColor = Color.Transparent
-                    )
+                    ), glass = false
                 )
 
                 // ── Material 3 Expressive Liquid Glass Sort Chips ──
@@ -550,7 +553,7 @@ fun PetalHistoryScreen(
                             border = null,
                             modifier = Modifier
                                 .graphicsLayer(scaleX = chipScale, scaleY = chipScale)
-                                .liquidGlassChrome(shape = chipShape, enabled = isGlass, sheenIntensity = 0.35f)
+                                .liquidGlassChrome(shape = chipShape, enabled = isGlass, sheenIntensity = 0.35f), glass = false
                         )
                     }
                 }

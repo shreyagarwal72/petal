@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,7 +38,7 @@ import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Work
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -103,38 +104,45 @@ fun PetalWorkspaceCarousel(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        items(workspaces, key = { it.id }) { workspace ->
+        itemsIndexed(workspaces, key = { _, ws -> ws.id }) { index, workspace ->
             val isActive = (workspace.id == activeWorkspaceId)
-            val wsColor = workspace.parseColor()
             val tabCount = tabCountsByWorkspace[workspace.id] ?: 0
+
+            // Material 3 Expressive colour roles (same roles as containment badges):
+            // 1st workspace = primary, 2nd = secondary, 3rd = tertiary, then repeat.
+            val scheme = MaterialTheme.colorScheme
+            val (roleContainer, roleOnContainer, roleAccent) = when (index % 3) {
+                0 -> Triple(scheme.primaryContainer, scheme.onPrimaryContainer, scheme.primary)
+                1 -> Triple(scheme.secondaryContainer, scheme.onSecondaryContainer, scheme.secondary)
+                else -> Triple(scheme.tertiaryContainer, scheme.onTertiaryContainer, scheme.tertiary)
+            }
 
             val containerColor by animateColorAsState(
                 targetValue = if (isActive) {
-                    wsColor.copy(alpha = if (isGlass) 0.22f else 0.16f)
+                    roleContainer.copy(alpha = if (isGlass) 0.55f else 1f)
                 } else {
-                    MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (isGlass) 0.45f else 0.70f)
+                    scheme.surfaceContainerHigh.copy(alpha = if (isGlass) 0.45f else 1f)
                 },
                 animationSpec = spring(),
                 label = "ws_container_color"
             )
-
-            val borderColor by animateColorAsState(
-                targetValue = if (isActive) {
-                    wsColor.copy(alpha = 0.85f)
-                } else {
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                },
+            val contentColor by animateColorAsState(
+                targetValue = if (isActive) roleOnContainer else scheme.onSurfaceVariant,
                 animationSpec = spring(),
-                label = "ws_border_color"
+                label = "ws_content_color"
             )
-
-            val borderWidth by animateDpAsState(
-                targetValue = if (isActive) 1.5.dp else 1.dp,
+            val iconTint by animateColorAsState(
+                targetValue = if (isActive) roleOnContainer else roleAccent,
                 animationSpec = spring(),
-                label = "ws_border_width"
+                label = "ws_icon_tint"
             )
-
-            val shape = RoundedCornerShape(20.dp)
+            // Selected = full pill, unselected = squarer 14dp (expressive shape morph).
+            val corner by animateDpAsState(
+                targetValue = if (isActive) 21.dp else 14.dp,
+                animationSpec = spring(),
+                label = "ws_corner"
+            )
+            val shape = RoundedCornerShape(corner)
 
             Surface(
                 modifier = Modifier
@@ -154,7 +162,7 @@ fun PetalWorkspaceCarousel(
                     ),
                 shape = shape,
                 color = containerColor,
-                border = BorderStroke(borderWidth, borderColor)
+                contentColor = contentColor
             ) {
                 Row(
                     modifier = Modifier
@@ -165,7 +173,7 @@ fun PetalWorkspaceCarousel(
                     Icon(
                         imageVector = getWorkspaceIconVector(workspace.iconName),
                         contentDescription = null,
-                        tint = if (isActive) wsColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = iconTint,
                         modifier = Modifier.size(18.dp)
                     )
 
@@ -177,7 +185,7 @@ fun PetalWorkspaceCarousel(
                             fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Medium,
                             fontSize = 13.sp
                         ),
-                        color = if (isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = contentColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -188,8 +196,8 @@ fun PetalWorkspaceCarousel(
                             modifier = Modifier
                                 .clip(CircleShape)
                                 .background(
-                                    if (isActive) wsColor.copy(alpha = 0.25f)
-                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                    if (isActive) roleOnContainer.copy(alpha = 0.16f)
+                                    else roleAccent.copy(alpha = 0.16f),
                                     CircleShape
                                 )
                                 .padding(horizontal = 5.dp, vertical = 1.dp),
@@ -201,7 +209,7 @@ fun PetalWorkspaceCarousel(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 10.sp
                                 ),
-                                color = if (isActive) wsColor else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isActive) roleOnContainer else roleAccent
                             )
                         }
                     }
@@ -227,7 +235,7 @@ fun PetalWorkspaceCarousel(
                     ),
                 colors = IconButtonDefaults.iconButtonColors(
                     containerColor = addContainerColor
-                )
+                ), glass = false
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,

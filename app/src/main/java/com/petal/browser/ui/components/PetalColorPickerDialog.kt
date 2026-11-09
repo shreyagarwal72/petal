@@ -28,11 +28,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material3.Button
+import com.petal.browser.ui.kit.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
+import com.petal.browser.ui.kit.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextField
+import com.petal.browser.ui.kit.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text

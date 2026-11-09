@@ -25,6 +25,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.TextField
+import com.petal.browser.ui.kit.FilterChip
+import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.kit.TextButton
+import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -353,7 +359,7 @@ fun PetalPasswordsScreen(
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .liquidGlassChrome(shape = passSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
+                                    .liquidGlassChrome(shape = passSearchShape, enabled = isGlass, sheenIntensity = 0.45f), glass = false
                             )
                         }
 
@@ -420,48 +426,25 @@ fun PetalPasswordsScreen(
 
                         // 4. Grouped Passwords List (Brave Browser Hierarchy)
                         item {
-                            Row(
+                            Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 PetalSectionLabel(
                                     text = if (searchQuery.isBlank()) "Saved Logins (${credentials.size})" else "Matches (${groupedLogins.values.flatten().size})"
                                 )
 
-                                val sortChipColors = FilterChipDefaults.filterChipColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    labelColor = MaterialTheme.colorScheme.onSurface,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                // Sort selector: M3 Expressive connected button group
+                                com.petal.browser.ui.components.ExpressiveButtonGroup(
+                                    items = listOf(
+                                        com.petal.browser.ui.components.ExpressiveSegmentItem("0", "Name"),
+                                        com.petal.browser.ui.components.ExpressiveSegmentItem("1", "Recent"),
+                                        com.petal.browser.ui.components.ExpressiveSegmentItem("2", "Favorites"),
+                                    ),
+                                    selectedId = selectedSortMode.toString(),
+                                    onItemSelected = { selectedSortMode = it.toInt() },
+                                    modifier = Modifier.fillMaxWidth(),
                                 )
-                                // Sort selector pill
-                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    FilterChip(
-                                        selected = selectedSortMode == 0,
-                                        onClick = { selectedSortMode = 0 },
-                                        label = { Text("Name", fontSize = 12.sp) },
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = sortChipColors,
-                                        border = null
-                                    )
-                                    FilterChip(
-                                        selected = selectedSortMode == 1,
-                                        onClick = { selectedSortMode = 1 },
-                                        label = { Text("Recent", fontSize = 12.sp) },
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = sortChipColors,
-                                        border = null
-                                    )
-                                    FilterChip(
-                                        selected = selectedSortMode == 2,
-                                        onClick = { selectedSortMode = 2 },
-                                        label = { Text("Favorites", fontSize = 12.sp) },
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = sortChipColors,
-                                        border = null
-                                    )
-                                }
                             }
                         }
 
@@ -931,7 +914,7 @@ private fun PasswordDetailsSheet(
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                     contentColor = MaterialTheme.colorScheme.onSurface
-                )
+                ), glass = false
             ) {
                 if (isCheckingBreach) {
                     PetalContainedLoadingIndicator(size = 16.dp)
@@ -969,7 +952,7 @@ private fun PasswordDetailsSheet(
                         .weight(1f)
                         .heightIn(min = 48.dp)
                         .then(if (isGlass) Modifier.liquidGlassChrome(petalConnectedShape(0, 2), enabled = true, sheenIntensity = 0.4f) else Modifier),
-                    shape = petalConnectedShape(0, 2)
+                    shape = petalConnectedShape(0, 2), glass = false
                 ) {
                     Text("Delete", fontWeight = FontWeight.SemiBold)
                 }
@@ -1050,7 +1033,7 @@ private fun PasswordEditSheet(
                 colors = fieldColors,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
+                    .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier), glass = false
             )
 
             TextField(
@@ -1062,7 +1045,7 @@ private fun PasswordEditSheet(
                 colors = fieldColors,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
+                    .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier), glass = false
             )
 
             PetalShapedPasswordInput(
@@ -1173,7 +1156,7 @@ private fun PasswordEditSheet(
                 colors = fieldColors,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
+                    .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier), glass = false
             )
 
             // Submit Buttons

@@ -25,6 +25,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.Card
+import com.petal.browser.ui.kit.TextField
+import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -798,7 +802,7 @@ private fun AiFieldRow(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (glass) Modifier.liquidGlassChrome(rowShape, enabled = true, sheenIntensity = 0.5f) else Modifier)
+            .then(if (glass) Modifier.liquidGlassChrome(rowShape, enabled = true, sheenIntensity = 0.5f) else Modifier), glass = false
     ) {
         Column(
             modifier = Modifier

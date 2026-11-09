@@ -38,6 +38,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.TextField
+import com.petal.browser.ui.kit.FilterChip
+import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -342,7 +347,7 @@ fun SafeLockerScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                                    .liquidGlassChrome(shape = lockerSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
+                                    .liquidGlassChrome(shape = lockerSearchShape, enabled = isGlass, sheenIntensity = 0.45f), glass = false
                             )
                         }
 

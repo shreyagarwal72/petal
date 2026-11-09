@@ -61,12 +61,13 @@
         "scorecardresearch.com"
     ];
 
-    // Common URL path patterns for ad servers and trackers
+    // Common URL path patterns for ad servers and trackers.
+    // Keep these specific: generic file names such as "/popup.js" or "analytics.js" are used by
+    // ordinary sites for their own UI code and blocking them breaks pages.
     const BLOCKED_PATH_PATTERNS = [
         "/pagead/",
         "/ad_banner",
         "/popunder",
-        "/popup.js",
         "adsbygoogle.js",
         "/api/stats/ads",
         "/pagead/interaction/",
@@ -75,8 +76,7 @@
         "/ad-delivery/",
         "/advertisement/",
         "facebook.com/tr/",
-        "analytics.js",
-        "gtag/js"
+        "googletagmanager.com/gtag/js"
     ];
 
     function normalizeHost(host) {

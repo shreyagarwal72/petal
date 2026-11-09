@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.TextButton
 import androidx.compose.runtime.*
 import com.petal.browser.ui.glass.liquidGlass
 import androidx.compose.ui.Alignment

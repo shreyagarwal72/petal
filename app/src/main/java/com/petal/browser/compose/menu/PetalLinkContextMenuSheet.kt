@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.Card
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -714,7 +715,7 @@ private fun PetalMenuRow(
             .petalStaggerIn(enterIndex)
             .scale(pressScale)
             .alpha(contentAlpha)
-            .then(if (rowGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.45f) else Modifier),
+            .then(if (rowGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.45f) else Modifier), glass = false
     ) {
         Row(
             modifier = Modifier

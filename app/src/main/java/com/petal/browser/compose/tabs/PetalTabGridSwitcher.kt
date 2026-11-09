@@ -59,6 +59,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.TextField
+import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.kit.TextButton
+import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -504,6 +509,10 @@ fun PetalTabGridSwitcher(
 
     // Tab counts
     val regularTabCount = tabs.count { !it.isIncognito }
+    // Header count must match what the grid/workspace chips show for the active workspace.
+    val activeWorkspaceTabCount = tabs.count { tab ->
+        !tab.isIncognito && (tab.workspaceId == activeWorkspaceId || (tab.workspaceId == null && activeWorkspaceId == PetalWorkspaceManager.DEFAULT_WORKSPACE_ID) || (tab.isPinned && tab.isPinnedGlobal))
+    }
     val incognitoTabCount = tabs.count { it.isIncognito }
     val groupsCount = tabGroups.size
 
@@ -737,7 +746,7 @@ fun PetalTabGridSwitcher(
                     subtitle = if (selectionMode) "Choose an action for selected tabs" else when (selectedCategory) {
                         TabCategory.INCOGNITO -> if (incognitoTabCount == 1) "1 private tab open" else "$incognitoTabCount private tabs open"
                         TabCategory.GROUPS -> if (groupsCount == 1) "1 active group" else "$groupsCount active groups"
-                        TabCategory.REGULAR -> if (regularTabCount == 1) "1 active tab open" else "$regularTabCount active tabs open"
+                        TabCategory.REGULAR -> if (activeWorkspaceTabCount == 1) "1 active tab open" else "$activeWorkspaceTabCount active tabs open"
                     },
                     enableLiquidGlass = true,
                     actions = {
@@ -932,7 +941,7 @@ fun PetalTabGridSwitcher(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .liquidGlassChrome(shape = tabSearchShape, enabled = isGlass, sheenIntensity = 0.45f)
+                            .liquidGlassChrome(shape = tabSearchShape, enabled = isGlass, sheenIntensity = 0.45f), glass = false
                     )
 
                     // ── Zen Essentials Pinned Tabs Shelf ──

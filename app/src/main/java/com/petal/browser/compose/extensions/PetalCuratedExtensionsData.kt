@@ -185,6 +185,7 @@ object PetalCuratedExtensionsData {
         // ── Ad/tracker blocking ──────────────────────────────────────────
         "ublock-origin" to ExtensionVisual(Icons.Rounded.Shield, Color(0xFFFF3B5C)),
         "adguard-adblocker" to ExtensionVisual(Icons.Rounded.Shield, Color(0xFF67B346)),
+        "adguardadblocker@adguard.com" to ExtensionVisual(Icons.Rounded.Shield, Color(0xFF67B346)),
         "privacy-badger17" to ExtensionVisual(Icons.Rounded.Security, Color(0xFF10B981)),
         "noscript" to ExtensionVisual(Icons.Rounded.Block, Color(0xFFDC2626)),
 

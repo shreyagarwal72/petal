@@ -16,6 +16,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -316,7 +319,7 @@ fun PetalSummaryBoxDialog(
                         onClick = onAskQuestion,
                         shape = RoundedCornerShape(50.dp),
                         modifier = if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(50.dp), enabled = true, sheenIntensity = 0.65f, pressFx = true) else Modifier,
-                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)
+                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp), glass = false
                     ) {
                         Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))

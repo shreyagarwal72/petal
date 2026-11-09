@@ -58,10 +58,18 @@ object PetalFilterSubscriptionManager {
             isCustom = false
         ),
         PetalFilterSubscription(
-            id = "ublock_filters",
-            name = "uBlock Origin Filters",
-            description = "Defuses aggressive anti-adblock detection scripts and malvertising.",
-            url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt",
+            id = "adguard_base",
+            name = "AdGuard Base Filter",
+            description = "Comprehensive ad and banner blocking rules curated by the AdGuard Team.",
+            url = "https://filters.adtidy.org/windows/filters/2.txt",
+            isEnabled = true,
+            isCustom = false
+        ),
+        PetalFilterSubscription(
+            id = "adguard_mobile",
+            name = "AdGuard Mobile Filter",
+            description = "Specifically targeted at blocking advertisements and banners on mobile web browsers.",
+            url = "https://filters.adtidy.org/windows/filters/11.txt",
             isEnabled = true,
             isCustom = false
         ),

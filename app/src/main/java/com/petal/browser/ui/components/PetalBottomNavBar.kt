@@ -61,7 +61,7 @@ import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -408,7 +408,7 @@ fun PetalBottomNavBar(
 
                     if (centerSearch) {
                         ExpressiveNavTabItem(
-                            selected = false,
+                            selected = selectedTab == PetalNavTab.SEARCH,
                             label = "Search",
                             index = 2,
                             isLiquidGlass = isLiquidGlass,
@@ -429,7 +429,7 @@ fun PetalBottomNavBar(
                         selected = selectedTab == PetalNavTab.TABS,
                         label = "Tabs",
                         badgeText = if (tabCount > 99) "99+" else tabCount.toString(),
-                        index = 2,
+                        index = if (centerSearch) 3 else 2,
                         isLiquidGlass = isLiquidGlass,
                         modifier = Modifier
                             .weight(1f)
@@ -457,7 +457,7 @@ fun PetalBottomNavBar(
                     ExpressiveNavTabItem(
                         selected = selectedTab == PetalNavTab.MENU,
                         label = "Menu",
-                        index = 3,
+                        index = if (centerSearch) 4 else 3,
                         isLiquidGlass = isLiquidGlass,
                         modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->
