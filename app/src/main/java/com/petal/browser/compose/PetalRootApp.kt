@@ -88,13 +88,12 @@ fun PetalRootApp(
         when {
             isOmniboxOpen -> isOmniboxOpen = false
             viewModel.hasOpenOverlay -> viewModel.dismissTopOverlay()
-            canGoBack -> viewModel.goBack()
-            !isHome -> viewModel.loadUrl("about:home")
-            else -> activity?.finish()
+            !viewModel.goBack() -> activity?.finish()
         }
     }
 
     Scaffold(
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (!isOmniboxOpen && !viewModel.hasOpenOverlay) {
                 PetalBottomNavBar(

@@ -42,11 +42,19 @@ fun ComposeEngineViewport(
 ) {
     val context = LocalContext.current
     val pullRefreshState = rememberPullToRefreshState()
+    var isPullRefreshing by remember { androidx.compose.runtime.mutableStateOf(false) }
+
+    androidx.compose.runtime.LaunchedEffect(isLoading) {
+        if (!isLoading) {
+            isPullRefreshing = false
+        }
+    }
 
     // Create and retain an EngineView instance across recompositions
     val engineView = remember(context) {
         PetalEngineStore.createEngineView(context).also { ev ->
             ev.asView().background = null
+            ev.asView().isNestedScrollingEnabled = true
             findGeckoView(ev.asView())?.let { gv ->
                 gv.background = null
                 try {
@@ -69,8 +77,11 @@ fun ComposeEngineViewport(
     }
 
     PullToRefreshBox(
-        isRefreshing = isLoading,
-        onRefresh = onRefresh,
+        isRefreshing = isPullRefreshing,
+        onRefresh = {
+            isPullRefreshing = true
+            onRefresh()
+        },
         state = pullRefreshState,
         modifier = modifier.fillMaxSize()
     ) {
