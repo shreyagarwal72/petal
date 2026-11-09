@@ -189,6 +189,38 @@ class PetalBrowserViewModel @Inject constructor(
                 }
             }
         }
+
+        // Automatic Popup Window Adoption & Window Closure (window.open / target="_blank" / window.close)
+        viewModelScope.launch {
+            browserState.collect { state ->
+                for (tab in state.tabs) {
+                    val req = tab.content.windowRequest ?: continue
+                    try {
+                        if (req.type == mozilla.components.concept.engine.window.WindowRequest.Type.OPEN) {
+                            val engineSession = req.prepare()
+                            val newTabId = "tab_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode())
+                            val isIncognito = tab.content.private
+                            val targetUrl = req.url?.takeIf { it.isNotBlank() } ?: "about:blank"
+                            PetalEngineStore.adoptPreparedSession(
+                                context = context,
+                                tabId = newTabId,
+                                url = targetUrl,
+                                title = "",
+                                isIncognito = isIncognito,
+                                session = engineSession,
+                                select = true
+                            )
+                        } else if (req.type == mozilla.components.concept.engine.window.WindowRequest.Type.CLOSE) {
+                            closeTab(tab.id)
+                        }
+                    } catch (t: Throwable) {
+                        android.util.Log.e("PetalBrowserVM", "Failed to handle window request: ${t.message}", t)
+                    } finally {
+                        PetalEngineStore.consumeWindowRequest(context, tab.id)
+                    }
+                }
+            }
+        }
     }
 
     // ── Core Navigation Actions ─────────────────────────────────────────────
@@ -334,12 +366,12 @@ class PetalBrowserViewModel @Inject constructor(
         } else {
             tab.url
         }
-        tabsUseCases.addTab(url = url, selectTab = false, private = tab.isIncognito)
+        openNewTab(url = url, selectTab = false, private = tab.isIncognito)
     }
 
     fun duplicateTab(tab: PetalTabItem) {
         val url = if (tab.url.isBlank() || tab.url == "Petal Home") "about:home" else tab.url
-        tabsUseCases.addTab(url = url, selectTab = true, private = tab.isIncognito)
+        openNewTab(url = url, selectTab = true, private = tab.isIncognito)
     }
 
     fun saveBookmark(title: String, url: String) {

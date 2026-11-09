@@ -474,15 +474,44 @@ class PetalTabViewController private constructor(
         override fun onWindowRequest(
             windowRequest: mozilla.components.concept.engine.window.WindowRequest
         ) {
-            val activity = context as? com.petal.browser.activity.BrowserActivity ?: return
-            activity.runOnUiThread {
-                if (windowRequest.type == mozilla.components.concept.engine.window.WindowRequest.Type.OPEN) {
-                    activity.adoptPreparedWindow(this@PetalTabViewController, windowRequest)
-                } else {
-                    activity.closeContentWindow(this@PetalTabViewController)
+            val activity = context as? com.petal.browser.activity.BrowserActivity
+            if (activity != null) {
+                activity.runOnUiThread {
+                    if (windowRequest.type == mozilla.components.concept.engine.window.WindowRequest.Type.OPEN) {
+                        activity.adoptPreparedWindow(this@PetalTabViewController, windowRequest)
+                    } else {
+                        activity.closeContentWindow(this@PetalTabViewController)
+                    }
+                    boundTabId?.let {
+                        PetalEngineStore.consumeWindowRequest(appContext, it)
+                    }
                 }
-                boundTabId?.let {
-                    PetalEngineStore.consumeWindowRequest(appContext, it)
+            } else {
+                try {
+                    val tabId = boundTabId ?: return
+                    if (windowRequest.type == mozilla.components.concept.engine.window.WindowRequest.Type.OPEN) {
+                        val session = windowRequest.prepare()
+                        val newTabId = "tab_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode())
+                        val targetUrl = windowRequest.url?.takeIf { it.isNotBlank() } ?: "about:blank"
+                        val isIncognito = isIncognito()
+                        PetalEngineStore.adoptPreparedSession(
+                            appContext,
+                            newTabId,
+                            targetUrl,
+                            "",
+                            isIncognito,
+                            session,
+                            true
+                        )
+                    } else {
+                        PetalEngineStore.removeTab(appContext, tabId)
+                    }
+                } catch (t: Throwable) {
+                    android.util.Log.e("PetalTabViewController", "Failed to handle windowRequest in Option B: ${t.message}", t)
+                } finally {
+                    boundTabId?.let {
+                        PetalEngineStore.consumeWindowRequest(appContext, it)
+                    }
                 }
             }
         }

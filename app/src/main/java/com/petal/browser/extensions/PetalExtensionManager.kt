@@ -826,29 +826,56 @@ object PetalExtensionManager {
                 source: WebExtension,
                 createDetails: WebExtension.CreateTabDetails
             ): GeckoResult<GeckoSession>? {
-                val act = findBrowserActivity(context) ?: return null
                 val targetUrl = createDetails.url?.takeIf { it.isNotBlank() } ?: "about:blank"
                 val currentSession = currentBrowserSession(context)
                 val isPrivate = (currentSession?.settings?.usePrivateMode ?: false) && source.metaData.allowedInPrivateBrowsing
                 val shouldActivate = createDetails.active ?: true
 
-                val result = GeckoResult<GeckoSession>()
-                act.runOnUiThread {
+                val act = findBrowserActivity(context)
+                if (act != null) {
+                    val result = GeckoResult<GeckoSession>()
+                    act.runOnUiThread {
+                        try {
+                            val newSession = GeckoSession(
+                                com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(context, isPrivate)
+                            )
+                            // Attach SessionTabDelegate immediately so browser.tabs.query()/update()/remove()
+                            // work correctly as soon as Gecko registers this session as a tab.
+                            attachTabDelegateToSession(newSession, context)
+                            act.adoptPopupGeckoSession(newSession, targetUrl, isPrivate, shouldActivate)
+                            result.complete(newSession)
+                        } catch (t: Throwable) {
+                            Log.e(TAG, "Failed to handle onNewTab from extension ${source.id}", t)
+                            result.complete(null)
+                        }
+                    }
+                    return result
+                } else {
+                    // Option B: create tab directly in BrowserStore
+                    val result = GeckoResult<GeckoSession>()
                     try {
-                        val newSession = GeckoSession(
-                            com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(context, isPrivate)
+                        val tabId = "tab_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode())
+                        val pair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+                            context = context,
+                            tabId = tabId,
+                            url = targetUrl,
+                            title = "",
+                            isIncognito = isPrivate,
+                            select = shouldActivate
                         )
-                        // Attach SessionTabDelegate immediately so browser.tabs.query()/update()/remove()
-                        // work correctly as soon as Gecko registers this session as a tab.
-                        attachTabDelegateToSession(newSession, context)
-                        act.adoptPopupGeckoSession(newSession, targetUrl, isPrivate, shouldActivate)
-                        result.complete(newSession)
+                        val gs = com.petal.browser.engine.gecko.PetalEngineBridge.getGeckoSession(pair.second)
+                        if (gs != null) {
+                            attachTabDelegateToSession(gs, context)
+                            result.complete(gs)
+                        } else {
+                            result.complete(null)
+                        }
                     } catch (t: Throwable) {
-                        Log.e(TAG, "Failed to handle onNewTab from extension ${source.id}", t)
+                        Log.e(TAG, "Failed to handle Option B onNewTab from extension ${source.id}", t)
                         result.complete(null)
                     }
+                    return result
                 }
-                return result
             }
         }
     }
@@ -1373,11 +1400,35 @@ object PetalExtensionManager {
                 activity.addAlbum("${extItem.name} Settings", optionsUrl, true)
             }
         } else {
-            openDirectPopup(extItem.raw, optionsUrl, context)
+            try {
+                val tabId = "tab_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode())
+                com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+                    context = context,
+                    tabId = tabId,
+                    url = optionsUrl,
+                    title = "${extItem.name} Settings",
+                    isIncognito = false,
+                    select = true
+                )
+            } catch (t: Throwable) {
+                Log.e(TAG, "Failed to open options page in new tab: ${t.message}", t)
+                openDirectPopup(extItem.raw, optionsUrl, context)
+            }
         }
     }
 
     private fun currentBrowserSession(context: Context): GeckoSession? {
+        // Option B: Retrieve active tab from BrowserStore
+        try {
+            val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context)
+            val selectedTab = store.state.selectedTab
+            val engineSession = selectedTab?.engineState?.engineSession
+            if (engineSession != null) {
+                val gs = com.petal.browser.engine.gecko.PetalEngineBridge.getGeckoSession(engineSession)
+                if (gs != null) return gs
+            }
+        } catch (_: Throwable) {}
+
         val activity = findBrowserActivity(context) ?: return null
         return activity.currentAlbumController?.let(::geckoSessionFor)
     }
