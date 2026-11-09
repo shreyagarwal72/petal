@@ -299,6 +299,7 @@ object PetalPrivacyShieldSheet {
         }
 
         val installedExtensions by com.petal.browser.extensions.PetalExtensionManager.extensions.collectAsState()
+        val pendingPrompt by com.petal.browser.extensions.PetalExtensionManager.pendingPrompt.collectAsState()
         val adguardExt = remember(installedExtensions) {
             installedExtensions.firstOrNull {
                 it.id.equals("adguardadblocker@adguard.com", ignoreCase = true) ||
@@ -308,6 +309,10 @@ object PetalPrivacyShieldSheet {
         }
         val isAdGuardInstalled = adguardExt != null
         var isInstallingAdGuard by remember { mutableStateOf(false) }
+
+        pendingPrompt?.let { prompt ->
+            com.petal.browser.compose.extensions.InstallPermissionDialog(prompt = prompt)
+        }
 
         val categoryCounts = remember(cleanHost) {
             PetalAdBlockEngine.getCategoryCountsForDomain(cleanHost)
@@ -660,9 +665,9 @@ object PetalPrivacyShieldSheet {
                                         isInstallingAdGuard = true
                                         val adguardEntry = com.petal.browser.extensions.PetalExtensionManager.catalog.firstOrNull { it.id == "adguard-adblocker" }
                                         val url = adguardEntry?.downloadUrl ?: "https://addons.mozilla.org/firefox/downloads/latest/adguard-adblocker/latest.xpi"
-                                        com.petal.browser.extensions.PetalExtensionManager.install(url) { success, msg ->
+                                        com.petal.browser.extensions.PetalExtensionManager.install(url, autoConfirm = true) { success, msg ->
                                             isInstallingAdGuard = false
-                                            Toast.makeText(activity, msg ?: if (success) "AdGuard AdBlocker installed" else "Install failed", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(activity, msg ?: if (success) "AdGuard AdBlocker connected" else "Install failed", Toast.LENGTH_SHORT).show()
                                         }
                                     },
                                     enabled = !isInstallingAdGuard,
@@ -671,7 +676,7 @@ object PetalPrivacyShieldSheet {
                                 ) {
                                     Icon(Icons.Rounded.Extension, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(8.dp))
-                                    Text(if (isInstallingAdGuard) "Installing AdGuard AdBlocker..." else "1-Tap Install AdGuard AdBlocker")
+                                    Text(if (isInstallingAdGuard) "Connecting AdGuard AdBlocker..." else "1-Tap Install AdGuard AdBlocker")
                                 }
                             }
                         }

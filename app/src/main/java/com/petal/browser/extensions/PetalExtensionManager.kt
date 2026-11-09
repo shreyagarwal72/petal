@@ -522,6 +522,9 @@ object PetalExtensionManager {
     @Volatile
     private var currentActiveSession: GeckoSession? = null
 
+    /** Tracks pending installs marked for auto-confirmation (e.g. 1-tap connects like AdGuard). */
+    private val autoConfirmInstallUris = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
+
     private val _activeTabActionStates = MutableStateFlow<Map<String, ExtensionActionState>>(emptyMap())
     /** Reactive map of extension ID -> [ExtensionActionState] for the currently active tab session. */
     val activeTabActionStates: StateFlow<Map<String, ExtensionActionState>> = _activeTabActionStates.asStateFlow()
@@ -613,6 +616,7 @@ object PetalExtensionManager {
      */
     @JvmStatic
     fun setActiveBrowserSession(oldSession: GeckoSession?, newSession: GeckoSession?) {
+        val previousSession = oldSession ?: if (currentActiveSession !== newSession) currentActiveSession else null
         currentActiveSession = newSession
         updateActiveTabActionStates(newSession)
 
@@ -624,8 +628,8 @@ object PetalExtensionManager {
             return
         }
 
-        if (oldSession != null && oldSession !== newSession && oldSession.isOpen) {
-            try { controller.setTabActive(oldSession, false) }
+        if (previousSession != null && previousSession !== newSession && previousSession.isOpen) {
+            try { controller.setTabActive(previousSession, false) }
             catch (t: Throwable) { Log.d(TAG, "Failed to deactivate extension tab session", t) }
         }
         if (newSession != null && newSession.isOpen) {
@@ -670,6 +674,15 @@ object PetalExtensionManager {
                 origins: Array<out String>,
                 dataCollectionPermissions: Array<out String>
             ): GeckoResult<WebExtension.PermissionPromptResponse>? {
+                val isAdGuard = extension.id.contains("adguard", ignoreCase = true) ||
+                    extension.metaData?.name?.contains("AdGuard", ignoreCase = true) == true
+                val shouldAutoConfirm = isAdGuard || autoConfirmInstallUris.isNotEmpty()
+                if (shouldAutoConfirm) {
+                    Log.i(TAG, "Auto-granting permissions for 1-tap/curated extension install ${extension.id}")
+                    return GeckoResult.fromValue(
+                        WebExtension.PermissionPromptResponse(true, true, true)
+                    )
+                }
                 val result = GeckoResult<WebExtension.PermissionPromptResponse>()
                 _pendingPrompt.value = PendingPrompt(
                     extension = extension,
@@ -732,6 +745,19 @@ object PetalExtensionManager {
 
         controller.setAddonManagerDelegate(object : WebExtensionController.AddonManagerDelegate {
             override fun onInstalled(extension: WebExtension) {
+                // Auto-grant private browsing permission for AdGuard and top content blockers
+                // so users enjoy 100% full ad and tracker blocking potential in both normal and incognito modes.
+                if (extension.id.contains("adguard", ignoreCase = true) ||
+                    extension.metaData?.name?.contains("AdGuard", ignoreCase = true) == true ||
+                    extension.id.contains("ublock", ignoreCase = true)
+                ) {
+                    try {
+                        controller.setAllowedInPrivateBrowsing(extension, true)
+                        Log.i(TAG, "Auto-enabled private browsing support for content blocker ${extension.id}")
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Failed to auto-enable private browsing for ${extension.id}", t)
+                    }
+                }
                 attachActionDelegate(extension)
                 attachExtensionToOpenSessions(extension)
                 refresh()
@@ -1516,7 +1542,8 @@ object PetalExtensionManager {
             val fileUri = Uri.fromFile(destFile.canonicalFile).toString()
             install(
                 fileUri,
-                WebExtensionController.INSTALLATION_METHOD_FROM_FILE
+                WebExtensionController.INSTALLATION_METHOD_FROM_FILE,
+                autoConfirm = false
             ) { success, message ->
                 try { destFile.delete() } catch (ignored: Exception) {}
                 onResult(success, message)
@@ -1531,13 +1558,19 @@ object PetalExtensionManager {
     }
 
     /** Installs a `.xpi` from any https URL (an AMO listing's download link, or a direct file). */
-    fun install(uri: String, onResult: (success: Boolean, message: String?) -> Unit = { _, _ -> }) {
-        install(uri, WebExtensionController.INSTALLATION_METHOD_MANAGER, onResult)
+    @JvmOverloads
+    fun install(
+        uri: String,
+        autoConfirm: Boolean = false,
+        onResult: (success: Boolean, message: String?) -> Unit = { _, _ -> }
+    ) {
+        install(uri, WebExtensionController.INSTALLATION_METHOD_MANAGER, autoConfirm, onResult)
     }
 
     private fun install(
         uri: String,
         installationMethod: String,
+        autoConfirm: Boolean = false,
         onResult: (success: Boolean, message: String?) -> Unit = { _, _ -> }
     ) {
         val installUri = normalizeInstallUri(uri)
@@ -1547,6 +1580,10 @@ object PetalExtensionManager {
             onResult(false, message)
             return
         }
+        val isAdGuard = uri.contains("adguard", ignoreCase = true) || installUri.contains("adguard", ignoreCase = true)
+        if (autoConfirm || isAdGuard) {
+            autoConfirmInstallUris.add(installUri)
+        }
         val ctx = appContext ?: return
         attach(ctx)
         val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
@@ -1554,8 +1591,16 @@ object PetalExtensionManager {
         _lastError.value = null
         controller.install(installUri, installationMethod)
             .accept({ extension ->
+                autoConfirmInstallUris.remove(installUri)
                 _busy.value = false
                 if (extension != null) {
+                    if (isAdGuard || autoConfirm || extension.id.contains("adguard", ignoreCase = true)) {
+                        try {
+                            controller.setAllowedInPrivateBrowsing(extension, true)
+                        } catch (t: Throwable) {
+                            Log.w(TAG, "Failed to enable private browsing for ${extension.id}", t)
+                        }
+                    }
                     attachActionDelegate(extension)
                 }
                 refresh()
@@ -1570,11 +1615,18 @@ object PetalExtensionManager {
                     Log.i(TAG, "Retrying local XPI install with INSTALLATION_METHOD_MANAGER fallback")
                     controller.install(installUri, WebExtensionController.INSTALLATION_METHOD_MANAGER)
                         .accept({ extension ->
+                            autoConfirmInstallUris.remove(installUri)
                             _busy.value = false
-                            if (extension != null) attachActionDelegate(extension)
+                            if (extension != null) {
+                                if (isAdGuard || autoConfirm || extension.id.contains("adguard", ignoreCase = true)) {
+                                    try { controller.setAllowedInPrivateBrowsing(extension, true) } catch (_: Throwable) {}
+                                }
+                                attachActionDelegate(extension)
+                            }
                             refresh()
                             onResult(true, extension?.metaData?.name ?: "Extension installed")
                         }, { retryThrowable ->
+                            autoConfirmInstallUris.remove(installUri)
                             _busy.value = false
                             val message = if (retryThrowable is WebExtension.InstallException) {
                                 describeInstallError(retryThrowable)
@@ -1586,6 +1638,7 @@ object PetalExtensionManager {
                         })
                     return@accept
                 }
+                autoConfirmInstallUris.remove(installUri)
                 _busy.value = false
                 val message = if (throwable is WebExtension.InstallException) {
                     describeInstallError(throwable)
