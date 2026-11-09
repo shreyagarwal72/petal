@@ -159,7 +159,7 @@ fun PetalRootApp(
     }
 
     // Omnibox Input Overlay State (Single authoritative source of truth via ViewModel)
-    val isOmniboxOpen by viewModel.isOmniboxOpen.collectAsState()
+    val isOmniboxOpen by viewModel.isOmniboxOpen.collectAsStateWithLifecycle()
 
     val isHome = activeUrl.isBlank() || PetalBrowserUtils.isHomePage(activeUrl)
 
