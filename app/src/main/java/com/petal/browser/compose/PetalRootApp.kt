@@ -25,6 +25,7 @@ import com.petal.browser.ui.components.BarCollapseState
 import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -144,7 +145,7 @@ fun PetalRootApp(
     }
     LaunchedEffect(Unit) {
         BarCollapseState.onExpandRequested = {
-            BarCollapseState.fraction = 0f
+            BarCollapseState.setFraction(0f)
         }
     }
 
