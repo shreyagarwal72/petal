@@ -545,18 +545,9 @@
             android:exported="true">
         </activity>
 
-        <!--
-          Einstellungs-Activities:
-          WICHTIG ab Android 12+: Müssen explizit android:exported="false" deklariert werden,
-          da sie nur App-intern aufgerufen werden und sonst ein Sicherheitsrisiko darstellen!
-        -->
+        <!-- Einstellungs-Activities -->
         <activity android:name="com.petal.browser.activity.SettingsActivity" android:label="@string/setting_title_browser" android:exported="false" />
-        <activity android:name="com.petal.browser.activity.SettingsProfileListActivity" android:label="@string/setting_title_savedWebSites" android:exported="false" />
         <activity android:name="com.petal.browser.activity.SettingsDataClearActivity" android:label="@string/menu_delete" android:exported="false" />
-        <activity android:name="com.petal.browser.activity.SettingsBackupActivity" android:label="@string/setting_title_data" android:exported="false" />
-        <activity android:name="com.petal.browser.activity.SettingsGestureActivity" android:label="@string/setting_gestures" android:exported="false" />
-        <activity android:name="com.petal.browser.activity.SettingsFilterActivity" android:label="@string/setting_filter" android:exported="false" />
-        <activity android:name="com.petal.browser.activity.SettingsProfileActivity" android:label="@string/setting_title_profiles_standard" android:exported="false" />
         <activity android:name="com.petal.browser.activity.SettingsMenuActivity" android:label="@string/setting_menu" android:exported="false" />
 
         <receiver

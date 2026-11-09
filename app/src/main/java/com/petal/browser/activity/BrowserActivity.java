@@ -142,6 +142,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.petal.browser.R;
+import com.petal.browser.activity.MainActivity;
 import com.petal.browser.browser.AlbumController;
 import com.petal.browser.browser.BrowserContainer;
 import com.petal.browser.browser.BrowserController;
@@ -778,6 +779,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Intent target = new Intent(this, MainActivity.class);
+        Intent incoming = getIntent();
+        if (incoming != null) {
+            target.setAction(incoming.getAction());
+            target.setData(incoming.getData());
+            if (incoming.getExtras() != null) {
+                target.putExtras(incoming.getExtras());
+            }
+            target.setFlags(incoming.getFlags());
+        }
+        startActivity(target);
+        finish();
+        super.onCreate(savedInstanceState);
+        return;
+    }
+
+    private void legacyOnCreate(Bundle savedInstanceState) {
         final androidx.core.splashscreen.SplashScreen splashScreen =
                 androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
