@@ -20,9 +20,9 @@ import com.petal.browser.unit.PetalBrowserUtils
 import java.util.ArrayList
 
 class CustomSearchAdapter(
-    private val context: Context,
-    private val url: String,
-    private val redirects: ArrayList<CustomRedirect>
+    val context: Context,
+    val url: String,
+    val redirects: ArrayList<CustomRedirect>
 ) : RecyclerView.Adapter<RedirectsViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RedirectsViewHolder {

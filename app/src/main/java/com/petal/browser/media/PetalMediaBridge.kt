@@ -1,25 +1,27 @@
-package com.petal.browser.media;
+package com.petal.browser.media
 
-import android.app.Activity;
-import android.app.PictureInPictureParams;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.os.Build;
-import android.util.Rational;
-import android.view.View;
-import android.webkit.JavascriptInterface;
-import androidx.preference.PreferenceManager;
+import android.app.Activity
+import android.content.Context
+import android.os.Build
+import android.view.View
+import android.webkit.JavascriptInterface
+import androidx.preference.PreferenceManager
+import com.petal.browser.activity.MainActivity
+import com.petal.browser.browser.AlbumController
+import com.petal.browser.browser.PetalTabViewController
+import org.mozilla.geckoview.MediaSession
 
 /**
  * PetalMediaBridge
  * Connects WebView HTML5 media elements (audio/video) with MediaSessionService and PiP mode.
  * Provides JavaScript injection to monitor play, pause, timeupdate, and fullscreen video state.
  */
-public class PetalMediaBridge {
+class PetalMediaBridge(private val context: Context, private var listener: MediaStateListener?) {
 
-    private static final String JS_INTERFACE_NAME = "PetalMediaInterface";
+    companion object {
+        private const val JS_INTERFACE_NAME = "PetalMediaInterface"
 
-    public static final String MEDIA_JS_INJECTION =
+        const val MEDIA_JS_INJECTION =
             "(function() {" +
             "   try {" +
             "       Object.defineProperty(document, 'hidden', { get: function() { return false; }, configurable: true });" +
@@ -96,151 +98,159 @@ public class PetalMediaBridge {
             "       }" +
             "   }, 1500);" +
             "   hookMediaElements();" +
-            "})();";
+            "})();"
 
-    private final Context context;
-    private org.mozilla.geckoview.MediaSession activeGeckoMediaSession;
-    private mozilla.components.concept.engine.mediasession.MediaSession.Controller activeEngineMediaController;
-    private MediaStateListener listener;
+        /**
+         * Checks if Auto-PiP on home gesture is enabled and attempts entering PiP mode.
+         */
+        @JvmStatic
+        fun enterPipIfSupported(activity: Activity?, customView: View?): Boolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || activity == null) {
+                return false
+            }
+            val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+            val autoPip = sp.getBoolean("sp_auto_pip", true)
+            if (!autoPip) return false
 
-    public interface MediaStateListener {
-        void onMediaPlay(String title, long positionMs, long durationMs);
-        void onMediaPause(long positionMs, long durationMs);
-        void onMediaProgress(long positionMs, long durationMs);
-        default void onMediaPlayingStateChanged(boolean isPlaying) {}
-        default void onVideoDimensionsChanged(int width, int height) {}
-        default void onSpeedChanged(float speed) {}
-        default void onMuteChanged(boolean muted) {}
-    }
-
-    public void setListener(MediaStateListener listener) {
-        this.listener = listener;
-    }
-
-    public MediaStateListener getListener() {
-        return listener;
-    }
-
-    public PetalMediaBridge(Context context, MediaStateListener listener) {
-        this.context = context;
-        this.listener = listener;
-    }
-
-    private com.petal.browser.browser.PetalTabViewController tabViewController;
-
-    public void attachTabViewController(com.petal.browser.browser.PetalTabViewController tabViewController) {
-        this.tabViewController = tabViewController;
-    }
-
-    public void evaluateJavascriptOnTab(String js) {
-        if (tabViewController != null) {
-            tabViewController.evaluateJavascript(js, null);
-        } else if (context instanceof Activity) {
-            Activity act = (Activity) context;
-            if (act instanceof com.petal.browser.activity.MainActivity) {
-                com.petal.browser.browser.AlbumController controller = ((com.petal.browser.activity.MainActivity) act).getCurrentAlbumController();
-                if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
-                    ((com.petal.browser.browser.PetalTabViewController) controller).evaluateJavascript(js, null);
+            return try {
+                if (activity is MainActivity) {
+                    BrowserMediaDelegate.triggerSystemPipMode(activity)
+                    true
+                } else {
+                    false
                 }
+            } catch (_: Exception) {
+                false
             }
         }
     }
 
-    public void setActiveGeckoMediaSession(org.mozilla.geckoview.MediaSession session) {
-        this.activeGeckoMediaSession = session;
+    interface MediaStateListener {
+        fun onMediaPlay(title: String?, positionMs: Long, durationMs: Long)
+        fun onMediaPause(positionMs: Long, durationMs: Long)
+        fun onMediaProgress(positionMs: Long, durationMs: Long)
+        fun onMediaPlayingStateChanged(isPlaying: Boolean) {}
+        fun onVideoDimensionsChanged(width: Int, height: Int) {}
+        fun onSpeedChanged(speed: Float) {}
+        fun onMuteChanged(muted: Boolean) {}
     }
 
-    public org.mozilla.geckoview.MediaSession getActiveGeckoMediaSession() {
-        return activeGeckoMediaSession;
+    private var activeGeckoMediaSession: MediaSession? = null
+    private var activeEngineMediaController: mozilla.components.concept.engine.mediasession.MediaSession.Controller? = null
+    private var tabViewController: PetalTabViewController? = null
+    private var lastKnownPositionSec = 0.0
+    private var lastKnownDurationSec = 0.0
+    private var isMutedState = false
+
+    fun setListener(listener: MediaStateListener?) {
+        this.listener = listener
     }
 
-    public void setActiveEngineMediaController(
-            mozilla.components.concept.engine.mediasession.MediaSession.Controller controller) {
-        this.activeEngineMediaController = controller;
+    fun getListener(): MediaStateListener? = listener
+
+    fun attachTabViewController(tabViewController: PetalTabViewController?) {
+        this.tabViewController = tabViewController
     }
 
-    public mozilla.components.concept.engine.mediasession.MediaSession.Controller getActiveEngineMediaController() {
-        return activeEngineMediaController;
+    fun evaluateJavascriptOnTab(js: String) {
+        if (tabViewController != null) {
+            tabViewController?.evaluateJavascript(js, null)
+        } else if (context is MainActivity) {
+            val controller: AlbumController? = context.getCurrentAlbumController()
+            if (controller is PetalTabViewController) {
+                controller.evaluateJavascript(js, null)
+            }
+        }
     }
 
-    public boolean hasActiveMedia() {
-        return activeGeckoMediaSession != null || activeEngineMediaController != null;
+    fun setActiveGeckoMediaSession(session: MediaSession?) {
+        this.activeGeckoMediaSession = session
     }
 
-    public void injectMediaHooks() {
-        evaluateJavascriptOnTab(MEDIA_JS_INJECTION);
+    fun getActiveGeckoMediaSession(): MediaSession? = activeGeckoMediaSession
+
+    fun setActiveEngineMediaController(
+        controller: mozilla.components.concept.engine.mediasession.MediaSession.Controller?
+    ) {
+        this.activeEngineMediaController = controller
     }
 
-    private double lastKnownPositionSec = 0.0;
-    private double lastKnownDurationSec = 0.0;
-    private boolean isMutedState = false;
+    fun getActiveEngineMediaController(): mozilla.components.concept.engine.mediasession.MediaSession.Controller? =
+        activeEngineMediaController
 
-    public void updatePositionState(double positionSec, double durationSec) {
-        this.lastKnownPositionSec = positionSec;
-        this.lastKnownDurationSec = durationSec;
+    fun hasActiveMedia(): Boolean =
+        activeGeckoMediaSession != null || activeEngineMediaController != null
+
+    fun injectMediaHooks() {
+        evaluateJavascriptOnTab(MEDIA_JS_INJECTION)
     }
 
-    public void playMedia() {
+    fun updatePositionState(positionSec: double, durationSec: double) {
+        this.lastKnownPositionSec = positionSec
+        this.lastKnownDurationSec = durationSec
+    }
+
+    fun playMedia() {
         if (activeGeckoMediaSession != null) {
             try {
-                activeGeckoMediaSession.play();
-                return;
-            } catch (Exception ignored) {}
+                activeGeckoMediaSession?.play()
+                return
+            } catch (_: Exception) {}
         }
         if (activeEngineMediaController != null) {
             try {
-                activeEngineMediaController.play();
-                return;
-            } catch (Exception ignored) {}
+                activeEngineMediaController?.play()
+                return
+            } catch (_: Exception) {}
         }
         evaluateJavascriptOnTab(
-                "(function() {" +
-                "   var vids = document.querySelectorAll('video');" +
-                "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
-                "   for (var i = 0; i < vids.length; i++) {" +
-                "       try { vids[i].play(); } catch(e) {}" +
-                "   }" +
-                "})();"
-        );
+            "(function() {" +
+            "   var vids = document.querySelectorAll('video');" +
+            "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
+            "   for (var i = 0; i < vids.length; i++) {" +
+            "       try { vids[i].play(); } catch(e) {}" +
+            "   }" +
+            "})();"
+        )
     }
 
-    public void pauseMedia() {
+    fun pauseMedia() {
         if (activeGeckoMediaSession != null) {
             try {
-                activeGeckoMediaSession.pause();
-                return;
-            } catch (Exception ignored) {}
+                activeGeckoMediaSession?.pause()
+                return
+            } catch (_: Exception) {}
         }
         if (activeEngineMediaController != null) {
             try {
-                activeEngineMediaController.pause();
-                return;
-            } catch (Exception ignored) {}
+                activeEngineMediaController?.pause()
+                return
+            } catch (_: Exception) {}
         }
         evaluateJavascriptOnTab(
-                "(function() {" +
+            "(function() {" +
+            "   var vids = document.querySelectorAll('video, audio');" +
+            "   for (var i = 0; i < vids.length; i++) {" +
+            "       try { vids[i].pause(); } catch(e) {}" +
+            "   }" +
+            "})();"
+        )
+    }
+
+    fun changeSpeed(speed: Float) {
+        val js = "(function() {" +
                 "   var vids = document.querySelectorAll('video, audio');" +
                 "   for (var i = 0; i < vids.length; i++) {" +
-                "       try { vids[i].pause(); } catch(e) {}" +
+                "       try { vids[i].playbackRate = $speed; } catch(e) {}" +
                 "   }" +
                 "})();"
-        );
+        evaluateJavascriptOnTab(js)
     }
 
-    public void changeSpeed(float speed) {
-        String js = "(function() {" +
-                "   var vids = document.querySelectorAll('video, audio');" +
-                "   for (var i = 0; i < vids.length; i++) {" +
-                "       try { vids[i].playbackRate = " + speed + "; } catch(e) {}" +
-                "   }" +
-                "})();";
-        evaluateJavascriptOnTab(js);
-    }
-
-    public void setVideoAspectRatio(String mode) {
-        String js = "(function() {" +
+    fun setVideoAspectRatio(mode: String) {
+        val js = "(function() {" +
                 "   var vids = document.querySelectorAll('video');" +
-                "   var mode = '" + mode + "';" +
+                "   var mode = '$mode';" +
                 "   for (var i = 0; i < vids.length; i++) {" +
                 "       var v = vids[i];" +
                 "       try {" +
@@ -277,178 +287,147 @@ public class PetalMediaBridge {
                 "           }" +
                 "       } catch(e) {}" +
                 "   }" +
-                "})();";
-        evaluateJavascriptOnTab(js);
+                "})();"
+        evaluateJavascriptOnTab(js)
     }
 
-    public boolean isMuted() {
-        return isMutedState;
+    fun isMuted(): Boolean = isMutedState
+
+    fun setMuted(muted: Boolean) {
+        if (isMutedState == muted) return
+        toggleMute()
     }
 
-    public void setMuted(boolean muted) {
-        if (isMutedState == muted) return;
-        toggleMute();
-    }
-
-    public void toggleMute() {
-        isMutedState = !isMutedState;
+    fun toggleMute() {
+        isMutedState = !isMutedState
         if (activeGeckoMediaSession != null) {
             try {
-                activeGeckoMediaSession.muteAudio(isMutedState);
-                return;
-            } catch (Exception ignored) {}
+                activeGeckoMediaSession?.muteAudio(isMutedState)
+                return
+            } catch (_: Exception) {}
         }
         if (activeEngineMediaController != null) {
             try {
-                activeEngineMediaController.muteAudio(isMutedState);
-                return;
-            } catch (Exception ignored) {}
+                activeEngineMediaController?.muteAudio(isMutedState)
+                return
+            } catch (_: Exception) {}
         }
         evaluateJavascriptOnTab(
-                "(function() {" +
-                "   var vids = document.querySelectorAll('video, audio');" +
+            "(function() {" +
+            "   var vids = document.querySelectorAll('video, audio');" +
+            "   for (var i = 0; i < vids.length; i++) {" +
+            "       try { vids[i].muted = !vids[i].muted; } catch(e) {}" +
+            "   }" +
+            "})();"
+        )
+    }
+
+    fun skip(deltaSeconds: Int) {
+        if (activeGeckoMediaSession != null) {
+            try {
+                var target = Math.max(0.0, lastKnownPositionSec + deltaSeconds)
+                if (lastKnownDurationSec > 0.0) {
+                    target = Math.min(lastKnownDurationSec, target)
+                }
+                activeGeckoMediaSession?.seekTo(target, false)
+                lastKnownPositionSec = target
+                return
+            } catch (_: Exception) {}
+        }
+        if (activeEngineMediaController != null) {
+            try {
+                var target = Math.max(0.0, lastKnownPositionSec + deltaSeconds)
+                if (lastKnownDurationSec > 0.0) target = Math.min(lastKnownDurationSec, target)
+                activeEngineMediaController?.seekTo(target, false)
+                lastKnownPositionSec = target
+                return
+            } catch (_: Exception) {}
+        }
+        val skipJs = "(function() {" +
+                "   var vids = document.querySelectorAll('video');" +
+                "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
+                "   var target = null;" +
                 "   for (var i = 0; i < vids.length; i++) {" +
-                "       try { vids[i].muted = !vids[i].muted; } catch(e) {}" +
+                "       if (!vids[i].paused && vids[i].currentTime > 0) { target = vids[i]; break; }" +
+                "   }" +
+                "   if (!target && vids.length > 0) target = vids[0];" +
+                "   if (target) {" +
+                "       try {" +
+                "           target.currentTime = Math.max(0, Math.min(target.duration || 1e9, target.currentTime + ($deltaSeconds)));" +
+                "       } catch(e) {}" +
                 "   }" +
                 "})();"
-        );
+        evaluateJavascriptOnTab(skipJs)
     }
 
-    public void skip(int deltaSeconds) {
+    fun seekMediaTo(positionMs: Long) {
         if (activeGeckoMediaSession != null) {
             try {
-                double target = Math.max(0.0, lastKnownPositionSec + deltaSeconds);
-                if (lastKnownDurationSec > 0.0) {
-                    target = Math.min(lastKnownDurationSec, target);
+                val target = positionMs / 1000.0
+                activeGeckoMediaSession?.seekTo(target, false)
+                lastKnownPositionSec = target
+                return
+            } catch (_: Exception) {}
+        }
+        if (activeEngineMediaController != null) {
+            try {
+                val target = positionMs / 1000.0
+                activeEngineMediaController?.seekTo(target, false)
+                lastKnownPositionSec = target
+                return
+            } catch (_: Exception) {}
+        }
+        val seconds = positionMs / 1000.0
+        val seekJs = "(function() {" +
+                "   var vids = document.querySelectorAll('video');" +
+                "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
+                "   var target = null;" +
+                "   for (var i = 0; i < vids.length; i++) {" +
+                "       if (!vids[i].paused && vids[i].currentTime > 0) { target = vids[i]; break; }" +
+                "   }" +
+                "   if (!target && vids.length > 0) target = vids[0];" +
+                "   if (target) {" +
+                "       try {" +
+                "           target.currentTime = $seconds;" +
+                "       } catch(e) {}" +
+                "   }" +
+                "})();"
+        evaluateJavascriptOnTab(seekJs)
+    }
+
+    private inner class MediaJsInterface {
+        @JavascriptInterface
+        fun triggerPip() {
+            if (context is Activity) {
+                context.runOnUiThread {
+                    enterPipIfSupported(context, tabViewController?.albumView)
                 }
-                activeGeckoMediaSession.seekTo(target, false);
-                lastKnownPositionSec = target;
-                return;
-            } catch (Exception ignored) {}
-        }
-        if (activeEngineMediaController != null) {
-            try {
-                double target = Math.max(0.0, lastKnownPositionSec + deltaSeconds);
-                if (lastKnownDurationSec > 0.0) target = Math.min(lastKnownDurationSec, target);
-                activeEngineMediaController.seekTo(target, false);
-                lastKnownPositionSec = target;
-                return;
-            } catch (Exception ignored) {}
-        }
-        String skipJs = "(function() {" +
-                "   var vids = document.querySelectorAll('video');" +
-                "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
-                "   var target = null;" +
-                "   for (var i = 0; i < vids.length; i++) {" +
-                "       if (!vids[i].paused && vids[i].currentTime > 0) { target = vids[i]; break; }" +
-                "   }" +
-                "   if (!target && vids.length > 0) target = vids[0];" +
-                "   if (target) {" +
-                "       try {" +
-                "           target.currentTime = Math.max(0, Math.min(target.duration || 1e9, target.currentTime + (" + deltaSeconds + ")));" +
-                "       } catch(e) {}" +
-                "   }" +
-                "})();";
-        evaluateJavascriptOnTab(skipJs);
-    }
-
-    public void seekMediaTo(long positionMs) {
-        if (activeGeckoMediaSession != null) {
-            try {
-                double target = positionMs / 1000.0;
-                activeGeckoMediaSession.seekTo(target, false);
-                lastKnownPositionSec = target;
-                return;
-            } catch (Exception ignored) {}
-        }
-        if (activeEngineMediaController != null) {
-            try {
-                double target = positionMs / 1000.0;
-                activeEngineMediaController.seekTo(target, false);
-                lastKnownPositionSec = target;
-                return;
-            } catch (Exception ignored) {}
-        }
-        double seconds = positionMs / 1000.0;
-        String seekJs = "(function() {" +
-                "   var vids = document.querySelectorAll('video');" +
-                "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
-                "   var target = null;" +
-                "   for (var i = 0; i < vids.length; i++) {" +
-                "       if (!vids[i].paused && vids[i].currentTime > 0) { target = vids[i]; break; }" +
-                "   }" +
-                "   if (!target && vids.length > 0) target = vids[0];" +
-                "   if (target) {" +
-                "       try {" +
-                "           target.currentTime = " + seconds + ";" +
-                "       } catch(e) {}" +
-                "   }" +
-                "})();";
-        evaluateJavascriptOnTab(seekJs);
-    }
-
-    /**
-     * Checks if Auto-PiP on home gesture is enabled and attempts entering PiP mode.
-     */
-    public static boolean enterPipIfSupported(Activity activity, View customView) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || activity == null) {
-            return false;
-        }
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(activity);
-        boolean autoPip = sp.getBoolean("sp_auto_pip", true);
-        if (!autoPip) return false;
-
-        try {
-            if (activity instanceof com.petal.browser.activity.MainActivity) {
-                com.petal.browser.media.BrowserMediaDelegate.triggerSystemPipMode(
-                        (com.petal.browser.activity.MainActivity) activity);
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private class MediaJsInterface {
-        @JavascriptInterface
-        public void triggerPip() {
-            if (context instanceof Activity) {
-                Activity act = (Activity) context;
-                act.runOnUiThread(() -> {
-                    enterPipIfSupported(act, tabViewController != null ? tabViewController.getAlbumView() : null);
-                });
             }
         }
 
         @JavascriptInterface
-        public void onMediaStateChanged(boolean isPlaying, String title, double positionMs, double durationMs) {
-            if (listener != null) {
-                listener.onMediaPlayingStateChanged(isPlaying);
+        fun onMediaStateChanged(isPlaying: Boolean, title: String?, positionMs: Double, durationMs: Double) {
+            listener?.let { l ->
+                l.onMediaPlayingStateChanged(isPlaying)
                 if (isPlaying) {
-                    listener.onMediaPlay(title, (long) positionMs, (long) durationMs);
+                    l.onMediaPlay(title, positionMs.toLong(), durationMs.toLong())
                 } else {
-                    listener.onMediaPause((long) positionMs, (long) durationMs);
+                    l.onMediaPause(positionMs.toLong(), durationMs.toLong())
                 }
             }
         }
 
         @JavascriptInterface
-        public void onMediaProgress(double positionMs, double durationMs) {
-            if (listener != null) {
-                listener.onMediaProgress((long) positionMs, (long) durationMs);
-            }
+        fun onMediaProgress(positionMs: Double, durationMs: Double) {
+            listener?.onMediaProgress(positionMs.toLong(), durationMs.toLong())
         }
 
         @JavascriptInterface
-        public void onVideoDimensions(int width, int height) {
-            if (context instanceof Activity) {
-                Activity act = (Activity) context;
-                act.runOnUiThread(() -> {
-                    if (listener != null) {
-                        listener.onVideoDimensionsChanged(width, height);
-                    }
-                });
+        fun onVideoDimensions(width: Int, height: Int) {
+            if (context is Activity) {
+                context.runOnUiThread {
+                    listener?.onVideoDimensionsChanged(width, height)
+                }
             }
         }
     }
