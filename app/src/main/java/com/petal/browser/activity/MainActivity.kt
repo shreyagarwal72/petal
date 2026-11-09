@@ -77,8 +77,10 @@ class MainActivity : FragmentActivity(), BrowserController {
     var isCustomFullscreenState: Boolean = false
     var isDecorOverlayShowing: Boolean = false
     var isPetalHomeSurfaceShowing: Boolean = false
-    var isBarAnimationRunning: Boolean = false
-    var isAddressBarCollapsed: Boolean = false
+    val isBarAnimationRunning: Boolean get() = false
+    fun isBarAnimationRunning(): Boolean = false
+    val isAddressBarCollapsed: Boolean get() = false
+    fun isAddressBarCollapsed(): Boolean = false
     var pendingOverlayBackAction: Runnable? = null
     var mediaService: PetalMediaSessionService? = null
     val activeMediaBridge: PetalMediaBridge? = null
@@ -109,7 +111,7 @@ class MainActivity : FragmentActivity(), BrowserController {
 
         @Deprecated("Use PetalApplication.getAppContext() directly")
         @JvmStatic
-        fun getAppContext(): Context = com.petal.browser.PetalApplication.getAppContext()
+        fun getAppContext(): Context? = com.petal.browser.PetalApplication.getAppContext()
 
         @JvmStatic
         fun isExternalOrWidgetLaunch(intent: Intent?): Boolean = false
@@ -333,8 +335,9 @@ class MainActivity : FragmentActivity(), BrowserController {
     }
 
     fun installPwaShortcut() { }
-    fun isCurrentTabHomeOrBlank(): Boolean =
-        viewModel.activeUrl.value.isBlank() || viewModel.activeUrl.value == "about:home"
+    val isCurrentTabHomeOrBlank: Boolean
+        get() = viewModel.activeUrl.value.isBlank() || viewModel.activeUrl.value == "about:home"
+    fun isCurrentTabHomeOrBlank(): Boolean = isCurrentTabHomeOrBlank
     fun isActualWebPage(url: String): Boolean =
         url.isNotBlank() && !url.startsWith("about:")
 
