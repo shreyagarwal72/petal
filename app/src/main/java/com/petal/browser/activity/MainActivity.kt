@@ -2,6 +2,8 @@ package com.petal.browser.activity
 
 import android.app.Activity
 import android.app.Dialog
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -31,10 +33,13 @@ import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.browser.viewmodel.PetalBrowserViewModel
 import com.petal.browser.compose.PetalRootApp
 import com.petal.browser.compose.composable.PetalRefreshBarState
+import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.database.Record
 import com.petal.browser.extensions.PetalBuiltInExtensionManager
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.media.BrowserMediaDelegate
+import com.petal.browser.media.PetalMediaBridge
+import com.petal.browser.media.PetalMediaSessionService
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.view.RecordListAdapter
 import dagger.hilt.android.AndroidEntryPoint
@@ -44,13 +49,13 @@ import dagger.hilt.android.AndroidEntryPoint
  * ─────────────────────────────────────────────────────────────────────────────
  * The modern, lightweight 100% Jetpack Compose Entry Point for Petal Browser.
  *
- * Fully replaces the legacy 8,560-line MainActivity. All UI rendering,
+ * Fully replaces the legacy 8,560-line BrowserActivity. All UI rendering,
  * window insets, Material 3 Expressive theme tokens, and Liquid Glass composition
  * run entirely in Jetpack Compose, while Mozilla's [BrowserStore], [GeckoView],
  * and [PetalBrowserFeatures] power engine features, prompts, and site permissions.
  *
  * Implements [BrowserController] and provides legacy delegation stubs to ensure
- * seamless compatibility across all remaining delegates without needing MainActivity.
+ * seamless compatibility across all remaining delegates without needing BrowserActivity.
  */
 @AndroidEntryPoint
 class MainActivity : FragmentActivity(), BrowserController {
@@ -71,6 +76,12 @@ class MainActivity : FragmentActivity(), BrowserController {
     var isOverlayScreenShowing: Boolean = false
     var isCustomFullscreenState: Boolean = false
     var isDecorOverlayShowing: Boolean = false
+    var isPetalHomeSurfaceShowing: Boolean = false
+    var isBarAnimationRunning: Boolean = false
+    var isAddressBarCollapsed: Boolean = false
+    var pendingOverlayBackAction: Runnable? = null
+    var mediaService: PetalMediaSessionService? = null
+    val activeMediaBridge: PetalMediaBridge? = null
     val refreshState: PetalRefreshBarState = PetalRefreshBarState()
     var tab_container: LinearLayout? = null
     var fullscreenHolder: FrameLayout? = null
@@ -89,6 +100,9 @@ class MainActivity : FragmentActivity(), BrowserController {
     var dialogOverview: androidx.appcompat.app.AlertDialog? = null
     var search_input: TextInputEditText? = null
     private var singleTabViewController: PetalTabViewController? = null
+
+    val orCreateTabViewController: PetalTabViewController
+        get() = getOrCreateTabViewController()
 
     companion object {
         const val INPUT_FILE_REQUEST_CODE = 1
@@ -199,9 +213,9 @@ class MainActivity : FragmentActivity(), BrowserController {
         removeAlbum(controller)
     }
 
-    fun switchAdjacentTab(direction: Int) {
-        // Option B tab switcher handles navigation
-    }
+    fun switchAdjacentTab(direction: Int) { }
+
+    fun nextAlbumController(next: Boolean): AlbumController? = null
 
     fun restoreTab(
         title: String?,
@@ -221,16 +235,16 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     fun saveOpenedTabs() { }
 
-    fun openSettingsScreen(category: com.petal.browser.compose.settings.SettingsCategory? = null) {
-        viewModel.openSettings(category)
+    fun openSettingsScreen(category: SettingsCategory? = null) {
+        viewModel.openSettings(category ?: SettingsCategory.OVERVIEW)
     }
 
     fun openFlagsHubScreen() {
-        viewModel.openSettings(com.petal.browser.compose.settings.SettingsCategory.FLAGS)
+        viewModel.openSettings(SettingsCategory.MISCELLANEOUS)
     }
 
     fun openApiIntegrationsHub() {
-        viewModel.openSettings(com.petal.browser.compose.settings.SettingsCategory.API_INTEGRATIONS)
+        viewModel.openSettings(SettingsCategory.API_INTEGRATIONS)
     }
 
     fun showDownloads() {
@@ -241,7 +255,7 @@ class MainActivity : FragmentActivity(), BrowserController {
     fun showBookmarks() { viewModel.openBookmarks() }
     fun showBookmarksSheet() { viewModel.openBookmarks() }
     fun showHistoryScreen() { viewModel.openHistory() }
-    fun showOmniboxPage(initialQuery: String? = null) { viewModel.openOmnibox() }
+    fun showOmniboxPage(initialQuery: String? = null) { }
     fun showExtensionsScreen() { viewModel.openExtensions() }
     fun showQuickTools() { }
     fun showReaderMode() { }
@@ -254,6 +268,14 @@ class MainActivity : FragmentActivity(), BrowserController {
     fun showDialogFilter() { }
     fun showDialogCustomSearches(url: String) { }
     fun doubleTapsQuit() { finish() }
+    fun maybePromptDefaultBrowser() { }
+    fun savePageOffline() { }
+    fun createWebPrintJob(webView: Any?) { }
+    fun updatePersistentBottomNav() { }
+    fun updateBackCallbackState() { }
+    fun updateOmniBox() { }
+    fun settlePillFraction(target: Float) { }
+    fun onScrollOffsetDelta(deltaY: Float) { }
 
     fun updateVideoDimensions(width: Int, height: Int) {
         currentVideoWidth = width
@@ -264,14 +286,22 @@ class MainActivity : FragmentActivity(), BrowserController {
         isCustomFullscreenState = fullscreen
     }
 
-    fun resolveCurrentTabUrl(): String = viewModel.currentTabUrl ?: ""
+    fun resolveCurrentTabUrl(): String = viewModel.activeUrl.value
 
     fun copyLink(url: String) {
-        com.petal.browser.unit.PetalBrowserUtils.copyToClipboard(this, url)
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        val clip = ClipData.newPlainText("URL", url)
+        clipboard?.setPrimaryClip(clip)
     }
 
     fun shareLink(title: String, url: String) {
-        com.petal.browser.unit.PetalBrowserUtils.shareUrl(this, url, title)
+        val sendIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, url)
+            putExtra(Intent.EXTRA_TITLE, title)
+            type = "text/plain"
+        }
+        startActivity(Intent.createChooser(sendIntent, null))
     }
 
     fun saveBookmark(title: String, url: String) { }
@@ -304,9 +334,9 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     fun installPwaShortcut() { }
     fun isCurrentTabHomeOrBlank(): Boolean =
-        viewModel.currentTabUrl.isNullOrBlank() || viewModel.currentTabUrl == "about:home"
+        viewModel.activeUrl.value.isBlank() || viewModel.activeUrl.value == "about:home"
     fun isActualWebPage(url: String): Boolean =
-        !url.isNullOrBlank() && !url.startsWith("about:")
+        url.isNotBlank() && !url.startsWith("about:")
 
     fun adoptPreparedWindow(source: PetalTabViewController?, request: mozilla.components.concept.engine.window.WindowRequest?) { }
     fun closeContentWindow(source: PetalTabViewController?) { }
@@ -342,10 +372,12 @@ class MainActivity : FragmentActivity(), BrowserController {
     override fun onHideCustomView() { }
 
     override fun showOverview() {
-        viewModel.openTabsSheet()
+        viewModel.setTabSwitcherOpen(true)
     }
 
-    override fun hideOverview() { }
+    override fun hideOverview() {
+        viewModel.setTabSwitcherOpen(false)
+    }
 
     override fun hideOverflow() { }
 
