@@ -234,7 +234,7 @@ object PetalReaderBridge {
         mainHandler.postDelayed({
             val timedOutCb = pendingCallbacks.remove(url)
             if (timedOutCb != null) {
-                // Return null so BrowserActivity triggers native Firefox about:reader?url=... fallback
+                // Return null so MainActivity triggers native Firefox about:reader?url=... fallback
                 timedOutCb(null)
             }
         }, 1200L)

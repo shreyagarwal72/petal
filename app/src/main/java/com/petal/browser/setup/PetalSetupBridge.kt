@@ -14,15 +14,15 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.ui.theme.*
 
 object PetalSetupBridge {
     private var setupView: ComposeView? = null
-    private var activeActivity: BrowserActivity? = null
+    private var activeActivity: MainActivity? = null
 
     @JvmStatic
-    fun createSetupView(activity: BrowserActivity, onFinished: () -> Unit): ComposeView {
+    fun createSetupView(activity: MainActivity, onFinished: () -> Unit): ComposeView {
         val model = ViewModelProvider(activity)[PetalSetupState::class.java]
         val view = ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
@@ -79,7 +79,7 @@ object PetalSetupBridge {
     }
 
     @JvmStatic
-    fun showSetup(activity: BrowserActivity) {
+    fun showSetup(activity: MainActivity) {
         val sp = PreferenceManager.getDefaultSharedPreferences(activity)
         if (sp.getBoolean("sp_setup_v2_done", false) || activeActivity === activity) return
         if (activeActivity != null && !activeActivity!!.isChangingConfigurations) return
@@ -95,7 +95,7 @@ object PetalSetupBridge {
         showStage(activity)
     }
 
-    private fun showStage(activity: BrowserActivity) {
+    private fun showStage(activity: MainActivity) {
         activity.runOnUiThread {
             try {
                 activity.captureBrowserMainPreview()
@@ -127,7 +127,7 @@ object PetalSetupBridge {
         }
     }
 
-    private fun finishSetup(activity: BrowserActivity) {
+    private fun finishSetup(activity: MainActivity) {
         val sp = PreferenceManager.getDefaultSharedPreferences(activity)
         val language = ViewModelProvider(activity)[PetalSetupState::class.java].language.value
         com.petal.browser.unit.PetalAndroidUtils.setAppLanguage(activity, language)
@@ -143,7 +143,7 @@ object PetalSetupBridge {
         }, 1000L)
     }
 
-    internal fun refreshStage(activity: BrowserActivity) = showStage(activity)
+    internal fun refreshStage(activity: MainActivity) = showStage(activity)
 
     internal fun localizedContext(context: android.content.Context, language: String): android.content.Context {
         val config = Configuration(context.resources.configuration)

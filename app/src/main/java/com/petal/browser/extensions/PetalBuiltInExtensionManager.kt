@@ -375,7 +375,7 @@ object PetalBuiltInExtensionManager {
         }
     }
 
-    /** Install and sync all built-in extensions. Called from BrowserActivity. */
+    /** Install and sync all built-in extensions. Called from MainActivity. */
     @JvmStatic
     fun installAll(context: Context) {
         appContext = context.applicationContext
@@ -395,7 +395,7 @@ object PetalBuiltInExtensionManager {
 
     /**
      * Installs a single built-in and applies its saved on/off preference. Used by callers that
-     * run before BrowserActivity (e.g. Application start-up) so they honour the user's toggle
+     * run before MainActivity (e.g. Application start-up) so they honour the user's toggle
      * instead of force-enabling the extension and racing [installAll].
      */
     @JvmStatic

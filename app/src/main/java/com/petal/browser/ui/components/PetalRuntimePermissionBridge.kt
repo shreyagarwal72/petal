@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * PetalRuntimePermissionBridge
  * ─────────────────────────────────────────────────────────────────────────────
  * Bridges GeckoSession.PermissionDelegate.onAndroidPermissionsRequest to the host
- * Android Activity (BrowserActivity, PetalCustomTabActivity, PetalPwaActivity).
+ * Android Activity (MainActivity, PetalCustomTabActivity, PetalPwaActivity).
  * Tracks pending requests by request code and invokes Gecko callback with real grant/reject results.
  */
 object PetalRuntimePermissionBridge {

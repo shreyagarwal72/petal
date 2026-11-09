@@ -25,7 +25,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
@@ -34,7 +34,7 @@ object PetalAppLockBridge {
     @JvmStatic
     fun showLockOverlay(activity: Activity, onUnlocked: Runnable, onCancel: Runnable) {
         val decor = activity.window.decorView as? ViewGroup ?: return
-        val browserActivity = activity as? BrowserActivity
+        val browserActivity = activity as? MainActivity
         val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
         PetalContentSnapshot.capture(rootView)
         var composeView: ComposeView? = null
@@ -148,7 +148,7 @@ object PetalAppLockBridge {
     @JvmStatic
     fun showConfig(activity: Activity, onBack: Runnable) {
         val decor = activity.window.decorView as? ViewGroup ?: return
-        val browserActivity = activity as? BrowserActivity
+        val browserActivity = activity as? MainActivity
         val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
         PetalContentSnapshot.capture(rootView)
         var composeView: ComposeView? = null

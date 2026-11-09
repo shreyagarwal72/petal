@@ -76,7 +76,7 @@ class PetalCustomTabActivity : ComponentActivity() {
     private var progressState by mutableStateOf(0)
     private var isDesktopModeState by mutableStateOf(false)
 
-    // Pull-to-refresh state matching BrowserActivity's PetalRefreshBarState
+    // Pull-to-refresh state matching MainActivity's PetalRefreshBarState
     private val refreshState = PetalRefreshBarState()
 
     // CustomTabsIntent customizations

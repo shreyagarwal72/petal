@@ -103,7 +103,7 @@ object PetalDownloadBannerBridge {
         activity: ComponentActivity,
         onOpenDownloads: Runnable
     ) {
-        val hostSource = (activity as? com.petal.browser.activity.BrowserActivity)?.let {
+        val hostSource = (activity as? com.petal.browser.activity.MainActivity)?.let {
             it.findViewById<android.view.View>(com.petal.browser.R.id.main_content)
                 ?: it.currentAlbumController?.albumView
         }

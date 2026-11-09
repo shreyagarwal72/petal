@@ -809,7 +809,7 @@ fun PetalDownloadManagerScreen(
                                 onDeleteItem = { deleteFile -> performStagedDelete(listOf(item), deleteFile) },
                                 onOpenFile = {
                                     PetalContainerSource.set(rowBounds[item.id])
-                                    val activity = context as? com.petal.browser.activity.BrowserActivity
+                                    val activity = context as? com.petal.browser.activity.MainActivity
                                     if (activity != null && item.status == DownloadStatus.STATUS_SUCCESSFUL && isPreviewImage(item.fileName)) {
                                         val allImages = sortedDownloadList.filter { it.status == DownloadStatus.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }
                                         activity.pendingOverlayBackAction = Runnable {
@@ -918,7 +918,7 @@ private fun DownloadedImagePreviewStrip(
                         .height(if (images.size == 1) 220.dp else 130.dp)
                         .combinedClickable(
                             onClick = {
-                                val activity = context as? com.petal.browser.activity.BrowserActivity
+                                val activity = context as? com.petal.browser.activity.MainActivity
                                 if (activity != null) {
                                     activity.pendingOverlayBackAction = Runnable {
                                         activity.runOnUiThread { activity.showDownloads() }
@@ -939,7 +939,7 @@ private fun DownloadedImagePreviewStrip(
                     com.petal.browser.ui.containment.PetalPopupMenu(expanded = menuItem?.id == item.id, onDismissRequest = { menuItem = null }) {
                         com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_view_image)) }, leadingIcon = { Icon(Icons.Rounded.Image, null) }, onClick = {
                             menuItem = null
-                            val activity = context as? com.petal.browser.activity.BrowserActivity
+                            val activity = context as? com.petal.browser.activity.MainActivity
                             if (activity != null) {
                                 activity.pendingOverlayBackAction = Runnable {
                                     activity.runOnUiThread { activity.showDownloads() }

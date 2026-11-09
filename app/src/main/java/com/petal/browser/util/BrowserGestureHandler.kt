@@ -3,19 +3,19 @@ package com.petal.browser.util
 import android.content.Intent
 import android.util.Log
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.activity.SettingsActivity
 import com.petal.browser.view.PetalToast
 
 /**
- * Kotlin utility handler encapsulating swipe & motion gesture actions for BrowserActivity.
+ * Kotlin utility handler encapsulating swipe & motion gesture actions for MainActivity.
  */
 object BrowserGestureHandler {
 
     private const val TAG = "BrowserGestureHandler"
 
     @JvmStatic
-    fun performGesture(activity: BrowserActivity, gestureKey: String, targetUrl: String?) {
+    fun performGesture(activity: MainActivity, gestureKey: String, targetUrl: String?) {
         val prefs = activity.sp ?: return
         val gestureAction = prefs.getString(gestureKey, "0") ?: "0"
         val ctrl = activity.currentAlbumController

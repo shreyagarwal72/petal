@@ -28,7 +28,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.ui.theme.*
 import java.io.File
 
@@ -112,7 +112,7 @@ object PetalFilePickerBridge {
                             onDismissRequest = {
                                 if (!isHandled) {
                                     isHandled = true
-                                    if (activity is BrowserActivity && !asModalDialog) {
+                                    if (activity is MainActivity && !asModalDialog) {
                                         activity.performBackNavigation()
                                     } else {
                                         try { activeDialog?.dismiss() } catch (_: Exception) {}
@@ -122,7 +122,7 @@ object PetalFilePickerBridge {
                             },
                             onFileSelected = { file ->
                                 isHandled = true
-                                if (activity is BrowserActivity && !asModalDialog) {
+                                if (activity is MainActivity && !asModalDialog) {
                                     activity.performBackNavigation()
                                 } else {
                                     try { activeDialog?.dismiss() } catch (_: Exception) {}
@@ -131,7 +131,7 @@ object PetalFilePickerBridge {
                             },
                             onMultipleFilesSelected = { files ->
                                 isHandled = true
-                                if (activity is BrowserActivity && !asModalDialog) {
+                                if (activity is MainActivity && !asModalDialog) {
                                     activity.performBackNavigation()
                                 } else {
                                     try { activeDialog?.dismiss() } catch (_: Exception) {}
@@ -140,7 +140,7 @@ object PetalFilePickerBridge {
                             },
                             onPreviewFile = { file ->
                                 val uri = Uri.fromFile(file)
-                                val browserAct = activity as? BrowserActivity
+                                val browserAct = activity as? MainActivity
                                 if (browserAct != null && !asModalDialog) {
                                     val viewer = PetalFileViewerBridge.createFileViewerView(
                                         browserAct,
@@ -154,7 +154,7 @@ object PetalFilePickerBridge {
                             },
                             onBrowseSystemFallback = {
                                 isHandled = true
-                                if (activity is BrowserActivity && !asModalDialog) {
+                                if (activity is MainActivity && !asModalDialog) {
                                     activity.performBackNavigation()
                                 } else {
                                     try { activeDialog?.dismiss() } catch (_: Exception) {}
@@ -168,7 +168,7 @@ object PetalFilePickerBridge {
 
             activeComposeView = composeView
 
-            val browserActivity = activity as? BrowserActivity
+            val browserActivity = activity as? MainActivity
             if (browserActivity != null && !asModalDialog) {
                 // Clear the old browser content before pushing the picker. This is
                 // important: the picker is a first-class full-screen Petal page,
@@ -180,7 +180,7 @@ object PetalFilePickerBridge {
             }
 
             // Non-browser callers (or modal dialog callers) get a full-screen host dialog.
-            // This prevents wiping BrowserActivity's contentFrame / destroying active bottom sheets.
+            // This prevents wiping MainActivity's contentFrame / destroying active bottom sheets.
             val dialog = Dialog(activity)
             activeDialog = dialog
             dialog.setContentView(composeView)

@@ -45,7 +45,7 @@ import javax.inject.Inject
  * Unidirectional Reactive ViewModel bridging Mozilla's [BrowserStore] into
  * pure Jetpack Compose UI surfaces for Petal Browser.
  *
- * Eliminates the legacy BrowserActivity god-class and manages all tab lifecycles,
+ * Eliminates the legacy MainActivity god-class and manages all tab lifecycles,
  * navigation actions, and sheet states via pure StateFlow streams.
  */
 @HiltViewModel

@@ -1,7 +1,7 @@
 /*
  * PetalSendToDeviceBridge.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Bridge utility allowing BrowserActivity to present PetalSendToDeviceSheet.
+ * Bridge utility allowing MainActivity to present PetalSendToDeviceSheet.
  *
  * Copyright (c) 2026 Petal Browser
  */

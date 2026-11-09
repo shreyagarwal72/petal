@@ -227,7 +227,7 @@ object PetalPrivacyShieldSheet {
                                         totalBlocked = totalBlocked,
                                         onDismiss = { dialog.dismiss() },
                                         onReloadRequested = {
-                                            if (activity is com.petal.browser.activity.BrowserActivity) {
+                                            if (activity is com.petal.browser.activity.MainActivity) {
                                                 val current = activity.currentAlbumController
                                                 if (current is com.petal.browser.browser.PetalTabViewController) {
                                                     current.reload()
@@ -594,7 +594,7 @@ object PetalPrivacyShieldSheet {
                         FilledTonalButton(
                             onClick = {
                                 onDismiss()
-                                if (activity is com.petal.browser.activity.BrowserActivity) {
+                                if (activity is com.petal.browser.activity.MainActivity) {
                                     PetalElementZapper.launch(activity.currentAlbumController)
                                 }
                             },

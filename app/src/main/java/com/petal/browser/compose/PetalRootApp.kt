@@ -71,7 +71,7 @@ import com.petal.browser.unit.PetalBrowserUtils
  * ─────────────────────────────────────────────────────────────────────────────
  * The 100% Jetpack Compose Root Application Shell for Petal Browser.
  *
- * Replaces the legacy 450 KB BrowserActivity and provides unified back-navigation,
+ * Replaces the legacy 450 KB MainActivity and provides unified back-navigation,
  * Material 3 Expressive motion curves, and Liquid Glass composition over the
  * Mozilla GeckoView engine.
  */

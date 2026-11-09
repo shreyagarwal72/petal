@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit
  * - Tab ID, Group ID, Group Title
  * - Incognito state
  *
- * When the user switches back to a suspended tab, [BrowserActivity.showAlbum]
+ * When the user switches back to a suspended tab, [MainActivity.showAlbum]
  * transparently materializes a fresh GeckoSession and restores the exact tab view.
  */
 object PetalTabSuspender {

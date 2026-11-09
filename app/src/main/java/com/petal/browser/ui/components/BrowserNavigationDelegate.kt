@@ -7,7 +7,7 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.unit.PetalBrowserUtils
@@ -15,12 +15,12 @@ import com.petal.browser.view.PetalToast
 
 /**
  * Kotlin delegate handling navigation, overview tab switching, and
- * Material 3 Expressive overflow menu actions for BrowserActivity.
+ * Material 3 Expressive overflow menu actions for MainActivity.
  */
 object BrowserNavigationDelegate {
 
     @JvmStatic
-    fun showOverflowMenu(activity: BrowserActivity) {
+    fun showOverflowMenu(activity: MainActivity) {
         val currentController = activity.currentAlbumController
         val tabSurface = currentController as? com.petal.browser.browser.PetalTabViewController ?: activity.getOrCreateTabViewController()
 

@@ -45,7 +45,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.browser.PetalAdBlockEngine
 import com.petal.browser.extensions.PetalBuiltInExtensionManager
 import com.petal.browser.ui.components.*
@@ -57,7 +57,7 @@ private data class SetupPermission(val id: String, val title: Int, val reason: I
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PetalSetupScreen(
-    activity: BrowserActivity,
+    activity: MainActivity,
     state: PetalSetupState,
     sp: android.content.SharedPreferences,
     onFinished: () -> Unit
@@ -77,7 +77,7 @@ fun PetalSetupScreen(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun PetalSetupContent(
-    activity: BrowserActivity,
+    activity: MainActivity,
     state: PetalSetupState,
     sp: android.content.SharedPreferences,
     onFinished: () -> Unit
@@ -795,7 +795,7 @@ private fun HelloStage(
 
 @Composable
 private fun AccessStage(
-    activity: BrowserActivity,
+    activity: MainActivity,
     sp: android.content.SharedPreferences,
     items: List<SetupPermission>,
     refresh: Int,

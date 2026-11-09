@@ -215,7 +215,7 @@ object PetalLensBridge {
 
             host.setOnDismissListener {
                 composeView.clearFocus()
-                (activity as? com.petal.browser.activity.BrowserActivity)?.restoreBrowserInputFocus()
+                (activity as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
             }
             host.setContentView(composeView)
             host.show()

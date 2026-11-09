@@ -192,7 +192,7 @@ fun PetalAiSearchResultSheet(
 
     fun openAiHub() {
         onDismiss()
-        val browserActivity = context as? com.petal.browser.activity.BrowserActivity
+        val browserActivity = context as? com.petal.browser.activity.MainActivity
         if (browserActivity != null) {
             browserActivity.openApiIntegrationsHub()
         } else {

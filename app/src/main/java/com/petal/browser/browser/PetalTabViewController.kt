@@ -205,7 +205,7 @@ class PetalTabViewController private constructor(
                 com.petal.browser.accessibility.PetalAccessibilityEngine.applyAccessibilitySettings(this@PetalTabViewController)
             }
             "sp_liquid_glass_enabled", "sp_liquid_glass_omnibox", "sp_liquid_glass_bottom_nav" -> {
-                if (isHostedByBrowserActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                if (isHostedByMainActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                     post {
                         findGeckoView(engineView.asView())?.let { gv ->
                             try {
@@ -234,7 +234,7 @@ class PetalTabViewController private constructor(
     private var lastDirection: Int = 0
     private val settleHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val settleRunnable = Runnable {
-        val act = resolveActivity(context) as? com.petal.browser.activity.BrowserActivity ?: return@Runnable
+        val act = resolveActivity(context) as? com.petal.browser.activity.MainActivity ?: return@Runnable
         val currentFrac = com.petal.browser.ui.components.BarCollapseState.collapsedFraction
         val target = if (currentFrac >= 0.5f) 1f else 0f
         act.settlePillFraction(target)
@@ -244,7 +244,7 @@ class PetalTabViewController private constructor(
         pendingScrollUpdate.set(false)
         android.os.Trace.beginSection("PetalTab:handleScrollChanged")
         try {
-            val act = resolveActivity(context) as? com.petal.browser.activity.BrowserActivity ?: return@Runnable
+            val act = resolveActivity(context) as? com.petal.browser.activity.MainActivity ?: return@Runnable
             val now = android.os.SystemClock.uptimeMillis()
 
             // 1. Ignore scroll changes caused by viewport or layout resizes
@@ -436,7 +436,7 @@ class PetalTabViewController private constructor(
             if (!loading) {
                 isRefreshing = false
                 if (active) {
-                    (resolveActivity(context) as? com.petal.browser.activity.BrowserActivity)
+                    (resolveActivity(context) as? com.petal.browser.activity.MainActivity)
                         ?.onActivePageLoadFinished()
                 }
                 injectPagePrivacyAndAdBlock()
@@ -474,7 +474,7 @@ class PetalTabViewController private constructor(
         override fun onWindowRequest(
             windowRequest: mozilla.components.concept.engine.window.WindowRequest
         ) {
-            val activity = context as? com.petal.browser.activity.BrowserActivity
+            val activity = context as? com.petal.browser.activity.MainActivity
             if (activity != null) {
                 activity.runOnUiThread {
                     if (windowRequest.type == mozilla.components.concept.engine.window.WindowRequest.Type.OPEN) {
@@ -526,7 +526,7 @@ class PetalTabViewController private constructor(
         override fun onMediaDeactivated() {
             mediaBridge?.setActiveEngineMediaController(null)
             tab?.let { PetalEngineStore.updateMediaController(appContext, it.id, null) }
-            (context as? com.petal.browser.activity.BrowserActivity)?.runOnUiThread {
+            (context as? com.petal.browser.activity.MainActivity)?.runOnUiThread {
                 mediaBridge?.listener?.onMediaPlayingStateChanged(false)
             }
         }
@@ -599,7 +599,7 @@ class PetalTabViewController private constructor(
         // Tab pages are drawn by android-components' GeckoEngineView, whose inner GeckoView
         // defaults to a SurfaceView (official Mozilla GeckoView default). Switch to TextureView
         // only if Liquid Glass is active and requires page sampling.
-        if (isHostedByBrowserActivity()) {
+        if (isHostedByMainActivity()) {
             findGeckoView(engineView.asView())?.let {
                 try { com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(it, context) } catch (_: Throwable) {}
             }
@@ -608,7 +608,7 @@ class PetalTabViewController private constructor(
             context,
             object : com.petal.browser.media.PetalMediaBridge.MediaStateListener {
                 override fun onMediaPlay(title: String?, positionMs: Long, durationMs: Long) {
-                    val activity = context as? com.petal.browser.activity.BrowserActivity ?: return
+                    val activity = context as? com.petal.browser.activity.MainActivity ?: return
                     activity.runOnUiThread {
                         activity.isMediaPlaying = true
                         activity.updatePipParams(true)
@@ -617,7 +617,7 @@ class PetalTabViewController private constructor(
                 }
 
                 override fun onMediaPause(positionMs: Long, durationMs: Long) {
-                    val activity = context as? com.petal.browser.activity.BrowserActivity ?: return
+                    val activity = context as? com.petal.browser.activity.MainActivity ?: return
                     activity.runOnUiThread {
                         activity.isMediaPlaying = false
                         activity.updatePipParams(false)
@@ -628,7 +628,7 @@ class PetalTabViewController private constructor(
                 override fun onMediaProgress(positionMs: Long, durationMs: Long) = Unit
 
                 override fun onMediaPlayingStateChanged(isPlaying: Boolean) {
-                    val activity = context as? com.petal.browser.activity.BrowserActivity ?: return
+                    val activity = context as? com.petal.browser.activity.MainActivity ?: return
                     activity.runOnUiThread {
                         activity.isMediaPlaying = isPlaying
                         activity.updatePipParams(isPlaying)
@@ -636,7 +636,7 @@ class PetalTabViewController private constructor(
                 }
 
                 override fun onVideoDimensionsChanged(width: Int, height: Int) {
-                    (context as? com.petal.browser.activity.BrowserActivity)?.updateVideoDimensions(width, height)
+                    (context as? com.petal.browser.activity.MainActivity)?.updateVideoDimensions(width, height)
                 }
             }
         ).apply {
@@ -675,7 +675,7 @@ class PetalTabViewController private constructor(
             sessionUseCases = SessionUseCases(browserStore),
             tabId = tab.id,
             fullScreenChanged = { enabled ->
-                (context as? com.petal.browser.activity.BrowserActivity)?.setCustomFullscreen(enabled)
+                (context as? com.petal.browser.activity.MainActivity)?.setCustomFullscreen(enabled)
             }
         )
         pageUrl = tab.content.url
@@ -709,7 +709,7 @@ class PetalTabViewController private constructor(
         geckoView?.background = null
         // Choose SurfaceView / TextureView BEFORE a session is attached. Swapping the backend while
         // a session is rendering throws away the surface it draws to and leaves a black page.
-        if (isHostedByBrowserActivity() && geckoView != null) {
+        if (isHostedByMainActivity() && geckoView != null) {
             try { com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(geckoView, context) } catch (_: Throwable) {}
         }
         engineView.render(session)
@@ -805,7 +805,7 @@ class PetalTabViewController private constructor(
                         )
                     }
                     val act = resolveActivity(context)
-                    if (act is com.petal.browser.activity.BrowserActivity) {
+                    if (act is com.petal.browser.activity.MainActivity) {
                         act.updateBackCallbackState()
                         act.updateOmniBox()
                     }
@@ -824,7 +824,7 @@ class PetalTabViewController private constructor(
                         )
                     }
                     val act = resolveActivity(context)
-                    if (act is com.petal.browser.activity.BrowserActivity) {
+                    if (act is com.petal.browser.activity.MainActivity) {
                         act.updateOmniBox()
                     }
                     publishState()
@@ -894,8 +894,8 @@ class PetalTabViewController private constructor(
                     selection: org.mozilla.geckoview.GeckoSession.SelectionActionDelegate.Selection
                 ) {
                     this@PetalTabViewController.currentSelection = selection
-                    val act = (context as? com.petal.browser.activity.BrowserActivity)
-                        ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
+                    val act = (context as? com.petal.browser.activity.MainActivity)
+                        ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.MainActivity
                         ?: return
                     val anchorView: View = findGeckoView(engineView.asView()) ?: this@PetalTabViewController
                     if (com.petal.browser.ui.selection.PetalPageSelectionToolbar.show(act, anchorView, selection)) {
@@ -911,8 +911,8 @@ class PetalTabViewController private constructor(
 
                 override fun onHideAction(session: org.mozilla.geckoview.GeckoSession, reason: Int) {
                     this@PetalTabViewController.currentSelection = null
-                    val act = (context as? com.petal.browser.activity.BrowserActivity)
-                        ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
+                    val act = (context as? com.petal.browser.activity.MainActivity)
+                        ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.MainActivity
                     if (act != null) com.petal.browser.ui.selection.PetalPageSelectionToolbar.hide(act)
                 }
             }
@@ -969,7 +969,7 @@ class PetalTabViewController private constructor(
                         )
                     }
                     val act = resolveActivity(context)
-                    if (act is com.petal.browser.activity.BrowserActivity) {
+                    if (act is com.petal.browser.activity.MainActivity) {
                         act.runOnUiThread {
                             act.updateBackCallbackState()
                             act.updateOmniBox()
@@ -1032,10 +1032,10 @@ class PetalTabViewController private constructor(
         publishState()
     }
 
-    private fun isHostedByBrowserActivity(): Boolean {
+    private fun isHostedByMainActivity(): Boolean {
         var ctx: android.content.Context? = context
         while (ctx is android.content.ContextWrapper) {
-            if (ctx is com.petal.browser.activity.BrowserActivity) return true
+            if (ctx is com.petal.browser.activity.MainActivity) return true
             if (ctx is com.petal.browser.customtabs.PetalCustomTabActivity) return true
             ctx = ctx.baseContext
         }
@@ -2140,7 +2140,7 @@ class PetalTabViewController private constructor(
             browserStore.dispatch(mozilla.components.browser.state.action.ContentAction.ConsumeHitResultAction(id))
             post {
                 val act = resolveActivity(context)
-                if (act is com.petal.browser.activity.BrowserActivity && active) {
+                if (act is com.petal.browser.activity.MainActivity && active) {
                     com.petal.browser.compose.menu.BrowserContextMenuManager.handleContextMenu(
                         activity = act,
                         hitResult = hit,
@@ -2203,7 +2203,7 @@ class PetalTabViewController private constructor(
         fullScreenFeature?.stop()
         isRefreshing = false
         // A refresh belongs to the tab being left; don't leave the next tab blocked behind it.
-        (resolveActivity(context) as? com.petal.browser.activity.BrowserActivity)?.resetRefreshState()
+        (resolveActivity(context) as? com.petal.browser.activity.MainActivity)?.resetRefreshState()
     }
 
     override fun getTitle(): String = pageTitle
@@ -2410,7 +2410,7 @@ private class PetalContentDelegateWrapper(
 
     override fun onFullScreen(session: org.mozilla.geckoview.GeckoSession, fullScreen: Boolean) {
         val act = resolveActivity()
-        if (act is com.petal.browser.activity.BrowserActivity) {
+        if (act is com.petal.browser.activity.MainActivity) {
             act.runOnUiThread {
                 act.setCustomFullscreen(fullScreen)
             }
@@ -2483,7 +2483,7 @@ private class PetalContentDelegateWrapper(
         // Mozilla produces no HitResult for a press on empty page area (no link, no media), so
         // that single case keeps Petal's page menu.
         val act = resolveActivity()
-        if (act is com.petal.browser.activity.BrowserActivity &&
+        if (act is com.petal.browser.activity.MainActivity &&
             element.linkUri.isNullOrBlank() && element.srcUri.isNullOrBlank() &&
             element.type == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_NONE
         ) {
@@ -2653,7 +2653,7 @@ private class ExternalSchemeNavigationDelegate(
             if (httpsOnly && !host.isNullOrBlank() && !com.petal.browser.privacy.PetalHttpsOnlyWhitelist.isBypassed(context, host)) {
                 if (error.category == org.mozilla.geckoview.WebRequestError.ERROR_CATEGORY_SECURITY ||
                     error.category == org.mozilla.geckoview.WebRequestError.ERROR_CATEGORY_NETWORK) {
-                    val act = resolveActivity() as? com.petal.browser.activity.BrowserActivity
+                    val act = resolveActivity() as? com.petal.browser.activity.MainActivity
                     act?.runOnUiThread {
                         com.petal.browser.view.PetalToast.show(
                             act,
@@ -2713,7 +2713,7 @@ private class ExternalSchemeNavigationDelegate(
             android.util.Log.w("PetalTabNav", "engine.onNewSession threw or not handled: ${t.message}")
         }
 
-        val act = resolveActivity() as? com.petal.browser.activity.BrowserActivity
+        val act = resolveActivity() as? com.petal.browser.activity.MainActivity
         if (act == null || act.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && act.isDestroyed)) {
             return try {
                 engine.onNewSession(session, uri)
@@ -2815,10 +2815,10 @@ private class ExternalSchemeNavigationDelegate(
             if (!currentHost.isNullOrBlank() && !reqHost.isNullOrBlank() && currentHost != reqHost) {
                 var ctx: android.content.Context? = context
                 while (ctx is android.content.ContextWrapper) {
-                    if (ctx is com.petal.browser.activity.BrowserActivity) break
+                    if (ctx is com.petal.browser.activity.MainActivity) break
                     ctx = ctx.baseContext
                 }
-                val act = ctx as? com.petal.browser.activity.BrowserActivity
+                val act = ctx as? com.petal.browser.activity.MainActivity
                 if (act != null) {
                     act.runOnUiThread {
                         act.addAlbum(null, uri, false, isIncognitoSupplier())

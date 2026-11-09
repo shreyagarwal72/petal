@@ -2,7 +2,7 @@ package com.petal.browser.ui.components
 
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -306,7 +306,7 @@ object PetalAiResearchBridge {
                                             isVisible = false
                                             PetalContentSnapshot.clear()
                                             (composeView?.parent as? ViewGroup)?.removeView(composeView)
-                                            (activity as? BrowserActivity)?.openApiIntegrationsHub()
+                                            (activity as? MainActivity)?.openApiIntegrationsHub()
                                         },
                                         onDismiss = {
                                             isVisible = false

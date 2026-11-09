@@ -15,7 +15,7 @@ import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 
 /**
  * Petal PiP Engine & Delegate
@@ -39,7 +39,7 @@ object BrowserMediaDelegate {
     private var pipReceiver: BroadcastReceiver? = null
 
     @JvmStatic
-    fun registerPipReceiver(activity: BrowserActivity) {
+    fun registerPipReceiver(activity: MainActivity) {
         if (pipReceiver == null) {
             pipReceiver = object : BroadcastReceiver() {
                 override fun onReceive(context: Context?, intent: Intent?) {
@@ -76,7 +76,7 @@ object BrowserMediaDelegate {
     }
 
     @JvmStatic
-    fun unregisterPipReceiver(activity: BrowserActivity) {
+    fun unregisterPipReceiver(activity: MainActivity) {
         pipReceiver?.let {
             try {
                 activity.unregisterReceiver(it)
@@ -128,7 +128,7 @@ object BrowserMediaDelegate {
     }
 
     @JvmStatic
-    fun buildPipParams(activity: BrowserActivity, enableAutoEnter: Boolean): PictureInPictureParams? {
+    fun buildPipParams(activity: MainActivity, enableAutoEnter: Boolean): PictureInPictureParams? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return null
 
         val pipBuilder = PictureInPictureParams.Builder()
@@ -175,7 +175,7 @@ object BrowserMediaDelegate {
     }
 
     @JvmStatic
-    fun updatePipParams(activity: BrowserActivity, enableAutoEnter: Boolean) {
+    fun updatePipParams(activity: MainActivity, enableAutoEnter: Boolean) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
                 registerPipReceiver(activity)
@@ -188,7 +188,7 @@ object BrowserMediaDelegate {
     }
 
     @JvmStatic
-    fun triggerSystemPipMode(activity: BrowserActivity) {
+    fun triggerSystemPipMode(activity: MainActivity) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
             activity.isFinishing || activity.isChangingConfigurations ||
             activity.isInPictureInPictureMode

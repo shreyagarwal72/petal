@@ -239,7 +239,7 @@ fun PetalFindInPageBar(
 }
 
 /**
- * Java interop bridge to set up the Find in Page ComposeView from BrowserActivity.
+ * Java interop bridge to set up the Find in Page ComposeView from MainActivity.
  */
 object PetalFindInPageBridge {
     @JvmStatic

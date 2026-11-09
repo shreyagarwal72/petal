@@ -137,8 +137,8 @@ public class PetalMediaBridge {
             tabViewController.evaluateJavascript(js, null);
         } else if (context instanceof Activity) {
             Activity act = (Activity) context;
-            if (act instanceof com.petal.browser.activity.BrowserActivity) {
-                com.petal.browser.browser.AlbumController controller = ((com.petal.browser.activity.BrowserActivity) act).getCurrentAlbumController();
+            if (act instanceof com.petal.browser.activity.MainActivity) {
+                com.petal.browser.browser.AlbumController controller = ((com.petal.browser.activity.MainActivity) act).getCurrentAlbumController();
                 if (controller instanceof com.petal.browser.browser.PetalTabViewController) {
                     ((com.petal.browser.browser.PetalTabViewController) controller).evaluateJavascript(js, null);
                 }
@@ -399,9 +399,9 @@ public class PetalMediaBridge {
         if (!autoPip) return false;
 
         try {
-            if (activity instanceof com.petal.browser.activity.BrowserActivity) {
+            if (activity instanceof com.petal.browser.activity.MainActivity) {
                 com.petal.browser.media.BrowserMediaDelegate.triggerSystemPipMode(
-                        (com.petal.browser.activity.BrowserActivity) activity);
+                        (com.petal.browser.activity.MainActivity) activity);
                 return true;
             }
             return false;

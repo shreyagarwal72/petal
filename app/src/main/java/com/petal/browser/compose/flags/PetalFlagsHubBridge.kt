@@ -15,7 +15,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 /**
  * PetalFlagsHubBridge
  * ─────────────────────────────────────────────────────────────────────────
- * Dynamic ComposeView bridge presenting PetalFlagsHubScreen inside BrowserActivity.
+ * Dynamic ComposeView bridge presenting PetalFlagsHubScreen inside MainActivity.
  */
 object PetalFlagsHubBridge {
 

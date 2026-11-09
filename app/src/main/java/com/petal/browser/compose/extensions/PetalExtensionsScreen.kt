@@ -296,7 +296,7 @@ fun PetalExtensionsScreen(
                                         shape = ExpressiveButtonShape,
                                         onClick = {
                                             haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
-                                            (context as? com.petal.browser.activity.BrowserActivity)?.addAlbum(
+                                            (context as? com.petal.browser.activity.MainActivity)?.addAlbum(
                                                 "Firefox Add-ons",
                                                 PetalExtensionManager.amoAndroidBrowseUrl,
                                                 true
@@ -473,7 +473,7 @@ fun PetalExtensionsScreen(
                 onOpenLink = { linkTitle, url ->
                     detailExtensionId = null
                     onDismiss()
-                    val activity = context as? com.petal.browser.activity.BrowserActivity
+                    val activity = context as? com.petal.browser.activity.MainActivity
                     if (activity != null) {
                         activity.addAlbum(linkTitle, url, true)
                     } else {
@@ -843,7 +843,7 @@ private fun ExploreExtensionsTab(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            (context as? com.petal.browser.activity.BrowserActivity)?.addAlbum(
+                            (context as? com.petal.browser.activity.MainActivity)?.addAlbum(
                                 "Firefox Add-ons",
                                 PetalExtensionManager.amoAndroidBrowseUrl,
                                 true
@@ -2144,7 +2144,7 @@ fun PetalExtensionPopupScreen(
                                         hostActivity?.let { act ->
                                             act.runOnUiThread {
                                                 onDismiss()
-                                                val browserActivity = act as? com.petal.browser.activity.BrowserActivity
+                                                val browserActivity = act as? com.petal.browser.activity.MainActivity
                                                 if (browserActivity != null) {
                                                     browserActivity.addAlbum(null, uri, true)
                                                 } else {
@@ -2167,7 +2167,7 @@ fun PetalExtensionPopupScreen(
                                         hostActivity?.let { act ->
                                             act.runOnUiThread {
                                                 onDismiss()
-                                                val browserActivity = act as? com.petal.browser.activity.BrowserActivity
+                                                val browserActivity = act as? com.petal.browser.activity.MainActivity
                                                 if (browserActivity != null) {
                                                     browserActivity.addAlbum(null, uri, true)
                                                 } else {

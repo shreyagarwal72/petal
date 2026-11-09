@@ -14,7 +14,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.ui.components.BarCollapseState
 import com.petal.browser.ui.components.BarPrefs
 import com.petal.browser.ui.components.PetalAddressBar
@@ -118,7 +118,7 @@ object PetalAddressBarBridge {
 
         BarCollapseState.updatePage(url, isIncognito)
         BarCollapseState.onExpandRequested = {
-            (activity as? BrowserActivity)?.animateAddressBarCollapse(false)
+            (activity as? MainActivity)?.animateAddressBarCollapse(false)
         }
 
         if (composeView.tag == "PetalAddressBarBound") {
@@ -185,14 +185,14 @@ object PetalAddressBarBridge {
                             "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
                             BarPrefs.KEY_ADDRESS_BAR_POSITION -> {
                                 addressBarPosition = sp.getString(BarPrefs.KEY_ADDRESS_BAR_POSITION, "TOP") ?: "TOP"
-                                (activity as? BrowserActivity)?.let { act -> act.window.decorView.post { act.applyAddressBarPosition() } }
+                                (activity as? MainActivity)?.let { act -> act.window.decorView.post { act.applyAddressBarPosition() } }
                             }
                             BarPrefs.KEY_ADDRESS_BAR_STYLE -> {
                                 addressBarStyle = sp.getString(BarPrefs.KEY_ADDRESS_BAR_STYLE, BarPrefs.STYLE_CLASSIC) ?: BarPrefs.STYLE_CLASSIC
-                                (activity as? BrowserActivity)?.let { act -> act.window.decorView.post { act.applyAddressBarPosition() } }
+                                (activity as? MainActivity)?.let { act -> act.window.decorView.post { act.applyAddressBarPosition() } }
                             }
                             BarPrefs.KEY_MERGE_LAYOUT, BarPrefs.KEY_MERGE_LEADING, BarPrefs.KEY_MERGE_TRAILING -> {
-                                (activity as? BrowserActivity)?.let { act -> act.window.decorView.post { act.applyAddressBarPosition() } }
+                                (activity as? MainActivity)?.let { act -> act.window.decorView.post { act.applyAddressBarPosition() } }
                             }
                         }
                     }
@@ -236,7 +236,7 @@ object PetalAddressBarBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    val bottomNavContainer = (activity as? BrowserActivity)?.findViewById<android.view.View>(com.petal.browser.R.id.bottom_nav_container)
+                    val bottomNavContainer = (activity as? MainActivity)?.findViewById<android.view.View>(com.petal.browser.R.id.bottom_nav_container)
                     val hasBottomNav = !isMerge && (bottomNavContainer != null && bottomNavContainer.visibility != android.view.View.GONE)
 
                     if (isMerge) {
@@ -250,23 +250,23 @@ object PetalAddressBarBridge {
                             canGoBack = currentCanGoBack,
                             canGoForward = currentCanGoForward,
                             tabCount = currentTabCount,
-                            onBackClick = { backClick?.run() ?: (activity as? BrowserActivity)?.performBackNavigation() },
+                            onBackClick = { backClick?.run() ?: (activity as? MainActivity)?.performBackNavigation() },
                             onForwardClick = {
                                 forwardClick?.run() ?: run {
-                                    val act = activity as? BrowserActivity ?: return@run
+                                    val act = activity as? MainActivity ?: return@run
                                     val ctrl = act.currentAlbumController
                                     if (ctrl is com.petal.browser.browser.PetalTabViewController) ctrl.goForward()
                                     else act.getOrCreateTabViewController()?.goForward()
                                 }
                             },
                             onReloadClick = {
-                                reloadClick?.run() ?: (activity as? BrowserActivity)?.reloadCurrentBrowserTab()
+                                reloadClick?.run() ?: (activity as? MainActivity)?.reloadCurrentBrowserTab()
                             },
                             onShareClick = { shareClick?.run() },
-                            onAddressClick = { addressClick?.run() ?: (activity as? BrowserActivity)?.showOmniboxPage(currentUrl) },
+                            onAddressClick = { addressClick?.run() ?: (activity as? MainActivity)?.showOmniboxPage(currentUrl) },
                             onHomeClick = {
                                 homeClick?.run() ?: run {
-                                    val act = activity as? BrowserActivity ?: return@run
+                                    val act = activity as? MainActivity ?: return@run
                                     val effectiveHome = com.petal.browser.unit.PetalBrowserUtils.getEffectiveHomepageUrl(act)
                                     if (effectiveHome != null && !effectiveHome.equals("about:blank", true) && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(effectiveHome)) {
                                         act.showAlbum(act.currentAlbumController, effectiveHome)
@@ -276,21 +276,21 @@ object PetalAddressBarBridge {
                                 }
                             },
                             onNewTabClick = {
-                                newTabClick?.run() ?: (activity as? BrowserActivity)?.addAlbum("New Tab", "about:blank", true, currentIncognito)
+                                newTabClick?.run() ?: (activity as? MainActivity)?.addAlbum("New Tab", "about:blank", true, currentIncognito)
                             },
-                            onTabsClick = { tabsClick?.run() ?: (activity as? BrowserActivity)?.showOverview() },
+                            onTabsClick = { tabsClick?.run() ?: (activity as? MainActivity)?.showOverview() },
                             onMenuClick = {
                                 menuClick?.run() ?: run {
-                                    val act = activity as? BrowserActivity ?: return@run
+                                    val act = activity as? MainActivity ?: return@run
                                     act.showOverflow(null, composeView, 0, currentTitle, currentUrl, null, null, 0)
                                 }
                             },
-                            onSearchClick = { searchClick?.run() ?: (activity as? BrowserActivity)?.showOmniboxPage("") },
-                            onDownloadsClick = { downloadsClick?.run() ?: (activity as? BrowserActivity)?.showDownloads() },
-                            onFindInPageClick = { findInPageClick?.run() ?: (activity as? BrowserActivity)?.searchOnSite() },
+                            onSearchClick = { searchClick?.run() ?: (activity as? MainActivity)?.showOmniboxPage("") },
+                            onDownloadsClick = { downloadsClick?.run() ?: (activity as? MainActivity)?.showDownloads() },
+                            onFindInPageClick = { findInPageClick?.run() ?: (activity as? MainActivity)?.searchOnSite() },
                             onBookmarkClick = {
                                 bookmarkClick?.run() ?: run {
-                                    val act = activity as? BrowserActivity ?: return@run
+                                    val act = activity as? MainActivity ?: return@run
                                     try {
                                         val action = com.petal.browser.database.HistoryBookmarkRepository(act)
                                         action.open(true)
@@ -310,14 +310,14 @@ object PetalAddressBarBridge {
                             onMediaClick = {
                                 com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
                             },
-                            onSwipeNextTab = { swipeNextTab?.run() ?: (activity as? BrowserActivity)?.switchAdjacentTab(1) },
-                            onSwipePrevTab = { swipePrevTab?.run() ?: (activity as? BrowserActivity)?.switchAdjacentTab(-1) },
+                            onSwipeNextTab = { swipeNextTab?.run() ?: (activity as? MainActivity)?.switchAdjacentTab(1) },
+                            onSwipePrevTab = { swipePrevTab?.run() ?: (activity as? MainActivity)?.switchAdjacentTab(-1) },
                             onPasteAndGo = { pasteAndGo?.invoke(it) },
-                            onHardRefresh = { hardRefresh?.run() ?: (activity as? BrowserActivity)?.reloadCurrentBrowserTab() },
+                            onHardRefresh = { hardRefresh?.run() ?: (activity as? MainActivity)?.reloadCurrentBrowserTab() },
                             isReaderEligible = _isReaderEligibleState.value,
                             onReaderClick = { _onReaderClickState.value?.run() },
                             onCustomizeClick = {
-                                (activity as? BrowserActivity)?.let { act ->
+                                (activity as? MainActivity)?.let { act ->
                                     act.openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR)
                                 }
                             },
@@ -332,17 +332,17 @@ object PetalAddressBarBridge {
                             isIncognito = currentIncognito,
                             isLoading = currentLoading,
                             canGoBack = currentCanGoBack,
-                            onBackClick = { backClick?.run() ?: (activity as? BrowserActivity)?.performBackNavigation() },
+                            onBackClick = { backClick?.run() ?: (activity as? MainActivity)?.performBackNavigation() },
                             onShareClick = { shareClick?.run() },
-                            onAddressClick = { addressClick?.run() ?: (activity as? BrowserActivity)?.showOmniboxPage(currentUrl) },
+                            onAddressClick = { addressClick?.run() ?: (activity as? MainActivity)?.showOmniboxPage(currentUrl) },
                             onAiResearchClick = { aiResearchClick?.run() },
                             onMediaClick = {
                                 com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
                             },
-                            onSwipeNextTab = { swipeNextTab?.run() ?: (activity as? BrowserActivity)?.switchAdjacentTab(1) },
-                            onSwipePrevTab = { swipePrevTab?.run() ?: (activity as? BrowserActivity)?.switchAdjacentTab(-1) },
+                            onSwipeNextTab = { swipeNextTab?.run() ?: (activity as? MainActivity)?.switchAdjacentTab(1) },
+                            onSwipePrevTab = { swipePrevTab?.run() ?: (activity as? MainActivity)?.switchAdjacentTab(-1) },
                             onPasteAndGo = { pasteAndGo?.invoke(it) },
-                            onHardRefresh = { hardRefresh?.run() ?: (activity as? BrowserActivity)?.reloadCurrentBrowserTab() },
+                            onHardRefresh = { hardRefresh?.run() ?: (activity as? MainActivity)?.reloadCurrentBrowserTab() },
                             isReaderEligible = _isReaderEligibleState.value,
                             onReaderClick = { _onReaderClickState.value?.run() },
                             isBottom = isBottomPosition,

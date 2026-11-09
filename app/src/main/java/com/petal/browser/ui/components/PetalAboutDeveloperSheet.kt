@@ -194,7 +194,7 @@ fun PetalAboutDeveloperSheetContent(
 
     fun openUrl(url: String) {
         try {
-            val activity = context as? com.petal.browser.activity.BrowserActivity
+            val activity = context as? com.petal.browser.activity.MainActivity
             if (activity != null) {
                 onClose()
                 val ctrl = activity.currentAlbumController
@@ -603,7 +603,7 @@ fun AppInfoGroup(
                 PetalGroupListRow(
                     position = position,
                     onClick = {
-                        val act = ctx as? com.petal.browser.activity.BrowserActivity
+                        val act = ctx as? com.petal.browser.activity.MainActivity
                         if (act != null) {
                             act.openFlagsHubScreen()
                         } else {

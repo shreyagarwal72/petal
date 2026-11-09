@@ -213,7 +213,7 @@ fun PetalQrScannerScreen(
                 cameraControl = null
                 executor.shutdownNow()
             } catch (_: Exception) {}
-            (context as? com.petal.browser.activity.BrowserActivity)?.restoreBrowserInputFocus()
+            (context as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
         }
     }
 

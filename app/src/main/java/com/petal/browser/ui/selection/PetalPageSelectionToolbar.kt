@@ -33,7 +33,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.compose.menu.BrowserContextMenuManager
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.PetalBrowserUtils
@@ -118,7 +118,7 @@ object PetalPageSelectionToolbar {
         }
 
         val text: String = (try { selection.text } catch (_: Throwable) { null }) ?: ""
-        val browser = activity as? BrowserActivity
+        val browser = activity as? MainActivity
         val out = ArrayList<PetalSelectionAction>()
 
         if (available(Sel.ACTION_CUT)) {

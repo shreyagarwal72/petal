@@ -6,7 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.webkit.URLUtil
 import androidx.lifecycle.lifecycleScope
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.compose.ai.ResearchMode
 import com.petal.browser.compose.mlkit.PetalImageScannerBridge
@@ -20,7 +20,7 @@ import com.petal.browser.unit.ImageActionHelper
 import com.petal.browser.view.PetalToast
 
 /**
- * Kotlin Manager encapsulating long-press context menus for BrowserActivity.
+ * Kotlin Manager encapsulating long-press context menus for MainActivity.
  * Fulfills Material 3 Expressive menu handlers for image, link, video, audio, text, and page targets.
  */
 object BrowserContextMenuManager {
@@ -29,7 +29,7 @@ object BrowserContextMenuManager {
      * Launches [targetUrl] in a second, independent Android window using freeform/
      * adjacent multi-window mode (FLAG_ACTIVITY_NEW_TASK + MULTIPLE_TASK + LAUNCH_ADJACENT).
      */
-    private fun launchInNewWindow(activity: BrowserActivity, targetUrl: String) {
+    private fun launchInNewWindow(activity: MainActivity, targetUrl: String) {
         try {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)).apply {
                 setClass(activity, MainActivity::class.java)
@@ -48,7 +48,7 @@ object BrowserContextMenuManager {
     /**
      * Resolves external app handler for [targetUrl] or opens the system intent chooser.
      */
-    private fun openInExternalApp(activity: BrowserActivity, targetUrl: String) {
+    private fun openInExternalApp(activity: MainActivity, targetUrl: String) {
         try {
             val uri = Uri.parse(targetUrl)
             val intent = Intent(Intent.ACTION_VIEW, uri).apply {
@@ -70,7 +70,7 @@ object BrowserContextMenuManager {
     /**
      * Forwards audio/video to an external player application via ACTION_VIEW.
      */
-    private fun openInExternalPlayer(activity: BrowserActivity, mediaUrl: String, mimeType: String) {
+    private fun openInExternalPlayer(activity: MainActivity, mediaUrl: String, mimeType: String) {
         try {
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(Uri.parse(mediaUrl), mimeType)
@@ -84,7 +84,7 @@ object BrowserContextMenuManager {
 
     @JvmStatic
     @JvmOverloads
-    fun showImageContextMenu(activity: BrowserActivity, imageURL: String, title: String? = null) {
+    fun showImageContextMenu(activity: MainActivity, imageURL: String, title: String? = null) {
         val displayTitle = title?.trim()?.takeIf { it.isNotEmpty() }?.take(80) ?: PetalAndroidUtils.domain(imageURL)
         PetalLinkContextMenuBridge.show(
             activity = activity,
@@ -261,7 +261,7 @@ object BrowserContextMenuManager {
 
     @JvmStatic
     @JvmOverloads
-    fun showLinkContextMenu(activity: BrowserActivity, urlResult: String, linkText: String? = null) {
+    fun showLinkContextMenu(activity: MainActivity, urlResult: String, linkText: String? = null) {
         val parsed = Uri.parse(urlResult)
         val faviconUrl = if (parsed.scheme == "http" || parsed.scheme == "https") {
             "${parsed.scheme}://${parsed.authority}/favicon.ico"
@@ -451,7 +451,7 @@ object BrowserContextMenuManager {
     }
 
     @JvmStatic
-    fun showVideoContextMenu(activity: BrowserActivity, cleanVideoUrl: String) {
+    fun showVideoContextMenu(activity: MainActivity, cleanVideoUrl: String) {
         val title = PetalAndroidUtils.domain(cleanVideoUrl)
         PetalLinkContextMenuBridge.show(
             activity = activity,
@@ -538,7 +538,7 @@ object BrowserContextMenuManager {
     }
 
     @JvmStatic
-    fun showAudioContextMenu(activity: BrowserActivity, audioUrl: String) {
+    fun showAudioContextMenu(activity: MainActivity, audioUrl: String) {
         val title = PetalAndroidUtils.domain(audioUrl)
         PetalLinkContextMenuBridge.show(
             activity = activity,
@@ -614,7 +614,7 @@ object BrowserContextMenuManager {
     }
 
     @JvmStatic
-    fun showSelectionContextMenu(activity: BrowserActivity, selectedText: String) {
+    fun showSelectionContextMenu(activity: MainActivity, selectedText: String) {
         if (selectedText.isBlank()) return
         PetalLinkContextMenuBridge.show(
             activity = activity,
@@ -672,7 +672,7 @@ object BrowserContextMenuManager {
     }
 
     @JvmStatic
-    fun showSmsContextMenu(activity: BrowserActivity, smsUri: String) {
+    fun showSmsContextMenu(activity: MainActivity, smsUri: String) {
         val number = smsUri.removePrefix("sms:").removePrefix("smsto:").substringBefore('?')
         PetalLinkContextMenuBridge.show(
             activity = activity,
@@ -706,7 +706,7 @@ object BrowserContextMenuManager {
     @JvmStatic
     @JvmOverloads
     fun showPageContextMenu(
-        activity: BrowserActivity,
+        activity: MainActivity,
         pageUrl: String,
         pageTitle: String? = null,
     ) {
@@ -786,7 +786,7 @@ object BrowserContextMenuManager {
 
     @JvmStatic
     @JvmOverloads
-    fun showImageLinkContextMenu(activity: BrowserActivity, linkUrl: String, imageUrl: String, linkText: String? = null) {
+    fun showImageLinkContextMenu(activity: MainActivity, linkUrl: String, imageUrl: String, linkText: String? = null) {
         val parsed = Uri.parse(linkUrl)
         val faviconUrl = if (parsed.scheme == "http" || parsed.scheme == "https") {
             "${parsed.scheme}://${parsed.authority}/favicon.ico"
@@ -995,7 +995,7 @@ object BrowserContextMenuManager {
     @JvmStatic
     @JvmOverloads
     fun handleContextMenu(
-        activity: BrowserActivity,
+        activity: MainActivity,
         hitResult: mozilla.components.concept.engine.HitResult?,
         pageUrl: String? = null,
         pageTitle: String? = null,

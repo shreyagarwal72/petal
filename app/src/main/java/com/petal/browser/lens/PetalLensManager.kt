@@ -138,7 +138,7 @@ object PetalLensManager {
 
         // Fallback to Google Lens web URL inside the browser / active activity
         try {
-            if (context is com.petal.browser.activity.BrowserActivity) {
+            if (context is com.petal.browser.activity.MainActivity) {
                 context.addAlbum("Google Lens", "https://lens.google.com", true)
             } else {
                 val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://lens.google.com")).apply {
@@ -352,7 +352,7 @@ object PetalLensManager {
                     context.runOnUiThread {
                         val encodedUrl = Uri.encode(imageUrl)
                         val lensWebUrl = "https://lens.google.com/uploadbyurl?url=$encodedUrl"
-                        if (context is com.petal.browser.activity.BrowserActivity) {
+                        if (context is com.petal.browser.activity.MainActivity) {
                             context.addAlbum("Google Lens", lensWebUrl, true)
                         } else {
                             val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(lensWebUrl)).apply {

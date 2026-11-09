@@ -10,7 +10,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.compose.incognito.PetalIncognitoSessionManager
 import com.petal.browser.compose.mlkit.PetalImageScannerBridge
 import com.petal.browser.browser.BrowserContainer
@@ -29,7 +29,7 @@ import java.util.Objects
 
 /**
  * Kotlin utility handler encapsulating Intent dispatching, file URI opening,
- * deep link routing, and widget actions for BrowserActivity.
+ * deep link routing, and widget actions for MainActivity.
  */
 object BrowserIntentHandler {
 

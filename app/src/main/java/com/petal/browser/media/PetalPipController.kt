@@ -5,7 +5,7 @@
  * Unified architecture supporting:
  *   - Standalone Video Player (PetalVideoPlayerScreen / MediaPlayerActivity)
  *   - Standalone Audio Player (PetalAudioPlayerScreen)
- *   - Website In-Page and Fullscreen HTML5 Video Players (BrowserActivity)
+ *   - Website In-Page and Fullscreen HTML5 Video Players (MainActivity)
  *
  * Features:
  *   - Clamped aspect ratio boundaries [0.418f..2.39f] as enforced by Android OS

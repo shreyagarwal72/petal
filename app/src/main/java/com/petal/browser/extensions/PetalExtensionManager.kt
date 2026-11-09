@@ -25,7 +25,7 @@ import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 
 /**
  * PetalExtensionManager
@@ -831,7 +831,7 @@ object PetalExtensionManager {
                 val isPrivate = (currentSession?.settings?.usePrivateMode ?: false) && source.metaData.allowedInPrivateBrowsing
                 val shouldActivate = createDetails.active ?: true
 
-                val act = findBrowserActivity(context)
+                val act = findMainActivity(context)
                 if (act != null) {
                     val result = GeckoResult<GeckoSession>()
                     act.runOnUiThread {
@@ -973,7 +973,7 @@ object PetalExtensionManager {
             override fun onCloseTab(extension: WebExtension?, session: GeckoSession): GeckoResult<AllowOrDeny> {
                 Handler(Looper.getMainLooper()).post {
                     try {
-                        val activity = findBrowserActivity(context) ?: return@post
+                        val activity = findMainActivity(context) ?: return@post
                         val controller = BrowserContainer.list().firstOrNull {
                             geckoSessionFor(it) === session
                         }
@@ -992,7 +992,7 @@ object PetalExtensionManager {
             ): GeckoResult<AllowOrDeny> {
                 Handler(Looper.getMainLooper()).post {
                     try {
-                        val activity = findBrowserActivity(context) ?: return@post
+                        val activity = findMainActivity(context) ?: return@post
                         val controller = BrowserContainer.list().firstOrNull {
                             geckoSessionFor(it) === session
                         }
@@ -1394,7 +1394,7 @@ object PetalExtensionManager {
             return
         }
 
-        val activity = findBrowserActivity(context)
+        val activity = findMainActivity(context)
         if (activity != null) {
             activity.runOnUiThread {
                 activity.addAlbum("${extItem.name} Settings", optionsUrl, true)
@@ -1430,7 +1430,7 @@ object PetalExtensionManager {
             }
         } catch (_: Throwable) {}
 
-        val activity = findBrowserActivity(context) ?: return null
+        val activity = findMainActivity(context) ?: return null
         return activity.currentAlbumController?.let(::geckoSessionFor)
     }
 
@@ -1439,10 +1439,10 @@ object PetalExtensionManager {
         else -> null
     }
 
-    private fun findBrowserActivity(context: Context): com.petal.browser.activity.BrowserActivity? {
+    private fun findMainActivity(context: Context): com.petal.browser.activity.MainActivity? {
         var ctx: Context? = context
         while (ctx is android.content.ContextWrapper) {
-            if (ctx is com.petal.browser.activity.BrowserActivity) return ctx
+            if (ctx is com.petal.browser.activity.MainActivity) return ctx
             ctx = ctx.baseContext
         }
         return null

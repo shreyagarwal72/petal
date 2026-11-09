@@ -4,7 +4,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.browser.BrowserContainer
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.webextension.Action
@@ -27,10 +27,10 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    private fun findBrowserActivity(): BrowserActivity? {
+    private fun findMainActivity(): MainActivity? {
         var ctx: Context? = context
         while (ctx is android.content.ContextWrapper) {
-            if (ctx is BrowserActivity) return ctx
+            if (ctx is MainActivity) return ctx
             ctx = ctx.baseContext
         }
         return null
@@ -65,7 +65,7 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
     ) {
         mainHandler.post {
             try {
-                val act = findBrowserActivity() ?: return@post
+                val act = findMainActivity() ?: return@post
                 val title = extension.getMetadata()?.name ?: act.getString(com.petal.browser.R.string.app_name)
                 val targetUrl = url.ifBlank { "about:blank" }
                 act.runOnUiThread {

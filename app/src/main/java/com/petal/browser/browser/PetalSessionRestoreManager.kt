@@ -7,7 +7,7 @@ import androidx.preference.PreferenceManager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.engine.gecko.PetalEngineStore
 import kotlinx.coroutines.Dispatchers
@@ -91,7 +91,7 @@ object PetalSessionRestoreManager {
     @JvmStatic
     @JvmOverloads
     @MainThread
-    fun saveSession(activity: BrowserActivity, isStopping: Boolean = false) {
+    fun saveSession(activity: MainActivity, isStopping: Boolean = false) {
         try {
             if (activity.isFinishing) return
             val store = PetalEngineStore.getStore(activity)
@@ -327,7 +327,7 @@ object PetalSessionRestoreManager {
      * and this returns true immediately.
      */
     @JvmStatic
-    fun restoreSession(activity: BrowserActivity): Boolean {
+    fun restoreSession(activity: MainActivity): Boolean {
         val store = PetalEngineStore.getStore(activity)
 
         // Process is alive: reuse existing tabs in BrowserStore
@@ -418,7 +418,7 @@ object PetalSessionRestoreManager {
     @JvmStatic
     @JvmOverloads
     fun restoreTabSilently(
-        activity: BrowserActivity,
+        activity: MainActivity,
         title: String?,
         url: String?,
         targetIndex: Int = -1,

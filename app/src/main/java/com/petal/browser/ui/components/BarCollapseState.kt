@@ -9,7 +9,7 @@ import androidx.compose.runtime.setValue
  * Shared state tracking the scroll minimization and morph of the Petal toolbar.
  *
  * [collapsedFraction] ranges from 0f (fully expanded bar) to 1f (compact minimized pill).
- * [BrowserActivity] drives the value during scroll animations; Compose bar composables observe it
+ * [MainActivity] drives the value during scroll animations; Compose bar composables observe it
  * to morph their shape, dimensions, and contents smoothly without jerky re-layouts.
  */
 object BarCollapseState {

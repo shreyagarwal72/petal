@@ -36,7 +36,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.lens.PetalLensBridge
@@ -94,7 +94,7 @@ object PetalQuickToolsBridge {
     }
 
     @JvmStatic
-    fun showQuickTools(activity: BrowserActivity) {
+    fun showQuickTools(activity: MainActivity) {
         val currentController = activity.currentAlbumController
         val currentUrl = currentController?.url ?: ""
         val currentTitle = currentController?.title ?: ""
@@ -191,7 +191,7 @@ object PetalQuickToolsBridge {
     }
 
     private fun handleToolClick(
-        activity: BrowserActivity,
+        activity: MainActivity,
         controller: AlbumController?,
         currentUrl: String,
         currentTitle: String,
@@ -414,7 +414,7 @@ object PetalQuickToolsBridge {
         }
     }
 
-    private fun showQrGenerator(activity: BrowserActivity, url: String, title: String) {
+    private fun showQrGenerator(activity: MainActivity, url: String, title: String) {
         val decor = activity.window.decorView as? ViewGroup ?: return
         var view: ComposeView? = null
         view = ComposeView(activity).apply {
@@ -434,7 +434,7 @@ object PetalQuickToolsBridge {
         decor.addView(view)
     }
 
-    private fun showSiteStyle(activity: BrowserActivity, controller: AlbumController?) {
+    private fun showSiteStyle(activity: MainActivity, controller: AlbumController?) {
         try {
             val dialog = BottomSheetDialog(activity)
             dialog.behavior.skipCollapsed = true
@@ -504,7 +504,7 @@ object PetalQuickToolsBridge {
         }
     }
 
-    private fun showDevNotes(activity: BrowserActivity, domain: String) {
+    private fun showDevNotes(activity: MainActivity, domain: String) {
         try {
             val dialog = BottomSheetDialog(activity)
             dialog.behavior.skipCollapsed = true
@@ -555,7 +555,7 @@ object PetalQuickToolsBridge {
         }
     }
 
-    private fun showAutoScroll(activity: BrowserActivity, controller: AlbumController?) {
+    private fun showAutoScroll(activity: MainActivity, controller: AlbumController?) {
         val decor = activity.window.decorView as? ViewGroup ?: return
         var view: ComposeView? = null
         view = ComposeView(activity).apply {
@@ -578,7 +578,7 @@ object PetalQuickToolsBridge {
         decor.addView(view)
     }
 
-    private fun showImageGrabber(activity: BrowserActivity, controller: AlbumController?) {
+    private fun showImageGrabber(activity: MainActivity, controller: AlbumController?) {
         evaluateJavascript(controller, """
             (function() {
                 var urls = new Set();
@@ -660,7 +660,7 @@ object PetalQuickToolsBridge {
         }
     }
 
-    private fun showNetworkInspector(activity: BrowserActivity, url: String) {
+    private fun showNetworkInspector(activity: MainActivity, url: String) {
         val decor = activity.window.decorView as? ViewGroup ?: return
         var view: ComposeView? = null
         view = ComposeView(activity).apply {
@@ -679,7 +679,7 @@ object PetalQuickToolsBridge {
         decor.addView(view)
     }
 
-    private fun showSpoofIdentity(activity: BrowserActivity, controller: AlbumController?) {
+    private fun showSpoofIdentity(activity: MainActivity, controller: AlbumController?) {
         val decor = activity.window.decorView as? ViewGroup ?: return
         var view: ComposeView? = null
         view = ComposeView(activity).apply {

@@ -284,7 +284,7 @@ object PetalImageScannerBridge {
             dialog.setOnDismissListener {
                 composeView.clearFocus()
                 dialog.window?.decorView?.clearFocus()
-                (activity as? com.petal.browser.activity.BrowserActivity)
+                (activity as? com.petal.browser.activity.MainActivity)
                     ?.restoreBrowserInputFocus()
             }
             dialog.show()

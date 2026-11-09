@@ -28,7 +28,7 @@ import androidx.preference.PreferenceManager;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.petal.browser.R;
-import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.activity.MainActivity;
 import com.petal.browser.activity.MainActivity;
 import com.petal.browser.unit.PetalAndroidUtils;
 import com.petal.browser.view.PetalToast;

@@ -57,7 +57,7 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer
 import com.petal.browser.browser.PlaceholderAlbumController
@@ -250,12 +250,12 @@ object PetalTabSwitcherBridge {
                         },
                         onBookmarkTab = { tabItem ->
                             val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
-                            if (targetAlbum != null && activity is BrowserActivity) {
+                            if (targetAlbum != null && activity is MainActivity) {
                                 activity.saveBookmark(tabItem.title, tabItem.url)
                             }
                         },
                         onShareTab = { tabItem ->
-                            if (activity is BrowserActivity && tabItem.url.isNotBlank() && tabItem.url != "Petal Home") {
+                            if (activity is MainActivity && tabItem.url.isNotBlank() && tabItem.url != "Petal Home") {
                                 activity.shareLink(tabItem.title, tabItem.url)
                             }
                         },
@@ -270,7 +270,7 @@ object PetalTabSwitcherBridge {
                             com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTab(context, tabItem)
                         },
                         onRestoreTab = { restoredTab ->
-                            if (activity is BrowserActivity) {
+                            if (activity is MainActivity) {
                                 val restoreUrl = if (restoredTab.url == "Petal Home" || restoredTab.url.isBlank() || restoredTab.url.equals("about:blank", ignoreCase = true)) {
                                     "about:blank"
                                 } else {
@@ -312,7 +312,7 @@ object PetalTabSwitcherBridge {
                             com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
                         },
                         onOpenSettings = {
-                            (activity as? BrowserActivity)?.openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.TABS)
+                            (activity as? MainActivity)?.openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.TABS)
                         },
                         onTabVisible = { tabItem ->
                             val expectedKey = tabItem.thumbnailKey
@@ -341,7 +341,7 @@ object PetalTabSwitcherBridge {
                         },
 
                         onDuplicateTab = { tabItem ->
-                            if (activity is BrowserActivity) {
+                            if (activity is MainActivity) {
                                 val url = if (tabItem.url.isBlank() || tabItem.url == "Petal Home") "about:blank" else tabItem.url
                                 activity.addAlbum(tabItem.title, url, tabItem.isIncognito)
                             }
@@ -377,7 +377,7 @@ object PetalTabSwitcherBridge {
         onCloseAllTabs: () -> Unit,
         onNewTab: () -> Unit
     ) {
-        if (activity is BrowserActivity) {
+        if (activity is MainActivity) {
             activity.showOverview()
         }
     }

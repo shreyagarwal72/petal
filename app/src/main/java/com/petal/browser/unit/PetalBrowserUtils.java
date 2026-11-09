@@ -47,7 +47,7 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 import com.petal.browser.R;
-import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.activity.MainActivity;
 import com.petal.browser.browser.StandardDomainWhitelist;
 import com.petal.browser.database.HistoryBookmarkContract;
 import com.petal.browser.database.HistoryBookmarkRepository;
@@ -631,8 +631,8 @@ public class PetalBrowserUtils {
         if (context == null || uri == null) return;
         String uriStr = uri.toString();
         if (uriStr.startsWith("petal://flags") || uriStr.startsWith("about:flags") || uriStr.startsWith("about:config") || uriStr.startsWith("chrome://flags")) {
-            if (context instanceof com.petal.browser.activity.BrowserActivity) {
-                ((com.petal.browser.activity.BrowserActivity) context).openFlagsHubScreen();
+            if (context instanceof com.petal.browser.activity.MainActivity) {
+                ((com.petal.browser.activity.MainActivity) context).openFlagsHubScreen();
                 return;
             }
         }
@@ -640,15 +640,15 @@ public class PetalBrowserUtils {
             if (context instanceof Activity) {
                 Activity activity = (Activity) context;
                 if (uriStr.startsWith("petal://ai")) {
-                    if (activity instanceof com.petal.browser.activity.BrowserActivity) {
+                    if (activity instanceof com.petal.browser.activity.MainActivity) {
                         // AI deep links are handled directly by the existing AI search
-                        // bridge. Do not depend on a BrowserActivity helper that may not
+                        // bridge. Do not depend on a MainActivity helper that may not
                         // exist in older/newer activity revisions.
                         String query = uri.getQueryParameter("q");
                         if (query == null) query = uri.getQueryParameter("query");
                         if (query == null) query = "";
                         com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(
-                                (com.petal.browser.activity.BrowserActivity) activity,
+                                (com.petal.browser.activity.MainActivity) activity,
                                 query
                         );
                     } else {
@@ -660,11 +660,11 @@ public class PetalBrowserUtils {
                     return;
                 }
                 if (uriStr.startsWith("petal://settings")) {
-                    if (activity instanceof com.petal.browser.activity.BrowserActivity) {
+                    if (activity instanceof com.petal.browser.activity.MainActivity) {
                         if (uriStr.contains("category=api_integrations") || uriStr.contains("category=ai_research")) {
-                            ((com.petal.browser.activity.BrowserActivity) activity).openApiIntegrationsHub();
+                            ((com.petal.browser.activity.MainActivity) activity).openApiIntegrationsHub();
                         } else {
-                            ((com.petal.browser.activity.BrowserActivity) activity).openSettingsScreen();
+                            ((com.petal.browser.activity.MainActivity) activity).openSettingsScreen();
                         }
                     } else {
                         Intent intent = new Intent(activity, com.petal.browser.activity.SettingsActivity.class);
@@ -680,8 +680,8 @@ public class PetalBrowserUtils {
                 }
             }
         } else if (uriStr.startsWith("http://") || uriStr.startsWith("https://")) {
-            if (context instanceof com.petal.browser.activity.BrowserActivity) {
-                ((com.petal.browser.activity.BrowserActivity) context).addAlbum(null, uriStr, true);
+            if (context instanceof com.petal.browser.activity.MainActivity) {
+                ((com.petal.browser.activity.MainActivity) context).addAlbum(null, uriStr, true);
                 return;
             } else if (context instanceof Activity) {
                 Intent intent = new Intent(context, com.petal.browser.activity.MainActivity.class);

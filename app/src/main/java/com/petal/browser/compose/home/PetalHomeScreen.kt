@@ -1161,7 +1161,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
     // It never accepts typed input itself - tapping anywhere on it (including
     // the placeholder text area) hands off immediately to the real full-screen
     // omnibox (PetalOmniboxPage, opened via onSearch("") -> showOmniboxPage("")
-    // in BrowserActivity), which is where live suggestions/history/voice/engine
+    // in MainActivity), which is where live suggestions/history/voice/engine
     // preference all actually live. Do not reintroduce a local TextField or
     // local suggestion-fetching here - that previously duplicated and shadowed
     // the omnibox page instead of opening it.

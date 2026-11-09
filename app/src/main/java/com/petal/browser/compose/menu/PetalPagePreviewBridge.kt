@@ -48,7 +48,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.browser.PetalTabViewController
@@ -65,7 +65,7 @@ import com.petal.browser.R
 object PetalPagePreviewBridge {
 
     @JvmStatic
-    fun show(activity: BrowserActivity, url: String) {
+    fun show(activity: MainActivity, url: String) {
         if (url.isBlank()) return
 
         activity.runOnUiThread {

@@ -26,7 +26,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.media.session.MediaButtonReceiver;
 
 import com.petal.browser.R;
-import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.activity.MainActivity;
 import com.petal.browser.activity.MainActivity;
 import com.petal.browser.compose.downloads.LiveUpdateNotificationManager;
 import com.petal.browser.live.PetalLiveActionBus;

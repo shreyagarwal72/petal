@@ -11,7 +11,7 @@ import androidx.compose.ui.geometry.Rect
  * Remembers where the bar the user just tapped sits on screen, so the full-screen omnibox page
  * can grow out of it (container transform) and collapse back into it.
  *
- * Compose bars call [mark] in their click handler; BrowserActivity.showOmniboxPage() calls
+ * Compose bars call [mark] in their click handler; MainActivity.showOmniboxPage() calls
  * [take] once. A mark older than [MAX_AGE_MS] is ignored so a stale position is never reused.
  */
 object PetalOmniboxOrigin {

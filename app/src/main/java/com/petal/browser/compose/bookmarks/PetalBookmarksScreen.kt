@@ -622,7 +622,7 @@ fun PetalBookmarksScreen(
                                     onClick = {
                                         val url = rec.url ?: ""
                                         optionsRecord = null
-                                        (context as? com.petal.browser.activity.BrowserActivity)?.let { act ->
+                                        (context as? com.petal.browser.activity.MainActivity)?.let { act ->
                                             act.addAlbum(rec.title ?: url, url, true)
                                             onDismiss()
                                         } ?: onOpenUrl(url)

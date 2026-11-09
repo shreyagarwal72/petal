@@ -394,7 +394,7 @@ private fun ExtensionsMenuContent(
                     onClick = {
                         haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                         onDismiss()
-                        if (activity is com.petal.browser.activity.BrowserActivity) {
+                        if (activity is com.petal.browser.activity.MainActivity) {
                             activity.addAlbum("Firefox Add-ons", PetalExtensionManager.amoAndroidBrowseUrl, true)
                         }
                     },

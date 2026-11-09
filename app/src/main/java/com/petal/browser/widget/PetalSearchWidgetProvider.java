@@ -11,7 +11,7 @@ package com.petal.browser.widget;
  * This class survives only as the single shared source of truth for the widget's
  * action strings and the {@link #updateAllWidgets(android.content.Context)} entry
  * point, since both are referenced from Java call sites
- * ({@link com.petal.browser.activity.BrowserActivity#dispatchIntent} and the palette
+ * ({@link com.petal.browser.activity.MainActivity#dispatchIntent} and the palette
  * pickers in PetalSettingsScreen.kt) that shouldn't need to know it's Glance under the
  * hood.
  */

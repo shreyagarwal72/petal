@@ -647,7 +647,7 @@ object PetalLiveLogEngine {
                     val l = reader.readLine() ?: break
                     // Filter to our PID or key browser tags
                     val isMyPid = l.contains(myPid)
-                    val isGeckoTag = l.contains("Gecko") || l.contains("Petal") || l.contains("BrowserActivity") || l.contains("libxul")
+                    val isGeckoTag = l.contains("Gecko") || l.contains("Petal") || l.contains("MainActivity") || l.contains("libxul")
                     if (!isMyPid && !isGeckoTag) continue
 
                     // Ignore high-volume spam

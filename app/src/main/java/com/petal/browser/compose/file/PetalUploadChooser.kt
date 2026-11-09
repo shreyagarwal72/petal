@@ -102,7 +102,7 @@ object PetalUploadChooser {
     }
 
     /**
-     * Called from BrowserActivity.showFileChooser(). [onFatalFallback] runs only if BOTH
+     * Called from MainActivity.showFileChooser(). [onFatalFallback] runs only if BOTH
      * Petal pickers throw while opening (should never happen); it lets the caller cancel cleanly.
      */
     @JvmStatic

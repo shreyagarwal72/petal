@@ -5,7 +5,7 @@
  * the legacy AlertDialog-based search dialog (dialog_search.xml + AdapterSearch)
  * AND the previous bottom-sheet PetalOmniboxOverlay, unifying every entry point
  * (address bar tap, home page search box, incognito home, search widget) behind
- * a single full-page surface that mounts directly into BrowserActivity's
+ * a single full-page surface that mounts directly into MainActivity's
  * contentFrame - the same architecture as Downloads/History/Account/Settings -
  * so it gets the same predictive-back gesture handling and "last page" underlay
  * preview (InstallerX-Revived style) as those screens instead of a dialog window.
@@ -137,7 +137,7 @@ object PetalOmniboxBridge {
 
     /**
      * Builds the full-screen omnibox page as a plain [ComposeView] meant to be mounted
-     * into BrowserActivity's `contentFrame`, supporting Chrome-style quick-action cards
+     * into MainActivity's `contentFrame`, supporting Chrome-style quick-action cards
      * and site shortcuts.
      */
     @JvmStatic
@@ -1205,7 +1205,7 @@ fun PetalOmniboxPage(
                                                             if (payload.source == SuggestionSource.SWITCH_TO_TAB && payload.tabIndex >= 0) {
                                                                 try {
                                                                     val target = com.petal.browser.browser.PetalTabRegistry.get(payload.tabIndex)
-                                                                    (activity as? com.petal.browser.activity.BrowserActivity)?.showAlbum(target)
+                                                                    (activity as? com.petal.browser.activity.MainActivity)?.showAlbum(target)
                                                                     onBackPress()
                                                                 } catch (_: Exception) {
                                                                     val trimmed = payload.targetUrl?.trim() ?: payload.query.trim()

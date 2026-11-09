@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.compose.settings.viewmodel.AddressBarSettingsViewModel
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.*
@@ -210,7 +210,7 @@ fun AddressBarSettingsScreen(
                         onSelect = { selectedStyle ->
                             haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                             viewModel.setStyle(selectedStyle)
-                            (context as? BrowserActivity)?.let { act ->
+                            (context as? MainActivity)?.let { act ->
                                 act.applyAddressBarPosition()
                                 act.updatePersistentBottomNav()
                             }
@@ -237,8 +237,8 @@ fun AddressBarSettingsScreen(
                         onSelect = { selectedPos ->
                             haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                             viewModel.setPosition(selectedPos)
-                            (context as? BrowserActivity)?.applyAddressBarPosition()
-                            (context as? BrowserActivity)?.window?.decorView?.post { (context as? BrowserActivity)?.applyAddressBarPosition() }
+                            (context as? MainActivity)?.applyAddressBarPosition()
+                            (context as? MainActivity)?.window?.decorView?.post { (context as? MainActivity)?.applyAddressBarPosition() }
                         }
                     )
                 }
@@ -265,7 +265,7 @@ fun AddressBarSettingsScreen(
                             onSelect = { selectedLayout ->
                                 haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                 viewModel.setMergeLayout(selectedLayout)
-                                (context as? BrowserActivity)?.applyAddressBarPosition()
+                                (context as? MainActivity)?.applyAddressBarPosition()
                             }
                         )
                     }
@@ -480,7 +480,7 @@ fun AddressBarSettingsScreen(
                                 onCheckedChange = { on ->
                                     hideBarsOnScroll = on
                                     barsSp.edit().putBoolean(BarPrefs.KEY_HIDE_BARS_ON_SCROLL, on).apply()
-                                    if (!on) (context as? BrowserActivity)?.animateAddressBarCollapse(false)
+                                    if (!on) (context as? MainActivity)?.animateAddressBarCollapse(false)
                                 }
                             )
                         }
@@ -504,7 +504,7 @@ fun AddressBarSettingsScreen(
                             onSelect = { selectedStyle ->
                                 haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                 viewModel.setCollapseStyle(selectedStyle)
-                                (context as? BrowserActivity)?.applyAddressBarPosition()
+                                (context as? MainActivity)?.applyAddressBarPosition()
                             }
                         )
                     }

@@ -443,7 +443,7 @@ fun PetalLensBottomSheet(
             PetalQrScannerScreen(
                 onResult = { value ->
                     showPetalScanner = false
-                    (context as? com.petal.browser.activity.BrowserActivity)?.restoreBrowserInputFocus()
+                    (context as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
                     if (value.startsWith("http://") || value.startsWith("https://")) {
                         com.petal.browser.unit.PetalBrowserUtils.intentURL(context, Uri.parse(value))
                         onDismissRequest()
@@ -456,7 +456,7 @@ fun PetalLensBottomSheet(
                 },
                 onDismiss = {
                     showPetalScanner = false
-                    (context as? com.petal.browser.activity.BrowserActivity)?.restoreBrowserInputFocus()
+                    (context as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
                     onDismissRequest()
                 }
             )

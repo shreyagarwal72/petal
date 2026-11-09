@@ -18,7 +18,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 
 object PetalMediaSnifferOverlayBridge {
 
-    /** The URL of the currently visible page — updated by BrowserActivity on every navigation. */
+    /** The URL of the currently visible page — updated by MainActivity on every navigation. */
     @JvmStatic
     val currentPageUrl = mutableStateOf("")
 
@@ -31,7 +31,7 @@ object PetalMediaSnifferOverlayBridge {
         isSheetForcedOpen.value = true
     }
 
-    /** Call from BrowserActivity (or tab switch events) to keep the Social Download section current. */
+    /** Call from MainActivity (or tab switch events) to keep the Social Download section current. */
     @JvmStatic
     fun setCurrentPageUrl(url: String) {
         currentPageUrl.value = url
@@ -69,7 +69,7 @@ object PetalMediaSnifferOverlayBridge {
                     context        = activity,
                     currentPageUrl = pageUrl
                 ) { request ->
-                    val act = activity as? com.petal.browser.activity.BrowserActivity
+                    val act = activity as? com.petal.browser.activity.MainActivity
                     val tabController = act?.currentAlbumController as? com.petal.browser.browser.PetalTabViewController ?: act?.getOrCreateTabViewController()
                     tabController?.captureVideoHandoffState { handoff ->
                         val intent = Intent(activity, MediaPlayerActivity::class.java).apply {

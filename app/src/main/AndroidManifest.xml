@@ -323,16 +323,14 @@
             </intent-filter>
         </activity>
 
-        <activity
+        <!--
+          Legacy component alias: preserves 100% backward compatibility for OS shortcuts,
+          widgets, and external launcher targets previously mapped to BrowserActivity.
+        -->
+        <activity-alias
             android:name="com.petal.browser.activity.BrowserActivity"
-            android:theme="@style/Theme.Petal.Splash"
-            android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
-            android:supportsPictureInPicture="true"
-            android:windowSoftInputMode="adjustResize"
-            android:fitsSystemWindows="false"
-            android:exported="false"
-            android:resizeableActivity="true"
-            android:launchMode="singleTask" />
+            android:targetActivity="com.petal.browser.activity.MainActivity"
+            android:exported="true" />
 
         <!--
           Standalone Dedicated Viewers & Players:

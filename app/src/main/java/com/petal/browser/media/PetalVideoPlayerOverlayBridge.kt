@@ -45,7 +45,7 @@ class PetalVideoPlayerOverlayBridge(
 
     private val mediaBridge: PetalMediaBridge?
         get() = (controller as? PetalTabViewController)?.getMediaBridge()
-            ?: (activity as? com.petal.browser.activity.BrowserActivity)?.activeMediaBridge
+            ?: (activity as? com.petal.browser.activity.MainActivity)?.activeMediaBridge
 
     private var composeView: ComposeView? = null
     private var previousListener: PetalMediaBridge.MediaStateListener? = null
@@ -180,14 +180,14 @@ class PetalVideoPlayerOverlayBridge(
                             mediaBridge?.setVideoAspectRatio(mode)
                         },
                         onPipClick = {
-                            BrowserMediaDelegate.triggerSystemPipMode(activity as com.petal.browser.activity.BrowserActivity)
+                            BrowserMediaDelegate.triggerSystemPipMode(activity as com.petal.browser.activity.MainActivity)
                         },
                         onCloseFullscreen = {
                             onClose()
                         },
                         videoUrl = controller?.url,
                         onCastClick = {
-                            val act = activity as? com.petal.browser.activity.BrowserActivity
+                            val act = activity as? com.petal.browser.activity.MainActivity
                             val currentTab = controller ?: act?.currentAlbumController
                             val pageUrl = currentTab?.url ?: ""
                             // 1. Try to find sniffed media stream for current page (HLS, MP4, WebM)

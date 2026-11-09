@@ -60,7 +60,7 @@ object PetalSplashState {
 
     /**
      * True when the Compose launch splash will play after the system launch splash. Same condition
-     * PetalHomeScreen uses to show it; BrowserActivity reads it to choose how the system splash exits
+     * PetalHomeScreen uses to show it; MainActivity reads it to choose how the system splash exits
      * (dissolve into this screen vs. open up into the home screen).
      */
     @JvmStatic

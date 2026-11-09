@@ -34,7 +34,7 @@ import androidx.core.graphics.drawable.IconCompat;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.petal.browser.R;
-import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.activity.MainActivity;
 import com.petal.browser.unit.PetalAndroidUtils;
 
 import org.json.JSONArray;
@@ -634,14 +634,14 @@ public class PetalPwaManager {
         if (activity == null) return;
 
         com.petal.browser.browser.AlbumController targetController = this.albumController;
-        if (targetController == null && activity instanceof com.petal.browser.activity.BrowserActivity) {
-            targetController = ((com.petal.browser.activity.BrowserActivity) activity).currentAlbumController;
+        if (targetController == null && activity instanceof com.petal.browser.activity.MainActivity) {
+            targetController = ((com.petal.browser.activity.MainActivity) activity).currentAlbumController;
         }
 
         String pageUrl = targetController != null ? targetController.getUrl() : null;
         if (pageUrl == null || pageUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(pageUrl.trim())) {
-            if (activity instanceof com.petal.browser.activity.BrowserActivity) {
-                pageUrl = ((com.petal.browser.activity.BrowserActivity) activity).resolveCurrentTabUrl();
+            if (activity instanceof com.petal.browser.activity.MainActivity) {
+                pageUrl = ((com.petal.browser.activity.MainActivity) activity).resolveCurrentTabUrl();
             }
         }
 

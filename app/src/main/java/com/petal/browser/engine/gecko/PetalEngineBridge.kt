@@ -273,7 +273,7 @@ object PetalEngineBridge {
                     }
                     val fallbackUrl = intent.getStringExtra("browser_fallback_url")
                     if (!fallbackUrl.isNullOrBlank()) {
-                        if (activity is com.petal.browser.activity.BrowserActivity) {
+                        if (activity is com.petal.browser.activity.MainActivity) {
                             activity.showAlbum(activity.getCurrentAlbumController(), fallbackUrl)
                         }
                         return true
@@ -645,8 +645,8 @@ object PetalEngineBridge {
                     val target = prompt.targetUri
                     return if (blockPopups) {
                         if (!target.isNullOrBlank()) {
-                            val act = (context as? com.petal.browser.activity.BrowserActivity)
-                                ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.BrowserActivity
+                            val act = (context as? com.petal.browser.activity.MainActivity)
+                                ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.MainActivity
                             act?.runOnUiThread {
                                 val domain = try { android.net.Uri.parse(target).host ?: target } catch (_: Throwable) { target }
                                 com.petal.browser.view.PetalToast.show(
@@ -866,7 +866,7 @@ object PetalEngineBridge {
                                 geckoResult.complete(request.dismiss())
                             },
                             onManagePasswords = {
-                                if (act is com.petal.browser.activity.BrowserActivity) {
+                                if (act is com.petal.browser.activity.MainActivity) {
                                     act.openSettingsScreen()
                                 }
                                 geckoResult.complete(request.dismiss())
@@ -929,7 +929,7 @@ object PetalEngineBridge {
                             }
                         }
 
-                        if (act is com.petal.browser.activity.BrowserActivity) {
+                        if (act is com.petal.browser.activity.MainActivity) {
                             act.showFileChooser(valueCallback, fileChooserParams)
                         } else {
                             com.petal.browser.compose.file.PetalUploadChooser.show(

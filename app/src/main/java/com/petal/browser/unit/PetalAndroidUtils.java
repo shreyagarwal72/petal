@@ -95,7 +95,7 @@ import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
 import com.petal.browser.R;
-import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.activity.MainActivity;
 import com.petal.browser.activity.MainActivity;
 import com.petal.browser.browser.BrowserController;
 import com.petal.browser.browser.DataURIParser;
@@ -226,8 +226,8 @@ public class PetalAndroidUtils {
                                 fos.close();
                                 String text = activity.getString(R.string.app_done) + ". " + activity.getString(R.string.menu_download) +"?";
                                 PetalToast.show(activity, text, PetalToast.LENGTH_LONG, activity.getString(R.string.app_ok), () -> {
-                                    if (activity instanceof com.petal.browser.activity.BrowserActivity) {
-                                        ((com.petal.browser.activity.BrowserActivity) activity).showDownloads();
+                                    if (activity instanceof com.petal.browser.activity.MainActivity) {
+                                        ((com.petal.browser.activity.MainActivity) activity).showDownloads();
                                     }
                                 });
                             } else {

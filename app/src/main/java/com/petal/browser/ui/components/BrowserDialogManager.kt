@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.view.CustomSearchAdapter
 import com.petal.browser.view.GridAdapter
 import com.petal.browser.objects.CustomSearchesHelper
@@ -25,14 +25,14 @@ import java.util.LinkedList
 import java.util.Objects
 
 /**
- * Kotlin manager handling legacy filter and custom searches dialogs for BrowserActivity.
+ * Kotlin manager handling legacy filter and custom searches dialogs for MainActivity.
  */
 object BrowserDialogManager {
 
     private const val TAG = "BrowserDialogManager"
 
     @JvmStatic
-    fun showDialogFilter(activity: BrowserActivity) {
+    fun showDialogFilter(activity: MainActivity) {
         val context: Context = activity
         val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(context)
         val dialogView = View.inflate(context, R.layout.dialog_menu, null)
@@ -77,7 +77,7 @@ object BrowserDialogManager {
     }
 
     @JvmStatic
-    fun showDialogCustomSearches(activity: BrowserActivity, initialUrl: String) {
+    fun showDialogCustomSearches(activity: MainActivity, initialUrl: String) {
         activity.search_input?.clearFocus()
         if (activity.dialogOverview != null && activity.dialogOverview.isShowing) {
             activity.dialogOverview.cancel()
