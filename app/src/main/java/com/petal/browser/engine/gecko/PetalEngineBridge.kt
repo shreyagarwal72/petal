@@ -274,7 +274,7 @@ object PetalEngineBridge {
                     val fallbackUrl = intent.getStringExtra("browser_fallback_url")
                     if (!fallbackUrl.isNullOrBlank()) {
                         if (activity is com.petal.browser.activity.MainActivity) {
-                            activity.showAlbum(activity.getCurrentAlbumController(), fallbackUrl)
+                            activity.showAlbum(activity.currentAlbumController, fallbackUrl)
                         }
                         return true
                     }

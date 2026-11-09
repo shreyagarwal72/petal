@@ -77,9 +77,7 @@ class MainActivity : FragmentActivity(), BrowserController {
     var isCustomFullscreenState: Boolean = false
     var isDecorOverlayShowing: Boolean = false
     var isPetalHomeSurfaceShowing: Boolean = false
-    val isBarAnimationRunning: Boolean get() = false
     fun isBarAnimationRunning(): Boolean = false
-    val isAddressBarCollapsed: Boolean get() = false
     fun isAddressBarCollapsed(): Boolean = false
     var pendingOverlayBackAction: Runnable? = null
     var mediaService: PetalMediaSessionService? = null
@@ -103,8 +101,7 @@ class MainActivity : FragmentActivity(), BrowserController {
     var search_input: TextInputEditText? = null
     private var singleTabViewController: PetalTabViewController? = null
 
-    val orCreateTabViewController: PetalTabViewController
-        get() = getOrCreateTabViewController()
+
 
     companion object {
         const val INPUT_FILE_REQUEST_CODE = 1
@@ -187,9 +184,7 @@ class MainActivity : FragmentActivity(), BrowserController {
         return singleTabViewController!!
     }
 
-    fun getCurrentAlbumController(): AlbumController {
-        return currentAlbumController ?: getOrCreateTabViewController()
-    }
+
 
     fun getCurrentTabSurface(): PetalTabSurface {
         return getOrCreateTabViewController()
@@ -337,8 +332,7 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     fun installPwaShortcut() { }
     val isCurrentTabHomeOrBlank: Boolean
-        get() = viewModel.activeUrl.value.isBlank() || viewModel.activeUrl.value == "about:home"
-    fun isCurrentTabHomeOrBlank(): Boolean = isCurrentTabHomeOrBlank
+        get() = viewModel.activeUrl.value.isBlank() || viewModel.activeUrl.value == "about:home" 
     fun isActualWebPage(url: String): Boolean =
         url.isNotBlank() && !url.startsWith("about:")
 

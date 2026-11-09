@@ -476,7 +476,7 @@ object PetalSessionRestoreManager {
             return placeholder
         }
 
-        val geckoView = activity.orCreateTabViewController
+        val geckoView = activity.getOrCreateTabViewController()
         geckoView.bindTab(sessionPair.first)
         if (!groupId.isNullOrBlank()) {
             geckoView.setTabGroupId(groupId)
