@@ -391,10 +391,8 @@ open class HistoryBookmarkRepository(context: Context?) {
     }
 
     val sessionStateJson: String?
-        get() = getSessionStateJson()
-
-    fun getSessionStateJson(): String? {
-        val db = database ?: helper.readableDatabase
+        get() {
+            val db = database ?: helper.readableDatabase
         var cursor: Cursor? = null
         try {
             cursor = db.query(

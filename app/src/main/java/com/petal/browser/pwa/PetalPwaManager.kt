@@ -592,12 +592,6 @@ class PetalPwaManager(
         tabViewController?.evaluateJavascript(js, null)
     }
 
-    fun getCurrentManifest(): PwaManifest? = currentManifest
-
-    fun setCurrentManifest(manifest: PwaManifest?) {
-        currentManifest = manifest
-    }
-
     fun installCurrentPwa(activity: Activity?) {
         if (activity == null) return
 

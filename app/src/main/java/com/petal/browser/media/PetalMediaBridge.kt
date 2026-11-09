@@ -142,12 +142,6 @@ class PetalMediaBridge(private val context: Context, var listener: MediaStateLis
     private var lastKnownDurationSec = 0.0
     private var isMutedState = false
 
-    fun setListener(listener: MediaStateListener?) {
-        this.listener = listener
-    }
-
-    fun getListener(): MediaStateListener? = listener
-
     fun attachTabViewController(tabViewController: PetalTabViewController?) {
         this.tabViewController = tabViewController
     }

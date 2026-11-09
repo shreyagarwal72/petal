@@ -82,8 +82,6 @@ class CustomSearchAdapter(
 
     override fun getItemCount(): Int = redirects.size
 
-    fun getRedirects(): ArrayList<CustomRedirect> = redirects
-
     fun addRedirect(redirect: CustomRedirect) {
         redirects.add(redirect)
         notifyItemInserted(itemCount - 1)
