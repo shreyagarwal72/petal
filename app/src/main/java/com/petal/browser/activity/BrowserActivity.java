@@ -189,6 +189,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public WebChromeClient.CustomViewCallback customViewCallback;
     public com.petal.browser.media.PetalVideoPlayerOverlayBridge videoOverlayBridge;
     public VideoView videoView;
+    public int currentVideoWidth = 0;
+    public int currentVideoHeight = 0;
     public boolean isMediaPlaying = false;
     public FloatingActionButton fab_menu;
     public BadgeDrawable badgeDrawable;
