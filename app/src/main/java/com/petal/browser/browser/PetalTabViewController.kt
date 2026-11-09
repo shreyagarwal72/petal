@@ -1565,6 +1565,25 @@ class PetalTabViewController private constructor(
         try { engineView.setVerticalClipping(clippingHeight) } catch (_: Throwable) {}
     }
 
+    private var lastRefreshSpinnerOffset = Int.MIN_VALUE
+
+    /**
+     * SwipeRefreshLayout draws its spinner from the top edge of this view. When the page runs
+     * underneath a top bar (glass / immersive modes) the spinner was hidden behind that bar, so
+     * pull-to-refresh looked like it did nothing. Push the spinner down by the bar height.
+     */
+    fun setRefreshSpinnerTopOffset(offsetPx: Int) {
+        if (offsetPx == lastRefreshSpinnerOffset) return
+        lastRefreshSpinnerOffset = offsetPx
+        val density = resources.displayMetrics.density
+        try {
+            // 40dp = default spinner diameter, 64dp = default pull distance (SwipeRefreshLayout).
+            setProgressViewOffset(false, offsetPx - (40 * density).toInt(), offsetPx + (64 * density).toInt())
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabViewController", "Could not move the pull-to-refresh spinner", t)
+        }
+    }
+
     /** GeckoView-only integration point used for WebExtension delegates. */
     fun getGeckoSession(): org.mozilla.geckoview.GeckoSession? =
         com.petal.browser.engine.gecko.PetalEngineBridge.getEngineGeckoSession(observedSession)

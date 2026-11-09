@@ -3126,6 +3126,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private void updateDynamicToolbarHeights(int toolbarHeightPx) {
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
             ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).setDynamicToolbarMaxHeight(toolbarHeightPx);
+            ((com.petal.browser.browser.PetalTabViewController) currentAlbumController).setRefreshSpinnerTopOffset(toolbarHeightPx);
         }
     }
 

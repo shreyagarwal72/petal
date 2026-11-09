@@ -3,6 +3,8 @@ package com.petal.browser.ui.glass
 import android.content.Context
 import android.graphics.SurfaceTexture
 import android.os.Build
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
@@ -38,14 +40,62 @@ object GeckoGlassBackend {
         val hasTexture = findTextureView(geckoView) != null
         // Already correct: never rebuild the surface for nothing (every rebuild drops the frame).
         if (wantTexture == hasTexture) return
-        // GeckoView.setViewBackend() removes the current surface view and adds a new one. While a
-        // session is attached the compositor keeps drawing to the removed surface and the page
-        // stays black, so only switch while no session is shown. The next bind retries.
-        if (geckoView.session != null) return
-        if (wantTexture) {
-            useTextureView(geckoView)
-        } else {
-            useSurfaceView(geckoView)
+        switchBackend(geckoView, wantTexture)
+    }
+
+    /**
+     * Switches the surface while a session may be attached.
+     *
+     * Why this is needed (read from Mozilla's own source, GeckoView.java + SurfaceViewWrapper.java):
+     *  - SurfaceViewWrapper.useSurfaceView() builds a NEW SurfaceView but never registers the
+     *    SurfaceHolder.Callback on it (only setListener(), called once from the GeckoView
+     *    constructor, does that). After TextureView -> SurfaceView, Gecko therefore never receives
+     *    a surface and the page stays black. That is the "black screen when Liquid Glass is
+     *    toggled" bug. We re-register the same callback ourselves.
+     *  - The session is released first and set again afterwards so the compositor never draws
+     *    into a surface that is being torn down. GeckoView re-acquires the display when the new
+     *    surface reports in.
+     */
+    private fun switchBackend(geckoView: GeckoView, toTexture: Boolean) {
+        val released = try { geckoView.releaseSession() } catch (_: Throwable) { null }
+        try {
+            if (toTexture) {
+                useTextureView(geckoView)
+            } else {
+                // The TextureView's listener is Mozilla's ListenerWrapper, which also implements
+                // SurfaceHolder.Callback. Grab it before the TextureView is replaced.
+                val wrapper = findTextureView(geckoView)?.surfaceTextureListener
+                useSurfaceView(geckoView)
+                val surfaceView = findSurfaceView(geckoView)
+                if (wrapper is SurfaceHolder.Callback && surfaceView != null) {
+                    surfaceView.holder.addCallback(wrapper)
+                } else if (!reattachHolderCallbackByReflection(geckoView)) {
+                    android.util.Log.w("GeckoGlassBackend", "Could not re-attach the SurfaceHolder callback")
+                }
+            }
+        } finally {
+            if (released != null) {
+                try { geckoView.setSession(released) } catch (_: Throwable) {}
+            }
+        }
+    }
+
+    /** Fallback if Mozilla renames its internals: look the callback up by type instead of by name. */
+    private fun reattachHolderCallbackByReflection(geckoView: GeckoView): Boolean {
+        return try {
+            val wrapperField = GeckoView::class.java.getDeclaredField("mSurfaceWrapper")
+            wrapperField.isAccessible = true
+            val wrapper = wrapperField.get(geckoView) ?: return false
+            val cbField = wrapper.javaClass.declaredFields.firstOrNull {
+                SurfaceHolder.Callback::class.java.isAssignableFrom(it.type)
+            } ?: return false
+            cbField.isAccessible = true
+            val callback = cbField.get(wrapper) as? SurfaceHolder.Callback ?: return false
+            val surfaceView = findSurfaceView(geckoView) ?: return false
+            surfaceView.holder.addCallback(callback)
+            true
+        } catch (_: Throwable) {
+            false
         }
     }
 
@@ -61,6 +111,14 @@ object GeckoGlassBackend {
         try {
             geckoView.setViewBackend(GeckoView.BACKEND_TEXTURE_VIEW)
         } catch (_: Throwable) {}
+    }
+
+    private fun findSurfaceView(root: View): SurfaceView? {
+        if (root is SurfaceView) return root
+        if (root is ViewGroup) {
+            for (i in 0 until root.childCount) findSurfaceView(root.getChildAt(i))?.let { return it }
+        }
+        return null
     }
 
     private fun findTextureView(root: View): TextureView? {
