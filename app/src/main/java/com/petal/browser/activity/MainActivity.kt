@@ -190,6 +190,7 @@ class MainActivity : FragmentActivity(), BrowserController {
         return getOrCreateTabViewController()
     }
 
+    @JvmOverloads
     fun addAlbum(title: String?, url: String?, foreground: Boolean = true, incognito: Boolean = false) {
         val effectiveUrl = if (url.isNullOrBlank()) "about:home" else url
         viewModel.openNewTab(effectiveUrl, selectTab = foreground, private = incognito)
@@ -233,6 +234,7 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     fun saveOpenedTabs() { }
 
+    @JvmOverloads
     fun openSettingsScreen(category: SettingsCategory? = null) {
         viewModel.openSettings(category ?: SettingsCategory.OVERVIEW)
     }

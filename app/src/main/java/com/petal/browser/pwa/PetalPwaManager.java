@@ -635,7 +635,7 @@ public class PetalPwaManager {
 
         com.petal.browser.browser.AlbumController targetController = this.albumController;
         if (targetController == null && activity instanceof com.petal.browser.activity.MainActivity) {
-            targetController = ((com.petal.browser.activity.MainActivity) activity).currentAlbumController;
+            targetController = ((com.petal.browser.activity.MainActivity) activity).getCurrentAlbumController();
         }
 
         String pageUrl = targetController != null ? targetController.getUrl() : null;
