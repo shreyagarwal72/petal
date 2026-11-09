@@ -69,7 +69,7 @@ object BrowserDialogManager {
             activity.filter = true
             activity.filterBy = gridList[position].data.toLong()
             dialog.cancel()
-            activity.bottom_navigation.selectedItemId = R.id.page_2
+            activity.bottom_navigation?.selectedItemId = R.id.page_2
         }
         dialog.setOnCancelListener {
             activity.sp.edit().putString("showFilterDialogX", "false").apply()
@@ -79,8 +79,9 @@ object BrowserDialogManager {
     @JvmStatic
     fun showDialogCustomSearches(activity: MainActivity, initialUrl: String) {
         activity.search_input?.clearFocus()
-        if (activity.dialogOverview != null && activity.dialogOverview.isShowing) {
-            activity.dialogOverview.cancel()
+        val overview = activity.dialogOverview
+        if (overview != null && overview.isShowing) {
+            overview.cancel()
         }
         val currentCtrl = activity.currentAlbumController
         if (currentCtrl is com.petal.browser.browser.PetalTabViewController) {

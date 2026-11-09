@@ -7,7 +7,6 @@ import android.os.Build
 import android.webkit.URLUtil
 import androidx.lifecycle.lifecycleScope
 import com.petal.browser.activity.MainActivity
-import com.petal.browser.activity.MainActivity
 import com.petal.browser.compose.ai.ResearchMode
 import com.petal.browser.compose.mlkit.PetalImageScannerBridge
 import com.petal.browser.database.HistoryBookmarkRepository

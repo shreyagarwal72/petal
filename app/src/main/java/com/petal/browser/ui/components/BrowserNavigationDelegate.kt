@@ -108,11 +108,11 @@ object BrowserNavigationDelegate {
                 }
 
                 override fun onNewTab() {
-                    activity.addAlbum(activity.getString(R.string.app_name), prefs.getString("favoriteURL", "about:blank"), true)
+                    activity.addAlbum(activity.getString(R.string.app_name), prefs.getString("favoriteURL", "about:blank") ?: "about:blank", true)
                 }
 
                 override fun onNewIncognitoTab() {
-                    activity.addAlbum("Incognito Tab", prefs.getString("favoriteURL", "about:blank"), true, true)
+                    activity.addAlbum("Incognito Tab", prefs.getString("favoriteURL", "about:blank") ?: "about:blank", true, true)
                     PetalToast.show(activity, activity.getString(R.string.ui_opened_incognito_tab))
                 }
 

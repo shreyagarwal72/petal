@@ -195,15 +195,16 @@ class MainActivity : FragmentActivity(), BrowserController {
         return getOrCreateTabViewController()
     }
 
-    fun addAlbum(title: String?, url: String, foreground: Boolean = true, incognito: Boolean = false) {
-        viewModel.openNewTab(url, selectTab = foreground, private = incognito)
+    fun addAlbum(title: String?, url: String?, foreground: Boolean = true, incognito: Boolean = false) {
+        val effectiveUrl = if (url.isNullOrBlank()) "about:home" else url
+        viewModel.openNewTab(effectiveUrl, selectTab = foreground, private = incognito)
     }
 
-    fun addAlbum(title: String?, url: String, foreground: Boolean) {
+    fun addAlbum(title: String?, url: String?, foreground: Boolean) {
         addAlbum(title, url, foreground, false)
     }
 
-    fun addAlbumInGroup(title: String?, url: String, foreground: Boolean, groupId: String?, groupTitle: String?) {
+    fun addAlbumInGroup(title: String?, url: String?, foreground: Boolean, groupId: String?, groupTitle: String?) {
         addAlbum(title, url, foreground, false)
     }
 
@@ -360,7 +361,14 @@ class MainActivity : FragmentActivity(), BrowserController {
     override fun updateProgress(progress: Int) { }
 
     override fun showAlbum(albumController: AlbumController?) {
+        showAlbum(albumController, null)
+    }
+
+    fun showAlbum(albumController: AlbumController?, targetUrl: String?) {
         currentAlbumController = albumController
+        if (!targetUrl.isNullOrBlank()) {
+            viewModel.loadUrl(targetUrl)
+        }
     }
 
     override fun removeAlbum(albumController: AlbumController?) { }
