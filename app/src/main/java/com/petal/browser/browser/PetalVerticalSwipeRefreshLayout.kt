@@ -34,15 +34,69 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : SwipeRefreshLayout(context, attrs) {
 
+    /** Callback dispatched during pull gestures with normalized progress in [0f, 1f]. */
+    var onPullProgress: ((progress: Float) -> Unit)? = null
+
+    /** Callback dispatched whenever refresh state commits or completes. */
+    var onRefreshStateChanged: ((isRefreshing: Boolean) -> Unit)? = null
+
     private var isQuickScaleInProgress = false
     private var quickScaleEvents = QuickScaleEvents()
     private var previousX = 0f
     private var previousY = 0f
+    private var initialDownY = 0f
     private val doubleTapTimeout = ViewConfiguration.getDoubleTapTimeout()
     private val doubleTapSlop = ViewConfiguration.get(context).scaledDoubleTapSlop
     private val doubleTapSlopSquare = doubleTapSlop * doubleTapSlop
     private var hadMultiTouch = false
     private var disallowInterceptTouchEvent = false
+
+    init {
+        // Suppress legacy Android CircleImageView spinner so Petal's Zenith ContainedLoadingIndicator draws instead
+        post {
+            suppressLegacyCircleSpinner()
+        }
+    }
+
+    private fun isCircleImageView(view: View): Boolean {
+        val name = view.javaClass.name
+        return name.contains("CircleImageView") || name.contains("CircleView")
+    }
+
+    private fun suppressLegacyCircleSpinner() {
+        for (i in 0 until childCount) {
+            val child = getChildAt(i)
+            if (isCircleImageView(child)) {
+                child.alpha = 0f
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                    child.elevation = 0f
+                }
+            }
+        }
+    }
+
+    override fun onViewAdded(child: View) {
+        super.onViewAdded(child)
+        if (isCircleImageView(child)) {
+            child.alpha = 0f
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                child.elevation = 0f
+            }
+        }
+    }
+
+    override fun drawChild(canvas: android.graphics.Canvas, child: View, drawingTime: Long): Boolean {
+        // Skip rasterization of the legacy circle arrow disc entirely
+        if (isCircleImageView(child)) {
+            return false
+        }
+        return super.drawChild(canvas, child, drawingTime)
+    }
+
+    override fun setRefreshing(refreshing: Boolean) {
+        super.setRefreshing(refreshing)
+        onRefreshStateChanged?.invoke(refreshing)
+    }
 
     @Suppress("ReturnCount")
     override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
@@ -69,6 +123,8 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
             (MotionEvent.ACTION_UP == eventAction && isQuickScaleInProgress)
         ) {
             forgetQuickScaleEvents()
+            initialDownY = 0f
+            onPullProgress?.invoke(0f)
             return super.onInterceptTouchEvent(event)
         }
 
@@ -83,6 +139,7 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
         if (MotionEvent.ACTION_DOWN == eventAction) {
             previousX = event.x
             previousY = event.y
+            initialDownY = event.y
         } else if (MotionEvent.ACTION_MOVE == eventAction) {
             val xDistance = abs(event.x - previousX)
             val yDistance = abs(event.y - previousY)
@@ -94,6 +151,33 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
         }
 
         return super.onInterceptTouchEvent(event)
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (!isEnabled || disallowInterceptTouchEvent) {
+            return false
+        }
+
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                initialDownY = event.y
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (initialDownY == 0f) {
+                    initialDownY = previousY
+                }
+                val density = resources.displayMetrics.density
+                val totalDragDistance = 72f * density
+                val dragY = (event.y - initialDownY).coerceAtLeast(0f) * 0.5f
+                val progress = (dragY / totalDragDistance).coerceIn(0f, 1f)
+                onPullProgress?.invoke(progress)
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                initialDownY = 0f
+                onPullProgress?.invoke(0f)
+            }
+        }
+        return super.onTouchEvent(event)
     }
 
     override fun onStartNestedScroll(child: View, target: View, nestedScrollAxes: Int): Boolean {

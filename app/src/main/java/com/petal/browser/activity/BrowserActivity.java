@@ -255,11 +255,72 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private com.petal.browser.browser.PetalTabViewController singleTabViewController;
     private mozilla.components.lib.state.Store.Subscription browserStoreSubscription;
 
+    private final Runnable hideRefreshBarRunnable = () -> {
+        View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
+        if (refreshBarCompose != null && (refreshState == null || (!refreshState.isRefreshing() && refreshState.getPullProgress() <= 0.01f))) {
+            refreshBarCompose.setVisibility(View.INVISIBLE);
+        }
+    };
+
+    private void setupTabViewControllerPullToRefresh(com.petal.browser.browser.PetalTabViewController tabSurface) {
+        if (tabSurface == null) return;
+        tabSurface.setOnPullProgress(progress -> {
+            runOnUiThread(() -> {
+                if (refreshState != null) {
+                    float prev = refreshState.getPullProgress();
+                    refreshState.setPullProgress(progress);
+                    if (progress >= 0.75f && prev < 0.75f) {
+                        com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this)
+                            .playIfEnabled(BrowserActivity.this, com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.6f);
+                    }
+                }
+                View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
+                if (refreshBarCompose != null) {
+                    if (progress > 0.01f || (refreshState != null && refreshState.isRefreshing())) {
+                        refreshBarCompose.removeCallbacks(hideRefreshBarRunnable);
+                        if (refreshBarCompose.getVisibility() != View.VISIBLE) {
+                            refreshBarCompose.setVisibility(View.VISIBLE);
+                        }
+                    } else if (refreshState == null || !refreshState.isRefreshing()) {
+                        refreshBarCompose.removeCallbacks(hideRefreshBarRunnable);
+                        refreshBarCompose.postDelayed(hideRefreshBarRunnable, 350L);
+                    }
+                }
+            });
+            return kotlin.Unit.INSTANCE;
+        });
+
+        tabSurface.setOnRefreshStateChanged(refreshing -> {
+            runOnUiThread(() -> {
+                if (refreshState != null) {
+                    refreshState.setRefreshing(refreshing);
+                    if (!refreshing) {
+                        refreshState.setPullProgress(0f);
+                    }
+                }
+                View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
+                if (refreshBarCompose != null) {
+                    if (refreshing || (refreshState != null && refreshState.getPullProgress() > 0.01f)) {
+                        refreshBarCompose.removeCallbacks(hideRefreshBarRunnable);
+                        if (refreshBarCompose.getVisibility() != View.VISIBLE) {
+                            refreshBarCompose.setVisibility(View.VISIBLE);
+                        }
+                    } else {
+                        refreshBarCompose.removeCallbacks(hideRefreshBarRunnable);
+                        refreshBarCompose.postDelayed(hideRefreshBarRunnable, 350L);
+                    }
+                }
+            });
+            return kotlin.Unit.INSTANCE;
+        });
+    }
+
     public com.petal.browser.browser.PetalTabViewController getOrCreateTabViewController() {
         if (singleTabViewController == null) {
             singleTabViewController = new com.petal.browser.browser.PetalTabViewController(this);
             singleTabViewController.attachLifecycle(this);
             observePetalTabSurface(singleTabViewController);
+            setupTabViewControllerPullToRefresh(singleTabViewController);
         }
         return singleTabViewController;
     }
@@ -5375,11 +5436,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 refreshBarCompose.setElevation(elevationPx);
                 refreshBarCompose.setTranslationZ(elevationPx);
             }
-            // Keep the host view GONE while idle. Compose's AnimatedVisibility only
-            // hides its content; the ComposeView itself would otherwise remain as a
-            // transparent touch surface above the WebView and steal the next
-            // pull gesture. It is no longer shown by any pull (Mozilla's SwipeRefreshLayout draws its own spinner)
-            // has already captured a real pull gesture.
+            // Keep the host view INVISIBLE while idle so it does not intercept touches.
+            // When PetalVerticalSwipeRefreshLayout detects a pull or active refresh,
+            // setupTabViewControllerPullToRefresh sets this to VISIBLE and drives
+            // Petal's Zenith ContainedLoadingIndicator with spring settling and fade-out.
             refreshBarCompose.setVisibility(View.INVISIBLE);
             refreshBarCompose.bringToFront();
 
