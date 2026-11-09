@@ -107,12 +107,48 @@ class MainActivity : FragmentActivity() {
             return
         }
 
-        if (Intent.ACTION_VIEW == action && !data.isNullOrBlank()) {
-            viewModel.loadUrl(data)
-        } else if (Intent.ACTION_SEND == action && intent.type == "text/plain") {
-            val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+        if (Intent.ACTION_PROCESS_TEXT == action) {
+            val text = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString()
             if (!text.isNullOrBlank()) {
                 viewModel.loadUrl(text)
+            }
+            return
+        }
+
+        when (action) {
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_NEW_TAB -> {
+                viewModel.openNewTab("about:home", selectTab = true, private = false)
+            }
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO -> {
+                viewModel.openNewTab("about:home", selectTab = true, private = true)
+            }
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_BOOKMARKS -> {
+                viewModel.openBookmarks()
+            }
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_DOWNLOADS -> {
+                viewModel.openDownloads()
+            }
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH -> {
+                viewModel.openAiSheet()
+            }
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH -> {
+                viewModel.openNewTab("about:home", selectTab = true, private = false)
+            }
+            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.ACTION_CLOSE_INCOGNITO -> {
+                viewModel.closeAllTabs(isIncognitoOnly = true)
+            }
+            Intent.ACTION_VIEW -> {
+                if (!data.isNullOrBlank()) {
+                    viewModel.loadUrl(data)
+                }
+            }
+            Intent.ACTION_SEND -> {
+                if (intent.type == "text/plain") {
+                    val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+                    if (!text.isNullOrBlank()) {
+                        viewModel.loadUrl(text)
+                    }
+                }
             }
         }
     }

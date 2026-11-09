@@ -27,6 +27,7 @@ import androidx.media.session.MediaButtonReceiver;
 
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.activity.MainActivity;
 import com.petal.browser.compose.downloads.LiveUpdateNotificationManager;
 import com.petal.browser.live.PetalLiveActionBus;
 
@@ -77,7 +78,7 @@ public class PetalMediaSessionService extends Service {
     private float currentSpeed = 1.0f;
     private boolean isMuted = false;
     private Bitmap currentArtwork = null;
-    private Class<?> targetActivityClass = BrowserActivity.class;
+    private Class<?> targetActivityClass = MainActivity.class;
 
     private boolean isNoisyReceiverRegistered = false;
     private final BroadcastReceiver noisyAudioReceiver = new BroadcastReceiver() {
@@ -220,11 +221,11 @@ public class PetalMediaSessionService extends Service {
     }
 
     public void updateMediaState(String title, String artist, boolean playing, long positionMs, long durationMs) {
-        updateMediaState(title, artist, playing, positionMs, durationMs, null, BrowserActivity.class);
+        updateMediaState(title, artist, playing, positionMs, durationMs, null, MainActivity.class);
     }
 
     public void updateMediaState(String title, String artist, boolean playing, long positionMs, long durationMs, Bitmap artwork) {
-        updateMediaState(title, artist, playing, positionMs, durationMs, artwork, BrowserActivity.class);
+        updateMediaState(title, artist, playing, positionMs, durationMs, artwork, MainActivity.class);
     }
 
     public void updateMediaState(String title, String artist, boolean playing, long positionMs, long durationMs, Bitmap artwork, Class<?> targetActivity) {

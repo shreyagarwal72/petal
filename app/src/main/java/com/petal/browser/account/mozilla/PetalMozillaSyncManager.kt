@@ -523,7 +523,7 @@ class PetalMozillaSyncManager private constructor(
 
     private fun dispatchReceivedTabNotification(context: Context, senderName: String, title: String, url: String) {
         try {
-            val intent = android.content.Intent(context, com.petal.browser.activity.BrowserActivity::class.java).apply {
+            val intent = android.content.Intent(context, com.petal.browser.activity.MainActivity::class.java).apply {
                 action = android.content.Intent.ACTION_VIEW
                 data = android.net.Uri.parse(url)
                 flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP

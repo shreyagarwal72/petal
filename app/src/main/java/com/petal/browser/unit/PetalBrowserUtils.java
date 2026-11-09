@@ -652,7 +652,7 @@ public class PetalBrowserUtils {
                                 query
                         );
                     } else {
-                        Intent intent = new Intent(activity, com.petal.browser.activity.BrowserActivity.class);
+                        Intent intent = new Intent(activity, com.petal.browser.activity.MainActivity.class);
                         intent.setAction(Intent.ACTION_VIEW);
                         intent.setData(uri);
                         activity.startActivity(intent);
@@ -684,7 +684,7 @@ public class PetalBrowserUtils {
                 ((com.petal.browser.activity.BrowserActivity) context).addAlbum(null, uriStr, true);
                 return;
             } else if (context instanceof Activity) {
-                Intent intent = new Intent(context, com.petal.browser.activity.BrowserActivity.class);
+                Intent intent = new Intent(context, com.petal.browser.activity.MainActivity.class);
                 intent.setAction(Intent.ACTION_VIEW);
                 intent.setData(uri);
                 context.startActivity(intent);

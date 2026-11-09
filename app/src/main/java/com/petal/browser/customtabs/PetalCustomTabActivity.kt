@@ -45,7 +45,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.compose.composable.PetalRefreshBarState
 import com.petal.browser.compose.composable.RefreshBarLoadingIndicator
@@ -321,7 +321,7 @@ class PetalCustomTabActivity : ComponentActivity() {
             ?: "about:blank"
 
         val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(urlToOpen)).apply {
-            component = ComponentName(this@PetalCustomTabActivity, BrowserActivity::class.java)
+            component = ComponentName(this@PetalCustomTabActivity, MainActivity::class.java)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(browserIntent)

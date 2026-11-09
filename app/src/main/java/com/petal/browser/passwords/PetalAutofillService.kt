@@ -25,7 +25,7 @@ import androidx.annotation.RequiresApi
 import androidx.autofill.inline.UiVersions
 import androidx.autofill.inline.v1.InlineSuggestionUi
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 
 /**
  * PetalAutofillService
@@ -275,7 +275,7 @@ class PetalAutofillService : AutofillService() {
         val attribution = PendingIntent.getActivity(
             this,
             0,
-            Intent(this, BrowserActivity::class.java),
+            Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val content = InlineSuggestionUi.newContentBuilder(attribution)

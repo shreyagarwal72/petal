@@ -7,6 +7,7 @@ import android.os.Build
 import android.webkit.URLUtil
 import androidx.lifecycle.lifecycleScope
 import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.compose.ai.ResearchMode
 import com.petal.browser.compose.mlkit.PetalImageScannerBridge
 import com.petal.browser.database.HistoryBookmarkRepository
@@ -31,7 +32,7 @@ object BrowserContextMenuManager {
     private fun launchInNewWindow(activity: BrowserActivity, targetUrl: String) {
         try {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)).apply {
-                setClass(activity, BrowserActivity::class.java)
+                setClass(activity, MainActivity::class.java)
                 addFlags(
                     Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_MULTIPLE_TASK or

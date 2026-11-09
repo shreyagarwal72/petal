@@ -11,7 +11,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -234,7 +234,7 @@ object PetalLiveAlertManager {
     private fun showPausedNotification(context: Context, downloadId: Long) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
-        val openAppIntent = Intent(context, BrowserActivity::class.java).apply {
+        val openAppIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("open_downloads", true)
         }
@@ -306,7 +306,7 @@ object PetalLiveAlertManager {
         val totalText = if (total > 0) formatBytes(total) else "Unknown"
 
         // Open Downloads manager intent
-        val openAppIntent = Intent(context, BrowserActivity::class.java).apply {
+        val openAppIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("open_downloads", true)
         }
@@ -389,7 +389,7 @@ object PetalLiveAlertManager {
         val openFileIntent = if (fileUri != null) {
             com.petal.browser.download.PetalFileOpener.createOpenIntent(context, fileUri, fileName)
         } else {
-            Intent(context, BrowserActivity::class.java).apply {
+            Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 putExtra("open_downloads", true)
             }
@@ -428,7 +428,7 @@ object PetalLiveAlertManager {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
         ensureNotificationChannel(context)
 
-        val intent = Intent(context, BrowserActivity::class.java).apply {
+        val intent = Intent(context, MainActivity::class.java).apply {
             action = Intent.ACTION_VIEW
             data = Uri.parse("file://$filePath")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP

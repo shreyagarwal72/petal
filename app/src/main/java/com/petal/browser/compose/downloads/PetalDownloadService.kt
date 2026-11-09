@@ -10,7 +10,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import java.io.File
 
 /**
@@ -172,7 +172,7 @@ class PetalDownloadService : Service() {
         } else {
             "${active.size} downloads active in background"
         }
-        val openAppIntent = Intent(applicationContext, BrowserActivity::class.java).apply {
+        val openAppIntent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("open_downloads", true)
         }

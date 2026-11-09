@@ -11,7 +11,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import org.mozilla.geckoview.WebNotification
 import org.mozilla.geckoview.WebNotificationDelegate
 import java.util.concurrent.ConcurrentHashMap
@@ -218,7 +218,7 @@ class WebNotificationActionReceiver : BroadcastReceiver() {
             PetalWebNotificationDelegate.ACTION_CLICK -> {
                 PetalWebNotificationDelegate.handleClick(id)
                 // Bring browser to foreground
-                val launchIntent = Intent(context, BrowserActivity::class.java).apply {
+                val launchIntent = Intent(context, MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 }
                 context.startActivity(launchIntent)

@@ -9,7 +9,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 
 /**
  * Resumes unfinished downloads after device reboots or application updates,
@@ -69,7 +69,7 @@ class PetalDownloadBootReceiver : BroadcastReceiver() {
     private fun postResumeNotification(appContext: Context) {
         try {
             LiveUpdateNotificationManager.ensureChannelCreated(appContext)
-            val open = Intent(appContext, BrowserActivity::class.java).apply {
+            val open = Intent(appContext, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 putExtra("open_downloads", true)
             }

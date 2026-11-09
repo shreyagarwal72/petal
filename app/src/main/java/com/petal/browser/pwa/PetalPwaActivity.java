@@ -29,6 +29,7 @@ import androidx.preference.PreferenceManager;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.activity.MainActivity;
 import com.petal.browser.unit.PetalAndroidUtils;
 import com.petal.browser.view.PetalToast;
 import com.petal.browser.browser.PetalTabViewController;
@@ -333,7 +334,7 @@ public class PetalPwaActivity extends AppCompatActivity {
                             break;
                         case 2:
                             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(pwaUrl));
-                            browserIntent.setComponent(new android.content.ComponentName(this, BrowserActivity.class));
+                            browserIntent.setComponent(new android.content.ComponentName(this, MainActivity.class));
                             browserIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                             startActivity(browserIntent);
                             finish();

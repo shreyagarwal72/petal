@@ -96,6 +96,7 @@ import java.util.function.BooleanSupplier;
 
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.activity.MainActivity;
 import com.petal.browser.activity.SettingsMenuActivity;
 import com.petal.browser.browser.BrowserController;
 import com.petal.browser.browser.DataURIParser;
@@ -288,7 +289,7 @@ public class PetalAndroidUtils {
                             .setShortLabel(title)
                             .setLongLabel(title)
                             .setIcon(icon)
-                            .setIntent(new Intent(context, BrowserActivity.class).setAction(Intent.ACTION_VIEW).setData(Uri.parse(url)))
+                            .setIntent(new Intent(context, MainActivity.class).setAction(Intent.ACTION_VIEW).setData(Uri.parse(url)))
                             .build();
             shortcutManager.requestPinShortcut(pinShortcutInfo, null);
         } else System.out.println("failed_to_add");

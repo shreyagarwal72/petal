@@ -147,7 +147,7 @@ object PetalIncognitoSessionManager {
                 nm.createNotificationChannel(channel)
             }
 
-            val closeIntent = Intent(context, com.petal.browser.activity.BrowserActivity::class.java).apply {
+            val closeIntent = Intent(context, com.petal.browser.activity.MainActivity::class.java).apply {
                 action = ACTION_CLOSE_INCOGNITO
                 flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }

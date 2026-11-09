@@ -237,7 +237,7 @@ public class PetalUpdateUtils {
             };
             String body = customLines[new java.util.Random().nextInt(customLines.length)];
 
-            Intent intent = new Intent(context, com.petal.browser.activity.BrowserActivity.class);
+            Intent intent = new Intent(context, com.petal.browser.activity.MainActivity.class);
             intent.setAction("com.petal.browser.action.SHOW_UPDATE");
             intent.putExtra("update_version", latestTag);
             intent.putExtra("update_url", downloadUrl);

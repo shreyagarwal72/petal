@@ -2,7 +2,7 @@ package com.petal.browser.island
 
 import android.content.Context
 import android.content.Intent
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.live.LiveActionActionListener
 import com.petal.browser.live.LiveActionItem
@@ -64,7 +64,7 @@ class PetalOverlayActions(context: Context) : LiveActionActionListener {
     private inline fun launch(extras: Intent.() -> Unit) {
         try {
             app.startActivity(
-                Intent(app, BrowserActivity::class.java)
+                Intent(app, MainActivity::class.java)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                     .apply(extras)
             )

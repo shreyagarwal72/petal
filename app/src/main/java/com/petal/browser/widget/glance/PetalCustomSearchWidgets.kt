@@ -42,7 +42,7 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 
 /*
  * Petal's three home-screen widgets, in Material 3 Expressive.
@@ -66,7 +66,7 @@ import com.petal.browser.activity.BrowserActivity
  */
 
 private fun widgetActionIntent(context: Context, action: String): Intent =
-    Intent(context, BrowserActivity::class.java).apply {
+    Intent(context, MainActivity::class.java).apply {
         this.action = action
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
     }

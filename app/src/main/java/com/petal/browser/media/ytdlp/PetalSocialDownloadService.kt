@@ -13,7 +13,7 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.petal.browser.R
-import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.compose.downloads.LiveUpdateNotificationManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -141,7 +141,7 @@ class PetalSocialDownloadService : Service() {
     }
 
     private fun openDownloadsPendingIntent(): PendingIntent {
-        val i = Intent(this, BrowserActivity::class.java).apply {
+        val i = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("open_downloads", true)
         }
