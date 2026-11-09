@@ -1,2 +1,6 @@
 site/** linguist-vendored
 site/** linguist-generated=false
+app/src/main/assets/** linguist-vendored
+app/src/main/assets/** linguist-generated=false
+scripts/** linguist-vendored
+scripts/** linguist-generated=false

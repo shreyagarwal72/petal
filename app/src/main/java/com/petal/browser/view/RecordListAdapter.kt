@@ -56,7 +56,7 @@ open class RecordListAdapter(
                 holder.time?.text = record.url
             }
             PetalAndroidUtils.setHighLightedText(context, holder.time, holder.time?.text?.toString() ?: "", PetalAndroidUtils.domain(record.url))
-            holder.favicon?.let { FaviconHelper.setFavicon(context, it, record.url, R.drawable.icon_bookmark) }
+            holder.cardView?.let { FaviconHelper.setFavicon(context, it, record.url, R.id.iconView, R.drawable.icon_bookmark) }
         }
 
         return view

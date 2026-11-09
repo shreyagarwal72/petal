@@ -1398,7 +1398,8 @@ class PetalTabViewController private constructor(
         }
     }
 
-    override fun getCachedPreviewBitmap(): Bitmap? = TabThumbnailCache.getMemoryOnly(boundTabId, isIncognito())
+    override val cachedPreviewBitmap: Bitmap? get() = TabThumbnailCache.getMemoryOnly(boundTabId, isIncognito())
+    override fun getCachedPreviewBitmap(): Bitmap? = cachedPreviewBitmap
 
     @Volatile
     private var lastPreviewCaptureTime = 0L
@@ -1981,7 +1982,8 @@ class PetalTabViewController private constructor(
         }
     }
 
-    override fun getFavicon(): Bitmap? = tab?.content?.icon
+    override val favicon: Bitmap? get() = tab?.content?.icon
+    override fun getFavicon(): Bitmap? = favicon
 
     fun currentState(): State? = tab?.let {
         State(it.id, pageUrl, pageTitle, progress, loading, backAvailable, forwardAvailable, isSecure, it.content.private)
@@ -2105,9 +2107,12 @@ class PetalTabViewController private constructor(
         ensureSessionRendered()
     }
 
-    override fun getTabView(): View = this
-    override fun getAlbumView(): View = this
-    override fun getTabId(): String = boundTabId ?: ""
+    override val tabView: View get() = this
+    override val albumView: View get() = this
+    override fun getTabView(): View = tabView
+    override fun getAlbumView(): View = albumView
+    override val tabId: String get() = boundTabId ?: ""
+    override fun getTabId(): String = tabId
 
     @MainThread
     override fun activate() {
@@ -2206,11 +2211,14 @@ class PetalTabViewController private constructor(
         (resolveActivity(context) as? com.petal.browser.activity.MainActivity)?.resetRefreshState()
     }
 
-    override fun getTitle(): String = pageTitle
+    override val title: String get() = pageTitle
+    override fun getTitle(): String = title
 
-    override fun getUrl(): String = pageUrl
+    override val url: String get() = pageUrl
+    override fun getUrl(): String = url
 
-    override fun isIncognito(): Boolean = tab?.content?.private ?: false
+    override val isIncognito: Boolean get() = tab?.content?.private ?: false
+    override fun isIncognito(): Boolean = isIncognito
 
     /** Permanently closes the tab: removes it from BrowserStore and deletes its thumbnail. */
     override fun destroy() = destroy(keepThumbnail = false)

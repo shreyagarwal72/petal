@@ -10,62 +10,67 @@ import java.util.Collections
 open class PetalTabRegistry {
     companion object {
         @JvmStatic
-        protected val list: MutableList<AlbumController> = Collections.synchronizedList(ArrayList())
+        protected val _list: MutableList<AlbumController> = Collections.synchronizedList(ArrayList())
+
+        @JvmStatic
+        val list: List<AlbumController> get() = _list
+
+        @JvmStatic
+        fun list(): List<AlbumController> = _list
+
+        @JvmStatic
+        val size: Int get() = _list.size
 
         @JvmStatic
         @Synchronized
-        fun get(index: Int): AlbumController = list[index]
+        fun size(): Int = _list.size
+
+        @JvmStatic
+        operator fun get(index: Int): AlbumController = _list[index]
 
         @JvmStatic
         @Synchronized
         fun add(controller: AlbumController) {
-            list.add(controller)
+            _list.add(controller)
         }
 
         @JvmStatic
         @Synchronized
         fun add(controller: AlbumController, index: Int) {
-            list.add(index, controller)
+            _list.add(index, controller)
         }
 
         @JvmStatic
         @Synchronized
         fun replace(index: Int, controller: AlbumController) {
-            list[index] = controller
+            _list[index] = controller
         }
 
         @JvmStatic
         @Synchronized
         fun remove(controller: AlbumController?) {
             if (controller == null) return
-            list.remove(controller)
+            _list.remove(controller)
             controller.destroy()
         }
 
         @JvmStatic
         @Synchronized
-        fun indexOf(controller: AlbumController?): Int = list.indexOf(controller)
-
-        @JvmStatic
-        fun list(): List<AlbumController> = list
+        fun indexOf(controller: AlbumController?): Int = _list.indexOf(controller)
 
         @JvmStatic
         @Synchronized
-        fun size(): Int = list.size
+        fun getNormalCount(): Int = _list.count { !it.isIncognito() }
 
         @JvmStatic
         @Synchronized
-        fun getNormalCount(): Int = list.count { !it.isIncognito() }
-
-        @JvmStatic
-        @Synchronized
-        fun getIncognitoCount(): Int = list.count { it.isIncognito() }
+        fun getIncognitoCount(): Int = _list.count { it.isIncognito() }
 
         @JvmStatic
         @Synchronized
         fun clear() {
-            val copy = ArrayList(list)
-            list.clear()
+            val copy = ArrayList(_list)
+            _list.clear()
             for (albumController in copy) {
                 albumController.destroy()
             }
@@ -74,9 +79,10 @@ open class PetalTabRegistry {
         @JvmStatic
         @Synchronized
         fun releaseAll() {
-            val copy = ArrayList(list)
-            list.clear()
+            val copy = ArrayList(_list)
+            _list.clear()
             for (albumController in copy) {
+                if (albumController == null) continue
                 try {
                     if (albumController is PetalTabViewController) {
                         albumController.release()

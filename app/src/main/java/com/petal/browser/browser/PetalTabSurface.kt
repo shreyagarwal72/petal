@@ -11,15 +11,29 @@ import android.view.View
  * tab placeholders (PlaceholderTabController).
  */
 interface PetalTabSurface {
-    fun getTabView(): View
-    fun getAlbumView(): View = getTabView()
+    val tabView: View
+    val albumView: View get() = tabView
+    fun getTabView(): View = tabView
+    fun getAlbumView(): View = albumView
+
+    val title: String
+    val url: String
+    fun getTitle(): String = title
+    fun getUrl(): String = url
+
+    val tabId: String get() = ""
+    fun getTabId(): String = tabId
+
+    val favicon: Bitmap? get() = null
+    fun getFavicon(): Bitmap? = favicon
+
+    val isIncognito: Boolean get() = false
+    fun isIncognito(): Boolean = isIncognito
+
+    val cachedPreviewBitmap: Bitmap? get() = null
+    fun getCachedPreviewBitmap(): Bitmap? = cachedPreviewBitmap
+
     fun activate()
     fun deactivate()
-    fun getTitle(): String
-    fun getUrl(): String
-    fun getTabId(): String = ""
-    fun getFavicon(): Bitmap? = null
-    fun isIncognito(): Boolean = false
     fun destroy() {}
-    fun getCachedPreviewBitmap(): Bitmap? = null
 }
