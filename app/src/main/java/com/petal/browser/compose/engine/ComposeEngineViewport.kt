@@ -19,9 +19,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import com.petal.browser.compose.composable.RefreshBarLoadingIndicatorLazy
 import com.petal.browser.engine.gecko.PetalEngineStore
 import com.petal.browser.ui.glass.GeckoGlassBackend
 import com.petal.browser.unit.PetalBrowserUtils
@@ -116,7 +118,14 @@ fun ComposeEngineViewport(
             onRefresh()
         },
         state = pullRefreshState,
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(),
+        indicator = {
+            RefreshBarLoadingIndicatorLazy(
+                isRefreshing = isPullRefreshing,
+                pullProgressProvider = { pullRefreshState.distanceFraction },
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        }
     ) {
         Box(
             modifier = Modifier
