@@ -48,7 +48,7 @@ import com.petal.browser.R
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.compose.composable.PetalRefreshBarState
-import com.petal.browser.compose.composable.RefreshBarLoadingIndicator
+import com.petal.browser.compose.composable.RefreshBarLoadingIndicatorLazy
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
@@ -183,6 +183,13 @@ class PetalCustomTabActivity : ComponentActivity() {
                                                 refreshState.pullProgress = 0f
                                             }
                                         }
+                                        sfc.onPullProgress = { p ->
+                                            refreshState.pullProgress = p
+                                        }
+                                        sfc.onRefreshStateChanged = { r ->
+                                            refreshState.isRefreshing = r
+                                            if (!r) refreshState.pullProgress = 0f
+                                        }
                                         val customTabEtpEnabled = PreferenceManager.getDefaultSharedPreferences(ctx)
                                             .getBoolean("sp_custom_tabs_etp", true)
                                         if (customTabEtpEnabled) sfc.setTrackingProtection(true)
@@ -203,6 +210,12 @@ class PetalCustomTabActivity : ComponentActivity() {
                                 }
                             },
                             modifier = Modifier.fillMaxSize()
+                        )
+
+                        RefreshBarLoadingIndicatorLazy(
+                            isRefreshing = refreshState.isRefreshing,
+                            pullProgressProvider = { refreshState.pullProgress },
+                            modifier = Modifier.align(Alignment.TopCenter)
                         )
                     }
                 }
