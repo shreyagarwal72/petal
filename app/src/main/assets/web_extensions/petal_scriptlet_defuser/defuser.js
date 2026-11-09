@@ -50,6 +50,38 @@
                     });
                 } catch (_) {}
             });
+
+            // Live logging hook: forward console.error, console.warn, and uncaught exceptions to appPort
+            try {
+                const origError = rawWin.console && rawWin.console.error;
+                if (typeof origError === 'function') {
+                    rawWin.console.error = function (...args) {
+                        origError.apply(rawWin.console, args);
+                        try {
+                            if (appPort) {
+                                const msg = args.map(a => typeof a === 'object' && a !== null ? (a.message || JSON.stringify(a)) : String(a)).join(' ');
+                                appPort.postMessage({ type: "LIVE_LOG", level: "ERROR", message: msg, url: location.href });
+                            }
+                        } catch (_) {}
+                    };
+                }
+                rawWin.addEventListener('error', function (e) {
+                    try {
+                        if (appPort && e) {
+                            const errText = (e.message || String(e)) + (e.filename ? " (" + e.filename + ":" + e.lineno + ")" : "");
+                            appPort.postMessage({ type: "LIVE_LOG", level: "ERROR", message: "Uncaught error: " + errText, url: location.href });
+                        }
+                    } catch (_) {}
+                });
+                rawWin.addEventListener('unhandledrejection', function (e) {
+                    try {
+                        if (appPort && e) {
+                            const reason = e.reason ? (e.reason.message || String(e.reason)) : "unknown";
+                            appPort.postMessage({ type: "LIVE_LOG", level: "WARN", message: "Unhandled promise rejection: " + reason, url: location.href });
+                        }
+                    } catch (_) {}
+                });
+            } catch (_) {}
         }
     } catch (_) {}
 
@@ -342,6 +374,73 @@
             } else if (rawWin.document) {
                 rawWin.document.addEventListener('DOMContentLoaded', initObserver, { once: true });
             }
+        }
+    } catch (_) {}
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 6. Blank Page Diagnostic Sentinel
+    // ─────────────────────────────────────────────────────────────────────────
+    try {
+        const checkBlankPage = function () {
+            try {
+                if (!isTopFrame) return;
+                if (!location.href || location.href === 'about:blank') return;
+                const doc = rawWin.document;
+                if (!doc) return;
+                const body = doc.body;
+                if (!body) {
+                    if (appPort) {
+                        appPort.postMessage({
+                            type: "BLANK_PAGE_ALERT",
+                            reason: "document.body is null after DOMContentLoaded",
+                            details: "URL: " + location.href
+                        });
+                    }
+                    return;
+                }
+                const style = rawWin.getComputedStyle(body);
+                if (style.display === "none") {
+                    if (appPort) {
+                        appPort.postMessage({
+                            type: "BLANK_PAGE_ALERT",
+                            reason: "document.body has 'display: none !important' (hidden by stylesheet / cosmetic filter)",
+                            details: "URL: " + location.href
+                        });
+                    }
+                } else if (style.visibility === "hidden") {
+                    if (appPort) {
+                        appPort.postMessage({
+                            type: "BLANK_PAGE_ALERT",
+                            reason: "document.body has 'visibility: hidden'",
+                            details: "URL: " + location.href
+                        });
+                    }
+                } else if (parseFloat(style.opacity) === 0) {
+                    if (appPort) {
+                        appPort.postMessage({
+                            type: "BLANK_PAGE_ALERT",
+                            reason: "document.body has 'opacity: 0'",
+                            details: "URL: " + location.href
+                        });
+                    }
+                } else if (body.children.length === 0 && (!body.textContent || body.textContent.trim().length === 0)) {
+                    if (appPort) {
+                        appPort.postMessage({
+                            type: "BLANK_PAGE_ALERT",
+                            reason: "document.body is completely empty with 0 elements and 0 text",
+                            details: "URL: " + location.href
+                        });
+                    }
+                }
+            } catch (_) {}
+        };
+
+        if (rawWin.document && rawWin.document.readyState === 'complete') {
+            setTimeout(checkBlankPage, 1500);
+        } else if (rawWin.document) {
+            rawWin.addEventListener('load', function () {
+                setTimeout(checkBlankPage, 1500);
+            }, { once: true });
         }
     } catch (_) {}
 

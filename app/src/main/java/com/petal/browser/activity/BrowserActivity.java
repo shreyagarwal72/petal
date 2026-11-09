@@ -2370,6 +2370,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             targetFrame.postDelayed(() -> {
                 if (currentAlbumController != targetController || av.getParent() != targetFrame) return;
                 if (av.getWidth() == 0 || av.getHeight() == 0) {
+                    com.petal.browser.logger.PetalLiveLogEngine.logBlankWarning(
+                            "View measured to 0 dimension (" + av.getWidth() + "x" + av.getHeight() + ") in attachAlbumViewSafely",
+                            "Re-applying position and layout");
                     av.requestLayout();
                     targetFrame.requestLayout();
                     applyAddressBarPosition();
@@ -2551,9 +2554,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         View av = controller.getAlbumView();
         currentAlbumController = controller;
         if (contentFrame != null) {
-            int surfaceColor = com.google.android.material.color.MaterialColors.getColor(
-                    this, com.google.android.material.R.attr.colorSurface, android.graphics.Color.WHITE);
-            contentFrame.setBackgroundColor(surfaceColor);
+            if (isHomePage(url)) {
+                int surfaceColor = com.google.android.material.color.MaterialColors.getColor(
+                        this, com.google.android.material.R.attr.colorSurface, android.graphics.Color.WHITE);
+                contentFrame.setBackgroundColor(surfaceColor);
+            } else {
+                contentFrame.setBackground(null);
+            }
             contentFrame.setEnabled(true);
         }
         if (currentAlbumController instanceof com.petal.browser.browser.PetalTabViewController) {
@@ -2819,6 +2826,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             hideRefreshAndProgressOverlays();
             updatePersistentBottomNav();
         } else {
+            if (contentFrame != null) {
+                contentFrame.setBackground(null);
+            }
             // Swap tab surfaces by visibility, never by detaching: the outgoing tab's surface
             // goes View.GONE (its session was already setActive(false)), the incoming tab's
             // surface goes View.VISIBLE. This is the same code path for PetalTabViewController and

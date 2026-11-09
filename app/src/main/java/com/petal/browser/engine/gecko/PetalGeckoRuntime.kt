@@ -157,8 +157,8 @@ object PetalGeckoRuntime {
                 if (securityLevel == com.petal.browser.privacy.PetalPrivacyHardening.SecurityLevel.SAFEST) false
                 else sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
             )
-            .consoleOutput(isDebug)
-            .remoteDebuggingEnabled(isDebug)
+            .consoleOutput(isDebug || com.petal.browser.logger.PetalLiveLogEngine.isEnabled)
+            .remoteDebuggingEnabled(isDebug || com.petal.browser.logger.PetalLiveLogEngine.isEnabled)
             .webManifest(true)
             .extensionsProcessEnabled(!isLowRamDevice)
             .extensionsWebAPIEnabled(true)

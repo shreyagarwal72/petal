@@ -1,0 +1,387 @@
+#!/data/data/com.termux/files/usr/bin/python3
+"""
+petal-log: Proper live log monitor & blank-page diagnostic tool for Petal Browser in Termux.
+Stream live engine logs, monitor GeckoView compositing, capture JS errors, and diagnose blank screens.
+"""
+
+import sys
+import os
+import time
+import json
+import argparse
+import signal
+import re
+import urllib.request
+import urllib.error
+
+# ANSI Color Codes
+RESET = "\033[0m"
+BOLD = "\033[1m"
+DIM = "\033[2m"
+RED = "\033[31m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+BLUE = "\033[34m"
+MAGENTA = "\033[35m"
+CYAN = "\033[36m"
+WHITE = "\033[37m"
+BG_RED = "\033[41m"
+BG_YELLOW = "\033[43m"
+
+DEFAULT_PORT = 8765
+DEFAULT_HOST = "127.0.0.1"
+
+# Candidate paths for the live log file in Termux
+FILE_CANDIDATES = [
+    os.path.expanduser("~/storage/downloads/petal_live.log"),
+    "/storage/emulated/0/Download/petal_live.log",
+    "/sdcard/Download/petal_live.log"
+]
+
+def find_log_file():
+    for p in FILE_CANDIDATES:
+        if os.path.exists(p):
+            return p
+    return FILE_CANDIDATES[0]
+
+def print_banner(source_info):
+    print(f"{BOLD}{MAGENTA}🌸 PETAL BROWSER LIVE LOG SYSTEM (Termux){RESET}")
+    print(f"{DIM}📡 Stream Source: {source_info}{RESET}")
+    print(f"{DIM}Press Ctrl+C to exit{RESET}")
+    print("─" * 78)
+
+def format_category(cat, level):
+    cat_upper = (cat or "").upper()
+    level_upper = (level or "").upper()
+
+    if cat_upper == "BLANK_ALERT" or "BLANK" in cat_upper:
+        return f"{BG_RED}{WHITE}{BOLD} [🚨 BLANK ALERT] {RESET}"
+    elif level_upper == "ERROR":
+        return f"{RED}{BOLD} [❌ ERROR] {RESET}"
+    elif level_upper == "WARN":
+        return f"{YELLOW}{BOLD} [⚠️  WARN]  {RESET}"
+    elif cat_upper == "PAGE":
+        return f"{CYAN}{BOLD} [🌐 PAGE]  {RESET}"
+    elif cat_upper == "PAINT":
+        return f"{GREEN}{BOLD} [🎨 PAINT] {RESET}"
+    elif cat_upper == "SURFACE":
+        return f"{MAGENTA}{BOLD} [📐 SURFACE]{RESET}"
+    elif cat_upper == "BLOCK":
+        return f"{YELLOW} [🚫 BLOCK] {RESET}"
+    elif cat_upper == "JS":
+        return f"{BLUE}{BOLD} [💻 JS]    {RESET}"
+    elif cat_upper == "SYSTEM":
+        return f"{GREEN} [⚙️  SYSTEM]{RESET}"
+    else:
+        return f"{DIM} [📱 LOGCAT]{RESET}"
+
+def format_entry(entry):
+    ts = entry.get("timestamp", "")
+    level = entry.get("level", "INFO")
+    tag = entry.get("tag", "Petal")
+    cat = entry.get("category", "")
+    msg = entry.get("message", "")
+    details = entry.get("details")
+
+    badge = format_category(cat, level)
+    time_str = f"{DIM}{ts}{RESET}"
+    tag_str = f"{CYAN}[{tag}]{RESET}" if tag else ""
+
+    line = f"{time_str} {badge} {tag_str} {msg}"
+    if details:
+        line += f"\n  {DIM}└─ Details: {details}{RESET}"
+    return line
+
+def matches_filter(entry, args):
+    level = (entry.get("level") or "").upper()
+    cat = (entry.get("category") or "").upper()
+    msg = entry.get("message") or ""
+    details = entry.get("details") or ""
+    full_text = f"{level} {cat} {msg} {details}".lower()
+
+    if args.errors and level not in ("ERROR", "WARN") and "BLANK" not in cat:
+        return False
+
+    if args.web and cat != "JS":
+        return False
+
+    if args.grep and not re.search(args.grep, full_text, re.IGNORECASE):
+        return False
+
+    return True
+
+def cmd_status(host, port):
+    url = f"http://{host}:{port}/status"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "petal-log/1.0"})
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        print(f"\n{BOLD}{CYAN}=== PETAL BROWSER STATUS ==={RESET}")
+        print(f"📦 Package: {GREEN}{data.get('appPackage')}{RESET} (PID: {data.get('pid')})")
+        print(f"📱 Device:  {data.get('device')} (Android {data.get('androidRelease')}, SDK {data.get('androidSdk')})")
+
+        tab = data.get("currentTab", {})
+        print(f"\n{BOLD}🌐 Current Tab:{RESET}")
+        print(f"  • URL:                 {CYAN}{tab.get('url')}{RESET}")
+        print(f"  • Title:               {tab.get('title')}")
+        print(f"  • Loading:             {YELLOW if tab.get('isLoading') else GREEN}{tab.get('isLoading')}{RESET} ({tab.get('progress')}%)")
+        paint_color = GREEN if tab.get('firstContentfulPaint') else RED
+        print(f"  • FirstContentfulPaint: {paint_color}{tab.get('firstContentfulPaint')}{RESET}")
+
+        surf = data.get("surface", {})
+        print(f"\n{BOLD}📐 Rendering Surface:{RESET}")
+        print(f"  • Backend:             {surf.get('backend')}")
+        w, h = surf.get('width', 0), surf.get('height', 0)
+        dim_color = RED if (w <= 0 or h <= 0) else GREEN
+        print(f"  • Geometry:            {dim_color}{w} x {h}{RESET}")
+        print(f"  • Attached To Window:  {surf.get('isAttached')}")
+
+        diag = data.get("diagnostics", {})
+        print(f"\n{BOLD}🔍 Diagnostics:{RESET}")
+        last_blank = diag.get("lastBlankWarning")
+        if last_blank:
+            print(f"  • {BG_RED}{WHITE} Blank Warning: {RESET} {RED}{last_blank}{RESET}")
+        else:
+            print(f"  • Blank Warning:       {GREEN}None (Clean){RESET}")
+
+        last_err = diag.get("lastLoadError")
+        if last_err:
+            print(f"  • {RED}Last Load Error:      {last_err}{RESET}")
+        else:
+            print(f"  • Last Load Error:     {GREEN}None{RESET}")
+
+        print(f"  • Memory Logs Count:   {diag.get('inMemoryLogsCount')}")
+        print("─" * 50 + "\n")
+        return True
+    except Exception as e:
+        print(f"{RED}Error connecting to Petal Live Engine on http://{host}:{port}/status{RESET}")
+        print(f"{DIM}Cause: {e}{RESET}")
+        print(f"Tip: Ensure Petal Browser is open on device.")
+        return False
+
+def cmd_blank_check(host, port):
+    url = f"http://{host}:{port}/blank-check"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "petal-log/1.0"})
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        status = data.get("status", "UNKNOWN")
+        print(f"\n{BOLD}{CYAN}=== PETAL BLANK PAGE DIAGNOSTIC ANALYSIS ==={RESET}")
+        if status == "OK":
+            print(f"Verdict: {GREEN}{BOLD}✅ RENDERING NORMAL (No blank screen detected){RESET}")
+        elif status == "BLANK_PAGE_SUSPECTED":
+            print(f"Verdict: {YELLOW}{BOLD}⚠️  BLANK PAGE SUSPECTED{RESET}")
+        else:
+            print(f"Verdict: {BG_RED}{WHITE}{BOLD} 🚨 CRITICAL BLANK SCREEN DETECTED {RESET}")
+
+        print(f"Target URL:            {data.get('targetUrl')}")
+        print(f"FirstContentfulPaint:  {data.get('firstContentfulPaint')}")
+        print(f"Surface Geometry:      {data.get('surfaceGeometry')}")
+
+        issues = data.get("issues", [])
+        print(f"\nIssues Detected: {len(issues)}")
+        for idx, issue in enumerate(issues, 1):
+            sev = issue.get("severity", "INFO")
+            sev_color = RED if sev == "CRITICAL" else YELLOW
+            print(f"\n  [{idx}] {sev_color}{BOLD}{issue.get('type')}{RESET} ({sev})")
+            print(f"      Problem: {issue.get('message')}")
+            if "fix" in issue:
+                print(f"      {GREEN}Suggested Fix: {issue.get('fix')}{RESET}")
+
+        print("─" * 60 + "\n")
+        return True
+    except Exception as e:
+        print(f"{RED}Failed to run blank check on http://{host}:{port}/blank-check: {e}{RESET}")
+        return False
+
+def cmd_clear(host, port):
+    # 1. Clear remote memory
+    try:
+        req = urllib.request.Request(f"http://{host}:{port}/clear", data=b"", headers={"User-Agent": "petal-log/1.0"}, method="POST")
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            pass
+        print(f"{GREEN}Cleared Petal in-memory logs.{RESET}")
+    except Exception:
+        pass
+
+    # 2. Truncate local file
+    fpath = find_log_file()
+    if os.path.exists(fpath):
+        try:
+            with open(fpath, "w") as f:
+                f.write(f"=== Log cleared at {time.strftime('%Y-%m-%d %H:%M:%S')} ===\n")
+            print(f"{GREEN}Cleared log file: {fpath}{RESET}")
+        except Exception as e:
+            print(f"{RED}Error clearing {fpath}: {e}{RESET}")
+    else:
+        print(f"{DIM}Log file {fpath} does not exist yet.{RESET}")
+
+def stream_from_http(host, port, args):
+    url = f"http://{host}:{port}/stream"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "petal-log/1.0"})
+        resp = urllib.request.urlopen(req, timeout=10)
+    except Exception as e:
+        return False, str(e)
+
+    print_banner(f"http://{host}:{port}/stream (Live SSE)")
+
+    try:
+        buffer = ""
+        while True:
+            chunk = resp.read(1024)
+            if not chunk:
+                break
+            buffer += chunk.decode("utf-8", errors="replace")
+            while "\n\n" in buffer:
+                event_str, buffer = buffer.split("\n\n", 1)
+                for line in event_str.split("\n"):
+                    if line.startswith("data: "):
+                        payload = line[6:].strip()
+                        try:
+                            data = json.loads(payload)
+                            if data.get("event") == "connected":
+                                print(f"{GREEN}Connected to {data.get('app')} (PID: {data.get('pid')}){RESET}")
+                                continue
+                            if matches_filter(data, args):
+                                print(format_entry(data))
+                                sys.stdout.flush()
+                        except json.JSONDecodeError:
+                            print(f"{DIM}{payload}{RESET}")
+    except (KeyboardInterrupt, SystemExit):
+        print(f"\n{YELLOW}Stream stopped.{RESET}")
+    finally:
+        try:
+            resp.close()
+        except Exception:
+            pass
+    return True, None
+
+def stream_from_file(filepath, args):
+    if not os.path.exists(filepath):
+        print(f"{YELLOW}Log file not found at {filepath}. Waiting for Petal to create it...{RESET}")
+        while not os.path.exists(filepath):
+            time.sleep(1)
+
+    print_banner(f"{filepath} (File Tail)")
+
+    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+        # Jump to near end (last 4000 bytes)
+        f.seek(0, os.SEEK_END)
+        size = f.tell()
+        f.seek(max(0, size - 4000), os.SEEK_SET)
+
+        # Print initial lines
+        for line in f.readlines():
+            line = line.rstrip()
+            if line:
+                print(colorize_raw_line(line))
+
+        try:
+            while True:
+                line = f.readline()
+                if line:
+                    line = line.rstrip()
+                    if line and raw_matches_filter(line, args):
+                        print(colorize_raw_line(line))
+                        sys.stdout.flush()
+                else:
+                    time.sleep(0.15)
+        except (KeyboardInterrupt, SystemExit):
+            print(f"\n{YELLOW}Stopped tailing log file.{RESET}")
+
+def raw_matches_filter(line, args):
+    lower = line.lower()
+    if args.errors and not any(k in lower for k in ("[error]", "[warn]", "blank_alert", "fail")):
+        return False
+    if args.web and "[js]" not in lower and "geckoconsole" not in lower:
+        return False
+    if args.grep and not re.search(args.grep, line, re.IGNORECASE):
+        return False
+    return True
+
+def colorize_raw_line(line):
+    if "BLANK_ALERT" in line or "BLANK PAGE" in line:
+        return f"{BG_RED}{WHITE}{BOLD}{line}{RESET}"
+    elif "[ERROR]" in line or " E " in line or " E/" in line:
+        return f"{RED}{BOLD}{line}{RESET}"
+    elif "[WARN]" in line or " W " in line or " W/" in line:
+        return f"{YELLOW}{line}{RESET}"
+    elif "[PAGE]" in line:
+        return f"{CYAN}{line}{RESET}"
+    elif "[PAINT]" in line:
+        return f"{GREEN}{line}{RESET}"
+    elif "[SURFACE]" in line:
+        return f"{MAGENTA}{line}{RESET}"
+    elif "[JS]" in line or "GeckoConsole" in line:
+        return f"{BLUE}{line}{RESET}"
+    return line
+
+def cmd_adb():
+    print(f"\n{BOLD}{CYAN}=== PETAL ADB WIRELESS LOGGER ==={RESET}")
+    # Check if adb is installed
+    if os.system("command -v adb > /dev/null 2>&1") != 0:
+        print(f"{YELLOW}'adb' is not installed in Termux.{RESET}")
+        print("To install ADB in Termux run:")
+        print(f"  {GREEN}pkg install android-tools{RESET}")
+        print("\nThen pair with Android Wireless Debugging (Settings > Developer options > Wireless debugging):")
+        print("  1. adb pair localhost:<pairing_port> <pairing_code>")
+        print("  2. adb connect localhost:<debugging_port>")
+        return
+
+    print("Checking ADB devices...")
+    os.system("adb devices")
+    print(f"\n{GREEN}Launching filtered Logcat for Petal Browser...{RESET}\n")
+    os.system("adb logcat -v color -s Petal* Gecko* GeckoConsole GeckoView BrowserActivity BlankSentinel")
+
+def main():
+    signal.signal(signal.SIGINT, lambda s, f: sys.exit(0))
+
+    parser = argparse.ArgumentParser(
+        description="Proper live log monitor & blank-page diagnostic tool for Petal Browser in Termux."
+    )
+    parser.add_argument("-s", "--status", action="store_true", help="Inspect Petal's current tab, engine & surface status")
+    parser.add_argument("-b", "--blank-check", action="store_true", help="Run automated blank page diagnostics on active tab")
+    parser.add_argument("-e", "--errors", action="store_true", help="Filter stream to warnings, errors, and blank screen alerts")
+    parser.add_argument("-w", "--web", action="store_true", help="Filter stream to web console logs (JS errors, console.log)")
+    parser.add_argument("-g", "--grep", type=str, help="Filter stream by regex or keyword")
+    parser.add_argument("-f", "--file", action="store_true", help="Force reading directly from live log file (~/storage/downloads/petal_live.log)")
+    parser.add_argument("-c", "--clear", action="store_true", help="Clear memory logs and truncate disk log file")
+    parser.add_argument("-p", "--port", type=int, default=DEFAULT_PORT, help=f"HTTP port (default: {DEFAULT_PORT})")
+    parser.add_argument("--host", type=str, default=DEFAULT_HOST, help=f"HTTP host (default: {DEFAULT_HOST})")
+    parser.add_argument("--adb", action="store_true", help="Launch ADB Wireless Logcat tunnel for Petal")
+
+    args = parser.parse_args()
+
+    if args.adb:
+        cmd_adb()
+        return
+
+    if args.clear:
+        cmd_clear(args.host, args.port)
+        return
+
+    if args.status:
+        cmd_status(args.host, args.port)
+        return
+
+    if args.blank_check:
+        cmd_blank_check(args.host, args.port)
+        return
+
+    # Streaming mode:
+    if args.file:
+        stream_from_file(find_log_file(), args)
+        return
+
+    # Try HTTP SSE first
+    success, err = stream_from_http(args.host, args.port, args)
+    if not success:
+        print(f"{YELLOW}HTTP stream unreachable on {args.host}:{args.port} ({err}).{RESET}")
+        print(f"{GREEN}Falling back to live log file...{RESET}")
+        stream_from_file(find_log_file(), args)
+
+if __name__ == "__main__":
+    main()

@@ -552,13 +552,10 @@ class PetalTabViewController private constructor(
     }
 
     init {
-        val themeSurfaceColor = com.google.android.material.color.MaterialColors.getColor(
-            context,
-            com.google.android.material.R.attr.colorSurface,
-            android.graphics.Color.WHITE
-        )
-        setBackgroundColor(themeSurfaceColor)
-        try { engineView.asView().setBackgroundColor(themeSurfaceColor) } catch (_: Throwable) {}
+        // Transparent backgrounds ensure SurfaceView transparent region punches through to the hardware
+        // compositor surface. An opaque background here draws over the punch-hole and causes blank screens.
+        background = null
+        try { engineView.asView().background = null } catch (_: Throwable) {}
         isNestedScrollingEnabled = true
         addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
             if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) {
@@ -673,15 +670,14 @@ class PetalTabViewController private constructor(
         navUrls.clear(); navIndex = -1; navFallbackEligible = false
         currentScrollX = 0; currentScrollY = 0; lastProcessedScrollY = 0; accumulatedScrollY = 0; consecutiveDirectionSteps = 0
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
-        val themeSurfaceColor = com.google.android.material.color.MaterialColors.getColor(
-            context,
-            com.google.android.material.R.attr.colorSurface,
-            android.graphics.Color.WHITE
-        )
-        setBackgroundColor(themeSurfaceColor)
-        try { engineView.asView().setBackgroundColor(themeSurfaceColor) } catch (_: Throwable) {}
+        // Keep view hierarchy backgrounds transparent so SurfaceView's transparent region
+        // punches through to GeckoView's hardware compositor surface. Setting an opaque background
+        // on PetalTabViewController, engineView, or GeckoView covers the SurfaceView punch-hole
+        // and produces a blank white/dark screen on websites.
+        background = null
+        try { engineView.asView().background = null } catch (_: Throwable) {}
         val geckoView = findGeckoView(engineView.asView())
-        geckoView?.setBackgroundColor(themeSurfaceColor)
+        geckoView?.background = null
         // Choose SurfaceView / TextureView BEFORE a session is attached. Swapping the backend while
         // a session is rendering throws away the surface it draws to and leaves a black page.
         if (isHostedByBrowserActivity() && geckoView != null) {
@@ -1515,8 +1511,16 @@ class PetalTabViewController private constructor(
         val gv = findGeckoView(engineView.asView()) ?: return
         if (touchListenerView === gv) return
         touchListenerView = gv
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            gv.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+        gv.addOnLayoutChangeListener { _, left, top, right, bottom, _, _, _, _ ->
+            val w = right - left
+            val h = bottom - top
+            com.petal.browser.logger.PetalLiveLogEngine.logSurface(
+                backend = if (com.petal.browser.ui.glass.GeckoGlassBackend.shouldSamplePage(context)) "TextureView" else "SurfaceView",
+                width = w,
+                height = h,
+                attached = gv.isAttachedToWindow
+            )
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                 try {
                     if (gv.systemGestureExclusionRects.isNotEmpty()) {
                         gv.systemGestureExclusionRects = java.util.Collections.emptyList()
@@ -1532,6 +1536,16 @@ class PetalTabViewController private constructor(
         }
         installGeckoTouchListener()
         return super.dispatchTouchEvent(event)
+    }
+
+    override fun gatherTransparentRegion(region: android.graphics.Region?): Boolean {
+        val superResult = super.gatherTransparentRegion(region)
+        val gv = findGeckoView(engineView.asView())
+        return if (gv != null && region != null) {
+            gv.gatherTransparentRegion(region)
+        } else {
+            superResult
+        }
     }
 
     private var lastToolbarMaxHeight = Int.MIN_VALUE
@@ -2091,6 +2105,9 @@ class PetalTabViewController private constructor(
             val signal = "${content.loading}|${content.firstContentfulPaint}|${content.url}"
             if (signal == lastThumbnailSignal) return@observeManually
             lastThumbnailSignal = signal
+            if (content.firstContentfulPaint) {
+                com.petal.browser.logger.PetalLiveLogEngine.logPaint(content.url)
+            }
             if (!content.loading && content.firstContentfulPaint) {
                 com.petal.browser.motion.MotionGate.postAfterTransition {
                     post { try { capturePreviewBitmapAsync { } } catch (_: Throwable) {} }
@@ -2557,6 +2574,7 @@ private class ExternalSchemeNavigationDelegate(
         error: org.mozilla.geckoview.WebRequestError
     ): org.mozilla.geckoview.GeckoResult<String>? {
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLoadError uri=$uri error=${error.code}")
+        com.petal.browser.logger.PetalLiveLogEngine.logLoadError(uri, error.code, error.category)
         if (uri != null && uri.startsWith("https://", ignoreCase = true)) {
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
             val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
@@ -2762,6 +2780,10 @@ private class SessionStateCapturingProgressDelegate(
 ) : org.mozilla.geckoview.GeckoSession.ProgressDelegate, PetalOwnedDelegate {
 
     override fun onPageStart(session: org.mozilla.geckoview.GeckoSession, url: String) {
+        com.petal.browser.logger.PetalLiveLogEngine.isLoading = true
+        com.petal.browser.logger.PetalLiveLogEngine.firstContentfulPaint = false
+        com.petal.browser.logger.PetalLiveLogEngine.currentUrl = url
+        com.petal.browser.logger.PetalLiveLogEngine.logNav("PageStart", url)
         try {
             engine?.onPageStart(session, url)
         } catch (t: Throwable) {
@@ -2770,6 +2792,10 @@ private class SessionStateCapturingProgressDelegate(
     }
 
     override fun onPageStop(session: org.mozilla.geckoview.GeckoSession, success: Boolean) {
+        com.petal.browser.logger.PetalLiveLogEngine.isLoading = false
+        com.petal.browser.logger.PetalLiveLogEngine.lastPageStopTimeMs = System.currentTimeMillis()
+        com.petal.browser.logger.PetalLiveLogEngine.logNav("PageStop", session.loadRequest?.uri ?: pageUrl, "success=$success")
+        com.petal.browser.logger.PetalLiveLogEngine.checkBlankPageCondition(2000L)
         try {
             engine?.onPageStop(session, success)
         } catch (t: Throwable) {
@@ -2778,6 +2804,7 @@ private class SessionStateCapturingProgressDelegate(
     }
 
     override fun onProgressChange(session: org.mozilla.geckoview.GeckoSession, progress: Int) {
+        com.petal.browser.logger.PetalLiveLogEngine.currentProgress = progress
         try {
             engine?.onProgressChange(session, progress)
         } catch (t: Throwable) {
