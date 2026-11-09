@@ -196,10 +196,6 @@ class MainActivity : FragmentActivity(), BrowserController {
         viewModel.openNewTab(effectiveUrl, selectTab = foreground, private = incognito)
     }
 
-    fun addAlbum(title: String?, url: String?, foreground: Boolean) {
-        addAlbum(title, url, foreground, false)
-    }
-
     fun addAlbumInGroup(title: String?, url: String?, foreground: Boolean, groupId: String?, groupTitle: String?) {
         addAlbum(title, url, foreground, false)
     }
