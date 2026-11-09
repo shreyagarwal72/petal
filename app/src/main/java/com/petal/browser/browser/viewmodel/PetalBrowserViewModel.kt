@@ -21,7 +21,6 @@ import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.concept.base.profiling.Profile
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
@@ -128,7 +127,7 @@ class PetalBrowserViewModel @Inject constructor(
 
     fun loadUrl(url: String) {
         val targetTab = activeTab.value
-        val formattedUrl = PetalBrowserUtils.smartUrlFilter(url.trim())
+        val formattedUrl = PetalBrowserUtils.queryWrapper(context, url.trim())
         if (targetTab != null) {
             sessionUseCases.loadUrl(formattedUrl, targetTab.id)
         } else {

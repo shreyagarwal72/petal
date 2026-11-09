@@ -10,7 +10,7 @@ import androidx.fragment.app.FragmentActivity
 import com.petal.browser.browser.PetalBrowserFeatures
 import com.petal.browser.browser.viewmodel.PetalBrowserViewModel
 import com.petal.browser.compose.PetalRootApp
-import com.petal.browser.ui.theme.PetalTheme
+import com.petal.browser.ui.theme.PetalExpressiveTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -38,7 +38,7 @@ class MainActivity : FragmentActivity() {
         handleIncomingIntent(intent)
 
         setContent {
-            PetalTheme {
+            PetalExpressiveTheme {
                 PetalRootApp(viewModel = viewModel)
             }
         }

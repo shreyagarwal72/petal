@@ -98,7 +98,7 @@ fun PetalRootApp(
         bottomBar = {
             if (!isOmniboxOpen && !viewModel.hasOpenOverlay) {
                 PetalBottomNavBar(
-                    selectedTab = if (isHome) PetalNavTab.HOME else PetalNavTab.NONE,
+                    selectedTab = if (isHome) PetalNavTab.HOME else PetalNavTab.SEARCH,
                     tabCount = tabCount,
                     isIncognito = isIncognito,
                     onHomeClick = { viewModel.loadUrl("about:home") },
@@ -151,9 +151,11 @@ fun PetalRootApp(
                     canGoBack = canGoBack,
                     onBackClick = { viewModel.goBack() },
                     onShareClick = {
-                        activity?.let {
-                            PetalBrowserUtils.shareUrl(it, activeUrl, activeTitle)
+                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
                         }
+                        activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
                     },
                     onAddressClick = { isOmniboxOpen = true },
                     onHardRefresh = { viewModel.reload() },
@@ -231,6 +233,16 @@ fun PetalRootApp(
                     onOpenBookmarks = { viewModel.openBookmarks() },
                     onInstallPwa = {},
                     onSearchOnSite = { viewModel.openFindInPage() },
+                    onPrintPdf = {},
+                    onSavePage = {},
+                    onShareLink = {
+                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
+                        }
+                        activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
+                    },
+                    onViewSource = {},
                     onOpenSettings = { viewModel.openSettings() }
                 )
             }
