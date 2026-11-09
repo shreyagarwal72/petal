@@ -186,7 +186,7 @@ fun PetalRootApp(
     }
 
     // ── Single Authoritative Predictive Back Handler ────────────────────────
-    PredictiveBackHandler(enabled = true) { progressFlow ->
+    PredictiveBackHandler(enabled = !isOmniboxOpen) { progressFlow ->
         try {
             progressFlow.collect { backEvent ->
                 backProgress = backEvent.progress
@@ -354,22 +354,33 @@ fun PetalRootApp(
 
             // ── Fullscreen Overlay Screens ──────────────────────────────────
 
-            // Omnibox Query Page
-            if (isOmniboxOpen && activity != null) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(10f)) {
-                    PetalOmniboxPage(
-                        activity = activity,
-                        initialQuery = if (isHome) "" else activeUrl,
-                        pageTitle = activeTitle,
-                        pageUrl = activeUrl,
-                        isIncognito = isIncognito,
-                        onQuerySubmitted = { query ->
-                            isOmniboxOpen = false
-                            viewModel.loadUrl(query)
-                        },
-                        onBackPress = { isOmniboxOpen = false }
-                    )
-                }
+            // Omnibox Query Page with Seamless Enter/Exit Transition
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isOmniboxOpen && activity != null,
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                        androidx.compose.animation.scaleIn(
+                            initialScale = 0.94f,
+                            animationSpec = PetalSpring.enter()
+                        ),
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                       androidx.compose.animation.scaleOut(
+                           targetScale = 0.94f,
+                           animationSpec = PetalSpring.exit()
+                       ),
+                modifier = Modifier.fillMaxSize().zIndex(10f)
+            ) {
+                PetalOmniboxPage(
+                    activity = activity!!,
+                    initialQuery = if (isHome) "" else activeUrl,
+                    pageTitle = activeTitle,
+                    pageUrl = activeUrl,
+                    isIncognito = isIncognito,
+                    onQuerySubmitted = { query ->
+                        isOmniboxOpen = false
+                        viewModel.loadUrl(query)
+                    },
+                    onBackPress = { isOmniboxOpen = false }
+                )
             }
 
             // Tab Switcher Grid

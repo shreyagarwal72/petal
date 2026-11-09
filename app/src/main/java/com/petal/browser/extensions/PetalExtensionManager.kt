@@ -863,7 +863,7 @@ object PetalExtensionManager {
                             isIncognito = isPrivate,
                             select = shouldActivate
                         )
-                        val gs = com.petal.browser.engine.gecko.PetalEngineBridge.getGeckoSession(pair.second)
+                        val gs = com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(pair.second)
                         if (gs != null) {
                             attachTabDelegateToSession(gs, context)
                             result.complete(gs)
@@ -1421,10 +1421,11 @@ object PetalExtensionManager {
         // Option B: Retrieve active tab from BrowserStore
         try {
             val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context)
-            val selectedTab = store.state.selectedTab
+            val selectedTab = store.state.selectedTabId?.let { id -> store.state.tabs.firstOrNull { it.id == id } }
+                ?: store.state.tabs.firstOrNull()
             val engineSession = selectedTab?.engineState?.engineSession
             if (engineSession != null) {
-                val gs = com.petal.browser.engine.gecko.PetalEngineBridge.getGeckoSession(engineSession)
+                val gs = com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(engineSession)
                 if (gs != null) return gs
             }
         } catch (_: Throwable) {}

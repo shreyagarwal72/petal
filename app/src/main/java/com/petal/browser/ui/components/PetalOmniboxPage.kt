@@ -192,35 +192,25 @@ object PetalOmniboxBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    com.petal.browser.predictive.PetalPredictiveBackSurface(
-                        enabled = true,
-                        onBack = { (onBackGesture ?: onBackPress)() }
-                    ) {
-                        com.petal.browser.predictive.PetalScreenWrapper(
-                            backgroundSnapshot = snapshotBitmap,
-                            modifier = androidx.compose.ui.Modifier.fillMaxSize()
-                        ) {
-                            PetalOmniboxPage(
-                                backgroundSnapshot = snapshotBitmap,
-                                activity = activity,
-                                initialQuery = initialQuery,
-                                pageTitle = pageTitle,
-                                pageUrl = pageUrl,
-                                favicon = favicon,
-                                isIncognito = isIncognito,
-                                // The submit handler already navigates via showAlbum(tab, url)
-                                // (or showAlbum(tab) for empty input). Calling onBackPress() here
-                                // ran a second showAlbum(tab) with no URL while the tab still
-                                // reported about:blank, which stopped the just-started load and
-                                // rebuilt the surface, leaving a black page after every search.
-                                onQuerySubmitted = { query ->
-                                    onQuerySubmitted(query)
-                                },
-                                onBackPress = { onBackPress() },
-                                onBackGesture = onBackGesture
-                            )
-                        }
-                    }
+                    PetalOmniboxPage(
+                        backgroundSnapshot = snapshotBitmap,
+                        activity = activity,
+                        initialQuery = initialQuery,
+                        pageTitle = pageTitle,
+                        pageUrl = pageUrl,
+                        favicon = favicon,
+                        isIncognito = isIncognito,
+                        // The submit handler already navigates via showAlbum(tab, url)
+                        // (or showAlbum(tab) for empty input). Calling onBackPress() here
+                        // ran a second showAlbum(tab) with no URL while the tab still
+                        // reported about:blank, which stopped the just-started load and
+                        // rebuilt the surface, leaving a black page after every search.
+                        onQuerySubmitted = { query ->
+                            onQuerySubmitted(query)
+                        },
+                        onBackPress = { onBackPress() },
+                        onBackGesture = onBackGesture
+                    )
                 }
             }
         }
@@ -578,6 +568,10 @@ fun PetalOmniboxPage(
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    BackHandler(enabled = true) {
+        onBackPress()
     }
 
     Scaffold(
