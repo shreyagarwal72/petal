@@ -1,6 +1,7 @@
 package com.petal.browser.compose.engine
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -23,8 +24,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.petal.browser.engine.gecko.PetalEngineStore
 import com.petal.browser.ui.glass.GeckoGlassBackend
+import com.petal.browser.unit.PetalBrowserUtils
+import com.petal.browser.unit.TabThumbnailCache
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.engine.EngineView
+import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoView
 
 /**
@@ -75,6 +79,16 @@ fun ComposeEngineViewport(
                 engineView.render(session)
             } catch (t: Throwable) {
                 android.util.Log.w("ComposeEngineViewport", "Failed to render engine session: ${t.message}")
+            }
+        }
+    }
+
+    // Capture webpage thumbnail into TabThumbnailCache upon load completion
+    LaunchedEffect(tab?.id, isLoading) {
+        if (!isLoading && tab != null && tab.content.url.isNotBlank() && !PetalBrowserUtils.isHomePage(tab.content.url)) {
+            kotlinx.coroutines.delay(250L)
+            findGeckoView(engineView.asView())?.let { gv ->
+                captureGeckoThumbnail(gv, tab.id, tab.content.private)
             }
         }
     }
@@ -136,4 +150,33 @@ private fun findGeckoView(root: View?): GeckoView? {
         }
     }
     return null
+}
+
+private fun captureGeckoThumbnail(gv: GeckoView, tabId: String, isIncognito: Boolean) {
+    if (gv.width <= 0 || gv.height <= 0) return
+    try {
+        gv.capturePixels().then({ bitmap: Bitmap? ->
+            if (bitmap != null) {
+                TabThumbnailCache.DISK.execute {
+                    val w = bitmap.width
+                    val h = bitmap.height
+                    val targetWidth = Math.min(w, 480)
+                    val targetHeight = Math.max(1, (h.toFloat() * targetWidth / w).toInt())
+                    val scaled = try {
+                        val s = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+                        if (s !== bitmap && !bitmap.isRecycled) {
+                            bitmap.recycle()
+                        }
+                        s
+                    } catch (_: Throwable) {
+                        bitmap
+                    }
+                    TabThumbnailCache.put(tabId, scaled, isIncognito, true)
+                }
+            }
+            GeckoResult.fromValue<Void?>(null)
+        }, {
+            GeckoResult.fromValue<Void?>(null)
+        })
+    } catch (_: Throwable) {}
 }

@@ -1,20 +1,33 @@
 package com.petal.browser.browser.viewmodel
 
 import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.petal.browser.R
+import com.petal.browser.browser.PetalTabMetadataStore
+import com.petal.browser.compose.settings.SettingsCategory
+import com.petal.browser.compose.tabs.PetalTabItem
+import com.petal.browser.compose.tabs.PetalWorkspaceManager
+import com.petal.browser.database.HistoryBookmarkRepository
+import com.petal.browser.database.Record
 import com.petal.browser.engine.gecko.PetalEngineStore
 import com.petal.browser.unit.PetalBrowserUtils
+import com.petal.browser.unit.PetalRecentlyClosedManager
+import com.petal.browser.unit.TabThumbnailCache
+import com.petal.browser.view.PetalToast
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import com.petal.browser.compose.tabs.PetalTabItem
+import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.TabListAction
@@ -90,15 +103,41 @@ class PetalBrowserViewModel @Inject constructor(
     val isIncognito: StateFlow<Boolean> = activeTab.map { it?.content?.private == true }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    val tabItems: StateFlow<List<PetalTabItem>> = browserState.map { state ->
+    private val _thumbnailRevision = MutableStateFlow(0L)
+    private val _metadataRevision = MutableStateFlow(0L)
+
+    fun notifyMetadataChanged() {
+        _metadataRevision.value = System.currentTimeMillis()
+    }
+
+    fun notifyThumbnailUpdated() {
+        _thumbnailRevision.value = System.currentTimeMillis()
+    }
+
+    val tabItems: StateFlow<List<PetalTabItem>> = combine(
+        browserState,
+        _thumbnailRevision,
+        _metadataRevision
+    ) { state, _, _ ->
         state.tabs.map { tab ->
+            val meta = PetalTabMetadataStore.get(context, tab.id)
+            val preview = TabThumbnailCache.getMemoryOnly(tab.id, tab.content.private)
             PetalTabItem(
                 id = tab.id,
-                title = tab.content.title.ifBlank { "New Tab" },
+                thumbnailKey = tab.id,
+                title = meta?.customTitle ?: tab.content.title.ifBlank { "New Tab" },
                 url = tab.content.url,
                 faviconBitmap = tab.content.icon,
+                previewBitmap = preview,
                 isIncognito = tab.content.private,
-                isSelected = tab.id == state.selectedTabId
+                isSelected = tab.id == state.selectedTabId,
+                isPinned = meta?.isPinned ?: false,
+                isPinnedGlobal = meta?.isPinnedGlobal ?: true,
+                workspaceId = meta?.workspaceId ?: PetalWorkspaceManager.DEFAULT_WORKSPACE_ID,
+                isMuted = false,
+                groupId = meta?.tabGroupId,
+                groupTitle = meta?.tabGroupTitle,
+                groupColorHex = meta?.tabGroupColorHex
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -109,6 +148,9 @@ class PetalBrowserViewModel @Inject constructor(
 
     private val _isSettingsOpen = MutableStateFlow(false)
     val isSettingsOpen: StateFlow<Boolean> = _isSettingsOpen.asStateFlow()
+
+    private val _settingsCategory = MutableStateFlow(SettingsCategory.OVERVIEW)
+    val settingsCategory: StateFlow<SettingsCategory> = _settingsCategory.asStateFlow()
 
     private val _isBookmarksOpen = MutableStateFlow(false)
     val isBookmarksOpen: StateFlow<Boolean> = _isBookmarksOpen.asStateFlow()
@@ -163,11 +205,135 @@ class PetalBrowserViewModel @Inject constructor(
         _isTabSwitcherOpen.value = false
     }
 
+    fun loadTabThumbnailAsync(tabId: String, isIncognito: Boolean) {
+        TabThumbnailCache.loadFirstAsync(arrayOf(tabId), isIncognito) { bitmap ->
+            if (bitmap != null) {
+                _thumbnailRevision.value = System.currentTimeMillis()
+            }
+        }
+    }
+
     fun closeTab(tabId: String) {
+        val state = browserStore.state
+        val tabToClose = state.tabs.firstOrNull { it.id == tabId }
+        if (tabToClose != null) {
+            val meta = PetalTabMetadataStore.get(context, tabId)
+            PetalRecentlyClosedManager.pushClosedTab(
+                id = tabToClose.id,
+                title = meta?.customTitle ?: tabToClose.content.title,
+                url = tabToClose.content.url,
+                isIncognito = tabToClose.content.private,
+                groupId = meta?.tabGroupId,
+                groupTitle = meta?.tabGroupTitle,
+                groupColorHex = meta?.tabGroupColorHex
+            )
+        }
         tabsUseCases.removeTab(tabId)
+        PetalTabMetadataStore.remove(context, tabId)
         if (browserStore.state.tabs.isEmpty()) {
             openNewTab("about:home", selectTab = true)
         }
+    }
+
+    fun closeTabs(tabIds: Collection<String>) {
+        val state = browserStore.state
+        for (id in tabIds) {
+            val tabToClose = state.tabs.firstOrNull { it.id == id }
+            if (tabToClose != null) {
+                val meta = PetalTabMetadataStore.get(context, id)
+                PetalRecentlyClosedManager.pushClosedTab(
+                    id = tabToClose.id,
+                    title = meta?.customTitle ?: tabToClose.content.title,
+                    url = tabToClose.content.url,
+                    isIncognito = tabToClose.content.private,
+                    groupId = meta?.tabGroupId,
+                    groupTitle = meta?.tabGroupTitle,
+                    groupColorHex = meta?.tabGroupColorHex
+                )
+            }
+            PetalTabMetadataStore.remove(context, id)
+        }
+        browserStore.dispatch(TabListAction.RemoveTabsAction(tabIds.toList()))
+        if (browserStore.state.tabs.isEmpty()) {
+            openNewTab("about:home", selectTab = true)
+        }
+    }
+
+    fun closeOtherTabs(retainedTab: PetalTabItem) {
+        val otherIds = browserStore.state.tabs
+            .filter { it.id != retainedTab.id && it.content.private == retainedTab.isIncognito }
+            .map { it.id }
+        if (otherIds.isNotEmpty()) {
+            closeTabs(otherIds)
+        }
+    }
+
+    fun closeAllTabs(isIncognitoOnly: Boolean = false) {
+        val tabsToClose = if (isIncognitoOnly) {
+            browserStore.state.tabs.filter { it.content.private }
+        } else {
+            browserStore.state.tabs
+        }
+        val ids = tabsToClose.map { it.id }
+        if (ids.isNotEmpty()) {
+            closeTabs(ids)
+        }
+    }
+
+    fun restoreTab(tab: PetalTabItem) {
+        val url = if (tab.url.isBlank() || tab.url == "Petal Home" || tab.url.equals("about:blank", ignoreCase = true)) {
+            "about:home"
+        } else {
+            tab.url
+        }
+        tabsUseCases.addTab(url = url, selectTab = false, private = tab.isIncognito)
+    }
+
+    fun duplicateTab(tab: PetalTabItem) {
+        val url = if (tab.url.isBlank() || tab.url == "Petal Home") "about:home" else tab.url
+        tabsUseCases.addTab(url = url, selectTab = true, private = tab.isIncognito)
+    }
+
+    fun saveBookmark(title: String, url: String) {
+        if (url.isBlank() || PetalBrowserUtils.isHomePage(url)) {
+            PetalToast.show(context, R.string.toast_homepage_cannot_bookmark)
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val repo = HistoryBookmarkRepository(context)
+                repo.open(true)
+                val displayTitle = title.ifBlank { url }
+                if (repo.checkBookmark(url)) {
+                    repo.updateBookmark(url, displayTitle, url)
+                    withContext(Dispatchers.Main) {
+                        PetalToast.show(context, R.string.toast_bookmark_updated)
+                    }
+                } else {
+                    repo.addBookmark(Record(displayTitle, url, 0L, 0L))
+                    withContext(Dispatchers.Main) {
+                        PetalToast.show(context, R.string.app_done)
+                    }
+                }
+                repo.close()
+            } catch (t: Throwable) {
+                android.util.Log.w("PetalBrowserViewModel", "Failed to save bookmark", t)
+            }
+        }
+    }
+
+    fun shareLink(title: String, url: String) {
+        if (url.isBlank() || PetalBrowserUtils.isHomePage(url)) return
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, url)
+            putExtra(Intent.EXTRA_SUBJECT, title)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        val chooser = Intent.createChooser(intent, context.getString(R.string.menu_share)).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        context.startActivity(chooser)
     }
 
     fun closeActiveTab() {
@@ -249,7 +415,8 @@ class PetalBrowserViewModel @Inject constructor(
         _isMenuOpen.value = open
     }
 
-    fun openSettings() {
+    fun openSettings(category: SettingsCategory = SettingsCategory.OVERVIEW) {
+        _settingsCategory.value = category
         _isMenuOpen.value = false
         _isSettingsOpen.value = true
     }

@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -27,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -42,7 +44,10 @@ import com.petal.browser.compose.engine.ComposeEngineViewport
 import com.petal.browser.compose.history.PetalHistoryScreen
 import com.petal.browser.compose.home.PetalHomeScreen
 import com.petal.browser.compose.settings.PetalSettingsScreen
+import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.compose.tabs.PetalTabGridSwitcher
+import com.petal.browser.compose.tabs.PetalTabGroupManager
+import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.ui.components.PetalAddressBar
 import com.petal.browser.ui.components.PetalBottomNavBar
 import com.petal.browser.ui.components.PetalNavTab
@@ -86,6 +91,26 @@ fun PetalRootApp(
     val isHistoryOpen by viewModel.isHistoryOpen.collectAsStateWithLifecycle()
     val isDownloadsOpen by viewModel.isDownloadsOpen.collectAsStateWithLifecycle()
     val isMenuOpen by viewModel.isMenuOpen.collectAsStateWithLifecycle()
+    val settingsCategory by viewModel.settingsCategory.collectAsStateWithLifecycle()
+
+    val rootView = remember(activity) {
+        activity?.findViewById<android.view.View>(android.R.id.content) ?: activity?.window?.decorView
+    }
+
+    val tabSwitcherSnapshot = remember(isTabSwitcherOpen) {
+        if (isTabSwitcherOpen && rootView != null) {
+            PetalContentSnapshot.capture(rootView)
+            PetalContentSnapshot.current?.asImageBitmap()
+        } else null
+    }
+
+    DisposableEffect(isTabSwitcherOpen) {
+        onDispose {
+            if (!isTabSwitcherOpen) {
+                PetalContentSnapshot.clear()
+            }
+        }
+    }
 
     // Local Omnibox Input Overlay
     var isOmniboxOpen by remember { mutableStateOf(false) }
@@ -229,6 +254,7 @@ fun PetalRootApp(
             if (isTabSwitcherOpen) {
                 Box(modifier = Modifier.fillMaxSize().zIndex(9f)) {
                     PetalTabGridSwitcher(
+                        backgroundSnapshot = tabSwitcherSnapshot,
                         tabs = tabItems,
                         onTabSelect = { tab ->
                             viewModel.selectTab(tab.id)
@@ -240,7 +266,32 @@ fun PetalRootApp(
                             viewModel.openNewTab("about:home", selectTab = true, private = privateMode)
                         },
                         onCloseAllTabs = {
-                            tabItems.forEach { viewModel.closeTab(it.id) }
+                            viewModel.closeAllTabs()
+                        },
+                        onRestoreTab = { tab ->
+                            viewModel.restoreTab(tab)
+                        },
+                        onDuplicateTab = { tab ->
+                            viewModel.duplicateTab(tab)
+                        },
+                        onCloseOtherTabs = { tab ->
+                            viewModel.closeOtherTabs(tab)
+                        },
+                        onTabVisible = { tab ->
+                            viewModel.loadTabThumbnailAsync(tab.id, tab.isIncognito)
+                        },
+                        onBookmarkTab = { tab ->
+                            viewModel.saveBookmark(tab.title, tab.url)
+                        },
+                        onShareTab = { tab ->
+                            viewModel.shareLink(tab.title, tab.url)
+                        },
+                        onCreateGroup = { tab ->
+                            PetalTabGroupManager.createGroupWithTab(context, tab)
+                            viewModel.notifyMetadataChanged()
+                        },
+                        onOpenSettings = {
+                            viewModel.openSettings(SettingsCategory.TABS)
                         },
                         onBack = { viewModel.setTabSwitcherOpen(false) }
                     )
@@ -259,7 +310,7 @@ fun PetalRootApp(
                     onDismissRequest = { viewModel.setMenuOpen(false) },
                     onGoBack = { viewModel.goBack() },
                     onGoForward = { viewModel.goForward() },
-                    onToggleBookmark = {},
+                    onToggleBookmark = { viewModel.saveBookmark(activeTitle, activeUrl) },
                     onOpenDownloadsShortcut = { viewModel.openDownloads() },
                     onOpenPageInfo = {},
                     onReload = { viewModel.reload() },
@@ -274,15 +325,9 @@ fun PetalRootApp(
                     onSearchOnSite = { viewModel.openFindInPage() },
                     onPrintPdf = {},
                     onSavePage = {},
-                    onShareLink = {
-                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
-                        }
-                        activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
-                    },
+                    onShareLink = { viewModel.shareLink(activeTitle, activeUrl) },
                     onViewSource = {},
-                    onOpenSettings = { viewModel.openSettings() }
+                    onOpenSettings = { viewModel.openSettings(SettingsCategory.OVERVIEW) }
                 )
             }
 
@@ -325,6 +370,7 @@ fun PetalRootApp(
             if (isSettingsOpen) {
                 Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
                     PetalSettingsScreen(
+                        initialCategory = settingsCategory,
                         onBackPress = { viewModel.setSettingsOpen(false) }
                     )
                 }
