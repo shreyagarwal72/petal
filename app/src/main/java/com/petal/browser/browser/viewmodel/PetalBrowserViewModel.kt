@@ -171,6 +171,9 @@ class PetalBrowserViewModel @Inject constructor(
     private val _findInPageQuery = MutableStateFlow("")
     val findInPageQuery: StateFlow<String> = _findInPageQuery.asStateFlow()
 
+    private val _isOmniboxOpen = MutableStateFlow(false)
+    val isOmniboxOpen: StateFlow<Boolean> = _isOmniboxOpen.asStateFlow()
+
     init {
         viewModelScope.launch {
             if (browserStore.state.tabs.isEmpty()) {
@@ -572,7 +575,17 @@ class PetalBrowserViewModel @Inject constructor(
         _findInPageQuery.value = query
     }
 
+    fun openOmnibox() {
+        _isMenuOpen.value = false
+        _isOmniboxOpen.value = true
+    }
+
+    fun setOmniboxOpen(open: Boolean) {
+        _isOmniboxOpen.value = open
+    }
+
     fun dismissTopOverlay(): Boolean {
+        if (_isOmniboxOpen.value) { _isOmniboxOpen.value = false; return true }
         if (_isMenuOpen.value) { _isMenuOpen.value = false; return true }
         if (_isAiSheetOpen.value) { _isAiSheetOpen.value = false; return true }
         if (_isExtensionsOpen.value) { _isExtensionsOpen.value = false; return true }
@@ -587,7 +600,7 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     val hasOpenOverlay: Boolean
-        get() = _isTabSwitcherOpen.value || _isSettingsOpen.value ||
+        get() = _isOmniboxOpen.value || _isTabSwitcherOpen.value || _isSettingsOpen.value ||
                 _isBookmarksOpen.value || _isHistoryOpen.value ||
                 _isDownloadsOpen.value || _isMenuOpen.value ||
                 _isFindInPageOpen.value || _isAiSheetOpen.value ||

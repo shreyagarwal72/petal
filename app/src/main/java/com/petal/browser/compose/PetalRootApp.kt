@@ -158,8 +158,8 @@ fun PetalRootApp(
         }
     }
 
-    // Local Omnibox Input Overlay
-    var isOmniboxOpen by remember { mutableStateOf(false) }
+    // Omnibox Input Overlay State (Single authoritative source of truth via ViewModel)
+    val isOmniboxOpen by viewModel.isOmniboxOpen.collectAsState()
 
     val isHome = activeUrl.isBlank() || PetalBrowserUtils.isHomePage(activeUrl)
 
@@ -195,7 +195,7 @@ fun PetalRootApp(
             backProgress = 0f
             when {
                 pendingExtensionPopup != null -> PetalExtensionManager.dismissPopup()
-                isOmniboxOpen -> isOmniboxOpen = false
+                isOmniboxOpen -> viewModel.setOmniboxOpen(false)
                 viewModel.hasOpenOverlay -> viewModel.dismissTopOverlay()
                 !viewModel.goBack() -> activity?.finish()
             }
@@ -239,7 +239,7 @@ fun PetalRootApp(
                 PetalHomeScreen(
                     onSearch = { query ->
                         if (query.isBlank()) {
-                            isOmniboxOpen = true
+                            viewModel.openOmnibox()
                         } else {
                             viewModel.loadUrl(query)
                         }
@@ -278,7 +278,7 @@ fun PetalRootApp(
                         }
                         activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
                     },
-                    onAddressClick = { isOmniboxOpen = true },
+                    onAddressClick = { viewModel.openOmnibox() },
                     onHardRefresh = { viewModel.reload() },
                     onSwipeNextTab = { viewModel.switchToNextTab() },
                     onSwipePrevTab = { viewModel.switchToPreviousTab() },
@@ -337,7 +337,7 @@ fun PetalRootApp(
                 },
                 onSearchClick = {
                     haptic.playClick(context)
-                    isOmniboxOpen = true
+                    viewModel.openOmnibox()
                 },
                 onSwipeTabLeft = {
                     haptic.play(PetalHapticEngine.Pattern.CLICK, 0.6f)
@@ -355,32 +355,34 @@ fun PetalRootApp(
             // ── Fullscreen Overlay Screens ──────────────────────────────────
 
             // Omnibox Query Page with Seamless Enter/Exit Transition
-            androidx.compose.animation.AnimatedVisibility(
-                visible = isOmniboxOpen && activity != null,
-                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
-                        androidx.compose.animation.scaleIn(
-                            initialScale = 0.94f,
-                            animationSpec = PetalSpring.enter()
-                        ),
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
-                       androidx.compose.animation.scaleOut(
-                           targetScale = 0.94f,
-                           animationSpec = PetalSpring.exit()
-                       ),
-                modifier = Modifier.fillMaxSize().zIndex(10f)
-            ) {
-                PetalOmniboxPage(
-                    activity = activity!!,
-                    initialQuery = if (isHome) "" else activeUrl,
-                    pageTitle = activeTitle,
-                    pageUrl = activeUrl,
-                    isIncognito = isIncognito,
-                    onQuerySubmitted = { query ->
-                        isOmniboxOpen = false
-                        viewModel.loadUrl(query)
-                    },
-                    onBackPress = { isOmniboxOpen = false }
-                )
+            if (isOmniboxOpen && activity != null) {
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = isOmniboxOpen,
+                    enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                            androidx.compose.animation.scaleIn(
+                                initialScale = 0.94f,
+                                animationSpec = PetalSpring.enter()
+                            ),
+                    exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                           androidx.compose.animation.scaleOut(
+                               targetScale = 0.94f,
+                               animationSpec = PetalSpring.exit()
+                           ),
+                    modifier = Modifier.fillMaxSize().zIndex(10f)
+                ) {
+                    PetalOmniboxPage(
+                        activity = activity!!,
+                        initialQuery = if (isHome) "" else activeUrl,
+                        pageTitle = activeTitle,
+                        pageUrl = activeUrl,
+                        isIncognito = isIncognito,
+                        onQuerySubmitted = { query ->
+                            viewModel.setOmniboxOpen(false)
+                            viewModel.loadUrl(query)
+                        },
+                        onBackPress = { viewModel.setOmniboxOpen(false) }
+                    )
+                }
             }
 
             // Tab Switcher Grid

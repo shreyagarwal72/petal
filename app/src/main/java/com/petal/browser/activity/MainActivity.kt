@@ -118,9 +118,19 @@ class MainActivity : FragmentActivity(), BrowserController {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
-        enableEdgeToEdge()
+        val splashScreen = installSplashScreen()
+        splashScreen.setOnExitAnimationListener { provider ->
+            try {
+                provider.view.isClickable = false
+                provider.view.isFocusable = false
+                provider.remove()
+            } catch (_: Throwable) { }
+        }
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
+        com.petal.browser.compose.splash.PetalSplashState.splashActive.value = false
 
         // Initialize Mozilla features: Extensions & Firefox Account Sync
         PetalExtensionManager.attach(applicationContext)
@@ -143,6 +153,14 @@ class MainActivity : FragmentActivity(), BrowserController {
         super.onDestroy()
         browserFeatures?.stop()
         browserFeatures = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        try {
+            window.decorView.isFocusableInTouchMode = true
+            window.decorView.requestFocus()
+        } catch (_: Throwable) { }
     }
 
     override fun onRequestPermissionsResult(
@@ -251,7 +269,9 @@ class MainActivity : FragmentActivity(), BrowserController {
     fun showBookmarks() { viewModel.openBookmarks() }
     fun showBookmarksSheet() { viewModel.openBookmarks() }
     fun showHistoryScreen() { viewModel.openHistory() }
-    fun showOmniboxPage(initialQuery: String? = null) { }
+    fun showOmniboxPage(initialQuery: String? = null) {
+        viewModel.openOmnibox()
+    }
     fun showExtensionsScreen() { viewModel.openExtensions() }
     fun showQuickTools() { }
     fun showReaderMode() { }
