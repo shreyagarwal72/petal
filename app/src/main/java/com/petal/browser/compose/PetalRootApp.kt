@@ -12,12 +12,17 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.preference.PreferenceManager
+import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.components.BarCollapseState
+import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -112,6 +117,37 @@ fun PetalRootApp(
         }
     }
 
+    // Preferences for Bottom Nav Bar and Address Bar
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    var floatingTabBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
+    var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
+
+    DisposableEffect(sp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                "sp_floating_tab_bar" -> floatingTabBar = sp.getBoolean("sp_floating_tab_bar", true)
+                "sp_address_bar_position" -> addressBarPosition = sp.getString("sp_address_bar_position", "TOP") ?: "TOP"
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose {
+            sp.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
+    val isBottomAddressBar = "BOTTOM".equals(addressBarPosition, ignoreCase = true)
+    val effectiveFloating = floatingTabBar && !isBottomAddressBar
+    val haptic = remember(context) { PetalHapticEngine.getInstance(context) }
+
+    // Synchronize page state with BarCollapseState
+    LaunchedEffect(activeUrl, isIncognito) {
+        BarCollapseState.updatePage(activeUrl, isIncognito)
+    }
+    LaunchedEffect(Unit) {
+        BarCollapseState.onExpandRequested = {
+            BarCollapseState.fraction = 0f
+        }
+    }
+
     // Local Omnibox Input Overlay
     var isOmniboxOpen by remember { mutableStateOf(false) }
 
@@ -119,6 +155,23 @@ fun PetalRootApp(
 
     var backProgress by remember { mutableFloatStateOf(0f) }
     var backSwipeEdge by remember { mutableIntStateOf(BackEventCompat.EDGE_LEFT) }
+
+    // Overlay tracking and Bottom Nav visibility
+    val isOverlayShowing = isOmniboxOpen ||
+            isTabSwitcherOpen ||
+            isBookmarksOpen ||
+            isHistoryOpen ||
+            isDownloadsOpen ||
+            isSettingsOpen ||
+            settingsCategory != null
+
+    val isBottomBarVisible = !isOverlayShowing
+
+    val selectedTab = when {
+        isMenuOpen -> PetalNavTab.MENU
+        isHome -> PetalNavTab.HOME
+        else -> PetalNavTab.TABS
+    }
 
     // ── Single Authoritative Predictive Back Handler ────────────────────────
     PredictiveBackHandler(enabled = true) { progressFlow ->
@@ -138,39 +191,28 @@ fun PetalRootApp(
         }
     }
 
-    Scaffold(
-        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            if (!isOmniboxOpen && !viewModel.hasOpenOverlay) {
-                PetalBottomNavBar(
-                    selectedTab = if (isHome) PetalNavTab.HOME else PetalNavTab.SEARCH,
-                    tabCount = tabCount,
-                    isIncognito = isIncognito,
-                    onHomeClick = { viewModel.loadUrl("about:home") },
-                    onNewTabClick = { viewModel.openNewTab("about:home", selectTab = true, private = isIncognito) },
-                    onTabsClick = { viewModel.toggleTabSwitcher() },
-                    onMenuClick = { viewModel.toggleMenu() },
-                    onSearchClick = { isOmniboxOpen = true },
-                    onSwipeTabLeft = { viewModel.switchToNextTab() },
-                    onSwipeTabRight = { viewModel.switchToPreviousTab() },
-                    showSearch = !isHome,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        modifier = modifier.fillMaxSize()
-    ) { innerPadding ->
-        val density = LocalDensity.current
-        val predictiveScale = 1f - (0.08f * backProgress)
-        val predictiveTranslationX = with(density) {
-            (if (backSwipeEdge == BackEventCompat.EDGE_RIGHT) -24f else 24f) * backProgress
-        }
-        val predictiveCornerRadius = (28 * backProgress).dp
+    val density = LocalDensity.current
+    val navBarBottomInset = with(density) {
+        WindowInsets.navigationBars.getBottom(this).toDp()
+    }
+    val predictiveScale = 1f - (0.08f * backProgress)
+    val predictiveTranslationX = with(density) {
+        (if (backSwipeEdge == BackEventCompat.EDGE_RIGHT) -24f else 24f) * backProgress
+    }
+    val predictiveCornerRadius = (28 * backProgress).dp
 
+    Box(modifier = modifier.fillMaxSize()) {
+        // ── Primary Viewport (Home vs Gecko Engine) ─────────────────────
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .then(
+                    if (!effectiveFloating && isBottomBarVisible) {
+                        Modifier.padding(bottom = 64.dp + navBarBottomInset)
+                    } else {
+                        Modifier
+                    }
+                )
                 .graphicsLayer {
                     scaleX = predictiveScale
                     scaleY = predictiveScale
@@ -180,7 +222,6 @@ fun PetalRootApp(
                 }
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // ── Primary Viewport (Home vs Gecko Engine) ─────────────────────
             if (isHome) {
                 PetalHomeScreen(
                     onSearch = { query ->
@@ -223,12 +264,75 @@ fun PetalRootApp(
                     onHardRefresh = { viewModel.reload() },
                     onSwipeNextTab = { viewModel.switchToNextTab() },
                     onSwipePrevTab = { viewModel.switchToPreviousTab() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopCenter)
-                        .zIndex(2f)
+                    isBottom = isBottomAddressBar,
+                    hasBottomNav = isBottomBarVisible,
+                    modifier = if (isBottomAddressBar) {
+                        Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = if (isBottomBarVisible) 64.dp + navBarBottomInset else 0.dp)
+                            .zIndex(2f)
+                    } else {
+                        Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.TopCenter)
+                            .zIndex(2f)
+                    }
                 )
             }
+        }
+
+        // ── Persistent Bottom Navigation Bar ────────────────────────────
+        androidx.compose.animation.AnimatedVisibility(
+            visible = isBottomBarVisible,
+            enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                    androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 2 },
+            exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                   androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 2 },
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .zIndex(5f)
+        ) {
+            PetalBottomNavBar(
+                selectedTab = selectedTab,
+                tabCount = tabCount,
+                isIncognito = isIncognito,
+                isFloatingStyle = floatingTabBar,
+                isBottomAddressBar = isBottomAddressBar,
+                glassSource = rootView,
+                onHomeClick = {
+                    haptic.playClick(context)
+                    viewModel.loadUrl("about:home")
+                },
+                onNewTabClick = {
+                    haptic.playClick(context)
+                    viewModel.openNewTab("about:home", selectTab = true, private = isIncognito)
+                },
+                onTabsClick = {
+                    haptic.playClick(context)
+                    viewModel.toggleTabSwitcher()
+                },
+                onMenuClick = {
+                    haptic.playClick(context)
+                    viewModel.toggleMenu()
+                },
+                onSearchClick = {
+                    haptic.playClick(context)
+                    isOmniboxOpen = true
+                },
+                onSwipeTabLeft = {
+                    haptic.play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                    viewModel.switchToPreviousTab()
+                },
+                onSwipeTabRight = {
+                    haptic.play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                    viewModel.switchToNextTab()
+                },
+                showSearch = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
             // ── Fullscreen Overlay Screens ──────────────────────────────────
 
@@ -375,6 +479,5 @@ fun PetalRootApp(
                     )
                 }
             }
-        }
     }
 }
