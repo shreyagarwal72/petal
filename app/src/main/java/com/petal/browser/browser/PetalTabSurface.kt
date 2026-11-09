@@ -29,3 +29,13 @@ interface PetalTabSurface {
     fun deactivate()
     fun destroy() {}
 }
+
+// Extension bridge for legacy getter syntax across Kotlin callers without JVM signature clash
+fun PetalTabSurface.getTabView(): View = tabView
+fun PetalTabSurface.getAlbumView(): View = albumView
+fun PetalTabSurface.getTitle(): String = title
+fun PetalTabSurface.getUrl(): String = url
+fun PetalTabSurface.getTabId(): String = tabId
+fun PetalTabSurface.getFavicon(): Bitmap? = favicon
+fun PetalTabSurface.isIncognito(): Boolean = isIncognito
+fun PetalTabSurface.getCachedPreviewBitmap(): Bitmap? = cachedPreviewBitmap
