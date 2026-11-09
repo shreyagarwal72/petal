@@ -501,6 +501,20 @@ object PetalSettingsSearchIndex {
             subtitle = "Display media playback, downloads, password alerts, and file viewer status around hardware camera cutout with AMOLED protection",
             category = SettingsCategory.MEDIA,
             keywords = listOf("nowbar", "petal nowbar", "island", "cutout", "camera cutout", "punch hole", "notch", "live updates", "amoled", "burn protection", "dynamic island", "password")
+        ),
+        SettingsSearchItem(
+            id = "account_sync_fxa",
+            title = "Firefox Account & Mozilla Sync",
+            subtitle = "Sign in to synchronize bookmarks, history, open tabs, and send tabs between devices",
+            category = SettingsCategory.ACCOUNT_SYNC,
+            keywords = listOf("sync", "firefox", "fxa", "account", "mozilla", "bookmarks sync", "history sync", "tabs sync", "send to device")
+        ),
+        SettingsSearchItem(
+            id = "extensions_manager",
+            title = "Extensions & Add-ons",
+            subtitle = "Install and manage Firefox WebExtensions, uBlock Origin, Dark Reader, and custom scripts",
+            category = SettingsCategory.EXTENSIONS,
+            keywords = listOf("extension", "extensions", "addon", "addons", "ublock", "dark reader", "bitwarden", "xpi", "webextension")
         )
     )
 
@@ -512,7 +526,10 @@ object PetalSettingsSearchIndex {
         SettingsCategory.DISPLAY_ZOOM,
         SettingsCategory.ADDRESS_BAR,
         SettingsCategory.MEDIA,
+        SettingsCategory.DOWNLOADS,
         SettingsCategory.TABS,
+        SettingsCategory.ACCOUNT_SYNC,
+        SettingsCategory.EXTENSIONS,
         SettingsCategory.MISCELLANEOUS,
         SettingsCategory.DATA_STORAGE,
         SettingsCategory.UPDATER,

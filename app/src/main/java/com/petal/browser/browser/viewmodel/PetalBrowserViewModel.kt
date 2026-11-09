@@ -162,6 +162,12 @@ class PetalBrowserViewModel @Inject constructor(
     private val _isAiSheetOpen = MutableStateFlow(false)
     val isAiSheetOpen: StateFlow<Boolean> = _isAiSheetOpen.asStateFlow()
 
+    private val _isExtensionsOpen = MutableStateFlow(false)
+    val isExtensionsOpen: StateFlow<Boolean> = _isExtensionsOpen.asStateFlow()
+
+    private val _isAccountSyncOpen = MutableStateFlow(false)
+    val isAccountSyncOpen: StateFlow<Boolean> = _isAccountSyncOpen.asStateFlow()
+
     private val _findInPageQuery = MutableStateFlow("")
     val findInPageQuery: StateFlow<String> = _findInPageQuery.asStateFlow()
 
@@ -461,6 +467,24 @@ class PetalBrowserViewModel @Inject constructor(
         _isAiSheetOpen.value = open
     }
 
+    fun openExtensions() {
+        _isMenuOpen.value = false
+        _isExtensionsOpen.value = true
+    }
+
+    fun setExtensionsOpen(open: Boolean) {
+        _isExtensionsOpen.value = open
+    }
+
+    fun openAccountSync() {
+        _isMenuOpen.value = false
+        _isAccountSyncOpen.value = true
+    }
+
+    fun setAccountSyncOpen(open: Boolean) {
+        _isAccountSyncOpen.value = open
+    }
+
     fun openFindInPage() {
         _isMenuOpen.value = false
         _isFindInPageOpen.value = true
@@ -477,6 +501,8 @@ class PetalBrowserViewModel @Inject constructor(
     fun dismissTopOverlay(): Boolean {
         if (_isMenuOpen.value) { _isMenuOpen.value = false; return true }
         if (_isAiSheetOpen.value) { _isAiSheetOpen.value = false; return true }
+        if (_isExtensionsOpen.value) { _isExtensionsOpen.value = false; return true }
+        if (_isAccountSyncOpen.value) { _isAccountSyncOpen.value = false; return true }
         if (_isFindInPageOpen.value) { _isFindInPageOpen.value = false; return true }
         if (_isDownloadsOpen.value) { _isDownloadsOpen.value = false; return true }
         if (_isHistoryOpen.value) { _isHistoryOpen.value = false; return true }
@@ -490,7 +516,8 @@ class PetalBrowserViewModel @Inject constructor(
         get() = _isTabSwitcherOpen.value || _isSettingsOpen.value ||
                 _isBookmarksOpen.value || _isHistoryOpen.value ||
                 _isDownloadsOpen.value || _isMenuOpen.value ||
-                _isFindInPageOpen.value || _isAiSheetOpen.value
+                _isFindInPageOpen.value || _isAiSheetOpen.value ||
+                _isExtensionsOpen.value || _isAccountSyncOpen.value
 
     override fun onCleared() {
         super.onCleared()

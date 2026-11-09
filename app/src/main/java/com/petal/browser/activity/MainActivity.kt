@@ -8,9 +8,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
+import com.petal.browser.account.mozilla.FxAccountManager
+import com.petal.browser.account.mozilla.PetalMozillaSyncManager
 import com.petal.browser.browser.PetalBrowserFeatures
 import com.petal.browser.browser.viewmodel.PetalBrowserViewModel
 import com.petal.browser.compose.PetalRootApp
+import com.petal.browser.extensions.PetalBuiltInExtensionManager
+import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -34,6 +38,12 @@ class MainActivity : FragmentActivity() {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        // Initialize Mozilla features: Extensions & Firefox Account Sync
+        PetalExtensionManager.attach(applicationContext)
+        PetalBuiltInExtensionManager.installAll(applicationContext)
+        FxAccountManager.getInstance().initialize(this)
+        PetalMozillaSyncManager.getInstance()
 
         browserFeatures = PetalBrowserFeatures(this).also { it.start() }
 
@@ -85,6 +95,17 @@ class MainActivity : FragmentActivity() {
 
         val action = intent.action
         val data = intent.dataString
+        val dataUri = intent.data
+
+        // Handle WebExtension .xpi installation
+        if (dataUri != null && (intent.type == "application/x-xpinstall" || dataUri.path?.endsWith(".xpi") == true)) {
+            PetalExtensionManager.installFromContentUri(this, dataUri) { success, _ ->
+                if (success) {
+                    viewModel.openExtensions()
+                }
+            }
+            return
+        }
 
         if (Intent.ACTION_VIEW == action && !data.isNullOrBlank()) {
             viewModel.loadUrl(data)

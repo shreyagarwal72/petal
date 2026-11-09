@@ -43,16 +43,21 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.coroutines.cancellation.CancellationException
+import com.petal.browser.account.mozilla.FirefoxAccountSyncScreen
 import com.petal.browser.browser.viewmodel.PetalBrowserViewModel
 import com.petal.browser.compose.bookmarks.PetalBookmarksScreen
 import com.petal.browser.compose.downloads.PetalDownloadManagerScreen
 import com.petal.browser.compose.engine.ComposeEngineViewport
+import com.petal.browser.compose.extensions.PetalExtensionPopupScreen
+import com.petal.browser.compose.extensions.PetalExtensionsMenuSheet
+import com.petal.browser.compose.extensions.PetalExtensionsScreen
 import com.petal.browser.compose.history.PetalHistoryScreen
 import com.petal.browser.compose.home.PetalHomeScreen
 import com.petal.browser.compose.settings.PetalSettingsScreen
 import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.compose.tabs.PetalTabGridSwitcher
 import com.petal.browser.compose.tabs.PetalTabGroupManager
+import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.ui.components.PetalAddressBar
 import com.petal.browser.ui.components.PetalBottomNavBar
@@ -97,6 +102,9 @@ fun PetalRootApp(
     val isHistoryOpen by viewModel.isHistoryOpen.collectAsStateWithLifecycle()
     val isDownloadsOpen by viewModel.isDownloadsOpen.collectAsStateWithLifecycle()
     val isMenuOpen by viewModel.isMenuOpen.collectAsStateWithLifecycle()
+    val isExtensionsOpen by viewModel.isExtensionsOpen.collectAsStateWithLifecycle()
+    val isAccountSyncOpen by viewModel.isAccountSyncOpen.collectAsStateWithLifecycle()
+    val pendingExtensionPopup by PetalExtensionManager.pendingPopup.collectAsStateWithLifecycle()
     val settingsCategory by viewModel.settingsCategory.collectAsStateWithLifecycle()
 
     val rootView = remember(activity) {
@@ -164,6 +172,9 @@ fun PetalRootApp(
             isHistoryOpen ||
             isDownloadsOpen ||
             isSettingsOpen ||
+            isExtensionsOpen ||
+            isAccountSyncOpen ||
+            pendingExtensionPopup != null ||
             settingsCategory != null
 
     val isBottomBarVisible = !isOverlayShowing
@@ -183,6 +194,7 @@ fun PetalRootApp(
             }
             backProgress = 0f
             when {
+                pendingExtensionPopup != null -> PetalExtensionManager.dismissPopup()
                 isOmniboxOpen -> isOmniboxOpen = false
                 viewModel.hasOpenOverlay -> viewModel.dismissTopOverlay()
                 !viewModel.goBack() -> activity?.finish()
@@ -231,6 +243,7 @@ fun PetalRootApp(
                     onOpenShortcutUrl = { url ->
                         viewModel.loadUrl(url)
                     },
+                    onOpenAccountSync = { viewModel.openAccountSync() },
                     onOpenBookmarksAction = { viewModel.openBookmarks() },
                     onOpenHistoryAction = { viewModel.openHistory() },
                     onOpenDownloadsAction = { viewModel.openDownloads() },
@@ -432,6 +445,22 @@ fun PetalRootApp(
                     onSavePage = {},
                     onShareLink = { viewModel.shareLink(activeTitle, activeUrl) },
                     onViewSource = {},
+                    onOpenExtensions = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openExtensions()
+                    },
+                    onOpenExtensionsMenu = {
+                        viewModel.setMenuOpen(false)
+                        activity?.let {
+                            PetalExtensionsMenuSheet.show(it, activeUrl) {
+                                viewModel.openExtensions()
+                            }
+                        } ?: viewModel.openExtensions()
+                    },
+                    onOpenExtensionSettings = { extensionId ->
+                        viewModel.setMenuOpen(false)
+                        activity?.let { PetalExtensionManager.openOptionsPage(extensionId, it) }
+                    },
                     onOpenSettings = { viewModel.openSettings(SettingsCategory.OVERVIEW) }
                 )
             }
@@ -477,6 +506,40 @@ fun PetalRootApp(
                     PetalSettingsScreen(
                         initialCategory = settingsCategory,
                         onBackPress = { viewModel.setSettingsOpen(false) }
+                    )
+                }
+            }
+
+            // Extensions Screen
+            if (isExtensionsOpen) {
+                Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
+                    PetalExtensionsScreen(
+                        backgroundSnapshot = tabSwitcherSnapshot,
+                        onDismiss = { viewModel.setExtensionsOpen(false) }
+                    )
+                }
+            }
+
+            // Firefox Account & Sync Screen
+            if (isAccountSyncOpen) {
+                Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
+                    FirefoxAccountSyncScreen(
+                        backgroundSnapshot = tabSwitcherSnapshot,
+                        onBack = { viewModel.setAccountSyncOpen(false) },
+                        onOpenOAuth = { shortcut ->
+                            viewModel.setAccountSyncOpen(false)
+                            viewModel.loadUrl(shortcut.url)
+                        }
+                    )
+                }
+            }
+
+            // WebExtension Interactive Popup Overlay
+            if (pendingExtensionPopup != null) {
+                Box(modifier = Modifier.fillMaxSize().zIndex(12f)) {
+                    PetalExtensionPopupScreen(
+                        popup = pendingExtensionPopup!!,
+                        onDismiss = { PetalExtensionManager.dismissPopup() }
                     )
                 }
             }
