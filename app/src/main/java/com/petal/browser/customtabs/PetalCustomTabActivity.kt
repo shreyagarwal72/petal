@@ -310,7 +310,7 @@ class PetalCustomTabActivity : ComponentActivity() {
 
     private fun shareCurrentUrl() {
         val urlToShare = currentUrlState.takeIf { it.isNotBlank() && !it.equals("about:blank", ignoreCase = true) }
-            ?: tabSurface?.getUrl() ?: return
+            ?: tabSurface?.url ?: return
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, urlToShare)
@@ -321,7 +321,7 @@ class PetalCustomTabActivity : ComponentActivity() {
 
     private fun copyCurrentUrl() {
         val urlToCopy = currentUrlState.takeIf { it.isNotBlank() && !it.equals("about:blank", ignoreCase = true) }
-            ?: tabSurface?.getUrl() ?: return
+            ?: tabSurface?.url ?: return
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
         val clip = ClipData.newPlainText("URL", urlToCopy)
         clipboard?.setPrimaryClip(clip)
@@ -329,7 +329,7 @@ class PetalCustomTabActivity : ComponentActivity() {
     }
 
     private fun openInPetalBrowser() {
-        val urlToOpen = tabSurface?.getUrl()?.takeIf { it.isNotBlank() && !it.equals("about:blank", ignoreCase = true) }
+        val urlToOpen = tabSurface?.url?.takeIf { it.isNotBlank() && !it.equals("about:blank", ignoreCase = true) }
             ?: currentUrlState.takeIf { it.isNotBlank() && !it.equals("about:blank", ignoreCase = true) }
             ?: "about:blank"
 

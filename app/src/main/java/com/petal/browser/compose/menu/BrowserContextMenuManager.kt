@@ -304,8 +304,9 @@ object BrowserContextMenuManager {
                                 url = currentAlbum?.url ?: "about:blank"
                             )
                             val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTabs(activity, currentTab, currentTab)
-                            currentTabSurface?.setTabGroupId(newGroup.id)
-                            currentTabSurface?.setTabGroupTitle(newGroup.title)
+                            val tabVc = currentTabSurface as? com.petal.browser.browser.PetalTabViewController
+                            tabVc?.setTabGroupId(newGroup.id)
+                            tabVc?.setTabGroupTitle(newGroup.title)
                             activity.addAlbumInGroup(displayTitle, urlResult, true, newGroup.id, newGroup.title)
                         } else {
                             activity.addAlbum(displayTitle, urlResult, true)
@@ -831,8 +832,9 @@ object BrowserContextMenuManager {
                                 url = currentAlbum?.url ?: "about:blank"
                             )
                             val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTabs(activity, currentTab, currentTab)
-                            currentTabSurface?.setTabGroupId(newGroup.id)
-                            currentTabSurface?.setTabGroupTitle(newGroup.title)
+                            val tabVc = currentTabSurface as? com.petal.browser.browser.PetalTabViewController
+                            tabVc?.setTabGroupId(newGroup.id)
+                            tabVc?.setTabGroupTitle(newGroup.title)
                             activity.addAlbumInGroup(displayTitle, linkUrl, true, newGroup.id, newGroup.title)
                         } else {
                             activity.addAlbum(displayTitle, linkUrl, true)
