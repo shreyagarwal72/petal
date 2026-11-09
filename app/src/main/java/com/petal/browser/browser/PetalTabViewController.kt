@@ -1500,6 +1500,29 @@ class PetalTabViewController private constructor(
         }
     }
 
+    /**
+     * Cancels any active touch stream on GeckoView.
+     *
+     * Injected immediately when a predictive back gesture begins (handleOnBackStarted),
+     * preventing Gecko from misinterpreting the initial edge touch as a link tap, long-press,
+     * or link-peek preview while the user is swiping from the screen edge.
+     */
+    fun cancelActiveTouch(): Boolean {
+        val gv = findGeckoView(engineView.asView()) ?: return false
+        val now = android.os.SystemClock.uptimeMillis()
+        val cancelEvent = android.view.MotionEvent.obtain(
+            now, now, android.view.MotionEvent.ACTION_CANCEL, 0f, 0f, 0
+        )
+        return try {
+            gv.dispatchTouchEvent(cancelEvent)
+            true
+        } catch (_: Throwable) {
+            false
+        } finally {
+            cancelEvent.recycle()
+        }
+    }
+
     private var touchListenerView: org.mozilla.geckoview.GeckoView? = null
 
     /**
