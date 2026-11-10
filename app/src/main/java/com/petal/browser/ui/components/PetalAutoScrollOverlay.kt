@@ -54,8 +54,9 @@ fun PetalAutoScrollOverlay(
 
     Surface(
         modifier = modifier
-            .padding(16.dp),
-        shape = ExpressiveButtonShape,
+            .padding(16.dp)
+            .clip(ExpressiveButtonShape),
+        shape = ExpressiveButtonShape.shadowShape,
         color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.95f),
         tonalElevation = 6.dp,
         shadowElevation = 8.dp

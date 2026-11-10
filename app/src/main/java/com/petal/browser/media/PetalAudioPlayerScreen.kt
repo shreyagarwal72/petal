@@ -663,7 +663,7 @@ fun PetalAudioPlayerScreen(
                             modifier = Modifier
                                 .sizeIn(maxWidth = 310.dp, maxHeight = 310.dp)
                                 .aspectRatio(1f)
-                                .shadow(24.dp, ExpressiveButtonShape, spotColor = Color.Black.copy(alpha = 0.5f))
+                                .shadow(24.dp, ExpressiveButtonShape.shadowShape, spotColor = Color.Black.copy(alpha = 0.5f))
                                 .clip(ExpressiveButtonShape)
                                 .background(Color(0xFF161618))
                                 .clickable {

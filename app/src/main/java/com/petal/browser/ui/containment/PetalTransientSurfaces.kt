@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
@@ -68,13 +69,13 @@ fun PetalSnackbarHost(
             }
         ) {
             Surface(
-                shape = ExpressiveButtonShape,
+                shape = ExpressiveButtonShape.shadowShape,
                 color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 tonalElevation = if (isGlass) 0.dp else 6.dp,
                 shadowElevation = 6.dp,
                 border = null,
-                modifier = if (isGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.65f) else Modifier
+                modifier = (if (isGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.65f) else Modifier).clip(ExpressiveButtonShape)
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),

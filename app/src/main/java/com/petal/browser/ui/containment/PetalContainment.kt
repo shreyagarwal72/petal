@@ -1060,8 +1060,8 @@ fun PetalFloatingToolbar(modifier: Modifier = Modifier, elevation: Dp = 6.dp, co
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val toolbarShape = ExpressiveButtonShape
     Surface(
-        modifier = modifier.liquidGlassChrome(shape = toolbarShape, enabled = isGlass, sheenIntensity = sheen),
-        shape = toolbarShape,
+        modifier = modifier.clip(toolbarShape).liquidGlassChrome(shape = toolbarShape, enabled = isGlass, sheenIntensity = sheen),
+        shape = toolbarShape.shadowShape,
         color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = if (isGlass) 0.dp else elevation,
         shadowElevation = if (isGlass) 0.dp else elevation

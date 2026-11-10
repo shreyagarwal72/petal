@@ -72,6 +72,7 @@ data class ExpressiveShapeHolder(
 ) {
     val cachedShape: Shape by lazy { polygon.toShape() }
     fun toShape(): Shape = cachedShape
+    val shadowShape: Shape get() = ExpressiveShadowShape
 }
 
 /**

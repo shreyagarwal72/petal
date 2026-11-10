@@ -129,7 +129,7 @@ internal fun PetalStrideNavBar(
     BoxWithConstraints(
         modifier = modifier
             .graphicsLayer { translationX = dragOffsetPx }
-            .then(if (!isLiquidGlassActive) Modifier.shadow(12.dp, pill, clip = false) else Modifier)
+            .then(if (!isLiquidGlassActive) Modifier.shadow(12.dp, pill.shadowShape, clip = false) else Modifier)
             .then(if (isLiquidGlassActive) Modifier.glassPressScale(glassPress, 16f) else Modifier)
             .liquidGlass(pill, scheme.surfaceContainerHigh, glassBar, pressFx = false)
             .then(if (isLiquidGlassActive) Modifier.glassPressOverlay(glassPress, pill) else Modifier)

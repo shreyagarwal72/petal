@@ -233,7 +233,7 @@ fun RefreshBarLoadingIndicatorLazy(
             contentAlignment = Alignment.TopCenter
         ) {
             Surface(
-                shape = ExpressiveButtonShape,
+                shape = ExpressiveButtonShape.shadowShape,
                 color = Color.Transparent,
                 shadowElevation = 4.dp,
                 modifier = Modifier

@@ -166,12 +166,13 @@ fun PetalIncognitoHomeScreen(
                             ) {
                                 // Cookie-12-sided badge with Firefox Private Browsing Mask silhouette
                                 Surface(
-                                    shape = cookieShape,
+                                    shape = CircleShape,
                                     color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                                     tonalElevation = if (isGlass) 0.dp else 6.dp,
                                     shadowElevation = if (isGlass) 0.dp else 4.dp,
                                     modifier = Modifier
                                         .size(86.dp)
+                                        .clip(cookieShape)
                                         .graphicsLayer {
                                             scaleX = avatarScale
                                             scaleY = avatarScale

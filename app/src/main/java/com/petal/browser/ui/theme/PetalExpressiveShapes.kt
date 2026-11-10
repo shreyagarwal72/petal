@@ -10,6 +10,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +29,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.graphicsLayer
@@ -144,8 +147,35 @@ fun buildExpressivePath(
 // Shapes
 // ----------------------------------------------------------------------------
 
+/**
+ * Safe convex shadow shape for expressive components.
+ * Produces an [Outline.Rounded] capsule or circle which always takes the fast,
+ * convex HWUI shadow tessellation path and never triggers [computeConcaveShadow].
+ */
+val ExpressiveShadowShape: Shape = object : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+        val minSide = min(size.width, size.height)
+        if (minSide <= 0f) return Outline.Rectangle(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
+        val r = minSide / 2f
+        return Outline.Rounded(RoundRect(0f, 0f, size.width, size.height, CornerRadius(r, r)))
+    }
+}
+
+/**
+ * Returns a convex shadow shape if [this] shape is an expressive concave shape,
+ * avoiding SkBaseShadowTessellator::computeConcaveShadow ANRs on Android HWUI.
+ */
+fun Shape.toSafeShadowShape(): Shape = when (this) {
+    ExpressiveButtonShape, ExpressiveAccentShape -> ExpressiveShadowShape
+    is ExpressiveShape -> ExpressiveShadowShape
+    is RoundedCornerShape, RectangleShape, CircleShape, ExpressiveShadowShape -> this
+    else -> ExpressiveShadowShape
+}
+
 /** A fixed expressive shape for clip / background / Surface. */
 class ExpressiveShape(private val preset: ExpressiveButtonPreset) : Shape {
+    val shadowShape: Shape get() = ExpressiveShadowShape
+
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
         buildOutline(preset, size)
 }
@@ -171,12 +201,16 @@ private fun buildOutline(preset: ExpressiveButtonPreset, size: Size): Outline {
  * when expressive shapes are switched off. Wide containers automatically stay capsules.
  */
 object ExpressiveButtonShape : Shape {
+    val shadowShape: Shape get() = ExpressiveShadowShape
+
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
         buildOutline(PetalShapeState.effectivePreset, size)
 }
 
 /** Shape for the main accent buttons (header, FAB-like): ignores "accents only" but honours "none". */
 object ExpressiveAccentShape : Shape {
+    val shadowShape: Shape get() = ExpressiveShadowShape
+
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
         buildOutline(
             if (!PetalShapeState.enabled || PetalShapeState.amount == ExpressiveShapeAmount.NONE) ExpressiveButtonPreset.CIRCLE

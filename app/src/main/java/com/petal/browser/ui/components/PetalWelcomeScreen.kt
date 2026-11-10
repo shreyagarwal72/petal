@@ -475,10 +475,12 @@ private fun WelcomeStepPage() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(
-                shape = ExpressiveButtonShape,
+                shape = ExpressiveButtonShape.shadowShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 shadowElevation = 6.dp,
-                modifier = Modifier.size(84.dp)
+                modifier = Modifier
+                    .size(84.dp)
+                    .clip(ExpressiveButtonShape)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Image(

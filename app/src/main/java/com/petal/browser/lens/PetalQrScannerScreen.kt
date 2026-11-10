@@ -573,11 +573,12 @@ fun PetalQrScannerScreen(
 
                     // Main Capture Click Button
                     Surface(
-                        shape = ExpressiveButtonShape,
+                        shape = ExpressiveButtonShape.shadowShape,
                         color = MaterialTheme.colorScheme.primary,
                         shadowElevation = 6.dp,
                         modifier = Modifier
                             .size(68.dp)
+                            .clip(ExpressiveButtonShape)
                             .then(if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true) else Modifier)
                             .bouncyClickable(enabled = !isCapturing) {
                                 PetalHapticEngine.getInstance(context).playClick(context)

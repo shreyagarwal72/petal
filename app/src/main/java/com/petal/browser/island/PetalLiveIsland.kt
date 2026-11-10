@@ -558,7 +558,7 @@ private fun SatelliteBubble(item: LiveActionItem, palette: IslandPalette, onClic
             .size(44.dp)
             .clip(ExpressiveButtonShape)
             .clickable(role = Role.Button, onClickLabel = "Show live update", onClick = onClick),
-        shape = ExpressiveButtonShape,
+        shape = ExpressiveButtonShape.shadowShape,
         color = palette.surface,
         shadowElevation = 10.dp
     ) {

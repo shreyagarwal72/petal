@@ -73,7 +73,7 @@ internal fun PetalSearchGlassButton(
                 alpha = enter.value.coerceIn(0f, 1f)
             }
             .size(size)
-            .then(if (!glassActive) Modifier.shadow(12.dp, ExpressiveButtonShape, clip = false) else Modifier)
+            .then(if (!glassActive) Modifier.shadow(12.dp, ExpressiveButtonShape.shadowShape, clip = false) else Modifier)
             .liquidGlass(ExpressiveButtonShape, scheme.surfaceContainerHigh, glassBar)
             .clip(ExpressiveButtonShape)
             .bouncyClickable(scaleDown = 0.86f, onClick = onClick)

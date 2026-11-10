@@ -668,12 +668,12 @@ fun PetalTabSwitcherContent(
                         }
                 ) {
                     Surface(
-                        shape = ExpressiveButtonShape,
+                        shape = ExpressiveButtonShape.shadowShape,
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
                         contentColor = MaterialTheme.colorScheme.onSurface,
                         tonalElevation = 6.dp,
                         shadowElevation = 8.dp,
-                        modifier = Modifier.fillMaxWidth().entrance()
+                        modifier = Modifier.fillMaxWidth().clip(ExpressiveButtonShape).entrance()
                     ) {
                         Row(
                             modifier = Modifier

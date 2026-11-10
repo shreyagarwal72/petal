@@ -750,12 +750,13 @@ fun PetalExpressiveScrollBar(
                             IntOffset(x.toInt(), y.toInt())
                         }
                         .size(dragLabelSize)
+                        .clip(ExpressiveButtonShape)
                         .graphicsLayer {
                             alpha = dragLabelAlpha
                             scaleX = dragLabelScale
                             scaleY = dragLabelScale
                         },
-                    shape = ExpressiveButtonShape,
+                    shape = ExpressiveButtonShape.shadowShape,
                     color = labelContainerColor,
                     contentColor = labelContentColor,
                     tonalElevation = 6.dp,

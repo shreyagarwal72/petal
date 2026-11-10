@@ -56,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import com.petal.browser.ui.theme.toSafeShadowShape
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -1052,7 +1053,7 @@ private fun ShortcutTile(
             modifier = Modifier
                 .size(60.dp)
                 .graphicsLayer { scaleX = scale; scaleY = scale }
-                .shadow(elevation = if (isGlass) 0.dp else 2.dp, shape = tileShape, clip = false)
+                .shadow(elevation = if (isGlass) 0.dp else 2.dp, shape = tileShape.toSafeShadowShape(), clip = false)
                 .liquidGlassChrome(shape = tileShape, enabled = isGlass)
                 .clip(tileShape)
                 .background(if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest)
@@ -1619,7 +1620,7 @@ private fun EditShortcutDialog(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .size(54.dp)
-                            .then(if (isGlass) Modifier.liquidGlassChrome(previewTileShape, enabled = true, sheenIntensity = 0.45f) else Modifier.shadow(elevation = 2.dp, shape = previewTileShape))
+                            .then(if (isGlass) Modifier.liquidGlassChrome(previewTileShape, enabled = true, sheenIntensity = 0.45f) else Modifier.shadow(elevation = 2.dp, shape = previewTileShape.toSafeShadowShape()))
                             .clip(previewTileShape)
                             .background(if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest)
                     ) {
