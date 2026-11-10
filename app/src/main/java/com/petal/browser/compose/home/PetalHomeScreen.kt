@@ -22,8 +22,10 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
@@ -486,19 +488,6 @@ fun PetalHomeScreen(
         shortcuts.map { it to true } + extraVisited.map { it to false }
     }
 
-    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    var isWelcomeShown by remember { mutableStateOf(sp.getBoolean("sp_welcome_shown", false)) }
-
-    DisposableEffect(sp) {
-        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "sp_welcome_shown") {
-                isWelcomeShown = sp.getBoolean("sp_welcome_shown", false)
-            }
-        }
-        sp.registerOnSharedPreferenceChangeListener(listener)
-        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
-
     val coroutineScope = rememberCoroutineScope()
     val profileSwitchProgress = remember { Animatable(1f) }
     var showProfileSwitchSheet by remember { mutableStateOf(false) }
@@ -623,6 +612,7 @@ fun PetalHomeScreen(
                                 Surface(
                                     shape = profilePillShape,
                                     color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
+                                    border = if (isGlass) null else BorderStroke(1.dp, currentProfile.getComposeColor().copy(alpha = 0.5f)),
                                     modifier = Modifier
                                         .height(34.dp)
                                         .liquidGlassChrome(shape = profilePillShape, enabled = isGlass)
@@ -635,14 +625,14 @@ fun PetalHomeScreen(
                                         Box(
                                             modifier = Modifier
                                                 .size(20.dp)
-                                                .clip(ExpressiveButtonShape)
+                                                .clip(CircleShape)
                                                 .background(currentProfile.getComposeColor().copy(alpha = 0.25f)),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             PetalProfileAvatar(
                                                 profile = currentProfile,
                                                 size = 20.dp,
-                                                shape = ExpressiveButtonShape
+                                                shape = CircleShape
                                             )
                                         }
                                         Spacer(Modifier.width(6.dp))
@@ -685,11 +675,10 @@ fun PetalHomeScreen(
                             ) {
                                 Spacer(Modifier.height(20.dp))
 
-                                if (isWelcomeShown) {
-                                    // ── Greeting Tagline (replaces removed quick shortcuts row) ──
-                                    PetalGreetingTagline(profile = profile)
-                                    Spacer(Modifier.height(18.dp))
-                                }
+                                // ── Greeting Tagline (replaces removed quick shortcuts row) ──
+                                PetalGreetingTagline(profile = profile)
+
+                                Spacer(Modifier.height(18.dp))
 
                                 // ── Hero Search Bar (moved down into former quick-actions slot) ──
                                 PetalSearchBar(onSearch = onSearch)
@@ -762,7 +751,7 @@ fun PetalHomeScreen(
                                                             Box(
                                                                 modifier = Modifier
                                                                     .size(10.dp)
-                                                                    .clip(ExpressiveButtonShape)
+                                                                    .clip(CircleShape)
                                                                     .background(
                                                                         try {
                                                                             Color(android.graphics.Color.parseColor(col.colorHex))
@@ -1150,7 +1139,8 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
 
 @Composable
 private fun homeShortcutShape(index: Int, key: Any? = null): Shape {
-    return com.petal.browser.ui.theme.rememberExpressiveShape(key ?: index)
+    val mixedKey = if (key != null) (key.hashCode() xor (index * 31)) else (index * 7919)
+    return com.petal.browser.ui.theme.rememberExpressiveShape(mixedKey)
 }
 
 // ── 6. Search Bar ─────────────────────────────────────────────────────────
@@ -1520,7 +1510,7 @@ private fun EditShortcutDialog(
 
     val previewTileShape = remember(selectedShapeName) {
         val matched = PetalMaterialShapes.allShapes.find { it.name.equals(selectedShapeName, ignoreCase = true) }
-        matched?.toShape() ?: RoundedCornerShape(16.dp)
+        matched?.toShape() ?: PetalMaterialShapes.Flower.toShape()
     }
 
     com.petal.browser.ui.containment.PetalMaterialAlertDialog(
@@ -1593,6 +1583,11 @@ private fun EditShortcutDialog(
                                     else MaterialTheme.colorScheme.surfaceContainerHighest
                                 )
                                 .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.35f, pressFx = true) else Modifier)
+                                .border(
+                                    width = if (isSelected) 2.dp else if (isGlass) 0.dp else 0.5.dp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                    shape = shape
+                                )
                                 .clickable {
                                     selectedShapeName = shapeHolder.name
                                 }
