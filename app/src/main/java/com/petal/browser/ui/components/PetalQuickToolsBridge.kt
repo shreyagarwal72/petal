@@ -620,10 +620,6 @@ object PetalQuickToolsBridge {
             }
         }
     }
-                e.printStackTrace()
-            }
-        }
-    }
 
     private fun showNetworkInspector(activity: MainActivity, url: String) {
         val decor = activity.window.decorView as? ViewGroup ?: return

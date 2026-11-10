@@ -239,12 +239,13 @@ object PetalImageScannerBridge {
             val decorView = activity.window?.decorView as? android.view.ViewGroup ?: return@runOnUiThread
             lateinit var composeView: ComposeView
 
-            val dismissAction = {
+            val dismissAction: () -> Unit = {
                 if (composeView.parent != null) {
                     decorView.removeView(composeView)
                 }
                 composeView.clearFocus()
                 (activity as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
+                Unit
             }
 
             composeView = ComposeView(activity).apply {

@@ -19,9 +19,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.layout.fillMaxWidth
 import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.glass.PetalGlassContainer
-import com.petal.browser.ui.glass.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -60,7 +61,7 @@ object PetalLensBridge {
             }
             activeDismissAction = dismissAction
 
-            val composeView = ComposeView(activity).apply {
+            composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)

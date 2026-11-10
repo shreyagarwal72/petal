@@ -60,10 +60,10 @@ import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.petal.browser.ui.glass.PetalGlassContainer
-import com.petal.browser.ui.glass.isLiquidGlassEnabled
-import com.petal.browser.ui.glass.liquidGlassChrome
-import com.petal.browser.ui.glass.petalGroupSurfaceColor
-import com.petal.browser.ui.glass.petalSheenIntensity
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.petalSheenIntensity
 import com.petal.browser.ui.kit.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider

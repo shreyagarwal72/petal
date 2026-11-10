@@ -57,35 +57,43 @@ fun ExpressiveFloatingDockBar(
             enabled = isGlass,
             live = true
         ) {
-            HorizontalFloatingToolbar(
-                expanded = true,
-                colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
-                    containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh
-                ),
+            Surface(
+                shape = dockShape,
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                shadowElevation = if (isGlass) 0.dp else 8.dp,
+                tonalElevation = if (isGlass) 0.dp else 4.dp,
                 modifier = Modifier
                     .padding(horizontal = 24.dp, vertical = 12.dp)
                     .height(60.dp)
                     .then(if (isGlass) Modifier.liquidGlassChrome(dockShape, enabled = true, sheenIntensity = sheen) else Modifier)
             ) {
-            PetalLiquidIconButton(onClick = onBack, contentDescription = stringResource(R.string.ui_back)) {
-                Icon(Icons.Rounded.ArrowBack, contentDescription = null)
-            }
-            PetalLiquidIconButton(onClick = onForward, contentDescription = stringResource(R.string.ui_forward)) {
-                Icon(Icons.Rounded.ArrowForward, contentDescription = null)
-            }
-            PetalLiquidIconButton(onClick = onHome, contentDescription = stringResource(R.string.ui_home)) {
-                Icon(Icons.Rounded.Home, contentDescription = null)
-            }
-            PetalLiquidIconButton(onClick = onTabs, contentDescription = stringResource(R.string.ui_tabs)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Layers, contentDescription = null)
-                    AnimatedCounterBadge(count = tabCount, modifier = Modifier.padding(start = 14.dp, bottom = 14.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                ) {
+                    PetalLiquidIconButton(onClick = onBack, contentDescription = stringResource(R.string.ui_back)) {
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = null)
+                    }
+                    PetalLiquidIconButton(onClick = onForward, contentDescription = stringResource(R.string.ui_forward)) {
+                        Icon(Icons.Rounded.ArrowForward, contentDescription = null)
+                    }
+                    PetalLiquidIconButton(onClick = onHome, contentDescription = stringResource(R.string.ui_home)) {
+                        Icon(Icons.Rounded.Home, contentDescription = null)
+                    }
+                    PetalLiquidIconButton(onClick = onTabs, contentDescription = stringResource(R.string.ui_tabs)) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Rounded.Layers, contentDescription = null)
+                            AnimatedCounterBadge(count = tabCount, modifier = Modifier.padding(start = 14.dp, bottom = 14.dp))
+                        }
+                    }
+                    PetalLiquidIconButton(onClick = onMenu, contentDescription = stringResource(R.string.ui_menu)) {
+                        Icon(Icons.Rounded.MoreVert, contentDescription = null)
+                    }
                 }
-            }
-            PetalLiquidIconButton(onClick = onMenu, contentDescription = stringResource(R.string.ui_menu)) {
-                Icon(Icons.Rounded.MoreVert, contentDescription = null)
             }
         }
     }
-}
 }

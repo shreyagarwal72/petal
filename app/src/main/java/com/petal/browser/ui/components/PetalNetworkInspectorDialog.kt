@@ -35,10 +35,10 @@ import java.net.InetAddress
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.glass.PetalGlassContainer
-import com.petal.browser.ui.glass.isLiquidGlassEnabled
-import com.petal.browser.ui.glass.liquidGlassChrome
-import com.petal.browser.ui.glass.petalGroupSurfaceColor
-import com.petal.browser.ui.glass.petalSheenIntensity
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.petalSheenIntensity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

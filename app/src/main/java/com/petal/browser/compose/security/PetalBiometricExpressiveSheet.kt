@@ -63,6 +63,8 @@ import com.petal.browser.activity.MainActivity
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.security.BiometricLockManager
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.layout.LiquidRippleEffect
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme

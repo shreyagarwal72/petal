@@ -256,6 +256,7 @@ object PetalUpdateSheetBridge {
                         }
                     }
                 }
+            }
                 val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content)
                 rootView?.addView(
                     composeView,
@@ -361,6 +362,7 @@ object PetalUpdateSheetBridge {
                         }
                     }
                 }
+            }
                 val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content)
                 rootView?.addView(
                     composeView,

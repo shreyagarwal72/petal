@@ -1248,7 +1248,6 @@ private fun ImageInfoBottomSheet(
         }
     }
 }
-}
 
 @Composable
 private fun InfoCardRow(label: String, value: String) {

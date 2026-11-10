@@ -24,6 +24,7 @@ import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material3.*
 import com.petal.browser.ui.kit.IconButton
 import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.containment.liquidGlassChrome
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
