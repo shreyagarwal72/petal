@@ -11,6 +11,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.browser.AlbumController
 
 object PetalSiteInfoBridge {
@@ -49,29 +50,33 @@ object PetalSiteInfoBridge {
                         val appFont = AppFont.fromName(fontName)
                         val colorStyle = try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
 
-                        PetalExpressiveTheme(
-                            dynamicColor = dynamicColor,
-                            useAmoled = isAmoled,
-                            appFont = appFont,
-                            colorStyle = colorStyle,
-                            paletteId = paletteId
-                        ) {
-                            var showSheet by remember { mutableStateOf(true) }
-                            if (showSheet) {
-                                PetalSiteInfoBottomSheet(
-                                    albumController = albumController,
-                                    onDismissRequest = {
-                                        showSheet = false
-                                        val parentView = composeView?.parent as? android.view.ViewGroup
-                                        parentView?.removeView(composeView)
-                                    },
-                                    onResetSiteData = {
-                                        onResetSiteData.run()
-                                        showSheet = false
-                                        val parentView = composeView?.parent as? android.view.ViewGroup
-                                        parentView?.removeView(composeView)
-                                    }
-                                )
+                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                            ?: activity.findViewById(android.R.id.content)
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            PetalExpressiveTheme(
+                                dynamicColor = dynamicColor,
+                                useAmoled = isAmoled,
+                                appFont = appFont,
+                                colorStyle = colorStyle,
+                                paletteId = paletteId
+                            ) {
+                                var showSheet by remember { mutableStateOf(true) }
+                                if (showSheet) {
+                                    PetalSiteInfoBottomSheet(
+                                        albumController = albumController,
+                                        onDismissRequest = {
+                                            showSheet = false
+                                            val parentView = composeView?.parent as? android.view.ViewGroup
+                                            parentView?.removeView(composeView)
+                                        },
+                                        onResetSiteData = {
+                                            onResetSiteData.run()
+                                            showSheet = false
+                                            val parentView = composeView?.parent as? android.view.ViewGroup
+                                            parentView?.removeView(composeView)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

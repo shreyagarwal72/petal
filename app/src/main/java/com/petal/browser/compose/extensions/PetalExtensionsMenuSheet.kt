@@ -56,6 +56,7 @@ import com.petal.browser.extensions.PetalBuiltInExtensionManager
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.*
+import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.ExpressiveButtonShape
@@ -120,36 +121,40 @@ object PetalExtensionsMenuSheet {
                             try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                         }
 
-                        PetalExpressiveTheme(
-                            darkTheme = darkTheme,
-                            dynamicColor = dynamicColor,
-                            useAmoled = isAmoled,
-                            appFont = appFont,
-                            colorStyle = colorStyle,
-                            paletteId = paletteId
-                        ) {
-                            com.petal.browser.ui.glass.PetalGlassContainer(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight(),
-                                enabled = isLiquidGlassEnabled("sp_liquid_glass_containments")
+                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main) ?: rootView
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            PetalExpressiveTheme(
+                                darkTheme = darkTheme,
+                                dynamicColor = dynamicColor,
+                                useAmoled = isAmoled,
+                                appFont = appFont,
+                                colorStyle = colorStyle,
+                                paletteId = paletteId
                             ) {
-                                Box(
+                                com.petal.browser.ui.glass.PetalGlassContainer(
                                     modifier = Modifier
-                                        .fillMaxSize()
-                                        .navigationBarsPadding()
-                                        .padding(horizontal = 16.dp, vertical = 20.dp),
-                                    contentAlignment = Alignment.BottomCenter
+                                        .fillMaxWidth()
+                                        .wrapContentHeight(),
+                                    enabled = isLiquidGlassEnabled("sp_liquid_glass_containments"),
+                                    live = true
                                 ) {
-                                    ExtensionsMenuContent(
-                                        activity = activity,
-                                        domain = host.ifEmpty { "Current Page" },
-                                        onDismiss = { dialog.dismiss() },
-                                        onOpenManager = {
-                                            dialog.dismiss()
-                                            onOpenManager()
-                                        }
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .navigationBarsPadding()
+                                            .padding(horizontal = 16.dp, vertical = 20.dp),
+                                        contentAlignment = Alignment.BottomCenter
+                                    ) {
+                                        ExtensionsMenuContent(
+                                            activity = activity,
+                                            domain = host.ifEmpty { "Current Page" },
+                                            onDismiss = { dialog.dismiss() },
+                                            onOpenManager = {
+                                                dialog.dismiss()
+                                                onOpenManager()
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -60,27 +60,31 @@ object PetalAccountPickerSheet {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                     setContent {
-                        com.petal.browser.ui.theme.PetalExpressiveTheme {
-                            AccountPickerSheetContent(
-                                domain = domain,
-                                accounts = accounts,
-                                onSelect = { cred ->
-                                    onAccountSelected(cred)
-                                    dialog.dismiss()
-                                },
-                                onSuggest = {
-                                    onSuggestPassword()
-                                    dialog.dismiss()
-                                },
-                                onManage = {
-                                    onManagePasswords()
-                                    dialog.dismiss()
-                                },
-                                onDismiss = {
-                                    onDismiss()
-                                    dialog.dismiss()
-                                }
-                            )
+                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                            ?: activity.findViewById(android.R.id.content)
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            com.petal.browser.ui.theme.PetalExpressiveTheme {
+                                AccountPickerSheetContent(
+                                    domain = domain,
+                                    accounts = accounts,
+                                    onSelect = { cred ->
+                                        onAccountSelected(cred)
+                                        dialog.dismiss()
+                                    },
+                                    onSuggest = {
+                                        onSuggestPassword()
+                                        dialog.dismiss()
+                                    },
+                                    onManage = {
+                                        onManagePasswords()
+                                        dialog.dismiss()
+                                    },
+                                    onDismiss = {
+                                        onDismiss()
+                                        dialog.dismiss()
+                                    }
+                                )
+                            }
                         }
                     }
                 }

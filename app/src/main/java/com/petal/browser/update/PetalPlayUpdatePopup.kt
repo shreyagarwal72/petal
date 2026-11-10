@@ -33,6 +33,7 @@ import com.petal.browser.ui.components.PetalLiquidButton
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalSheet
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.glass.LocalPetalGlassSource
 
 object PetalPlayUpdatePopupBridge {
 
@@ -83,44 +84,48 @@ object PetalPlayUpdatePopupBridge {
                             try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (_: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                         }
 
-                        PetalExpressiveTheme(
-                            dynamicColor = dynamicColor,
-                            useAmoled = isAmoled,
-                            appFont = appFont,
-                            colorStyle = colorStyle,
-                            paletteId = paletteId
-                        ) {
-                            var showSheet by remember { mutableStateOf(true) }
-                            if (showSheet) {
-                                PetalSheet(
-                                    onDismissRequest = {
-                                        showSheet = false
-                                        val parent = composeView?.parent as? ViewGroup
-                                        parent?.removeView(composeView)
-                                        onDismiss()
-                                    }
-                                ) {
-                                    PetalPlayUpdatePopupContent(
-                                        isDownloaded = isDownloaded,
-                                        onUpdateNow = {
-                                            showSheet = false
-                                            val parent = composeView?.parent as? ViewGroup
-                                            parent?.removeView(composeView)
-                                            onUpdateNow()
-                                        },
-                                        onRestartNow = {
-                                            showSheet = false
-                                            val parent = composeView?.parent as? ViewGroup
-                                            parent?.removeView(composeView)
-                                            onRestartNow()
-                                        },
-                                        onDismiss = {
+                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                            ?: activity.findViewById(android.R.id.content)
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            PetalExpressiveTheme(
+                                dynamicColor = dynamicColor,
+                                useAmoled = isAmoled,
+                                appFont = appFont,
+                                colorStyle = colorStyle,
+                                paletteId = paletteId
+                            ) {
+                                var showSheet by remember { mutableStateOf(true) }
+                                if (showSheet) {
+                                    PetalSheet(
+                                        onDismissRequest = {
                                             showSheet = false
                                             val parent = composeView?.parent as? ViewGroup
                                             parent?.removeView(composeView)
                                             onDismiss()
                                         }
-                                    )
+                                    ) {
+                                        PetalPlayUpdatePopupContent(
+                                            isDownloaded = isDownloaded,
+                                            onUpdateNow = {
+                                                showSheet = false
+                                                val parent = composeView?.parent as? ViewGroup
+                                                parent?.removeView(composeView)
+                                                onUpdateNow()
+                                            },
+                                            onRestartNow = {
+                                                showSheet = false
+                                                val parent = composeView?.parent as? ViewGroup
+                                                parent?.removeView(composeView)
+                                                onRestartNow()
+                                            },
+                                            onDismiss = {
+                                                showSheet = false
+                                                val parent = composeView?.parent as? ViewGroup
+                                                parent?.removeView(composeView)
+                                                onDismiss()
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }

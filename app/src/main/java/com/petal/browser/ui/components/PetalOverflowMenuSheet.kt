@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
+import com.petal.browser.ui.glass.LocalPetalGlassSource
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -155,19 +156,22 @@ object PetalOverflowBridge {
                         try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                     }
 
-                    PetalExpressiveTheme(
-                        dynamicColor = dynamicColor,
-                        useAmoled = isAmoled,
-                        appFont = appFont,
-                        colorStyle = colorStyle,
-                        paletteId = paletteId
-                    ) {
-                        PetalOverflowMenuSheet(
-                            pageTitle = title,
-                            pageUrl = url,
-                            isBookmarked = isBookmarked,
-                            canGoBack = canGoBack,
-                            canGoForward = canGoForward,
+                    val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                        ?: activity.findViewById(android.R.id.content)
+                    CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                        PetalExpressiveTheme(
+                            dynamicColor = dynamicColor,
+                            useAmoled = isAmoled,
+                            appFont = appFont,
+                            colorStyle = colorStyle,
+                            paletteId = paletteId
+                        ) {
+                            PetalOverflowMenuSheet(
+                                pageTitle = title,
+                                pageUrl = url,
+                                isBookmarked = isBookmarked,
+                                canGoBack = canGoBack,
+                                canGoForward = canGoForward,
                             isDesktopSite = isDesktopSite,
                             isAdBlockEnabled = isAdBlockEnabled,
                             isMediaPlaying = isMediaPlaying,
@@ -314,6 +318,7 @@ object PetalOverflowBridge {
                     }
                 }
             }
+        }
             dialog.setContentView(composeView)
             dialog.setOnShowListener {
                 dialog.window?.let { window ->

@@ -71,21 +71,25 @@ object PetalUpdatePasswordSheet {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                     setContent {
-                        com.petal.browser.ui.theme.PetalExpressiveTheme {
-                            UpdatePasswordSheetContent(
-                                domain = domain,
-                                username = username,
-                                newPassword = newPassword,
-                                onUpdate = {
-                                    onUpdate(newPassword)
-                                },
-                                onDismiss = {
-                                    onDismiss()
-                                },
-                                onExitAnimationFinished = {
-                                    dialog.dismiss()
-                                }
-                            )
+                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                            ?: activity.findViewById(android.R.id.content)
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            com.petal.browser.ui.theme.PetalExpressiveTheme {
+                                UpdatePasswordSheetContent(
+                                    domain = domain,
+                                    username = username,
+                                    newPassword = newPassword,
+                                    onUpdate = {
+                                        onUpdate(newPassword)
+                                    },
+                                    onDismiss = {
+                                        onDismiss()
+                                    },
+                                    onExitAnimationFinished = {
+                                        dialog.dismiss()
+                                    }
+                                )
+                            }
                         }
                     }
                 }

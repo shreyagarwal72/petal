@@ -113,6 +113,8 @@ import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
+import androidx.compose.runtime.CompositionLocalProvider
+import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
 object PetalPrivacyShieldSheet {
@@ -194,48 +196,52 @@ object PetalPrivacyShieldSheet {
                             }
                         }
 
-                        PetalExpressiveTheme(
-                            darkTheme = darkTheme,
-                            dynamicColor = dynamicColor,
-                            useAmoled = isAmoled,
-                            expressiveColors = isExpressiveColors,
-                            appFont = appFont,
-                            fontWidth = fontWidthVal,
-                            fontWeight = fontWeightVal,
-                            fontRoundness = fontRoundnessVal,
-                            colorStyle = colorStyle,
-                            paletteId = paletteId
-                        ) {
-                            com.petal.browser.ui.glass.PetalGlassContainer(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight(),
-                                enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main) ?: rootView
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            PetalExpressiveTheme(
+                                darkTheme = darkTheme,
+                                dynamicColor = dynamicColor,
+                                useAmoled = isAmoled,
+                                expressiveColors = isExpressiveColors,
+                                appFont = appFont,
+                                fontWidth = fontWidthVal,
+                                fontWeight = fontWeightVal,
+                                fontRoundness = fontRoundnessVal,
+                                colorStyle = colorStyle,
+                                paletteId = paletteId
                             ) {
-                                Box(
+                                com.petal.browser.ui.glass.PetalGlassContainer(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .wrapContentHeight(),
-                                    contentAlignment = Alignment.Center,
+                                    enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments"),
+                                    live = true
                                 ) {
-                                    PrivacyShieldContent(
-                                        activity = activity,
-                                        domain = cleanHost.ifEmpty { "Current Website" },
-                                        pageUrl = pageUrl,
-                                        isHttps = isHttps,
-                                        blockedCount = blockedCount,
-                                        totalBlocked = totalBlocked,
-                                        onDismiss = { dialog.dismiss() },
-                                        onReloadRequested = {
-                                            if (activity is com.petal.browser.activity.MainActivity) {
-                                                val current = activity.currentAlbumController
-                                                if (current is com.petal.browser.browser.PetalTabViewController) {
-                                                    current.reload()
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .wrapContentHeight(),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        PrivacyShieldContent(
+                                            activity = activity,
+                                            domain = cleanHost.ifEmpty { "Current Website" },
+                                            pageUrl = pageUrl,
+                                            isHttps = isHttps,
+                                            blockedCount = blockedCount,
+                                            totalBlocked = totalBlocked,
+                                            onDismiss = { dialog.dismiss() },
+                                            onReloadRequested = {
+                                                if (activity is com.petal.browser.activity.MainActivity) {
+                                                    val current = activity.currentAlbumController
+                                                    if (current is com.petal.browser.browser.PetalTabViewController) {
+                                                        current.reload()
+                                                    }
                                                 }
-                                            }
-                                        },
-                                        onToggleAdBlock = onToggleAdBlock
-                                    )
+                                            },
+                                            onToggleAdBlock = onToggleAdBlock
+                                        )
+                                    }
                                 }
                             }
                         }

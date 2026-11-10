@@ -29,6 +29,8 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.containment.liquidGlassChrome
 import java.io.File
 import java.util.Locale
@@ -459,26 +461,30 @@ object PetalDownloadDialogBridge {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                     setContent {
-                        PetalExpressiveTheme(
-                            dynamicColor = dynamicColor,
-                            useAmoled = isAmoled,
-                            appFont = appFont,
-                            colorStyle = colorStyle,
-                            paletteId = paletteId
-                        ) {
-                            PetalFirstTimeDownloadEngineDialog(
-                                initialEngineKey = initialEngineKey,
-                                onConfirm = { chosenMode ->
-                                    com.petal.browser.torrent.PetalTorrentEngineManager.setEngineMode(activity, chosenMode)
-                                    if (engineDialog.isShowing) engineDialog.dismiss()
-                                    onComplete()
-                                },
-                                onDismiss = {
-                                    com.petal.browser.torrent.PetalTorrentEngineManager.setEnginePromptCompleted(activity)
-                                    if (engineDialog.isShowing) engineDialog.dismiss()
-                                    onComplete()
-                                }
-                            )
+                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                            ?: activity.findViewById(android.R.id.content)
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            PetalExpressiveTheme(
+                                dynamicColor = dynamicColor,
+                                useAmoled = isAmoled,
+                                appFont = appFont,
+                                colorStyle = colorStyle,
+                                paletteId = paletteId
+                            ) {
+                                PetalFirstTimeDownloadEngineDialog(
+                                    initialEngineKey = initialEngineKey,
+                                    onConfirm = { chosenMode ->
+                                        com.petal.browser.torrent.PetalTorrentEngineManager.setEngineMode(activity, chosenMode)
+                                        if (engineDialog.isShowing) engineDialog.dismiss()
+                                        onComplete()
+                                    },
+                                    onDismiss = {
+                                        com.petal.browser.torrent.PetalTorrentEngineManager.setEnginePromptCompleted(activity)
+                                        if (engineDialog.isShowing) engineDialog.dismiss()
+                                        onComplete()
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -565,28 +571,32 @@ object PetalDownloadDialogBridge {
                         setViewTreeSavedStateRegistryOwner(activity)
                         setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                         setContent {
-                            PetalExpressiveTheme(
-                                dynamicColor = dynamicColor,
-                                useAmoled = isAmoled,
-                                appFont = appFont,
-                                colorStyle = colorStyle,
-                                paletteId = paletteId
-                            ) {
-                                PetalDownloadConfirmationDialog(
-                                    fileName = guessedFileName,
-                                    fileSizeFormatted = formattedSize,
-                                    isDuplicate = isDuplicate,
-                                    onConfirm = {
-                                        if (dialog.isShowing) dialog.dismiss()
-                                        if (!com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet(activity, url, guessedFileName, mimeType)) {
-                                            onConfirmDownload(guessedFileName)
-                                        }
-                                    },
-                                    onDismiss = {
-                                        if (dialog.isShowing) dialog.dismiss()
-                                    },
-                                    onExternalDownload = externalDownloadAction
-                                )
+                            val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                                ?: activity.findViewById(android.R.id.content)
+                            CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                                PetalExpressiveTheme(
+                                    dynamicColor = dynamicColor,
+                                    useAmoled = isAmoled,
+                                    appFont = appFont,
+                                    colorStyle = colorStyle,
+                                    paletteId = paletteId
+                                ) {
+                                    PetalDownloadConfirmationDialog(
+                                        fileName = guessedFileName,
+                                        fileSizeFormatted = formattedSize,
+                                        isDuplicate = isDuplicate,
+                                        onConfirm = {
+                                            if (dialog.isShowing) dialog.dismiss()
+                                            if (!com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet(activity, url, guessedFileName, mimeType)) {
+                                                onConfirmDownload(guessedFileName)
+                                            }
+                                        },
+                                        onDismiss = {
+                                            if (dialog.isShowing) dialog.dismiss()
+                                        },
+                                        onExternalDownload = externalDownloadAction
+                                    )
+                                }
                             }
                         }
                     }

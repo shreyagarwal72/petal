@@ -15,6 +15,8 @@ import android.graphics.drawable.ColorDrawable
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.CompositionLocalProvider
+import com.petal.browser.ui.glass.LocalPetalGlassSource
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -52,22 +54,26 @@ object PetalSendToDeviceBridge {
                     try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (_: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                 }
 
-                PetalExpressiveTheme(
-                    dynamicColor = dynamicColor,
-                    useAmoled = isAmoled,
-                    appFont = appFont,
-                    colorStyle = colorStyle,
-                    paletteId = paletteId
-                ) {
-                    PetalSendToDeviceSheet(
-                        url = url,
-                        title = title,
-                        onDismissRequest = { dialog.dismiss() },
-                        onOpenSyncSettings = {
-                            dialog.dismiss()
-                            onOpenSyncSettings()
-                        }
-                    )
+                val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                    ?: activity.findViewById(android.R.id.content)
+                CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                    PetalExpressiveTheme(
+                        dynamicColor = dynamicColor,
+                        useAmoled = isAmoled,
+                        appFont = appFont,
+                        colorStyle = colorStyle,
+                        paletteId = paletteId
+                    ) {
+                        PetalSendToDeviceSheet(
+                            url = url,
+                            title = title,
+                            onDismissRequest = { dialog.dismiss() },
+                            onOpenSyncSettings = {
+                                dialog.dismiss()
+                                onOpenSyncSettings()
+                            }
+                        )
+                    }
                 }
             }
         }

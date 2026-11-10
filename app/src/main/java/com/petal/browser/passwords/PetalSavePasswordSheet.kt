@@ -75,23 +75,27 @@ object PetalSavePasswordSheet {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                     setContent {
-                        com.petal.browser.ui.theme.PetalExpressiveTheme {
-                            SavePasswordSheetContent(
-                                domain = domain,
-                                initialUsername = initialUsername,
-                                initialPassword = initialPassword,
-                                onSave = onSave,
-                                onNever = {
-                                    onNeverSave()
-                                    dialog.dismiss()
-                                },
-                                onDismiss = {
-                                    onDismiss()
-                                },
-                                onExitAnimationFinished = {
-                                    dialog.dismiss()
-                                }
-                            )
+                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                            ?: activity.findViewById(android.R.id.content)
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            com.petal.browser.ui.theme.PetalExpressiveTheme {
+                                SavePasswordSheetContent(
+                                    domain = domain,
+                                    initialUsername = initialUsername,
+                                    initialPassword = initialPassword,
+                                    onSave = onSave,
+                                    onNever = {
+                                        onNeverSave()
+                                        dialog.dismiss()
+                                    },
+                                    onDismiss = {
+                                        onDismiss()
+                                    },
+                                    onExitAnimationFinished = {
+                                        dialog.dismiss()
+                                    }
+                                )
+                            }
                         }
                     }
                 }

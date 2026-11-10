@@ -139,18 +139,23 @@ object PetalExitConfirmationDialog {
             }
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
             setContent {
-                PetalExpressiveTheme {
-                    com.petal.browser.ui.glass.PetalGlassContainer(
-                        modifier = Modifier.fillMaxWidth().wrapContentHeight(),
-                        enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-                    ) {
-                        ExitDialogContent(
-                            onStay = { dialog.dismiss() },
-                            onExit = {
-                                dialog.dismiss()
-                                onExit.run()
-                            }
-                        )
+                val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                    ?: activity.findViewById(android.R.id.content)
+                CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource) {
+                    PetalExpressiveTheme {
+                        com.petal.browser.ui.glass.PetalGlassContainer(
+                            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                            enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments"),
+                            live = true
+                        ) {
+                            ExitDialogContent(
+                                onStay = { dialog.dismiss() },
+                                onExit = {
+                                    dialog.dismiss()
+                                    onExit.run()
+                                }
+                            )
+                        }
                     }
                 }
             }
