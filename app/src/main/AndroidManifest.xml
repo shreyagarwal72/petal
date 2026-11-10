@@ -229,6 +229,7 @@
 
         <activity
             android:name="com.petal.browser.activity.MainActivity"
+            android:hardwareAccelerated="false"
             android:theme="@style/Theme.Petal.Splash"
             android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
             android:supportsPictureInPicture="true"
