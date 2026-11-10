@@ -103,13 +103,9 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             // Stage 2: Call GeckoRuntime.warmUp() once on the main process after runtime creation
             runtime.warmUp()
 
-            // GeckoEngine, BrowserStore, and session-storage init are heavy synchronized
-            // operations that block the main thread and cause the startup freeze. Kick them
-            // onto a background thread so the first Compose frame can draw immediately.
-            // PetalEngineStore's internal @Synchronized guards ensure only one thread wins
-            // the construction race; any concurrent first use (e.g. ViewModel on main thread)
-            // will block briefly on the lock rather than on a stalled main-thread message queue.
-            CoroutineScope(Dispatchers.IO).launch {
+            // GeckoView engine and SessionStorage construction require the UI thread. Defer
+            // this until Application.onCreate returns so it does not delay activity startup.
+            CoroutineScope(Dispatchers.Main).launch {
                 try {
                     com.petal.browser.engine.gecko.PetalEngineStore.getEngine(this@PetalApplication)
                     Log.i(TAG, "Initialized GeckoEngine at application start for WebCompat")

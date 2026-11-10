@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.TabListAction
@@ -176,6 +177,8 @@ class PetalBrowserViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            // Let Compose draw the initial home surface before creating Gecko sessions.
+            yield()
             if (browserStore.state.tabs.isEmpty()) {
                 openNewTab("about:home", selectTab = true)
             } else {

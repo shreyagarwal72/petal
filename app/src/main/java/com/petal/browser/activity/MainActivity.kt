@@ -132,21 +132,23 @@ class MainActivity : FragmentActivity(), BrowserController {
         com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
         com.petal.browser.compose.splash.PetalSplashState.splashActive.value = false
 
-        // Initialize Mozilla features: Extensions & Firefox Account Sync
-        PetalExtensionManager.attach(applicationContext)
-        PetalBuiltInExtensionManager.installAll(applicationContext)
-        FxAccountManager.getInstance().initialize(this)
-        PetalMozillaSyncManager.getInstance()
-
-        browserFeatures = PetalBrowserFeatures(this).also { it.start() }
-
-        handleIncomingIntent(intent)
-
         setContent {
             PetalExpressiveTheme {
                 PetalRootApp(viewModel = viewModel)
             }
         }
+
+        // Allow the first browser frame to render before attaching optional engine features.
+        // These initializers can trigger Gecko extension scans and service/store setup.
+        window.decorView.postDelayed({
+            if (isFinishing || isDestroyed) return@postDelayed
+            PetalExtensionManager.attach(applicationContext)
+            PetalBuiltInExtensionManager.installAll(applicationContext)
+            FxAccountManager.getInstance().initialize(this)
+            PetalMozillaSyncManager.getInstance()
+            browserFeatures = PetalBrowserFeatures(this).also { it.start() }
+            handleIncomingIntent(intent)
+        }, 250L)
     }
 
     override fun onDestroy() {

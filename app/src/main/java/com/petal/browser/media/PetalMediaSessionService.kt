@@ -50,6 +50,11 @@ class PetalMediaSessionService : Service() {
         const val ACTION_SPEED_TOGGLE = "com.petal.browser.media.ACTION_SPEED_TOGGLE"
         const val ACTION_MUTE_TOGGLE = "com.petal.browser.media.ACTION_MUTE_TOGGLE"
         const val EXTRA_TARGET_ACTIVITY = "extra_target_activity"
+        private const val EXTRA_TITLE = "extra_media_title"
+        private const val EXTRA_ARTIST = "extra_media_artist"
+        private const val EXTRA_PLAYING = "extra_media_playing"
+        private const val EXTRA_POSITION = "extra_media_position"
+        private const val EXTRA_DURATION = "extra_media_duration"
 
         @JvmStatic
         var activeInstance: PetalMediaSessionService? = null
@@ -86,7 +91,13 @@ class PetalMediaSessionService : Service() {
             if (current != null) {
                 current.updateMediaState(title, artist, playing, positionMs, durationMs, artwork, targetActivity)
             } else if (context != null) {
-                val intent = Intent(context, PetalMediaSessionService::class.java)
+                val intent = Intent(context, PetalMediaSessionService::class.java).apply {
+                    putExtra(EXTRA_TITLE, title)
+                    putExtra(EXTRA_ARTIST, artist)
+                    putExtra(EXTRA_PLAYING, playing)
+                    putExtra(EXTRA_POSITION, positionMs)
+                    putExtra(EXTRA_DURATION, durationMs)
+                }
                 if (playing && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(intent)
                 } else {
@@ -203,15 +214,29 @@ class PetalMediaSessionService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         mediaSession?.let { MediaButtonReceiver.handleIntent(it, intent) }
         val action = intent?.action
-        if (action != null) {
+        val startsPlayback = intent?.getBooleanExtra(EXTRA_PLAYING, false) == true
+        if ((action == null && startsPlayback) || action == ACTION_PLAY) {
+            // startMediaSession uses startForegroundService while playback is beginning.
+            // Promote immediately; metadata and playback state are applied below.
+            startForeground(NOTIFICATION_ID, buildNotification())
+        }
+        if (action == null) {
+            updateMediaState(
+                title = intent?.getStringExtra(EXTRA_TITLE),
+                artist = intent?.getStringExtra(EXTRA_ARTIST),
+                playing = intent?.getBooleanExtra(EXTRA_PLAYING, false) ?: false,
+                positionMs = intent?.getLongExtra(EXTRA_POSITION, 0L) ?: 0L,
+                durationMs = intent?.getLongExtra(EXTRA_DURATION, 0L) ?: 0L
+            )
+        } else {
             when (action) {
                 ACTION_PLAY -> {
                     controlListener?.onPlay()
-                    updatePlaybackState(true, currentPosition)
+                    updateMediaState(currentTitle, currentArtist, true, currentPosition, currentDuration)
                 }
                 ACTION_PAUSE -> {
                     controlListener?.onPause()
-                    updatePlaybackState(false, currentPosition)
+                    updateMediaState(currentTitle, currentArtist, false, currentPosition, currentDuration)
                 }
                 ACTION_STOP -> {
                     controlListener?.onStop()
