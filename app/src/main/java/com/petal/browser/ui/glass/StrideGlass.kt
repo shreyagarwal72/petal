@@ -395,15 +395,21 @@ internal fun lensEffect(size: Size, pad: Float, radii: FloatArray, height: Float
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun lensShaderEffect(size: Size, pad: Float, radii: FloatArray, height: Float, amount: Float): RenderEffect {
-    val shader = LensShaders.plain
-    shader.setFloatUniform("size", size.width, size.height)
-    shader.setFloatUniform("offset", -pad, -pad)
-    shader.setFloatUniform("cornerRadii", radii)
-    shader.setFloatUniform("refractionHeight", height.coerceAtMost(size.minDimension / 2f))
-    shader.setFloatUniform("refractionAmount", -amount)
-    shader.setFloatUniform("depthEffect", 0f)
-    return RenderEffect.createRuntimeShaderEffect(shader, "content")
+private fun lensShaderEffect(size: Size, pad: Float, radii: FloatArray, height: Float, amount: Float): RenderEffect? {
+    return try {
+        val shader = LensShaders.plain
+        synchronized(shader) {
+            shader.setFloatUniform("size", size.width, size.height)
+            shader.setFloatUniform("offset", -pad, -pad)
+            shader.setFloatUniform("cornerRadii", radii)
+            shader.setFloatUniform("refractionHeight", height.coerceAtMost(size.minDimension / 2f))
+            shader.setFloatUniform("refractionAmount", -amount)
+            shader.setFloatUniform("depthEffect", 0f)
+            RenderEffect.createRuntimeShaderEffect(shader, "content")
+        }
+    } catch (_: Throwable) {
+        null
+    }
 }
 
 /** Corner radii in the shader's order — top-left, top-right, bottom-right, bottom-left. */

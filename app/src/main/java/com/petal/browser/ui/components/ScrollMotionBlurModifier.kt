@@ -111,39 +111,37 @@ fun Modifier.scrollMotionBlur(
     val animatedVelocity = remember { Animatable(0f) }
 
     LaunchedEffect(scrollState) {
-        var prevValue = scrollState.value
-        var prevTimeNanos = 0L
-
-        while (isActive) {
-            var newVelocityToSnap = 0f
-            withFrameNanos { frameTimeNanos ->
-                val currentValue = scrollState.value
-                if (prevTimeNanos != 0L) {
-                    val dtMs = (frameTimeNanos - prevTimeNanos) / 1_000_000.0f
-                    if (dtMs in 1f..100f) {
-                        val delta = (currentValue - prevValue).toFloat()
-                        val targetVelocity = (delta / dtMs).coerceIn(-3f, 3f)
-                        if (abs(delta) > 0.1f && scrollState.isScrollInProgress) {
-                            newVelocityToSnap = animatedVelocity.value * 0.35f + targetVelocity * 0.65f
-                        } else {
-                            val decayed = animatedVelocity.value * 0.45f
-                            newVelocityToSnap = if (abs(decayed) < 0.01f) 0f else decayed
+        androidx.compose.runtime.snapshotFlow { scrollState.isScrollInProgress }
+            .collect { inProgress ->
+                if (inProgress) {
+                    var prevValue = scrollState.value
+                    var prevTimeNanos = 0L
+                    while (isActive && scrollState.isScrollInProgress) {
+                        var newVelocityToSnap = 0f
+                        withFrameNanos { frameTimeNanos ->
+                            val currentValue = scrollState.value
+                            if (prevTimeNanos != 0L) {
+                                val dtMs = (frameTimeNanos - prevTimeNanos) / 1_000_000.0f
+                                if (dtMs in 1f..100f) {
+                                    val delta = (currentValue - prevValue).toFloat()
+                                    val targetVelocity = (delta / dtMs).coerceIn(-3f, 3f)
+                                    if (abs(delta) > 0.1f) {
+                                        newVelocityToSnap = animatedVelocity.value * 0.35f + targetVelocity * 0.65f
+                                    }
+                                }
+                            }
+                            prevValue = currentValue
+                            prevTimeNanos = frameTimeNanos
                         }
-                    } else {
-                        newVelocityToSnap = 0f
+                        animatedVelocity.snapTo(newVelocityToSnap)
+                    }
+                    animatedVelocity.animateTo(0f, animationSpec = tween(60))
+                } else {
+                    if (animatedVelocity.value != 0f) {
+                        animatedVelocity.animateTo(0f, animationSpec = tween(60))
                     }
                 }
-                prevValue = currentValue
-                prevTimeNanos = frameTimeNanos
             }
-            animatedVelocity.snapTo(newVelocityToSnap)
-        }
-    }
-
-    LaunchedEffect(scrollState.isScrollInProgress) {
-        if (!scrollState.isScrollInProgress) {
-            animatedVelocity.animateTo(0f, animationSpec = tween(60))
-        }
     }
 
     Api33ScrollBlur.applyScrollMotionBlur(

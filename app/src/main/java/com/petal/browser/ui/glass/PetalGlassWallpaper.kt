@@ -70,7 +70,7 @@ class PetalGlassWallpaper(val sharp: GraphicsLayer, val frosted: GraphicsLayer) 
     @Volatile var coords: LayoutCoordinates? = null
     var origin by mutableStateOf(Offset.Zero)
     var ready by mutableStateOf(false)
-    var hasRecorded by mutableStateOf(false)
+    @Volatile var hasRecorded: Boolean = false
 }
 
 val LocalPetalGlassWallpaper = staticCompositionLocalOf<PetalGlassWallpaper?> { null }
@@ -103,23 +103,28 @@ fun Modifier.captureGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
         }
     }.drawWithCache {
         wallpaper.frosted.renderEffect = frostEffect(this)
+        var lastRecordNs = 0L
         onDrawWithContent {
             try {
                 if (size.width > 0f && size.height > 0f) {
-                    try {
-                        wallpaper.sharp.record {
-                            try {
-                                this@onDrawWithContent.drawContent()
-                            } catch (_: Throwable) {}
+                    val nowNs = System.nanoTime()
+                    if (!wallpaper.hasRecorded || (nowNs - lastRecordNs >= LIVE_RECORD_MIN_INTERVAL_NS)) {
+                        lastRecordNs = nowNs
+                        try {
+                            wallpaper.sharp.record {
+                                try {
+                                    this@onDrawWithContent.drawContent()
+                                } catch (_: Throwable) {}
+                            }
+                            wallpaper.frosted.record {
+                                try {
+                                    drawLayer(wallpaper.sharp)
+                                } catch (_: Throwable) {}
+                            }
+                            wallpaper.hasRecorded = true
+                        } catch (_: Throwable) {
+                            // Keep previous recording instead of dropping to flat fill.
                         }
-                        wallpaper.frosted.record {
-                            try {
-                                drawLayer(wallpaper.sharp)
-                            } catch (_: Throwable) {}
-                        }
-                        wallpaper.hasRecorded = true
-                    } catch (_: Throwable) {
-                        // Keep previous recording instead of dropping to flat fill.
                     }
                     this@onDrawWithContent.drawContent()
                 } else {

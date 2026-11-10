@@ -61,7 +61,7 @@ object PetalAppLogger {
 
     private fun diagnosticsEnabled(context: Context): Boolean =
         PreferenceManager.getDefaultSharedPreferences(context)
-            .getString(PREF_CRASH_REPORT_MODE, "off") == "auto"
+            .getString(PREF_CRASH_REPORT_MODE, "auto") == "auto"
 
     private const val PREF_LAST_CLEAN_EXIT_TIME = "sp_last_clean_exit_timestamp"
     private const val PREF_LAST_HANDLED_EXIT_TIME = "sp_last_handled_exit_timestamp"

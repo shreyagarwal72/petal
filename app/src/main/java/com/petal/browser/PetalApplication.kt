@@ -31,7 +31,7 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
 
     override fun getWorkManagerConfiguration(): androidx.work.Configuration =
         androidx.work.Configuration.Builder()
-            .setMinimumLoggingLevel(android.util.Log.WARN)
+            .setMinimumLoggingLevel(android.util.Log.DEBUG)
             .build()
 
     private var lastNightModeBits: Int = 0
