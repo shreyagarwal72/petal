@@ -161,12 +161,8 @@ fun ComposeEngineViewport(
                     frameLayout
                 },
                 update = {
-                    val session = tab?.engineState?.engineSession
-                    if (session != null) {
-                        try {
-                            engineView.render(session)
-                        } catch (_: Throwable) {}
-                    }
+                    // Session binding is handled when the tab or engine session changes above.
+                    // Avoid rebinding GeckoView on every progress/title recomposition.
                     // Update layout and backend if required
                     findGeckoView(engineView.asView())?.let { gv ->
                         try {
