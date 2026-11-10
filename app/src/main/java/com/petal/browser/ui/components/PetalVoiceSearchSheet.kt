@@ -50,6 +50,7 @@ import com.petal.browser.ui.glass.recordGlassWallpaper
 import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
 import com.petal.browser.ui.glass.PetalGlassPattern
+import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -89,16 +90,20 @@ object PetalVoiceSearchBridge {
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                 setContent {
-                    PetalExpressiveTheme {
-                        PetalVoiceSearchSheet(
-                            onResult = { result ->
-                                cleanup()
-                                onResult(result)
-                            },
-                            onDismiss = {
-                                cleanup()
-                            }
-                        )
+                    val hostSource = activity.findViewById<android.view.View>(R.id.main)
+                        ?: activity.findViewById(android.R.id.content)
+                    CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                        PetalExpressiveTheme {
+                            PetalVoiceSearchSheet(
+                                onResult = { result ->
+                                    cleanup()
+                                    onResult(result)
+                                },
+                                onDismiss = {
+                                    cleanup()
+                                }
+                            )
+                        }
                     }
                 }
             }

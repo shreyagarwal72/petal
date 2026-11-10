@@ -18,6 +18,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.CompositionLocalProvider
+import com.petal.browser.ui.glass.LocalPetalGlassSource
+import com.petal.browser.ui.glass.PetalGlassContainer
+import com.petal.browser.ui.glass.isLiquidGlassEnabled
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -97,28 +101,38 @@ object PetalLensBridge {
                         try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
                     }
 
-                    PetalExpressiveTheme(
-                        darkTheme = androidx.compose.foundation.isSystemInDarkTheme(),
-                        dynamicColor = dynamicColor,
-                        useAmoled = isAmoled,
-                        appFont = appFont,
-                        fontWidth = fontWidthVal,
-                        fontWeight = fontWeightVal,
-                        fontRoundness = fontRoundnessVal,
-                        colorStyle = colorStyle,
-                        paletteId = paletteId
-                    ) {
-                        ModalBottomSheet(
-                            onDismissRequest = dismissAction,
-                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                            shape = BottomSheetDefaults.ExpandedShape,
-                            containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                            dragHandle = { BottomSheetDefaults.DragHandle() }
+                    val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                        ?: activity.findViewById(android.R.id.content)
+                    CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                        PetalExpressiveTheme(
+                            darkTheme = androidx.compose.foundation.isSystemInDarkTheme(),
+                            dynamicColor = dynamicColor,
+                            useAmoled = isAmoled,
+                            appFont = appFont,
+                            fontWidth = fontWidthVal,
+                            fontWeight = fontWeightVal,
+                            fontRoundness = fontRoundnessVal,
+                            colorStyle = colorStyle,
+                            paletteId = paletteId
                         ) {
-                            PetalLensBottomSheet(
-                                autoSnapCamera = autoSnapCamera,
-                                onDismissRequest = dismissAction
-                            )
+                            ModalBottomSheet(
+                                onDismissRequest = dismissAction,
+                                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                                shape = BottomSheetDefaults.ExpandedShape,
+                                containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                dragHandle = { BottomSheetDefaults.DragHandle() }
+                            ) {
+                                PetalGlassContainer(
+                                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                                    enabled = isLiquidGlassEnabled("sp_liquid_glass_containments"),
+                                    live = true
+                                ) {
+                                    PetalLensBottomSheet(
+                                        autoSnapCamera = autoSnapCamera,
+                                        onDismissRequest = dismissAction
+                                    )
+                                }
+                            }
                         }
                     }
                 }

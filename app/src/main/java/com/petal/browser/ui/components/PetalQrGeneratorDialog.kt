@@ -92,15 +92,20 @@ fun PetalQrGeneratorDialog(
     val dialogShape = MaterialTheme.shapes.extraLarge
 
     BasicAlertDialog(onDismissRequest = onDismissRequest) {
-        Surface(
-            shape = dialogShape,
-            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = if (isGlass) 0.dp else 8.dp,
-            shadowElevation = if (isGlass) 0.dp else 8.dp,
-            modifier = Modifier
-                .widthIn(max = 380.dp)
-                .then(if (isGlass) Modifier.liquidGlassChrome(dialogShape, enabled = true, sheenIntensity = sheen) else Modifier)
+        com.petal.browser.ui.glass.PetalGlassContainer(
+            modifier = Modifier.widthIn(max = 380.dp),
+            enabled = isGlass,
+            live = true
         ) {
+            Surface(
+                shape = dialogShape,
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = if (isGlass) 0.dp else 8.dp,
+                shadowElevation = if (isGlass) 0.dp else 8.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(dialogShape, enabled = true, sheenIntensity = sheen) else Modifier)
+            ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -297,6 +302,7 @@ fun PetalQrGeneratorDialog(
                     }
                 }
             }
+        }
         }
     }
 }

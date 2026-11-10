@@ -62,6 +62,7 @@ import com.petal.browser.logger.PetalAppLogger
 import com.petal.browser.view.PetalToast
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.PetalDialog
+import com.petal.browser.ui.glass.LocalPetalGlassSource
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -89,13 +90,17 @@ object PetalCrashReportingBridge {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                     setContent {
-                        PetalExpressiveTheme {
-                            PetalCrashRecoveryHost(
-                                onDismiss = {
-                                    val parent = composeView?.parent as? android.view.ViewGroup
-                                    parent?.removeView(composeView)
-                                }
-                            )
+                        val hostSource = activity.findViewById<android.view.View>(R.id.main)
+                            ?: activity.findViewById(android.R.id.content)
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            PetalExpressiveTheme {
+                                PetalCrashRecoveryHost(
+                                    onDismiss = {
+                                        val parent = composeView?.parent as? android.view.ViewGroup
+                                        parent?.removeView(composeView)
+                                    }
+                                )
+                            }
                         }
                     }
                 }

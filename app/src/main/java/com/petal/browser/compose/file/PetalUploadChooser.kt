@@ -247,26 +247,41 @@ object PetalUploadChooser {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    androidx.compose.material3.ModalBottomSheet(
-                        onDismissRequest = {
-                            dismissAction()
-                        },
-                        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                        shape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape,
-                        dragHandle = { androidx.compose.material3.BottomSheetDefaults.DragHandle() }
+                    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                        ?: activity.findViewById(android.R.id.content)
+
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource
                     ) {
-                        ChoiceContent(
-                            onPickFiles = {
-                                chosen = true
+                        androidx.compose.material3.ModalBottomSheet(
+                            onDismissRequest = {
                                 dismissAction()
-                                openFiles(activity, cb, params, onFatalFallback)
                             },
-                            onPickMedia = {
-                                chosen = true
-                                dismissAction()
-                                openMedia(activity, cb, params, onFatalFallback)
+                            sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                            shape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape,
+                            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            dragHandle = { androidx.compose.material3.BottomSheetDefaults.DragHandle() }
+                        ) {
+                            com.petal.browser.ui.glass.PetalGlassContainer(
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = isGlass,
+                                live = true
+                            ) {
+                                ChoiceContent(
+                                    onPickFiles = {
+                                        chosen = true
+                                        dismissAction()
+                                        openFiles(activity, cb, params, onFatalFallback)
+                                    },
+                                    onPickMedia = {
+                                        chosen = true
+                                        dismissAction()
+                                        openMedia(activity, cb, params, onFatalFallback)
+                                    }
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }
@@ -291,42 +306,58 @@ object PetalUploadChooser {
 
 @androidx.compose.runtime.Composable
 private fun ChoiceContent(onPickFiles: () -> Unit, onPickMedia: () -> Unit) {
-    Column(
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+    val sheetShape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape
+
+    Surface(
+        shape = sheetShape,
+        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = sheen) else Modifier)
     ) {
-        Text(
-            text = stringResource(R.string.upload_chooser_title),
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(Modifier.height(4.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.upload_chooser_title),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(4.dp))
 
-        ChoiceRow(
-            icon = Icons.Rounded.FolderOpen,
-            title = stringResource(R.string.upload_chooser_files_title),
-            subtitle = stringResource(R.string.upload_chooser_files_desc),
-            onClick = onPickFiles
-        )
-        ChoiceRow(
-            icon = Icons.Rounded.PhotoLibrary,
-            title = stringResource(R.string.upload_chooser_media_title),
-            subtitle = stringResource(R.string.upload_chooser_media_desc),
-            onClick = onPickMedia
-        )
+            ChoiceRow(
+                icon = Icons.Rounded.FolderOpen,
+                title = stringResource(R.string.upload_chooser_files_title),
+                subtitle = stringResource(R.string.upload_chooser_files_desc),
+                onClick = onPickFiles
+            )
+            ChoiceRow(
+                icon = Icons.Rounded.PhotoLibrary,
+                title = stringResource(R.string.upload_chooser_media_title),
+                subtitle = stringResource(R.string.upload_chooser_media_desc),
+                onClick = onPickMedia
+            )
+        }
     }
 }
 
 @androidx.compose.runtime.Composable
 private fun ChoiceRow(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val rowShape = MaterialTheme.shapes.large
+
     Surface(
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = rowShape,
+        color = if (isGlass) MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.55f) else MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier
             .fillMaxWidth()
+            .then(if (isGlass) Modifier.liquidGlassChrome(rowShape, enabled = true, sheenIntensity = 0.4f) else Modifier)
             .clickable(onClick = onClick)
     ) {
         Row(

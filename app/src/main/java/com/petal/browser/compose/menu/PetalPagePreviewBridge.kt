@@ -29,7 +29,9 @@ import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import com.petal.browser.ui.glass.LocalPetalGlassSource
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -84,22 +86,26 @@ object PetalPagePreviewBridge {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                     setContent {
-                        PetalExpressiveTheme {
-                            androidx.compose.material3.ModalBottomSheet(
-                                onDismissRequest = dismissAction,
-                                sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                                shape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape,
-                                containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                                dragHandle = { androidx.compose.material3.BottomSheetDefaults.DragHandle() }
-                            ) {
-                                PetalPagePreviewSheet(
-                                    url = url,
-                                    onOpenFullTab = {
-                                        dismissAction()
-                                        activity.addAlbum(PetalAndroidUtils.domain(url), url, true)
-                                    },
-                                    onDismiss = dismissAction
-                                )
+                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                            ?: activity.findViewById(android.R.id.content)
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            PetalExpressiveTheme {
+                                androidx.compose.material3.ModalBottomSheet(
+                                    onDismissRequest = dismissAction,
+                                    sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                                    shape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape,
+                                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                    dragHandle = { androidx.compose.material3.BottomSheetDefaults.DragHandle() }
+                                ) {
+                                    PetalPagePreviewSheet(
+                                        url = url,
+                                        onOpenFullTab = {
+                                            dismissAction()
+                                            activity.addAlbum(PetalAndroidUtils.domain(url), url, true)
+                                        },
+                                        onDismiss = dismissAction
+                                    )
+                                }
                             }
                         }
                     }

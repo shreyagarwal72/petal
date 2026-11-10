@@ -138,11 +138,17 @@ fun PetalBiometricExpressiveSheet(
         onCancel()
     }
 
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
+
     Surface(
-        shape = BottomSheetDefaults.ExpandedShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 6.dp,
-        modifier = Modifier.fillMaxWidth()
+        shape = sheetShape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = if (isGlass) 0.dp else 6.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = sheen) else Modifier)
     ) {
         Box(
             modifier = Modifier
@@ -374,35 +380,49 @@ object PetalBiometricOverlayBridge {
                     fontWeight = fontWeightVal,
                     fontRoundness = fontRoundnessVal
                 ) {
-                    ModalBottomSheet(
-                        onDismissRequest = {
-                            dismissAction()
-                            onCancel.run()
-                        },
-                        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                        shape = BottomSheetDefaults.ExpandedShape,
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        dragHandle = { BottomSheetDefaults.DragHandle() }
+                    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    val hostSource = appCompat.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                        ?: appCompat.findViewById(android.R.id.content)
+
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource
                     ) {
-                        PetalBiometricExpressiveSheet(
-                            title = title,
-                            subtitle = subtitle,
-                            allowPasswordFallback = onUsePassword != null,
-                            onSuccess = {
-                                dismissAction()
-                                onSuccess.run()
-                            },
-                            onCancel = {
+                        ModalBottomSheet(
+                            onDismissRequest = {
                                 dismissAction()
                                 onCancel.run()
                             },
-                            onUsePassword = onUsePassword?.let { cb ->
-                                {
-                                    dismissAction()
-                                    cb.run()
-                                }
+                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                            shape = BottomSheetDefaults.ExpandedShape,
+                            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            dragHandle = { BottomSheetDefaults.DragHandle() }
+                        ) {
+                            com.petal.browser.ui.glass.PetalGlassContainer(
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = isGlass,
+                                live = true
+                            ) {
+                                PetalBiometricExpressiveSheet(
+                                    title = title,
+                                    subtitle = subtitle,
+                                    allowPasswordFallback = onUsePassword != null,
+                                    onSuccess = {
+                                        dismissAction()
+                                        onSuccess.run()
+                                    },
+                                    onCancel = {
+                                        dismissAction()
+                                        onCancel.run()
+                                    },
+                                    onUsePassword = onUsePassword?.let { cb ->
+                                        {
+                                            dismissAction()
+                                            cb.run()
+                                        }
+                                    }
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }

@@ -28,18 +28,21 @@ fun LinearRipplingWavyProgressIndicator(
     secondaryColor: Color = MaterialTheme.colorScheme.tertiary,
     trackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
 ) {
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val resolvedTrackColor = if (isGlass) activeColor.copy(alpha = 0.14f) else trackColor
+
     if (progress != null) {
         LinearWavyProgressIndicator(
             progress = { progress.coerceIn(0f, 1f) },
             modifier = modifier.fillMaxWidth(),
             color = activeColor,
-            trackColor = trackColor
+            trackColor = resolvedTrackColor
         )
     } else {
         LinearWavyProgressIndicator(
             modifier = modifier.fillMaxWidth(),
             color = activeColor,
-            trackColor = trackColor
+            trackColor = resolvedTrackColor
         )
     }
 }

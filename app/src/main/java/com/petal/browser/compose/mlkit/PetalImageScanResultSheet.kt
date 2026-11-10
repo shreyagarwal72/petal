@@ -44,6 +44,8 @@ import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.Result
 import com.google.zxing.common.HybridBinarizer
 import com.petal.browser.R
+import com.petal.browser.ui.glass.LocalPetalGlassSource
+import com.petal.browser.ui.glass.PetalGlassContainer
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.theme.AppFont
@@ -265,24 +267,34 @@ object PetalImageScannerBridge {
                         try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                     }
 
-                    PetalExpressiveTheme(
-                        dynamicColor = dynamicColor,
-                        useAmoled = isAmoled,
-                        appFont = appFont,
-                        colorStyle = colorStyle,
-                        paletteId = paletteId
-                    ) {
-                        ModalBottomSheet(
-                            onDismissRequest = dismissAction,
-                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                            shape = BottomSheetDefaults.ExpandedShape,
-                            containerColor = Color.Transparent,
-                            dragHandle = { BottomSheetDefaults.DragHandle() }
+                    val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                        ?: activity.findViewById(android.R.id.content)
+                    CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                        PetalExpressiveTheme(
+                            dynamicColor = dynamicColor,
+                            useAmoled = isAmoled,
+                            appFont = appFont,
+                            colorStyle = colorStyle,
+                            paletteId = paletteId
                         ) {
-                            PetalImageScanResultSheet(
-                                imageUrl = imageUrl,
-                                onDismiss = dismissAction
-                            )
+                            ModalBottomSheet(
+                                onDismissRequest = dismissAction,
+                                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                                shape = BottomSheetDefaults.ExpandedShape,
+                                containerColor = Color.Transparent,
+                                dragHandle = { BottomSheetDefaults.DragHandle() }
+                            ) {
+                                PetalGlassContainer(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = isLiquidGlassEnabled("sp_liquid_glass_containments"),
+                                    live = true
+                                ) {
+                                    PetalImageScanResultSheet(
+                                        imageUrl = imageUrl,
+                                        onDismiss = dismissAction
+                                    )
+                                }
+                            }
                         }
                     }
                 }

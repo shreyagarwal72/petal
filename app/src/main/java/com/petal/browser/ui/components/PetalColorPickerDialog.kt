@@ -105,18 +105,29 @@ fun PetalColorPickerDialog(
 
     val animatedColor by animateColorAsState(color, label = "pickerPreview")
     val onPreview = if (animatedColor.luminance() > 0.5f) Color.Black else Color.White
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+    val dialogShape = MaterialTheme.shapes.extraLarge
 
     BasicAlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.padding(16.dp).fillMaxWidth(),
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            border = null,
-            modifier = Modifier.fillMaxWidth()
+        com.petal.browser.ui.glass.PetalGlassContainer(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isGlass,
+            live = true
         ) {
+            Surface(
+                shape = dialogShape,
+                color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = if (isGlass) 0.dp else 6.dp,
+                border = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(dialogShape, enabled = true, sheenIntensity = sheen) else Modifier)
+            ) {
             Column {
                 Box(
                     modifier = Modifier.fillMaxWidth().height(132.dp).background(animatedColor),
@@ -194,6 +205,7 @@ fun PetalColorPickerDialog(
                     }
                 }
             }
+        }
         }
     }
 }

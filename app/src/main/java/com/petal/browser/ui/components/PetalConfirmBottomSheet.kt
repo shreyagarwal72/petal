@@ -48,26 +48,43 @@ fun PetalConfirmBottomSheet(
     onCancel: () -> Unit = onDismissRequest
 ) {
     if (visible) {
+        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+        val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+        val sheetShape = BottomSheetDefaults.ExpandedShape
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ModalBottomSheet(
             onDismissRequest = onDismissRequest,
             sheetState = sheetState,
             dragHandle = { BottomSheetDefaults.DragHandle() },
-            shape = BottomSheetDefaults.ExpandedShape,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = sheetShape,
+            containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow,
             contentWindowInsets = { WindowInsets.navigationBars }
         ) {
-            PetalConfirmSheetContent(
-                icon = icon,
-                title = title,
-                message = message,
-                confirmText = confirmText,
-                cancelText = cancelText,
-                isDestructive = isDestructive,
-                showDragHandle = false,
-                onConfirm = onConfirm,
-                onCancel = onCancel
-            )
+            com.petal.browser.ui.glass.PetalGlassContainer(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = isGlass,
+                live = true
+            ) {
+                Surface(
+                    shape = sheetShape,
+                    color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = sheen) else Modifier)
+                ) {
+                    PetalConfirmSheetContent(
+                        icon = icon,
+                        title = title,
+                        message = message,
+                        confirmText = confirmText,
+                        cancelText = cancelText,
+                        isDestructive = isDestructive,
+                        showDragHandle = false,
+                        onConfirm = onConfirm,
+                        onCancel = onCancel
+                    )
+                }
+            }
         }
     }
 }
@@ -207,12 +224,17 @@ object PetalConfirmSheetBridge {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
 
                 setContent {
-                    PetalExpressiveTheme(
-                        paletteId = paletteId,
-                        useAmoled = isAmoled,
-                        dynamicColor = useDynamic
+                    val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                        ?: activity.findViewById(android.R.id.content)
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource
                     ) {
-                        PetalConfirmBottomSheet(
+                        PetalExpressiveTheme(
+                            paletteId = paletteId,
+                            useAmoled = isAmoled,
+                            dynamicColor = useDynamic
+                        ) {
+                            PetalConfirmBottomSheet(
                             visible = true,
                             onDismissRequest = {
                                 if (!actionHandled) {
@@ -244,6 +266,7 @@ object PetalConfirmSheetBridge {
                         )
                     }
                 }
+            }
             }
 
             activeComposeView = composeView

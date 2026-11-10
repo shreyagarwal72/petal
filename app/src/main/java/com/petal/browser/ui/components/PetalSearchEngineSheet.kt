@@ -121,23 +121,30 @@ fun PetalSearchEngineSheet(
     onConfirm: (Int) -> Unit
 ) {
     if (visible) {
+        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ModalBottomSheet(
             onDismissRequest = onDismissRequest,
             sheetState = sheetState,
             dragHandle = { BottomSheetDefaults.DragHandle() },
             shape = BottomSheetDefaults.ExpandedShape,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow,
             contentWindowInsets = { WindowInsets.navigationBars }
         ) {
-            PetalSearchEngineSheetContent(
-                initialIndex = initialIndex,
-                onConfirm = {
-                    onConfirm(it)
-                    onDismissRequest()
-                },
-                onCancel = onDismissRequest
-            )
+            com.petal.browser.ui.glass.PetalGlassContainer(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = isGlass,
+                live = true
+            ) {
+                PetalSearchEngineSheetContent(
+                    initialIndex = initialIndex,
+                    onConfirm = {
+                        onConfirm(it)
+                        onDismissRequest()
+                    },
+                    onCancel = onDismissRequest
+                )
+            }
         }
     }
 }
@@ -178,19 +185,25 @@ object PetalSearchEngineBridge {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                     setContent {
-                        PetalExpressiveTheme {
-                            PetalSearchEngineSheet(
-                                visible = true,
-                                onDismissRequest = { cleanup() },
-                                onConfirm = { index ->
-                                    PreferenceManager.getDefaultSharedPreferences(activity).edit()
-                                        .putString("sp_search_engine", index.toString())
-                                        .putBoolean("sp_search_engine_chosen", true)
-                                        .putBoolean("searchEngineSwitch", false)
-                                        .apply()
-                                    cleanup()
-                                }
-                            )
+                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                            ?: activity.findViewById(android.R.id.content)
+                        androidx.compose.runtime.CompositionLocalProvider(
+                            com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource
+                        ) {
+                            PetalExpressiveTheme {
+                                PetalSearchEngineSheet(
+                                    visible = true,
+                                    onDismissRequest = { cleanup() },
+                                    onConfirm = { index ->
+                                        PreferenceManager.getDefaultSharedPreferences(activity).edit()
+                                            .putString("sp_search_engine", index.toString())
+                                            .putBoolean("sp_search_engine_chosen", true)
+                                            .putBoolean("searchEngineSwitch", false)
+                                            .apply()
+                                        cleanup()
+                                    }
+                                )
+                            }
                         }
                     }
                 }

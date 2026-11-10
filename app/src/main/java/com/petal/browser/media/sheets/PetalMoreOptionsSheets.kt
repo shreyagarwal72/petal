@@ -58,7 +58,13 @@ import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Speaker
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import com.petal.browser.ui.glass.PetalGlassContainer
+import com.petal.browser.ui.glass.isLiquidGlassEnabled
+import com.petal.browser.ui.glass.liquidGlassChrome
+import com.petal.browser.ui.glass.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.petalSheenIntensity
 import com.petal.browser.ui.kit.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import com.petal.browser.ui.kit.FilterChip
@@ -118,20 +124,36 @@ fun PetalSleepTimerSheet(
 
     val presetMinutes = listOf(5, 10, 15, 20, 30, 45, 60, 90)
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = petalSheenIntensity("sp_liquid_glass_sheen", default = 0.35f)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = audioPalette.surfaceContainerHighest,
+        shape = sheetShape,
+        containerColor = if (isGlass) Color.Transparent else audioPalette.surfaceContainerHighest,
         contentColor = audioPalette.onSurface,
-        dragHandle = null,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = modifier
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 20.dp)
+        PetalGlassContainer(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isGlass,
+            live = true
         ) {
+            Surface(
+                shape = sheetShape,
+                color = if (isGlass) petalGroupSurfaceColor() else audioPalette.surfaceContainerHighest,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .liquidGlassChrome(sheetShape, enabled = isGlass, sheenIntensity = sheen)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -301,6 +323,8 @@ fun PetalSleepTimerSheet(
             }
 
             Spacer(Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding().coerceAtLeast(16.dp)))
+                }
+            }
         }
     }
 }
@@ -337,20 +361,36 @@ fun PetalSongInfoSheet(
         "URI / Path" to (mediaUri.path ?: mediaUri.toString())
     )
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = petalSheenIntensity("sp_liquid_glass_sheen", default = 0.35f)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = audioPalette.surfaceContainerHighest,
+        shape = sheetShape,
+        containerColor = if (isGlass) Color.Transparent else audioPalette.surfaceContainerHighest,
         contentColor = audioPalette.onSurface,
-        dragHandle = null,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = modifier
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 20.dp)
+        PetalGlassContainer(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isGlass,
+            live = true
         ) {
+            Surface(
+                shape = sheetShape,
+                color = if (isGlass) petalGroupSurfaceColor() else audioPalette.surfaceContainerHighest,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .liquidGlassChrome(sheetShape, enabled = isGlass, sheenIntensity = sheen)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -439,6 +479,8 @@ fun PetalSongInfoSheet(
             }
 
             Spacer(Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding().coerceAtLeast(16.dp)))
+                }
+            }
         }
     }
 }
@@ -460,20 +502,36 @@ fun PetalSpeedSelectorSheet(
     val speeds = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
     val context = LocalContext.current
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = petalSheenIntensity("sp_liquid_glass_sheen", default = 0.35f)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = audioPalette.surfaceContainerHighest,
+        shape = sheetShape,
+        containerColor = if (isGlass) Color.Transparent else audioPalette.surfaceContainerHighest,
         contentColor = audioPalette.onSurface,
-        dragHandle = null,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = modifier
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 20.dp)
+        PetalGlassContainer(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isGlass,
+            live = true
         ) {
+            Surface(
+                shape = sheetShape,
+                color = if (isGlass) petalGroupSurfaceColor() else audioPalette.surfaceContainerHighest,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .liquidGlassChrome(sheetShape, enabled = isGlass, sheenIntensity = sheen)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -566,6 +624,8 @@ fun PetalSpeedSelectorSheet(
             }
 
             Spacer(Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding().coerceAtLeast(16.dp)))
+                }
+            }
         }
     }
 }
@@ -612,20 +672,36 @@ fun PetalAudioRouteSheet(
         }
     }
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = petalSheenIntensity("sp_liquid_glass_sheen", default = 0.35f)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = audioPalette.surfaceContainerHighest,
+        shape = sheetShape,
+        containerColor = if (isGlass) Color.Transparent else audioPalette.surfaceContainerHighest,
         contentColor = audioPalette.onSurface,
-        dragHandle = null,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = modifier
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 20.dp)
+        PetalGlassContainer(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isGlass,
+            live = true
         ) {
+            Surface(
+                shape = sheetShape,
+                color = if (isGlass) petalGroupSurfaceColor() else audioPalette.surfaceContainerHighest,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .liquidGlassChrome(sheetShape, enabled = isGlass, sheenIntensity = sheen)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -714,6 +790,8 @@ fun PetalAudioRouteSheet(
             }
 
             Spacer(Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding().coerceAtLeast(16.dp)))
+                }
+            }
         }
     }
 }

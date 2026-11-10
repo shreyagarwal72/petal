@@ -138,15 +138,25 @@ private fun CustomRedirectsDialogContent(
     }
 
     var showCreateDialog by remember { mutableStateOf(false) }
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+    val dialogShape = MaterialTheme.shapes.extraLarge
 
-    Surface(
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 6.dp,
+    com.petal.browser.ui.glass.PetalGlassContainer(
         modifier = Modifier
             .fillMaxWidth(0.92f)
-            .padding(16.dp)
+            .padding(16.dp),
+        enabled = isGlass,
+        live = true
     ) {
+        Surface(
+            shape = dialogShape,
+            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = if (isGlass) 0.dp else 6.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (isGlass) Modifier.liquidGlassChrome(dialogShape, enabled = true, sheenIntensity = sheen) else Modifier)
+        ) {
         Column(
             modifier = Modifier.padding(24.dp)
         ) {
@@ -289,6 +299,7 @@ private fun CustomRedirectsDialogContent(
             }
         }
     }
+    }
 
     if (showCreateDialog) {
         CreateNewRedirectDialog(
@@ -313,16 +324,27 @@ private fun CreateNewRedirectDialog(
     var sourceText by remember { mutableStateOf("") }
     var targetText by remember { mutableStateOf("") }
 
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+    val dialogShape = MaterialTheme.shapes.extraLarge
+
     androidx.compose.material3.BasicAlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxWidth(0.90f)
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 8.dp,
-            modifier = Modifier.fillMaxWidth()
+        com.petal.browser.ui.glass.PetalGlassContainer(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isGlass,
+            live = true
         ) {
+            Surface(
+                shape = dialogShape,
+                color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = if (isGlass) 0.dp else 8.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isGlass) Modifier.liquidGlassChrome(dialogShape, enabled = true, sheenIntensity = sheen) else Modifier)
+            ) {
             Column(
                 modifier = Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -395,6 +417,7 @@ private fun CreateNewRedirectDialog(
                     }
                 }
             }
+        }
         }
     }
 }

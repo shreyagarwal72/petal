@@ -90,7 +90,9 @@ import androidx.compose.material.icons.rounded.RotateRight
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.ViewCarousel
 import androidx.compose.material.icons.rounded.Wallpaper
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import com.petal.browser.ui.glass.PetalGlassContainer
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -1176,22 +1178,35 @@ private fun ImageInfoBottomSheet(
         }
     }
 
+    val sheetShape = BottomSheetDefaults.ExpandedShape
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.then(
-            if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), enabled = true)
-            else Modifier
-        )
+        shape = sheetShape,
+        containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 36.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+        PetalGlassContainer(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isGlass,
+            live = true
         ) {
+            Surface(
+                shape = sheetShape,
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .liquidGlassChrome(sheetShape, enabled = isGlass, sheenIntensity = sheen)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 36.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1232,6 +1247,7 @@ private fun ImageInfoBottomSheet(
             }
         }
     }
+}
 }
 
 @Composable

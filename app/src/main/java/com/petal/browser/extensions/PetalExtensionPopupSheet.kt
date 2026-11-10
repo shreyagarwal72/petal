@@ -51,23 +51,48 @@ object PetalExtensionPopupSheet {
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
             setContent {
-                PetalExpressiveTheme {
-                    ModalBottomSheet(
-                        onDismissRequest = dismissAction,
-                        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                        shape = BottomSheetDefaults.ExpandedShape,
-                        dragHandle = { BottomSheetDefaults.DragHandle() }
-                    ) {
-                        AndroidView(
-                            factory = { ctx ->
-                                val engineView = PetalEngineStore.createEngineView(ctx)
-                                engineView.render(popupSession)
-                                engineView.asView()
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 200.dp, max = 500.dp)
-                        )
+                val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+                val sheetShape = BottomSheetDefaults.ExpandedShape
+                val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                    ?: activity.findViewById(android.R.id.content)
+
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource
+                ) {
+                    PetalExpressiveTheme {
+                        ModalBottomSheet(
+                            onDismissRequest = dismissAction,
+                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                            shape = sheetShape,
+                            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            dragHandle = { BottomSheetDefaults.DragHandle() }
+                        ) {
+                            com.petal.browser.ui.glass.PetalGlassContainer(
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = isGlass,
+                                live = true
+                            ) {
+                                androidx.compose.material3.Surface(
+                                    shape = sheetShape,
+                                    color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = sheen) else Modifier)
+                                ) {
+                                    AndroidView(
+                                        factory = { ctx ->
+                                            val engineView = PetalEngineStore.createEngineView(ctx)
+                                            engineView.render(popupSession)
+                                            engineView.asView()
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(min = 200.dp, max = 500.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

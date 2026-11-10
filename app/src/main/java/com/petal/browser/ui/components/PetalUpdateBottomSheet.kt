@@ -58,6 +58,7 @@ import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.haptics.PetalHapticEngine
 import androidx.compose.ui.text.style.TextAlign
@@ -227,8 +228,11 @@ object PetalUpdateSheetBridge {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                     setContent {
-                        PetalExpressiveTheme {
-                            var showSheet by remember { mutableStateOf(true) }
+                        val hostSource = activity.findViewById<android.view.View>(R.id.main)
+                            ?: activity.findViewById(android.R.id.content)
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            PetalExpressiveTheme {
+                                var showSheet by remember { mutableStateOf(true) }
                             if (showSheet) {
                                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
                                 com.petal.browser.ui.containment.PetalSheet(
@@ -327,8 +331,11 @@ object PetalUpdateSheetBridge {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                     setContent {
-                        PetalExpressiveTheme {
-                            var showSheet by remember { mutableStateOf(true) }
+                        val hostSource = activity.findViewById<android.view.View>(R.id.main)
+                            ?: activity.findViewById(android.R.id.content)
+                        CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
+                            PetalExpressiveTheme {
+                                var showSheet by remember { mutableStateOf(true) }
                             if (showSheet) {
                                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
                                 val dismissAction: () -> Unit = {

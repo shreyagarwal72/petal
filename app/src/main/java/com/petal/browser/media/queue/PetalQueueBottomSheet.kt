@@ -60,7 +60,13 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DragIndicator
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import com.petal.browser.ui.glass.PetalGlassContainer
+import com.petal.browser.ui.glass.isLiquidGlassEnabled
+import com.petal.browser.ui.glass.liquidGlassChrome
+import com.petal.browser.ui.glass.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.petalSheenIntensity
 import com.petal.browser.ui.kit.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
@@ -117,20 +123,36 @@ fun PetalQueueBottomSheet(
         }
     }
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = petalSheenIntensity("sp_liquid_glass_sheen", default = 0.35f)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = audioPalette.surfaceContainerHighest,
+        shape = sheetShape,
+        containerColor = if (isGlass) Color.Transparent else audioPalette.surfaceContainerHighest,
         contentColor = audioPalette.onSurface,
-        dragHandle = null,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = modifier.fillMaxHeight(0.88f)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 16.dp)
+        PetalGlassContainer(
+            modifier = Modifier.fillMaxSize(),
+            enabled = isGlass,
+            live = true
         ) {
+            Surface(
+                shape = sheetShape,
+                color = if (isGlass) petalGroupSurfaceColor() else audioPalette.surfaceContainerHighest,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .liquidGlassChrome(sheetShape, enabled = isGlass, sheenIntensity = sheen)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 8.dp)
+                ) {
             // ── Header: "Up Next", count badge, Add & Clear actions, Dismiss ──
             Row(
                 modifier = Modifier
@@ -320,6 +342,8 @@ fun PetalQueueBottomSheet(
             }
 
             Spacer(Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding().coerceAtLeast(8.dp)))
+                }
+            }
         }
     }
 }

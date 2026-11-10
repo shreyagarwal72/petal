@@ -156,22 +156,37 @@ object PetalCastManager {
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                 setContent {
-                    PetalExpressiveTheme {
-                        ModalBottomSheet(
-                            onDismissRequest = dismissAction,
-                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                            shape = BottomSheetDefaults.ExpandedShape,
-                            dragHandle = { BottomSheetDefaults.DragHandle() }
-                        ) {
-                            PetalCastDeviceSheet(
-                                videoUrl = videoUrl,
-                                videoTitle = title ?: "Web Video",
-                                onDismiss = dismissAction,
-                                onOpenExternal = {
-                                    dismissAction()
-                                    openExternalAppChooser(activity, videoUrl, title)
+                    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                        ?: activity.findViewById(android.R.id.content)
+
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource
+                    ) {
+                        PetalExpressiveTheme {
+                            ModalBottomSheet(
+                                onDismissRequest = dismissAction,
+                                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                                shape = BottomSheetDefaults.ExpandedShape,
+                                containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                dragHandle = { BottomSheetDefaults.DragHandle() }
+                            ) {
+                                com.petal.browser.ui.glass.PetalGlassContainer(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = isGlass,
+                                    live = true
+                                ) {
+                                    PetalCastDeviceSheet(
+                                        videoUrl = videoUrl,
+                                        videoTitle = title ?: "Web Video",
+                                        onDismiss = dismissAction,
+                                        onOpenExternal = {
+                                            dismissAction()
+                                            openExternalAppChooser(activity, videoUrl, title)
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }
@@ -423,10 +438,16 @@ fun PetalCastDeviceSheet(
         scanDevices()
     }
 
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
+
     Surface(
-        color = MaterialTheme.colorScheme.surface,
-        shape = BottomSheetDefaults.ExpandedShape,
-        modifier = Modifier.fillMaxWidth(),
+        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surface,
+        shape = sheetShape,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isGlass) Modifier.liquidGlassChrome(shape = sheetShape, enabled = true, sheenIntensity = sheen) else Modifier),
     ) {
         Column(
             modifier = Modifier

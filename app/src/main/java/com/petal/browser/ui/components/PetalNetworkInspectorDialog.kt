@@ -34,6 +34,11 @@ import kotlinx.coroutines.withContext
 import java.net.InetAddress
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.glass.PetalGlassContainer
+import com.petal.browser.ui.glass.isLiquidGlassEnabled
+import com.petal.browser.ui.glass.liquidGlassChrome
+import com.petal.browser.ui.glass.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.petalSheenIntensity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,58 +68,77 @@ fun PetalNetworkInspectorDialog(
         }
     }
 
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = petalSheenIntensity("sp_liquid_glass_sheen", default = 0.35f)
+    val shape = MaterialTheme.shapes.extraLarge
+
     BasicAlertDialog(onDismissRequest = onDismissRequest) {
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
-            modifier = Modifier.widthIn(max = 380.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = if (isSecure) Icons.Rounded.Lock else Icons.Rounded.Public,
-                            contentDescription = null,
-                            tint = if (isSecure) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = stringResource(R.string.ui_network_inspector),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(onClick = onDismissRequest) {
-                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
-                    }
+        val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        androidx.compose.runtime.SideEffect {
+            dialogWindow?.let { win ->
+                if (isGlass) {
+                    win.setDimAmount(0.12f)
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                NetworkInfoRow("Host", host.ifEmpty { "localhost" })
-                NetworkInfoRow("Protocol", if (isSecure) "HTTPS (TLS 1.3 / HTTP/2 or 3)" else "HTTP (Insecure)")
-                NetworkInfoRow("IP Address", ipAddress)
-                NetworkInfoRow("Port", if (parsedUri?.port != -1 && parsedUri?.port != null) parsedUri.port.toString() else if (isSecure) "443" else "80")
-                NetworkInfoRow("DNS Mode", "Private DNS (DoH / Encrypted)")
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Button(
-                    onClick = onDismissRequest,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp)
+            }
+        }
+        PetalGlassContainer(
+            live = true,
+            modifier = Modifier.wrapContentSize()
+        ) {
+            Surface(
+                shape = shape,
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = if (isGlass) 0.dp else 6.dp,
+                modifier = Modifier
+                    .widthIn(max = 380.dp)
+                    .liquidGlassChrome(shape, enabled = isGlass, sheenIntensity = sheen)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
                 ) {
-                    Text(stringResource(R.string.ui_done))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (isSecure) Icons.Rounded.Lock else Icons.Rounded.Public,
+                                contentDescription = null,
+                                tint = if (isSecure) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = stringResource(R.string.ui_network_inspector),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        IconButton(onClick = onDismissRequest) {
+                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    NetworkInfoRow("Host", host.ifEmpty { "localhost" })
+                    NetworkInfoRow("Protocol", if (isSecure) "HTTPS (TLS 1.3 / HTTP/2 or 3)" else "HTTP (Insecure)")
+                    NetworkInfoRow("IP Address", ipAddress)
+                    NetworkInfoRow("Port", if (parsedUri?.port != -1 && parsedUri?.port != null) parsedUri.port.toString() else if (isSecure) "443" else "80")
+                    NetworkInfoRow("DNS Mode", "Private DNS (DoH / Encrypted)")
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Button(
+                        onClick = onDismissRequest,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large
+                    ) {
+                        Text(stringResource(R.string.ui_done))
+                    }
                 }
             }
         }

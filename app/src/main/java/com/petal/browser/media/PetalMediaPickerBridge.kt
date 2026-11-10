@@ -129,27 +129,42 @@ object PetalMediaPickerBridge {
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
-                        ModalBottomSheet(
-                            onDismissRequest = dismissAction,
-                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                            shape = BottomSheetDefaults.ExpandedShape,
-                            dragHandle = { BottomSheetDefaults.DragHandle() }
+                        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                            ?: activity.findViewById(android.R.id.content)
+
+                        androidx.compose.runtime.CompositionLocalProvider(
+                            com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource
                         ) {
-                            PetalMediaPickerBottomSheet(
-                                allowMultiple = allowMultiple,
-                                acceptTypes = acceptTypes,
-                                onMediaSelected = { uris ->
-                                    isHandled = true
-                                    filePathCallback?.onReceiveValue(uris.toTypedArray())
-                                    dismissAction()
-                                },
+                            ModalBottomSheet(
                                 onDismissRequest = dismissAction,
-                                onBrowseSystemFiles = {
-                                    isHandled = true
-                                    dismissAction()
-                                    onBrowseSystemFallback()
+                                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                                shape = BottomSheetDefaults.ExpandedShape,
+                                containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                dragHandle = { BottomSheetDefaults.DragHandle() }
+                            ) {
+                                com.petal.browser.ui.glass.PetalGlassContainer(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = isGlass,
+                                    live = true
+                                ) {
+                                    PetalMediaPickerBottomSheet(
+                                        allowMultiple = allowMultiple,
+                                        acceptTypes = acceptTypes,
+                                        onMediaSelected = { uris ->
+                                            isHandled = true
+                                            filePathCallback?.onReceiveValue(uris.toTypedArray())
+                                            dismissAction()
+                                        },
+                                        onDismissRequest = dismissAction,
+                                        onBrowseSystemFiles = {
+                                            isHandled = true
+                                            dismissAction()
+                                            onBrowseSystemFallback()
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }

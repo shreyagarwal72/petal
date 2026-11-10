@@ -38,6 +38,7 @@ fun ExpressiveFloatingDockBar(
 ) {
     val dockShape = RoundedCornerShape(32.dp)
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_bottom_nav") || isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
     AnimatedVisibility(
         visible = isVisible,
@@ -51,13 +52,21 @@ fun ExpressiveFloatingDockBar(
         ),
         modifier = modifier
     ) {
-        HorizontalFloatingToolbar(
-            expanded = true,
-            modifier = Modifier
-                .padding(horizontal = 24.dp, vertical = 12.dp)
-                .height(60.dp)
-                .then(if (isGlass) Modifier.liquidGlassChrome(dockShape, enabled = true, sheenIntensity = 0.65f) else Modifier)
+        com.petal.browser.ui.glass.PetalGlassContainer(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isGlass,
+            live = true
         ) {
+            HorizontalFloatingToolbar(
+                expanded = true,
+                colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
+                    containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
+                modifier = Modifier
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+                    .height(60.dp)
+                    .then(if (isGlass) Modifier.liquidGlassChrome(dockShape, enabled = true, sheenIntensity = sheen) else Modifier)
+            ) {
             PetalLiquidIconButton(onClick = onBack, contentDescription = stringResource(R.string.ui_back)) {
                 Icon(Icons.Rounded.ArrowBack, contentDescription = null)
             }
@@ -78,4 +87,5 @@ fun ExpressiveFloatingDockBar(
             }
         }
     }
+}
 }

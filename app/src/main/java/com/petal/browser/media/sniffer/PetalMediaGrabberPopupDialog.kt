@@ -88,6 +88,7 @@ fun PetalMediaGrabberPopupDialog(
 
     var socialState by remember { mutableStateOf<GrabberSocialState>(GrabberSocialState.Idle) }
     var formatMenuOpen by remember { mutableStateOf(false) }
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
 
     BasicAlertDialog(
         onDismissRequest = onDismiss,
@@ -96,11 +97,16 @@ fun PetalMediaGrabberPopupDialog(
             .widthIn(max = 500.dp)
             .heightIn(max = 680.dp)
     ) {
-        PetalHeroCard(
-            shape = PetalContainmentShapes.Hero,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            modifier = Modifier.fillMaxSize()
+        com.petal.browser.ui.glass.PetalGlassContainer(
+            modifier = Modifier.fillMaxSize(),
+            enabled = isGlass,
+            live = true
         ) {
+            PetalHeroCard(
+                shape = PetalContainmentShapes.Hero,
+                containerColor = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.fillMaxSize()
+            ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -722,6 +728,7 @@ fun PetalMediaGrabberPopupDialog(
                     item { Spacer(Modifier.height(8.dp)) }
                 }
             }
+        }
         }
     }
 }

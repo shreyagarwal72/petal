@@ -202,10 +202,16 @@ fun PetalMediaPickerBottomSheet(
         }
     }
 
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+    val sheetShape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape
+
     Surface(
-        shape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.fillMaxWidth()
+        shape = sheetShape,
+        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isGlass) Modifier.liquidGlassChrome(shape = sheetShape, enabled = true, sheenIntensity = sheen) else Modifier)
     ) {
         Column(
             modifier = Modifier
