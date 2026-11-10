@@ -91,6 +91,12 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             return
         }
 
+        // Keep the app-level particle splash disabled while troubleshooting startup
+        // rendering stalls on some Android GPU drivers.
+        PreferenceManager.getDefaultSharedPreferences(this).edit()
+            .putBoolean("sp_app_launch_animation", false)
+            .apply()
+
         try {
             com.petal.browser.logger.PetalAppLogger.init(this)
             com.petal.browser.logger.PetalLiveLogEngine.init(this)
