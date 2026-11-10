@@ -94,6 +94,7 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
         try {
             com.petal.browser.logger.PetalAppLogger.init(this)
             com.petal.browser.logger.PetalLiveLogEngine.init(this)
+            com.petal.browser.logger.PetalMainThreadWatchdog.start()
 
             // Stage 4: Startup reflection self-check for GeckoSession extraction
             com.petal.browser.engine.gecko.PetalEngineBridge.selfCheckReflection(this)
