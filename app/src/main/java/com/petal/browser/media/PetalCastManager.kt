@@ -44,7 +44,9 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetDialog
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -71,11 +73,6 @@ data class PetalCastDevice(
     val modelName: String = "",
 )
 
-private class CastDialogLifecycleOwner : LifecycleOwner {
-    val registry = LifecycleRegistry(this)
-    override val lifecycle: Lifecycle get() = registry
-}
-
 /**
  * PetalCastManager
  * Direct in-app casting to Smart TVs, DLNA / UPnP media renderers, Roku, Samsung, LG,
@@ -84,8 +81,7 @@ private class CastDialogLifecycleOwner : LifecycleOwner {
  */
 object PetalCastManager {
 
-    private var activeDialog: BottomSheetDialog? = null
-    private var activeLifecycleOwner: CastDialogLifecycleOwner? = null
+    private var activeDismissAction: (() -> Unit)? = null
 
     @JvmStatic
     fun castMedia(context: Context, videoUrl: String?, title: String?) {
@@ -135,51 +131,59 @@ object PetalCastManager {
 
     private fun showCastDialog(activity: ComponentActivity, videoUrl: String, title: String?) {
         activity.runOnUiThread {
-            activeDialog?.dismiss()
-            activeDialog = null
-            activeLifecycleOwner?.let { it.registry.currentState = Lifecycle.State.DESTROYED }
-            activeLifecycleOwner = null
+            try {
+                activeDismissAction?.invoke()
+            } catch (_: Exception) {}
+            activeDismissAction = null
 
-            val dialog = BottomSheetDialog(activity)
-            activeDialog = dialog
+            val decorView = activity.window?.decorView as? android.view.ViewGroup ?: return@runOnUiThread
+            lateinit var composeView: ComposeView
 
-            val dialogLifecycleOwner = CastDialogLifecycleOwner()
-            activeLifecycleOwner = dialogLifecycleOwner
-            dialogLifecycleOwner.registry.currentState = Lifecycle.State.RESUMED
+            val dismissAction: () -> Unit = {
+                if (activeDismissAction != null) {
+                    activeDismissAction = null
+                    if (composeView.parent != null) {
+                        decorView.removeView(composeView)
+                    }
+                    composeView.clearFocus()
+                }
+            }
+            activeDismissAction = dismissAction
 
-            val composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(dialogLifecycleOwner)
+            composeView = ComposeView(activity).apply {
+                setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                 setContent {
                     PetalExpressiveTheme {
-                        PetalCastDeviceSheet(
-                            videoUrl = videoUrl,
-                            videoTitle = title ?: "Web Video",
-                            onDismiss = {
-                                try {
-                                    if (dialog.isShowing) dialog.dismiss()
-                                } catch (ignored: Exception) {}
-                            },
-                            onOpenExternal = {
-                                try {
-                                    if (dialog.isShowing) dialog.dismiss()
-                                } catch (ignored: Exception) {}
-                                openExternalAppChooser(activity, videoUrl, title)
-                            }
-                        )
+                        ModalBottomSheet(
+                            onDismissRequest = dismissAction,
+                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                            shape = BottomSheetDefaults.ExpandedShape,
+                            dragHandle = { BottomSheetDefaults.DragHandle() }
+                        ) {
+                            PetalCastDeviceSheet(
+                                videoUrl = videoUrl,
+                                videoTitle = title ?: "Web Video",
+                                onDismiss = dismissAction,
+                                onOpenExternal = {
+                                    dismissAction()
+                                    openExternalAppChooser(activity, videoUrl, title)
+                                }
+                            )
+                        }
                     }
                 }
             }
 
-            dialog.setContentView(composeView)
-            dialog.setOnDismissListener {
-                dialogLifecycleOwner.registry.currentState = Lifecycle.State.DESTROYED
-                if (activeDialog == dialog) activeDialog = null
-                if (activeLifecycleOwner == dialogLifecycleOwner) activeLifecycleOwner = null
-            }
-            dialog.show()
+            decorView.addView(
+                composeView,
+                android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
         }
     }
 
@@ -421,24 +425,15 @@ fun PetalCastDeviceSheet(
 
     Surface(
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        shape = BottomSheetDefaults.ExpandedShape,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 8.dp),
         ) {
-            // Drag handle
-            Box(
-                modifier = Modifier
-                    .size(width = 36.dp, height = 4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(MaterialTheme.colorScheme.outlineVariant)
-                    .align(Alignment.CenterHorizontally),
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Title Bar
             Row(

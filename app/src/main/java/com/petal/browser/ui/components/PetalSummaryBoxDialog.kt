@@ -95,9 +95,9 @@ fun PetalSummaryBoxDialog(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val dialogShape = RoundedCornerShape(28.dp)
+    val dialogShape = MaterialTheme.shapes.extraLarge
 
-    Dialog(onDismissRequest = onDismiss) {
+    BasicAlertDialog(onDismissRequest = onDismiss) {
         val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
         androidx.compose.runtime.SideEffect {
             dialogWindow?.let { win ->

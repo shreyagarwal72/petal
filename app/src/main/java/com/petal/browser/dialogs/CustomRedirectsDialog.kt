@@ -140,7 +140,7 @@ private fun CustomRedirectsDialogContent(
     var showCreateDialog by remember { mutableStateOf(false) }
 
     Surface(
-        shape = RoundedCornerShape(28.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 6.dp,
         modifier = Modifier
@@ -313,17 +313,15 @@ private fun CreateNewRedirectDialog(
     var sourceText by remember { mutableStateOf("") }
     var targetText by remember { mutableStateOf("") }
 
-    androidx.compose.ui.window.Dialog(
+    androidx.compose.material3.BasicAlertDialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        modifier = Modifier.fillMaxWidth(0.90f)
     ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = MaterialTheme.shapes.extraLarge,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 8.dp,
-            modifier = Modifier
-                .fillMaxWidth(0.90f)
-                .padding(16.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),

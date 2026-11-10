@@ -33,7 +33,7 @@ fun ExpressiveToastPill(
     isVisible: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val toastShape = RoundedCornerShape(28.dp)
+    val toastShape = MaterialTheme.shapes.extraLarge
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
 
     AnimatedVisibility(

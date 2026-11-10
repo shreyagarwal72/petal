@@ -49,8 +49,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.R
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
@@ -63,103 +61,93 @@ import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.unit.PetalBrowserUtils
 import kotlinx.coroutines.launch
 
+@Composable
+fun PetalAboutDeveloperSheet(
+    visible: Boolean,
+    onDismissRequest: () -> Unit
+) {
+    if (visible) {
+        PetalAboutDeveloperSheetContent(
+            onClose = onDismissRequest
+        )
+    }
+}
+
 /**
  * Java Interop Bridge to present the Material 3 Expressive "About Developer" sheet.
  */
 object PetalAboutDeveloperBridge {
+    private var activeComposeView: ComposeView? = null
+
     @JvmStatic
     @JvmOverloads
     fun show(activity: ComponentActivity, onDismiss: Runnable? = null) {
-        try {
-            val dialog = BottomSheetDialog(activity)
-            dialog.behavior.isDraggable = false
-            dialog.behavior.skipCollapsed = true
-            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            dialog.setCancelable(true)
-            dialog.setCanceledOnTouchOutside(true)
-            dialog.window?.let { window ->
-                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-                window.statusBarColor = android.graphics.Color.TRANSPARENT
-                window.navigationBarColor = android.graphics.Color.TRANSPARENT
-                window.setWindowAnimations(0)
-            }
-            dialog.setOnShowListener {
-                try {
-                    val container = dialog.findViewById<android.view.View>(com.google.android.material.R.id.container)
-                    container?.let { root ->
-                        root.fitsSystemWindows = false
-                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
-                    }
-
-                    val coordinator = dialog.findViewById<android.view.View>(com.google.android.material.R.id.coordinator)
-                    coordinator?.let { root ->
-                        root.fitsSystemWindows = false
-                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
-                    }
-
-                    val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                    bottomSheet?.let { sheet ->
-                        sheet.fitsSystemWindows = false
-                        sheet.background = null
-                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(sheet) { _, insets -> insets }
-
-                        val behavior = BottomSheetBehavior.from(sheet)
-                        behavior.state = BottomSheetBehavior.STATE_EXPANDED
-                        behavior.skipCollapsed = true
-                        behavior.isDraggable = false
-                        sheet.layoutParams?.height = ViewGroup.LayoutParams.MATCH_PARENT
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+        activity.runOnUiThread {
+            try {
+                activeComposeView?.let {
+                    (it.parent as? android.view.ViewGroup)?.removeView(it)
                 }
-            }
+                activeComposeView = null
 
-            val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
-            com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
-            val composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(activity)
-                setViewTreeViewModelStoreOwner(activity)
-                setViewTreeSavedStateRegistryOwner(activity)
-                setViewTreeOnBackPressedDispatcherOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
-                setContent {
-                    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
-                    val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                    val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
-                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                    val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
-                    val isAmoled = sp.getBoolean("sp_amoled", false)
-                    val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+                val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content) ?: return@runOnUiThread
+                com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
 
-                    val appFont = remember(fontName) { com.petal.browser.ui.theme.AppFont.fromName(fontName) }
-                    val colorStyle = remember(styleName) {
-                        try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (_: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+                var composeView: ComposeView? = null
+                fun cleanup() {
+                    com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    composeView?.let { cv ->
+                        (cv.parent as? android.view.ViewGroup)?.removeView(cv)
+                        if (activeComposeView == cv) {
+                            activeComposeView = null
+                        }
                     }
+                    onDismiss?.run()
+                }
 
-                    PetalExpressiveTheme(
-                        dynamicColor = dynamicColor,
-                        useAmoled = isAmoled,
-                        appFont = appFont,
-                        colorStyle = colorStyle,
-                        paletteId = paletteId
-                    ) {
-                        PetalAboutDeveloperSheetContent(
-                            backgroundSnapshot = snapshotBitmap,
-                            onClose = {
-                                try { dialog.dismiss() } catch (_: Exception) {}
-                                onDismiss?.run()
-                            }
-                        )
+                val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                val isAmoled = sp.getBoolean("sp_amoled", false)
+                val useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+
+                val appFont = AppFont.fromName(fontName)
+                val colorStyle = try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
+
+                composeView = ComposeView(activity).apply {
+                    setViewTreeLifecycleOwner(activity)
+                    setViewTreeViewModelStoreOwner(activity)
+                    setViewTreeSavedStateRegistryOwner(activity)
+                    setViewTreeOnBackPressedDispatcherOwner(activity)
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
+                    setContent {
+                        val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+
+                        PetalExpressiveTheme(
+                            dynamicColor = useDynamic,
+                            useAmoled = isAmoled,
+                            appFont = appFont,
+                            colorStyle = colorStyle,
+                            paletteId = paletteId
+                        ) {
+                            PetalAboutDeveloperSheetContent(
+                                backgroundSnapshot = snapshotBitmap,
+                                onClose = { cleanup() }
+                            )
+                        }
                     }
                 }
+                activeComposeView = composeView
+                rootView.addView(
+                    composeView,
+                    android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            dialog.setOnDismissListener {
-                com.petal.browser.predictive.PetalContentSnapshot.clear()
-            }
-            dialog.setContentView(composeView)
-            dialog.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 }

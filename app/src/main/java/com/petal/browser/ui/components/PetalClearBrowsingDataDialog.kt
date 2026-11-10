@@ -42,12 +42,12 @@ fun PetalClearBrowsingDataDialog(
 
     com.petal.browser.ui.containment.PetalMaterialAlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(32.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 6.dp,
         icon = {
             Surface(
-                shape = RoundedCornerShape(20.dp),
+                shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.errorContainer,
                 modifier = Modifier.size(56.dp)
             ) {

@@ -484,7 +484,7 @@ fun PetalAiResearchSheet(
             Column {
                 PetalSectionLabel("Ask your own question")
                 val askGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-                val askShape = RoundedCornerShape(28.dp)
+                val askShape = MaterialTheme.shapes.extraLarge
                 Surface(
                     shape = askShape,
                     color = if (askGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,

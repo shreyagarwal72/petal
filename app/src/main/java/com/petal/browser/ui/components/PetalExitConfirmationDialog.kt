@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import com.petal.browser.ui.containment.liquidGlassChrome
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import com.petal.browser.ui.kit.Button
 import androidx.compose.material3.ButtonDefaults
@@ -55,6 +56,55 @@ import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+
+@Composable
+fun PetalExitConfirmationDialog(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    onExit: () -> Unit
+) {
+    if (visible) {
+        AlertDialog(
+            onDismissRequest = onDismissRequest,
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.ui_leave_petal_browser),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.ui_do_you_want_to_exit),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = onExit,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Text(stringResource(R.string.ui_exit), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissRequest) {
+                    Text(stringResource(R.string.ui_stay), fontWeight = FontWeight.SemiBold)
+                }
+            }
+        )
+    }
+}
 
 /**
  * Material 3 Expressive exit confirmation dialog used by the browser activity.
@@ -172,7 +222,7 @@ private fun ExitDialogContent(
     onExit: () -> Unit,
 ) {
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val dialogShape = RoundedCornerShape(28.dp)
+    val dialogShape = MaterialTheme.shapes.extraLarge
 
     Surface(
         modifier = Modifier

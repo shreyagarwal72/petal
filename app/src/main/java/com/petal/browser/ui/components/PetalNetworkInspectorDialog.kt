@@ -35,6 +35,7 @@ import java.net.InetAddress
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalNetworkInspectorDialog(
     url: String,
@@ -62,9 +63,9 @@ fun PetalNetworkInspectorDialog(
         }
     }
 
-    Dialog(onDismissRequest = onDismissRequest) {
+    BasicAlertDialog(onDismissRequest = onDismissRequest) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = MaterialTheme.shapes.extraLarge,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 6.dp,
             modifier = Modifier.widthIn(max = 380.dp)

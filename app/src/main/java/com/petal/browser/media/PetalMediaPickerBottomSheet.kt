@@ -203,7 +203,7 @@ fun PetalMediaPickerBottomSheet(
     }
 
     Surface(
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        shape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -212,16 +212,6 @@ fun PetalMediaPickerBottomSheet(
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         ) {
-            // Drag handle
-            Box(
-                modifier = Modifier
-                    .padding(top = 12.dp)
-                    .size(width = 36.dp, height = 4.dp)
-                    .clip(ExpressiveButtonShape)
-                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-                    .align(Alignment.CenterHorizontally)
-            )
-
             // Header Row
             Row(
                 modifier = Modifier

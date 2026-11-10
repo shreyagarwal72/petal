@@ -52,9 +52,11 @@ import androidx.compose.material.icons.rounded.Close
 import com.petal.browser.ui.kit.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
@@ -373,14 +375,9 @@ fun PetalFloatingStatusCard(
 
                     if (data.useWavyProgress) {
                         if (data.isIndeterminateProgress) {
-                            LinearRipplingWavyProgressIndicator(
-                                progress = null,
+                            LinearWavyProgressIndicator(
                                 modifier = Modifier.fillMaxWidth(),
-                                height = 4.5.dp,
-                                strokeWidth = 3.5.dp,
-                                waveAmplitude = 2.5.dp,
-                                waveWavelength = 22.dp,
-                                activeColor = barColor,
+                                color = barColor,
                                 trackColor = trackColor
                             )
                         } else if (data.progress != null) {
@@ -392,14 +389,10 @@ fun PetalFloatingStatusCard(
                                 ),
                                 label = "floatingCardProgress"
                             )
-                            LinearRipplingWavyProgressIndicator(
-                                progress = animatedProgress,
+                            LinearWavyProgressIndicator(
+                                progress = { animatedProgress },
                                 modifier = Modifier.fillMaxWidth(),
-                                height = 4.5.dp,
-                                strokeWidth = 3.5.dp,
-                                waveAmplitude = 2.5.dp,
-                                waveWavelength = 22.dp,
-                                activeColor = barColor,
+                                color = barColor,
                                 trackColor = trackColor
                             )
                         }

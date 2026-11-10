@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.compose.ai.AiProvider
 import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.compose.ai.PetalAiSearchManager
@@ -67,6 +66,8 @@ import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
 object PetalAiSearchBridge {
+    private var activeComposeView: ComposeView? = null
+
     @JvmStatic
     fun showAiSearchResult(
         activity: ComponentActivity,
@@ -74,68 +75,68 @@ object PetalAiSearchBridge {
     ) {
         activity.runOnUiThread {
             try {
-                val rootForSnapshot = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
-                com.petal.browser.predictive.PetalContentSnapshot.capture(rootForSnapshot)
-            } catch (_: Throwable) {}
-            val dialog = BottomSheetDialog(activity)
-            dialog.behavior.apply {
-                state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-                skipCollapsed = true
-            }
-            val composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(activity)
-                setViewTreeViewModelStoreOwner(activity)
-                setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-                setContent {
-                    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                    val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
-                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                    val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
-                    val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
-                    val isAmoled = sp.getBoolean("sp_amoled", false)
+                activeComposeView?.let {
+                    (it.parent as? android.view.ViewGroup)?.removeView(it)
+                }
+                activeComposeView = null
 
-                    val appFont = AppFont.fromName(fontName)
-                    val colorStyle = try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
+                val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content) ?: return@runOnUiThread
+                try {
+                    com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+                } catch (_: Throwable) {}
 
-                    PetalExpressiveTheme(
-                        dynamicColor = dynamicColor,
-                        useAmoled = isAmoled,
-                        appFont = appFont,
-                        colorStyle = colorStyle,
-                        paletteId = paletteId
-                    ) {
-                        PetalAiSearchResultSheet(
-                            query = query,
-                            onDismiss = { dialog.dismiss() }
-                        )
+                var composeView: ComposeView? = null
+                fun cleanup() {
+                    com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    composeView?.let { cv ->
+                        (cv.parent as? android.view.ViewGroup)?.removeView(cv)
+                        if (activeComposeView == cv) {
+                            activeComposeView = null
+                        }
                     }
                 }
-            }
-            dialog.setContentView(composeView)
-            dialog.setOnShowListener {
-                dialog.window?.let { win ->
-                    androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
-                    win.statusBarColor = android.graphics.Color.TRANSPARENT
-                    win.navigationBarColor = android.graphics.Color.TRANSPARENT
-                    win.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
-                    val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                    bottomSheet?.background = null
-                    bottomSheet?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                    val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false) && sp.getBoolean("sp_liquid_glass_containments", true)
-                    if (isLiquidGlass && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                        win.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                        win.setBackgroundBlurRadius(36)
-                        win.setDimAmount(0.12f)
-                    } else if (isLiquidGlass) {
-                        win.setDimAmount(0.12f)
-                    } else {
-                        win.setDimAmount(0.35f)
+
+                val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
+                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
+                val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+                val isAmoled = sp.getBoolean("sp_amoled", false)
+
+                val appFont = AppFont.fromName(fontName)
+                val colorStyle = try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
+
+                composeView = ComposeView(activity).apply {
+                    setViewTreeLifecycleOwner(activity)
+                    setViewTreeViewModelStoreOwner(activity)
+                    setViewTreeSavedStateRegistryOwner(activity)
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+                    setContent {
+                        PetalExpressiveTheme(
+                            dynamicColor = dynamicColor,
+                            useAmoled = isAmoled,
+                            appFont = appFont,
+                            colorStyle = colorStyle,
+                            paletteId = paletteId
+                        ) {
+                            PetalAiSearchResultSheet(
+                                query = query,
+                                onDismiss = { cleanup() }
+                            )
+                        }
                     }
                 }
+                activeComposeView = composeView
+                rootView.addView(
+                    composeView,
+                    android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            dialog.show()
         }
     }
 }
@@ -207,8 +208,8 @@ fun PetalAiSearchResultSheet(
     }
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
-    val pillShape = RoundedCornerShape(28.dp)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
+    val pillShape = MaterialTheme.shapes.extraLarge
 
     // The dialog window cannot blur what is behind it on every device, so frost a screenshot
     // of the screen instead. It is only recorded (never drawn) and aligned to screen position.

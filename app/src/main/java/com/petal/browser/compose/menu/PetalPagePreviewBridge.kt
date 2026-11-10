@@ -47,7 +47,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.PetalAndroidUtils
@@ -70,33 +69,48 @@ object PetalPagePreviewBridge {
 
         activity.runOnUiThread {
             try {
-                val dialog = BottomSheetDialog(activity)
-                dialog.setOnShowListener {
-                    try {
-                        val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                        bottomSheet?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                    } catch (_: Throwable) {}
+                val decorView = activity.window?.decorView as? ViewGroup ?: return@runOnUiThread
+                lateinit var composeView: ComposeView
+
+                val dismissAction = {
+                    if (composeView.parent != null) {
+                        decorView.removeView(composeView)
+                    }
                 }
-                val composeView = ComposeView(activity).apply {
+
+                composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
                     setViewTreeViewModelStoreOwner(activity)
                     setViewTreeSavedStateRegistryOwner(activity)
-                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                     setContent {
                         PetalExpressiveTheme {
-                            PetalPagePreviewSheet(
-                                url = url,
-                                onOpenFullTab = {
-                                    dialog.dismiss()
-                                    activity.addAlbum(PetalAndroidUtils.domain(url), url, true)
-                                },
-                                onDismiss = { dialog.dismiss() }
-                            )
+                            androidx.compose.material3.ModalBottomSheet(
+                                onDismissRequest = dismissAction,
+                                sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                                shape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape,
+                                containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                dragHandle = { androidx.compose.material3.BottomSheetDefaults.DragHandle() }
+                            ) {
+                                PetalPagePreviewSheet(
+                                    url = url,
+                                    onOpenFullTab = {
+                                        dismissAction()
+                                        activity.addAlbum(PetalAndroidUtils.domain(url), url, true)
+                                    },
+                                    onDismiss = dismissAction
+                                )
+                            }
                         }
                     }
                 }
-                dialog.setContentView(composeView)
-                dialog.show()
+                decorView.addView(
+                    composeView,
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -114,7 +128,7 @@ private fun PetalPagePreviewSheet(
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+    val sheetShape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape
 
     // Standalone PetalTabViewController with isolated EngineSession — never added
     // to BrowserContainer or tracked as a main tab. destroy() tears it down on dismiss.
@@ -155,16 +169,7 @@ private fun PetalPagePreviewSheet(
                 .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true) else Modifier)
         ) {
             Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {
-                Spacer(Modifier.height(10.dp))
-                Box(
-                    modifier = Modifier
-                        .width(36.dp)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                        .align(Alignment.CenterHorizontally)
-                )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
 
                 Row(
                     modifier = Modifier

@@ -53,8 +53,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroup
@@ -179,6 +177,9 @@ object PetalBrowserPermissionDialog {
         }
     }
 
+    private var activeComposeView: ComposeView? = null
+
+    @OptIn(ExperimentalMaterial3Api::class)
     @JvmStatic
     fun show(activity: ComponentActivity) {
         if (activity.isFinishing || (Build.VERSION.SDK_INT >= 17 && activity.isDestroyed)) return
@@ -186,57 +187,72 @@ object PetalBrowserPermissionDialog {
         // Record prompt timestamp to enforce at most 1 display every 24 hours
         markShown(activity)
 
-        val dialog = BottomSheetDialog(activity)
-        val view = ComposeView(activity).apply {
-            setViewTreeLifecycleOwner(activity)
-            setViewTreeViewModelStoreOwner(activity)
-            setViewTreeSavedStateRegistryOwner(activity)
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
-                    ?: activity.findViewById(android.R.id.content)
-                val isLiquidGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-                CompositionLocalProvider(
-                    LocalPetalGlassSource provides hostSource
-                ) {
-                    PetalExpressiveTheme {
-                        PetalGlassContainer(
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = isLiquidGlass,
-                            live = true
-                        ) {
-                            BrowserPermissionSheet(
-                                onDone = {
-                                    try {
-                                        dialog.dismiss()
-                                    } catch (_: Exception) {}
-                                },
-                                onNotNow = {
-                                    markShown(activity)
-                                    try {
-                                        dialog.dismiss()
-                                    } catch (_: Exception) {}
+        activity.runOnUiThread {
+            activeComposeView?.let {
+                (it.parent as? android.view.ViewGroup)?.removeView(it)
+            }
+            activeComposeView = null
+
+            val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content) ?: return@runOnUiThread
+            var composeView: ComposeView? = null
+            fun cleanup() {
+                composeView?.let { cv ->
+                    (cv.parent as? android.view.ViewGroup)?.removeView(cv)
+                    if (activeComposeView == cv) {
+                        activeComposeView = null
+                    }
+                }
+            }
+
+            composeView = ComposeView(activity).apply {
+                setViewTreeLifecycleOwner(activity)
+                setViewTreeViewModelStoreOwner(activity)
+                setViewTreeSavedStateRegistryOwner(activity)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+                setContent {
+                    val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                        ?: activity.findViewById(android.R.id.content)
+                    val isLiquidGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    CompositionLocalProvider(
+                        LocalPetalGlassSource provides hostSource
+                    ) {
+                        PetalExpressiveTheme {
+                            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                            ModalBottomSheet(
+                                onDismissRequest = { cleanup() },
+                                sheetState = sheetState,
+                                dragHandle = { BottomSheetDefaults.DragHandle() },
+                                shape = BottomSheetDefaults.ExpandedShape,
+                                containerColor = if (isLiquidGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow,
+                                contentWindowInsets = { WindowInsets.navigationBars }
+                            ) {
+                                PetalGlassContainer(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = isLiquidGlass,
+                                    live = true
+                                ) {
+                                    BrowserPermissionSheet(
+                                        onDone = { cleanup() },
+                                        onNotNow = {
+                                            markShown(activity)
+                                            cleanup()
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }
             }
+            activeComposeView = composeView
+            rootView.addView(
+                composeView,
+                android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
         }
-        dialog.setContentView(view)
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialog.setOnShowListener {
-            val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-            bottomSheet?.setBackgroundResource(android.R.color.transparent)
-            dialog.behavior.apply {
-                state = BottomSheetBehavior.STATE_EXPANDED
-                skipCollapsed = true
-                isDraggable = true
-            }
-        }
-        try {
-            dialog.show()
-        } catch (_: Exception) {}
     }
 }
 
@@ -373,9 +389,9 @@ private fun BrowserPermissionSheet(
     }
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
     Surface(
-        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
         shape = sheetShape,
         tonalElevation = 0.dp,
         shadowElevation = if (isGlass) 0.dp else 8.dp,
@@ -390,19 +406,11 @@ private fun BrowserPermissionSheet(
                 .navigationBarsPadding()
                 .imePadding()
                 .padding(horizontal = 20.dp)
-                .padding(top = 16.dp, bottom = 20.dp)
+                .padding(top = 8.dp, bottom = 20.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Zenith-style top drag handle
-            Box(
-                modifier = Modifier
-                    .size(width = 32.dp, height = 4.dp)
-                    .clip(ExpressiveButtonShape)
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-            )
-
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(8.dp))
 
             // Expressive header: slowly turning scalloped badge behind a steady shield icon.
             val animActive = rememberAnimationActive()

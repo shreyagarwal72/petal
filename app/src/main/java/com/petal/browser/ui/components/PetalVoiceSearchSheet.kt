@@ -43,7 +43,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.core.content.ContextCompat
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.glass.captureGlassWallpaper
 import com.petal.browser.ui.glass.liveGlassWallpaper
@@ -59,32 +58,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
-/**
- * Minimal standalone [LifecycleOwner] for the voice search [BottomSheetDialog].
- *
- * The ComposeView inside the dialog previously had its tree lifecycle owner set
- * to the hosting Activity. Since the Activity stays RESUMED for as long as the
- * app is in the foreground, ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
- * never actually disposed the sheet's composition when the dialog was dismissed -
- * only when the whole Activity was destroyed. That meant the DisposableEffect
- * inside PetalVoiceSearchSheet (which cancels/destroys the SpeechRecognizer)
- * never ran on dismiss: every voice search left its SpeechRecognizer instance
- * alive and still bound to the system speech-recognition service. Repeated use
- * piled up leaked recognizer instances/binder connections until the app hung
- * (browser "not responding") the next time it tried to touch the mic.
- *
- * Giving the dialog its own short-lived LifecycleOwner - moved to DESTROYED
- * from the dialog's own onDismissListener - makes the composition (and its
- * DisposableEffect cleanup) tear down exactly when the sheet closes.
- */
-private class VoiceSearchDialogLifecycleOwner : LifecycleOwner {
-    val registry = LifecycleRegistry(this)
-    override val lifecycle: Lifecycle get() = registry
-}
-
 object PetalVoiceSearchBridge {
-    private var activeDialog: BottomSheetDialog? = null
-    private var activeLifecycleOwner: VoiceSearchDialogLifecycleOwner? = null
+    private var activeComposeView: ComposeView? = null
 
     @JvmStatic
     fun showVoiceSearchSheet(
@@ -92,66 +67,49 @@ object PetalVoiceSearchBridge {
         onResult: (String) -> Unit
     ) {
         activity.runOnUiThread {
-            activeDialog?.dismiss()
-            activeDialog = null
-            activeLifecycleOwner?.let { it.registry.currentState = Lifecycle.State.DESTROYED }
-            activeLifecycleOwner = null
-
-            val dialog = BottomSheetDialog(activity)
-            dialog.window?.let { window ->
-                window.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                    ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                // Clear the default Android Dialog dim so ModalBottomSheet provides the single, correct scrim
-                window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                window.setDimAmount(0f)
+            activeComposeView?.let {
+                (it.parent as? android.view.ViewGroup)?.removeView(it)
             }
-            activeDialog = dialog
+            activeComposeView = null
 
-            val dialogLifecycleOwner = VoiceSearchDialogLifecycleOwner()
-            activeLifecycleOwner = dialogLifecycleOwner
-            dialogLifecycleOwner.registry.currentState = Lifecycle.State.RESUMED
+            val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content) ?: return@runOnUiThread
+            var composeView: ComposeView? = null
+            fun cleanup() {
+                composeView?.let { cv ->
+                    (cv.parent as? android.view.ViewGroup)?.removeView(cv)
+                    if (activeComposeView == cv) {
+                        activeComposeView = null
+                    }
+                }
+            }
 
-            val composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(dialogLifecycleOwner)
+            composeView = ComposeView(activity).apply {
+                setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                 setContent {
                     PetalExpressiveTheme {
                         PetalVoiceSearchSheet(
                             onResult = { result ->
-                                try {
-                                    if (dialog.isShowing) {
-                                        dialog.dismiss()
-                                    }
-                                } catch (e: Exception) {}
+                                cleanup()
                                 onResult(result)
                             },
                             onDismiss = {
-                                try {
-                                    if (dialog.isShowing) {
-                                        dialog.dismiss()
-                                    }
-                                } catch (e: Exception) {}
+                                cleanup()
                             }
                         )
                     }
                 }
             }
-            dialog.setContentView(composeView)
-            dialog.setOnDismissListener {
-                // This is what now actually releases the SpeechRecognizer: moving the
-                // lifecycle to DESTROYED disposes the composition, which runs the
-                // DisposableEffect's onDispose in PetalVoiceSearchSheet.
-                dialogLifecycleOwner.registry.currentState = Lifecycle.State.DESTROYED
-                if (activeDialog == dialog) {
-                    activeDialog = null
-                }
-                if (activeLifecycleOwner == dialogLifecycleOwner) {
-                    activeLifecycleOwner = null
-                }
-            }
-            dialog.show()
+            activeComposeView = composeView
+            rootView.addView(
+                composeView,
+                android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
         }
     }
 }

@@ -141,7 +141,7 @@ fun PetalCrashRecoveryHost(
 
         PetalDialog(
             onDismissRequest = handleDismiss,
-            shape = RoundedCornerShape(28.dp)
+            shape = MaterialTheme.shapes.extraLarge
         ) {
             // Squircle Icon Badge + Centered Title
             Column(
@@ -150,13 +150,13 @@ fun PetalCrashRecoveryHost(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Surface(
-                    shape = RoundedCornerShape(18.dp),
+                    shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.errorContainer,
                     modifier = Modifier
                         .size(56.dp)
                         .then(
                             if (isGlass) Modifier.liquidGlassChrome(
-                                shape = RoundedCornerShape(18.dp),
+                                shape = MaterialTheme.shapes.large,
                                 enabled = true,
                                 sheenIntensity = 0.5f
                             ) else Modifier
@@ -309,16 +309,16 @@ fun PetalCrashRecoveryHost(
         val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
         val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
-        Dialog(onDismissRequest = { showFullTraceDialog = false }) {
+        BasicAlertDialog(onDismissRequest = { showFullTraceDialog = false }) {
             Surface(
-                shape = RoundedCornerShape(28.dp),
+                shape = MaterialTheme.shapes.extraLarge,
                 color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.85f)
                     .then(
                         if (isGlass) Modifier.liquidGlassChrome(
-                            shape = RoundedCornerShape(28.dp),
+                            shape = MaterialTheme.shapes.extraLarge,
                             enabled = true,
                             sheenIntensity = sheen
                         ) else Modifier

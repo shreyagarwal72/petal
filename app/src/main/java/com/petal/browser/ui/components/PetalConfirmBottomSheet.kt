@@ -24,7 +24,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
@@ -34,10 +33,50 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PetalConfirmBottomSheet(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    title: String,
+    message: String,
+    icon: ImageVector = Icons.Rounded.Close,
+    confirmText: String = "Confirm",
+    cancelText: String = "Cancel",
+    isDestructive: Boolean = false,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit = onDismissRequest
+) {
+    if (visible) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = onDismissRequest,
+            sheetState = sheetState,
+            dragHandle = { BottomSheetDefaults.DragHandle() },
+            shape = BottomSheetDefaults.ExpandedShape,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            contentWindowInsets = { WindowInsets.navigationBars }
+        ) {
+            PetalConfirmSheetContent(
+                icon = icon,
+                title = title,
+                message = message,
+                confirmText = confirmText,
+                cancelText = cancelText,
+                isDestructive = isDestructive,
+                showDragHandle = false,
+                onConfirm = onConfirm,
+                onCancel = onCancel
+            )
+        }
+    }
+}
+
 /**
  * Material 3 Expressive Confirmation Bottom Sheet for Petal Browser.
  * Used for tab closing, quit confirmation, and bottom dialogs.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalConfirmSheetContent(
     icon: ImageVector = Icons.Rounded.Close,
@@ -46,6 +85,7 @@ fun PetalConfirmSheetContent(
     confirmText: String = "Confirm",
     cancelText: String = "Cancel",
     isDestructive: Boolean = false,
+    showDragHandle: Boolean = true,
     onConfirm: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -58,14 +98,9 @@ fun PetalConfirmSheetContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Drag handle bar
-        Box(
-            modifier = Modifier
-                .width(36.dp)
-                .height(4.dp)
-                .clip(RoundedCornerShape(50))
-                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-        )
+        if (showDragHandle) {
+            BottomSheetDefaults.DragHandle()
+        }
 
         // Header Icon Badge
         Surface(
@@ -124,6 +159,7 @@ fun PetalConfirmSheetContent(
 }
 
 object PetalConfirmSheetBridge {
+    private var activeComposeView: ComposeView? = null
 
     @JvmStatic
     @JvmOverloads
@@ -140,39 +176,51 @@ object PetalConfirmSheetBridge {
     ) {
         if (activity.isFinishing) return
 
-        val dialog = BottomSheetDialog(activity)
-        var actionHandled = false
-        val composeView = ComposeView(activity).apply {
-            setViewTreeLifecycleOwner(activity)
-            setViewTreeViewModelStoreOwner(activity)
-            setViewTreeSavedStateRegistryOwner(activity)
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        activity.runOnUiThread {
+            activeComposeView?.let {
+                (it.parent as? android.view.ViewGroup)?.removeView(it)
+            }
+            activeComposeView = null
+
+            val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content) ?: return@runOnUiThread
+            var composeView: ComposeView? = null
+            var actionHandled = false
+
+            fun cleanup() {
+                composeView?.let { cv ->
+                    (cv.parent as? android.view.ViewGroup)?.removeView(cv)
+                    if (activeComposeView == cv) {
+                        activeComposeView = null
+                    }
+                }
+            }
 
             val sp = PreferenceManager.getDefaultSharedPreferences(activity)
             val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
             val isAmoled = sp.getBoolean("sp_amoled", false)
             val useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
-            setContent {
-                PetalExpressiveTheme(
-                    paletteId = paletteId,
-                    useAmoled = isAmoled,
-                    dynamicColor = useDynamic
-                ) {
-                    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-                    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-                    val sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+            composeView = ComposeView(activity).apply {
+                setViewTreeLifecycleOwner(activity)
+                setViewTreeViewModelStoreOwner(activity)
+                setViewTreeSavedStateRegistryOwner(activity)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
 
-                    Surface(
-                        shape = sheetShape,
-                        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                        tonalElevation = if (isGlass) 0.dp else 6.dp,
-                        shadowElevation = if (isGlass) 0.dp else 8.dp,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = sheen) else Modifier)
+                setContent {
+                    PetalExpressiveTheme(
+                        paletteId = paletteId,
+                        useAmoled = isAmoled,
+                        dynamicColor = useDynamic
                     ) {
-                        PetalConfirmSheetContent(
+                        PetalConfirmBottomSheet(
+                            visible = true,
+                            onDismissRequest = {
+                                if (!actionHandled) {
+                                    actionHandled = true
+                                    cleanup()
+                                    onCancel?.run()
+                                }
+                            },
                             icon = icon,
                             title = title,
                             message = message,
@@ -180,29 +228,33 @@ object PetalConfirmSheetBridge {
                             cancelText = cancelText,
                             isDestructive = isDestructive,
                             onConfirm = {
-                                actionHandled = true
-                                dialog.dismiss()
-                                onConfirm.run()
+                                if (!actionHandled) {
+                                    actionHandled = true
+                                    cleanup()
+                                    onConfirm.run()
+                                }
                             },
                             onCancel = {
-                                actionHandled = true
-                                dialog.dismiss()
-                                onCancel?.run()
+                                if (!actionHandled) {
+                                    actionHandled = true
+                                    cleanup()
+                                    onCancel?.run()
+                                }
                             }
                         )
                     }
                 }
             }
-        }
 
-        dialog.setContentView(composeView)
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialog.setOnDismissListener {
-            if (!actionHandled) {
-                onCancel?.run()
-            }
+            activeComposeView = composeView
+            rootView.addView(
+                composeView,
+                android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
         }
-        dialog.show()
     }
 
     @JvmStatic

@@ -673,7 +673,7 @@ fun PetalQrScannerScreen(
             exit = fadeOut() + scaleOut(targetScale = 0.9f),
             modifier = Modifier.align(Alignment.Center)
         ) {
-            val dialogShape = RoundedCornerShape(28.dp)
+            val dialogShape = MaterialTheme.shapes.extraLarge
             Surface(
                 shape = dialogShape,
                 color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
@@ -792,7 +792,7 @@ fun PetalQrScannerScreen(
                 showScanProviderDialog = false
                 selectedGalleryUri = null
             },
-            shape = RoundedCornerShape(28.dp),
+            shape = MaterialTheme.shapes.extraLarge,
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = {
                 Icon(
@@ -967,7 +967,7 @@ fun PetalQrScannerScreen(
         val targetUri = remember(fallbackLensPromptUri) { android.net.Uri.parse(fallbackLensPromptUri) }
         AlertDialog(
             onDismissRequest = { fallbackLensPromptUri = null },
-            shape = RoundedCornerShape(28.dp),
+            shape = MaterialTheme.shapes.extraLarge,
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = {
                 Icon(

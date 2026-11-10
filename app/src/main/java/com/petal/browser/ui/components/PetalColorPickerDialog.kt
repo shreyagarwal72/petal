@@ -29,7 +29,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.heightIn
 import com.petal.browser.ui.kit.Button
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import com.petal.browser.ui.kit.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import com.petal.browser.ui.kit.TextField
@@ -104,12 +106,16 @@ fun PetalColorPickerDialog(
     val animatedColor by animateColorAsState(color, label = "pickerPreview")
     val onPreview = if (animatedColor.luminance() > 0.5f) Color.Black else Color.White
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    BasicAlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = MaterialTheme.shapes.extraLarge,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             border = null,
-            modifier = Modifier.padding(16.dp).fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         ) {
             Column {
                 Box(

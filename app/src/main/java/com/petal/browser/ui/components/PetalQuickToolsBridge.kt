@@ -32,8 +32,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.petal.browser.activity.MainActivity
@@ -103,33 +101,15 @@ object PetalQuickToolsBridge {
             val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
             com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
 
-            val dialog = BottomSheetDialog(activity)
-            dialog.behavior.skipCollapsed = true
-            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            dialog.setCancelable(true)
-            dialog.setCanceledOnTouchOutside(true)
-            dialog.window?.let { win ->
-                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
-                win.statusBarColor = android.graphics.Color.TRANSPARENT
-                win.navigationBarColor = android.graphics.Color.TRANSPARENT
-                win.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
-                win.setDimAmount(0.12f)
-            }
-            dialog.setOnShowListener {
-                dialog.window?.let { win ->
-                    val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                    bottomSheet?.background = null
-                    bottomSheet?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                    val coordinator = dialog.findViewById<android.view.View>(com.google.android.material.R.id.coordinator)
-                    coordinator?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                }
-            }
-            dialog.setOnDismissListener {
+            val decor = activity.window.decorView as? ViewGroup ?: return
+            var composeView: ComposeView? = null
+            fun cleanup() {
                 com.petal.browser.predictive.PetalContentSnapshot.clear()
+                composeView?.let { cv -> decor.removeView(cv) }
             }
 
             val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-            val composeView = ComposeView(activity).apply {
+            composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
@@ -170,11 +150,11 @@ object PetalQuickToolsBridge {
                                     currentPageUrl = currentUrl,
                                     currentPageTitle = currentTitle,
                                     onToolClicked = { tool ->
-                                        try { dialog.dismiss() } catch (_: Exception) {}
+                                        cleanup()
                                         handleToolClick(activity, currentController, currentUrl, currentTitle, tool)
                                     },
                                     onDismissRequest = {
-                                        try { dialog.dismiss() } catch (_: Exception) {}
+                                        cleanup()
                                     }
                                 )
                             }
@@ -183,8 +163,7 @@ object PetalQuickToolsBridge {
                 }
             }
 
-            dialog.setContentView(composeView)
-            dialog.show()
+            decor.addView(composeView)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -436,19 +415,14 @@ object PetalQuickToolsBridge {
 
     private fun showSiteStyle(activity: MainActivity, controller: AlbumController?) {
         try {
-            val dialog = BottomSheetDialog(activity)
-            dialog.behavior.skipCollapsed = true
-            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            dialog.setCancelable(true)
-            dialog.setCanceledOnTouchOutside(true)
-            dialog.window?.let { win ->
-                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
-                win.statusBarColor = android.graphics.Color.TRANSPARENT
-                win.navigationBarColor = android.graphics.Color.TRANSPARENT
+            val decor = activity.window.decorView as? ViewGroup ?: return
+            var composeView: ComposeView? = null
+            fun cleanup() {
+                composeView?.let { cv -> decor.removeView(cv) }
             }
 
             val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-            val composeView = ComposeView(activity).apply {
+            composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
@@ -491,14 +465,13 @@ object PetalQuickToolsBridge {
                                 }
                             },
                             onDismissRequest = {
-                                try { dialog.dismiss() } catch (_: Exception) {}
+                                cleanup()
                             }
                         )
                     }
                 }
             }
-            dialog.setContentView(composeView)
-            dialog.show()
+            decor.addView(composeView)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -506,19 +479,14 @@ object PetalQuickToolsBridge {
 
     private fun showDevNotes(activity: MainActivity, domain: String) {
         try {
-            val dialog = BottomSheetDialog(activity)
-            dialog.behavior.skipCollapsed = true
-            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            dialog.setCancelable(true)
-            dialog.setCanceledOnTouchOutside(true)
-            dialog.window?.let { win ->
-                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
-                win.statusBarColor = android.graphics.Color.TRANSPARENT
-                win.navigationBarColor = android.graphics.Color.TRANSPARENT
+            val decor = activity.window.decorView as? ViewGroup ?: return
+            var composeView: ComposeView? = null
+            fun cleanup() {
+                composeView?.let { cv -> decor.removeView(cv) }
             }
 
             val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-            val composeView = ComposeView(activity).apply {
+            composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
@@ -542,14 +510,13 @@ object PetalQuickToolsBridge {
                         PetalDevNotesSheet(
                             domain = domain,
                             onDismissRequest = {
-                                try { dialog.dismiss() } catch (_: Exception) {}
+                                cleanup()
                             }
                         )
                     }
                 }
             }
-            dialog.setContentView(composeView)
-            dialog.show()
+            decor.addView(composeView)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -591,19 +558,14 @@ object PetalQuickToolsBridge {
             val type = object : TypeToken<List<String>>() {}.type
             val images: List<String> = try { Gson().fromJson(result, type) } catch (_: Exception) { emptyList() }
             try {
-                val dialog = BottomSheetDialog(activity)
-                dialog.behavior.skipCollapsed = true
-                dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-                dialog.setCancelable(true)
-                dialog.setCanceledOnTouchOutside(true)
-                dialog.window?.let { win ->
-                    androidx.core.view.WindowCompat.setDecorFitsSystemWindows(win, false)
-                    win.statusBarColor = android.graphics.Color.TRANSPARENT
-                    win.navigationBarColor = android.graphics.Color.TRANSPARENT
+                val decor = activity.window.decorView as? ViewGroup ?: return@evaluateJavascript
+                var composeView: ComposeView? = null
+                fun cleanup() {
+                    composeView?.let { cv -> decor.removeView(cv) }
                 }
 
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                val composeView = ComposeView(activity).apply {
+                composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
                     setViewTreeViewModelStoreOwner(activity)
                     setViewTreeSavedStateRegistryOwner(activity)
@@ -643,18 +605,21 @@ object PetalQuickToolsBridge {
                                         )
                                     }
                                     PetalToast.show(activity, activity.getString(R.string.ui_downloading_n_images, images.size))
-                                    try { dialog.dismiss() } catch (_: Exception) {}
+                                    cleanup()
                                 },
                                 onDismissRequest = {
-                                    try { dialog.dismiss() } catch (_: Exception) {}
+                                    cleanup()
                                 }
                             )
                         }
                     }
                 }
-                dialog.setContentView(composeView)
-                dialog.show()
+                decor.addView(composeView)
             } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
                 e.printStackTrace()
             }
         }

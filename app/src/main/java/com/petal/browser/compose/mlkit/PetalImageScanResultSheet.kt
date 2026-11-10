@@ -37,7 +37,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
 import com.google.zxing.MultiFormatReader
@@ -235,18 +234,22 @@ object PetalImageScannerBridge {
         val activity = current as? ComponentActivity ?: return
 
         activity.runOnUiThread {
-            val dialog = BottomSheetDialog(activity)
-            dialog.setOnShowListener {
-                dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                    ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                dialog.behavior.skipCollapsed = true
-                dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            val decorView = activity.window?.decorView as? android.view.ViewGroup ?: return@runOnUiThread
+            lateinit var composeView: ComposeView
+
+            val dismissAction = {
+                if (composeView.parent != null) {
+                    decorView.removeView(composeView)
+                }
+                composeView.clearFocus()
+                (activity as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
             }
-            val composeView = ComposeView(activity).apply {
+
+            composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                 setContent {
                     val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
                     val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
@@ -269,25 +272,28 @@ object PetalImageScannerBridge {
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
-                        PetalImageScanResultSheet(
-                            imageUrl = imageUrl,
-                            onDismiss = {
-                                try {
-                                    if (dialog.isShowing) dialog.dismiss()
-                                } catch (_: Exception) {}
-                            }
-                        )
+                        ModalBottomSheet(
+                            onDismissRequest = dismissAction,
+                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                            shape = BottomSheetDefaults.ExpandedShape,
+                            containerColor = Color.Transparent,
+                            dragHandle = { BottomSheetDefaults.DragHandle() }
+                        ) {
+                            PetalImageScanResultSheet(
+                                imageUrl = imageUrl,
+                                onDismiss = dismissAction
+                            )
+                        }
                     }
                 }
             }
-            dialog.setContentView(composeView)
-            dialog.setOnDismissListener {
-                composeView.clearFocus()
-                dialog.window?.decorView?.clearFocus()
-                (activity as? com.petal.browser.activity.MainActivity)
-                    ?.restoreBrowserInputFocus()
-            }
-            dialog.show()
+            decorView.addView(
+                composeView,
+                android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
         }
     }
 }
@@ -315,7 +321,7 @@ fun PetalImageScanResultSheet(
     }
 
     val isLiquidGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
 
     Surface(
         shape = sheetShape,
@@ -343,19 +349,9 @@ fun PetalImageScanResultSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .padding(horizontal = 20.dp, vertical = 8.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                // Drag Handle
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .size(width = 36.dp, height = 4.dp)
-                        .clip(ExpressiveButtonShape)
-                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-                )
-
-                Spacer(Modifier.height(14.dp))
 
                 // Header
                 Row(

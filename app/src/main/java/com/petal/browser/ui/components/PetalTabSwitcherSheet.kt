@@ -56,7 +56,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer

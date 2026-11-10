@@ -137,7 +137,7 @@ fun PetalQuickToolsSheet(
 
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
 
     Surface(
         modifier = Modifier
@@ -161,13 +161,7 @@ fun PetalQuickToolsSheet(
                     .padding(bottom = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Surface(
-                    modifier = Modifier
-                        .width(36.dp)
-                        .height(4.dp),
-                    shape = ExpressiveButtonShape,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                ) {}
+                BottomSheetDefaults.DragHandle()
             }
 
             // Header Row

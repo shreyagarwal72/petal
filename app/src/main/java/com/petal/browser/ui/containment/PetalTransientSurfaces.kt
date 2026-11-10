@@ -276,12 +276,12 @@ fun PetalAlertDialog(
     PetalMaterialAlertDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
-        shape = RoundedCornerShape(28.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         icon = icon?.let { ic ->
             {
                 Surface(
-                    shape = RoundedCornerShape(18.dp),
+                    shape = MaterialTheme.shapes.large,
                     color = if (destructive) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
                     contentColor = if (destructive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
                     tonalElevation = 0.dp,
@@ -384,7 +384,7 @@ fun PetalMaterialAlertDialog(
     icon: (@Composable () -> Unit)? = null,
     title: (@Composable () -> Unit)? = null,
     text: (@Composable () -> Unit)? = null,
-    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(28.dp),
+    shape: androidx.compose.ui.graphics.Shape = MaterialTheme.shapes.extraLarge,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     iconContentColor: Color = MaterialTheme.colorScheme.secondary,
     titleContentColor: Color = MaterialTheme.colorScheme.onSurface,
@@ -469,7 +469,7 @@ fun PetalMaterialAlertDialog(
 fun PetalDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(28.dp),
+    shape: androidx.compose.ui.graphics.Shape = MaterialTheme.shapes.extraLarge,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
     content: @Composable ColumnScope.() -> Unit,

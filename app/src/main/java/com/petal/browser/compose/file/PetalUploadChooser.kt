@@ -59,8 +59,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.R
 import com.petal.browser.media.PetalMediaPickerBridge
 import com.petal.browser.ui.theme.AppFont
@@ -73,7 +71,7 @@ object PetalUploadChooser {
 
     private enum class RequestKind { MEDIA, FILES, ANY }
 
-    private var activeDialog: BottomSheetDialog? = null
+    private var activeDismissAction: (() -> Unit)? = null
 
     private val mediaExtensions = setOf(
         ".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif", ".bmp", ".avif",
@@ -199,15 +197,26 @@ object PetalUploadChooser {
         params: WebChromeClient.FileChooserParams?,
         onFatalFallback: () -> Unit
     ) {
+        val decorView = activity.window?.decorView as? android.view.ViewGroup ?: return
         var chosen = false
-        val dialog = BottomSheetDialog(activity)
-        activeDialog = dialog
+        lateinit var composeView: ComposeView
 
-        val composeView = ComposeView(activity).apply {
+        val dismissAction: () -> Unit = {
+            if (activeDismissAction != null) {
+                activeDismissAction = null
+                if (composeView.parent != null) {
+                    decorView.removeView(composeView)
+                }
+                if (!chosen) cb?.onReceiveValue(null)
+            }
+        }
+        activeDismissAction = dismissAction
+
+        composeView = ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
 
             setContent {
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
@@ -238,38 +247,45 @@ object PetalUploadChooser {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    ChoiceContent(
-                        onPickFiles = {
-                            chosen = true
-                            try { dialog.dismiss() } catch (_: Exception) {}
-                            openFiles(activity, cb, params, onFatalFallback)
+                    androidx.compose.material3.ModalBottomSheet(
+                        onDismissRequest = {
+                            dismissAction()
                         },
-                        onPickMedia = {
-                            chosen = true
-                            try { dialog.dismiss() } catch (_: Exception) {}
-                            openMedia(activity, cb, params, onFatalFallback)
-                        }
-                    )
+                        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                        shape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape,
+                        dragHandle = { androidx.compose.material3.BottomSheetDefaults.DragHandle() }
+                    ) {
+                        ChoiceContent(
+                            onPickFiles = {
+                                chosen = true
+                                dismissAction()
+                                openFiles(activity, cb, params, onFatalFallback)
+                            },
+                            onPickMedia = {
+                                chosen = true
+                                dismissAction()
+                                openMedia(activity, cb, params, onFatalFallback)
+                            }
+                        )
+                    }
                 }
             }
         }
 
-        dialog.setContentView(composeView)
-        dialog.setOnShowListener {
-            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            dialog.behavior.skipCollapsed = true
-        }
-        dialog.setOnDismissListener {
-            if (activeDialog === dialog) activeDialog = null
-            // Closed without choosing -> tell the website nothing was picked.
-            if (!chosen) cb?.onReceiveValue(null)
-        }
-        dialog.show()
+        decorView.addView(
+            composeView,
+            android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
     }
 
     private fun dismissActive() {
-        try { activeDialog?.dismiss() } catch (_: Exception) {}
-        activeDialog = null
+        try {
+            activeDismissAction?.invoke()
+        } catch (_: Exception) {}
+        activeDismissAction = null
     }
 }
 
@@ -307,7 +323,7 @@ private fun ChoiceContent(onPickFiles: () -> Unit, onPickMedia: () -> Unit) {
 @androidx.compose.runtime.Composable
 private fun ChoiceRow(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
     Surface(
-        shape = RoundedCornerShape(24.dp),
+        shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier
             .fillMaxWidth()

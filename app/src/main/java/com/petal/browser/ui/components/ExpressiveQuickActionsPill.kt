@@ -40,7 +40,7 @@ fun ExpressiveQuickActionsPill(
     onTranslate: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val pillShape = RoundedCornerShape(28.dp)
+    val pillShape = MaterialTheme.shapes.extraLarge
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_bottom_nav") || isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 

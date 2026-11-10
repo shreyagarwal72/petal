@@ -120,7 +120,7 @@ object PetalOverflowBridge {
             val useBlurBg = sp.getBoolean("sp_overflow_menu_blur_bg", true) && isLiquidGlass
 
             var pendingDismissAction: (() -> Unit)? = null
-            val dialog = android.app.Dialog(activity, com.google.android.material.R.style.Theme_Design_BottomSheetDialog).apply {
+            val dialog = android.app.Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar).apply {
                 setCanceledOnTouchOutside(true)
                 setCancelable(true)
             }

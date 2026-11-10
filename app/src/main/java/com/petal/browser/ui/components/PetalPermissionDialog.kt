@@ -215,7 +215,7 @@ fun PetalPermissionDialog(
     val context = LocalContext.current
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = rememberGlassSheen(isGlass)
-    val shape = RoundedCornerShape(28.dp)
+    val shape = MaterialTheme.shapes.extraLarge
     val accent = type.accent()
     val scheme = MaterialTheme.colorScheme
 
@@ -343,7 +343,7 @@ fun PetalPermissionDialog(
                     Spacer(Modifier.height(2.dp))
 
                     // Remember decision
-                    val rowShape = RoundedCornerShape(26.dp)
+                    val rowShape = MaterialTheme.shapes.large
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

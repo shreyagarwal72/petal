@@ -18,7 +18,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.google.android.material.bottomsheet.BottomSheetDialog
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -28,27 +30,31 @@ import com.petal.browser.unit.PetalBrowserUtils
 
 object PetalLensBridge {
 
-    private var activeDialog: BottomSheetDialog? = null
+    private var activeDismissAction: (() -> Unit)? = null
 
     @JvmStatic
     @JvmOverloads
     fun showLensBottomSheet(activity: ComponentActivity, autoSnapCamera: Boolean = false) {
         activity.runOnUiThread {
             try {
-                activeDialog?.dismiss()
+                activeDismissAction?.invoke()
             } catch (_: Exception) {}
-            activeDialog = null
+            activeDismissAction = null
 
-            val dialog = BottomSheetDialog(activity)
-            // The sheet container only exists after the content is attached, so clear its
-            // default opaque background once the dialog is shown (doing it earlier was a no-op).
-            dialog.setOnShowListener {
-                dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                    ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                dialog.behavior.skipCollapsed = true
-                dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            val decorView = activity.window?.decorView as? android.view.ViewGroup ?: return@runOnUiThread
+            lateinit var composeView: ComposeView
+
+            val dismissAction: () -> Unit = {
+                if (activeDismissAction != null) {
+                    activeDismissAction = null
+                    if (composeView.parent != null) {
+                        decorView.removeView(composeView)
+                    }
+                    composeView.clearFocus()
+                    (activity as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
+                }
             }
-            activeDialog = dialog
+            activeDismissAction = dismissAction
 
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
@@ -102,27 +108,29 @@ object PetalLensBridge {
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
-                        PetalLensBottomSheet(
-                            autoSnapCamera = autoSnapCamera,
-                            onDismissRequest = {
-                                try {
-                                    if (dialog.isShowing) {
-                                        dialog.dismiss()
-                                    }
-                                } catch (_: Exception) {}
-                            }
-                        )
+                        ModalBottomSheet(
+                            onDismissRequest = dismissAction,
+                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                            shape = BottomSheetDefaults.ExpandedShape,
+                            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                            dragHandle = { BottomSheetDefaults.DragHandle() }
+                        ) {
+                            PetalLensBottomSheet(
+                                autoSnapCamera = autoSnapCamera,
+                                onDismissRequest = dismissAction
+                            )
+                        }
                     }
                 }
             }
 
-            dialog.setContentView(composeView)
-            dialog.setOnDismissListener {
-                if (activeDialog == dialog) {
-                    activeDialog = null
-                }
-            }
-            dialog.show()
+            decorView.addView(
+                composeView,
+                android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
         }
     }
 
@@ -134,17 +142,22 @@ object PetalLensBridge {
     @JvmStatic
     fun showPetalScannerDirectly(activity: ComponentActivity) {
         activity.runOnUiThread {
-            val host = BottomSheetDialog(activity)
-            host.setOnShowListener {
-                host.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                    ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            val decorView = activity.window?.decorView as? android.view.ViewGroup ?: return@runOnUiThread
+            lateinit var composeView: ComposeView
+
+            val dismissAction: () -> Unit = {
+                if (composeView.parent != null) {
+                    decorView.removeView(composeView)
+                }
+                composeView.clearFocus()
+                (activity as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
             }
 
-            val composeView = ComposeView(activity).apply {
+            composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
 
                 setContent {
                     val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
@@ -168,7 +181,7 @@ object PetalLensBridge {
 
                     LaunchedEffect(showScanner) {
                         if (!showScanner) {
-                            try { if (host.isShowing) host.dismiss() } catch (_: Exception) {}
+                            dismissAction()
                         }
                     }
 
@@ -213,12 +226,13 @@ object PetalLensBridge {
                 }
             }
 
-            host.setOnDismissListener {
-                composeView.clearFocus()
-                (activity as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
-            }
-            host.setContentView(composeView)
-            host.show()
+            decorView.addView(
+                composeView,
+                android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
         }
     }
 }

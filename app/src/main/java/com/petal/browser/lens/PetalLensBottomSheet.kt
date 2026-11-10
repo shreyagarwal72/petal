@@ -264,7 +264,7 @@ fun PetalLensBottomSheet(
 
         AlertDialog(
             onDismissRequest = { pendingImageUriForProviderChooser = null },
-            shape = RoundedCornerShape(28.dp),
+            shape = MaterialTheme.shapes.extraLarge,
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = {
                 Icon(
@@ -464,7 +464,7 @@ fun PetalLensBottomSheet(
     }
 
     val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
 
     val glassWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
     val sheetSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
@@ -500,18 +500,10 @@ fun PetalLensBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+                .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Drag Handle
-            Box(
-                modifier = Modifier
-                    .size(width = 36.dp, height = 4.dp)
-                    .clip(ExpressiveButtonShape)
-                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-            )
-
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),

@@ -59,8 +59,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.security.BiometricLockManager
@@ -141,7 +139,7 @@ fun PetalBiometricExpressiveSheet(
     }
 
     Surface(
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        shape = BottomSheetDefaults.ExpandedShape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 6.dp,
         modifier = Modifier.fillMaxWidth()
@@ -330,8 +328,16 @@ object PetalBiometricOverlayBridge {
         val appCompat = activity as? AppCompatActivity ?: return
         if (appCompat.isFinishing || (Build.VERSION.SDK_INT >= 17 && appCompat.isDestroyed)) return
 
-        val dialog = BottomSheetDialog(appCompat)
-        val composeView = ComposeView(appCompat).apply {
+        val decorView = appCompat.window?.decorView as? ViewGroup ?: return
+        lateinit var composeView: ComposeView
+
+        val dismissAction = {
+            if (composeView.parent != null) {
+                decorView.removeView(composeView)
+            }
+        }
+
+        composeView = ComposeView(appCompat).apply {
             setViewTreeLifecycleOwner(appCompat)
             setViewTreeViewModelStoreOwner(appCompat)
             setViewTreeSavedStateRegistryOwner(appCompat)
@@ -368,42 +374,46 @@ object PetalBiometricOverlayBridge {
                     fontWeight = fontWeightVal,
                     fontRoundness = fontRoundnessVal
                 ) {
-                    PetalBiometricExpressiveSheet(
-                        title = title,
-                        subtitle = subtitle,
-                        allowPasswordFallback = onUsePassword != null,
-                        onSuccess = {
-                            try { dialog.dismiss() } catch (_: Exception) {}
-                            onSuccess.run()
-                        },
-                        onCancel = {
-                            try { dialog.dismiss() } catch (_: Exception) {}
+                    ModalBottomSheet(
+                        onDismissRequest = {
+                            dismissAction()
                             onCancel.run()
                         },
-                        onUsePassword = onUsePassword?.let { cb ->
-                            {
-                                try { dialog.dismiss() } catch (_: Exception) {}
-                                cb.run()
+                        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                        shape = BottomSheetDefaults.ExpandedShape,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        dragHandle = { BottomSheetDefaults.DragHandle() }
+                    ) {
+                        PetalBiometricExpressiveSheet(
+                            title = title,
+                            subtitle = subtitle,
+                            allowPasswordFallback = onUsePassword != null,
+                            onSuccess = {
+                                dismissAction()
+                                onSuccess.run()
+                            },
+                            onCancel = {
+                                dismissAction()
+                                onCancel.run()
+                            },
+                            onUsePassword = onUsePassword?.let { cb ->
+                                {
+                                    dismissAction()
+                                    cb.run()
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
 
-        dialog.setContentView(composeView)
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialog.setOnShowListener {
-            val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-            bottomSheet?.setBackgroundResource(android.R.color.transparent)
-            dialog.behavior.apply {
-                state = BottomSheetBehavior.STATE_EXPANDED
-                skipCollapsed = true
-                isDraggable = true
-            }
-        }
-        try {
-            dialog.show()
-        } catch (_: Exception) {}
+        decorView.addView(
+            composeView,
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
     }
 }

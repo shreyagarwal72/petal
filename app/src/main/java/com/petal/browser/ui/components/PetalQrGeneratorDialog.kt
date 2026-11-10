@@ -68,6 +68,7 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalQrGeneratorDialog(
     url: String,
@@ -88,9 +89,9 @@ fun PetalQrGeneratorDialog(
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val dialogShape = RoundedCornerShape(28.dp)
+    val dialogShape = MaterialTheme.shapes.extraLarge
 
-    Dialog(onDismissRequest = onDismissRequest) {
+    BasicAlertDialog(onDismissRequest = onDismissRequest) {
         Surface(
             shape = dialogShape,
             color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,

@@ -59,7 +59,7 @@ fun PetalDownloadConfirmationDialog(
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val dialogShape = RoundedCornerShape(28.dp)
+    val dialogShape = MaterialTheme.shapes.extraLarge
 
     com.petal.browser.ui.glass.PetalGlassContainer(
         modifier = Modifier.fillMaxWidth(),
@@ -232,7 +232,7 @@ fun PetalFirstTimeDownloadEngineDialog(
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val dialogShape = RoundedCornerShape(28.dp)
+    val dialogShape = MaterialTheme.shapes.extraLarge
 
     com.petal.browser.ui.glass.PetalGlassContainer(
         modifier = Modifier.fillMaxWidth(),

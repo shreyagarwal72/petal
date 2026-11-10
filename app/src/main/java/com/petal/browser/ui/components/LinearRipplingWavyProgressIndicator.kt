@@ -1,31 +1,20 @@
 package com.petal.browser.ui.components
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import kotlin.math.sin
 
 /**
- * Expressive Rippling Wavy Linear Progress Indicator.
- * Renders a dynamic continuous sine wave progress line with gradient flow and ripple physics.
+ * Material 3 Expressive Linear Wavy Progress Indicator.
+ * Delegates directly to the official [androidx.compose.material3.LinearWavyProgressIndicator].
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LinearRipplingWavyProgressIndicator(
     progress: Float? = null,
@@ -39,81 +28,18 @@ fun LinearRipplingWavyProgressIndicator(
     secondaryColor: Color = MaterialTheme.colorScheme.tertiary,
     trackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
 ) {
-    val animActive = rememberAnimationActive()
-    val infiniteTransition = rememberInfiniteTransition(label = "ripplingWaveTransition")
-
-    val rawPhase by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 2f * Math.PI.toFloat(),
-        animationSpec = infiniteRepeatable(
-            animation = tween(1100, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "phaseAnimation",
-    )
-
-    val rawShimmerShift by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "shimmerAnimation",
-    )
-    val phase = if (animActive) rawPhase else 0f
-    val shimmerShift = if (animActive) rawShimmerShift else 0f
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height),
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val width = size.width
-            val centerY = size.height / 2f
-            val strokeWidthPx = strokeWidth.toPx()
-            val amplitudePx = waveAmplitude.toPx()
-            val wavelengthPx = waveWavelength.toPx()
-
-            val effectiveProgress = (progress ?: 1f).coerceIn(0.04f, 1f)
-            val activeWidth = width * effectiveProgress
-
-            drawLine(
-                color = trackColor,
-                start = androidx.compose.ui.geometry.Offset(0f, centerY),
-                end = androidx.compose.ui.geometry.Offset(width, centerY),
-                strokeWidth = strokeWidthPx / 1.5f,
-            )
-
-            val path = Path()
-            var first = true
-
-            var x = 0f
-            while (x <= activeWidth) {
-                val angle = (x / wavelengthPx) * 2f * Math.PI.toFloat() + phase
-                val y = centerY + sin(angle).toFloat() * amplitudePx
-
-                if (first) {
-                    path.moveTo(x, y)
-                    first = false
-                } else {
-                    path.lineTo(x, y)
-                }
-                x += 2f
-            }
-
-            val gradientBrush = Brush.horizontalGradient(
-                colors = listOf(activeColor, secondaryColor, activeColor),
-                startX = activeWidth * (shimmerShift - 0.5f),
-                endX = activeWidth * (shimmerShift + 0.5f),
-            )
-
-            drawPath(
-                path = path,
-                brush = gradientBrush,
-                style = Stroke(width = strokeWidthPx),
-            )
-        }
+    if (progress != null) {
+        LinearWavyProgressIndicator(
+            progress = { progress.coerceIn(0f, 1f) },
+            modifier = modifier.fillMaxWidth(),
+            color = activeColor,
+            trackColor = trackColor
+        )
+    } else {
+        LinearWavyProgressIndicator(
+            modifier = modifier.fillMaxWidth(),
+            color = activeColor,
+            trackColor = trackColor
+        )
     }
 }

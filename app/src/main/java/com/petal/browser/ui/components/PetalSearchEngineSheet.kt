@@ -25,7 +25,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
@@ -113,58 +112,99 @@ private fun saveCustomSearchEngines(context: Context, engines: List<SearchEngine
     PreferenceManager.getDefaultSharedPreferences(context).edit().putString(CUSTOM_ENGINES_KEY, json.toString()).apply()
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PetalSearchEngineSheet(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    initialIndex: Int? = null,
+    onConfirm: (Int) -> Unit
+) {
+    if (visible) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = onDismissRequest,
+            sheetState = sheetState,
+            dragHandle = { BottomSheetDefaults.DragHandle() },
+            shape = BottomSheetDefaults.ExpandedShape,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            contentWindowInsets = { WindowInsets.navigationBars }
+        ) {
+            PetalSearchEngineSheetContent(
+                initialIndex = initialIndex,
+                onConfirm = {
+                    onConfirm(it)
+                    onDismissRequest()
+                },
+                onCancel = onDismissRequest
+            )
+        }
+    }
+}
+
 fun allSearchEngines(context: Context): List<SearchEngineItem> =
     getStandardSearchEngines(context) + getCustomSearchEngines(context)
 
 object PetalSearchEngineBridge {
+    private var activeComposeView: ComposeView? = null
+
     @JvmStatic
     fun showSearchEngineDialog(activity: ComponentActivity, onDismiss: Runnable? = null) {
-        try {
-            val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
-            com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+        activity.runOnUiThread {
+            try {
+                activeComposeView?.let {
+                    (it.parent as? android.view.ViewGroup)?.removeView(it)
+                }
+                activeComposeView = null
 
-            val dialog = BottomSheetDialog(activity)
-            dialog.setOnDismissListener {
-                com.petal.browser.predictive.PetalContentSnapshot.clear()
-            }
-            dialog.window?.let { window ->
-                window.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                    ?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            }
-            val composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(activity)
-                setViewTreeViewModelStoreOwner(activity)
-                setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-                setContent {
-                    PetalExpressiveTheme {
-                        com.petal.browser.ui.glass.PetalGlassContainer(
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-                        ) {
-                            PetalSearchEngineSheetContent(
+                val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content) ?: return@runOnUiThread
+                com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+
+                var composeView: ComposeView? = null
+                fun cleanup() {
+                    com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    composeView?.let { cv ->
+                        (cv.parent as? android.view.ViewGroup)?.removeView(cv)
+                        if (activeComposeView == cv) {
+                            activeComposeView = null
+                        }
+                    }
+                    onDismiss?.run()
+                }
+
+                composeView = ComposeView(activity).apply {
+                    setViewTreeLifecycleOwner(activity)
+                    setViewTreeViewModelStoreOwner(activity)
+                    setViewTreeSavedStateRegistryOwner(activity)
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+                    setContent {
+                        PetalExpressiveTheme {
+                            PetalSearchEngineSheet(
+                                visible = true,
+                                onDismissRequest = { cleanup() },
                                 onConfirm = { index ->
                                     PreferenceManager.getDefaultSharedPreferences(activity).edit()
                                         .putString("sp_search_engine", index.toString())
                                         .putBoolean("sp_search_engine_chosen", true)
                                         .putBoolean("searchEngineSwitch", false)
                                         .apply()
-                                    dialog.dismiss()
-                                    onDismiss?.run()
-                                },
-                                onCancel = {
-                                    dialog.dismiss()
-                                    onDismiss?.run()
+                                    cleanup()
                                 }
                             )
                         }
                     }
                 }
+                activeComposeView = composeView
+                rootView.addView(
+                    composeView,
+                    android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            dialog.setContentView(composeView)
-            dialog.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 }
@@ -270,7 +310,7 @@ fun PetalSearchEngineSheetContent(
 
     val engines = remember(context, customEngines) { getStandardSearchEngines(context) + customEngines }
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    val sheetShape = BottomSheetDefaults.ExpandedShape
 
     Surface(
         shape = sheetShape,

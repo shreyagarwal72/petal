@@ -241,7 +241,7 @@ dependencies {
     // Pinned alpha for Material 3 Expressive APIs. It MUST stay in step with the BOM's
     // foundation/ui versions, otherwise text fields crash with AbstractMethodError
     // (CustomStyle.applyStyle). Bump this and the BOM together.
-    implementation 'androidx.compose.material3:material3:1.5.0-alpha22'
+    implementation 'androidx.compose.material3:material3:1.5.0-rc01'
     implementation 'androidx.compose.material:material-icons-extended'
     implementation 'androidx.activity:activity-compose:1.9.3'
     implementation 'androidx.media3:media3-common:1.4.1'

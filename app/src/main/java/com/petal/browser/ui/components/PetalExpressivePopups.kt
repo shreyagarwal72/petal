@@ -46,8 +46,10 @@ import com.petal.browser.R
  * - generous 56dp menu rows and spring/motion supplied by MaterialExpressiveTheme
  */
 object PetalExpressivePopupDefaults {
-    val dialogShape: Shape = RoundedCornerShape(28.dp)
-    val menuShape: Shape = RoundedCornerShape(24.dp)
+    val dialogShape: Shape
+        @Composable get() = MaterialTheme.shapes.extraLarge
+    val menuShape: Shape
+        @Composable get() = MaterialTheme.shapes.large
     val menuContainerColor: Color
         @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
     val dialogContainerColor: Color
@@ -767,7 +769,7 @@ fun PetalExpressiveDateTimeDialog(
         val goesToTime = hasTime
         DatePickerDialog(
             onDismissRequest = onDismiss,
-            shape = RoundedCornerShape(28.dp),
+            shape = MaterialTheme.shapes.extraLarge,
             colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
             confirmButton = {
                 Button(

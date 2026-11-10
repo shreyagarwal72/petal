@@ -40,7 +40,6 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil.compose.AsyncImage
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
@@ -581,7 +580,7 @@ private fun PetalMenuHeader(
     val isImage = imageUrl != null
 
     val headerGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val headerShape = RoundedCornerShape(28.dp)
+    val headerShape = MaterialTheme.shapes.extraLarge
     Surface(
         modifier = modifier
             .fillMaxWidth()

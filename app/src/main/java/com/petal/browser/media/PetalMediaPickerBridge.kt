@@ -20,7 +20,9 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetDialog
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -29,7 +31,7 @@ import com.petal.browser.ui.theme.isDynamicColorSupported
 
 object PetalMediaPickerBridge {
 
-    private var activeDialog: BottomSheetDialog? = null
+    private var activeDismissAction: (() -> Unit)? = null
 
     @JvmStatic
     fun showMediaPicker(
@@ -40,14 +42,11 @@ object PetalMediaPickerBridge {
     ) {
         activity.runOnUiThread {
             try {
-                activeDialog?.dismiss()
+                activeDismissAction?.invoke()
             } catch (_: Exception) {}
-            activeDialog = null
+            activeDismissAction = null
 
             var isHandled = false
-
-            val dialog = BottomSheetDialog(activity)
-            activeDialog = dialog
 
             val allowMultiple = fileChooserParams != null && fileChooserParams.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE
             val acceptTypes = fileChooserParams?.acceptTypes
@@ -61,11 +60,28 @@ object PetalMediaPickerBridge {
                 return@runOnUiThread
             }
 
-            val composeView = ComposeView(activity).apply {
+            val decorView = activity.window?.decorView as? android.view.ViewGroup ?: return@runOnUiThread
+            lateinit var composeView: ComposeView
+
+            val dismissAction: () -> Unit = {
+                if (activeDismissAction != null) {
+                    activeDismissAction = null
+                    if (composeView.parent != null) {
+                        decorView.removeView(composeView)
+                    }
+                    composeView.clearFocus()
+                    if (!isHandled) {
+                        filePathCallback?.onReceiveValue(null)
+                    }
+                }
+            }
+            activeDismissAction = dismissAction
+
+            val composeViewInstance = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
 
                 setContent {
                     val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
@@ -113,43 +129,40 @@ object PetalMediaPickerBridge {
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
-                        PetalMediaPickerBottomSheet(
-                            allowMultiple = allowMultiple,
-                            acceptTypes = acceptTypes,
-                            onMediaSelected = { uris ->
-                                isHandled = true
-                                filePathCallback?.onReceiveValue(uris.toTypedArray())
-                                try {
-                                    dialog.dismiss()
-                                } catch (_: Exception) {}
-                            },
-                            onDismissRequest = {
-                                try {
-                                    if (dialog.isShowing) {
-                                        dialog.dismiss()
-                                    }
-                                } catch (_: Exception) {}
-                            },
-                            onBrowseSystemFiles = {
-                                isHandled = true
-                                try {
-                                    dialog.dismiss()
-                                } catch (_: Exception) {}
-                                onBrowseSystemFallback()
-                            }
-                        )
+                        ModalBottomSheet(
+                            onDismissRequest = dismissAction,
+                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                            shape = BottomSheetDefaults.ExpandedShape,
+                            dragHandle = { BottomSheetDefaults.DragHandle() }
+                        ) {
+                            PetalMediaPickerBottomSheet(
+                                allowMultiple = allowMultiple,
+                                acceptTypes = acceptTypes,
+                                onMediaSelected = { uris ->
+                                    isHandled = true
+                                    filePathCallback?.onReceiveValue(uris.toTypedArray())
+                                    dismissAction()
+                                },
+                                onDismissRequest = dismissAction,
+                                onBrowseSystemFiles = {
+                                    isHandled = true
+                                    dismissAction()
+                                    onBrowseSystemFallback()
+                                }
+                            )
+                        }
                     }
                 }
             }
+            composeView = composeViewInstance
 
-            dialog.setContentView(composeView)
-            dialog.setOnDismissListener {
-                activeDialog = null
-                if (!isHandled) {
-                    filePathCallback?.onReceiveValue(null)
-                }
-            }
-            dialog.show()
+            decorView.addView(
+                composeView,
+                android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
         }
     }
 }

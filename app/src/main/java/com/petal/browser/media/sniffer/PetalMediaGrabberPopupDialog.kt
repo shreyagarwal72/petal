@@ -89,18 +89,17 @@ fun PetalMediaGrabberPopupDialog(
     var socialState by remember { mutableStateOf<GrabberSocialState>(GrabberSocialState.Idle) }
     var formatMenuOpen by remember { mutableStateOf(false) }
 
-    Dialog(
+    BasicAlertDialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        modifier = Modifier
+            .fillMaxWidth(0.94f)
+            .widthIn(max = 500.dp)
+            .heightIn(max = 680.dp)
     ) {
         PetalHeroCard(
             shape = PetalContainmentShapes.Hero,
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            modifier = Modifier
-                .fillMaxWidth(0.94f)
-                .widthIn(max = 500.dp)
-                .heightIn(max = 680.dp)
-                .padding(16.dp)
+            modifier = Modifier.fillMaxSize()
         ) {
             Column(
                 modifier = Modifier

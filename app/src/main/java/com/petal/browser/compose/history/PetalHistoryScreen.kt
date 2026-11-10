@@ -53,7 +53,6 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.launch
 import coil.compose.SubcomposeAsyncImage
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.database.HistoryBookmarkContract
 import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
