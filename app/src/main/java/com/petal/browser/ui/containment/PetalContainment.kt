@@ -308,6 +308,14 @@ fun petalGroupSurfaceColor(): Color {
     return color
 }
 
+@Composable
+fun petalSheenIntensity(key: String = "sp_liquid_glass_sheen", default: Float = 0.35f): Float {
+    LocalPetalGlassRevision.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    return sp.getFloat(key, default).coerceIn(0f, 1f)
+}
+
 /**
  * Same corners as [petalGroupShape], but the four radii animate when a row's position in its group changes
  * (rows added/removed, a row becoming first/last). Nothing animates on first composition.

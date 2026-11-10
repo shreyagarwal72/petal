@@ -1245,6 +1245,8 @@ private fun ImageInfoBottomSheet(
                     InfoCardRow(label = stringResource(R.string.ui_source_url), value = it)
                 }
             }
+                }
+            }
         }
     }
 }
