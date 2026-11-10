@@ -103,26 +103,32 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             // Stage 2: Call GeckoRuntime.warmUp() once on the main process after runtime creation
             runtime.warmUp()
 
-            // Ensure GeckoEngine and WebCompatFeature are created at app start
-            // so WebCompat interventions are active immediately for all tabs.
-            try {
-                com.petal.browser.engine.gecko.PetalEngineStore.getEngine(this)
-                Log.i(TAG, "Initialized GeckoEngine at application start for WebCompat")
-            } catch (t: Throwable) {
-                Log.w(TAG, "Failed to initialize GeckoEngine at application start: ${t.message}")
-            }
-            // Initialize Android Components session persistence alongside the
-            // shared Gecko runtime. PetalEngineStore owns the BrowserStore and
-            // AutoSave lifecycle; touching it here makes state persistence
-            // available before the first tab is materialized, while retaining
-            // the existing Petal tab/session UI as the source of truth.
-            try {
-                com.petal.browser.engine.gecko.PetalEngineStore.getSessionStorage(this)
-                // Fenix's three triggers (30 s foreground timer, background, tab/load changes).
-                // Writes stay blocked until the saved session has been restored into the store.
-                com.petal.browser.engine.gecko.PetalEngineStore.startAutoSave(this)
-            } catch (t: Throwable) {
-                Log.w(TAG, "BrowserStore session persistence unavailable", t)
+            // GeckoEngine, BrowserStore, and session-storage init are heavy synchronized
+            // operations that block the main thread and cause the startup freeze. Kick them
+            // onto a background thread so the first Compose frame can draw immediately.
+            // PetalEngineStore's internal @Synchronized guards ensure only one thread wins
+            // the construction race; any concurrent first use (e.g. ViewModel on main thread)
+            // will block briefly on the lock rather than on a stalled main-thread message queue.
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    com.petal.browser.engine.gecko.PetalEngineStore.getEngine(this@PetalApplication)
+                    Log.i(TAG, "Initialized GeckoEngine at application start for WebCompat")
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Failed to initialize GeckoEngine at application start: ${t.message}")
+                }
+                // Initialize Android Components session persistence alongside the
+                // shared Gecko runtime. PetalEngineStore owns the BrowserStore and
+                // AutoSave lifecycle; touching it here makes state persistence
+                // available before the first tab is materialized, while retaining
+                // the existing Petal tab/session UI as the source of truth.
+                try {
+                    com.petal.browser.engine.gecko.PetalEngineStore.getSessionStorage(this@PetalApplication)
+                    // Fenix's three triggers (30 s foreground timer, background, tab/load changes).
+                    // Writes stay blocked until the saved session has been restored into the store.
+                    com.petal.browser.engine.gecko.PetalEngineStore.startAutoSave(this@PetalApplication)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "BrowserStore session persistence unavailable", t)
+                }
             }
             com.petal.browser.media.sniffer.PetalMediaGrabberInstaller.install(this)
             com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(this)
