@@ -201,16 +201,16 @@ configurations.all {
 dependencies {
     implementation 'com.google.android.material:material:1.14.0'
     implementation 'androidx.preference:preference:1.2.1'
-    githubImplementation 'com.google.android.gms:play-services-ads:23.6.0'
-    playImplementation 'com.google.android.gms:play-services-ads:23.6.0'
-    implementation 'androidx.fragment:fragment:1.8.9'
-    implementation 'androidx.media:media:1.7.0'
-    implementation 'androidx.webkit:webkit:1.16.0'
+    githubImplementation 'com.google.android.gms:play-services-ads:25.5.0'
+    playImplementation 'com.google.android.gms:play-services-ads:25.5.0'
+    implementation 'androidx.fragment:fragment:1.9.1'
+    implementation 'androidx.media:media:1.8.0'
+    implementation 'androidx.webkit:webkit:1.18.0'
     implementation 'androidx.palette:palette:1.0.0'
-    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'com.google.code.gson:gson:2.15.0'
     implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
-    implementation 'androidx.graphics:graphics-shapes:1.0.1'
-    implementation 'com.airbnb.android:lottie-compose:6.6.2'
+    implementation 'androidx.graphics:graphics-shapes:1.1.0'
+    implementation 'com.airbnb.android:lottie-compose:6.7.1'
 
     // PDFBox-Android — used only for the "Edit PDF text" feature (real embedded
     // text extraction + content-stream rewrite). PdfRenderer above stays as the
@@ -220,18 +220,18 @@ dependencies {
 
     // Jetpack Glance — used for the home screen widget so it can be built with real
     // Material 3 (Expressive) components/color roles instead of hand-rolled RemoteViews.
-    implementation 'androidx.glance:glance:1.1.1'
-    implementation 'androidx.glance:glance-appwidget:1.1.1'
-    implementation 'androidx.glance:glance-material3:1.1.1'
+    implementation 'androidx.glance:glance:1.2.0'
+    implementation 'androidx.glance:glance-appwidget:1.2.0'
+    implementation 'androidx.glance:glance-material3:1.2.0'
 
     // AndroidX Activity, Lifecycle, and SavedState Explicit KTX Dependencies
-    implementation 'androidx.core:core-splashscreen:1.0.1'
+    implementation 'androidx.core:core-splashscreen:1.2.0'
     // Installs the baseline profile (src/main/baseline-prof.txt) at first run so hot UI paths
     // are AOT-compiled instead of interpreted/JIT'd. Cuts cold-start and first-scroll jank.
     implementation 'androidx.profileinstaller:profileinstaller:1.4.1'
-    implementation 'androidx.activity:activity-ktx:1.9.3'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
-    implementation 'androidx.savedstate:savedstate-ktx:1.2.1'
+    implementation 'androidx.activity:activity-ktx:1.13.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.11.0'
+    implementation 'androidx.savedstate:savedstate-ktx:1.5.0'
 
     // Compose Dependencies
     implementation platform('androidx.compose:compose-bom:2026.09.00')
@@ -243,25 +243,25 @@ dependencies {
     // (CustomStyle.applyStyle). Bump this and the BOM together.
     implementation 'androidx.compose.material3:material3:1.5.0-alpha22'
     implementation 'androidx.compose.material:material-icons-extended'
-    implementation 'androidx.activity:activity-compose:1.9.3'
-    implementation 'androidx.media3:media3-common:1.4.1'
-    implementation 'androidx.media3:media3-session:1.4.1'
-    implementation 'androidx.media3:media3-exoplayer:1.4.1'
-    implementation 'androidx.media3:media3-exoplayer-hls:1.4.1'
-    implementation 'androidx.media3:media3-ui:1.4.1'
-    implementation 'androidx.browser:browser:1.8.0'
-    implementation 'androidx.navigation:navigation-compose:2.8.4'
+    implementation 'androidx.activity:activity-compose:1.13.0'
+    implementation 'androidx.media3:media3-common:1.11.1'
+    implementation 'androidx.media3:media3-session:1.11.1'
+    implementation 'androidx.media3:media3-exoplayer:1.11.1'
+    implementation 'androidx.media3:media3-exoplayer-hls:1.11.1'
+    implementation 'androidx.media3:media3-ui:1.11.1'
+    implementation 'androidx.browser:browser:1.10.0'
+    implementation 'androidx.navigation:navigation-compose:2.10.2'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'io.coil-kt:coil-compose:2.7.0'
     implementation 'io.coil-kt:coil-gif:2.7.0'
     // Real liquid glass (backdrop blur + lens refraction + specular rim); same library SimpMusic uses
     implementation 'io.github.kyant0:backdrop:2.0.1'
     // Pure-Java barcode/QR decoding for the FOSS Snap Photo scanner.
-    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:core:3.5.4'
     // FOSS camera preview and frame analysis for Petal Scanner.
-    implementation 'androidx.camera:camera-camera2:1.4.2'
-    implementation 'androidx.camera:camera-lifecycle:1.4.2'
-    implementation 'androidx.camera:camera-view:1.4.2'
+    implementation 'androidx.camera:camera-camera2:1.6.2'
+    implementation 'androidx.camera:camera-lifecycle:1.6.2'
+    implementation 'androidx.camera:camera-view:1.6.2'
 
     // Google Sign-In via Credential Manager (real OAuth, consent-screen based —
     // replaces the old WebView-cookie account sync)
@@ -280,7 +280,7 @@ dependencies {
 
     // AndroidX Biometric for hardware biometric & device credential lock
     implementation 'androidx.biometric:biometric:1.2.0-alpha05'
-    implementation 'androidx.autofill:autofill:1.1.0'
+    implementation 'androidx.autofill:autofill:1.3.0'
 
     // Google ML Kit On-Device Recognition APIs
 
@@ -305,7 +305,7 @@ dependencies {
 
     // Android Components Features (159.0.1)
     implementation 'org.mozilla.components:feature-session:159.0.1'
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.2.0'
     implementation 'org.mozilla.components:feature-sitepermissions:159.0.1'
     implementation 'org.mozilla.components:feature-prompts:159.0.1'
     implementation 'org.mozilla.components:feature-tabs:159.0.1'
@@ -316,7 +316,7 @@ dependencies {
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.60.1'
     ksp 'com.google.dagger:hilt-compiler:2.60.1'
-    implementation 'androidx.hilt:hilt-navigation-compose:1.2.0'
+    implementation 'androidx.hilt:hilt-navigation-compose:1.4.0'
 
     // Shizuku API & Provider for direct APK installation without root
     implementation 'dev.rikka.shizuku:api:13.1.5'
