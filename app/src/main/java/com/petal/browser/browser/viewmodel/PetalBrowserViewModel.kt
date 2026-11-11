@@ -6,6 +6,7 @@ import androidx.preference.PreferenceManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.petal.browser.R
+import com.petal.browser.browser.PetalTabMetadata
 import com.petal.browser.browser.PetalTabMetadataStore
 import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.compose.tabs.PetalTabItem
@@ -279,9 +280,21 @@ class PetalBrowserViewModel @Inject constructor(
     fun openNewTab(
         url: String = "about:home",
         selectTab: Boolean = true,
-        private: Boolean = false
+        private: Boolean = false,
+        groupId: String? = null,
+        groupTitle: String? = null
     ) {
         val tabId = java.util.UUID.randomUUID().toString()
+        if (!groupId.isNullOrBlank()) {
+            PetalTabMetadataStore.put(
+                context,
+                PetalTabMetadata(
+                    persistentTabId = tabId,
+                    tabGroupId = groupId,
+                    tabGroupTitle = groupTitle ?: "Group"
+                )
+            )
+        }
         val formattedUrl = if (url.isBlank()) "about:home" else PetalBrowserUtils.queryWrapper(context, url.trim())
         PetalEngineStore.createTabSession(
             context = context,

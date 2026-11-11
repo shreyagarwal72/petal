@@ -262,7 +262,9 @@ object PetalAddressBarBridge {
                             onReloadClick = {
                                 reloadClick?.run() ?: (activity as? MainActivity)?.reloadCurrentBrowserTab()
                             },
-                            onShareClick = { shareClick?.run() },
+                            onShareClick = {
+                                shareClick?.run() ?: (activity as? MainActivity)?.shareLink(currentTitle, currentUrl)
+                            },
                             onAddressClick = { addressClick?.run() ?: (activity as? MainActivity)?.showOmniboxPage(currentUrl) },
                             onHomeClick = {
                                 homeClick?.run() ?: run {
@@ -306,7 +308,9 @@ object PetalAddressBarBridge {
                                     } catch (e: Exception) { e.printStackTrace() }
                                 }
                             },
-                            onAiResearchClick = { aiResearchClick?.run() },
+                            onAiResearchClick = {
+                                aiResearchClick?.run() ?: (activity as? MainActivity)?.viewModel?.openAiSheet(currentTitle)
+                            },
                             onMediaClick = {
                                 com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
                             },
@@ -315,7 +319,9 @@ object PetalAddressBarBridge {
                             onPasteAndGo = { pasteAndGo?.invoke(it) },
                             onHardRefresh = { hardRefresh?.run() ?: (activity as? MainActivity)?.reloadCurrentBrowserTab() },
                             isReaderEligible = _isReaderEligibleState.value,
-                            onReaderClick = { _onReaderClickState.value?.run() },
+                            onReaderClick = {
+                                _onReaderClickState.value?.run() ?: (activity as? MainActivity)?.showReaderMode()
+                            },
                             onCustomizeClick = {
                                 (activity as? MainActivity)?.let { act ->
                                     act.openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR)
@@ -333,9 +339,13 @@ object PetalAddressBarBridge {
                             isLoading = currentLoading,
                             canGoBack = currentCanGoBack,
                             onBackClick = { backClick?.run() ?: (activity as? MainActivity)?.performBackNavigation() },
-                            onShareClick = { shareClick?.run() },
+                            onShareClick = {
+                                shareClick?.run() ?: (activity as? MainActivity)?.shareLink(currentTitle, currentUrl)
+                            },
                             onAddressClick = { addressClick?.run() ?: (activity as? MainActivity)?.showOmniboxPage(currentUrl) },
-                            onAiResearchClick = { aiResearchClick?.run() },
+                            onAiResearchClick = {
+                                aiResearchClick?.run() ?: (activity as? MainActivity)?.viewModel?.openAiSheet(currentTitle)
+                            },
                             onMediaClick = {
                                 com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
                             },
@@ -344,7 +354,9 @@ object PetalAddressBarBridge {
                             onPasteAndGo = { pasteAndGo?.invoke(it) },
                             onHardRefresh = { hardRefresh?.run() ?: (activity as? MainActivity)?.reloadCurrentBrowserTab() },
                             isReaderEligible = _isReaderEligibleState.value,
-                            onReaderClick = { _onReaderClickState.value?.run() },
+                            onReaderClick = {
+                                _onReaderClickState.value?.run() ?: (activity as? MainActivity)?.showReaderMode()
+                            },
                             isBottom = isBottomPosition,
                             hasBottomNav = hasBottomNav
                         )

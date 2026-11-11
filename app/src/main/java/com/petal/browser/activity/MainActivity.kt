@@ -237,7 +237,8 @@ class MainActivity : FragmentActivity(), BrowserController {
     }
 
     fun addAlbumInGroup(title: String?, url: String?, foreground: Boolean, groupId: String?, groupTitle: String?) {
-        addAlbum(title, url, foreground, false)
+        val effectiveUrl = if (url.isNullOrBlank()) "about:home" else url
+        viewModel.openNewTab(effectiveUrl, selectTab = foreground, private = false, groupId = groupId, groupTitle = groupTitle)
     }
 
     fun selectTab(controller: AlbumController?) {
@@ -472,9 +473,30 @@ class MainActivity : FragmentActivity(), BrowserController {
         ctrl?.evaluateJavascript(script, callback)
     }
 
+    val presentedScreens = java.util.Stack<View>()
+    val hasPresentedScreens: Boolean get() = presentedScreens.isNotEmpty()
+
+    fun dismissTopPresentedScreen(): Boolean {
+        if (presentedScreens.isNotEmpty()) {
+            val screen = presentedScreens.pop()
+            val content = findViewById<android.view.ViewGroup>(android.R.id.content)
+            screen.animate()
+                .alpha(0f)
+                .translationY(80f)
+                .setDuration(180L)
+                .withEndAction { content?.removeView(screen) }
+                .start()
+            return true
+        }
+        return false
+    }
+
     fun animateAddressBarCollapse(collapse: Boolean) { }
     fun applyAddressBarPosition() { }
     fun performBackNavigation() {
+        if (dismissTopPresentedScreen()) {
+            return
+        }
         if (canBrowserGoBack()) {
             (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.goBack() ?: viewModel.goBack()
         } else {
@@ -553,9 +575,45 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     fun isActionDispatchable(intent: Intent): Boolean = true
     fun dispatchIntent(intent: Intent) { handleIncomingIntent(intent) }
-    fun presentComposeScreen(screen: View?) { }
-    fun presentComposeScreen(screen: View?, animate: Boolean) { }
-    fun clearContentFrameKeepingTabs() { }
+
+    fun presentComposeScreen(screen: View?) {
+        presentComposeScreen(screen, true)
+    }
+
+    fun presentComposeScreen(screen: View?, animate: Boolean) {
+        if (screen == null) return
+        val content = findViewById<android.view.ViewGroup>(android.R.id.content) ?: return
+        if (screen.parent != null) {
+            (screen.parent as? android.view.ViewGroup)?.removeView(screen)
+        }
+        screen.layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        )
+        if (animate) {
+            screen.alpha = 0f
+            screen.translationY = 80f
+            content.addView(screen)
+            screen.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(240L)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
+        } else {
+            content.addView(screen)
+        }
+        presentedScreens.push(screen)
+    }
+
+    fun clearContentFrameKeepingTabs() {
+        val content = findViewById<android.view.ViewGroup>(android.R.id.content)
+        while (presentedScreens.isNotEmpty()) {
+            val screen = presentedScreens.pop()
+            content?.removeView(screen)
+        }
+    }
+
     fun onTabUrlStarted(webView: AlbumController?, url: String?) { }
 
     // ─────────────────────────────────────────────────────────────────────────

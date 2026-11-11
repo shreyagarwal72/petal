@@ -210,6 +210,7 @@ fun PetalRootApp(
             }
             backProgress = 0f
             when {
+                (activity as? MainActivity)?.hasPresentedScreens == true -> (activity as? MainActivity)?.dismissTopPresentedScreen()
                 pendingExtensionPopup != null -> PetalExtensionManager.dismissPopup()
                 isOmniboxOpen -> viewModel.setOmniboxOpen(false)
                 viewModel.hasOpenOverlay -> viewModel.dismissTopOverlay()
@@ -295,6 +296,8 @@ fun PetalRootApp(
                         activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
                     },
                     onAddressClick = { viewModel.openOmnibox() },
+                    onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
+                    onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
                     onHardRefresh = { viewModel.reload() },
                     onSwipeNextTab = { viewModel.switchToNextTab() },
                     onSwipePrevTab = { viewModel.switchToPreviousTab() },

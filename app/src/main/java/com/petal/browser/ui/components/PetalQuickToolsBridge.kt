@@ -46,13 +46,18 @@ import java.net.URLEncoder
 
 object PetalQuickToolsBridge {
 
+    @Volatile
+    private var activeMainActivity: MainActivity? = null
+
     private fun evaluateJavascript(
         controller: AlbumController?,
         script: String,
         callback: ((String?) -> Unit)? = null
     ) {
-        when (controller) {
-            is PetalTabViewController -> controller.evaluateJavascript(script, callback)
+        val act = activeMainActivity
+        when {
+            controller is PetalTabViewController -> controller.evaluateJavascript(script, callback)
+            act != null -> act.evaluateJavascriptInActiveTab(script) { callback?.invoke(it) }
             else -> callback?.invoke(null)
         }
     }
@@ -61,8 +66,14 @@ object PetalQuickToolsBridge {
         controller: AlbumController?,
         callback: (Bitmap?) -> Unit
     ) {
-        when (controller) {
-            is PetalTabViewController -> controller.captureFullPageBitmap(callback)
+        val act = activeMainActivity
+        when {
+            controller is PetalTabViewController -> controller.captureFullPageBitmap(callback)
+            act != null -> {
+                val root = act.findViewById<android.view.View>(android.R.id.content) ?: act.window.decorView
+                com.petal.browser.predictive.PetalContentSnapshot.capture(root)
+                callback(com.petal.browser.predictive.PetalContentSnapshot.current)
+            }
             else -> callback(null)
         }
     }
@@ -78,24 +89,29 @@ object PetalQuickToolsBridge {
     }
 
     private fun reloadTab(controller: AlbumController?) {
-        when (controller) {
-            is PetalTabViewController -> controller.reload()
+        val act = activeMainActivity
+        when {
+            controller is PetalTabViewController -> controller.reload()
+            act != null -> act.reloadCurrentBrowserTab()
             else -> {}
         }
     }
 
     private fun loadUrlInTab(controller: AlbumController?, url: String) {
-        when (controller) {
-            is PetalTabViewController -> controller.loadUrl(url)
+        val act = activeMainActivity
+        when {
+            controller is PetalTabViewController -> controller.loadUrl(url)
+            act != null -> act.viewModel.loadUrl(url)
             else -> {}
         }
     }
 
     @JvmStatic
     fun showQuickTools(activity: MainActivity) {
+        activeMainActivity = activity
         val currentController = activity.currentAlbumController
-        val currentUrl = currentController?.url ?: ""
-        val currentTitle = currentController?.title ?: ""
+        val currentUrl = currentController?.url?.takeIf { it.isNotBlank() } ?: activity.viewModel.activeUrl.value
+        val currentTitle = currentController?.title?.takeIf { it.isNotBlank() } ?: activity.viewModel.activeTitle.value
 
         try {
             val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView

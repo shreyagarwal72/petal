@@ -233,10 +233,7 @@ object PetalPrivacyShieldSheet {
                                             onDismiss = { dialog.dismiss() },
                                             onReloadRequested = {
                                                 if (activity is com.petal.browser.activity.MainActivity) {
-                                                    val current = activity.currentAlbumController
-                                                    if (current is com.petal.browser.browser.PetalTabViewController) {
-                                                        current.reload()
-                                                    }
+                                                    activity.reloadCurrentBrowserTab()
                                                 }
                                             },
                                             onToggleAdBlock = onToggleAdBlock
