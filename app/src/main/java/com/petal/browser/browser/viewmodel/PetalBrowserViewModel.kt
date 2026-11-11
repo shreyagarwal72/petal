@@ -64,7 +64,7 @@ class PetalBrowserViewModel @Inject constructor(
 
     private val storeSubscription = browserStore.observeManually { state ->
         _browserState.value = state
-    }
+    }.also { it.resume() }
 
     // ── Derived Active Tab State ────────────────────────────────────────────
     val activeTab: StateFlow<TabSessionState?> = browserState.map { state ->
