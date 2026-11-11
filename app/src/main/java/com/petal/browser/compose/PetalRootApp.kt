@@ -53,6 +53,7 @@ import com.petal.browser.compose.extensions.PetalExtensionsMenuSheet
 import com.petal.browser.compose.extensions.PetalExtensionsScreen
 import com.petal.browser.compose.history.PetalHistoryScreen
 import com.petal.browser.compose.home.PetalHomeScreen
+import com.petal.browser.compose.find.PetalFindInPageBar
 import com.petal.browser.compose.settings.PetalDeleteScreen
 import com.petal.browser.compose.settings.PetalSettingsScreen
 import com.petal.browser.compose.settings.SettingsCategory
@@ -62,10 +63,13 @@ import com.petal.browser.compose.tabs.PetalTabGroupManager
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.ui.components.PetalAddressBar
+import com.petal.browser.ui.components.PetalAiSearchResultSheet
 import com.petal.browser.ui.components.PetalBottomNavBar
 import com.petal.browser.ui.components.PetalNavTab
 import com.petal.browser.ui.components.PetalOmniboxPage
 import com.petal.browser.ui.components.PetalOverflowMenuSheet
+import com.petal.browser.ui.components.PetalSiteInfoBridge
+import com.petal.browser.activity.MainActivity
 import com.petal.browser.unit.PetalBrowserUtils
 
 /**
@@ -108,6 +112,12 @@ fun PetalRootApp(
     val isAccountSyncOpen by viewModel.isAccountSyncOpen.collectAsStateWithLifecycle()
     val isDeleteOpen by viewModel.isDeleteOpen.collectAsStateWithLifecycle()
     val isSafeLockerOpen by viewModel.isSafeLockerOpen.collectAsStateWithLifecycle()
+    val isFindInPageOpen by viewModel.isFindInPageOpen.collectAsStateWithLifecycle()
+    val findInPageQuery by viewModel.findInPageQuery.collectAsStateWithLifecycle()
+    val isAiSheetOpen by viewModel.isAiSheetOpen.collectAsStateWithLifecycle()
+    val aiSheetQuery by viewModel.aiSheetQuery.collectAsStateWithLifecycle()
+    val isDesktopMode by viewModel.isDesktopMode.collectAsStateWithLifecycle()
+    val isBookmarked by viewModel.isCurrentUrlBookmarked.collectAsStateWithLifecycle()
     val pendingExtensionPopup by PetalExtensionManager.pendingPopup.collectAsStateWithLifecycle()
     val settingsCategory by viewModel.settingsCategory.collectAsStateWithLifecycle()
 
@@ -444,30 +454,81 @@ fun PetalRootApp(
                 PetalOverflowMenuSheet(
                     pageTitle = activeTitle,
                     pageUrl = activeUrl,
-                    isBookmarked = false,
+                    isBookmarked = isBookmarked,
                     canGoBack = canGoBack,
                     canGoForward = canGoForward,
-                    isDesktopSite = false,
+                    isDesktopSite = isDesktopMode,
                     onDismissRequest = { viewModel.setMenuOpen(false) },
                     onGoBack = { viewModel.goBack() },
                     onGoForward = { viewModel.goForward() },
-                    onToggleBookmark = { viewModel.saveBookmark(activeTitle, activeUrl) },
-                    onOpenDownloadsShortcut = { viewModel.openDownloads() },
-                    onOpenPageInfo = {},
-                    onReload = { viewModel.reload() },
-                    onToggleDesktopSite = {},
-                    onNewTab = { viewModel.openNewTab("about:home", selectTab = true) },
-                    onNewIncognitoTab = { viewModel.openNewTab("about:home", selectTab = true, private = true) },
-                    onOpenHistory = { viewModel.openHistory() },
-                    onDeleteBrowsingData = {},
-                    onOpenDownloads = { viewModel.openDownloads() },
-                    onOpenBookmarks = { viewModel.openBookmarks() },
-                    onInstallPwa = {},
-                    onSearchOnSite = { viewModel.openFindInPage() },
-                    onPrintPdf = {},
-                    onSavePage = {},
-                    onShareLink = { viewModel.shareLink(activeTitle, activeUrl) },
-                    onViewSource = {},
+                    onToggleBookmark = { viewModel.toggleBookmark(activeTitle, activeUrl) },
+                    onOpenDownloadsShortcut = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openDownloads()
+                    },
+                    onOpenPageInfo = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.let { act ->
+                            PetalSiteInfoBridge.showSiteInfoBottomSheet(act, act.currentAlbumController) {}
+                        }
+                    },
+                    onReload = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.reload()
+                    },
+                    onToggleDesktopSite = { enabled ->
+                        viewModel.toggleDesktopMode(enabled)
+                    },
+                    onNewTab = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openNewTab("about:home", selectTab = true)
+                    },
+                    onNewIncognitoTab = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openNewTab("about:home", selectTab = true, private = true)
+                    },
+                    onOpenHistory = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openHistory()
+                    },
+                    onDeleteBrowsingData = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openDelete()
+                    },
+                    onOpenDownloads = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openDownloads()
+                    },
+                    onOpenBookmarks = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openBookmarks()
+                    },
+                    onInstallPwa = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.installPwaShortcut()
+                    },
+                    onSearchOnSite = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openFindInPage()
+                    },
+                    onPrintPdf = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.createWebPrintJob(null)
+                    },
+                    onSavePage = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.savePageOffline()
+                    },
+                    onShareLink = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.shareLink(activeTitle, activeUrl)
+                    },
+                    onViewSource = {
+                        viewModel.setMenuOpen(false)
+                        if (activeUrl.isNotBlank() && !activeUrl.startsWith("about:") && !activeUrl.startsWith("view-source:")) {
+                            viewModel.loadUrl("view-source:$activeUrl")
+                        }
+                    },
                     onOpenExtensions = {
                         viewModel.setMenuOpen(false)
                         viewModel.openExtensions()
@@ -484,7 +545,10 @@ fun PetalRootApp(
                         viewModel.setMenuOpen(false)
                         activity?.let { PetalExtensionManager.openOptionsPage(extensionId, it) }
                     },
-                    onOpenSettings = { viewModel.openSettings(SettingsCategory.OVERVIEW) }
+                    onOpenSettings = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openSettings(SettingsCategory.OVERVIEW)
+                    }
                 )
             }
 
@@ -582,6 +646,37 @@ fun PetalRootApp(
                     PetalExtensionPopupScreen(
                         popup = pendingExtensionPopup!!,
                         onDismiss = { PetalExtensionManager.dismissPopup() }
+                    )
+                }
+            }
+
+            // Find In Page Bar Overlay
+            if (isFindInPageOpen) {
+                PetalFindInPageBar(
+                    visible = isFindInPageOpen,
+                    query = findInPageQuery,
+                    onQueryChange = { query ->
+                        viewModel.findAll(query)
+                    },
+                    onFindNext = {
+                        viewModel.findNext(true)
+                    },
+                    onFindPrevious = {
+                        viewModel.findNext(false)
+                    },
+                    onClose = {
+                        viewModel.clearFindMatches()
+                    },
+                    modifier = Modifier.fillMaxWidth().zIndex(11f)
+                )
+            }
+
+            // AI Search Result Bottom Sheet Overlay
+            if (isAiSheetOpen) {
+                Box(modifier = Modifier.fillMaxSize().zIndex(9f)) {
+                    PetalAiSearchResultSheet(
+                        query = aiSheetQuery,
+                        onDismiss = { viewModel.setAiSheetOpen(false) }
                     )
                 }
             }

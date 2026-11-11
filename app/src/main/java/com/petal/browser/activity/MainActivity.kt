@@ -248,9 +248,18 @@ class MainActivity : FragmentActivity(), BrowserController {
         removeAlbum(controller)
     }
 
-    fun switchAdjacentTab(direction: Int) { }
+    fun switchAdjacentTab(direction: Int) {
+        if (direction > 0) {
+            viewModel.switchToNextTab()
+        } else {
+            viewModel.switchToPreviousTab()
+        }
+    }
 
-    fun nextAlbumController(next: Boolean): AlbumController? = null
+    fun nextAlbumController(next: Boolean): AlbumController? {
+        switchAdjacentTab(if (next) 1 else -1)
+        return currentAlbumController
+    }
 
     fun restoreTab(
         title: String?,
@@ -268,7 +277,9 @@ class MainActivity : FragmentActivity(), BrowserController {
         return null
     }
 
-    fun saveOpenedTabs() { }
+    fun saveOpenedTabs() {
+        PetalSessionRestoreManager.saveSession(this, isStopping = false)
+    }
 
     @JvmOverloads
     fun openSettingsScreen(category: SettingsCategory? = null) {
@@ -316,15 +327,30 @@ class MainActivity : FragmentActivity(), BrowserController {
         val title = currentAlbumController?.title.orEmpty()
         com.petal.browser.account.mozilla.PetalSendToDeviceBridge.showSendToDevice(this, url, title)
     }
-    fun captureBrowserMainPreview() { }
+    fun captureBrowserMainPreview() {
+        val root = findViewById<View>(android.R.id.content) ?: window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(root)
+    }
     fun searchOnSite() {
         viewModel.openFindInPage()
     }
-    fun setSelectedTab() { }
-    fun showDialogFilter() { }
-    fun showDialogCustomSearches(url: String) { }
+    fun setSelectedTab() {
+        when (overViewTab) {
+            getString(R.string.album_title_bookmarks) -> viewModel.openBookmarks()
+            getString(R.string.album_title_history) -> viewModel.openHistory()
+            else -> viewModel.setTabSwitcherOpen(true)
+        }
+    }
+    fun showDialogFilter() {
+        com.petal.browser.ui.components.BrowserDialogManager.showDialogFilter(this)
+    }
+    fun showDialogCustomSearches(url: String) {
+        com.petal.browser.ui.components.BrowserDialogManager.showDialogCustomSearches(this, url)
+    }
     fun doubleTapsQuit() { finish() }
-    fun maybePromptDefaultBrowser() { }
+    fun maybePromptDefaultBrowser() {
+        com.petal.browser.ui.components.PetalBrowserPermissionDialog.maybePromptDefaultBrowser(this, false)
+    }
     fun savePageOffline() {
         val controller = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
         if (controller != null) {
@@ -347,7 +373,54 @@ class MainActivity : FragmentActivity(), BrowserController {
             }
         }
     }
-    fun createWebPrintJob(webView: Any?) { }
+    fun createWebPrintJob(webView: Any?) {
+        val controller = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
+        val printManager = getSystemService(Context.PRINT_SERVICE) as? android.print.PrintManager
+        if (printManager == null || controller == null) {
+            savePageOffline()
+            return
+        }
+        val jobName = "${controller.title.ifBlank { "Petal Web Document" }} Document"
+        val adapter = object : android.print.PrintDocumentAdapter() {
+            override fun onLayout(
+                oldAttributes: android.print.PrintAttributes?,
+                newAttributes: android.print.PrintAttributes?,
+                cancellationSignal: android.os.CancellationSignal?,
+                callback: LayoutResultCallback?,
+                extras: android.os.Bundle?
+            ) {
+                if (cancellationSignal?.isCanceled == true) {
+                    callback?.onLayoutCancelled()
+                    return
+                }
+                val info = android.print.PrintDocumentInfo.Builder(jobName)
+                    .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
+                    .build()
+                callback?.onLayoutFinished(info, true)
+            }
+
+            override fun onWrite(
+                pages: Array<out android.print.PageRange>?,
+                destination: android.os.ParcelFileDescriptor?,
+                cancellationSignal: android.os.CancellationSignal?,
+                callback: WriteResultCallback?
+            ) {
+                if (destination == null) {
+                    callback?.onWriteFailed("No output destination")
+                    return
+                }
+                val fos = java.io.FileOutputStream(destination.fileDescriptor)
+                controller.printToPdf(fos) { success ->
+                    if (success) {
+                        callback?.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
+                    } else {
+                        callback?.onWriteFailed("Print to PDF failed")
+                    }
+                }
+            }
+        }
+        printManager.print(jobName, adapter, android.print.PrintAttributes.Builder().build())
+    }
     fun updatePersistentBottomNav() { }
     fun updateBackCallbackState() { }
     fun updateOmniBox() { }
@@ -381,19 +454,41 @@ class MainActivity : FragmentActivity(), BrowserController {
         startActivity(Intent.createChooser(sendIntent, null))
     }
 
-    fun saveBookmark(title: String, url: String) { }
-    fun toggleBookmark(title: String, url: String): Boolean = false
+    fun saveBookmark(title: String, url: String) {
+        if (url.isNotBlank() && !url.startsWith("about:")) {
+            viewModel.saveBookmark(title, url)
+        }
+    }
+    fun toggleBookmark(title: String, url: String): Boolean {
+        if (url.isBlank() || url.startsWith("about:")) return false
+        val repo = com.petal.browser.database.HistoryBookmarkRepository(this)
+        val exists = try { repo.checkBookmark(url) } catch (_: Throwable) { false }
+        viewModel.toggleBookmark(title, url)
+        return !exists
+    }
 
-    fun evaluateJavascriptInActiveTab(script: String, callback: ValueCallback<String>?) { }
+    fun evaluateJavascriptInActiveTab(script: String, callback: ValueCallback<String>?) {
+        val ctrl = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
+        ctrl?.evaluateJavascript(script, callback)
+    }
 
     fun animateAddressBarCollapse(collapse: Boolean) { }
     fun applyAddressBarPosition() { }
-    fun performBackNavigation() { onBackPressedDispatcher.onBackPressed() }
+    fun performBackNavigation() {
+        if (canBrowserGoBack()) {
+            (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.goBack() ?: viewModel.goBack()
+        } else {
+            onBackPressedDispatcher.onBackPressed()
+        }
+    }
     fun resetRefreshState() { }
     fun hideRefreshAndProgressOverlays() { }
     fun onActivePageLoadFinished() { }
-    fun reloadCurrentBrowserTab() { }
-    fun canBrowserGoBack(): Boolean = false
+    fun reloadCurrentBrowserTab() {
+        (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.reload() ?: viewModel.reload()
+    }
+    fun canBrowserGoBack(): Boolean =
+        (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.canGoBack() ?: viewModel.canGoBack.value
     fun restoreBrowserInputFocus() { }
 
     fun triggerRebirth(ctx: Context) {
@@ -404,21 +499,57 @@ class MainActivity : FragmentActivity(), BrowserController {
         Runtime.getRuntime().exit(0)
     }
 
-    fun updatePipParams(enableAutoEnter: Boolean) { }
+    fun updatePipParams(enableAutoEnter: Boolean) {
+        BrowserMediaDelegate.updatePipParams(this, enableAutoEnter)
+    }
     fun triggerSystemPipMode() {
         BrowserMediaDelegate.triggerSystemPipMode(this)
     }
 
-    fun installPwaShortcut() { }
+    fun installPwaShortcut() {
+        com.petal.browser.pwa.PetalPwaManager(this, currentAlbumController, null).installCurrentPwa(this)
+    }
     val isCurrentTabHomeOrBlank: Boolean
         get() = viewModel.activeUrl.value.isBlank() || viewModel.activeUrl.value == "about:home" 
     fun isActualWebPage(url: String): Boolean =
         url.isNotBlank() && !url.startsWith("about:")
 
-    fun adoptPreparedWindow(source: PetalTabViewController?, request: mozilla.components.concept.engine.window.WindowRequest?) { }
-    fun closeContentWindow(source: PetalTabViewController?) { }
-    fun adoptPopupGeckoSession(popupSession: org.mozilla.geckoview.GeckoSession?, targetUrl: String?, isIncognito: Boolean) { }
-    fun adoptPopupGeckoSession(popupSession: org.mozilla.geckoview.GeckoSession?, targetUrl: String?, isIncognito: Boolean, activate: Boolean) { }
+    fun adoptPreparedWindow(source: PetalTabViewController?, request: mozilla.components.concept.engine.window.WindowRequest?) {
+        if (request == null) return
+        val tabId = java.util.UUID.randomUUID().toString()
+        val isIncognito = source?.isIncognito ?: false
+        com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+            context = this,
+            tabId = tabId,
+            url = request.url ?: "about:blank",
+            isIncognito = isIncognito,
+            select = true
+        )
+        viewModel.selectTab(tabId)
+    }
+    fun closeContentWindow(source: PetalTabViewController?) {
+        source?.let { removeAlbum(it) }
+    }
+    fun adoptPopupGeckoSession(popupSession: org.mozilla.geckoview.GeckoSession?, targetUrl: String?, isIncognito: Boolean) {
+        adoptPopupGeckoSession(popupSession, targetUrl, isIncognito, true)
+    }
+    fun adoptPopupGeckoSession(popupSession: org.mozilla.geckoview.GeckoSession?, targetUrl: String?, isIncognito: Boolean, activate: Boolean) {
+        val tabId = java.util.UUID.randomUUID().toString()
+        val url = targetUrl?.takeIf { it.isNotBlank() } ?: "about:blank"
+        val pair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+            context = this,
+            tabId = tabId,
+            url = url,
+            isIncognito = isIncognito,
+            select = activate
+        )
+        if (popupSession != null) {
+            com.petal.browser.engine.gecko.PetalEngineBridge.attachGeckoSessionToEngineSession(pair.second, popupSession)
+        }
+        if (activate) {
+            viewModel.selectTab(tabId)
+        }
+    }
 
     fun isActionDispatchable(intent: Intent): Boolean = true
     fun dispatchIntent(intent: Intent) { handleIncomingIntent(intent) }
@@ -444,7 +575,11 @@ class MainActivity : FragmentActivity(), BrowserController {
         }
     }
 
-    override fun removeAlbum(albumController: AlbumController?) { }
+    override fun removeAlbum(albumController: AlbumController?) {
+        val id = albumController?.tabId?.takeIf { it.isNotBlank() }
+            ?: viewModel.browserState.value.selectedTabId
+        id?.let { viewModel.closeTab(it) }
+    }
 
     override fun showFileChooser(filePathCallback: ValueCallback<Array<Uri>>?, fileChooserParams: WebChromeClient.FileChooserParams?) {
         this.filePathCallback = filePathCallback
@@ -463,11 +598,17 @@ class MainActivity : FragmentActivity(), BrowserController {
         viewModel.setTabSwitcherOpen(false)
     }
 
-    override fun hideOverflow() { }
+    override fun hideOverflow() {
+        viewModel.setMenuOpen(false)
+    }
 
-    override fun hideSearch() { }
+    override fun hideSearch() {
+        viewModel.setOmniboxOpen(false)
+    }
 
-    override fun showDialogFastToggle(title: String?, url: String?, floatingActionButton: FloatingActionButton?) { }
+    override fun showDialogFastToggle(title: String?, url: String?, floatingActionButton: FloatingActionButton?) {
+        com.petal.browser.ui.components.BrowserDialogManager.showDialogFilter(this)
+    }
 
     override fun setProfileIcon(floatingActionButton: FloatingActionButton?, url: String?) { }
 
@@ -480,7 +621,9 @@ class MainActivity : FragmentActivity(), BrowserController {
         adapterRecord: RecordListAdapter?,
         recordList: List<Record>?,
         location: Int
-    ) { }
+    ) {
+        viewModel.setMenuOpen(true)
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Intent Handling

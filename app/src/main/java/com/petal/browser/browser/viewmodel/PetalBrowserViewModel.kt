@@ -2,6 +2,7 @@ package com.petal.browser.browser.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import androidx.preference.PreferenceManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.petal.browser.R
@@ -175,8 +176,23 @@ class PetalBrowserViewModel @Inject constructor(
     private val _isSafeLockerOpen = MutableStateFlow(false)
     val isSafeLockerOpen: StateFlow<Boolean> = _isSafeLockerOpen.asStateFlow()
 
+    private val _isDesktopMode = MutableStateFlow(
+        PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_desktop_site", false)
+    )
+    val isDesktopMode: StateFlow<Boolean> = _isDesktopMode.asStateFlow()
+
+    val isCurrentUrlBookmarked: StateFlow<Boolean> = activeUrl.map { url ->
+        if (url.isBlank() || url.startsWith("about:")) false
+        else withContext(Dispatchers.IO) {
+            try { HistoryBookmarkRepository(context).checkBookmark(url) } catch (_: Throwable) { false }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     private val _findInPageQuery = MutableStateFlow("")
     val findInPageQuery: StateFlow<String> = _findInPageQuery.asStateFlow()
+
+    private val _aiSheetQuery = MutableStateFlow("")
+    val aiSheetQuery: StateFlow<String> = _aiSheetQuery.asStateFlow()
 
     private val _isOmniboxOpen = MutableStateFlow(false)
     val isOmniboxOpen: StateFlow<Boolean> = _isOmniboxOpen.asStateFlow()
@@ -414,6 +430,42 @@ class PetalBrowserViewModel @Inject constructor(
         }
     }
 
+    fun toggleBookmark(title: String, url: String) {
+        if (url.isBlank() || PetalBrowserUtils.isHomePage(url)) {
+            PetalToast.show(context, R.string.toast_homepage_cannot_bookmark)
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val repo = HistoryBookmarkRepository(context)
+                repo.open(true)
+                if (repo.checkBookmark(url)) {
+                    repo.deleteBookmark(url)
+                    withContext(Dispatchers.Main) {
+                        PetalToast.show(context, "Bookmark removed")
+                    }
+                } else {
+                    val displayTitle = title.ifBlank { url }
+                    repo.addBookmark(Record(displayTitle, url, 0L, 0L))
+                    withContext(Dispatchers.Main) {
+                        PetalToast.show(context, R.string.app_done)
+                    }
+                }
+                repo.close()
+            } catch (t: Throwable) {
+                android.util.Log.w("PetalBrowserViewModel", "Failed to toggle bookmark", t)
+            }
+        }
+    }
+
+    fun toggleDesktopMode(enabled: Boolean? = null) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val newTarget = enabled ?: !_isDesktopMode.value
+        _isDesktopMode.value = newTarget
+        sp.edit().putBoolean("sp_desktop_site", newTarget).apply()
+        activeTab.value?.engineState?.engineSession?.toggleDesktopMode(newTarget, reload = true)
+    }
+
     fun shareLink(title: String, url: String) {
         if (url.isBlank() || PetalBrowserUtils.isHomePage(url)) return
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -544,8 +596,9 @@ class PetalBrowserViewModel @Inject constructor(
         _isDownloadsOpen.value = open
     }
 
-    fun openAiSheet() {
+    fun openAiSheet(query: String = "") {
         _isMenuOpen.value = false
+        _aiSheetQuery.value = query
         _isAiSheetOpen.value = true
     }
 
@@ -596,10 +649,28 @@ class PetalBrowserViewModel @Inject constructor(
 
     fun setFindInPageOpen(open: Boolean) {
         _isFindInPageOpen.value = open
+        if (!open) {
+            clearFindMatches()
+        }
     }
 
     fun setFindInPageQuery(query: String) {
         _findInPageQuery.value = query
+    }
+
+    fun findAll(query: String) {
+        _findInPageQuery.value = query
+        activeTab.value?.engineState?.engineSession?.findAll(query)
+    }
+
+    fun findNext(forward: Boolean) {
+        activeTab.value?.engineState?.engineSession?.findNext(forward)
+    }
+
+    fun clearFindMatches() {
+        _findInPageQuery.value = ""
+        _isFindInPageOpen.value = false
+        activeTab.value?.engineState?.engineSession?.clearFindMatches()
     }
 
     fun openOmnibox() {
