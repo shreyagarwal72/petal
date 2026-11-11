@@ -77,13 +77,19 @@ object PetalWallpaperManager {
 
     fun loadForActiveProfile(context: Context) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        val profileId = PetalProfileManager.activeProfile.id
-        val uriKey = "${KEY_WALLPAPER_URI_PREFIX}_$profileId"
-        val dimKey = "${KEY_WALLPAPER_DIM_PREFIX}_$profileId"
-        val blurKey = "${KEY_WALLPAPER_BLUR_PREFIX}_$profileId"
+        val profile = PetalProfileManager.activeProfile
+        val profileId = profile.id
+        val isDefault = profile.isDefault
+        val uriKey = if (isDefault) KEY_WALLPAPER_URI_PREFIX else "${KEY_WALLPAPER_URI_PREFIX}_$profileId"
+        val dimKey = if (isDefault) KEY_WALLPAPER_DIM_PREFIX else "${KEY_WALLPAPER_DIM_PREFIX}_$profileId"
+        val blurKey = if (isDefault) KEY_WALLPAPER_BLUR_PREFIX else "${KEY_WALLPAPER_BLUR_PREFIX}_$profileId"
 
         val defaultUri = sp.getString(KEY_WALLPAPER_URI_PREFIX, null)
-        wallpaperUri = sp.getString(uriKey, defaultUri)
+        wallpaperUri = if (isDefault) {
+            sp.getString(uriKey, defaultUri)
+        } else {
+            sp.getString(uriKey, null)
+        }
         val fallbackDim = safeGetFloat(sp, KEY_WALLPAPER_DIM_PREFIX, 0.20f)
         wallpaperDim = safeGetFloat(sp, dimKey, fallbackDim)
         val fallbackBlur = safeGetFloat(sp, KEY_WALLPAPER_BLUR_PREFIX, 0f)
@@ -92,10 +98,12 @@ object PetalWallpaperManager {
 
     fun setWallpaper(context: Context, uri: String?, dim: Float = wallpaperDim, blur: Float = wallpaperBlur) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        val profileId = PetalProfileManager.activeProfile.id
-        val uriKey = "${KEY_WALLPAPER_URI_PREFIX}_$profileId"
-        val dimKey = "${KEY_WALLPAPER_DIM_PREFIX}_$profileId"
-        val blurKey = "${KEY_WALLPAPER_BLUR_PREFIX}_$profileId"
+        val profile = PetalProfileManager.activeProfile
+        val profileId = profile.id
+        val isDefault = profile.isDefault
+        val uriKey = if (isDefault) KEY_WALLPAPER_URI_PREFIX else "${KEY_WALLPAPER_URI_PREFIX}_$profileId"
+        val dimKey = if (isDefault) KEY_WALLPAPER_DIM_PREFIX else "${KEY_WALLPAPER_DIM_PREFIX}_$profileId"
+        val blurKey = if (isDefault) KEY_WALLPAPER_BLUR_PREFIX else "${KEY_WALLPAPER_BLUR_PREFIX}_$profileId"
 
         wallpaperUri = uri
         wallpaperDim = dim.coerceIn(0f, 0.85f)
@@ -104,17 +112,23 @@ object PetalWallpaperManager {
         val editor = sp.edit()
         if (uri != null) {
             editor.putString(uriKey, uri)
-            if (PetalProfileManager.activeProfile.isDefault) {
-                editor.putString(KEY_WALLPAPER_URI_PREFIX, uri)
+            if (isDefault) {
+                editor.putString("${KEY_WALLPAPER_URI_PREFIX}_$profileId", uri)
             }
         } else {
             editor.remove(uriKey)
-            if (PetalProfileManager.activeProfile.isDefault) {
-                editor.remove(KEY_WALLPAPER_URI_PREFIX)
+            if (isDefault) {
+                editor.remove("${KEY_WALLPAPER_URI_PREFIX}_$profileId")
             }
         }
         editor.putFloat(dimKey, wallpaperDim)
+        if (isDefault) {
+            editor.putFloat(KEY_WALLPAPER_DIM_PREFIX, wallpaperDim)
+        }
         editor.putFloat(blurKey, wallpaperBlur)
+        if (isDefault) {
+            editor.putFloat(KEY_WALLPAPER_BLUR_PREFIX, wallpaperBlur)
+        }
         editor.apply()
     }
 

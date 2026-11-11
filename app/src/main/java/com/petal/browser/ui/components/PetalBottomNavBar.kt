@@ -211,7 +211,10 @@ fun PetalBottomNavBar(
     // Liquid glass + floating: search is its own glass button on the right.
     // Everything else (Material 3 Expressive floating/docked, glass docked): search sits in the centre.
     val separateSearch = showSearch && effectiveFloating && glassNavOn
-    val centerSearch = showSearch && !separateSearch
+    // Material 3 Expressive floating (glass off): PixelMusic-style pill + separate ghost-shaped search.
+    val pixelStyle = effectiveFloating && !glassNavOn
+    val pixelSearch = showSearch && pixelStyle
+    val centerSearch = showSearch && !separateSearch && !pixelSearch
     // The docked bar (glass or solid) runs through the gesture-bar area like Brave's, so no
     // gap shows between the bar and the screen edge and no page shows unblurred under it.
     val flatNavInset = if (!effectiveFloating) {
@@ -254,20 +257,47 @@ fun PetalBottomNavBar(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                PetalStrideNavBar(
-                    selectedTab = selectedTab,
-                    tabCount = tabCount,
-                    badgeScale = badgeScale.value,
-                    glassSource = glassSource,
-                    onHomeClick = onHomeClick,
-                    onNewTabClick = onNewTabClick,
-                    onTabsClick = onTabsClick,
-                    onMenuClick = onMenuClick,
-                    onSwipeTabLeft = onSwipeTabLeft,
-                    onSwipeTabRight = onSwipeTabRight,
-                    compact = separateSearch,
-                    includeSearch = centerSearch,
-                    onSearchClick = launchSearch
+                if (pixelStyle) {
+                    PetalPixelNavPill(
+                        selectedTab = selectedTab,
+                        tabCount = tabCount,
+                        badgeScale = badgeScale.value,
+                        onHomeClick = onHomeClick,
+                        onNewTabClick = onNewTabClick,
+                        onTabsClick = onTabsClick,
+                        onMenuClick = onMenuClick,
+                        onSwipeTabLeft = onSwipeTabLeft,
+                        onSwipeTabRight = onSwipeTabRight,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    PetalStrideNavBar(
+                        selectedTab = selectedTab,
+                        tabCount = tabCount,
+                        badgeScale = badgeScale.value,
+                        glassSource = glassSource,
+                        onHomeClick = onHomeClick,
+                        onNewTabClick = onNewTabClick,
+                        onTabsClick = onTabsClick,
+                        onMenuClick = onMenuClick,
+                        onSwipeTabLeft = onSwipeTabLeft,
+                        onSwipeTabRight = onSwipeTabRight,
+                        compact = separateSearch,
+                        includeSearch = centerSearch,
+                        onSearchClick = launchSearch
+                    )
+                }
+            }
+            if (pixelSearch) {
+                PetalGhostSearchButton(
+                    onClick = launchSearch,
+                    modifier = Modifier.onGloballyPositioned { searchButtonBounds[0] = it.boundsInWindow() }.graphicsLayer {
+                        val p = searchLaunch.value
+                        val sc = 1f + 0.22f * p
+                        scaleX = sc
+                        scaleY = sc
+                        alpha = 1f - 0.7f * p
+                    }
                 )
             }
             if (separateSearch) {

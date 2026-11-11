@@ -168,6 +168,7 @@ fun PrivacySettingsScreenContent(
     var showPasswordsScreen by remember { mutableStateOf(false) }
     var showAdBlockSettings by remember { mutableStateOf(false) }
     var showWhitelistDialog by remember { mutableStateOf(false) }
+    var showDeleteScreenDialog by remember { mutableStateOf(false) }
     var whitelistDomainInput by remember { mutableStateOf("") }
     var whitelistedDomainsState by remember { mutableStateOf(PetalAdBlockEngine.getWhitelistedDomains()) }
 
@@ -613,7 +614,7 @@ fun PrivacySettingsScreenContent(
                         )
                     }
 
-                    // ── 6. Private Browsing (Biometric Lock, Clear on Exit) ──
+                    // ── 6. Private Browsing (Biometric Lock, Clear Browsing Data, Clear on Exit) ──
                     PetalSettingsSection(
                         title = "Private Browsing",
                         icon = Icons.Rounded.VisibilityOff,
@@ -627,6 +628,14 @@ fun PrivacySettingsScreenContent(
                             icon = Icons.Rounded.Fingerprint,
                             checked = biometricTabLock,
                             onCheckedChange = onBiometricTabLockChange
+                        )
+
+                        com.petal.browser.ui.containment.PetalGroupRow(
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "Clear Browsing Data",
+                            subtitle = "Permanently remove history, cache, cookies, and local database storage",
+                            icon = Icons.Rounded.DeleteOutline,
+                            onClick = { showDeleteScreenDialog = true }
                         )
 
                         PetalSettingsToggleRow(
@@ -675,6 +684,14 @@ fun PrivacySettingsScreenContent(
                 PetalPasswordsScreen(
                     activity = passwordsActivity,
                     onNavigateBack = { showPasswordsScreen = false }
+                )
+            }
+        }
+
+        if (showDeleteScreenDialog) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                com.petal.browser.compose.settings.PetalDeleteScreen(
+                    onBackPress = { showDeleteScreenDialog = false }
                 )
             }
         }

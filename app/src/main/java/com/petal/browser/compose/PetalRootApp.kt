@@ -53,8 +53,10 @@ import com.petal.browser.compose.extensions.PetalExtensionsMenuSheet
 import com.petal.browser.compose.extensions.PetalExtensionsScreen
 import com.petal.browser.compose.history.PetalHistoryScreen
 import com.petal.browser.compose.home.PetalHomeScreen
+import com.petal.browser.compose.settings.PetalDeleteScreen
 import com.petal.browser.compose.settings.PetalSettingsScreen
 import com.petal.browser.compose.settings.SettingsCategory
+import com.petal.browser.privacy.SafeLockerScreen
 import com.petal.browser.compose.tabs.PetalTabGridSwitcher
 import com.petal.browser.compose.tabs.PetalTabGroupManager
 import com.petal.browser.extensions.PetalExtensionManager
@@ -104,6 +106,8 @@ fun PetalRootApp(
     val isMenuOpen by viewModel.isMenuOpen.collectAsStateWithLifecycle()
     val isExtensionsOpen by viewModel.isExtensionsOpen.collectAsStateWithLifecycle()
     val isAccountSyncOpen by viewModel.isAccountSyncOpen.collectAsStateWithLifecycle()
+    val isDeleteOpen by viewModel.isDeleteOpen.collectAsStateWithLifecycle()
+    val isSafeLockerOpen by viewModel.isSafeLockerOpen.collectAsStateWithLifecycle()
     val pendingExtensionPopup by PetalExtensionManager.pendingPopup.collectAsStateWithLifecycle()
     val settingsCategory by viewModel.settingsCategory.collectAsStateWithLifecycle()
 
@@ -175,6 +179,8 @@ fun PetalRootApp(
             isSettingsOpen ||
             isExtensionsOpen ||
             isAccountSyncOpen ||
+            isDeleteOpen ||
+            isSafeLockerOpen ||
             pendingExtensionPopup != null
 
     val isBottomBarVisible = !isOverlayShowing
@@ -547,6 +553,25 @@ fun PetalRootApp(
                             viewModel.setAccountSyncOpen(false)
                             viewModel.loadUrl(shortcut.url)
                         }
+                    )
+                }
+            }
+
+            // Delete Browsing Data Screen Overlay
+            if (isDeleteOpen) {
+                Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
+                    PetalDeleteScreen(
+                        backgroundSnapshot = tabSwitcherSnapshot,
+                        onBackPress = { viewModel.setDeleteOpen(false) }
+                    )
+                }
+            }
+
+            // Biometric Safe Locker Screen Overlay
+            if (isSafeLockerOpen) {
+                Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
+                    SafeLockerScreen(
+                        onBack = { viewModel.setSafeLockerOpen(false) }
                     )
                 }
             }

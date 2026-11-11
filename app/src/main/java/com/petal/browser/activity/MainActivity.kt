@@ -132,6 +132,15 @@ class MainActivity : FragmentActivity(), BrowserController {
         com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
         com.petal.browser.compose.splash.PetalSplashState.splashActive.value = false
 
+        // Restore tabs from previous session if cold start
+        if (savedInstanceState == null) {
+            val restored = com.petal.browser.browser.PetalSessionRestoreManager.restoreSession(this)
+            val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this)
+            if (!restored && store.state.tabs.isEmpty()) {
+                viewModel.openNewTab("about:home", selectTab = true)
+            }
+        }
+
         setContent {
             PetalExpressiveTheme {
                 PetalRootApp(viewModel = viewModel)
@@ -149,6 +158,17 @@ class MainActivity : FragmentActivity(), BrowserController {
             browserFeatures = PetalBrowserFeatures(this).also { it.start() }
             handleIncomingIntent(intent)
         }, 250L)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+        val clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
+        if (isFinishing && clearQuit) {
+            com.petal.browser.unit.PetalBrowserUtils.clearOnExit(this, waitForCompletion = true)
+        } else {
+            com.petal.browser.browser.PetalSessionRestoreManager.saveSession(this, isStopping = true)
+        }
     }
 
     override fun onDestroy() {
@@ -275,19 +295,58 @@ class MainActivity : FragmentActivity(), BrowserController {
         viewModel.openOmnibox()
     }
     fun showExtensionsScreen() { viewModel.openExtensions() }
-    fun showQuickTools() { }
-    fun showReaderMode() { }
-    fun showDeleteScreen() { }
-    fun showSafeLocker() { }
-    fun showSendToDevice() { }
+    fun showQuickTools() {
+        com.petal.browser.ui.components.PetalQuickToolsBridge.showQuickTools(this)
+    }
+    fun showReaderMode() {
+        val controller = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
+        if (controller != null) {
+            val isReader = controller.url?.startsWith("about:reader?url=") == true
+            controller.toggleReaderMode(!isReader)
+        }
+    }
+    fun showDeleteScreen() {
+        viewModel.openDelete()
+    }
+    fun showSafeLocker() {
+        viewModel.openSafeLocker()
+    }
+    fun showSendToDevice() {
+        val url = currentAlbumController?.url.orEmpty()
+        val title = currentAlbumController?.title.orEmpty()
+        com.petal.browser.account.mozilla.PetalSendToDeviceBridge.showSendToDevice(this, url, title)
+    }
     fun captureBrowserMainPreview() { }
-    fun searchOnSite() { }
+    fun searchOnSite() {
+        viewModel.openFindInPage()
+    }
     fun setSelectedTab() { }
     fun showDialogFilter() { }
     fun showDialogCustomSearches(url: String) { }
     fun doubleTapsQuit() { finish() }
     fun maybePromptDefaultBrowser() { }
-    fun savePageOffline() { }
+    fun savePageOffline() {
+        val controller = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
+        if (controller != null) {
+            val curUrl = controller.url.orEmpty()
+            if (curUrl.isNotBlank() && !curUrl.startsWith("about:")) {
+                try {
+                    val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                    val titleSafe = (controller.title.ifBlank { "Page" }).replace(Regex("[^a-zA-Z0-9.-]"), "_")
+                    val targetPdf = java.io.File(downloadsDir, "$titleSafe.pdf")
+                    java.io.FileOutputStream(targetPdf).use { fos ->
+                        controller.printToPdf(fos) { success ->
+                            if (success) {
+                                com.petal.browser.view.PetalToast.show(this, "Saved to Downloads: ${targetPdf.name}")
+                            }
+                        }
+                    }
+                } catch (_: Throwable) {
+                    com.petal.browser.view.PetalToast.show(this, "Failed to save offline page")
+                }
+            }
+        }
+    }
     fun createWebPrintJob(webView: Any?) { }
     fun updatePersistentBottomNav() { }
     fun updateBackCallbackState() { }

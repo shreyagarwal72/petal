@@ -123,7 +123,10 @@ fun PetalAnimatedWallpaperBackground(
                 when {
                     isVideo -> videoPoster
                     wallpaperUri.startsWith("android.resource://") -> Uri.parse(wallpaperUri)
-                    wallpaperUri.startsWith("file://") -> Uri.parse(wallpaperUri)
+                    wallpaperUri.startsWith("file://") -> {
+                        val path = runCatching { Uri.parse(wallpaperUri).path }.getOrNull()
+                        if (!path.isNullOrBlank()) File(path) else File(wallpaperUri.removePrefix("file://"))
+                    }
                     wallpaperUri.startsWith("/") -> File(wallpaperUri)
                     wallpaperUri.startsWith("content://") -> Uri.parse(wallpaperUri)
                     else -> wallpaperUri
@@ -142,8 +145,8 @@ fun PetalAnimatedWallpaperBackground(
                                 else GifDecoder.Factory()
                             )
                         } else {
-                            allowHardware(true)
-                            bitmapConfig(Bitmap.Config.RGB_565)
+                            allowHardware(false)
+                            bitmapConfig(Bitmap.Config.ARGB_8888)
                         }
                     }
                     .build()
@@ -170,7 +173,10 @@ fun PetalAnimatedWallpaperBackground(
                 runCatching {
                     val mediaUri = when {
                         wallpaperUri.startsWith("android.resource://") -> Uri.parse(wallpaperUri)
-                        wallpaperUri.startsWith("file://") -> Uri.parse(wallpaperUri)
+                        wallpaperUri.startsWith("file://") -> {
+                            val path = runCatching { Uri.parse(wallpaperUri).path }.getOrNull()
+                            if (!path.isNullOrBlank()) Uri.fromFile(File(path)) else Uri.parse(wallpaperUri)
+                        }
                         wallpaperUri.startsWith("/") -> Uri.fromFile(File(wallpaperUri))
                         else -> Uri.parse(wallpaperUri)
                     }

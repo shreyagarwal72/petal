@@ -93,7 +93,9 @@ object PetalSessionRestoreManager {
     @MainThread
     fun saveSession(activity: MainActivity, isStopping: Boolean = false) {
         try {
-            if (activity.isFinishing) return
+            val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+            val clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
+            if (activity.isFinishing && clearQuit) return
             val store = PetalEngineStore.getStore(activity)
             if (!store.state.restoreComplete) return
 

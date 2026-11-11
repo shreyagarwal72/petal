@@ -539,21 +539,22 @@ fun PetalHomeScreen(
         onDispose { homeSp.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
+    val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
+    val effectiveWallpaperUri = when {
+        !activeWallpaperUri.isNullOrBlank() -> activeWallpaperUri
+        isGlassEnabled && glassBgMode == "IMAGE" && glassImageUri.isNotBlank() -> glassImageUri
+        else -> null
+    }
+
     CompositionLocalProvider(
         com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides glassWallpaper
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = if (isGlassEnabled) Color.Transparent else MaterialTheme.colorScheme.background
+            color = if (isGlassEnabled || !effectiveWallpaperUri.isNullOrBlank()) Color.Transparent else MaterialTheme.colorScheme.background
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // ── Layer 0: OmniBrowser Wallpaper engine OR Living M3 background ───────────
-                val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
-                val effectiveWallpaperUri = when {
-                    !activeWallpaperUri.isNullOrBlank() -> activeWallpaperUri
-                    isGlassEnabled && glassBgMode == "IMAGE" && glassImageUri.isNotBlank() -> glassImageUri
-                    else -> null
-                }
 
                 Box(
                     modifier = Modifier.fillMaxSize()
