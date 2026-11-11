@@ -129,7 +129,7 @@ object PetalFlagsStore {
                 }
             }
 
-            val content = sb.toString()
+            val content = sb.toString() + "\n" + com.petal.browser.privacy.PetalPrivacyHardening.buildArkenfoxUserJs(appContext)
             val possibleDirs = listOf(
                 File(appContext.filesDir, "mozilla"),
                 appContext.getDir("mozilla", Context.MODE_PRIVATE),
@@ -142,8 +142,8 @@ object PetalFlagsStore {
                     val targetDirs = if (subdirs.isNotEmpty()) subdirs.toList() + dir else listOf(dir)
                     for (target in targetDirs) {
                         try {
-                            val flagsJs = File(target, "petal-flags.js")
-                            flagsJs.writeText(content)
+                            File(target, "petal-flags.js").writeText(content)
+                            File(target, "user.js").writeText(content)
                         } catch (_: Throwable) {}
                     }
                 }

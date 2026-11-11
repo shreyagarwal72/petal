@@ -1246,6 +1246,15 @@ class PetalTabViewController private constructor(
     }
 
     fun setDesktopMode(enabled: Boolean) {
+        try {
+            getGeckoSession()?.settings?.let { s ->
+                s.viewportMode = if (enabled) {
+                    org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_DESKTOP
+                } else {
+                    org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE
+                }
+            }
+        } catch (_: Throwable) {}
         observedSession?.toggleDesktopMode(enabled, reload = true)
     }
 
@@ -1271,6 +1280,15 @@ class PetalTabViewController private constructor(
         } else {
             preferences.getBoolean("sp_desktop_site", false)
         }
+        try {
+            getGeckoSession()?.settings?.let { s ->
+                s.viewportMode = if (desktopEnabled) {
+                    org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_DESKTOP
+                } else {
+                    org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE
+                }
+            }
+        } catch (_: Throwable) {}
         session.toggleDesktopMode(desktopEnabled, reload = false)
 
         val effectiveMode = com.petal.browser.browser.PetalAdBlockEngine.getEffectiveMode(appContext, host)

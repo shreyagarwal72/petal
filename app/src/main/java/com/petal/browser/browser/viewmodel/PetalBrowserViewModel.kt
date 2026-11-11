@@ -289,7 +289,7 @@ class PetalBrowserViewModel @Inject constructor(
             PetalTabMetadataStore.put(
                 context,
                 PetalTabMetadata(
-                    persistentTabId = tabId,
+                    tabId = tabId,
                     tabGroupId = groupId,
                     tabGroupTitle = groupTitle ?: "Group"
                 )

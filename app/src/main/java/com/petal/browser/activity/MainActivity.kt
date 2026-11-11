@@ -193,11 +193,19 @@ class MainActivity : FragmentActivity(), BrowserController {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        com.petal.browser.ui.components.PetalRuntimePermissionBridge.handlePermissionsResult(
+            requestCode,
+            permissions,
+            grantResults
+        )
         browserFeatures?.onPermissionsResult(requestCode, permissions, grantResults)
     }
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (com.petal.browser.engine.gecko.PetalGeckoRuntime.handleActivityResult(requestCode, resultCode, data)) {
+            return
+        }
         if (browserFeatures?.onActivityResult(requestCode, resultCode, data) == true) {
             return
         }
