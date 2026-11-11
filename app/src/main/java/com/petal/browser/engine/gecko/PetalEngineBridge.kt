@@ -86,11 +86,16 @@ object PetalEngineBridge {
         } else {
             org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_MOBILE
         }
+        val viewportMode = if (desktopEnabled) {
+            org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_DESKTOP
+        } else {
+            org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE
+        }
         return org.mozilla.geckoview.GeckoSessionSettings.Builder()
             .usePrivateMode(isPrivate)
             .allowJavascript(jsAllowed)
             .userAgentMode(agentMode)
-            .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
+            .viewportMode(viewportMode)
             .build()
     }
 
@@ -266,17 +271,18 @@ object PetalEngineBridge {
             try {
                 val intent = Intent.parseUri(trimmedUrl, Intent.URI_INTENT_SCHEME)
                 if (intent != null) {
-                    val pm = activity.packageManager
-                    if (pm != null && intent.resolveActivity(pm) != null) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    try {
                         activity.startActivity(intent)
                         return true
-                    }
-                    val fallbackUrl = intent.getStringExtra("browser_fallback_url")
-                    if (!fallbackUrl.isNullOrBlank()) {
-                        if (activity is com.petal.browser.activity.MainActivity) {
-                            activity.showAlbum(activity.currentAlbumController, fallbackUrl)
+                    } catch (_: android.content.ActivityNotFoundException) {
+                        val fallbackUrl = intent.getStringExtra("browser_fallback_url")
+                        if (!fallbackUrl.isNullOrBlank()) {
+                            if (activity is com.petal.browser.activity.MainActivity) {
+                                activity.viewModel.loadUrl(fallbackUrl)
+                            }
+                            return true
                         }
-                        return true
                     }
                 }
             } catch (e: Exception) {
@@ -286,14 +292,16 @@ object PetalEngineBridge {
         }
         try {
             val parsedUri = Uri.parse(trimmedUrl)
-            val intent = Intent(Intent.ACTION_VIEW, parsedUri)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            val pm = activity.packageManager
-            if (pm != null && intent.resolveActivity(pm) != null) {
-                activity.startActivity(intent)
-                return true
+            val intent = Intent(Intent.ACTION_VIEW, parsedUri).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-        } catch (_: Exception) {}
+            activity.startActivity(intent)
+            return true
+        } catch (_: android.content.ActivityNotFoundException) {
+            Log.w(TAG, "No activity found to handle scheme: $trimmedUrl")
+        } catch (e: Exception) {
+            Log.w(TAG, "Error starting external scheme activity: $trimmedUrl", e)
+        }
         return true
     }
 

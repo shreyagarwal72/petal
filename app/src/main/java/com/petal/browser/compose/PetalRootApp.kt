@@ -638,7 +638,7 @@ fun PetalRootApp(
             if (isSafeLockerOpen) {
                 Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
                     SafeLockerScreen(
-                        onBack = { viewModel.setSafeLockerOpen(false) }
+                        onBackPress = { viewModel.setSafeLockerOpen(false) }
                     )
                 }
             }

@@ -23,11 +23,13 @@ import androidx.fragment.app.FragmentActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
+import com.petal.browser.R
 import com.petal.browser.account.mozilla.FxAccountManager
 import com.petal.browser.account.mozilla.PetalMozillaSyncManager
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserController
 import com.petal.browser.browser.PetalBrowserFeatures
+import com.petal.browser.browser.PetalSessionRestoreManager
 import com.petal.browser.browser.PetalTabSurface
 import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.browser.viewmodel.PetalBrowserViewModel
@@ -469,6 +471,13 @@ class MainActivity : FragmentActivity(), BrowserController {
     }
 
     fun evaluateJavascriptInActiveTab(script: String, callback: ValueCallback<String>?) {
+        val ctrl = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
+        ctrl?.evaluateJavascript(script) { result ->
+            callback?.onReceiveValue(result)
+        }
+    }
+
+    fun evaluateJavascriptInActiveTab(script: String, callback: ((String?) -> Unit)? = null) {
         val ctrl = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
         ctrl?.evaluateJavascript(script, callback)
     }
