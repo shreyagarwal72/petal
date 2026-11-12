@@ -31,7 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
 import androidx.compose.runtime.Composable
-import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -135,13 +134,12 @@ fun PetalContainedLoadingIndicator(
 
 /**
  * Contained loading indicator used specifically for pull-to-refresh.
+ * Always indeterminate so the Material 3 Expressive continuous shape-morphing animation runs.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ContainedRefreshLoadingIndicator(
-    modifier: Modifier = Modifier,
-    /** Null = indeterminate (refreshing). Otherwise the shape morphs with the pull (0..1). */
-    progress: (() -> Float)? = null
+    modifier: Modifier = Modifier
 ) {
     val containerColor by animateColorAsState(
         targetValue = MaterialTheme.colorScheme.primary,
@@ -154,40 +152,15 @@ private fun ContainedRefreshLoadingIndicator(
         label = "RefreshBarIndicatorColor"
     )
 
-    if (progress == null) {
-        androidx.compose.material3.ContainedLoadingIndicator(
-            modifier = modifier,
-            containerColor = containerColor,
-            indicatorColor = indicatorColor
-        )
-    } else {
-        androidx.compose.material3.ContainedLoadingIndicator(
-            progress = progress,
-            modifier = modifier,
-            containerColor = containerColor,
-            indicatorColor = indicatorColor
-        )
-    }
+    androidx.compose.material3.ContainedLoadingIndicator(
+        modifier = modifier,
+        containerColor = containerColor,
+        indicatorColor = indicatorColor
+    )
 }
-
-/** Where the indicator waits (hidden behind the bar) and where it rests while refreshing. */
-private val RefreshIndicatorStartY = (-40).dp
-private val RefreshIndicatorRestY = 12.dp
-
-/** Room for the whole indicator travel: 8 top pad + 40 max pull + 42 circle + bounce/shadow. */
-private val RefreshBarContainerHeight = 120.dp
 
 /**
  * RefreshBar pull-to-refresh loading indicator utilizing [ContainedLoadingIndicator].
- *
- * Fast-flick fix: the indicator used to be mounted lazily inside AnimatedVisibility and its offset,
- * scale and alpha were chased by springs that started from zero. A quick pull moves the progress from
- * 0 to ~1 in one or two frames, so the first frames showed a half-composed, half-scaled, clipped circle
- * until the springs caught up. Now:
- *  - the indicator is always composed (warm), so the first frame of a flick already has real content;
- *  - while the finger is down, offset / scale / alpha follow the pull progress directly (no spring lag),
- *    read inside graphicsLayer so no recomposition or layout happens per touch event;
- *  - springs are only used for the settle into the refreshing state and for fading out.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -205,10 +178,10 @@ fun RefreshBarLoadingIndicator(
 }
 
 /**
- * Same indicator, but the pull progress is read through [pullProgressProvider] only inside
- * graphicsLayer / derivedStateOf. The touch handler pushes a new progress on every MOVE event; reading
- * a plain Float here made the whole host composition (theme + preference reads) re-run per event,
- * which starved the main thread during a pull.
+ * Zenith-style pull-to-refresh indicator using Material 3 Expressive [ContainedLoadingIndicator].
+ *
+ * Pulling down organically morphs the inner shape while scaling bouncily.
+ * Exactly matches Zenith's HomeScreen / AppDetailScreen / UsageStatsScreen behavior.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -219,73 +192,39 @@ fun RefreshBarLoadingIndicatorLazy(
 ) {
     val currentProvider by androidx.compose.runtime.rememberUpdatedState(pullProgressProvider)
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var hasHapticTriggered by remember { mutableStateOf(false) }
 
-    // One value drives everything: `shown` (0 = hidden, 1 = fully pulled / resting while refreshing).
-    //  - finger down: snapped to the real pull progress every event (no spring lag, so fast flicks
-    //    never show a half-built indicator);
-    //  - finger up + refresh committed: bouncy spring from wherever the finger left it to the rest spot;
-    //  - finger up + cancelled, or refresh finished: smooth, non-bouncy exit.
-    val shown = remember { androidx.compose.animation.core.Animatable(0f) }
-    var ready by remember { mutableStateOf(false) }
+    val rawProgress = currentProvider().coerceIn(0f, 1f)
 
-    androidx.compose.runtime.LaunchedEffect(isRefreshing) {
-        androidx.compose.runtime.snapshotFlow { currentProvider() }
-            .collectLatest { raw ->
-                val p = raw.coerceIn(0f, 1f)
-                if (p > 0f) {
-                    shown.snapTo(p)
-                    val nowReady = p >= 1f
-                    if (nowReady && !ready) {
-                        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    }
-                    if (nowReady != ready && (nowReady || p < 0.85f)) ready = nowReady
-                } else {
-                    ready = false
-                    shown.animateTo(
-                        targetValue = if (isRefreshing) 1f else 0f,
-                        animationSpec = if (isRefreshing) {
-                            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
-                        } else {
-                            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
-                        }
-                    )
-                }
-            }
+    androidx.compose.runtime.LaunchedEffect(rawProgress) {
+        if (rawProgress >= 1f && !hasHapticTriggered) {
+            haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+            hasHapticTriggered = true
+        } else if (rawProgress < 0.85f && hasHapticTriggered) {
+            hasHapticTriggered = false
+        }
     }
 
-    // Small "release to refresh" pop when the pull reaches the commit distance.
-    val pop by animateFloatAsState(
-        targetValue = if (ready) 1.14f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
-        label = "LoadingIndicatorPop"
+    val scale by animateFloatAsState(
+        targetValue = if (isRefreshing) 1f else rawProgress,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "LoadingIndicatorScale"
     )
 
-    Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.TopCenter
-    ) {
-        androidx.compose.animation.Crossfade(
-            targetState = isRefreshing,
-            animationSpec = androidx.compose.animation.core.tween(durationMillis = 140),
-            label = "LoadingIndicatorMode",
-            modifier = Modifier.graphicsLayer {
-                // All reads happen here, in the draw phase: no recomposition per touch event.
-                val s = shown.value.coerceAtLeast(0f)
-                // Decelerating slide while pulling (fast at first, easing onto the rest spot);
-                // past 1f (the bouncy settle) it continues linearly so the overshoot is visible.
-                val t = if (s <= 1f) 1f - (1f - s) * (1f - s) else s
-                val startY = RefreshIndicatorStartY.toPx()
-                val restY = RefreshIndicatorRestY.toPx()
-                translationY = startY + (restY - startY) * t
-                val sc = (0.4f + 0.6f * t) * pop
-                scaleX = sc
-                scaleY = sc
-                alpha = (s * 2f).coerceIn(0f, 1f)
-            }
-        ) { refreshing ->
+    if (scale > 0.001f || isRefreshing) {
+        Box(
+            modifier = modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter
+        ) {
             ContainedRefreshLoadingIndicator(
-                // Pulling: the shape morphs with the pull. Refreshing: the normal spinning morph.
-                progress = if (refreshing) null else { { shown.value.coerceIn(0f, 1f) } }
+                modifier = Modifier.graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    alpha = scale.coerceIn(0f, 1f)
+                }
             )
         }
     }

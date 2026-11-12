@@ -1,30 +1,39 @@
-# Petal Repository Roles & Dual-Synchronization Protocol
+# Petal Architecture & Unified Repository Guidelines
 
-## 1. Distinct Repository Roles & Architecture Boundaries
+## 1. Unified Repository & Product Flavors
 
-- **`petal` (FOSS / GitHub Release Variant)**:
+The `petal` and `petal_browser` repositories have been consolidated into this single repository (`petal`). Distribution variants are managed via Gradle product flavors (`distribution` dimension):
+
+- **`github` (GitHub Release Variant)**:
   - Direct APK distribution via GitHub Releases.
-  - Features self-contained in-app updater (`UpdateUnit.java`, `PetalUpdateInstallerReceiver.kt`, `UpdaterSettingsScreen.kt`, and `dialog_petal_update_expressive.xml`).
-  - Strict FOSS environment: **Zero Google Play SDKs** (`play-services-ads`, `com.google.android.play:app-update` are strictly forbidden).
-  - Requires `REQUEST_INSTALL_PACKAGES` permission to install downloaded APKs.
+  - Self-contained in-app updater (`UpdateUnit.java`, `PetalUpdateInstallerReceiver.kt`, `UpdaterSettingsScreen.kt`).
+  - Uses `src/ads/java` and `src/noPlay/java`.
+  - Requires `REQUEST_INSTALL_PACKAGES` permission declared in `src/github/AndroidManifest.xml`.
+  - BuildConfig: `IS_PLAY_STORE_BUILD = false`, `IS_FDROID_BUILD = false`, `DISTRIBUTION_CHANNEL = "github"`.
 
-- **`petal_browser` (Google Play Store Variant)**:
-  - Distributed via Google Play Store.
-  - **No In-App Self-Updater**: Google Play Developer Program Policy strictly forbids apps downloading or installing executable code/APKs outside Google Play.
-  - **Google Play In-App Updates**: Powered by official `com.google.android.play:app-update-ktx` (`PetalPlayUpdateManager.kt`, `PetalPlayUpdatePopup.kt`).
-  - **Monetization & Supportive Ads**: Features Google AdMob rewarded ads (`PetalAdMobRewardedAds.kt`) which is strictly opt-in, rewarded only, initialized only after explicit user consent, and never triggered or touched in private/incognito tabs.
-  - **Publishing & Assets**: Tracks Fastlane metadata (`fastlane/`), Google Play graphic assets (`graphics/`, `wiki/`), draft backups (`drafts/`), variable fonts (`inter_variable.ttf`, `lexend_variable.ttf`, etc.), and bundle signing utilities (`.github/scripts/strip_aab_signatures.py`).
-  - **Permissions**: Omits `REQUEST_INSTALL_PACKAGES` to maintain Play Store compliance.
+- **`play` (Google Play Store Variant)**:
+  - Distributed via Google Play Store as an AAB bundle.
+  - **No In-App APK Updater**: Play Policy compliance strictly disallows downloading/installing APKs outside Google Play.
+  - Official Google Play In-App Updates powered by `com.google.android.play:app-update-ktx` (`PetalPlayUpdateManager.kt` in `src/play/java`).
+  - Monetization & Supportive Ads: Opt-in Google AdMob rewarded ads (`src/ads/java`), strictly consent-gated, never triggered in private/incognito tabs.
+  - Publishing & metadata managed via `fastlane/metadata`.
+  - Omits `REQUEST_INSTALL_PACKAGES` in `src/play/AndroidManifest.xml`.
+  - BuildConfig: `IS_PLAY_STORE_BUILD = true`, `IS_FDROID_BUILD = false`, `DISTRIBUTION_CHANNEL = "play"`.
 
-## 2. Feature & Fix Synchronization Protocol
+- **`fdroid` (Pure FOSS Variant)**:
+  - Distributed via F-Droid repository.
+  - Zero Google Play SDKs and zero Ads (`src/noAds/java` and `src/noPlay/java`).
+  - BuildConfig: `IS_PLAY_STORE_BUILD = false`, `IS_FDROID_BUILD = true`, `DISTRIBUTION_CHANNEL = "fdroid"`.
 
-- Treat `petal` as the primary browser feature and browsing engine source.
-- **Never blindly mirror or fast-forward merge repositories**. Features, engine improvements, bug fixes (such as Firefox Sync, widgets, address bar physics, media players) must be synced while strictly respecting variant-specific boundaries.
-- When porting changes:
-  1. Never delete or overwrite Play Store variant components (`PetalPlayUpdateManager`, `fastlane`, variable fonts) in `petal_browser`.
-  2. Never copy Play Store SDKs (`app-update`) into `petal`.
-  3. Keep settings navigation mapped to `SettingsCategory.UPDATER` in `petal`.
+## 2. Shared Engine & Architecture Boundaries
+
+- **Single Engine & Downloader**: Mozilla's `AbstractFetchDownloadService` + `GeckoViewFetchClient` serves as the sole byte-moving HTTP engine for downloads across all variants (inheriting cookies, auth, private mode, and proxy directly from Gecko).
+- **Source Separation**: Variant-specific code stays strictly partitioned across source sets (`src/play`, `src/noPlay`, `src/ads`, `src/noAds`, `src/github`). Common browser and engine logic stays in `src/main`.
+- **Updater Rules**: Keep the in-app updater self-contained for GitHub builds. Never inject Google Play SDKs into non-Play flavors or common modules.
 
 ## 3. File Reading & Execution Hygiene
-- Inspect targets precisely once, synthesize necessary context, and immediately apply the concrete practical fix.
-- One command per invocation, no command chaining (`&&` / `||`), and zero local gradle builds on Termux.
+
+- Inspect targets precisely once, synthesize necessary context, and immediately apply concrete practical fixes.
+- **One command per invocation**, no command chaining (`&&` / `||`).
+- **Zero local Gradle builds on Termux**. Verification is performed through static code analysis and tests.
+- Keep edits small, modular, and reviewable.
