@@ -192,7 +192,10 @@ object PetalThemePrefs {
         "sp_theme_config", "useDynamicColor", "sp_amoled", "sp_expressive_colors",
         "sp_color_style", "sp_palette_id", "sp_palette_manually_selected",
         PetalCustomPalette.KEY_SEED, PetalCustomPalette.KEY_SECONDARY, PetalCustomPalette.KEY_TERTIARY,
-        PetalPaletteMix.KEY_ENABLED, PetalPaletteMix.KEY_SECONDARY, PetalPaletteMix.KEY_TERTIARY
+        PetalPaletteMix.KEY_ENABLED, PetalPaletteMix.KEY_SECONDARY, PetalPaletteMix.KEY_TERTIARY,
+        "sp_app_font", "sp_font_width", "sp_font_weight", "sp_font_roundness", "sp_custom_font_path",
+        "sp_blur_effect_enabled", "sp_expressive_shapes_35_enabled", "sp_corner_radius",
+        "sp_high_refresh_rate", "sp_touch_haptics"
     )
 
     fun install(context: Context) {

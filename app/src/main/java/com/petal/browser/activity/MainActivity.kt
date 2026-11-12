@@ -19,6 +19,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -103,6 +106,28 @@ class MainActivity : FragmentActivity(), BrowserController {
     var search_input: TextInputEditText? = null
     private var singleTabViewController: PetalTabViewController? = null
 
+    private val prefChangeListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        when (key) {
+            "sp_immersive_fullscreen" -> {
+                runOnUiThread { applyImmersiveFullscreen() }
+            }
+            com.petal.browser.unit.PetalHighRefreshRateManager.PREF_HIGH_REFRESH_RATE -> {
+                runOnUiThread { com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this) }
+            }
+        }
+    }
+
+    fun applyImmersiveFullscreen() {
+        val immersive = isCustomFullscreenState || sp.getBoolean("sp_immersive_fullscreen", false)
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        if (immersive) {
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
 
 
     companion object {
@@ -129,8 +154,11 @@ class MainActivity : FragmentActivity(), BrowserController {
             } catch (_: Throwable) { }
         }
         super.onCreate(savedInstanceState)
+        com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this)
         com.petal.browser.engine.gecko.PetalFileUploadMiddleware.attachActivity(this)
         enableEdgeToEdge()
+        applyImmersiveFullscreen()
+        sp.registerOnSharedPreferenceChangeListener(prefChangeListener)
 
         com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
         com.petal.browser.compose.splash.PetalSplashState.splashActive.value = false
@@ -182,6 +210,7 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     override fun onDestroy() {
         super.onDestroy()
+        sp.unregisterOnSharedPreferenceChangeListener(prefChangeListener)
         com.petal.browser.engine.gecko.PetalFileUploadMiddleware.detachActivity(this)
         browserFeatures?.stop()
         browserFeatures = null
@@ -189,6 +218,8 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     override fun onResume() {
         super.onResume()
+        com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this)
+        applyImmersiveFullscreen()
         try {
             window.decorView.isFocusableInTouchMode = true
             window.decorView.requestFocus()
@@ -462,6 +493,7 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     fun setCustomFullscreen(fullscreen: Boolean) {
         isCustomFullscreenState = fullscreen
+        runOnUiThread { applyImmersiveFullscreen() }
     }
 
     fun resolveCurrentTabUrl(): String = viewModel.activeUrl.value

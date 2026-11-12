@@ -102,9 +102,18 @@ fun PetalExpressiveTheme(
     appFont: AppFont? = null,
     customFontPath: String? = null,
     customFontSettings: CustomFontSettings? = null,
-    fontWidth: Float = 92f,
-    fontWeight: Int = 750,
-    fontRoundness: Float = 100f,
+    fontWidth: Float = run {
+        val sp = themePrefs()
+        sp.getFloat("sp_font_width", 92f)
+    },
+    fontWeight: Int = run {
+        val sp = themePrefs()
+        sp.getInt("sp_font_weight", 750)
+    },
+    fontRoundness: Float = run {
+        val sp = themePrefs()
+        sp.getFloat("sp_font_roundness", 100f)
+    },
     gsFlexSettings: GSFlexSettings? = null,
     colorStyle: ColorStyle = run {
         val sp = themePrefs()
@@ -123,12 +132,12 @@ fun PetalExpressiveTheme(
         }
     },
     blurEffectEnabled: Boolean = run {
-        androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-            .getBoolean("sp_blur_effect_enabled", true)
+        val sp = themePrefs()
+        sp.getBoolean("sp_blur_effect_enabled", true)
     },
     expressiveShapesEnabled: Boolean = run {
-        androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-            .getBoolean(PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED, true)
+        val sp = themePrefs()
+        sp.getBoolean(PetalMaterialShapes.PREF_EXPRESSIVE_SHAPES_ENABLED, true)
     },
     content: @Composable () -> Unit
 ) {
@@ -310,20 +319,30 @@ fun PetalExpressiveTheme(
         }
     }
 
+    val effectiveFontWidth = remember(fontRevision, fontWidth) {
+        if (fontRevision > 0) sp.getFloat("sp_font_width", fontWidth) else fontWidth
+    }
+    val effectiveFontWeight = remember(fontRevision, fontWeight) {
+        if (fontRevision > 0) sp.getInt("sp_font_weight", fontWeight) else fontWeight
+    }
+    val effectiveFontRoundness = remember(fontRevision, fontRoundness) {
+        if (fontRevision > 0) sp.getFloat("sp_font_roundness", fontRoundness) else fontRoundness
+    }
+
     val effectiveTypography = remember(
         effectiveAppFont,
-        fontWidth,
-        fontWeight,
-        fontRoundness,
+        effectiveFontWidth,
+        effectiveFontWeight,
+        effectiveFontRoundness,
         effectiveGsFlexSettings,
         effectiveCustomFontPath,
         effectiveCustomFontSettings
     ) {
         petalTypography(
             appFont = effectiveAppFont,
-            fontWidth = fontWidth,
-            fontWeight = fontWeight,
-            fontRoundness = fontRoundness,
+            fontWidth = effectiveFontWidth,
+            fontWeight = effectiveFontWeight,
+            fontRoundness = effectiveFontRoundness,
             gsFlexSettings = effectiveGsFlexSettings,
             customFontPath = effectiveCustomFontPath,
             customFontSettings = effectiveCustomFontSettings
