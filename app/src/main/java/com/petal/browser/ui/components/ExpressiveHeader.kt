@@ -428,12 +428,14 @@ private fun Modifier.expressiveHeaderDecor(color: Color): Modifier = this.drawWi
     val path = if (show) {
         com.petal.browser.ui.theme.buildExpressivePath(
             com.petal.browser.ui.theme.ExpressiveButtonPreset.SUNNY,
-            cx = size.width * 0.94f,
-            cy = size.height * 0.12f,
-            radius = size.height * 0.85f,
+            cx = size.width * 0.98f,
+            cy = size.height * 0.02f,
+            // Kept well inside the header so it reads as a soft accent in the corner instead of a
+            // dark blob that bleeds behind the action buttons and the rounded bottom edge.
+            radius = size.height * 0.55f,
         )
     } else null
     onDrawBehind {
-        if (path != null) drawPath(path, color.copy(alpha = 0.07f))
+        if (path != null) drawPath(path, color.copy(alpha = 0.05f))
     }
 }

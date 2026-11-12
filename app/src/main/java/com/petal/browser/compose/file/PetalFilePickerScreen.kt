@@ -17,8 +17,11 @@
 
 package com.petal.browser.compose.file
 import com.petal.browser.ui.theme.ExpressiveButtonShape
-import com.petal.browser.ui.components.PetalExpressiveScrollBar
-import com.petal.browser.ui.components.extractFastScrollGlyph
+import com.petal.browser.ui.components.HeaderActionIcon
+import com.petal.browser.ui.components.PetalButtonGroupItem
+import com.petal.browser.ui.components.PetalChoiceButtonGroup
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
+import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 
 import android.Manifest
 import android.content.Context
@@ -61,7 +64,6 @@ import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import com.petal.browser.ui.kit.TextField
-import com.petal.browser.ui.kit.FilterChip
 import com.petal.browser.ui.kit.IconButton
 import com.petal.browser.ui.kit.TextButton
 import com.petal.browser.ui.kit.FilledTonalButton
@@ -220,11 +222,16 @@ fun PetalFilePickerScreen(
         }
     }
 
+    // Same wiring as the other full-screen pages: reuse the ambient glass wallpaper if the theme
+    // provides one, otherwise build one so header, segmented groups and rows get real refraction.
+    val wallpaper = LocalPetalGlassWallpaper.current ?: rememberPetalGlassWallpaper()
+
     PetalPredictiveBackSurface(
         enabled = true,
         onBack = onDismissRequest
     ) {
         PetalScreenWrapper {
+          CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
             Box(modifier = Modifier.fillMaxSize()) {
                 M3ExpressiveVariableBackground(
                     modifier = Modifier.fillMaxSize(),
@@ -254,6 +261,7 @@ fun PetalFilePickerScreen(
                     }
                 }
             }
+          }
         }
     }
 }
@@ -301,33 +309,28 @@ private fun StoragePermissionRequestState(
             modifier = Modifier.padding(horizontal = 16.dp)
         )
         Spacer(Modifier.height(28.dp))
+        // M3E: full-width pill actions that morph on press (kit buttons own the shape + glass).
         Button(
             onClick = onGrant,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(0.8f).height(48.dp)
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
         ) {
-            Icon(Icons.Rounded.LockOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(Icons.Rounded.LockOpen, contentDescription = null, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.file_picker_grant_button))
+            Text(stringResource(R.string.file_picker_grant_button), style = MaterialTheme.typography.titleMedium)
         }
 
         if (onBrowseSystemFallback != null) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
             FilledTonalButton(
                 onClick = onBrowseSystemFallback,
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.filledTonalButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
-                modifier = Modifier.fillMaxWidth(0.8f).height(48.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
             ) {
-                Text(stringResource(R.string.ui_open_system_file_picker))
+                Text(stringResource(R.string.ui_open_system_file_picker), style = MaterialTheme.typography.titleMedium)
             }
         }
 
-        Spacer(Modifier.height(12.dp))
-        TextButton(
-            onClick = onDismiss,
-            shape = RoundedCornerShape(20.dp)
-        ) {
+        Spacer(Modifier.height(4.dp))
+        TextButton(onClick = onDismiss) {
             Text(stringResource(R.string.ui_cancel))
         }
     }
@@ -439,74 +442,50 @@ private fun FilePickerBrowserContent(
                 }
             },
             actions = {
-                IconButton(onClick = {
-                    haptics.playClick(context)
-                    isSearching = !isSearching
-                    if (!isSearching) searchQuery = ""
-                }) {
-                    Icon(
-                        imageVector = if (isSearching) Icons.Rounded.Close else Icons.Rounded.Search,
-                        contentDescription = stringResource(R.string.ui_search),
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+                // Only two header actions so the title keeps its width ("Select File" no longer
+                // truncates). The system picker moved into the sort/options menu.
+                HeaderActionIcon(
+                    icon = if (isSearching) Icons.Rounded.Close else Icons.Rounded.Search,
+                    contentDescription = stringResource(R.string.ui_search),
+                    onClick = {
+                        haptics.playClick(context)
+                        isSearching = !isSearching
+                        if (!isSearching) searchQuery = ""
+                    },
+                    emphasized = isSearching
+                )
 
                 Box {
-                    val sortMenuRotation by animateFloatAsState(
-                        targetValue = if (showSortMenu) 180f else 0f,
-                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
-                        label = "file_picker_sort_rot"
-                    )
-                    IconButton(
+                    HeaderActionIcon(
+                        icon = Icons.AutoMirrored.Rounded.Sort,
+                        contentDescription = stringResource(R.string.ui_sort),
                         onClick = {
                             haptics.playClick(context)
                             showSortMenu = true
                         },
-                        modifier = Modifier.graphicsLayer { rotationZ = sortMenuRotation }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.Sort,
-                            contentDescription = stringResource(R.string.ui_sort),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                        emphasized = showSortMenu
+                    )
 
                     PetalPopupMenu(
                         expanded = showSortMenu,
                         onDismissRequest = { showSortMenu = false }
                     ) {
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = stringResource(R.string.file_picker_sort_name_asc),
-                            leadingIcon = { if (sortMode == FileSortMode.NAME_ASC) Icon(Icons.Rounded.Check, null) },
-                            onClick = { sortMode = FileSortMode.NAME_ASC; showSortMenu = false }
-                        )
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = stringResource(R.string.file_picker_sort_name_desc),
-                            leadingIcon = { if (sortMode == FileSortMode.NAME_DESC) Icon(Icons.Rounded.Check, null) },
-                            onClick = { sortMode = FileSortMode.NAME_DESC; showSortMenu = false }
-                        )
+                        @Composable
+                        fun SortItem(mode: FileSortMode, labelRes: Int) {
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                text = stringResource(labelRes),
+                                leadingIcon = { if (sortMode == mode) Icon(Icons.Rounded.Check, null) },
+                                onClick = { sortMode = mode; showSortMenu = false }
+                            )
+                        }
+                        SortItem(FileSortMode.NAME_ASC, R.string.file_picker_sort_name_asc)
+                        SortItem(FileSortMode.NAME_DESC, R.string.file_picker_sort_name_desc)
                         com.petal.browser.ui.containment.PetalMenuDivider()
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = stringResource(R.string.file_picker_sort_size_desc),
-                            leadingIcon = { if (sortMode == FileSortMode.SIZE_DESC) Icon(Icons.Rounded.Check, null) },
-                            onClick = { sortMode = FileSortMode.SIZE_DESC; showSortMenu = false }
-                        )
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = stringResource(R.string.file_picker_sort_size_asc),
-                            leadingIcon = { if (sortMode == FileSortMode.SIZE_ASC) Icon(Icons.Rounded.Check, null) },
-                            onClick = { sortMode = FileSortMode.SIZE_ASC; showSortMenu = false }
-                        )
+                        SortItem(FileSortMode.SIZE_DESC, R.string.file_picker_sort_size_desc)
+                        SortItem(FileSortMode.SIZE_ASC, R.string.file_picker_sort_size_asc)
                         com.petal.browser.ui.containment.PetalMenuDivider()
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = stringResource(R.string.file_picker_sort_date_desc),
-                            leadingIcon = { if (sortMode == FileSortMode.DATE_DESC) Icon(Icons.Rounded.Check, null) },
-                            onClick = { sortMode = FileSortMode.DATE_DESC; showSortMenu = false }
-                        )
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = stringResource(R.string.file_picker_sort_date_asc),
-                            leadingIcon = { if (sortMode == FileSortMode.DATE_ASC) Icon(Icons.Rounded.Check, null) },
-                            onClick = { sortMode = FileSortMode.DATE_ASC; showSortMenu = false }
-                        )
+                        SortItem(FileSortMode.DATE_DESC, R.string.file_picker_sort_date_desc)
+                        SortItem(FileSortMode.DATE_ASC, R.string.file_picker_sort_date_asc)
                         com.petal.browser.ui.containment.PetalMenuDivider()
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
                             text = { Text(stringResource(R.string.file_picker_show_hidden_files), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) },
@@ -520,19 +499,14 @@ private fun FilePickerBrowserContent(
                             },
                             onClick = { showHiddenFiles = !showHiddenFiles; showSortMenu = false }
                         )
-                    }
-                }
-
-                if (onBrowseSystemFallback != null) {
-                    IconButton(onClick = {
-                        haptics.playClick(context)
-                        onBrowseSystemFallback()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Rounded.OpenInBrowser,
-                            contentDescription = stringResource(R.string.ui_system_picker),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        if (onBrowseSystemFallback != null) {
+                            com.petal.browser.ui.containment.PetalMenuDivider()
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                text = stringResource(R.string.ui_system_picker),
+                                leadingIcon = { Icon(Icons.Rounded.OpenInBrowser, null) },
+                                onClick = { showSortMenu = false; onBrowseSystemFallback() }
+                            )
+                        }
                     }
                 }
             }
@@ -566,112 +540,50 @@ private fun FilePickerBrowserContent(
             }
         }
 
-        // Storage Volume Shortcuts & Breadcrumbs
+        // Storage volumes as one M3E connected (segmented) button group + a single breadcrumb pill.
+        val downloadsDir = remember { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) }
+        val downloadsLabel = stringResource(R.string.file_picker_downloads)
+        val volumeOptions = remember(roots, downloadsDir, downloadsLabel) {
+            buildList {
+                if (downloadsDir != null && downloadsDir.exists()) {
+                    add(PetalButtonGroupItem(downloadsDir.absolutePath, downloadsLabel, icon = Icons.Rounded.Download))
+                }
+                roots.forEach { (label, rootDir) ->
+                    val icon = when {
+                        label.contains("SD", true) -> Icons.Rounded.SdCard
+                        rootDir.absolutePath == "/" -> Icons.Rounded.DeveloperMode
+                        else -> Icons.Rounded.Storage
+                    }
+                    add(PetalButtonGroupItem(rootDir.absolutePath, label, icon = icon))
+                }
+            }
+        }
+        val volumePaths = remember(volumeOptions) { volumeOptions.map { it.value }.toSet() }
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 6.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Volume Roots Strip
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val chipColors = FilterChipDefaults.filterChipColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    labelColor = MaterialTheme.colorScheme.onSurface,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    selectedLeadingIconColor = MaterialTheme.colorScheme.primary
+            if (volumeOptions.isNotEmpty()) {
+                PetalChoiceButtonGroup(
+                    options = volumeOptions,
+                    // Not a volume root (we're inside a subfolder) -> nothing selected, all segments neutral.
+                    selected = currentDir.absolutePath.takeIf { it in volumePaths } ?: "",
+                    onSelect = { path ->
+                        haptics.playClick(context)
+                        currentDir = File(path)
+                    }
                 )
-
-                // Downloads Jump
-                val downloads = remember { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) }
-                if (downloads != null && downloads.exists()) {
-                    val isSelected = currentDir.absolutePath == downloads.absolutePath
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
-                            haptics.playClick(context)
-                            currentDir = downloads
-                        },
-                        leadingIcon = { Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp)) },
-                        label = { Text(stringResource(R.string.file_picker_downloads)) },
-                        shape = RoundedCornerShape(14.dp),
-                        colors = chipColors,
-                        border = null
-                    )
-                }
-
-                roots.forEach { (label, rootDir) ->
-                    val isSelected = currentDir.absolutePath == rootDir.absolutePath
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
-                            haptics.playClick(context)
-                            currentDir = rootDir
-                        },
-                        leadingIcon = {
-                            val icon = if (label.contains("SD", true)) Icons.Rounded.SdCard else if (rootDir.absolutePath == "/") Icons.Rounded.DeveloperMode else Icons.Rounded.Storage
-                            Icon(icon, null, modifier = Modifier.size(16.dp))
-                        },
-                        label = { Text(label) },
-                        shape = RoundedCornerShape(14.dp),
-                        colors = chipColors,
-                        border = null
-                    )
-                }
             }
-
-            Spacer(Modifier.height(4.dp))
-
-            // Interactive Breadcrumb Chips
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                breadcrumbs.forEachIndexed { index, (name, dir) ->
-                    val isLast = index == breadcrumbs.lastIndex
-                    Surface(
-                        onClick = {
-                            if (!isLast) {
-                                haptics.playClick(context)
-                                currentDir = dir
-                            }
-                        },
-                        shape = RoundedCornerShape(10.dp),
-                        color = if (isLast) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier.height(28.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        ) {
-                            Text(
-                                text = name,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (isLast) FontWeight.Bold else FontWeight.Normal),
-                                color = if (isLast) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-
-                    if (!isLast) {
-                        Text(
-                            text = "/",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
+            PickerBreadcrumbs(
+                crumbs = breadcrumbs,
+                onNavigate = { dir ->
+                    haptics.playClick(context)
+                    currentDir = dir
                 }
-            }
+            )
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
@@ -699,7 +611,11 @@ private fun FilePickerBrowserContent(
             } else {
                 LazyColumn(
                     state = listState,
-                    contentPadding = PaddingValues(bottom = 80.dp),
+                    // Clears the gesture/nav bar so the last row is never cut off; no scrollbar overlay.
+                    contentPadding = PaddingValues(
+                        top = 8.dp,
+                        bottom = 16.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                    ),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     // Parent Directory Row
@@ -760,14 +676,6 @@ private fun FilePickerBrowserContent(
                         )
                     }
                 }
-
-                PetalExpressiveScrollBar(
-                    listState = listState,
-                    modifier = Modifier.align(Alignment.CenterEnd),
-                    dragLabelProvider = { index ->
-                        displayedFiles.getOrNull(index)?.name?.let { extractFastScrollGlyph(it) }
-                    }
-                )
             }
         }
 
@@ -810,7 +718,7 @@ private fun FilePickerBrowserContent(
                                 haptics.playClick(context)
                                 onFileSelected(currentDir)
                             },
-                            shape = RoundedCornerShape(18.dp)
+                            modifier = Modifier.heightIn(min = 48.dp)
                         ) {
                             Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
@@ -827,11 +735,66 @@ private fun FilePickerBrowserContent(
                                 haptics.playClick(context)
                                 onMultipleFilesSelected?.invoke(selectedFiles.toList())
                             },
-                            shape = RoundedCornerShape(18.dp)
+                            modifier = Modifier.heightIn(min = 48.dp)
                         ) {
                             Text(stringResource(R.string.ui_confirm))
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Breadcrumb trail as ONE rounded container with chevron separators (not a row of mini chips).
+ * Auto-scrolls to the current folder; the last crumb is emphasised, the rest are tappable.
+ */
+@Composable
+private fun PickerBreadcrumbs(
+    crumbs: List<Pair<String, File>>,
+    onNavigate: (File) -> Unit,
+) {
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val shape = RoundedCornerShape(50)
+    val scroll = rememberScrollState()
+    LaunchedEffect(crumbs) { scroll.animateScrollTo(scroll.maxValue) }
+
+    Surface(
+        shape = shape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier
+            .fillMaxWidth()
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = 0.35f)
+    ) {
+        Row(
+            modifier = Modifier
+                .horizontalScroll(scroll)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            crumbs.forEachIndexed { index, (name, dir) ->
+                val isLast = index == crumbs.lastIndex
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (isLast) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isLast) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .clickable(enabled = !isLast) { onNavigate(dir) }
+                        .heightIn(min = 32.dp)
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+                if (!isLast) {
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
         }
