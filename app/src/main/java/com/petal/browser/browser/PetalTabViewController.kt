@@ -594,8 +594,8 @@ class PetalTabViewController private constructor(
         // Pull-to-refresh is Mozilla's own: this view is a vertical-only SwipeRefreshLayout
         // (PetalVerticalSwipeRefreshLayout, a port of Fenix's VerticalSwipeRefreshLayout) driven by
         // android-components' SwipeRefreshFeature (see bindTab), the same stack Fenix uses.
-        // Only the spinner colours are themed here.
-        applyRefreshSpinnerTheme()
+        // Its default spinner is never drawn; Petal's Compose indicator (RefreshBarLoadingIndicatorLazy)
+        // is fed through onPullProgress / onRefreshStateChanged by whoever hosts this view.
         // Tab pages are drawn by android-components' GeckoEngineView, whose inner GeckoView
         // defaults to a SurfaceView (official Mozilla GeckoView default). Switch to TextureView
         // only if Liquid Glass is active and requires page sampling.
@@ -1635,25 +1635,6 @@ class PetalTabViewController private constructor(
         try { engineView.setVerticalClipping(clippingHeight) } catch (_: Throwable) {}
     }
 
-    private var lastRefreshSpinnerOffset = Int.MIN_VALUE
-
-    /**
-     * SwipeRefreshLayout draws its spinner from the top edge of this view. When the page runs
-     * underneath a top bar (glass / immersive modes) the spinner was hidden behind that bar, so
-     * pull-to-refresh looked like it did nothing. Push the spinner down by the bar height.
-     */
-    fun setRefreshSpinnerTopOffset(offsetPx: Int) {
-        if (offsetPx == lastRefreshSpinnerOffset) return
-        lastRefreshSpinnerOffset = offsetPx
-        val density = resources.displayMetrics.density
-        try {
-            // 40dp = default spinner diameter, 64dp = default pull distance (SwipeRefreshLayout).
-            setProgressViewOffset(false, offsetPx - (40 * density).toInt(), offsetPx + (64 * density).toInt())
-        } catch (t: Throwable) {
-            android.util.Log.w("PetalTabViewController", "Could not move the pull-to-refresh spinner", t)
-        }
-    }
-
     /** GeckoView-only integration point used for WebExtension delegates. */
     fun getGeckoSession(): org.mozilla.geckoview.GeckoSession? =
         com.petal.browser.engine.gecko.PetalEngineBridge.getEngineGeckoSession(observedSession)
@@ -2068,39 +2049,6 @@ class PetalTabViewController private constructor(
         removeCallbacks(refreshWatchdog)
         postDelayed(refreshWatchdog, REFRESH_WATCHDOG_MS)
     }
-
-    /**
-     * Spinner colours, same idea as Fenix (on-surface arc on a surface-container disc) but with a
-     * contrast guarantee so the arc can never be drawn in the same colour as the disc, which looks
-     * like an empty white circle stuck on screen.
-     */
-    private fun applyRefreshSpinnerTheme() {
-        try {
-            val disc = resolveOpaqueThemeColor(
-                com.google.android.material.R.attr.colorSurfaceContainerHigh,
-                resolveOpaqueThemeColor(com.google.android.material.R.attr.colorSurface, android.graphics.Color.WHITE)
-            )
-            val onSurface = resolveOpaqueThemeColor(
-                com.google.android.material.R.attr.colorOnSurface,
-                if (androidx.core.graphics.ColorUtils.calculateLuminance(disc) > 0.5) {
-                    android.graphics.Color.BLACK
-                } else {
-                    android.graphics.Color.WHITE
-                }
-            )
-            var arc = resolveOpaqueThemeColor(android.R.attr.colorPrimary, onSurface)
-            if (androidx.core.graphics.ColorUtils.calculateContrast(arc, disc) < 3.0) {
-                arc = onSurface
-            }
-            setColorSchemeColors(arc)
-            setProgressBackgroundColorSchemeColor(disc)
-        } catch (t: Throwable) {
-            android.util.Log.w("PetalTabViewController", "Could not theme the pull-to-refresh spinner", t)
-        }
-    }
-
-    private fun resolveOpaqueThemeColor(attr: Int, fallback: Int): Int =
-        com.google.android.material.color.MaterialColors.getColor(context, attr, fallback) or 0xFF000000.toInt()
 
     /**
      * android-components' GeckoEngineView calls release() from onDetachedFromWindow(), which removes

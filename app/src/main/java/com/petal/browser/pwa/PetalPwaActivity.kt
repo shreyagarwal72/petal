@@ -273,6 +273,8 @@ class PetalPwaActivity : AppCompatActivity() {
         }
         geckoView = gv
         frame.addView(gv)
+        // The tab view's default spinner is never drawn; show Petal's Compose pull indicator instead.
+        com.petal.browser.compose.composable.PetalRefreshBarBridge.attachTo(frame, this, gv)
 
         if (!"about:blank".equals(effectiveUrl, ignoreCase = true)) {
             gv.loadUrl(effectiveUrl)

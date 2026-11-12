@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -138,7 +139,9 @@ fun PetalContainedLoadingIndicator(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ContainedRefreshLoadingIndicator(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Null = indeterminate (refreshing). Otherwise the shape morphs with the pull (0..1). */
+    progress: (() -> Float)? = null
 ) {
     val containerColor by animateColorAsState(
         targetValue = MaterialTheme.colorScheme.primary,
@@ -151,12 +154,25 @@ private fun ContainedRefreshLoadingIndicator(
         label = "RefreshBarIndicatorColor"
     )
 
-    androidx.compose.material3.ContainedLoadingIndicator(
-        modifier = modifier,
-        containerColor = containerColor,
-        indicatorColor = indicatorColor
-    )
+    if (progress == null) {
+        androidx.compose.material3.ContainedLoadingIndicator(
+            modifier = modifier,
+            containerColor = containerColor,
+            indicatorColor = indicatorColor
+        )
+    } else {
+        androidx.compose.material3.ContainedLoadingIndicator(
+            progress = progress,
+            modifier = modifier,
+            containerColor = containerColor,
+            indicatorColor = indicatorColor
+        )
+    }
 }
+
+/** Where the indicator waits (hidden behind the bar) and where it rests while refreshing. */
+private val RefreshIndicatorStartY = (-40).dp
+private val RefreshIndicatorRestY = 12.dp
 
 /** Room for the whole indicator travel: 8 top pad + 40 max pull + 42 circle + bounce/shadow. */
 private val RefreshBarContainerHeight = 120.dp
@@ -202,30 +218,76 @@ fun RefreshBarLoadingIndicatorLazy(
     modifier: Modifier = Modifier
 ) {
     val currentProvider by androidx.compose.runtime.rememberUpdatedState(pullProgressProvider)
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
 
-    // Same behaviour as Zenith's pull indicator (HomeScreen): a Material 3 Expressive
-    // ContainedLoadingIndicator whose scale and alpha follow the pull fraction through a bouncy,
-    // low-stiffness spring, and which stays at full size while refreshing. No slide, no extra shadow.
-    val scale by animateFloatAsState(
-        targetValue = if (isRefreshing) 1f else currentProvider().coerceIn(0f, 1f),
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "LoadingIndicatorScale"
+    // One value drives everything: `shown` (0 = hidden, 1 = fully pulled / resting while refreshing).
+    //  - finger down: snapped to the real pull progress every event (no spring lag, so fast flicks
+    //    never show a half-built indicator);
+    //  - finger up + refresh committed: bouncy spring from wherever the finger left it to the rest spot;
+    //  - finger up + cancelled, or refresh finished: smooth, non-bouncy exit.
+    val shown = remember { androidx.compose.animation.core.Animatable(0f) }
+    var ready by remember { mutableStateOf(false) }
+
+    androidx.compose.runtime.LaunchedEffect(isRefreshing) {
+        androidx.compose.runtime.snapshotFlow { currentProvider() }
+            .collectLatest { raw ->
+                val p = raw.coerceIn(0f, 1f)
+                if (p > 0f) {
+                    shown.snapTo(p)
+                    val nowReady = p >= 1f
+                    if (nowReady && !ready) {
+                        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    }
+                    if (nowReady != ready && (nowReady || p < 0.85f)) ready = nowReady
+                } else {
+                    ready = false
+                    shown.animateTo(
+                        targetValue = if (isRefreshing) 1f else 0f,
+                        animationSpec = if (isRefreshing) {
+                            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+                        } else {
+                            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+                        }
+                    )
+                }
+            }
+    }
+
+    // Small "release to refresh" pop when the pull reaches the commit distance.
+    val pop by animateFloatAsState(
+        targetValue = if (ready) 1.14f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+        label = "LoadingIndicatorPop"
     )
 
     Box(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.TopCenter
     ) {
-        ContainedRefreshLoadingIndicator(
+        androidx.compose.animation.Crossfade(
+            targetState = isRefreshing,
+            animationSpec = androidx.compose.animation.core.tween(durationMillis = 140),
+            label = "LoadingIndicatorMode",
             modifier = Modifier.graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                alpha = scale.coerceIn(0f, 1f)
+                // All reads happen here, in the draw phase: no recomposition per touch event.
+                val s = shown.value.coerceAtLeast(0f)
+                // Decelerating slide while pulling (fast at first, easing onto the rest spot);
+                // past 1f (the bouncy settle) it continues linearly so the overshoot is visible.
+                val t = if (s <= 1f) 1f - (1f - s) * (1f - s) else s
+                val startY = RefreshIndicatorStartY.toPx()
+                val restY = RefreshIndicatorRestY.toPx()
+                translationY = startY + (restY - startY) * t
+                val sc = (0.4f + 0.6f * t) * pop
+                scaleX = sc
+                scaleY = sc
+                alpha = (s * 2f).coerceIn(0f, 1f)
             }
-        )
+        ) { refreshing ->
+            ContainedRefreshLoadingIndicator(
+                // Pulling: the shape morphs with the pull. Refreshing: the normal spinning morph.
+                progress = if (refreshing) null else { { shown.value.coerceIn(0f, 1f) } }
+            )
+        }
     }
 }
 
@@ -235,6 +297,50 @@ class PetalRefreshBarState {
 }
 
 object PetalRefreshBarBridge {
+    /**
+     * For hosts that show a [com.petal.browser.browser.PetalVerticalSwipeRefreshLayout] (e.g. the tab
+     * view) in plain Views: adds a pass-through Compose overlay on top of [parent] and feeds it from
+     * the layout's pull/refresh callbacks. The gesture itself is still Mozilla's SwipeRefreshFeature.
+     */
+    @JvmStatic
+    fun attachTo(
+        parent: android.view.ViewGroup,
+        activity: ComponentActivity,
+        layout: com.petal.browser.browser.PetalVerticalSwipeRefreshLayout
+    ) {
+        val state = PetalRefreshBarState()
+        layout.onPullProgress = { state.pullProgress = it }
+        layout.onRefreshStateChanged = { refreshing ->
+            state.isRefreshing = refreshing
+            if (!refreshing) state.pullProgress = 0f
+        }
+        val overlay = ComposeView(activity).apply {
+            isClickable = false
+            isFocusable = false
+            importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            translationZ = 100f
+        }
+        bindRefreshBar(overlay, activity, state)
+        val lp = android.widget.FrameLayout.LayoutParams(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+            android.view.Gravity.TOP
+        )
+        parent.addView(overlay, lp)
+        // If the page runs under the status bar, keep the indicator below it.
+        parent.post {
+            val bars = androidx.core.view.ViewCompat.getRootWindowInsets(parent)
+                ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars())?.top ?: 0
+            val loc = IntArray(2)
+            parent.getLocationInWindow(loc)
+            val extra = (bars - loc[1]).coerceAtLeast(0)
+            if (extra != lp.topMargin) {
+                lp.topMargin = extra
+                overlay.layoutParams = lp
+            }
+        }
+    }
+
     @JvmStatic
     fun bindRefreshBar(
         composeView: ComposeView,

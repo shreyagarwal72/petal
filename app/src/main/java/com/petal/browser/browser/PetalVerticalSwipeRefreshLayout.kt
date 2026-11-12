@@ -48,46 +48,37 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
     private val doubleTapTimeout = ViewConfiguration.getDoubleTapTimeout()
     private val doubleTapSlop = ViewConfiguration.get(context).scaledDoubleTapSlop
     private val doubleTapSlopSquare = doubleTapSlop * doubleTapSlop
+    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
     private var hadMultiTouch = false
     private var disallowInterceptTouchEvent = false
 
+    /**
+     * SwipeRefreshLayout's own spinner (its private CircleImageView). The gesture, the Gecko
+     * "can the page scroll up" check and the refresh commit stay 100% Mozilla/AndroidX; only its
+     * drawing is replaced by Petal's Compose indicator.
+     *
+     * SwipeRefreshLayout's constructor adds this view first, so right after `super(...)` it is
+     * child 0. It is found by position, NOT by class name: release builds are minified by R8, which
+     * renames `CircleImageView`, and the old name check then let the default spinner draw on top
+     * of the Compose one.
+     */
+    private val legacySpinner: View? = if (childCount > 0) getChildAt(0) else null
+
     init {
-        // Suppress legacy Android CircleImageView spinner so Petal's Zenith ContainedLoadingIndicator draws instead
-        post {
-            suppressLegacyCircleSpinner()
+        legacySpinner?.apply {
+            alpha = 0f
+            elevation = 0f
+            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
         }
     }
 
-    private fun isCircleImageView(view: View): Boolean {
-        val name = view.javaClass.name
-        return name.contains("CircleImageView") || name.contains("CircleView")
-    }
-
-    private fun suppressLegacyCircleSpinner() {
-        for (i in 0 until childCount) {
-            val child = getChildAt(i)
-            if (isCircleImageView(child)) {
-                child.alpha = 0f
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                    child.elevation = 0f
-                }
-            }
-        }
-    }
-
-    override fun onViewAdded(child: View) {
-        super.onViewAdded(child)
-        if (isCircleImageView(child)) {
-            child.alpha = 0f
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                child.elevation = 0f
-            }
-        }
-    }
+    private fun isLegacySpinner(view: View): Boolean =
+        view === legacySpinner || view.javaClass.name.contains("CircleImageView")
 
     override fun drawChild(canvas: android.graphics.Canvas, child: View, drawingTime: Long): Boolean {
-        // Skip rasterization of the legacy circle arrow disc entirely
-        if (isCircleImageView(child)) {
+        // The default circle is never rasterized, whatever SwipeRefreshLayout does to its
+        // visibility/alpha/scale while pulling, refreshing or resetting.
+        if (isLegacySpinner(child)) {
             return false
         }
         return super.drawChild(canvas, child, drawingTime)
@@ -166,19 +157,26 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
                 if (initialDownY == 0f) {
                     initialDownY = previousY
                 }
-                val density = resources.displayMetrics.density
-                // SwipeRefreshLayout commits the refresh at 64dp of damped drag; match it so the loader is full exactly then.
-                val totalDragDistance = 64f * density
-                val dragY = (event.y - initialDownY).coerceAtLeast(0f) * 0.5f
-                val progress = (dragY / totalDragDistance).coerceIn(0f, 1f)
-                onPullProgress?.invoke(progress)
-            }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                initialDownY = 0f
-                onPullProgress?.invoke(0f)
+                // Only report a pull the AndroidX layout itself is handling: not while a refresh is
+                // running and not while Gecko says the page can still scroll up.
+                if (!isRefreshing && !canChildScrollUp()) {
+                    val density = resources.displayMetrics.density
+                    // Mirrors SwipeRefreshLayout.onTouchEvent: the drag starts after touch slop and is
+                    // damped by DRAG_RATE (0.5); the refresh commits at 64dp of damped drag.
+                    val totalDragDistance = 64f * density
+                    val dragY = (event.y - initialDownY - touchSlop).coerceAtLeast(0f) * 0.5f
+                    onPullProgress?.invoke((dragY / totalDragDistance).coerceIn(0f, 1f))
+                }
             }
         }
-        return super.onTouchEvent(event)
+        val handled = super.onTouchEvent(event)
+        // Reset AFTER super so a committed refresh (setRefreshing(true)) and the end of the pull
+        // reach the indicator in the same frame and it settles instead of dipping to zero first.
+        if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
+            initialDownY = 0f
+            onPullProgress?.invoke(0f)
+        }
+        return handled
     }
 
     override fun onStartNestedScroll(child: View, target: View, nestedScrollAxes: Int): Boolean {
