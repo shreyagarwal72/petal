@@ -68,6 +68,7 @@ class PetalPwaActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         PetalAndroidUtils.initTheme(this)
+        com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             window.attributes.layoutInDisplayCutoutMode =
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
@@ -338,6 +339,7 @@ class PetalPwaActivity : AppCompatActivity() {
     override fun onResume() {
         PetalGeckoRuntime.setForegroundActivity(this)
         super.onResume()
+        com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this)
         geckoView?.activate()
     }
 
