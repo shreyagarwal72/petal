@@ -35,7 +35,8 @@ import java.util.concurrent.Executors
 object PetalUpdateUtils {
 
     private const val TAG = "PetalUpdateUtils"
-    private const val GITHUB_RELEASES_API = "https://api.github.com/repos/shreyagarwal72/petal/releases/latest"
+    private const val GITHUB_RELEASES_LIST_API = "https://api.github.com/repos/shreyagarwal72/petal/releases?per_page=30"
+    const val PREF_KEY_PRERELEASE_ENABLED = "sp_update_prerelease_enabled"
     private const val GITHUB_RELEASES_PAGE = "https://github.com/shreyagarwal72/petal/releases"
     private const val PREF_KEY_LAST_CHECK_TIME = "sp_update_last_check_timestamp"
     private const val PREF_KEY_SKIP_VERSION = "sp_update_skipped_version"
@@ -72,7 +73,8 @@ object PetalUpdateUtils {
         executor.execute {
             try {
                 val currentVersion = getAppVersion(activity)
-                val json = fetchLatestReleaseJson(currentVersion)
+                val includePreReleases = sp.getBoolean(PREF_KEY_PRERELEASE_ENABLED, false)
+                val json = fetchLatestReleaseJson(currentVersion, includePreReleases)
                 if (json != null) {
                     val latestTag = json.optString("tag_name", currentVersion)
                     val releaseNotes = json.optString(
@@ -260,59 +262,49 @@ object PetalUpdateUtils {
         }
     }
 
-    private fun fetchLatestReleaseJson(currentVersion: String): JSONObject? {
+    private fun fetchLatestReleaseJson(currentVersion: String, includePreReleases: Boolean): JSONObject? {
         try {
-            val url = URL(GITHUB_RELEASES_API)
-            val conn = url.openConnection() as HttpURLConnection
+            val conn = URL(GITHUB_RELEASES_LIST_API).openConnection() as HttpURLConnection
             conn.requestMethod = "GET"
             conn.connectTimeout = 10000
             conn.readTimeout = 10000
             conn.setRequestProperty("Accept", "application/vnd.github.v3+json")
             conn.setRequestProperty("User-Agent", "PetalBrowserApp/$currentVersion")
+            if (conn.responseCode != 200) return null
 
-            if (conn.responseCode == 200) {
-                BufferedReader(InputStreamReader(conn.inputStream)).use { reader ->
-                    val sb = StringBuilder()
-                    var line: String?
-                    while (reader.readLine().also { line = it } != null) sb.append(line)
-                    return JSONObject(sb.toString())
+            val text = conn.inputStream.bufferedReader().use { it.readText() }
+            val array = JSONArray(text)
+            var best: JSONObject? = null
+            var bestTag = ""
+            for (i in 0 until array.length()) {
+                val rel = array.getJSONObject(i)
+                if (rel.optBoolean("draft", false)) continue
+                val tag = rel.optString("tag_name", "")
+                if (tag.isEmpty()) continue
+                val isPre = rel.optBoolean("prerelease", false) || isPreReleaseVersion(tag)
+                if (isPre && !includePreReleases) continue
+                if (best == null || isNewerVersion(tag, bestTag)) {
+                    best = rel
+                    bestTag = tag
                 }
             }
+            return best
         } catch (_: Exception) {}
-
-        // Fallback: fetch list of releases in case /releases/latest returns 404 or draft
-        try {
-            val url = URL("https://api.github.com/repos/shreyagarwal72/petal/releases")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "GET"
-            conn.connectTimeout = 10000
-            conn.readTimeout = 10000
-            conn.setRequestProperty("Accept", "application/vnd.github.v3+json")
-            conn.setRequestProperty("User-Agent", "PetalBrowserApp/$currentVersion")
-
-            if (conn.responseCode == 200) {
-                BufferedReader(InputStreamReader(conn.inputStream)).use { reader ->
-                    val sb = StringBuilder()
-                    var line: String?
-                    while (reader.readLine().also { line = it } != null) sb.append(line)
-
-                    val array = JSONArray(sb.toString())
-                    var bestRelease: JSONObject? = null
-                    var bestTag = ""
-                    for (i in 0 until array.length()) {
-                        val rel = array.getJSONObject(i)
-                        val tag = rel.optString("tag_name", "")
-                        if (bestRelease == null || isNewerVersion(tag, bestTag)) {
-                            bestRelease = rel
-                            bestTag = tag
-                        }
-                    }
-                    return bestRelease
-                }
-            }
-        } catch (_: Exception) {}
-
         return null
+    }
+
+    /**
+     * Petal versioning: 4.6, 4.7 = stable. 4.6.1, 4.7.1 (any patch number above 0)
+     * or tags with -beta / -alpha / -rc = pre-release.
+     */
+    @JvmStatic
+    fun isPreReleaseVersion(version: String?): Boolean {
+        if (version.isNullOrBlank()) return false
+        val v = version.trim().replace(Regex("^[vV_\\s-]+"), "")
+        if (Regex("(?i)(alpha|beta|rc|pre|dev)").containsMatchIn(v)) return true
+        val nums = v.substringBefore('-').split(".")
+            .map { it.replace(Regex("[^0-9]"), "").toIntOrNull() ?: 0 }
+        return nums.size >= 3 && nums.drop(2).any { it > 0 }
     }
 
     @JvmStatic

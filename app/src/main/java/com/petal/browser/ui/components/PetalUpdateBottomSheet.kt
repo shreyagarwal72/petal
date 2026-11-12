@@ -869,6 +869,33 @@ fun PetalUpdateSheetContent(
                 }
             }
 
+            if (com.petal.browser.unit.PetalUpdateUtils.isPreReleaseVersion(updateInfo.versionName)) {
+                androidx.compose.material3.Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Rounded.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = stringResource(R.string.ui_prerelease_warning),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+            }
+
             // Release Notes / What's New Container
             val notesToDisplay = fetchedNotes ?: updateInfo.releaseNotes
             if (isFetchingNotes) {

@@ -1,0 +1,3 @@
+Petal Browser v4.7 Release:
+- Updater: new 'Check for pre-releases' option. Stable builds (like 4.7) are shown by default; turn it on in Updates & Diagnostics to get beta builds (like 4.7.1).
+- Updater: fixed beta builds leaking into the stable update channel.

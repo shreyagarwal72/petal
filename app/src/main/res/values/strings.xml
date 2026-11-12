@@ -1846,5 +1846,15 @@
     <string name="pw_pick_color">Pick a color</string>
     <string name="pw_ok">OK</string>
     <string name="pw_visibility_note">Text and icon colors adjust automatically so they stay readable on any color you pick.</string>
+    <string name="ui_check_prereleases">Check for pre-releases</string>
+    <string name="ui_check_prereleases_desc">Get beta builds (like 4.7.1). Might be unstable</string>
+    <string name="ui_prerelease_enable_title">Enable pre-releases?</string>
+    <string name="ui_prerelease_enable_desc">Pre-release builds contain experimental features and might be unstable or introduce bugs.\n\nIt is recommended to take a backup first, from Data &amp; Backup settings.\n\nYou cannot go back to an older stable version without uninstalling. You will move to stable again when the next stable release is newer than your beta.</string>
+    <string name="ui_prerelease_disable_title">Disable pre-releases?</string>
+    <string name="ui_prerelease_disable_desc">You will only be offered stable updates again. If you are on a beta now, you stay on it until a newer stable version is released.</string>
+    <string name="ui_prerelease_abort">Abort</string>
+    <string name="ui_prerelease_continue">Continue</string>
+    <string name="ui_prerelease_warning">This is a pre-release version and might be unstable.</string>
+    <string name="ui_channel_github_prerelease_last_checked">Channel: GitHub Pre-release • Last Checked: %1$s</string>
 </resources>
 

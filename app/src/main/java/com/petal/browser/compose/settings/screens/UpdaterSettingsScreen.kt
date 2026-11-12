@@ -79,6 +79,10 @@ fun UpdaterSettingsScreenContent(
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
     var isCheckingUpdate by remember { mutableStateOf(false) }
+    var preReleaseEnabled by remember {
+        mutableStateOf(sp.getBoolean(PetalUpdateUtils.PREF_KEY_PRERELEASE_ENABLED, false))
+    }
+    var pendingPreRelease by remember { mutableStateOf<Boolean?>(null) }
     var crashReportMode by remember {
         mutableStateOf(sp.getString(PetalAppLogger.PREF_CRASH_REPORT_MODE, "off") ?: "off")
     }
@@ -107,6 +111,21 @@ fun UpdaterSettingsScreenContent(
     val formattedLastCheck = remember(lastCheckTimestamp) {
         if (lastCheckTimestamp <= 0L) "Never"
         else SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(lastCheckTimestamp))
+    }
+
+    pendingPreRelease?.let { enabling ->
+        PetalPreReleaseSheet(
+            isEnabling = enabling,
+            onDismiss = { pendingPreRelease = null },
+            onConfirm = {
+                sp.edit()
+                    .putBoolean(PetalUpdateUtils.PREF_KEY_PRERELEASE_ENABLED, enabling)
+                    .remove("sp_update_skipped_version")
+                    .apply()
+                preReleaseEnabled = enabling
+                pendingPreRelease = null
+            }
+        )
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -142,6 +161,16 @@ fun UpdaterSettingsScreenContent(
                         checked = checkUpdateOnLaunch,
                         onCheckedChange = onCheckUpdateOnLaunchChange
                     )
+                    if (!com.petal.browser.BuildConfig.IS_PLAY_STORE_BUILD) {
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            title = stringResource(R.string.ui_check_prereleases),
+                            subtitle = stringResource(R.string.ui_check_prereleases_desc),
+                            icon = Icons.Rounded.Science,
+                            checked = preReleaseEnabled,
+                            onCheckedChange = { pendingPreRelease = it }
+                        )
+                    }
                     // Channel & Version Hero Card
                     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
                     val channelCardShape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM)
@@ -189,7 +218,11 @@ fun UpdaterSettingsScreenContent(
                                     val channelSubtitle = if (com.petal.browser.BuildConfig.IS_PLAY_STORE_BUILD) {
                                         "Channel: Google Play • Last Checked: $formattedLastCheck"
                                     } else {
-                                        stringResource(R.string.ui_channel_github_official_last_checked, formattedLastCheck)
+                                        stringResource(
+                                            if (preReleaseEnabled) R.string.ui_channel_github_prerelease_last_checked
+                                            else R.string.ui_channel_github_official_last_checked,
+                                            formattedLastCheck
+                                        )
                                     }
                                     Text(
                                         text = channelSubtitle,
@@ -527,6 +560,56 @@ fun UpdaterSettingsScreenContent(
                 }
 
                 Spacer(Modifier.height(32.dp))
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PetalPreReleaseSheet(
+    isEnabling: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = stringResource(
+                    if (isEnabling) R.string.ui_prerelease_enable_title else R.string.ui_prerelease_disable_title
+                ),
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                text = stringResource(
+                    if (isEnabling) R.string.ui_prerelease_enable_desc else R.string.ui_prerelease_disable_desc
+                ),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.ui_prerelease_abort))
+                }
+                androidx.compose.material3.Button(onClick = onConfirm, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.ui_prerelease_continue))
+                }
             }
         }
     }
