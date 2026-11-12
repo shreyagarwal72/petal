@@ -61,6 +61,11 @@ object PetalGlassWidgets {
     @Synchronized
     fun getWallpaper(context: Context): Bitmap? {
         val file = copyFile(context)
+        // The system wallpaper may have changed without us hearing about it (the broadcast is unreliable on
+        // newer Android), so compare its id with the one the cached copy was taken from.
+        if (isSystemWallpaperStale(context)) {
+            tryExtractSystemWallpaper(context)?.let { return it }
+        }
         if (file.exists() && file.length() > 0) {
             val bmp = BitmapFactory.decodeFile(file.absolutePath)
             if (bmp != null) return bmp
@@ -92,6 +97,35 @@ object PetalGlassWidgets {
             } catch (_: Throwable) {}
         }
         return null
+    }
+
+    private fun isSystemWallpaperStale(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
+        return try {
+            val stored = store(context).getInt(KEY_WALLPAPER_ID, Int.MIN_VALUE)
+            val current = WallpaperManager.getInstance(context).getWallpaperId(WallpaperManager.FLAG_SYSTEM)
+            stored != Int.MIN_VALUE && current > 0 && current != stored
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    /** The system wallpaper changed: drop every cached slice, re-read the wallpaper and redraw all widgets. */
+    fun onSystemWallpaperChanged(context: Context) {
+        PetalGlassWidgetRenderer.forget()
+        try { tryExtractSystemWallpaper(context) } catch (_: Throwable) {}
+        PetalGlassWidgetRenderer.deleteTiles(context)
+        changes.value = System.currentTimeMillis()
+        PetalSearchGlanceWidgetUpdater.refresh(context)
+    }
+
+    /** A widget was removed from the home screen: forget its alignment and delete its tiles (no redraw needed). */
+    fun purge(context: Context, appWidgetId: Int) {
+        store(context).edit()
+            .remove("$KEY_RECT_PREFIX$appWidgetId")
+            .remove("$KEY_SIZE_PREFIX$appWidgetId")
+            .apply()
+        PetalGlassWidgetRenderer.deleteTilesFor(context, appWidgetId)
     }
 
     @SuppressLint("MissingPermission")

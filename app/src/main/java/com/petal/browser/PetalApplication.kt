@@ -39,14 +39,25 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
 
     private val wallpaperChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            PetalSearchWidgetProvider.updateAllWidgets(this@PetalApplication)
+            // Not just a redraw: the cached wallpaper slice and glass tiles must be rebuilt from the new wallpaper.
+            com.petal.browser.widget.glance.PetalGlassWidgets.onSystemWallpaperChanged(this@PetalApplication)
         }
     }
+
+    // Sliders fire many changes a second; coalesce them into one widget redraw.
+    private val glassWidgetHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val glassWidgetRefresh = Runnable { PetalSearchWidgetProvider.updateAllWidgets(this@PetalApplication) }
 
     private val widgetThemePrefListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == "sp_theme_config" || key == "sp_force_dark_mode") {
             val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
             com.petal.browser.engine.gecko.PetalGeckoRuntime.syncTheme(sp)
+        }
+        if (key != null && key.startsWith("sp_liquid_glass_")) {
+            // Master switch, widget switch, sheen, refraction, refraction width, alpha...: the widgets draw from these.
+            glassWidgetHandler.removeCallbacks(glassWidgetRefresh)
+            glassWidgetHandler.postDelayed(glassWidgetRefresh, 250L)
+            return@OnSharedPreferenceChangeListener
         }
         if (key != null && (key.startsWith("sp_gs_") || key == "sp_gs_flex_preset" || key.startsWith("sp_custom_font"))) {
             PetalSearchWidgetProvider.updateAllWidgets(this@PetalApplication)

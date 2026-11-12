@@ -18,56 +18,38 @@ object PetalPrivateDnsHelper {
     const val DNS_QUAD9 = "QUAD9"
     const val DNS_CUSTOM = "CUSTOM"
 
+    const val PREF_MODE = "sp_private_dns_mode"
+    const val PREF_NEXTDNS_PROFILE = "sp_nextdns_profile_id"
+
     @JvmStatic
     fun getDnsProviderName(context: Context?): String {
         if (context == null) return "System Default"
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        val mode = sp.getString("sp_private_dns_mode", DNS_OFF) ?: return "System Default"
-        return when (mode) {
-            DNS_CLOUDFLARE -> "Cloudflare 1.1.1.1"
-            DNS_GOOGLE -> "Google Public DNS"
-            DNS_CLEANBROWSING -> "CleanBrowsing Family Filter"
-            DNS_OPENDNS -> "OpenDNS"
-            DNS_NEXTDNS -> "NextDNS"
-            DNS_QUAD9 -> "Quad9"
-            DNS_CUSTOM -> "Custom DoH"
-            else -> "System Default"
-        }
+        val mode = sp.getString(PREF_MODE, DNS_OFF) ?: return "System Default"
+        if (mode == DNS_CUSTOM) return "Custom DoH"
+        return PetalDnsCatalog.find(mode)?.title ?: "System Default"
     }
 
     @JvmStatic
     fun getDnsHostname(context: Context?): String? {
         if (context == null) return null
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        val mode = sp.getString("sp_private_dns_mode", DNS_OFF) ?: return null
-        return when (mode) {
-            DNS_CLOUDFLARE -> "one.one.one.one"
-            DNS_GOOGLE -> "dns.google"
-            DNS_CLEANBROWSING -> "family-filter-dns.cleanbrowsing.org"
-            DNS_OPENDNS -> "dns.opendns.com"
-            DNS_NEXTDNS -> "dns.nextdns.io"
-            DNS_QUAD9 -> "dns.quad9.net"
-            else -> null
-        }
+        val mode = sp.getString(PREF_MODE, DNS_OFF) ?: return null
+        return PetalDnsCatalog.find(mode)?.hostname
     }
 
     @JvmStatic
     fun getDnsEndpointUrl(sp: SharedPreferences?): String? {
         if (sp == null) return null
-        val mode = sp.getString("sp_private_dns_mode", DNS_OFF)
+        val mode = sp.getString(PREF_MODE, DNS_OFF)
         if (mode == null || DNS_OFF == mode) return null
         return when (mode) {
-            DNS_CLOUDFLARE -> "https://cloudflare-dns.com/dns-query"
-            DNS_GOOGLE -> "https://dns.google/dns-query"
-            DNS_CLEANBROWSING -> "https://doh.cleanbrowsing.org/doh/family-filter/"
-            DNS_OPENDNS -> "https://doh.opendns.com/dns-query"
-            DNS_NEXTDNS -> "https://dns.nextdns.io/dns-query"
-            DNS_QUAD9 -> "https://dns.quad9.net/dns-query"
             DNS_CUSTOM -> {
                 val custom = sp.getString("sp_custom_doh_url", sp.getString("sp_private_dns_custom_url", ""))
                 if (!custom.isNullOrBlank()) custom.trim() else null
             }
-            else -> null
+            DNS_NEXTDNS -> PetalDnsCatalog.nextDnsUrl(sp.getString(PREF_NEXTDNS_PROFILE, ""))
+            else -> PetalDnsCatalog.find(mode)?.dohUrl
         }
     }
 

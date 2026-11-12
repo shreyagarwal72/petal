@@ -15,14 +15,6 @@ import android.content.Intent
 class PetalWallpaperChangedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_WALLPAPER_CHANGED) return
-        // Clear cached bitmap and tiles so the next render picks up the new wallpaper
-        PetalGlassWidgetRenderer.forget()
-        PetalGlassWidgetRenderer.deleteTiles(context)
-        // Re-extract the new wallpaper from the system
-        try {
-            PetalGlassWidgets.tryExtractSystemWallpaper(context)
-        } catch (_: Throwable) {}
-        // Trigger widget redraw
-        PetalSearchGlanceWidgetUpdater.refresh(context)
+        PetalGlassWidgets.onSystemWallpaperChanged(context.applicationContext)
     }
 }

@@ -105,15 +105,28 @@ class PetalSearchPetal1Widget : PetalBaseWidget(PetalWidgetKind.PETAL1)
 class PetalSearchPetal2Widget : PetalBaseWidget(PetalWidgetKind.PETAL2)
 class PetalSearchPetal3Widget : PetalBaseWidget(PetalWidgetKind.PETAL3)
 
-class PetalSearchPetal1WidgetReceiver : GlanceAppWidgetReceiver() {
+/** Shared receiver base: forgets a widget's glass alignment and tiles when it is removed from the home screen. */
+abstract class PetalBaseWidgetReceiver : GlanceAppWidgetReceiver() {
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        super.onDeleted(context, appWidgetIds)
+        appWidgetIds.forEach { id ->
+            try {
+                PetalGlassWidgets.purge(context.applicationContext, id)
+            } catch (_: Throwable) {
+            }
+        }
+    }
+}
+
+class PetalSearchPetal1WidgetReceiver : PetalBaseWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = PetalSearchPetal1Widget()
 }
 
-class PetalSearchPetal2WidgetReceiver : GlanceAppWidgetReceiver() {
+class PetalSearchPetal2WidgetReceiver : PetalBaseWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = PetalSearchPetal2Widget()
 }
 
-class PetalSearchPetal3WidgetReceiver : GlanceAppWidgetReceiver() {
+class PetalSearchPetal3WidgetReceiver : PetalBaseWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = PetalSearchPetal3Widget()
 }
 
@@ -177,10 +190,18 @@ private fun PetalWidgetCard(
     }
 
     val isLiquidGlass = PetalGlassWidgets.isLiquidGlassEnabled(context)
-    val rect = if (isLiquidGlass && validId) PetalGlassWidgets.getRect(context, appWidgetId) else null
+    val storedRect = if (isLiquidGlass && validId) PetalGlassWidgets.getRect(context, appWidgetId) else null
+    // If the widget was resized after it was aligned, keep the aligned top-left and take the live size so the
+    // glass slice is never stretched or squashed.
+    val rect = storedRect?.let { r ->
+        if (widthPx > 0 && heightPx > 0 &&
+            (kotlin.math.abs(r.width() - widthPx) > 2 || kotlin.math.abs(r.height() - heightPx) > 2)
+        ) android.graphics.Rect(r.left, r.top, r.left + widthPx, r.top + heightPx) else r
+    }
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
     val refraction = sp.getFloat("sp_liquid_glass_refraction", 1.0f).coerceIn(0f, 2f)
+    val refractionWidth = sp.getFloat("sp_liquid_glass_refraction_width", 1.0f).coerceIn(0f, 2f)
 
     // The glass renderer needs a number; "full" is half the widget's shorter side.
     val cornerDp = if (cfg.cornerRadius >= PETAL_RADIUS_FULL) minOf(size.width.value, size.height.value) / 2f else cfg.cornerRadius.toFloat()
@@ -194,7 +215,8 @@ private fun PetalWidgetCard(
                 cornerDp = cornerDp,
                 dark = pal.isDark,
                 edge = sheen,
-                refraction = refraction
+                refraction = refraction,
+                refractionWidth = refractionWidth
             ),
             appWidgetId
         )
@@ -247,7 +269,8 @@ private fun PetalWidgetCard(
 
         content()
 
-        if (isLiquidGlass && rect == null && validId) {
+        // Also offered when the glass could not be drawn (no wallpaper access yet), so the user can fix it from here.
+        if (isLiquidGlass && glassUri == null && validId) {
             Box(
                 modifier = GlanceModifier.fillMaxSize().padding(top = 4.dp, end = 8.dp),
                 contentAlignment = Alignment.TopEnd

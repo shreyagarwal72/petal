@@ -72,6 +72,9 @@ class PrivacySettingsViewModel @Inject constructor(
     val customDohUrl: StateFlow<String> = settingsRepository.customDohUrl
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
+    val nextDnsProfileId: StateFlow<String> = settingsRepository.nextDnsProfileId
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
     val privacyProfile: StateFlow<String> = settingsRepository.privacyProfile
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "HARDENED")
 
@@ -152,6 +155,10 @@ class PrivacySettingsViewModel @Inject constructor(
 
     fun setCustomDohUrl(url: String) = viewModelScope.launch {
         settingsRepository.setCustomDohUrl(url)
+    }
+
+    fun setNextDnsProfileId(id: String) = viewModelScope.launch {
+        settingsRepository.setNextDnsProfileId(id)
     }
 
     fun setPrivacyProfile(profile: String) = viewModelScope.launch {

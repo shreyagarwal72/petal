@@ -761,6 +761,10 @@ class MainActivity : FragmentActivity(), BrowserController {
         if (intent == null) return
 
         val action = intent.action
+        // A widget button's action is one-shot: clear it so a rotation or recreate doesn't run it again.
+        if (action != null && action.startsWith("com.petal.browser.action.OPEN_")) {
+            intent.action = Intent.ACTION_MAIN
+        }
         val data = intent.dataString
         val dataUri = intent.data
 
@@ -798,8 +802,21 @@ class MainActivity : FragmentActivity(), BrowserController {
             com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH -> {
                 viewModel.openAiSheet()
             }
+            // The search bar opens the search page on the current tab (it used to just open a blank new tab).
             com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH -> {
-                viewModel.openNewTab("about:home", selectTab = true, private = false)
+                viewModel.openOmnibox()
+            }
+            // These two widget buttons had no handler at all, so tapping them only brought the app forward.
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE -> {
+                com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(this) { result ->
+                    if (result.isNotBlank()) viewModel.loadUrl(result.trim())
+                }
+            }
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_LENS -> {
+                com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(this)
+            }
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SNAP_CAMERA -> {
+                com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(this, autoSnapCamera = true)
             }
             com.petal.browser.compose.incognito.PetalIncognitoSessionManager.ACTION_CLOSE_INCOGNITO -> {
                 viewModel.closeAllTabs(isIncognitoOnly = true)

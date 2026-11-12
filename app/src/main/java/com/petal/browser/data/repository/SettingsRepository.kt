@@ -86,6 +86,7 @@ interface SettingsRepository {
     val webglEnabled: Flow<Boolean>
     val privateDnsMode: Flow<String>
     val customDohUrl: Flow<String>
+    val nextDnsProfileId: Flow<String>
 
     // Accessibility & Display
     val immersiveFullScreen: Flow<Boolean>
@@ -216,6 +217,7 @@ interface SettingsRepository {
     suspend fun setOpenRedirectsInBackground(enabled: Boolean)
     suspend fun setPrivateDnsMode(mode: String)
     suspend fun setCustomDohUrl(url: String)
+    suspend fun setNextDnsProfileId(id: String)
     suspend fun setPrivacyProfile(profile: String)
     suspend fun setWebglEnabled(enabled: Boolean)
 

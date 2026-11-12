@@ -341,6 +341,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getString("sp_custom_doh_url", "") ?: ""
     }
 
+    override val nextDnsProfileId: Flow<String> = preferenceFlow("sp_nextdns_profile_id") {
+        sp.getString("sp_nextdns_profile_id", "") ?: ""
+    }
+
     // ── Accessibility & Display ───────────────────────────────────────────────
     override val immersiveFullScreen: Flow<Boolean> = preferenceFlow("sp_immersive_fullscreen") {
         sp.getBoolean("sp_immersive_fullscreen", false)
@@ -859,6 +863,11 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setCustomDohUrl(url: String) {
         sp.edit().putString("sp_custom_doh_url", url).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun setNextDnsProfileId(id: String) {
+        sp.edit().putString("sp_nextdns_profile_id", id.trim()).apply()
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 

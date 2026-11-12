@@ -76,6 +76,7 @@ fun PrivacySettingsScreen(
     val openRedirectsInBackground by viewModel.openRedirectsInBackground.collectAsStateWithLifecycle()
     val privateDnsMode by viewModel.privateDnsMode.collectAsStateWithLifecycle()
     val customDohUrl by viewModel.customDohUrl.collectAsStateWithLifecycle()
+    val nextDnsProfileId by viewModel.nextDnsProfileId.collectAsStateWithLifecycle()
 
     PrivacySettingsScreenContent(
         adBlockEnabled = adBlockEnabled,
@@ -95,6 +96,7 @@ fun PrivacySettingsScreen(
         openRedirectsInBackground = openRedirectsInBackground,
         privateDnsMode = privateDnsMode,
         customDohUrl = customDohUrl,
+        nextDnsProfileId = nextDnsProfileId,
         onAdBlockEnabledChange = viewModel::setAdBlockEnabled,
         onBlockThirdPartyCookiesChange = viewModel::setBlockThirdPartyCookies,
         onTotalCookieProtectionChange = viewModel::setTotalCookieProtection,
@@ -112,6 +114,7 @@ fun PrivacySettingsScreen(
         onOpenRedirectsInBackgroundChange = viewModel::setOpenRedirectsInBackground,
         onPrivateDnsModeChange = viewModel::setPrivateDnsMode,
         onCustomDohUrlChange = viewModel::setCustomDohUrl,
+        onNextDnsProfileIdChange = viewModel::setNextDnsProfileId,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -138,6 +141,7 @@ fun PrivacySettingsScreenContent(
     openRedirectsInBackground: Boolean,
     privateDnsMode: String,
     customDohUrl: String,
+    nextDnsProfileId: String = "",
     onAdBlockEnabledChange: (Boolean) -> Unit,
     onBlockThirdPartyCookiesChange: (Boolean) -> Unit,
     onTotalCookieProtectionChange: (Boolean) -> Unit = {},
@@ -155,6 +159,7 @@ fun PrivacySettingsScreenContent(
     onOpenRedirectsInBackgroundChange: (Boolean) -> Unit,
     onPrivateDnsModeChange: (String) -> Unit,
     onCustomDohUrlChange: (String) -> Unit,
+    onNextDnsProfileIdChange: (String) -> Unit = {},
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
@@ -479,16 +484,15 @@ fun PrivacySettingsScreenContent(
                             onCheckedChange = onHttpsOnlyChange
                         )
 
-                        val dnsOptions = listOf(
-                            Triple("OFF", "System Default (Off)", "Use default network DNS"),
-                            Triple("CLOUDFLARE", "Cloudflare (1.1.1.1)", "Fast & private 1.1.1.1 DNS over HTTPS"),
-                            Triple("GOOGLE", "Google Public DNS", "8.8.8.8 high performance resolution"),
-                            Triple("CLEANBROWSING", "CleanBrowsing Family Filter", "Blocks adult & malicious sites"),
-                            Triple("OPENDNS", "OpenDNS Home", "Cisco OpenDNS security protection"),
-                            Triple("NEXTDNS", "NextDNS", "Encrypted DNS with ad & tracker blocking"),
-                            Triple("QUAD9", "Quad9", "Malware blocking and privacy-preserving DNS"),
-                            Triple("CUSTOM", "Custom DNS-over-HTTPS (DoH)", "Enter your preferred DoH resolver endpoint URL")
-                        )
+                        val dnsOptions = remember {
+                            buildList {
+                                add(Triple("OFF", "System Default (Off)", "Use default network DNS"))
+                                com.petal.browser.unit.PetalDnsCatalog.presets.forEach {
+                                    add(Triple(it.mode, it.title, it.description))
+                                }
+                                add(Triple("CUSTOM", "Custom DNS-over-HTTPS (DoH)", "Enter your preferred DoH resolver endpoint URL"))
+                            }
+                        }
 
                         PetalGroup(rowCount = dnsOptions.size) { index, position ->
                             val (mode, name, desc) = dnsOptions[index]
@@ -526,6 +530,39 @@ fun PrivacySettingsScreenContent(
                                     }
                                 }
                             )
+                        }
+
+                        if (privateDnsMode == "NEXTDNS") {
+                            PetalHeroCard {
+                                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                    TextField(
+                                        value = nextDnsProfileId,
+                                        onValueChange = onNextDnsProfileIdChange,
+                                        label = { Text("NextDNS profile ID") },
+                                        placeholder = { Text("abc123") },
+                                        supportingText = {
+                                            Text(
+                                                if (nextDnsProfileId.isBlank() ||
+                                                    com.petal.browser.unit.PetalDnsCatalog.isValidNextDnsProfileId(nextDnsProfileId)
+                                                ) "Optional. Uses your own NextDNS profile and settings."
+                                                else "Profile IDs are 4-12 letters or digits."
+                                            )
+                                        },
+                                        isError = nextDnsProfileId.isNotBlank() &&
+                                            !com.petal.browser.unit.PetalDnsCatalog.isValidNextDnsProfileId(nextDnsProfileId),
+                                        leadingIcon = { Icon(Icons.Rounded.Dns, contentDescription = null) },
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = TextFieldDefaults.colors(
+                                            focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            focusedIndicatorColor = Color.Transparent,
+                                            unfocusedIndicatorColor = Color.Transparent
+                                        ),
+                                        modifier = Modifier.fillMaxWidth(), glass = false
+                                    )
+                                }
+                            }
                         }
 
                         if (privateDnsMode == "CUSTOM") {

@@ -155,6 +155,7 @@ object PetalBackupManager {
                 "sp_address_bar_height" == key || "sp_app_language" == key ||
                 "sp_app_lock_passcode" == key || "sp_app_lock_type" == key ||
                 "sp_private_dns_mode" == key || "sp_custom_doh_url" == key ||
+                "sp_nextdns_profile_id" == key ||
                 "sp_torrent_engine" == key || "sp_download_manager_mode" == key ||
                 "sp_custom_font_name" == key || "sp_custom_font_path" == key ||
                 "sp_home_wallpaper_uri" == key || "sp_custom_homepage_url" == key ||
