@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="plural_items_selected">
+        <item quantity="one">%1$d item selected</item>
+        <item quantity="other">%1$d items selected</item>
+    </plurals>
+    <plurals name="plural_items">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <plurals name="plural_tabs">
+        <item quantity="one">%1$d tab</item>
+        <item quantity="other">%1$d tabs</item>
+    </plurals>
+    <plurals name="plural_images_found">
+        <item quantity="one">%1$d image found on page</item>
+        <item quantity="other">%1$d images found on page</item>
+    </plurals>
+    <plurals name="plural_add_tabs_to_group">
+        <item quantity="one">Add %1$d tab to group</item>
+        <item quantity="other">Add %1$d tabs to group</item>
+    </plurals>
+    <plurals name="plural_remove_downloads">
+        <item quantity="one">Remove %1$d download from the list?</item>
+        <item quantity="other">Remove %1$d downloads from the list?</item>
+    </plurals>
+    <plurals name="plural_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+</resources>

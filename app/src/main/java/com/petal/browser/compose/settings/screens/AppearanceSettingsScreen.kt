@@ -56,6 +56,7 @@ import com.petal.browser.ui.components.*
 import com.petal.browser.ui.theme.*
 import com.petal.browser.unit.PetalHighRefreshRateManager
 import com.petal.browser.widget.PetalSearchWidgetProvider
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -1484,7 +1485,7 @@ fun AppearanceSettingsScreenContent(
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                             Text(
-                                                text = stringResource(R.string.ui_min, bgShapeRotationMin),
+                                                text = pluralStringResource(R.plurals.plural_minutes, bgShapeRotationMin, bgShapeRotationMin),
                                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                                 color = MaterialTheme.colorScheme.primary
                                             )

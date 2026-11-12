@@ -115,6 +115,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.cos
 import kotlin.math.sin
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.download.PetalBatteryOptimization
@@ -482,7 +483,7 @@ fun PetalDownloadManagerScreen(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = { Icon(Icons.Rounded.DeleteForever, null, tint = MaterialTheme.colorScheme.error) },
             title = { Text(stringResource(R.string.ui_delete_downloads), fontWeight = FontWeight.Bold) },
-            text = { Column { Text(stringResource(R.string.ui_remove_downloads_from_the_list, pendingDeleteItems.size)); Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = deleteSelectedFiles, onCheckedChange = { deleteSelectedFiles = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() }); Text(stringResource(R.string.ui_also_delete_files_from_device)) } } },
+            text = { Column { Text(pluralStringResource(R.plurals.plural_remove_downloads, pendingDeleteItems.size, pendingDeleteItems.size)); Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = deleteSelectedFiles, onCheckedChange = { deleteSelectedFiles = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() }); Text(stringResource(R.string.ui_also_delete_files_from_device)) } } },
             dismissButton = { TextButton(onClick = { pendingDeleteItems = emptyList() }) { Text(stringResource(R.string.ui_cancel)) } },
             confirmButton = { Button(onClick = { val items = pendingDeleteItems; pendingDeleteItems = emptyList(); performStagedDelete(items, deleteSelectedFiles) }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.ui_delete)) } }
         )

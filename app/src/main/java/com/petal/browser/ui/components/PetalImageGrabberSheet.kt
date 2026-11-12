@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
@@ -78,7 +79,7 @@ fun PetalImageGrabberSheet(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = stringResource(R.string.ui_images_found_on_page, images.size),
+                        text = pluralStringResource(R.plurals.plural_images_found, images.size, images.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

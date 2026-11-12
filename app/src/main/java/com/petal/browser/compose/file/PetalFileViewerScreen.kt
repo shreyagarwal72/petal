@@ -59,6 +59,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -668,7 +669,7 @@ private fun ArchiveViewerContent(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = stringResource(R.string.ui_items, visibleEntries.size),
+                                        text = pluralStringResource(R.plurals.plural_items, visibleEntries.size, visibleEntries.size),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

@@ -83,6 +83,7 @@ import com.petal.browser.haptics.PetalHapticEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -694,7 +695,7 @@ fun PetalMediaPickerBottomSheet(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = stringResource(R.string.ui_item_selected, selectedUris.size, if (selectedUris.size > 1) "s" else ""),
+                            text = pluralStringResource(R.plurals.plural_items_selected, selectedUris.size, selectedUris.size),
                             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )

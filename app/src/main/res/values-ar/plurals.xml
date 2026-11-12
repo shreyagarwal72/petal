@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="plural_items_selected">
+        <item quantity="zero">لم يتم تحديد أي عنصر</item>
+        <item quantity="one">تم تحديد عنصر واحد</item>
+        <item quantity="two">تم تحديد عنصرين</item>
+        <item quantity="few">تم تحديد %1$d عناصر</item>
+        <item quantity="many">تم تحديد %1$d عنصرًا</item>
+        <item quantity="other">تم تحديد %1$d عنصر</item>
+    </plurals>
+    <plurals name="plural_items">
+        <item quantity="zero">لا توجد عناصر</item>
+        <item quantity="one">عنصر واحد</item>
+        <item quantity="two">عنصران</item>
+        <item quantity="few">%1$d عناصر</item>
+        <item quantity="many">%1$d عنصرًا</item>
+        <item quantity="other">%1$d عنصر</item>
+    </plurals>
+    <plurals name="plural_tabs">
+        <item quantity="zero">لا توجد علامات تبويب</item>
+        <item quantity="one">علامة تبويب واحدة</item>
+        <item quantity="two">علامتا تبويب</item>
+        <item quantity="few">%1$d علامات تبويب</item>
+        <item quantity="many">%1$d علامة تبويب</item>
+        <item quantity="other">%1$d علامة تبويب</item>
+    </plurals>
+    <plurals name="plural_images_found">
+        <item quantity="zero">لم يتم العثور على صور في الصفحة</item>
+        <item quantity="one">تم العثور على صورة واحدة في الصفحة</item>
+        <item quantity="two">تم العثور على صورتين في الصفحة</item>
+        <item quantity="few">تم العثور على %1$d صور في الصفحة</item>
+        <item quantity="many">تم العثور على %1$d صورة في الصفحة</item>
+        <item quantity="other">تم العثور على %1$d صورة في الصفحة</item>
+    </plurals>
+    <plurals name="plural_add_tabs_to_group">
+        <item quantity="zero">إضافة %1$d علامة تبويب إلى المجموعة</item>
+        <item quantity="one">إضافة علامة تبويب واحدة إلى المجموعة</item>
+        <item quantity="two">إضافة علامتي تبويب إلى المجموعة</item>
+        <item quantity="few">إضافة %1$d علامات تبويب إلى المجموعة</item>
+        <item quantity="many">إضافة %1$d علامة تبويب إلى المجموعة</item>
+        <item quantity="other">إضافة %1$d علامة تبويب إلى المجموعة</item>
+    </plurals>
+    <plurals name="plural_remove_downloads">
+        <item quantity="zero">هل تريد إزالة %1$d تنزيل من القائمة؟</item>
+        <item quantity="one">هل تريد إزالة التنزيل من القائمة؟</item>
+        <item quantity="two">هل تريد إزالة التنزيلين من القائمة؟</item>
+        <item quantity="few">هل تريد إزالة %1$d تنزيلات من القائمة؟</item>
+        <item quantity="many">هل تريد إزالة %1$d تنزيلًا من القائمة؟</item>
+        <item quantity="other">هل تريد إزالة %1$d تنزيل من القائمة؟</item>
+    </plurals>
+    <plurals name="plural_minutes">
+        <item quantity="zero">%1$d دقيقة</item>
+        <item quantity="one">دقيقة واحدة</item>
+        <item quantity="two">دقيقتان</item>
+        <item quantity="few">%1$d دقائق</item>
+        <item quantity="many">%1$d دقيقة</item>
+        <item quantity="other">%1$d دقيقة</item>
+    </plurals>
+</resources>
