@@ -131,7 +131,7 @@ internal fun PetalPixelNavPill(
             val isCompact = maxWidth < 285.dp
             val unselectedSlotWidth = if (isCompact) 38.dp else 42.dp
             val selectedFixedParts = 24.dp /*icon*/ + 6.dp /*gap*/ + (if (isCompact) 20.dp else 24.dp) /*pad*/ + 12.dp /*rowPad*/
-            val minUnselectedWidth = (PixelNavOrder.size - 1) * unselectedSlotWidth
+            val minUnselectedWidth = unselectedSlotWidth * (PixelNavOrder.size - 1)
             val labelMaxPx = with(LocalDensity.current) {
                 (maxWidth - minUnselectedWidth - selectedFixedParts).coerceIn(54.dp, 120.dp).roundToPx()
             }
