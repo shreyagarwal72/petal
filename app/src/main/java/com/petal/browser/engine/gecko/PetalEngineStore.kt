@@ -133,6 +133,8 @@ object PetalEngineStore {
         val newStore = BrowserStore(
             initialState = BrowserState(),
             middleware = listOf(
+                // First: takes <input type="file"> requests before Mozilla's PromptFeature / reducer.
+                PetalFileUploadMiddleware(),
                 downloadMiddleware,
                 PromptMiddleware(),
                 FileUploadsDirCleanerMiddleware(uploadCleaner),

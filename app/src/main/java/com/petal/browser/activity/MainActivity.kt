@@ -129,6 +129,7 @@ class MainActivity : FragmentActivity(), BrowserController {
             } catch (_: Throwable) { }
         }
         super.onCreate(savedInstanceState)
+        com.petal.browser.engine.gecko.PetalFileUploadMiddleware.attachActivity(this)
         enableEdgeToEdge()
 
         com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
@@ -175,6 +176,7 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     override fun onDestroy() {
         super.onDestroy()
+        com.petal.browser.engine.gecko.PetalFileUploadMiddleware.detachActivity(this)
         browserFeatures?.stop()
         browserFeatures = null
     }
@@ -659,6 +661,10 @@ class MainActivity : FragmentActivity(), BrowserController {
     override fun showFileChooser(filePathCallback: ValueCallback<Array<Uri>>?, fileChooserParams: WebChromeClient.FileChooserParams?) {
         this.filePathCallback = filePathCallback
         this.mFilePathCallback = filePathCallback
+        // Always Petal's own picker, never the Android system chooser.
+        com.petal.browser.compose.file.PetalUploadChooser.show(this, filePathCallback, fileChooserParams) {
+            filePathCallback?.onReceiveValue(null)
+        }
     }
 
     override fun onShowCustomView(view: View?, callback: WebChromeClient.CustomViewCallback?) { }
