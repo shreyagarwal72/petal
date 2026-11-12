@@ -2331,7 +2331,9 @@ private fun PetalHomePreviewCard(
     tab: PetalTabItem,
     accentColor: Color,
 ) {
-    val isHome = tab.url.isBlank() || tab.url == "Petal Home" || tab.url == "about:blank"
+    // Every home form counts (about:home, petal://home, petal_home.html, bundled assets), not just
+    // about:blank, otherwise a home tab was drawn as a "Website" card with a bogus domain.
+    val isHome = tab.url == "Petal Home" || com.petal.browser.unit.PetalBrowserUtils.isHomePage(tab.url)
     Box(
         modifier = Modifier
             .fillMaxSize()

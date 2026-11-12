@@ -198,7 +198,16 @@ class PetalBrowserViewModel @Inject constructor(
     private val _isOmniboxOpen = MutableStateFlow(false)
     val isOmniboxOpen: StateFlow<Boolean> = _isOmniboxOpen.asStateFlow()
 
+    /** Lets the activity capture the visible tab's thumbnail right before the tab manager opens. */
+    @Volatile
+    var onBeforeTabSwitcherOpen: (() -> Unit)? = null
+
+    // The grid reads previews through tabItems; without this nudge a thumbnail stored after the
+    // list was built (capture on leaving a tab, page finished loading) never reached the screen.
+    private val thumbnailListener = TabThumbnailCache.ThumbnailListener { _thumbnailRevision.value = System.nanoTime() }
+
     init {
+        TabThumbnailCache.addListener(thumbnailListener)
         viewModelScope.launch {
             // Let Compose draw the initial home surface before creating Gecko sessions.
             yield()
@@ -557,10 +566,13 @@ class PetalBrowserViewModel @Inject constructor(
     // ── Overlay / Modal Toggles ─────────────────────────────────────────────
 
     fun toggleTabSwitcher() {
-        _isTabSwitcherOpen.value = !_isTabSwitcherOpen.value
+        setTabSwitcherOpen(!_isTabSwitcherOpen.value)
     }
 
     fun setTabSwitcherOpen(open: Boolean) {
+        if (open && !_isTabSwitcherOpen.value) {
+            try { onBeforeTabSwitcherOpen?.invoke() } catch (_: Throwable) {}
+        }
         _isTabSwitcherOpen.value = open
     }
 
@@ -722,6 +734,7 @@ class PetalBrowserViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        TabThumbnailCache.removeListener(thumbnailListener)
         storeSubscription.unsubscribe()
     }
 }

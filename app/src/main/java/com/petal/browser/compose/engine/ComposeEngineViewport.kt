@@ -159,13 +159,37 @@ fun ComposeEngineViewport(
         }
     }
 
-    // Capture webpage thumbnail into TabThumbnailCache upon load completion
-    LaunchedEffect(tab?.id, isLoading) {
-        if (!isLoading && tab != null && tab.content.url.isNotBlank() && !PetalBrowserUtils.isHomePage(tab.content.url)) {
+    // Capture webpage thumbnail into TabThumbnailCache upon load completion.
+    LaunchedEffect(tab?.id, isLoading, tab?.content?.url) {
+        if (tab == null || isLoading) return@LaunchedEffect
+        if (PetalBrowserUtils.isHomePage(tab.content.url)) {
+            // The tab went back to the home page: its old website thumbnail is now wrong.
+            TabThumbnailCache.remove(tab.id)
+            return@LaunchedEffect
+        }
+        if (tab.content.url.isNotBlank()) {
             kotlinx.coroutines.delay(250L)
             findGeckoView(engineView.asView())?.let { gv ->
-                captureGeckoThumbnail(gv, tab.id, tab.content.private)
+                captureGeckoThumbnail(context, gv, tab.id, tab.content.private)
             }
+        }
+    }
+
+    // Lets the activity refresh this thumbnail right before the tab manager opens.
+    DisposableEffect(tab?.id) {
+        val id = tab?.id
+        if (id != null) {
+            PetalViewportThumbnailer.capture = {
+                val current = PetalEngineStore.getStore(context).state.tabs.firstOrNull { it.id == id }
+                if (current != null && !PetalBrowserUtils.isHomePage(current.content.url)) {
+                    findGeckoView(engineView.asView())?.let { gv ->
+                        captureGeckoThumbnail(context, gv, id, current.content.private)
+                    }
+                }
+            }
+        }
+        onDispose {
+            if (PetalViewportThumbnailer.capture != null && id != null) PetalViewportThumbnailer.capture = null
         }
     }
 
@@ -226,14 +250,33 @@ private fun findGeckoView(root: View?): GeckoView? {
     return null
 }
 
-private fun captureGeckoThumbnail(gv: GeckoView, tabId: String, isIncognito: Boolean) {
+/** Hook used by MainActivity to capture the Compose-hosted tab just before the tab manager opens. */
+object PetalViewportThumbnailer {
+    @Volatile
+    @JvmField
+    var capture: (() -> Unit)? = null
+}
+
+private fun captureGeckoThumbnail(context: android.content.Context, gv: GeckoView, tabId: String, isIncognito: Boolean) {
     if (gv.width <= 0 || gv.height <= 0) return
+    // Same gate as Firefox's BrowserThumbnails: only the SELECTED tab, and only after first
+    // contentful paint. Without it a tab switched away during the delay got the NEW tab's pixels
+    // stored under its own id (wrong thumbnail) and half-painted white frames were kept.
+    val store = PetalEngineStore.getStore(context)
+    if (store.state.selectedTabId != tabId) return
+    if (store.state.tabs.firstOrNull { it.id == tabId }?.content?.firstContentfulPaint != true) return
     try {
         gv.capturePixels().then({ bitmap: Bitmap? ->
             if (bitmap != null) {
                 TabThumbnailCache.DISK.execute {
+                    // The tab may have changed while the pixels were in flight.
+                    if (store.state.selectedTabId != tabId) {
+                        if (!bitmap.isRecycled) bitmap.recycle()
+                        return@execute
+                    }
                     val w = bitmap.width
                     val h = bitmap.height
+                    if (w <= 0 || h <= 0) return@execute
                     val targetWidth = Math.min(w, 480)
                     val targetHeight = Math.max(1, (h.toFloat() * targetWidth / w).toInt())
                     val scaled = try {

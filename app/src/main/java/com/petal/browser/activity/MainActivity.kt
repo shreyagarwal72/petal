@@ -135,14 +135,20 @@ class MainActivity : FragmentActivity(), BrowserController {
         com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
         com.petal.browser.compose.splash.PetalSplashState.splashActive.value = false
 
-        // Restore tabs from previous session if cold start
-        if (savedInstanceState == null) {
+        // Restore tabs from the saved session. This must NOT be gated on savedInstanceState == null:
+        // after Android kills the process the activity is recreated WITH a saved state but with an
+        // empty BrowserStore, and skipping the restore there opened a blank tab (and let AutoSave
+        // overwrite the stored session). restoreSession() is a cheap no-op when the process is
+        // alive and the store already holds tabs (rotation, theme change, etc.).
+        run {
             val restored = com.petal.browser.browser.PetalSessionRestoreManager.restoreSession(this)
             val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this)
             if (!restored && store.state.tabs.isEmpty()) {
                 viewModel.openNewTab("about:home", selectTab = true)
             }
         }
+
+        viewModel.onBeforeTabSwitcherOpen = { captureVisibleTabThumbnail() }
 
         setContent {
             PetalExpressiveTheme {
@@ -339,6 +345,15 @@ class MainActivity : FragmentActivity(), BrowserController {
         val url = currentAlbumController?.url.orEmpty()
         val title = currentAlbumController?.title.orEmpty()
         com.petal.browser.account.mozilla.PetalSendToDeviceBridge.showSendToDevice(this, url, title)
+    }
+    /** Refreshes the thumbnail of the tab on screen so the tab manager never shows a stale frame. */
+    fun captureVisibleTabThumbnail() {
+        try {
+            (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.updatePreviewCache(true)
+        } catch (_: Throwable) {}
+        try {
+            com.petal.browser.compose.engine.PetalViewportThumbnailer.capture?.invoke()
+        } catch (_: Throwable) {}
     }
     fun captureBrowserMainPreview() {
         val root = findViewById<View>(android.R.id.content) ?: window.decorView

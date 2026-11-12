@@ -54,6 +54,27 @@ object TabThumbnailCache {
     private val regularVersions = ConcurrentHashMap<String, Long>()
     private val pendingLoads = ConcurrentHashMap.newKeySet<String>()
     private val loadCallbacks = ConcurrentHashMap<String, CopyOnWriteArrayList<ThumbnailCallback>>()
+    private val listeners = CopyOnWriteArrayList<ThumbnailListener>()
+
+    /** Notified on the main thread whenever a tab's thumbnail is stored or removed. */
+    fun interface ThumbnailListener {
+        fun onThumbnailChanged(tabId: String)
+    }
+
+    @JvmStatic
+    fun addListener(listener: ThumbnailListener) {
+        listeners.addIfAbsent(listener)
+    }
+
+    @JvmStatic
+    fun removeListener(listener: ThumbnailListener) {
+        listeners.remove(listener)
+    }
+
+    private fun notifyChanged(tabId: String) {
+        if (listeners.isEmpty()) return
+        MAIN.post { for (l in listeners) try { l.onThumbnailChanged(tabId) } catch (_: Throwable) {} }
+    }
 
     private val regularMemoryCache: LruCache<String, Bitmap>
     private val privateMemoryCache: LruCache<String, Bitmap>
@@ -169,6 +190,7 @@ object TabThumbnailCache {
         if (snapshot.isRecycled) return false
         val cache = if (isPrivate) privateMemoryCache else regularMemoryCache
         cache.put(tabId!!, snapshot)
+        notifyChanged(tabId)
         if (isPrivate) return true
 
         val token = TOKENS.incrementAndGet()
@@ -306,6 +328,12 @@ object TabThumbnailCache {
                 if (!valid) {
                     if (loaded != null && !loaded.isRecycled) loaded.recycle()
                     loaded = null
+                    // A newer thumbnail was stored while the disk read was running: hand that one
+                    // over instead of reporting "no thumbnail" (which made previews flash empty).
+                    for (id in ids) {
+                        val fresh = regularMemoryCache.get(id)
+                        if (fresh != null && !fresh.isRecycled) { loaded = fresh; break }
+                    }
                 } else if (loaded != null && loadedId != null) {
                     regularMemoryCache.put(loadedId, loaded)
                     val dir = getDiskCacheDir()
@@ -328,6 +356,7 @@ object TabThumbnailCache {
         if (isBlank(tabId)) return
         regularMemoryCache.remove(tabId!!)
         privateMemoryCache.remove(tabId)
+        notifyChanged(tabId)
         val token = TOKENS.incrementAndGet()
         val generation = GENERATION.get()
         regularVersions[tabId] = token
@@ -375,7 +404,10 @@ object TabThumbnailCache {
         privateMemoryCache.evictAll()
         regularVersions.clear()
         pendingLoads.clear()
+        val orphaned = ArrayList<ThumbnailCallback>()
+        for (list in loadCallbacks.values) orphaned.addAll(list)
         loadCallbacks.clear()
+        for (waiter in orphaned) dispatch(waiter, null)
         val generation = GENERATION.incrementAndGet()
         DISK.execute {
             if (generation != GENERATION.get()) return@execute

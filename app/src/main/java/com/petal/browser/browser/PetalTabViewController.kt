@@ -1418,6 +1418,8 @@ class PetalTabViewController private constructor(
 
     override val cachedPreviewBitmap: Bitmap? get() = TabThumbnailCache.getMemoryOnly(boundTabId, isIncognito())
 
+    private val previewMainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+
     @Volatile
     private var lastPreviewCaptureTime = 0L
     @Volatile
@@ -1427,7 +1429,9 @@ class PetalTabViewController private constructor(
     fun updatePreviewCache(force: Boolean = false) {
         val currentRev = previewRevision
         val now = android.os.SystemClock.uptimeMillis()
-        if (now - lastScrollTime < 400L) {
+        // The scroll gate only throttles background refreshes. A forced capture (leaving the tab,
+        // opening the tab manager, suspension) must never be dropped, or the thumbnail stays stale.
+        if (!force && now - lastScrollTime < 400L) {
             return
         }
         if (!force && capturedPreviewRevision == currentRev) {
@@ -1507,10 +1511,12 @@ class PetalTabViewController private constructor(
                             capturedPreviewRevision = revision
                             storedBitmap = scaled
                         } else {
-                            post { schedulePreviewRetry() }
+                            // Handler, not View.post: View.post is silently dropped when the view
+                            // is detached (tab switch), which lost the callback entirely.
+                            previewMainHandler.post { schedulePreviewRetry() }
                         }
                     }
-                    post {
+                    previewMainHandler.post {
                         callback(if (current && stored) storedBitmap else null)
                     }
                 }
