@@ -14,13 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -28,7 +28,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.petal.browser.browser.PetalVerticalSwipeRefreshLayout
+import com.petal.browser.compose.composable.PetalRefreshBarState
 import com.petal.browser.compose.composable.RefreshBarLoadingIndicatorLazy
+import mozilla.components.feature.session.SessionUseCases
+import mozilla.components.feature.session.SwipeRefreshFeature
 import com.petal.browser.engine.gecko.PetalEngineStore
 import com.petal.browser.ui.glass.GeckoGlassBackend
 import com.petal.browser.unit.PetalBrowserUtils
@@ -55,12 +59,61 @@ fun ComposeEngineViewport(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val pullRefreshState = rememberPullToRefreshState()
-    var isPullRefreshing by remember { mutableStateOf(false) }
+    // Pull-to-refresh uses Mozilla's own stack (same as Firefox for Android): a vertical-only
+    // SwipeRefreshLayout + android-components' SwipeRefreshFeature, which asks Gecko
+    // (InputResultDetail.canOverscrollTop) whether the page is at the top. The loader is drawn by
+    // Petal's Zenith-style RefreshBarLoadingIndicatorLazy instead of the legacy Android spinner.
+    val refreshBarState = remember { PetalRefreshBarState() }
+    val currentIsLoading by rememberUpdatedState(isLoading)
+    val swipeLayout = remember(context) {
+        PetalVerticalSwipeRefreshLayout(context).apply {
+            background = null
+            isNestedScrollingEnabled = true
+            onPullProgress = { refreshBarState.pullProgress = it }
+            onRefreshStateChanged = { refreshing ->
+                refreshBarState.isRefreshing = refreshing
+                if (!refreshing) refreshBarState.pullProgress = 0f
+            }
+        }
+    }
 
+    // Hide the loader when the page finished loading (the Mozilla feature also does this on tab changes).
     LaunchedEffect(isLoading) {
-        if (!isLoading) {
-            isPullRefreshing = false
+        if (!isLoading) swipeLayout.isRefreshing = false
+    }
+
+    // Safety net, same as PetalTabViewController: the feature only hides the spinner when the tab's
+    // `loading` flag CHANGES. If a reload ends between two updates, drop the loader after a few seconds.
+    LaunchedEffect(refreshBarState.isRefreshing) {
+        if (refreshBarState.isRefreshing) {
+            kotlinx.coroutines.delay(5_000L)
+            if (swipeLayout.isRefreshing && !currentIsLoading) swipeLayout.isRefreshing = false
+        }
+    }
+
+    // Pull is only available while a real web page is shown.
+    SideEffect {
+        swipeLayout.isEnabled = tab != null && !PetalBrowserUtils.isHomePage(tab.content.url)
+    }
+
+    DisposableEffect(tab?.id, swipeLayout) {
+        val tabId = tab?.id
+        if (tabId == null) {
+            onDispose { }
+        } else {
+            val store = PetalEngineStore.getStore(context)
+            val feature = SwipeRefreshFeature(
+                store = store,
+                reloadUrlUseCase = SessionUseCases(store).reload,
+                swipeRefreshLayout = swipeLayout,
+                tabId = tabId
+            )
+            feature.start()
+            onDispose {
+                feature.stop()
+                swipeLayout.isRefreshing = false
+                refreshBarState.pullProgress = 0f
+            }
         }
     }
 
@@ -116,63 +169,49 @@ fun ComposeEngineViewport(
         }
     }
 
-    PullToRefreshBox(
-        isRefreshing = isPullRefreshing,
-        onRefresh = {
-            isPullRefreshing = true
-            onRefresh()
-        },
-        state = pullRefreshState,
-        modifier = modifier.fillMaxSize(),
-        indicator = {
-            val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-            RefreshBarLoadingIndicatorLazy(
-                isRefreshing = isPullRefreshing,
-                pullProgressProvider = { pullRefreshState.distanceFraction },
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = statusBarTop + 56.dp)
-            )
-        }
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            AndroidView(
-                factory = {
-                    val frameLayout = FrameLayout(context).apply {
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                        background = null
-                    }
-                    val view = engineView.asView()
+        AndroidView(
+            factory = {
+                // Like Fenix, the EngineView is a direct child of the swipe-refresh layout:
+                // SwipeRefreshFeature inspects that child to ask Gecko if the page can still scroll up.
+                val view = engineView.asView()
+                if (view.parent !== swipeLayout) {
                     (view.parent as? ViewGroup)?.removeView(view)
-                    frameLayout.addView(
+                    swipeLayout.addView(
                         view,
                         ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT
                         )
                     )
-                    frameLayout
-                },
-                update = {
-                    // Session binding is handled when the tab or engine session changes above.
-                    // Avoid rebinding GeckoView on every progress/title recomposition.
-                    // Update layout and backend if required
-                    findGeckoView(engineView.asView())?.let { gv ->
-                        try {
-                            GeckoGlassBackend.applyBackend(gv, context)
-                        } catch (_: Throwable) {}
-                    }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+                }
+                (swipeLayout.parent as? ViewGroup)?.removeView(swipeLayout)
+                swipeLayout
+            },
+            update = {
+                // Session binding is handled when the tab or engine session changes above.
+                // Avoid rebinding GeckoView on every progress/title recomposition.
+                findGeckoView(engineView.asView())?.let { gv ->
+                    try {
+                        GeckoGlassBackend.applyBackend(gv, context)
+                    } catch (_: Throwable) {}
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+
+        RefreshBarLoadingIndicatorLazy(
+            isRefreshing = refreshBarState.isRefreshing,
+            pullProgressProvider = { refreshBarState.pullProgress },
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = statusBarTop + 56.dp)
+        )
     }
 }
 

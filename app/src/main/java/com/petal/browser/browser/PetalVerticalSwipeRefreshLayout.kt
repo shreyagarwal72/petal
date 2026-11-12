@@ -167,7 +167,8 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
                     initialDownY = previousY
                 }
                 val density = resources.displayMetrics.density
-                val totalDragDistance = 72f * density
+                // SwipeRefreshLayout commits the refresh at 64dp of damped drag; match it so the loader is full exactly then.
+                val totalDragDistance = 64f * density
                 val dragY = (event.y - initialDownY).coerceAtLeast(0f) * 0.5f
                 val progress = (dragY / totalDragDistance).coerceIn(0f, 1f)
                 onPullProgress?.invoke(progress)

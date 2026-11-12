@@ -202,60 +202,30 @@ fun RefreshBarLoadingIndicatorLazy(
     modifier: Modifier = Modifier
 ) {
     val currentProvider by androidx.compose.runtime.rememberUpdatedState(pullProgressProvider)
-    val isVisible by remember(isRefreshing) {
-        androidx.compose.runtime.derivedStateOf { isRefreshing || currentProvider() > 0.01f }
-    }
 
-    // 0 -> 1 while pulling, 1 once refreshing. Bouncy settle only when it commits to refreshing.
-    val refreshFactor by animateFloatAsState(
-        targetValue = if (isRefreshing) 1f else 0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-        label = "RefreshBarRefreshFactor"
-    )
-    // Appears instantly (no fade-in lag on a fast flick), fades out smoothly.
-    val visibleTarget = if (isVisible) 1f else 0f
-    val visibleFactor by animateFloatAsState(
-        targetValue = visibleTarget,
-        animationSpec = if (visibleTarget == 1f) snap<Float>() else spring<Float>(stiffness = Spring.StiffnessMediumLow),
-        label = "RefreshBarVisibleFactor"
+    // Same behaviour as Zenith's pull indicator (HomeScreen): a Material 3 Expressive
+    // ContainedLoadingIndicator whose scale and alpha follow the pull fraction through a bouncy,
+    // low-stiffness spring, and which stays at full size while refreshing. No slide, no extra shadow.
+    val scale by animateFloatAsState(
+        targetValue = if (isRefreshing) 1f else currentProvider().coerceIn(0f, 1f),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "LoadingIndicatorScale"
     )
 
-    // The indicator slides down with graphicsLayer (draw-only, not layout), so the host view
-    // never grows to fit it. Reserve the full travel (pull + bounce + shadow) up front, even while
-    // idle, so the host is already the right size on the first frame of a quick flick.
-    Box(modifier = modifier.fillMaxWidth().height(RefreshBarContainerHeight)) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .zIndex(500f)
-                .padding(top = 8.dp, bottom = 16.dp),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            Surface(
-                shape = ExpressiveButtonShape.shadowShape,
-                color = Color.Transparent,
-                shadowElevation = 4.dp,
-                modifier = Modifier
-                    .requiredSize(42.dp)
-                    .graphicsLayer {
-                        val p = currentProvider().coerceIn(0f, 1f)
-                        val r = refreshFactor
-                        val dragOffsetDp = 4f + p * 36f
-                        val offsetDp = dragOffsetDp + (24f - dragOffsetDp) * r
-                        val dragScale = (0.5f + p * 0.5f).coerceIn(0.5f, 1.05f)
-                        val dragAlpha = (p * 1.5f).coerceIn(0f, 1f)
-                        translationY = offsetDp.dp.toPx()
-                        scaleX = dragScale + (1f - dragScale) * r
-                        scaleY = scaleX
-                        alpha = (dragAlpha + (1f - dragAlpha) * r) * visibleFactor
-                    }
-            ) {
-                ContainedRefreshLoadingIndicator(
-                    modifier = Modifier.requiredSize(42.dp)
-                )
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        ContainedRefreshLoadingIndicator(
+            modifier = Modifier.graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                alpha = scale.coerceIn(0f, 1f)
             }
-        }
+        )
     }
 }
 
