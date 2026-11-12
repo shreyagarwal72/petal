@@ -554,10 +554,22 @@ object PetalExtensionManager {
         )
     }
 
+    /**
+     * GeckoView delivers tab-specific actions as *partial overrides* (only the fields the extension
+     * changed for that tab). Firefox rebuilds the full action with [WebExtension.Action.withDefault];
+     * using the raw override gives blank titles/icons and a dead click target.
+     */
+    private fun effectiveAction(extId: String, session: GeckoSession?): WebExtension.Action? {
+        val default = synchronized(actionByExtensionId) { actionByExtensionId[extId] }
+        val override = session?.let { sessionActionByExtensionId[it]?.get(extId) }
+        return when {
+            override != null && default != null -> override.withDefault(default)
+            override != null -> override
+            else -> default
+        }
+    }
+
     private fun rememberAction(extension: WebExtension, session: GeckoSession?, action: WebExtension.Action) {
-        // GeckoView may deliver the action with the originating tab session. Keep the
-        // per-session action authoritative so a stale action from another tab cannot be
-        // clicked when the user opens an extension from the current tab.
         if (session != null) {
             sessionActionByExtensionId
                 .computeIfAbsent(session) { java.util.concurrent.ConcurrentHashMap() }[extension.id] = action
@@ -566,32 +578,34 @@ object PetalExtensionManager {
         }
 
         val active = currentActiveSession
-        if (session == null || session === active) {
-            val state = extractActionState(action) { bmp ->
-                Handler(Looper.getMainLooper()).post {
-                    val current = _activeTabActionStates.value.toMutableMap()
-                    val prev = current[extension.id]
-                    if (prev != null) {
-                        current[extension.id] = prev.copy(icon = bmp)
-                        _activeTabActionStates.value = current
-                    }
-                }
-            }
+        // Updates for background tabs are stored but must not touch the visible state.
+        if (session != null && session !== active) return
+
+        val merged = effectiveAction(extension.id, active) ?: action
+        val extId = extension.id
+        val state = extractActionState(merged) { bmp ->
             Handler(Looper.getMainLooper()).post {
                 val current = _activeTabActionStates.value.toMutableMap()
-                current[extension.id] = state
-                _activeTabActionStates.value = current
+                current[extId]?.let { prev ->
+                    current[extId] = prev.copy(icon = bmp)
+                    _activeTabActionStates.value = current
+                }
             }
+        }
+        Handler(Looper.getMainLooper()).post {
+            val current = _activeTabActionStates.value.toMutableMap()
+            // Keep the previous icon until the new one decodes so badges never flicker.
+            current[extId] = state.copy(icon = state.icon ?: current[extId]?.icon)
+            _activeTabActionStates.value = current
         }
     }
 
     private fun updateActiveTabActionStates(session: GeckoSession?) {
         val map = mutableMapOf<String, ExtensionActionState>()
-        val tabActions = if (session != null) sessionActionByExtensionId[session] else null
         val allExtIds = _extensions.value.map { it.id }.toSet()
 
         for (extId in allExtIds) {
-            val action = tabActions?.get(extId) ?: synchronized(actionByExtensionId) { actionByExtensionId[extId] }
+            val action = effectiveAction(extId, session)
             if (action != null) {
                 map[extId] = extractActionState(action) { bmp ->
                     Handler(Looper.getMainLooper()).post {
@@ -822,6 +836,14 @@ object PetalExtensionManager {
     /** Creates the global WebExtension.TabDelegate handling browser.tabs.create() from add-ons. */
     private fun createWebExtensionTabDelegate(context: Context): WebExtension.TabDelegate {
         return object : WebExtension.TabDelegate {
+            // runtime.openOptionsPage(): Firefox for Android opens the options page in a new tab.
+            override fun onOpenOptionsPage(source: WebExtension) {
+                Handler(Looper.getMainLooper()).post {
+                    try { openOptionsPage(source.id, context) }
+                    catch (t: Throwable) { Log.w(TAG, "openOptionsPage failed for ${source.id}", t) }
+                }
+            }
+
             override fun onNewTab(
                 source: WebExtension,
                 createDetails: WebExtension.CreateTabDetails
@@ -1184,8 +1206,7 @@ object PetalExtensionManager {
                     var style = document.createElement('style');
                     style.id = 'petal-ext-popup-responsive';
                     style.innerHTML = [
-                        'html, body { max-width: 100vw !important; min-width: unset !important; overflow-x: hidden !important; box-sizing: border-box !important; }',
-                        '*, *::before, *::after { box-sizing: border-box !important; }'
+                        'html, body { max-width: 100vw !important; overflow-x: hidden !important; }'
                     ].join(' ');
                     (document.head || document.documentElement).appendChild(style);
                 } catch(e) {}
@@ -1269,12 +1290,9 @@ object PetalExtensionManager {
         val actionExtId = extItem.id
         // 1. Try action.click() if an action was captured and registered
         val activeSession = currentBrowserSession(ctx)
-        val sessionAction = activeSession?.let { sessionActionByExtensionId[it]?.get(actionExtId) }
-        val fallbackAction = synchronized(actionByExtensionId) { actionByExtensionId[actionExtId] }
-
-        // Prefer the action belonging to the visible tab. Only use the global action when
-        // there is no live active tab action at all (for example during very early startup).
-        val action = sessionAction ?: if (activeSession == null) fallbackAction else null
+        // Same resolution Firefox uses: the visible tab's override merged over the default action.
+        // Most extensions never set per-tab overrides, so the default action must be used as-is.
+        val action = effectiveAction(actionExtId, activeSession)
         if (action != null) {
             try {
                 action.click()

@@ -35,6 +35,7 @@ import com.petal.browser.ui.kit.FilledTonalButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -182,15 +183,13 @@ private fun ExtensionsMenuContent(
     val firefoxExtensions = remember(extensions) {
         extensions.filter { !PetalBuiltInExtensionManager.isBuiltIn(it.id) }
     }
-    val enabledExtensions = remember(firefoxExtensions) {
-        firefoxExtensions.filter { it.enabled }
-    }
+    val enabledExtensions = remember(firefoxExtensions) { firefoxExtensions.filter { it.enabled } }
 
     val context = LocalContext.current
     val haptic = remember(context) { PetalHapticEngine.getInstance(context) }
 
     PetalHeroCard(
-        shape = PetalContainmentShapes.HeroInner,
+        shape = PetalContainmentShapes.Hero,
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier
             .fillMaxWidth()
@@ -202,151 +201,82 @@ private fun ExtensionsMenuContent(
             )
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Header: Title & Active Domain Pill
+            // Header: expressive badge, title, current site pill, close
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Extension,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Column {
-                        Text(
-                            text = stringResource(R.string.ui_extensions),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = domain,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                PetalGroupIconBadge(Icons.Rounded.Extension, PetalBadgeVariant.PRIMARY, size = 48.dp, iconSize = 24.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.ui_extensions),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1
+                    )
+                    Text(
+                        text = domain,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
-
-                IconButton(
+                Surface(
                     onClick = {
                         haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                         onDismiss()
                     },
-                    modifier = Modifier.size(36.dp)
+                    shape = petalBadgeShape("extensions_close"),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    modifier = Modifier.size(44.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = stringResource(R.string.ui_close),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = stringResource(R.string.ui_close),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-            Spacer(Modifier.height(12.dp))
-
-            // Body: Empty State vs Extension List
-            if (firefoxExtensions.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 24.dp, horizontal = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ExtensionOff,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(28.dp)
-                        )
+            // Body
+            when {
+                firefoxExtensions.isEmpty() -> PetalGroupRow(
+                    icon = Icons.Rounded.Add,
+                    title = stringResource(R.string.ui_find_firefox_extensions),
+                    subtitle = "No add-ons installed yet",
+                    position = PetalGroupPosition.SINGLE,
+                    onClick = {
+                        haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.75f)
+                        onOpenManager()
                     }
-                    Text(
-                        text = "No add-ons installed",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Install powerful Firefox extensions like AdGuard, Dark Reader, and Bitwarden to customize your browsing.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    FilledTonalButton(
-                        onClick = {
-                            haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.75f)
-                            onOpenManager()
-                        },
-                        shape = RoundedCornerShape(14.dp),
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
-                    ) {
-                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_find_firefox_extensions))
-                    }
-                }
-            } else if (enabledExtensions.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 18.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "All add-ons are disabled",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    TextButton(onClick = onOpenManager) {
-                        Text(stringResource(R.string.ui_manage_extensions))
-                    }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 340.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                )
+                enabledExtensions.isEmpty() -> PetalGroupRow(
+                    icon = Icons.Rounded.ExtensionOff,
+                    title = "All add-ons are disabled",
+                    subtitle = stringResource(R.string.ui_manage_extensions),
+                    position = PetalGroupPosition.SINGLE,
+                    iconContainer = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    onClick = onOpenManager
+                )
+                else -> LazyColumn(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     itemsIndexed(enabledExtensions, key = { _, item -> item.id }) { index, ext ->
-                        val actionState = activeTabActions[ext.id]
-                        val position = petalGroupPositionFor(index, enabledExtensions.size)
-
                         ExtensionMenuCardRow(
                             extension = ext,
-                            actionState = actionState,
-                            position = position,
+                            actionState = activeTabActions[ext.id],
+                            position = petalGroupPositionFor(index, enabledExtensions.size),
                             onActionClick = {
                                 haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.8f)
                                 onDismiss()
@@ -366,57 +296,25 @@ private fun ExtensionsMenuContent(
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-            Spacer(Modifier.height(10.dp))
-
-            // Footer: Manage Add-ons & AMO Store Shortcut
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(
-                    onClick = {
-                        haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+            // Footer: connected buttons never wrap (single line, ellipsized)
+            PetalConnectedButtonGroup(
+                items = listOf(
+                    PetalConnectedButtonItem(stringResource(R.string.ui_manage_extensions), Icons.Rounded.Tune),
+                    PetalConnectedButtonItem("More on AMO", Icons.Rounded.OpenInNew)
+                ),
+                selectedIndex = -1,
+                onSelect = { index ->
+                    haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                    if (index == 0) {
                         onOpenManager()
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Tune,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.ui_manage_extensions),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                }
-
-                TextButton(
-                    onClick = {
-                        haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                    } else {
                         onDismiss()
                         if (activity is com.petal.browser.activity.MainActivity) {
                             activity.addAlbum("Firefox Add-ons", PetalExtensionManager.amoAndroidBrowseUrl, true)
                         }
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = "More on AMO",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Icon(
-                        imageVector = Icons.Rounded.OpenInNew,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    }
                 }
-            }
+            )
         }
     }
 }
@@ -430,71 +328,56 @@ private fun ExtensionMenuCardRow(
     onSettingsClick: () -> Unit
 ) {
     val shape = rememberPetalGroupShape(position)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val displayName = actionState?.title?.ifBlank { null } ?: extension.name
     val badgeText = actionState?.badgeText?.trim()
+    val actionEnabled = actionState?.enabled ?: true
 
-    val badgeBgColor = remember(actionState?.badgeBackgroundColor) {
-        val raw = actionState?.badgeBackgroundColor
-        if (raw != null && raw != 0) Color(raw) else null
-    }
-    val badgeFgColor = remember(actionState?.badgeTextColor) {
-        val raw = actionState?.badgeTextColor
-        if (raw != null && raw != 0) Color(raw) else null
-    }
+    val badgeBg = actionState?.badgeBackgroundColor?.takeIf { it != 0 }?.let { Color(it) }
+        ?: MaterialTheme.colorScheme.primary
+    val badgeFg = actionState?.badgeTextColor?.takeIf { it != 0 }?.let { Color(it) }
+        ?: MaterialTheme.colorScheme.onPrimary
 
     Surface(
+        onClick = onActionClick,
+        enabled = actionEnabled,
         shape = shape,
-        color = MaterialTheme.colorScheme.surface,
+        color = petalGroupSurfaceColor(),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(shape)
+            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true)
+            .alpha(if (actionEnabled) 1f else 0.5f)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onActionClick)
+                .heightIn(min = 64.dp)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Extension Icon (Action icon override -> Extension icon -> Fallback)
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                contentAlignment = Alignment.Center
+            PetalGroupIconBadge(
+                shape = petalBadgeShape(extension.id),
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                contentColor = MaterialTheme.colorScheme.primary,
+                size = 44.dp,
+                iconSize = 28.dp
             ) {
-                val actionIcon = actionState?.icon
-                val extIcon = extension.icon
-                if (actionIcon != null) {
-                    Image(
-                        bitmap = actionIcon.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else if (extIcon != null) {
-                    Image(
-                        bitmap = extIcon.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
+                val bmp = actionState?.icon ?: extension.icon
+                if (bmp != null) {
+                    Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.fillMaxSize())
                 } else {
-                    Icon(
-                        imageVector = Icons.Rounded.Extension,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Icon(Icons.Rounded.Extension, contentDescription = null, modifier = Modifier.fillMaxSize())
                 }
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(14.dp))
 
-            // Title & Description/Status
-            Column(modifier = Modifier.weight(1f)) {
+            Column(Modifier.weight(1f)) {
                 Text(
                     text = displayName,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -503,46 +386,47 @@ private fun ExtensionMenuCardRow(
                     Text(
                         text = "v${extension.version}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
                     )
                 }
             }
 
-            // Live Action Badge (e.g. uBlock blocked count "14")
             if (!badgeText.isNullOrBlank()) {
-                val bg = badgeBgColor ?: MaterialTheme.colorScheme.primary
-                val fg = badgeFgColor ?: MaterialTheme.colorScheme.onPrimary
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 6.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(bg)
-                        .padding(horizontal = 7.dp, vertical = 2.dp),
+                        .clip(PetalContainmentShapes.Pill)
+                        .background(badgeBg)
+                        .padding(horizontal = 9.dp, vertical = 3.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = badgeText,
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = fg,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = badgeFg,
                         maxLines = 1
                     )
                 }
             }
 
-            // Extension Settings Button (44dp touch target)
-            IconButton(
-                onClick = onSettingsClick,
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(ExpressiveButtonShape)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Settings,
-                    contentDescription = stringResource(R.string.ui_extension_settings),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(19.dp)
-                )
+            if (extension.optionsPageUrl != null) {
+                Surface(
+                    onClick = onSettingsClick,
+                    shape = petalBadgeShape("extension_row_settings"),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Rounded.Settings,
+                            contentDescription = stringResource(R.string.ui_extension_settings),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             }
         }
     }

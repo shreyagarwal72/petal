@@ -1863,6 +1863,13 @@ internal fun InstallPermissionDialog(prompt: PetalExtensionManager.PendingPrompt
 // EXTENSION POPUP SCREEN
 // ─────────────────────────────────────────────────────────────────────────────
 
+private class PopupDialogRequest(
+    val title: String?,
+    val message: String?,
+    val showCancel: Boolean,
+    val onResult: (Boolean) -> Unit
+)
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PetalExtensionPopupScreen(
@@ -1872,327 +1879,262 @@ fun PetalExtensionPopupScreen(
     androidx.activity.compose.BackHandler(onBack = onDismiss)
     val context = LocalContext.current
     val hostActivity = context as? ComponentActivity
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
     key(popup.session) {
-        var popupScale by remember { mutableFloatStateOf(1f) }
-
-        var pendingTextPrompt by remember {
-            mutableStateOf<GeckoSession.PromptDelegate.TextPrompt?>(null)
-        }
+        var pendingTextPrompt by remember { mutableStateOf<GeckoSession.PromptDelegate.TextPrompt?>(null) }
         var textPromptInput by remember { mutableStateOf("") }
         var textPromptIsPassword by remember { mutableStateOf(false) }
         var textPromptResult by remember {
             mutableStateOf<GeckoResult<GeckoSession.PromptDelegate.PromptResponse>?>(null)
         }
+        var pendingDialog by remember { mutableStateOf<PopupDialogRequest?>(null) }
 
-        Scaffold(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface),
-            topBar = {
-                Surface(
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 2.dp,
-                    shadowElevation = 1.dp
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .statusBarsPadding()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                                .padding(horizontal = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                IconButton(
-                                    onClick = {
-                                        try {
-                                            popup.session.goBack()
-                                        } catch (_: Throwable) {
-                                            onDismiss()
-                                        }
-                                    },
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                        contentDescription = stringResource(R.string.ui_back),
-                                        tint = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
+        val sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+        val noRipple = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
 
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Extension,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-
-                                Column(modifier = Modifier.padding(end = 4.dp)) {
-                                    Text(
-                                        text = popup.extensionName,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 15.sp,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.ui_extension_popup),
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                    )
-                                }
-                            }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(2.dp)
-                            ) {
-                                IconButton(
-                                    onClick = {
-                                        try { popup.session.reload() } catch (_: Throwable) {}
-                                    },
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Refresh,
-                                        contentDescription = stringResource(R.string.ui_refresh),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                        modifier = Modifier.size(19.dp)
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = { popupScale = (popupScale - 0.15f).coerceAtLeast(0.4f) },
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.ZoomOut,
-                                        contentDescription = stringResource(R.string.ui_zoom_out),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                        modifier = Modifier.size(19.dp)
-                                    )
-                                }
-
-                                Surface(
-                                    onClick = { popupScale = 1f },
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                                    modifier = Modifier.widthIn(min = 38.dp)
-                                ) {
-                                    Text(
-                                        text = "${(popupScale * 100).toInt()}%",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = { popupScale = (popupScale + 0.15f).coerceAtMost(4f) },
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.ZoomIn,
-                                        contentDescription = stringResource(R.string.ui_zoom_in),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                        modifier = Modifier.size(19.dp)
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        onDismiss()
-                                        PetalExtensionManager.openOptionsPage(popup.extensionId, context)
-                                    },
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Settings,
-                                        contentDescription = stringResource(R.string.ui_extension_settings),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                        modifier = Modifier.size(19.dp)
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = onDismiss,
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Close,
-                                        contentDescription = stringResource(R.string.ui_close),
-                                        tint = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    }
-                }
-            }
-        ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Scrim: tapping outside the sheet closes the popup, like Firefox's popup dialog.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .navigationBarsPadding()
-                    .clipToBounds()
+                    .background(Color.Black.copy(alpha = if (isGlass) 0.14f else 0.32f))
+                    .clickable(interactionSource = noRipple, indication = null, onClick = onDismiss)
+            )
+
+            Surface(
+                shape = sheetShape,
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.84f)
+                    .liquidGlassChrome(sheetShape, enabled = isGlass, sheenIntensity = sheen)
+                    .clickable(interactionSource = noRipple, indication = null, onClick = {})
             ) {
-                AndroidView(
-                    factory = { ctx ->
-                        GeckoView(ctx).apply {
-                            try {
-                                com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(this, ctx)
-                            } catch (_: Throwable) {}
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
+                Column(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
+                    // Drag-handle style grabber
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(top = 10.dp)
+                            .size(width = 36.dp, height = 4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        PetalGroupIconBadge(
+                            Icons.Rounded.Extension, PetalBadgeVariant.PRIMARY, size = 44.dp, iconSize = 22.dp
+                        )
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                text = popup.extensionName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
-                            isClickable = true
-                            isFocusable = true
-                            isFocusableInTouchMode = true
-
-                            try {
-                                popup.session.setActive(true)
-                            } catch (_: Throwable) {}
-
-                            popup.session.contentDelegate = object : GeckoSession.ContentDelegate {
-                                override fun onCloseRequest(session: GeckoSession) {
-                                    (ctx as? ComponentActivity)?.runOnUiThread { onDismiss() }
+                            Text(
+                                text = stringResource(R.string.ui_extension_popup),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        PopupHeaderButton(
+                            icon = Icons.Rounded.Refresh,
+                            description = stringResource(R.string.ui_refresh),
+                            shapeKey = "popup_refresh",
+                            onClick = { try { popup.session.reload() } catch (_: Throwable) {} }
+                        )
+                        if (PetalExtensionManager.findInstalledExtension(popup.extensionId)?.optionsPageUrl != null) {
+                            PopupHeaderButton(
+                                icon = Icons.Rounded.Settings,
+                                description = stringResource(R.string.ui_extension_settings),
+                                shapeKey = "popup_settings",
+                                onClick = {
+                                    onDismiss()
+                                    PetalExtensionManager.openOptionsPage(popup.extensionId, context)
                                 }
-                            }
+                            )
+                        }
+                        PopupHeaderButton(
+                            icon = Icons.Rounded.Close,
+                            description = stringResource(R.string.ui_close),
+                            shapeKey = "popup_close",
+                            onClick = onDismiss
+                        )
+                    }
 
-                            popup.session.promptDelegate = object : GeckoSession.PromptDelegate {
-                                override fun onAlertPrompt(
-                                    session: GeckoSession,
-                                    prompt: GeckoSession.PromptDelegate.AlertPrompt
-                                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-                                    GeckoResult.fromValue(prompt.dismiss())
+                    // Extension document lives in its own inner container, like any other containment card.
+                    val innerShape = PetalContainmentShapes.HeroInner
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(start = 10.dp, end = 10.dp, bottom = 10.dp)
+                            .clip(innerShape)
+                            .background(MaterialTheme.colorScheme.surface)
+                    ) {
+                        AndroidView(
+                            factory = { ctx ->
+                                GeckoView(ctx).apply {
+                                    try {
+                                        com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(this, ctx)
+                                    } catch (_: Throwable) {}
+                                    layoutParams = ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.MATCH_PARENT
+                                    )
+                                    isClickable = true
+                                    isFocusable = true
+                                    isFocusableInTouchMode = true
 
-                                override fun onButtonPrompt(
-                                    session: GeckoSession,
-                                    prompt: GeckoSession.PromptDelegate.ButtonPrompt
-                                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-                                    GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE))
+                                    try { popup.session.setActive(true) } catch (_: Throwable) {}
 
-                                override fun onTextPrompt(
-                                    session: GeckoSession,
-                                    prompt: GeckoSession.PromptDelegate.TextPrompt
-                                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-                                    val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
-                                    val lowerMsg = (prompt.message ?: "").lowercase()
-                                    val isPass = lowerMsg.contains("password") ||
-                                        lowerMsg.contains("pin") ||
-                                        lowerMsg.contains("passphrase") ||
-                                        lowerMsg.contains("master") ||
-                                        lowerMsg.contains("unlock") ||
-                                        lowerMsg.contains("secret")
-                                    (ctx as? ComponentActivity)?.runOnUiThread {
-                                        pendingTextPrompt = prompt
-                                        textPromptInput = prompt.defaultValue ?: ""
-                                        textPromptIsPassword = isPass
-                                        textPromptResult = result
-                                    }
-                                    return result
-                                }
-
-                                override fun onSharePrompt(
-                                    session: GeckoSession,
-                                    prompt: GeckoSession.PromptDelegate.SharePrompt
-                                ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-                                    GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.SharePrompt.Result.SUCCESS))
-                            }
-
-                            popup.session.navigationDelegate = object : GeckoSession.NavigationDelegate {
-                                override fun onLoadRequest(
-                                    session: GeckoSession,
-                                    request: GeckoSession.NavigationDelegate.LoadRequest
-                                ): GeckoResult<AllowOrDeny>? {
-                                    val uri = request.uri ?: return GeckoResult.fromValue(AllowOrDeny.ALLOW)
-                                    if (uri.startsWith("moz-extension://", true) ||
-                                        uri.startsWith("resource://", true) ||
-                                        uri.startsWith("about:", true) ||
-                                        uri.startsWith("blob:", true) ||
-                                        uri.startsWith("data:", true) ||
-                                        uri.startsWith("javascript:", true)
-                                    ) {
-                                        return GeckoResult.fromValue(AllowOrDeny.ALLOW)
-                                    }
-                                    if (uri.startsWith("http://", true) || uri.startsWith("https://", true)) {
-                                        hostActivity?.let { act ->
-                                            act.runOnUiThread {
-                                                onDismiss()
-                                                val browserActivity = act as? com.petal.browser.activity.MainActivity
-                                                if (browserActivity != null) {
-                                                    browserActivity.addAlbum(null, uri, true)
-                                                } else {
-                                                    try {
-                                                        act.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(uri)))
-                                                    } catch (_: Exception) {}
-                                                }
-                                            }
-                                        }
-                                        return GeckoResult.fromValue(AllowOrDeny.DENY)
-                                    }
-                                    return GeckoResult.fromValue(AllowOrDeny.ALLOW)
-                                }
-
-                                override fun onNewSession(
-                                    session: GeckoSession,
-                                    uri: String
-                                ): GeckoResult<GeckoSession>? {
-                                    if (uri.isNotEmpty()) {
-                                        hostActivity?.let { act ->
-                                            act.runOnUiThread {
-                                                onDismiss()
-                                                val browserActivity = act as? com.petal.browser.activity.MainActivity
-                                                if (browserActivity != null) {
-                                                    browserActivity.addAlbum(null, uri, true)
-                                                } else {
-                                                    try {
-                                                        act.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(uri)))
-                                                    } catch (_: Exception) {}
-                                                }
-                                            }
+                                    // window.close() from the popup (uBlock, AdGuard, ...) closes the sheet.
+                                    popup.session.contentDelegate = object : GeckoSession.ContentDelegate {
+                                        override fun onCloseRequest(session: GeckoSession) {
+                                            (ctx as? ComponentActivity)?.runOnUiThread { onDismiss() }
                                         }
                                     }
-                                    return null
-                                }
-                            }
 
-                            setSession(popup.session)
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            scaleX = popupScale
-                            scaleY = popupScale
-                        }
-                )
+                                    popup.session.promptDelegate = object : GeckoSession.PromptDelegate {
+                                        override fun onAlertPrompt(
+                                            session: GeckoSession,
+                                            prompt: GeckoSession.PromptDelegate.AlertPrompt
+                                        ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                                            val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                                            (ctx as? ComponentActivity)?.runOnUiThread {
+                                                pendingDialog = PopupDialogRequest(prompt.title, prompt.message, false) {
+                                                    result.complete(prompt.dismiss())
+                                                }
+                                            } ?: result.complete(prompt.dismiss())
+                                            return result
+                                        }
+
+                                        // confirm(): ask the user instead of silently answering "yes".
+                                        override fun onButtonPrompt(
+                                            session: GeckoSession,
+                                            prompt: GeckoSession.PromptDelegate.ButtonPrompt
+                                        ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                                            val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                                            val answer = { ok: Boolean ->
+                                                result.complete(
+                                                    prompt.confirm(
+                                                        if (ok) GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE
+                                                        else GeckoSession.PromptDelegate.ButtonPrompt.Type.NEGATIVE
+                                                    )
+                                                )
+                                            }
+                                            (ctx as? ComponentActivity)?.runOnUiThread {
+                                                pendingDialog = PopupDialogRequest(prompt.title, prompt.message, true) { ok -> answer(ok) }
+                                            } ?: answer(false)
+                                            return result
+                                        }
+
+                                        override fun onTextPrompt(
+                                            session: GeckoSession,
+                                            prompt: GeckoSession.PromptDelegate.TextPrompt
+                                        ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                                            val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                                            val lowerMsg = (prompt.message ?: "").lowercase()
+                                            val isPass = listOf("password", "pin", "passphrase", "master", "unlock", "secret")
+                                                .any { lowerMsg.contains(it) }
+                                            (ctx as? ComponentActivity)?.runOnUiThread {
+                                                pendingTextPrompt = prompt
+                                                textPromptInput = prompt.defaultValue ?: ""
+                                                textPromptIsPassword = isPass
+                                                textPromptResult = result
+                                            }
+                                            return result
+                                        }
+
+                                        override fun onSharePrompt(
+                                            session: GeckoSession,
+                                            prompt: GeckoSession.PromptDelegate.SharePrompt
+                                        ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
+                                            GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.SharePrompt.Result.SUCCESS))
+                                    }
+
+                                    // Links leave the popup and open as a real browser tab (Fenix behaviour).
+                                    fun openInBrowser(uri: String) {
+                                        hostActivity?.runOnUiThread {
+                                            onDismiss()
+                                            val browserActivity = hostActivity as? com.petal.browser.activity.MainActivity
+                                            if (browserActivity != null) {
+                                                browserActivity.addAlbum(null, uri, true)
+                                            } else {
+                                                try {
+                                                    hostActivity.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(uri)))
+                                                } catch (_: Exception) {}
+                                            }
+                                        }
+                                    }
+
+                                    popup.session.navigationDelegate = object : GeckoSession.NavigationDelegate {
+                                        override fun onLoadRequest(
+                                            session: GeckoSession,
+                                            request: GeckoSession.NavigationDelegate.LoadRequest
+                                        ): GeckoResult<AllowOrDeny>? {
+                                            val uri = request.uri ?: return GeckoResult.fromValue(AllowOrDeny.ALLOW)
+                                            if (uri.startsWith("http://", true) || uri.startsWith("https://", true)) {
+                                                openInBrowser(uri)
+                                                return GeckoResult.fromValue(AllowOrDeny.DENY)
+                                            }
+                                            return GeckoResult.fromValue(AllowOrDeny.ALLOW)
+                                        }
+
+                                        override fun onNewSession(
+                                            session: GeckoSession,
+                                            uri: String
+                                        ): GeckoResult<GeckoSession>? {
+                                            if (uri.isNotEmpty()) openInBrowser(uri)
+                                            return null
+                                        }
+                                    }
+
+                                    setSession(popup.session)
+                                }
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
             }
+        }
+
+        pendingDialog?.let { req ->
+            PetalMaterialAlertDialog(
+                onDismissRequest = {
+                    req.onResult(false)
+                    pendingDialog = null
+                },
+                title = { Text(req.title?.takeIf { it.isNotBlank() } ?: popup.extensionName) },
+                text = { if (!req.message.isNullOrBlank()) Text(req.message, style = MaterialTheme.typography.bodyMedium) },
+                confirmButton = {
+                    Button(onClick = {
+                        req.onResult(true)
+                        pendingDialog = null
+                    }) { Text(stringResource(R.string.ui_ok)) }
+                },
+                dismissButton = {
+                    if (req.showCancel) {
+                        TextButton(onClick = {
+                            req.onResult(false)
+                            pendingDialog = null
+                        }) { Text(stringResource(R.string.ui_cancel)) }
+                    }
+                }
+            )
         }
 
         pendingTextPrompt?.let { prompt ->
@@ -2228,19 +2170,39 @@ fun PetalExtensionPopupScreen(
                         textPromptResult?.complete(prompt.confirm(textPromptInput))
                         pendingTextPrompt = null
                         textPromptResult = null
-                    }) {
-                        Text("Submit")
-                    }
+                    }) { Text("Submit") }
                 },
                 dismissButton = {
                     TextButton(onClick = {
                         textPromptResult?.complete(prompt.dismiss())
                         pendingTextPrompt = null
                         textPromptResult = null
-                    }) {
-                        Text(stringResource(R.string.ui_cancel))
-                    }
+                    }) { Text(stringResource(R.string.ui_cancel)) }
                 }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PopupHeaderButton(
+    icon: ImageVector,
+    description: String,
+    shapeKey: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = petalBadgeShape(shapeKey),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        modifier = Modifier.size(40.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                icon,
+                contentDescription = description,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
             )
         }
     }
