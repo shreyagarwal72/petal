@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -159,6 +160,13 @@ private fun ContainedRefreshLoadingIndicator(
     )
 }
 
+/** Where the indicator waits (hidden behind the bar) and where it rests while refreshing. */
+private val RefreshIndicatorStartY = (-40).dp
+private val RefreshIndicatorRestY = 12.dp
+
+/** Room for the whole indicator travel: 8 top pad + 40 max pull + 42 circle + bounce/shadow. */
+private val RefreshBarContainerHeight = 120.dp
+
 /**
  * RefreshBar pull-to-refresh loading indicator utilizing [ContainedLoadingIndicator].
  */
@@ -178,10 +186,11 @@ fun RefreshBarLoadingIndicator(
 }
 
 /**
- * Zenith-style pull-to-refresh indicator using Material 3 Expressive [ContainedLoadingIndicator].
- *
- * Pulling down organically morphs the inner shape while scaling bouncily.
- * Exactly matches Zenith's HomeScreen / AppDetailScreen / UsageStatsScreen behavior.
+ * Pull-to-refresh indicator combining interactive pulling physics with continuous Material 3 Expressive shape morphing:
+ *  - While dragging: indicator tracks finger drag directly with decelerating slide from [RefreshIndicatorStartY] to [RefreshIndicatorRestY];
+ *  - Tactile haptic feedback and release-to-refresh spring pop when commit threshold is reached;
+ *  - Bouncy settle into resting position on refresh commit, smooth exit when complete;
+ *  - Indeterminate M3 Expressive morph animation runs continuously across all phases.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -192,41 +201,61 @@ fun RefreshBarLoadingIndicatorLazy(
 ) {
     val currentProvider by androidx.compose.runtime.rememberUpdatedState(pullProgressProvider)
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
-    var hasHapticTriggered by remember { mutableStateOf(false) }
 
-    val rawProgress = currentProvider().coerceIn(0f, 1f)
+    // One value drives everything: `shown` (0 = hidden, 1 = fully pulled / resting while refreshing).
+    val shown = remember { androidx.compose.animation.core.Animatable(0f) }
+    var ready by remember { mutableStateOf(false) }
 
-    androidx.compose.runtime.LaunchedEffect(rawProgress) {
-        if (rawProgress >= 1f && !hasHapticTriggered) {
-            haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-            hasHapticTriggered = true
-        } else if (rawProgress < 0.85f && hasHapticTriggered) {
-            hasHapticTriggered = false
-        }
+    androidx.compose.runtime.LaunchedEffect(isRefreshing) {
+        androidx.compose.runtime.snapshotFlow { currentProvider() }
+            .collectLatest { raw ->
+                val p = raw.coerceIn(0f, 1f)
+                if (p > 0f) {
+                    shown.snapTo(p)
+                    val nowReady = p >= 1f
+                    if (nowReady && !ready) {
+                        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    }
+                    if (nowReady != ready && (nowReady || p < 0.85f)) ready = nowReady
+                } else {
+                    ready = false
+                    shown.animateTo(
+                        targetValue = if (isRefreshing) 1f else 0f,
+                        animationSpec = if (isRefreshing) {
+                            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+                        } else {
+                            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+                        }
+                    )
+                }
+            }
     }
 
-    val scale by animateFloatAsState(
-        targetValue = if (isRefreshing) 1f else rawProgress,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "LoadingIndicatorScale"
+    // Small "release to refresh" pop when the pull reaches the commit distance.
+    val pop by animateFloatAsState(
+        targetValue = if (ready) 1.14f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+        label = "LoadingIndicatorPop"
     )
 
-    if (scale > 0.001f || isRefreshing) {
-        Box(
-            modifier = modifier.fillMaxWidth(),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            ContainedRefreshLoadingIndicator(
-                modifier = Modifier.graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    alpha = scale.coerceIn(0f, 1f)
-                }
-            )
-        }
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        ContainedRefreshLoadingIndicator(
+            modifier = Modifier.graphicsLayer {
+                // All reads happen in draw phase: no recomposition per touch event.
+                val s = shown.value.coerceAtLeast(0f)
+                val t = if (s <= 1f) 1f - (1f - s) * (1f - s) else s
+                val startY = RefreshIndicatorStartY.toPx()
+                val restY = RefreshIndicatorRestY.toPx()
+                translationY = startY + (restY - startY) * t
+                val sc = (0.4f + 0.6f * t) * pop
+                scaleX = sc
+                scaleY = sc
+                alpha = (s * 2f).coerceIn(0f, 1f)
+            }
+        )
     }
 }
 
