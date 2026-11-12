@@ -70,8 +70,8 @@ private val NavOrder5 = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTa
 private val NAV_FIXED_WIDTH = (4 * 52 + 3 * 4 + 20 + 8).dp
 
 /** Same, when the bar shares the row with the separate search button: tighter item padding. */
-private val NAV_FIXED_WIDTH_COMPACT = (4 * 46 + 3 * 2 + 16 + 8).dp
-private val NAV_FIXED_WIDTH_COMPACT5 = (5 * 46 + 4 * 2 + 16 + 8).dp
+private val NAV_FIXED_WIDTH_COMPACT = (3 * 38 + 24 + 16 + 3 * 2 + 12 + 6).dp
+private val NAV_FIXED_WIDTH_COMPACT5 = (4 * 38 + 24 + 16 + 4 * 2 + 12 + 6).dp
 
 /**
  * Stride's floating nav bar, in Petal: a glass pill whose selected item opens its label
@@ -150,11 +150,11 @@ internal fun PetalStrideNavBar(
                 )
             }
     ) {
-        // Whatever width the four icons don't need is the most the selected label may
+        // Whatever width the other icons don't need is the most the selected label may
         // take. Past that it shrinks its type rather than wrapping or pushing the bar
         // off a narrow screen.
         val labelMax = with(LocalDensity.current) {
-            (constraints.maxWidth - fixedWidth.roundToPx()).coerceAtLeast(24.dp.roundToPx())
+            (constraints.maxWidth - fixedWidth.roundToPx()).coerceIn(52.dp.roundToPx(), 120.dp.roundToPx())
         }
         // Where each item sits, so the glass slab can slide to the selected one.
         val itemBounds = remember { mutableStateMapOf<PetalNavTab, Rect>() }
@@ -235,7 +235,7 @@ internal fun PetalStrideNavBar(
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis,
                             autoSize = TextAutoSize.StepBased(
-                                minFontSize = 9.sp, maxFontSize = labelStyle.fontSize
+                                minFontSize = 9.sp, maxFontSize = 13.sp, stepSize = 0.5.sp
                             ),
                             modifier = Modifier
                                 .graphicsLayer {
@@ -244,7 +244,7 @@ internal fun PetalStrideNavBar(
                                 }
                                 .layout { measurable, _ ->
                                     val text = measurable.measure(Constraints(maxWidth = labelMax))
-                                    val gap = 8.dp.roundToPx()
+                                    val gap = 6.dp.roundToPx()
                                     val width = ((text.width + gap) * weight()).roundToInt()
                                     layout(width, text.height) { text.placeRelative(gap, 0) }
                                 }

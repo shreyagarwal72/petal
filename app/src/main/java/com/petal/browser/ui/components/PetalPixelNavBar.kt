@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.MoreVert
@@ -123,10 +125,15 @@ internal fun PetalPixelNavPill(
             }
     ) {
         BoxWithConstraints(contentAlignment = Alignment.Center) {
-            // Four icon slots (24dp icon + 14dp padding each side) and the row padding are fixed;
-            // whatever is left is the most the selected label may take.
+            // Adaptive layout calculations: unselected tabs take a compact icon slot (38-42dp),
+            // leaving generous space for the selected tab's label so short titles like "Home" or "Menu"
+            // are never truncated with an ellipsis.
+            val isCompact = maxWidth < 285.dp
+            val unselectedSlotWidth = if (isCompact) 38.dp else 42.dp
+            val selectedFixedParts = 24.dp /*icon*/ + 6.dp /*gap*/ + (if (isCompact) 20.dp else 24.dp) /*pad*/ + 12.dp /*rowPad*/
+            val minUnselectedWidth = (PixelNavOrder.size - 1) * unselectedSlotWidth
             val labelMaxPx = with(LocalDensity.current) {
-                (maxWidth - (4 * 52).dp - 16.dp).coerceAtLeast(24.dp).roundToPx()
+                (maxWidth - minUnselectedWidth - selectedFixedParts).coerceIn(54.dp, 120.dp).roundToPx()
             }
             val weights = remember { TabWeights(PixelNavOrder, selectedTab) }
             LaunchedEffect(selectedTab) { weights.animateTo(selectedTab) }
@@ -164,7 +171,7 @@ internal fun PetalPixelNavPill(
                             )
                         }
                     }
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
@@ -185,6 +192,11 @@ internal fun PetalPixelNavPill(
                     }
                     // Colour follows the capsule: it is on-primary as the capsule arrives.
                     val tint = lerp(scheme.onPrimaryContainer, scheme.onPrimary, weight())
+                    val padH = if (isCompact) {
+                        if (selected) 12.dp else 8.dp
+                    } else {
+                        if (selected) 14.dp else 10.dp
+                    }
                     Box(
                         modifier = Modifier
                             .onGloballyPositioned {
@@ -196,7 +208,7 @@ internal fun PetalPixelNavPill(
                             .semantics { contentDescription = label }
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                            modifier = Modifier.padding(horizontal = padH, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
@@ -223,16 +235,23 @@ internal fun PetalPixelNavPill(
                             }
                             // Opens by its item's weight: measured at full width, laid out at that
                             // fraction of it and clipped. Read in layout and draw only.
-                            Text(
+                            // Uses BasicText with StepBased auto-sizing so custom variable fonts
+                            // or large display scaling adapt gracefully without truncating labels.
+                            BasicText(
                                 text = label,
-                                style = MaterialTheme.typography.labelLarge.copy(
+                                style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.2.sp
+                                    color = scheme.onPrimary,
+                                    letterSpacing = 0.sp
                                 ),
-                                color = scheme.onPrimary,
                                 maxLines = 1,
                                 softWrap = false,
                                 overflow = TextOverflow.Ellipsis,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 9.sp,
+                                    maxFontSize = 13.sp,
+                                    stepSize = 0.5.sp
+                                ),
                                 modifier = Modifier
                                     .graphicsLayer {
                                         alpha = weight()
@@ -240,7 +259,7 @@ internal fun PetalPixelNavPill(
                                     }
                                     .layout { measurable, _ ->
                                         val text = measurable.measure(Constraints(maxWidth = labelMaxPx))
-                                        val gap = 8.dp.roundToPx()
+                                        val gap = 6.dp.roundToPx()
                                         val width = ((text.width + gap) * weight()).roundToInt()
                                         layout(width, text.height) { text.placeRelative(gap, 0) }
                                     }
