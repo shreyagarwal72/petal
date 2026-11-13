@@ -321,7 +321,7 @@ fun PetalExpressiveChoiceDialog(
     }
 
     val context = androidx.compose.ui.platform.LocalContext.current
-    val isGlass = com.petal.browser.ui.glass.GlassFxSettings.isLiquidGlassDirect(context)
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
 
     com.petal.browser.ui.glass.PetalGlassContainer(
@@ -329,8 +329,7 @@ fun PetalExpressiveChoiceDialog(
             .fillMaxWidth()
             .wrapContentHeight(),
         enabled = isGlass,
-        live = true,
-        shape = sheetShape
+        live = true
     ) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
