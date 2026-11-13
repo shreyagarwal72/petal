@@ -65,6 +65,8 @@ import com.petal.browser.compose.extensions.PetalExtensionsMenuSheet
 import com.petal.browser.compose.extensions.PetalExtensionsScreen
 import com.petal.browser.compose.history.PetalHistoryScreen
 import com.petal.browser.compose.home.PetalHomeScreen
+import com.petal.browser.compose.incognito.PetalIncognitoHomeScreen
+import com.petal.browser.compose.incognito.PetalIncognitoSessionManager
 import com.petal.browser.compose.find.PetalFindInPageBar
 import com.petal.browser.compose.settings.PetalDeleteScreen
 import com.petal.browser.compose.settings.PetalSettingsScreen
@@ -192,6 +194,22 @@ fun PetalRootApp(
     val isMerge = BarPrefs.STYLE_MERGE.equals(addressBarStyle, ignoreCase = true)
     val effectiveFloating = floatingTabBar && !isBottomAddressBar
     val haptic = remember(context) { PetalHapticEngine.getInstance(context) }
+
+    // Window security in incognito mode: prevent screenshots, screen recordings and app switcher previews
+    DisposableEffect(isIncognito, activity) {
+        if (activity != null && isIncognito) {
+            PetalIncognitoSessionManager.enableIncognitoSecurity(activity)
+        }
+        onDispose {
+            if (activity != null && isIncognito) {
+                PetalIncognitoSessionManager.disableIncognitoSecurity(activity)
+            }
+        }
+    }
+
+    LaunchedEffect(tabItems) {
+        PetalIncognitoSessionManager.syncIncognitoState(context)
+    }
 
     // Synchronize page state with BarCollapseState
     LaunchedEffect(activeUrl, isIncognito) {
@@ -413,24 +431,32 @@ fun PetalRootApp(
                         .fillMaxSize()
                         .appleDuoFoldEffect(isWebsite = false)
                 ) {
-                    PetalHomeScreen(
-                        onSearch = { query ->
-                            if (query.isBlank()) {
-                                viewModel.openOmnibox()
-                            } else {
-                                viewModel.loadUrl(query)
-                            }
-                        },
-                        onOpenShortcutUrl = { url ->
-                            viewModel.loadUrl(url)
-                        },
-                        onOpenAccountSync = { viewModel.openAccountSync() },
-                        onOpenBookmarksAction = { viewModel.openBookmarks() },
-                        onOpenHistoryAction = { viewModel.openHistory() },
-                        onOpenDownloadsAction = { viewModel.openDownloads() },
-                        onNewTabAction = { viewModel.openNewTab("about:home", selectTab = true) },
-                        onOpenTabSwitcher = { viewModel.toggleTabSwitcher() }
-                    )
+                    if (isIncognito) {
+                        PetalIncognitoHomeScreen(
+                            tabCount = tabItems.count { it.isIncognito },
+                            onSearchClick = { viewModel.openOmnibox() },
+                            onCloseIncognito = { viewModel.closeAllTabs(isIncognitoOnly = true) }
+                        )
+                    } else {
+                        PetalHomeScreen(
+                            onSearch = { query ->
+                                if (query.isBlank()) {
+                                    viewModel.openOmnibox()
+                                } else {
+                                    viewModel.loadUrl(query)
+                                }
+                            },
+                            onOpenShortcutUrl = { url ->
+                                viewModel.loadUrl(url)
+                            },
+                            onOpenAccountSync = { viewModel.openAccountSync() },
+                            onOpenBookmarksAction = { viewModel.openBookmarks() },
+                            onOpenHistoryAction = { viewModel.openHistory() },
+                            onOpenDownloadsAction = { viewModel.openDownloads() },
+                            onNewTabAction = { viewModel.openNewTab("about:home", selectTab = true) },
+                            onOpenTabSwitcher = { viewModel.toggleTabSwitcher() }
+                        )
+                    }
                 }
             } else {
                 val statusBarTopInset = WindowInsets.statusBars.union(WindowInsets.displayCutout)
@@ -671,8 +697,8 @@ fun PetalRootApp(
                         onNewTab = { privateMode ->
                             viewModel.openNewTab("about:home", selectTab = true, private = privateMode)
                         },
-                        onCloseAllTabs = {
-                            viewModel.closeAllTabs()
+                        onCloseAllTabs = { isIncognitoOnly ->
+                            viewModel.closeAllTabs(isIncognitoOnly = isIncognitoOnly)
                         },
                         onRestoreTab = { tab ->
                             viewModel.restoreTab(tab)

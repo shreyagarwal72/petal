@@ -1,12 +1,8 @@
 package com.petal.browser.compose.incognito
 
-import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.AnimatedContent
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -17,20 +13,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import com.petal.browser.ui.kit.Card
-import com.petal.browser.ui.kit.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -44,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
@@ -56,6 +50,8 @@ import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.containment.*
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
 import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
+import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.theme.PetalIncognitoTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.toShape
@@ -64,36 +60,50 @@ import com.petal.browser.ui.theme.toShape
 @Composable
 fun PetalIncognitoHomeScreen(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
+    tabCount: Int = 0,
     onSearchClick: () -> Unit = {},
     onCloseIncognito: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val activity = context as? ComponentActivity
-    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+    var blockThirdPartyCookies by remember {
+        mutableStateOf(sp.getBoolean("sp_incognito_block_3p_cookies", true))
+    }
+    var biometricLockEnabled by remember {
+        mutableStateOf(sp.getBoolean("sp_biometric_incognito_tab_lock", false))
+    }
+    var httpsOnlyEnabled by remember {
+        mutableStateOf(sp.getBoolean("sp_https_only", false))
+    }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "sp_amoled") {
-                isAmoled = sp.getBoolean("sp_amoled", false)
+            when (key) {
+                "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
+                "sp_incognito_block_3p_cookies" -> blockThirdPartyCookies = sp.getBoolean("sp_incognito_block_3p_cookies", true)
+                "sp_biometric_incognito_tab_lock" -> biometricLockEnabled = sp.getBoolean("sp_biometric_incognito_tab_lock", false)
+                "sp_https_only" -> httpsOnlyEnabled = sp.getBoolean("sp_https_only", false)
             }
         }
         sp.registerOnSharedPreferenceChangeListener(listener)
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
-    var blockThirdPartyCookies by remember {
-        mutableStateOf(sp.getBoolean("sp_incognito_block_3p_cookies", true))
-    }
     var showLearnMoreDialog by remember { mutableStateOf(false) }
 
-    androidx.activity.compose.BackHandler(enabled = showLearnMoreDialog) {
+    BackHandler(enabled = showLearnMoreDialog) {
         showLearnMoreDialog = false
     }
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val glassWallpaper = rememberPetalGlassWallpaper()
+
+    val liveIncognitoCount = remember(tabCount) {
+        if (tabCount > 0) tabCount else PetalIncognitoSessionManager.getIncognitoCount(context)
+    }
 
     PetalIncognitoTheme(useAmoled = isAmoled) {
         CompositionLocalProvider(LocalPetalGlassWallpaper provides glassWallpaper) {
@@ -101,7 +111,7 @@ fun PetalIncognitoHomeScreen(
             val infiniteTransition = rememberInfiniteTransition(label = "FirefoxMaskPulse")
             val rawAvatarScale by infiniteTransition.animateFloat(
                 initialValue = 0.985f,
-                targetValue = 1.018f,
+                targetValue = 1.022f,
                 animationSpec = infiniteRepeatable(
                     animation = tween(3200, easing = EaseInOutCubic),
                     repeatMode = RepeatMode.Reverse
@@ -125,7 +135,11 @@ fun PetalIncognitoHomeScreen(
                 Column(modifier = Modifier.fillMaxSize()) {
                     ExpressiveHeader(
                         title = stringResource(R.string.private_browsing_title),
-                        subtitle = stringResource(R.string.private_browsing_subtitle),
+                        subtitle = if (liveIncognitoCount > 1) {
+                            "$liveIncognitoCount isolated tabs open • Zero traces"
+                        } else {
+                            "Isolated session • Zero traces"
+                        },
                         maxTitleLines = 1,
                         maxSubtitleLines = 2,
                         onBack = null,
@@ -159,23 +173,22 @@ fun PetalIncognitoHomeScreen(
                             modifier = Modifier.widthIn(max = 640.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Spacer(Modifier.height(20.dp))
+                            Spacer(Modifier.height(18.dp))
 
-                            // ── 1. Firefox Private Browsing Mask Hero Badge with M3 Cookie Shape ──
+                            // ── 1. Hero Firefox Private Browsing Mask Badge with M3 Cookie Shape ──
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .size(108.dp)
+                                    .size(112.dp)
                                     .entrance(index = 0)
                             ) {
-                                // Cookie-12-sided badge with Firefox Private Browsing Mask silhouette
                                 Surface(
                                     shape = CircleShape,
                                     color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
                                     tonalElevation = if (isGlass) 0.dp else 6.dp,
                                     shadowElevation = if (isGlass) 0.dp else 4.dp,
                                     modifier = Modifier
-                                        .size(86.dp)
+                                        .size(92.dp)
                                         .clip(cookieShape)
                                         .graphicsLayer {
                                             scaleX = avatarScale
@@ -185,7 +198,7 @@ fun PetalIncognitoHomeScreen(
                                             if (isGlass) Modifier.liquidGlassChrome(
                                                 shape = cookieShape,
                                                 enabled = true,
-                                                sheenIntensity = 0.75f,
+                                                sheenIntensity = 0.85f,
                                                 tintColor = MaterialTheme.colorScheme.primary
                                             ) else Modifier
                                         )
@@ -198,7 +211,7 @@ fun PetalIncognitoHomeScreen(
                                             painter = painterResource(id = R.drawable.icon_firefox_mask),
                                             contentDescription = stringResource(R.string.private_browsing_title),
                                             tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(46.dp)
+                                            modifier = Modifier.size(50.dp)
                                         )
                                     }
                                 }
@@ -263,55 +276,22 @@ fun PetalIncognitoHomeScreen(
 
                             Spacer(Modifier.height(20.dp))
 
-                            // ── 5. Containment Settings Section: Cookie Isolation Toggle ──
+                            // ── 5. Containment Settings Section: M3 Expressive Privacy Controls ──
                             PetalSettingsSection(
                                 title = stringResource(R.string.ui_security_privacy),
-                                icon = Icons.Rounded.Cookie,
+                                icon = Icons.Rounded.Security,
                                 modifier = Modifier.entrance(index = 5)
                             ) {
-                                val position = PetalGroupPosition.SINGLE
-                                val shape = petalGroupShape(position)
-                                val source = remember { MutableInteractionSource() }
-                                val scale = rememberPetalGroupPressScale(source)
-                                val activeSurface = petalGroupSurfaceColor()
-                                val disabledContainer = if (isGlass) {
-                                    activeSurface.copy(alpha = (activeSurface.alpha * 0.7f).coerceAtLeast(0.12f))
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-                                }
-
-                                Card(
+                                // Row 1 (TOP): 3rd-Party Cookie & Tracker Shield
+                                PetalGroupListRow(
+                                    position = PetalGroupPosition.TOP,
                                     onClick = {
                                         val nextVal = !blockThirdPartyCookies
                                         blockThirdPartyCookies = nextVal
                                         sp.edit().putBoolean("sp_incognito_block_3p_cookies", nextVal).apply()
                                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                                     },
-                                    shape = shape,
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = activeSurface,
-                                        disabledContainerColor = disabledContainer
-                                    ),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                                    interactionSource = source,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .graphicsLayer {
-                                            scaleX = scale
-                                            scaleY = scale
-                                        }
-                                        .then(
-                                            if (isGlass) Modifier.liquidGlassChrome(shape = shape, enabled = true)
-                                            else Modifier
-                                        ), glass = false
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .heightIn(min = 64.dp)
-                                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
+                                    leading = {
                                         PetalGroupIconBadge(
                                             shape = RoundedCornerShape(14.dp),
                                             containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -323,28 +303,25 @@ fun PetalIncognitoHomeScreen(
                                                 modifier = Modifier.size(20.dp)
                                             )
                                         }
-                                        Spacer(Modifier.width(14.dp))
-                                        Column(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .padding(end = 8.dp)
-                                        ) {
-                                            Text(
-                                                text = stringResource(R.string.ui_block_third_party_cookies),
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                fontWeight = FontWeight.Medium,
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                                maxLines = 2,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Text(
-                                                text = stringResource(R.string.ui_when_on_sites_can_t),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                maxLines = 2,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
+                                    },
+                                    content = {
+                                        Text(
+                                            text = stringResource(R.string.ui_block_third_party_cookies),
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.ui_when_on_sites_can_t),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    },
+                                    trailing = {
                                         IconSwitch(
                                             checked = blockThirdPartyCookies,
                                             icon = Icons.Rounded.Cookie,
@@ -355,7 +332,111 @@ fun PetalIncognitoHomeScreen(
                                             }
                                         )
                                     }
-                                }
+                                )
+
+                                // Row 2 (MIDDLE): Biometric Incognito Tab Lock
+                                PetalGroupListRow(
+                                    position = PetalGroupPosition.MIDDLE,
+                                    onClick = {
+                                        val nextVal = !biometricLockEnabled
+                                        biometricLockEnabled = nextVal
+                                        sp.edit().putBoolean("sp_biometric_incognito_tab_lock", nextVal).apply()
+                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                    },
+                                    leading = {
+                                        PetalGroupIconBadge(
+                                            shape = RoundedCornerShape(14.dp),
+                                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Fingerprint,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    },
+                                    content = {
+                                        Text(
+                                            text = "Biometric Tab Lock",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = "Require fingerprint or unlock to view private tabs",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    },
+                                    trailing = {
+                                        IconSwitch(
+                                            checked = biometricLockEnabled,
+                                            icon = Icons.Rounded.Fingerprint,
+                                            onCheckedChange = { checked ->
+                                                biometricLockEnabled = checked
+                                                sp.edit().putBoolean("sp_biometric_incognito_tab_lock", checked).apply()
+                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                            }
+                                        )
+                                    }
+                                )
+
+                                // Row 3 (BOTTOM): HTTPS-Only Mode
+                                PetalGroupListRow(
+                                    position = PetalGroupPosition.BOTTOM,
+                                    onClick = {
+                                        val nextVal = !httpsOnlyEnabled
+                                        httpsOnlyEnabled = nextVal
+                                        sp.edit().putBoolean("sp_https_only", nextVal).apply()
+                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                    },
+                                    leading = {
+                                        PetalGroupIconBadge(
+                                            shape = RoundedCornerShape(14.dp),
+                                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Https,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    },
+                                    content = {
+                                        Text(
+                                            text = stringResource(R.string.ui_https_only_mode),
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = "Automatically upgrade connections to secure HTTPS",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    },
+                                    trailing = {
+                                        IconSwitch(
+                                            checked = httpsOnlyEnabled,
+                                            icon = Icons.Rounded.Https,
+                                            onCheckedChange = { checked ->
+                                                httpsOnlyEnabled = checked
+                                                sp.edit().putBoolean("sp_https_only", checked).apply()
+                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                            }
+                                        )
+                                    }
+                                )
                             }
 
                             Spacer(Modifier.height(20.dp))
@@ -387,7 +468,8 @@ fun PetalIncognitoHomeScreen(
                                         Text(
                                             text = "• " + stringResource(R.string.private_browsing_not_saved_history) +
                                                     "\n• " + stringResource(R.string.private_browsing_not_saved_cookies) +
-                                                    "\n• " + stringResource(R.string.private_browsing_not_saved_forms),
+                                                    "\n• " + stringResource(R.string.private_browsing_not_saved_forms) +
+                                                    "\n• Screenshots & app switcher previews (FLAG_SECURE)",
                                             style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -511,9 +593,10 @@ fun PetalIncognitoHomeScreen(
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
-                                BulletItem("Firefox GeckoView private engine session isolates cookies and cache into an ephemeral jar.")
-                                BulletItem("Closing all private tabs immediately purges cookies, temporary cache files, and private thumbnails.")
-                                BulletItem("Downloads and bookmarks are retained across sessions for your convenience.")
+                                BulletItem("GeckoView private engine session isolates cookies, IndexedDB, and cache into an ephemeral sandbox.")
+                                BulletItem("Closing private tabs immediately purges cookies, temporary cache files, and private thumbnails.")
+                                BulletItem("Window security (FLAG_SECURE) locks screenshots and app switcher previews while viewing private tabs.")
+                                BulletItem("Downloads and bookmarks you explicitly save are retained across sessions for your convenience.")
                                 BulletItem("Visited sites, networks, and ISPs can still see your IP address and online requests.")
                             }
                         }

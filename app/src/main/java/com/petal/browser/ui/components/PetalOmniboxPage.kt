@@ -242,8 +242,9 @@ fun PetalOmniboxPage(
     val sheen = if (isGlass) sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f) else 0.60f
 
     fun getSavedSearchHistory(): List<String> {
-        val listKey = if (isIncognito) "sp_incognito_search_history_list" else "sp_search_history_list"
-        val legacyKey = if (isIncognito) "sp_incognito_search_history_queries" else "sp_search_history_queries"
+        if (isIncognito) return emptyList()
+        val listKey = "sp_search_history_list"
+        val legacyKey = "sp_search_history_queries"
         val raw = sp.getString(listKey, null)
         if (!raw.isNullOrBlank()) {
             return try {
@@ -1332,9 +1333,11 @@ fun PetalOmniboxPage(
                         sp.edit().putStringSet("sp_removed_suggestions", newSet).apply()
 
                         // Remove from persistent search history list as well
-                        val listKey = if (isIncognito) "sp_incognito_search_history_list" else "sp_search_history_list"
-                        val updatedList = getSavedSearchHistory().filterNot { it.equals(targetQuery, ignoreCase = true) }
-                        sp.edit().putString(listKey, JSONArray(updatedList).toString()).apply()
+                        if (!isIncognito) {
+                            val listKey = "sp_search_history_list"
+                            val updatedList = getSavedSearchHistory().filterNot { it.equals(targetQuery, ignoreCase = true) }
+                            sp.edit().putString(listKey, JSONArray(updatedList).toString()).apply()
+                        }
 
                         suggestions = suggestions.filter { !it.query.equals(targetQuery, ignoreCase = true) }
 

@@ -191,7 +191,7 @@ fun PetalTabGridSwitcher(
     onTabSelect: (PetalTabItem) -> Unit,
     onTabClose: (PetalTabItem) -> Unit,
     onNewTab: (Boolean) -> Unit,
-    onCloseAllTabs: () -> Unit,
+    onCloseAllTabs: (Boolean) -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onTabVisible: (PetalTabItem) -> Unit = {},
     onBack: (() -> Unit)? = null,
@@ -866,7 +866,7 @@ fun PetalTabGridSwitcher(
                                 )
                                 com.petal.browser.ui.containment.PetalMenuDivider()
                                 PetalExpressiveMenuItem(
-                                    text = stringResource(R.string.ui_close_all_tabs),
+                                    text = if (selectedCategory == TabCategory.INCOGNITO) "Close all Incognito tabs" else stringResource(R.string.ui_close_all_tabs),
                                     leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                     destructive = true,
                                     onClick = {
@@ -876,7 +876,7 @@ fun PetalTabGridSwitcher(
                                             showCloseAllConfirmDialog = true
                                         } else {
                                             commitPendingRemovals()
-                                            onCloseAllTabs()
+                                            onCloseAllTabs(selectedCategory == TabCategory.INCOGNITO)
                                         }
                                     }
                                 )
@@ -1312,7 +1312,7 @@ fun PetalTabGridSwitcher(
                                                             val targetId = hoverTargetTabId
                                                             if (targetId != null) {
                                                                 val targetTab = tabs.find { it.id == targetId }
-                                                                if (targetTab != null) {
+                                                                if (targetTab != null && !tab.isIncognito && !targetTab.isIncognito) {
                                                                     PetalTabGroupManager.createGroupWithTabs(context, tab, targetTab)
                                                                     refreshGroups()
                                                                 }
@@ -1477,7 +1477,7 @@ fun PetalTabGridSwitcher(
                                                             val targetId = hoverTargetTabId
                                                             if (targetId != null) {
                                                                 val targetTab = tabs.find { it.id == targetId }
-                                                                if (targetTab != null) {
+                                                                if (targetTab != null && !tab.isIncognito && !targetTab.isIncognito) {
                                                                     PetalTabGroupManager.createGroupWithTabs(context, tab, targetTab)
                                                                     refreshGroups()
                                                                 }
@@ -1892,17 +1892,18 @@ fun PetalTabGridSwitcher(
 
     // Modal dialog for Close All Tabs confirmation
     if (showCloseAllConfirmDialog) {
+        val isIncognitoCategory = selectedCategory == TabCategory.INCOGNITO
         com.petal.browser.ui.containment.PetalAlertDialog(
             onDismissRequest = { showCloseAllConfirmDialog = false },
-            title = stringResource(R.string.ui_close_all_tabs_2),
-            message = stringResource(R.string.ui_are_you_sure_you_want, tabs.size),
+            title = if (isIncognitoCategory) "Close all Incognito tabs?" else stringResource(R.string.ui_close_all_tabs_2),
+            message = if (isIncognitoCategory) "This will close all open incognito tabs and clear private session data." else stringResource(R.string.ui_are_you_sure_you_want, tabs.size),
             icon = Icons.Rounded.LayersClear,
             destructive = true,
             confirmText = stringResource(R.string.ui_close_all_2),
             onConfirm = {
                 showCloseAllConfirmDialog = false
                 commitPendingRemovals()
-                onCloseAllTabs()
+                onCloseAllTabs(isIncognitoCategory)
             },
         )
     }

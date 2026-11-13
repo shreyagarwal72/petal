@@ -340,11 +340,15 @@ fun PetalBottomNavBar(
             com.petal.browser.ui.glass.LocalPetalGlassRevision.current
             val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
             val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isLiquidGlass) resolvedGlassSource else null)
-            val baseContainer = MaterialTheme.colorScheme.surfaceContainerHigh
+            val baseContainer = if (isIncognito) com.petal.browser.ui.theme.IncognitoSurfaceContainer else MaterialTheme.colorScheme.surfaceContainerHigh
 
             Surface(
                 shape = navBarShape,
-                color = if (isLiquidGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainer,
+                color = when {
+                    isLiquidGlass -> Color.Transparent
+                    isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer
+                    else -> MaterialTheme.colorScheme.surfaceContainer
+                },
                 // No tonal lift or drop shadow: the shadow was the dark blur smeared outside the
                 // rounded corners. The bar is a clean flat fill (or glass), rounded or rectangular.
                 tonalElevation = 0.dp,

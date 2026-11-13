@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.petal.browser.R
 import com.petal.browser.browser.PetalTabMetadata
 import com.petal.browser.browser.PetalTabMetadataStore
+import com.petal.browser.compose.incognito.PetalIncognitoSessionManager
 import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.compose.tabs.PetalTabItem
 import com.petal.browser.compose.tabs.PetalWorkspaceManager
@@ -333,6 +334,9 @@ class PetalBrowserViewModel @Inject constructor(
             isIncognito = private,
             select = selectTab
         )
+        if (private) {
+            PetalIncognitoSessionManager.syncIncognitoState(context)
+        }
         if (_isTabSwitcherOpen.value) {
             _isTabSwitcherOpen.value = false
         }
@@ -366,13 +370,14 @@ class PetalBrowserViewModel @Inject constructor(
     fun closeTab(tabId: String) {
         val state = browserStore.state
         val tabToClose = state.tabs.firstOrNull { it.id == tabId }
-        if (tabToClose != null) {
+        val isPrivate = tabToClose?.content?.private == true
+        if (tabToClose != null && !isPrivate) {
             val meta = PetalTabMetadataStore.get(context, tabId)
             PetalRecentlyClosedManager.pushClosedTab(
                 id = tabToClose.id,
                 title = meta?.customTitle ?: tabToClose.content.title,
                 url = tabToClose.content.url,
-                isIncognito = tabToClose.content.private,
+                isIncognito = false,
                 groupId = meta?.tabGroupId,
                 groupTitle = meta?.tabGroupTitle,
                 groupColorHex = meta?.tabGroupColorHex
@@ -380,6 +385,9 @@ class PetalBrowserViewModel @Inject constructor(
         }
         tabsUseCases.removeTab(tabId)
         PetalTabMetadataStore.remove(context, tabId)
+        if (isPrivate) {
+            PetalIncognitoSessionManager.syncIncognitoState(context)
+        }
         if (browserStore.state.tabs.isEmpty()) {
             openNewTab("about:home", selectTab = true)
         }
@@ -387,23 +395,31 @@ class PetalBrowserViewModel @Inject constructor(
 
     fun closeTabs(tabIds: Collection<String>) {
         val state = browserStore.state
+        var hadPrivate = false
         for (id in tabIds) {
             val tabToClose = state.tabs.firstOrNull { it.id == id }
             if (tabToClose != null) {
-                val meta = PetalTabMetadataStore.get(context, id)
-                PetalRecentlyClosedManager.pushClosedTab(
-                    id = tabToClose.id,
-                    title = meta?.customTitle ?: tabToClose.content.title,
-                    url = tabToClose.content.url,
-                    isIncognito = tabToClose.content.private,
-                    groupId = meta?.tabGroupId,
-                    groupTitle = meta?.tabGroupTitle,
-                    groupColorHex = meta?.tabGroupColorHex
-                )
+                if (!tabToClose.content.private) {
+                    val meta = PetalTabMetadataStore.get(context, id)
+                    PetalRecentlyClosedManager.pushClosedTab(
+                        id = tabToClose.id,
+                        title = meta?.customTitle ?: tabToClose.content.title,
+                        url = tabToClose.content.url,
+                        isIncognito = false,
+                        groupId = meta?.tabGroupId,
+                        groupTitle = meta?.tabGroupTitle,
+                        groupColorHex = meta?.tabGroupColorHex
+                    )
+                } else {
+                    hadPrivate = true
+                }
             }
             PetalTabMetadataStore.remove(context, id)
         }
         browserStore.dispatch(TabListAction.RemoveTabsAction(tabIds.toList()))
+        if (hadPrivate) {
+            PetalIncognitoSessionManager.syncIncognitoState(context)
+        }
         if (browserStore.state.tabs.isEmpty()) {
             openNewTab("about:home", selectTab = true)
         }

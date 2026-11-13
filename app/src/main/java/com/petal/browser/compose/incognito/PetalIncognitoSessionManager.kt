@@ -44,14 +44,25 @@ object PetalIncognitoSessionManager {
     }
 
     @JvmStatic
-    fun isIncognitoActive(): Boolean = com.petal.browser.browser.BrowserContainer.getIncognitoCount() > 0
+    fun getIncognitoCount(context: Context? = null): Int {
+        val countFromStore = try {
+            val ctx = context ?: com.petal.browser.PetalApplication.instance
+            com.petal.browser.engine.gecko.PetalEngineStore.getStore(ctx).state.tabs.count { it.content.private }
+        } catch (_: Throwable) {
+            0
+        }
+        val legacyCount = try { com.petal.browser.browser.BrowserContainer.getIncognitoCount() } catch (_: Throwable) { 0 }
+        return Math.max(countFromStore, Math.max(legacyCount, activeIncognitoTabCount))
+    }
+
+    @JvmStatic
+    fun isIncognitoActive(context: Context? = null): Boolean = getIncognitoCount(context) > 0
 
     @JvmStatic
     fun updateIncognitoState(activity: Activity) {
-        val incognitoCount = com.petal.browser.browser.BrowserContainer.getIncognitoCount()
+        val incognitoCount = getIncognitoCount(activity)
         if (incognitoCount > 0) {
             hadIncognitoTabs = true
-            enableIncognitoSecurity(activity)
             showIncognitoNotification(activity)
         } else {
             disableIncognitoSecurity(activity)
@@ -65,12 +76,9 @@ object PetalIncognitoSessionManager {
 
     @JvmStatic
     fun syncIncognitoState(context: Context) {
-        val incognitoCount = com.petal.browser.browser.BrowserContainer.getIncognitoCount()
+        val incognitoCount = getIncognitoCount(context)
         if (incognitoCount > 0) {
             hadIncognitoTabs = true
-            if (context is Activity) {
-                enableIncognitoSecurity(context)
-            }
             showIncognitoNotification(context)
         } else {
             if (context is Activity) {
@@ -160,7 +168,7 @@ object PetalIncognitoSessionManager {
 
             val pendingIntent = PendingIntent.getActivity(context, 0, closeIntent, pendingIntentFlags)
 
-            val incognitoCount = com.petal.browser.browser.BrowserContainer.getIncognitoCount()
+            val incognitoCount = getIncognitoCount(context)
             val contentText = if (incognitoCount > 1) {
                 "$incognitoCount Incognito tabs open. Tap to close all."
             } else {

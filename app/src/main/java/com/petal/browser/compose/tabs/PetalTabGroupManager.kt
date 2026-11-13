@@ -106,6 +106,12 @@ object PetalTabGroupManager {
         title: String? = null
     ): PetalTabGroup {
         init(context)
+        // Strict privacy: Incognito tabs cannot be merged into persistent tab groups
+        if (tabA.isIncognito || tabB.isIncognito) {
+            return findGroupByTabId(context, tabA.id)
+                ?: findGroupByTabId(context, tabB.id)
+                ?: PetalTabGroup(id = "", title = "", tabIds = emptyList())
+        }
         val existingGroupA = findGroupByTabId(context, tabA.id)
         val existingGroupB = findGroupByTabId(context, tabB.id)
 
@@ -177,6 +183,11 @@ object PetalTabGroupManager {
     @JvmStatic
     fun addTabToGroup(context: Context, groupId: String, tabId: String): PetalTabGroup? {
         init(context)
+        val isIncognito = try {
+            com.petal.browser.engine.gecko.PetalEngineStore.getStore(context).state.tabs.find { it.id == tabId }?.content?.private == true
+        } catch (_: Throwable) { false }
+        if (isIncognito) return null
+
         val group = groupsMap[groupId] ?: return null
         val updatedTabs = (group.tabIds + tabId).distinct()
         val updatedGroup = group.copy(tabIds = updatedTabs)

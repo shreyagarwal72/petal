@@ -92,7 +92,7 @@ fun PetalAddressBar(
     }
 
     LocalPetalGlassRevision.current
-    val isLiquidGlass = !isPreview && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") && !isIncognito
+    val isLiquidGlass = !isPreview && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar")
     val samplesWallpaper = BarInsets.glassSamplesWallpaper(
         sp, resolvedIsBottom, floatingTabBar, false
     )
@@ -101,11 +101,11 @@ fun PetalAddressBar(
     val glassSource = if (isPreview || samplesWallpaper) null else (ambientGlassSource ?: activity?.findViewById<android.view.View>(com.petal.browser.R.id.main_content))
     val glassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
     val pillGlassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
-    val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val baseGlassColor = if (isIncognito) com.petal.browser.ui.theme.IncognitoSurfaceContainer else MaterialTheme.colorScheme.surfaceContainerHigh
 
     val containerColor = when {
-        isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer
         isLiquidGlass -> Color.Transparent
+        isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer
         else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
