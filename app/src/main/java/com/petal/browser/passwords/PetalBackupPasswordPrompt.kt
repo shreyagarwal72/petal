@@ -148,7 +148,7 @@ object PetalBackupPasswordPrompt {
         dialog.setOnShowListener {
             val window = dialog.window ?: return@setOnShowListener
             window.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
-            val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+            val isGlass = com.petal.browser.ui.containment.isLiquidGlassDirect(activity)
             window.setDimAmount(if (isGlass) 0.12f else 0.68f)
             window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

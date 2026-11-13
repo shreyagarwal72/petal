@@ -205,7 +205,7 @@ object PetalExitConfirmationDialog {
         dialog.show()
 
         // Dialog.show() creates the window after setOnShowListener registration.
-        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+        val isGlass = com.petal.browser.ui.containment.isLiquidGlassDirect(activity)
         dialog.window?.let { window ->
             window.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
             window.setDimAmount(if (isGlass) 0.12f else 0.68f)

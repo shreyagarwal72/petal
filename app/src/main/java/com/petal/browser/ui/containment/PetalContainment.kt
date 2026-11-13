@@ -121,6 +121,15 @@ enum class PetalGroupPosition { SINGLE, TOP, MIDDLE, BOTTOM }
 val LocalPetalSectionHighlighted = compositionLocalOf { false }
 
 /**
+ * Direct non-composable check for Liquid Glass UI enabled status.
+ * Safe to use from Android Dialog windows, callbacks, and non-Compose contexts.
+ */
+fun isLiquidGlassDirect(context: android.content.Context, componentKey: String = "sp_liquid_glass_containments"): Boolean {
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    return sp.getBoolean("sp_liquid_glass_enabled", false) && sp.getBoolean(componentKey, true)
+}
+
+/**
  * Checks whether Liquid Glass UI is enabled system-wide.
  */
 @Composable
