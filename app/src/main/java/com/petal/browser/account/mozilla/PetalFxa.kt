@@ -20,6 +20,16 @@ import mozilla.components.concept.sync.*
 import mozilla.components.service.fxa.*
 import mozilla.components.service.fxa.manager.*
 import mozilla.components.service.fxa.sync.*
+import java.util.concurrent.TimeUnit
+import mozilla.appservices.fxaclient.FxaConfig
+import mozilla.appservices.fxaclient.FxaServer
+import mozilla.components.concept.base.crash.Breadcrumb
+import mozilla.components.concept.base.crash.CrashReporting
+
+private object NoopCrashReporter : CrashReporting {
+    override fun submitCaughtException(throwable: Throwable) = kotlinx.coroutines.Job().apply { complete() }
+    override fun recordCrashBreadcrumb(breadcrumb: Breadcrumb) {}
+}
 
 sealed interface FxaUi {
     data object SignedOut : FxaUi
@@ -99,7 +109,11 @@ object PetalFxa {
 
             manager = FxaAccountManager(
                 context = appContext,
-                serverConfig = ServerConfig(FxaServer.Release, CLIENT_ID, REDIRECT_URL),
+                serverConfig = FxaConfig(
+                    server = FxaServer.Release,
+                    clientId = CLIENT_ID,
+                    redirectUri = REDIRECT_URL
+                ),
                 deviceConfig = DeviceConfig(
                     name = PetalFxaSettings.deviceName(appContext),
                     type = DeviceType.MOBILE,
@@ -109,13 +123,19 @@ object PetalFxa {
                 syncConfig = SyncConfig(
                     supportedEngines = setOf(SyncEngine.History, SyncEngine.Bookmarks, SyncEngine.Tabs, SyncEngine.Passwords),
                     periodicSyncConfig = PeriodicSyncConfig(periodMinutes = 240, initialDelayMinutes = 5)
-                )
+                ),
+                crashReporter = NoopCrashReporter
             )
         }
         val m = manager!!
         if (syncedTabs == null) {
             // Publishes this device's open tabs and reads other devices' tabs (official feature-syncedtabs).
-            syncedTabs = SyncedTabsStorage(m, com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext), tabsStorage!!).also { it.start() }
+            syncedTabs = SyncedTabsStorage(
+                accountManager = m,
+                store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext),
+                tabsStorage = tabsStorage!!,
+                maxActiveTime = TimeUnit.DAYS.toMillis(14)
+            ).also { it.start() }
         }
         m.register(accountObserver, activity, false)
         m.registerForSyncEvents(syncObserver, activity, false)
@@ -213,13 +233,17 @@ object PetalFxa {
         }
     }
 
-    /** Pushes the engine toggles into Mozilla's SyncEnginesStorage (global to the account) and re-syncs. */
+    /** Pushes the engine toggles into Mozilla's Sync engines and re-syncs. */
     fun applyEngineSettings() {
-        val s = SyncEnginesStorage(appContext)
-        s.setStatus(SyncEngine.Bookmarks, PetalFxaSettings.bookmarks(appContext))
-        s.setStatus(SyncEngine.History, PetalFxaSettings.history(appContext))
-        s.setStatus(SyncEngine.Tabs, PetalFxaSettings.tabs(appContext))
-        s.setStatus(SyncEngine.Passwords, PetalFxaSettings.passwords(appContext))
+        val m = manager ?: return
+        scope.launch {
+            try {
+                m.setEngineEnabled(SyncEngine.Bookmarks, PetalFxaSettings.bookmarks(appContext))
+                m.setEngineEnabled(SyncEngine.History, PetalFxaSettings.history(appContext))
+                m.setEngineEnabled(SyncEngine.Tabs, PetalFxaSettings.tabs(appContext))
+                m.setEngineEnabled(SyncEngine.Passwords, PetalFxaSettings.passwords(appContext))
+            } catch (_: Throwable) {}
+        }
     }
 
     fun setEngine(engine: SyncEngine, enabled: Boolean) {
@@ -229,7 +253,11 @@ object PetalFxa {
             SyncEngine.Passwords -> PetalFxaSettings.setPasswords(appContext, enabled)
             else -> PetalFxaSettings.setHistory(appContext, enabled)
         }
-        applyEngineSettings()
+        manager?.let { m ->
+            scope.launch {
+                try { m.setEngineEnabled(engine, enabled) } catch (_: Throwable) {}
+            }
+        }
         syncNow(SyncReason.EngineChange)
     }
 
@@ -258,7 +286,7 @@ object PetalFxa {
         val st = syncedTabs ?: return
         scope.launch {
             try {
-                _remoteTabs.value = st.getSyncedTabs().flatMap { dt ->
+                _remoteTabs.value = st.getSyncedDeviceTabs().flatMap { dt ->
                     dt.tabs.mapNotNull { t -> t.active()?.let { RemoteTab(dt.device.displayName, it.title, it.url) } }
                 }
             } catch (_: Throwable) {}

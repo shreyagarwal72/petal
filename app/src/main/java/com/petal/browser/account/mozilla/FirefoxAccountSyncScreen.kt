@@ -21,7 +21,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.compose.home.PetalShortcut
 import com.petal.browser.ui.components.bouncyClickable
 import kotlinx.coroutines.launch
-import mozilla.components.service.fxa.SyncEngine
+import mozilla.components.concept.sync.SyncEngine
 
 /** Firefox Account & Sync settings, driven by the official FxaAccountManager through [PetalFxa]. */
 @OptIn(ExperimentalMaterial3Api::class)
