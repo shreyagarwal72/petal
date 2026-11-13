@@ -987,7 +987,7 @@ object PetalBackupManager {
                             c = c.baseContext
                         }
                         act?.let { activity ->
-                            com.petal.browser.ui.components.PetalConfirmBottomSheet.showRestartConfirmation(activity) {
+                            com.petal.browser.ui.components.PetalConfirmSheetBridge.showRestartConfirmation(activity) {
                                 com.petal.browser.flags.PetalRestartManager.restartApp(activity)
                             }
                         }
@@ -1067,7 +1067,7 @@ object PetalBackupManager {
                             c = c.baseContext
                         }
                         act?.let { activity ->
-                            com.petal.browser.ui.components.PetalConfirmBottomSheet.showRestartConfirmation(activity) {
+                            com.petal.browser.ui.components.PetalConfirmSheetBridge.showRestartConfirmation(activity) {
                                 com.petal.browser.flags.PetalRestartManager.restartApp(activity)
                             }
                         }

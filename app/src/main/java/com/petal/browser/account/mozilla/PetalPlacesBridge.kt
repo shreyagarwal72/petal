@@ -58,7 +58,7 @@ internal class PetalPlacesBridge(
                     write.deleteURL(rec.url, HistoryBookmarkContract.TABLE_BOOKMARK) // deleted on another device
                 } else {
                     try {
-                        bookmarks.addItem(BookmarkRoot.Mobile.id, url, rec.title?.ifBlank { url } ?: url)
+                        bookmarks.addItem(BookmarkRoot.Mobile.id, url, rec.title?.ifBlank { url } ?: url, null)
                         finalUrls += url
                     } catch (_: Throwable) {}
                 }

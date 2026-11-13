@@ -28,7 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Crop
-import androidx.compose.material.icons.rounded.Wallpaper as ImageIcon
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
 import androidx.compose.material3.IconButton
@@ -463,7 +463,7 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                     onClick = onPickNewWallpaper,
                     modifier = Modifier.size(44.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.6f))
                 ) {
-                    Icon(ImageIcon, stringResource(R.string.widget_glass_pick_wallpaper), tint = Color.White)
+                    Icon(Icons.Rounded.Image, stringResource(R.string.widget_glass_pick_wallpaper), tint = Color.White)
                 }
             }
 
