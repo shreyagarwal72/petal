@@ -41,7 +41,8 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
         androidPhotoPicker = null
     )
     fun start() {
-        // Suppress stock Mozilla SitePermissionsDialogFragment so only Petal's Live Liquid Glass overlay renders
+        // Suppress stock Mozilla DialogFragments (SitePermissions, Prompts, Choices)
+        // so only Petal's Live Liquid Glass & Material 3 Expressive overlays / bottom sheets render
         activity.supportFragmentManager.registerFragmentLifecycleCallbacks(
             object : androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
                 override fun onFragmentAttached(
@@ -49,7 +50,13 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
                     f: androidx.fragment.app.Fragment,
                     context: android.content.Context
                 ) {
-                    if (f.javaClass.simpleName.contains("SitePermissions", ignoreCase = true)) {
+                    val name = f.javaClass.name
+                    val simpleName = f.javaClass.simpleName
+                    if (name.contains("mozilla.components.feature.prompts") ||
+                        simpleName.contains("SitePermissions", ignoreCase = true) ||
+                        simpleName.contains("PromptDialog", ignoreCase = true) ||
+                        simpleName.contains("ChoiceDialog", ignoreCase = true)
+                    ) {
                         try {
                             if (f is androidx.fragment.app.DialogFragment) {
                                 f.dismissAllowingStateLoss()

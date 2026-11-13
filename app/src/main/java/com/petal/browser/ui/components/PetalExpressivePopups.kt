@@ -292,9 +292,14 @@ data class PetalChoiceOption(
 )
 
 /**
- * Material 3 Expressive choice popup for web <select> dropdowns (single / multiple).
- * Redesigned with Material 3 Expressive containment matching the context menu and settings:
- * tonal surfaceContainerHigh, rounded containment corners, connected rows, and responsive selection.
+ * Material 3 Expressive & Live Liquid Glass choice bottom sheet for web <select> dropdowns.
+ * Styled to match Brave/Chromium mobile choice pickers:
+ * - Anchored at the bottom edge-to-edge with 28dp top rounded corners
+ * - Top drag handle indicator
+ * - Clean title header
+ * - Native RadioButton on the far right for single choice (and Checkbox for multiple)
+ * - Instant selection and dismissal on tap in single-choice mode
+ * - Live Liquid Glass backdrop refraction and tactile haptic feedback
  */
 @Composable
 fun PetalExpressiveChoiceDialog(
@@ -315,216 +320,189 @@ fun PetalExpressiveChoiceDialog(
         if (first > 1) listState.scrollToItem(first - 1)
     }
 
-    com.petal.browser.ui.containment.PetalHeroCard(
-        shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isGlass = com.petal.browser.ui.glass.GlassFxSettings.isLiquidGlassDirect(context)
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+
+    com.petal.browser.ui.glass.PetalGlassContainer(
         modifier = Modifier
-            .fillMaxWidth(0.92f)
-            .widthIn(max = 380.dp)
-            .padding(16.dp)
+            .fillMaxWidth()
+            .wrapContentHeight(),
+        enabled = isGlass,
+        live = true,
+        shape = sheetShape
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = sheetShape,
+            color = if (isGlass) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f)
+                    else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 6.dp
         ) {
-            // Header Section
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    .navigationBarsPadding()
+                    .padding(bottom = 12.dp)
             ) {
+                // Drag handle
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .fillMaxWidth()
+                        .padding(top = 10.dp, bottom = 6.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(22.dp)
+                    Box(
+                        modifier = Modifier
+                            .width(36.dp)
+                            .height(4.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                     )
                 }
-                Column(modifier = Modifier.weight(1f)) {
+
+                // Header
+                if (!title.isNullOrBlank()) {
                     Text(
-                        text = if (!title.isNullOrBlank()) title else if (multiple) "Select Options" else "Choose Option",
+                        text = title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 8.dp)
                     )
-                    Text(
-                        text = if (multiple) "Select one or more items" else "Tap an option to select",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                     )
                 }
-            }
 
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-            )
-
-            // Selectable Rows List
-            androidx.compose.foundation.lazy.LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 340.dp)
-                    .padding(horizontal = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                items(count = options.size, key = { options[it].id.ifEmpty { "${options[it].label}_$it" } }) { index ->
-                    val opt = options[index]
-                    when {
-                        opt.isSeparator -> HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                            thickness = 1.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                        )
-                        opt.isHeader -> Text(
-                            text = opt.label,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
-                        else -> {
-                            val isSel = opt.id in selected
-                            val bg = if (isSel) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f)
-                                     else MaterialTheme.colorScheme.surfaceContainerLow
-                            val fg = if (isSel) MaterialTheme.colorScheme.onSecondaryContainer
-                                     else MaterialTheme.colorScheme.onSurface
-                            val context = androidx.compose.ui.platform.LocalContext.current
-
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                color = bg,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .clickable(enabled = !opt.disabled) {
-                                        try {
-                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                                                .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.7f)
-                                        } catch (_: Exception) {}
-                                        if (multiple) {
-                                            if (isSel) selected.remove(opt.id) else selected.add(opt.id)
-                                        } else {
-                                            onConfirm(listOf(opt.id))
-                                        }
-                                    }
-                            ) {
+                // Selectable Rows List (matches Brave browser choice bottom sheet)
+                androidx.compose.foundation.lazy.LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                ) {
+                    items(count = options.size, key = { options[it].id.ifEmpty { "${options[it].label}_$it" } }) { index ->
+                        val opt = options[index]
+                        when {
+                            opt.isSeparator -> HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                                thickness = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                            )
+                            opt.isHeader -> Text(
+                                text = opt.label,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp)
+                            )
+                            else -> {
+                                val isSel = opt.id in selected
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .heightIn(min = 52.dp)
+                                        .clickable(enabled = !opt.disabled) {
+                                            try {
+                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                                                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                            } catch (_: Exception) {}
+
+                                            if (multiple) {
+                                                if (isSel) selected.remove(opt.id) else selected.add(opt.id)
+                                            } else {
+                                                onConfirm(listOf(opt.id))
+                                            }
+                                        }
                                         .padding(
-                                            start = if (opt.indented) 28.dp else 16.dp,
-                                            end = 16.dp,
-                                            top = 8.dp,
-                                            bottom = 8.dp
+                                            start = if (opt.indented) 36.dp else 24.dp,
+                                            end = 20.dp,
+                                            top = 12.dp,
+                                            bottom = 12.dp
                                         ),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
                                     Text(
                                         text = opt.label,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (opt.disabled) fg.copy(alpha = 0.38f) else fg,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (opt.disabled) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                                else MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.weight(1f)
                                     )
+
                                     if (multiple) {
                                         Checkbox(
                                             checked = isSel,
                                             onCheckedChange = null,
-                                            enabled = !opt.disabled
-                                        )
-                                    } else if (isSel) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(28.dp)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(MaterialTheme.colorScheme.primary),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = androidx.compose.material.icons.Icons.Rounded.Check,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onPrimary,
-                                                modifier = Modifier.size(18.dp)
+                                            enabled = !opt.disabled,
+                                            colors = CheckboxDefaults.colors(
+                                                checkedColor = MaterialTheme.colorScheme.primary
                                             )
-                                        }
+                                        )
+                                    } else {
+                                        RadioButton(
+                                            selected = isSel,
+                                            onClick = null,
+                                            enabled = !opt.disabled,
+                                            colors = RadioButtonDefaults.colors(
+                                                selectedColor = MaterialTheme.colorScheme.primary,
+                                                unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+                                            )
+                                        )
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-            )
-
-            // Bottom action buttons
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(
-                    onClick = onDismiss,
-                    shape = if (multiple) {
-                        RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp)
-                    } else {
-                        RoundedCornerShape(50.dp)
-                    },
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 48.dp)
-                ) {
-                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
-                }
-
+                // If multiple selection, provide Confirm / Dismiss actions at bottom
                 if (multiple) {
-                    Button(
-                        onClick = { onConfirm(selected.toList()) },
-                        shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                    )
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 48.dp)
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp)
+                        ) {
+                            Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                        }
+
+                        Button(
+                            onClick = { onConfirm(selected.toList()) },
+                            shape = ExpressiveButtonShape,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp)
+                        ) {
+                            Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
         }
     }
 }
-
 
 private fun petalParseHex(hex: String?): Int {
     return try {
@@ -1205,7 +1183,7 @@ object PetalExpressivePromptBridge {
         onCancel: Runnable
     ) {
         val activity = findActivity(context) ?: run { onCancel.run(); return }
-        var dialog: androidx.appcompat.app.AlertDialog? = null
+        var dialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
         var finished = false
         val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
@@ -1219,23 +1197,47 @@ object PetalExpressivePromptBridge {
                         options = options,
                         multiple = multiple,
                         onConfirm = { ids ->
-                            if (!finished) { finished = true; try { dialog?.dismiss() } catch (_: Exception) {}; onConfirm.accept(ids) }
+                            if (!finished) {
+                                finished = true
+                                try { dialog?.dismiss() } catch (_: Exception) {}
+                                onConfirm.accept(ids)
+                            }
                         },
                         onDismiss = {
-                            if (!finished) { finished = true; try { dialog?.dismiss() } catch (_: Exception) {}; onCancel.run() }
+                            if (!finished) {
+                                finished = true
+                                try { dialog?.dismiss() } catch (_: Exception) {}
+                                onCancel.run()
+                            }
                         }
                     )
                 }
             }
         }
-        val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
-            .setView(composeView)
-            .setCancelable(true)
-            .setOnCancelListener { if (!finished) { finished = true; onCancel.run() } }
-        dialog = builder.create().apply {
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            show()
+        val bottomSheet = com.google.android.material.bottomsheet.BottomSheetDialog(activity).apply {
+            setContentView(composeView)
+            window?.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)?.let { sheet ->
+                sheet.setBackgroundResource(android.R.color.transparent)
+                com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet).apply {
+                    state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                    skipCollapsed = true
+                }
+            }
+            setOnCancelListener {
+                if (!finished) {
+                    finished = true
+                    onCancel.run()
+                }
+            }
+            setOnDismissListener {
+                if (!finished) {
+                    finished = true
+                    onCancel.run()
+                }
+            }
         }
+        dialog = bottomSheet
+        bottomSheet.show()
     }
 
 
