@@ -23,7 +23,6 @@
 
 package com.petal.browser.engine.gecko
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -31,6 +30,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import com.petal.browser.R
 import com.petal.browser.logger.PetalAppLogger
 import org.mozilla.geckoview.GeckoRuntime
@@ -93,10 +93,10 @@ class PetalCrashHandlerService : Service() {
                 }
                 nm.createNotificationChannel(channel)
             }
-            val notification = Notification.Builder(this, channelId)
+            val notification = NotificationCompat.Builder(this, channelId)
                 .setContentTitle("Petal Browser")
                 .setContentText("Saving diagnostic report...")
-                .setSmallIcon(R.drawable.ic_petal_icon)
+                .setSmallIcon(R.drawable.ic_splash_petal)
                 .build()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(

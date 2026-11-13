@@ -21,6 +21,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -76,19 +80,19 @@ fun ComposeEngineViewport(
     val act = (context as? MainActivity) ?: (context as? ContextWrapper)?.baseContext as? MainActivity
 
     val nestedScrollConnection = remember(act) {
-        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+        object : NestedScrollConnection {
             override fun onPreScroll(
-                available: androidx.compose.ui.geometry.Offset,
-                source: androidx.compose.ui.input.nestedscroll.NestedScrollSource
-            ): androidx.compose.ui.geometry.Offset {
-                if (source == androidx.compose.ui.input.nestedscroll.NestedScrollSource.UserInput && act != null) {
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (source == NestedScrollSource.UserInput && act != null) {
                     if (available.y < -12f) {
                         act.animateAddressBarCollapse(true)
                     } else if (available.y > 12f) {
                         act.animateAddressBarCollapse(false)
                     }
                 }
-                return androidx.compose.ui.geometry.Offset.Zero
+                return Offset.Zero
             }
         }
     }
@@ -286,7 +290,7 @@ fun ComposeEngineViewport(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .androidx.compose.ui.input.nestedscroll.nestedScroll(nestedScrollConnection)
+            .nestedScroll(nestedScrollConnection)
             .background(MaterialTheme.colorScheme.background)
     ) {
         AndroidView(

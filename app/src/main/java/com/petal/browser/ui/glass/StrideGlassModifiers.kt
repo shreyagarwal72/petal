@@ -54,15 +54,6 @@ fun rememberGlassBar(source: View?): GlassBar? {
     return bar
 }
 
-private fun isAncestor(ancestor: View, descendant: View): Boolean {
-    if (ancestor === descendant) return true
-    var p = descendant.parent
-    while (p != null) {
-        if (p === ancestor) return true
-        p = p.parent
-    }
-    return false
-}
 
 /**
  * Liquid glass for the nav bar: what's under it, blurred, refracted at the rim and tinted
