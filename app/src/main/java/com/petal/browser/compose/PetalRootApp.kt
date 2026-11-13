@@ -10,6 +10,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -34,8 +39,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import com.petal.browser.predictive.PetalBackInput
+import com.petal.browser.predictive.PetalBackMotion
+import com.petal.browser.predictive.PetalPredictiveJunction
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -187,9 +196,21 @@ fun PetalRootApp(
 
     val isHome = activeUrl.isBlank() || PetalBrowserUtils.isHomePage(activeUrl)
 
+    val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
+    val predictiveBackStyle by PetalPredictiveJunction.backStyle.collectAsStateWithLifecycle()
+    val predictiveBackExitDirection by PetalPredictiveJunction.backExitDirection.collectAsStateWithLifecycle()
+    val predictiveBlurEnabled by PetalPredictiveJunction.blurEnabled.collectAsStateWithLifecycle()
+
     val lastExitBackAt = remember { longArrayOf(0L) }
-    var backProgress by remember { mutableFloatStateOf(0f) }
+    val progressAnim = remember { Animatable(0f) }
     var backSwipeEdge by remember { mutableIntStateOf(BackEventCompat.EDGE_LEFT) }
+    var backTouchY by remember { mutableFloatStateOf(0f) }
+    var initialTouchY by remember { mutableFloatStateOf(0f) }
+    var isBackActive by remember { mutableStateOf(false) }
+    var isCommitting by remember { mutableStateOf(false) }
+    var releaseProgress by remember { mutableFloatStateOf(0f) }
+    var settleTime by remember { mutableFloatStateOf(0f) }
+    var releaseVelocity by remember { mutableFloatStateOf(0f) }
 
     // Overlay tracking and Bottom Nav visibility
     val isOverlayShowing = isOmniboxOpen ||
@@ -202,6 +223,7 @@ fun PetalRootApp(
             isAccountSyncOpen ||
             isDeleteOpen ||
             isSafeLockerOpen ||
+            isAiSheetOpen ||
             pendingExtensionPopup != null
 
     val isBottomBarVisible = !isOverlayShowing && (!isMerge || isHome)
@@ -214,36 +236,101 @@ fun PetalRootApp(
 
     // ── Single Authoritative Predictive Back Handler ────────────────────────
     PredictiveBackHandler(enabled = !isOmniboxOpen) { progressFlow ->
+        val currentStyle = PetalPredictiveJunction.backStyle.value
+        var gestureStarted = false
+        var lastProgress = 0f
+        var lastNanos = 0L
+        var velocity = 0f
+
         try {
             progressFlow.collect { backEvent ->
-                backProgress = backEvent.progress
+                val now = System.nanoTime()
+                if (!gestureStarted) {
+                    gestureStarted = true
+                    initialTouchY = backEvent.touchY
+                    lastProgress = backEvent.progress
+                    lastNanos = now
+                } else {
+                    val dt = (now - lastNanos) / 1_000_000_000f
+                    if (dt > 0.001f) {
+                        val instant = (backEvent.progress - lastProgress) / dt
+                        velocity = velocity * 0.5f + instant * 0.5f
+                        lastProgress = backEvent.progress
+                        lastNanos = now
+                    }
+                }
                 backSwipeEdge = backEvent.swipeEdge
+                backTouchY = backEvent.touchY
+                releaseVelocity = velocity
+                isBackActive = true
+                isCommitting = false
+                progressAnim.snapTo(backEvent.progress)
             }
-            backProgress = 0f
-            when {
-                (activity as? MainActivity)?.hasPresentedScreens == true -> (activity as? MainActivity)?.dismissTopPresentedScreen()
-                pendingExtensionPopup != null -> PetalExtensionManager.dismissPopup()
-                isOmniboxOpen -> viewModel.setOmniboxOpen(false)
-                viewModel.hasOpenOverlay -> viewModel.dismissTopOverlay()
-                !viewModel.goBack() -> {
-                    // "Double Back to Exit" (sp_double_back_exit): first back shows a hint,
-                    // a second back within 2s exits. Read live so the toggle applies instantly.
-                    val doubleBack = PreferenceManager.getDefaultSharedPreferences(context)
-                        .getBoolean("sp_double_back_exit", true)
-                    val now = android.os.SystemClock.elapsedRealtime()
-                    if (doubleBack && now - lastExitBackAt[0] > 2000L) {
-                        lastExitBackAt[0] = now
-                        com.petal.browser.view.PetalToast.show(
-                            context,
-                            com.petal.browser.R.string.ui_press_back_twice_quickly_to
+
+            // Finger lifted and gesture committed
+            val release = progressAnim.value
+            releaseProgress = release
+            val hasOpenOverlay = (activity as? MainActivity)?.hasPresentedScreens == true ||
+                    pendingExtensionPopup != null ||
+                    isOmniboxOpen ||
+                    isAiSheetOpen ||
+                    viewModel.hasOpenOverlay
+
+            if (hasOpenOverlay) {
+                when {
+                    (activity as? MainActivity)?.hasPresentedScreens == true -> (activity as? MainActivity)?.dismissTopPresentedScreen()
+                    pendingExtensionPopup != null -> PetalExtensionManager.dismissPopup()
+                    isOmniboxOpen -> viewModel.setOmniboxOpen(false)
+                    isAiSheetOpen -> viewModel.setAiSheetOpen(false)
+                    viewModel.hasOpenOverlay -> viewModel.dismissTopOverlay()
+                }
+                progressAnim.animateTo(0f, PetalSpring.containerMorph())
+            } else if (viewModel.goBack()) {
+                progressAnim.animateTo(0f, PetalSpring.containerMorph())
+            } else {
+                // "Double Back to Exit" (sp_double_back_exit): first back shows a hint,
+                // a second back within 2s exits. Read live so the toggle applies instantly.
+                val doubleBack = PreferenceManager.getDefaultSharedPreferences(context)
+                    .getBoolean("sp_double_back_exit", true)
+                val now = android.os.SystemClock.elapsedRealtime()
+                if (doubleBack && now - lastExitBackAt[0] > 2000L) {
+                    lastExitBackAt[0] = now
+                    com.petal.browser.view.PetalToast.show(
+                        context,
+                        com.petal.browser.R.string.ui_press_back_twice_quickly_to
+                    )
+                    progressAnim.animateTo(0f, PetalSpring.containerMorph())
+                } else {
+                    isCommitting = true
+                    if (currentStyle.usesSpringCommit) {
+                        progressAnim.animateTo(
+                            targetValue = 1f,
+                            animationSpec = spring(
+                                stiffness = Spring.StiffnessMedium,
+                                dampingRatio = Spring.DampingRatioNoBouncy
+                            )
                         )
                     } else {
-                        activity?.finish()
+                        val settleAnim = Animatable(0f)
+                        settleAnim.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(currentStyle.commitDurationMs, easing = LinearEasing)
+                        ) {
+                            settleTime = value
+                            val eased = currentStyle.commitEasing.transform(value)
+                            progressAnim.snapTo(release + (1f - release) * eased)
+                        }
                     }
+                    activity?.finish()
                 }
             }
         } catch (_: CancellationException) {
-            backProgress = 0f
+            isCommitting = false
+            progressAnim.animateTo(0f, PetalSpring.containerMorph())
+        } finally {
+            isBackActive = false
+            isCommitting = false
+            progressAnim.snapTo(0f)
         }
     }
 
@@ -251,11 +338,6 @@ fun PetalRootApp(
     val navBarBottomInset = with(density) {
         WindowInsets.navigationBars.getBottom(this).toDp()
     }
-    val predictiveScale = 1f - (0.08f * backProgress)
-    val predictiveTranslationX = with(density) {
-        (if (backSwipeEdge == BackEventCompat.EDGE_RIGHT) -24f else 24f) * backProgress
-    }
-    val predictiveCornerRadius = (28 * backProgress).dp
 
     Box(modifier = modifier.fillMaxSize()) {
         // ── Primary Viewport (Home vs Gecko Engine) ─────────────────────
@@ -270,11 +352,48 @@ fun PetalRootApp(
                     }
                 )
                 .graphicsLayer {
-                    scaleX = predictiveScale
-                    scaleY = predictiveScale
-                    translationX = predictiveTranslationX
-                    clip = backProgress > 0f
-                    shape = RoundedCornerShape(predictiveCornerRadius)
+                    val p = progressAnim.value
+                    if (junctionPredictiveEnabled && p > 0.001f) {
+                        val input = PetalBackInput(
+                            progress = p,
+                            swipeEdge = backSwipeEdge,
+                            touchY = backTouchY,
+                            initialTouchY = initialTouchY,
+                            widthPx = size.width,
+                            heightPx = size.height,
+                            density = density.density,
+                            blurEnabled = predictiveBlurEnabled,
+                            committing = isCommitting,
+                            releaseProgress = releaseProgress,
+                            releaseVelocity = releaseVelocity,
+                            settleTime = settleTime,
+                            exitDirection = predictiveBackExitDirection,
+                        )
+                        val backFrame = PetalBackMotion.frame(predictiveBackStyle, input)
+                        val topLayer = backFrame.top
+                        scaleX = topLayer.scale
+                        scaleY = topLayer.scale
+                        transformOrigin = TransformOrigin(topLayer.originX, topLayer.originY)
+                        translationX = topLayer.translationX
+                        translationY = topLayer.translationY
+                        alpha = topLayer.alpha
+                        if (topLayer.cornerDp > 0.5f) {
+                            shape = RoundedCornerShape(topLayer.cornerDp.dp)
+                            clip = true
+                            shadowElevation = topLayer.shadowDp.dp.toPx()
+                        } else {
+                            clip = false
+                            shadowElevation = 0f
+                        }
+                    } else {
+                        scaleX = 1f
+                        scaleY = 1f
+                        translationX = 0f
+                        translationY = 0f
+                        alpha = 1f
+                        clip = false
+                        shadowElevation = 0f
+                    }
                 }
                 .background(MaterialTheme.colorScheme.background)
         ) {
@@ -653,91 +772,131 @@ fun PetalRootApp(
             }
 
             // Bookmarks Screen
-            if (isBookmarksOpen) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
-                    PetalBookmarksScreen(
-                        onOpenUrl = { url ->
-                            viewModel.setBookmarksOpen(false)
-                            viewModel.loadUrl(url)
-                        },
-                        onDismiss = { viewModel.setBookmarksOpen(false) }
-                    )
-                }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isBookmarksOpen,
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                modifier = Modifier.fillMaxSize().zIndex(8f)
+            ) {
+                PetalBookmarksScreen(
+                    onOpenUrl = { url ->
+                        viewModel.setBookmarksOpen(false)
+                        viewModel.loadUrl(url)
+                    },
+                    onDismiss = { viewModel.setBookmarksOpen(false) }
+                )
             }
 
             // History Screen
-            if (isHistoryOpen) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
-                    PetalHistoryScreen(
-                        onOpenUrl = { url ->
-                            viewModel.setHistoryOpen(false)
-                            viewModel.loadUrl(url)
-                        },
-                        onDismiss = { viewModel.setHistoryOpen(false) }
-                    )
-                }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isHistoryOpen,
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                modifier = Modifier.fillMaxSize().zIndex(8f)
+            ) {
+                PetalHistoryScreen(
+                    onOpenUrl = { url ->
+                        viewModel.setHistoryOpen(false)
+                        viewModel.loadUrl(url)
+                    },
+                    onDismiss = { viewModel.setHistoryOpen(false) }
+                )
             }
 
             // Downloads Screen
-            if (isDownloadsOpen) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
-                    PetalDownloadManagerScreen(
-                        onBackPress = { viewModel.setDownloadsOpen(false) }
-                    )
-                }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isDownloadsOpen,
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                modifier = Modifier.fillMaxSize().zIndex(8f)
+            ) {
+                PetalDownloadManagerScreen(
+                    onBackPress = { viewModel.setDownloadsOpen(false) }
+                )
             }
 
             // Settings Screen
-            if (isSettingsOpen) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
-                    PetalSettingsScreen(
-                        initialCategory = settingsCategory,
-                        onBackPress = { viewModel.setSettingsOpen(false) }
-                    )
-                }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isSettingsOpen,
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                modifier = Modifier.fillMaxSize().zIndex(8f)
+            ) {
+                PetalSettingsScreen(
+                    initialCategory = settingsCategory,
+                    onBackPress = { viewModel.setSettingsOpen(false) }
+                )
             }
 
             // Extensions Screen
-            if (isExtensionsOpen) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
-                    PetalExtensionsScreen(
-                        backgroundSnapshot = tabSwitcherSnapshot,
-                        onDismiss = { viewModel.setExtensionsOpen(false) }
-                    )
-                }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isExtensionsOpen,
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                modifier = Modifier.fillMaxSize().zIndex(8f)
+            ) {
+                PetalExtensionsScreen(
+                    backgroundSnapshot = tabSwitcherSnapshot,
+                    onDismiss = { viewModel.setExtensionsOpen(false) }
+                )
             }
 
             // Firefox Account & Sync Screen
-            if (isAccountSyncOpen) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
-                    FirefoxAccountSyncScreen(
-                        backgroundSnapshot = tabSwitcherSnapshot,
-                        onBack = { viewModel.setAccountSyncOpen(false) },
-                        onOpenOAuth = { shortcut ->
-                            viewModel.setAccountSyncOpen(false)
-                            viewModel.loadUrl(shortcut.url)
-                        }
-                    )
-                }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isAccountSyncOpen,
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                modifier = Modifier.fillMaxSize().zIndex(8f)
+            ) {
+                FirefoxAccountSyncScreen(
+                    backgroundSnapshot = tabSwitcherSnapshot,
+                    onBack = { viewModel.setAccountSyncOpen(false) },
+                    onOpenOAuth = { shortcut ->
+                        viewModel.setAccountSyncOpen(false)
+                        viewModel.loadUrl(shortcut.url)
+                    }
+                )
             }
 
             // Delete Browsing Data Screen Overlay
-            if (isDeleteOpen) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
-                    PetalDeleteScreen(
-                        backgroundSnapshot = tabSwitcherSnapshot,
-                        onBackPress = { viewModel.setDeleteOpen(false) }
-                    )
-                }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isDeleteOpen,
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                modifier = Modifier.fillMaxSize().zIndex(8f)
+            ) {
+                PetalDeleteScreen(
+                    backgroundSnapshot = tabSwitcherSnapshot,
+                    onBackPress = { viewModel.setDeleteOpen(false) }
+                )
             }
 
             // Biometric Safe Locker Screen Overlay
-            if (isSafeLockerOpen) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(8f)) {
-                    SafeLockerScreen(
-                        onBackPress = { viewModel.setSafeLockerOpen(false) }
-                    )
-                }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isSafeLockerOpen,
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                modifier = Modifier.fillMaxSize().zIndex(8f)
+            ) {
+                SafeLockerScreen(
+                    onBackPress = { viewModel.setSafeLockerOpen(false) }
+                )
             }
 
             // WebExtension Interactive Popup Overlay
@@ -772,13 +931,18 @@ fun PetalRootApp(
             }
 
             // AI Search Result Bottom Sheet Overlay
-            if (isAiSheetOpen) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(9f)) {
-                    PetalAiSearchResultSheet(
-                        query = aiSheetQuery,
-                        onDismiss = { viewModel.setAiSheetOpen(false) }
-                    )
-                }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isAiSheetOpen,
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 2 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                        androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 2 },
+                modifier = Modifier.fillMaxSize().zIndex(9f)
+            ) {
+                PetalAiSearchResultSheet(
+                    query = aiSheetQuery,
+                    onDismiss = { viewModel.setAiSheetOpen(false) }
+                )
             }
     }
 }

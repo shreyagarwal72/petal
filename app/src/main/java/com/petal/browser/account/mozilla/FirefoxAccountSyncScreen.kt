@@ -20,8 +20,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.compose.home.PetalShortcut
 import com.petal.browser.ui.components.bouncyClickable
+import androidx.activity.compose.BackHandler
 import kotlinx.coroutines.launch
 import mozilla.components.concept.sync.SyncEngine
+import com.petal.browser.predictive.PetalPredictiveBackSurface
+import com.petal.browser.predictive.PetalScreenWrapper
 
 /** Firefox Account & Sync settings, driven by the official FxaAccountManager through [PetalFxa]. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,6 +35,7 @@ fun FirefoxAccountSyncScreen(
     onOpenOAuth: (PetalShortcut) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
@@ -61,6 +65,19 @@ fun FirefoxAccountSyncScreen(
         onMessage = { m -> scope.launch { snackbar.showSnackbar(m) } }
     )
 
+    val hasSubOverlay = showRewards || showXpBackup
+    if (hasSubOverlay) {
+        BackHandler(enabled = true) {
+            if (showRewards) showRewards = false
+            else if (showXpBackup) showXpBackup = false
+        }
+    }
+
+    PetalPredictiveBackSurface(
+        enabled = !hasSubOverlay,
+        onBack = onBack,
+    ) {
+        PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.surface,
@@ -219,6 +236,8 @@ fun FirefoxAccountSyncScreen(
             }
             item { com.petal.browser.account.progress.PetalRewardsCatalogCard(onOpen = { showRewards = true }) }
             item { com.petal.browser.account.progress.PetalSupportCard(onMessage = { m -> scope.launch { snackbar.showSnackbar(m) } }) }
+        }
+    }
         }
     }
 }

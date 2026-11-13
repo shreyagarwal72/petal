@@ -44,6 +44,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -781,6 +782,14 @@ private fun ExpressiveNavTabItem(
         Surface(
             shape = indicatorShape,
             color = indicatorBgColor,
+            border = if (isLiquidGlass && selected) {
+                BorderStroke(
+                    1.dp,
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        listOf(Color.White.copy(alpha = 0.70f), Color.White.copy(alpha = 0.20f))
+                    )
+                )
+            } else null,
             modifier = Modifier
                 .width(activeIndicatorWidth)
                 .height(activeIndicatorHeight)

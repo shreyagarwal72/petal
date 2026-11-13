@@ -526,10 +526,10 @@ object PetalSettingsSearchIndex {
         SettingsCategory.DISPLAY_ZOOM,
         SettingsCategory.ADDRESS_BAR,
         SettingsCategory.MEDIA,
-        SettingsCategory.DOWNLOADS,
-        SettingsCategory.TABS,
-        SettingsCategory.ACCOUNT_SYNC,
-        SettingsCategory.EXTENSIONS,
+        // Extensions, Downloads, Tabs, and Account/Sync are intentionally excluded from the
+        // Settings hub category list — each is already accessible from its own dedicated entry
+        // point in the browser UI (overflow menu / bottom nav). Surfacing them again here as
+        // Settings categories creates confusing duplicate navigation paths.
         SettingsCategory.MISCELLANEOUS,
         SettingsCategory.DATA_STORAGE,
         SettingsCategory.UPDATER,

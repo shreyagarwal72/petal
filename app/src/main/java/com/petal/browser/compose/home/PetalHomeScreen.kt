@@ -494,6 +494,19 @@ fun PetalHomeScreen(
     var showProfileSwitchSheet by remember { mutableStateOf(false) }
     var showWallpaperSheet by remember { mutableStateOf(false) }
 
+    // Dismiss any open home-screen sub-overlay on back before the gesture reaches the root
+    // PredictiveBackHandler in PetalRootApp (which would animate the entire viewport).
+    val hasHomeSubOverlay = editingItem != null || isAddingNewShortcut ||
+        showProfileSwitchSheet || showWallpaperSheet
+    androidx.activity.compose.BackHandler(enabled = hasHomeSubOverlay) {
+        when {
+            editingItem != null -> editingItem = null
+            isAddingNewShortcut -> isAddingNewShortcut = false
+            showProfileSwitchSheet -> showProfileSwitchSheet = false
+            showWallpaperSheet -> showWallpaperSheet = false
+        }
+    }
+
     // Petal browser profile transition function
     fun switchProfile(targetProfileId: String) {
         if (targetProfileId == com.petal.browser.profile.PetalProfileManager.activeProfile.id) return

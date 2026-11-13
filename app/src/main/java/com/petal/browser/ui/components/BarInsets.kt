@@ -30,12 +30,13 @@ object BarInsets {
      * and bend. Kept as a function so every caller reads one rule; always false.
      */
     @JvmStatic
+    @Suppress("UNUSED_PARAMETER")
     fun glassSamplesWallpaper(
         sp: SharedPreferences,
         isBottomAddressBar: Boolean,
         floatingNav: Boolean,
         forNav: Boolean
-    ): Boolean = forNav && !floatingNav
+    ): Boolean = false
 
     /**
      * @param addressHeight measured height of the address bar; it already includes the status

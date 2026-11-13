@@ -1,6 +1,5 @@
 package com.petal.browser.ui.components
 
-import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.view.View
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
@@ -73,9 +72,9 @@ internal fun PetalSearchGlassButton(
                 alpha = enter.value.coerceIn(0f, 1f)
             }
             .size(size)
-            .then(if (!glassActive) Modifier.shadow(12.dp, ExpressiveButtonShape.shadowShape, clip = false) else Modifier)
-            .liquidGlass(ExpressiveButtonShape, scheme.surfaceContainerHigh, glassBar)
-            .clip(ExpressiveButtonShape)
+            .then(if (!glassActive) Modifier.shadow(12.dp, CircleShape, clip = false) else Modifier)
+            .liquidGlass(CircleShape, scheme.surfaceContainerHigh, glassBar)
+            .clip(CircleShape)
             .bouncyClickable(scaleDown = 0.86f, onClick = onClick)
             .semantics { contentDescription = "Search" },
         contentAlignment = Alignment.Center

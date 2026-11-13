@@ -734,7 +734,7 @@ fun PetalTabGridSwitcher(
     val snackbarHostState = remember { SnackbarHostState() }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = false, // the grid has its own hero-driven predictive back above
+        enabled = tabs.isEmpty(), // the grid has its own hero-driven predictive back above when tabs are present
         onBack = effectiveOnBack,
     ) {
     com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {

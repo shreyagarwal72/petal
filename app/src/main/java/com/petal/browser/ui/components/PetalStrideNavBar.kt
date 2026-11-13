@@ -1,6 +1,5 @@
 package com.petal.browser.ui.components
 
-import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.view.View
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
@@ -99,7 +98,7 @@ internal fun PetalStrideNavBar(
 ) {
     val NavOrder = if (includeSearch) NavOrder5 else NavOrder4
     val scheme = MaterialTheme.colorScheme
-    val pill = ExpressiveButtonShape
+    val pill = CircleShape
     val compactAll = compact || includeSearch
     val itemPadH = if (compactAll) 11.dp else 14.dp
     val rowPadH = if (compactAll) 8.dp else 10.dp
@@ -129,7 +128,7 @@ internal fun PetalStrideNavBar(
     BoxWithConstraints(
         modifier = modifier
             .graphicsLayer { translationX = dragOffsetPx }
-            .then(if (!isLiquidGlassActive) Modifier.shadow(12.dp, pill.shadowShape, clip = false) else Modifier)
+            .then(if (!isLiquidGlassActive) Modifier.shadow(12.dp, pill, clip = false) else Modifier)
             .then(if (isLiquidGlassActive) Modifier.glassPressScale(glassPress, 16f) else Modifier)
             .liquidGlass(pill, scheme.surfaceContainerHigh, glassBar, pressFx = false)
             .then(if (isLiquidGlassActive) Modifier.glassPressOverlay(glassPress, pill) else Modifier)

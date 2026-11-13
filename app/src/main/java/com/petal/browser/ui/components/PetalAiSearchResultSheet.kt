@@ -147,6 +147,7 @@ fun PetalAiSearchResultSheet(
     query: String,
     onDismiss: () -> Unit
 ) {
+    androidx.activity.compose.BackHandler(enabled = true, onBack = onDismiss)
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 

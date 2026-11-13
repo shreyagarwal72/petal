@@ -88,6 +88,10 @@ fun PetalIncognitoHomeScreen(
     }
     var showLearnMoreDialog by remember { mutableStateOf(false) }
 
+    androidx.activity.compose.BackHandler(enabled = showLearnMoreDialog) {
+        showLearnMoreDialog = false
+    }
+
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val glassWallpaper = rememberPetalGlassWallpaper()
 
