@@ -142,6 +142,27 @@ fun PetalExpressiveTheme(
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
+    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    var glassRevision by remember(sp) { androidx.compose.runtime.mutableIntStateOf(0) }
+    var fontRevision by remember(sp) { androidx.compose.runtime.mutableIntStateOf(0) }
+    var themeRevision by remember(sp) { androidx.compose.runtime.mutableIntStateOf(0) }
+    androidx.compose.runtime.DisposableEffect(sp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == null || key.startsWith("sp_liquid_glass_") || key == "sp_stride_glass_nav") {
+                glassRevision++
+            } else if (key == "sp_app_font" || key.startsWith("sp_gs_") || key.startsWith("sp_font_") || key.startsWith("sp_custom_")) {
+                fontRevision++
+            } else if (key == "sp_expressive_colors" || key == "sp_color_style" || key == "sp_palette_id" || key == "sp_amoled" || key == "useDynamicColor" || key == "sp_theme_config") {
+                themeRevision++
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+
+    val effectiveExpressiveColors = if (themeRevision >= 0) sp.getBoolean("sp_expressive_colors", expressiveColors) else expressiveColors
+    val effectiveUseAmoled = if (themeRevision >= 0) sp.getBoolean("sp_amoled", useAmoled) else useAmoled
+
     var baseScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
@@ -168,9 +189,9 @@ fun PetalExpressiveTheme(
         )
     }
 
-    if (expressiveColors) {
+    if (effectiveExpressiveColors) {
         colorScheme = if (darkTheme) {
-            if (useAmoled) {
+            if (effectiveUseAmoled) {
                 // When AMOLED is active with expressive colors, surface containers use high contrast dark ladder
                 colorScheme.copy(
                     background = Color.Black,
@@ -205,7 +226,7 @@ fun PetalExpressiveTheme(
         }
     }
 
-    if (darkTheme && useAmoled && !expressiveColors) {
+    if (darkTheme && effectiveUseAmoled && !effectiveExpressiveColors) {
         colorScheme = colorScheme.applyAmoled()
     }
 
@@ -226,20 +247,6 @@ fun PetalExpressiveTheme(
         }
     }
 
-    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    var glassRevision by remember(sp) { androidx.compose.runtime.mutableIntStateOf(0) }
-    var fontRevision by remember(sp) { androidx.compose.runtime.mutableIntStateOf(0) }
-    androidx.compose.runtime.DisposableEffect(sp) {
-        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == null || key.startsWith("sp_liquid_glass_") || key == "sp_stride_glass_nav") {
-                glassRevision++
-            } else if (key == "sp_app_font" || key.startsWith("sp_gs_") || key.startsWith("sp_font_") || key.startsWith("sp_custom_")) {
-                fontRevision++
-            }
-        }
-        sp.registerOnSharedPreferenceChangeListener(listener)
-        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
     val glassEnabled = com.petal.browser.ui.containment.isLiquidGlassEnabled()
     val wallpaper = if (glassEnabled) com.petal.browser.ui.glass.rememberPetalGlassWallpaper() else null
     val hapticFeedback = androidx.compose.runtime.remember(context) { PetalHapticFeedback(context) }

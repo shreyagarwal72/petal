@@ -448,10 +448,8 @@ fun AddressPill(
             }
 
             // Material 3 Expressive integrated loading progress line
-            val isStackedMerged = inMergedBar && BarPrefs.LAYOUT_STACKED.equals(
+            val isStackedMerged = inMergedBar && BarPrefs.isStackedLayout(
                 androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-                    .getString("sp_merge_address_bar_layout", BarPrefs.LAYOUT_STACKED),
-                ignoreCase = true
             )
             if (!isStackedMerged && isLoading && progress > 0f && progress < 1f) {
                 Material3ExpressiveProgressIndicator(

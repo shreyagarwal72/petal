@@ -66,6 +66,10 @@ object PetalUpdateUtils {
 
         val context = activity.applicationContext
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        if (isLaunchCheck && !sp.getBoolean("sp_check_update_on_launch", true)) {
+            onComplete?.run()
+            return
+        }
 
         // Track last check timestamp
         sp.edit().putLong(PREF_KEY_LAST_CHECK_TIME, System.currentTimeMillis()).apply()

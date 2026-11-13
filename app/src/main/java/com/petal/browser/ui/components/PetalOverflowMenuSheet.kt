@@ -125,6 +125,12 @@ object PetalOverflowBridge {
                 setCanceledOnTouchOutside(true)
                 setCancelable(true)
             }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && useBlurBg) {
+                dialog.window?.setDimAmount(0f)
+                dialog.window?.setBackgroundBlurRadius(32)
+            } else if (!useBlurBg) {
+                dialog.window?.setDimAmount(0.4f)
+            }
             dialog.setOnDismissListener {
                 com.petal.browser.predictive.PetalContentSnapshot.clear()
                 val action = pendingDismissAction
@@ -455,6 +461,17 @@ fun PetalOverflowMenuSheet(
     )
 
     val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    var useBlurBg by remember { mutableStateOf(sp.getBoolean("sp_overflow_menu_blur_bg", true)) }
+    DisposableEffect(sp) {
+        val l = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, k ->
+            if (k == "sp_overflow_menu_blur_bg") {
+                useBlurBg = prefs.getBoolean("sp_overflow_menu_blur_bg", true)
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(l)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(l) }
+    }
     val wallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
     val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
     val liveContext = androidx.compose.ui.platform.LocalContext.current
@@ -466,8 +483,8 @@ fun PetalOverflowMenuSheet(
         }
     }
     val frameTick = remember { mutableLongStateOf(0L) }
-    LaunchedEffect(isLiquidGlass, liveSource) {
-        if (isLiquidGlass && liveSource != null) {
+    LaunchedEffect(isLiquidGlass, liveSource, useBlurBg) {
+        if (isLiquidGlass && liveSource != null && useBlurBg) {
             while (true) { withFrameNanos { frameTick.longValue = it } }
         }
     }
@@ -482,9 +499,13 @@ fun PetalOverflowMenuSheet(
                 onClick = handleDismiss
             )
       ) {
-        // Record-only source: feeds the frosted + refracted glass, never drawn itself,
-        // so the live page stays visible behind the menu.
-        if (isLiquidGlass && liveSource != null) {
+        if (!useBlurBg) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f * alpha))
+            )
+        } else if (isLiquidGlass && liveSource != null) {
             // Live: re-record the real app window behind the menu every frame.
             Box(
                 modifier = Modifier

@@ -63,6 +63,9 @@ import com.petal.browser.compose.tabs.PetalTabGroupManager
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.ui.components.PetalAddressBar
+import com.petal.browser.ui.components.PetalMergedBar
+import com.petal.browser.ui.components.BarPrefs
+import com.petal.browser.appleduo.appleDuoFoldEffect
 import com.petal.browser.ui.components.PetalAiSearchResultSheet
 import com.petal.browser.ui.components.PetalBottomNavBar
 import com.petal.browser.ui.components.PetalNavTab
@@ -144,12 +147,18 @@ fun PetalRootApp(
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     var floatingTabBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
     var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
+    var addressBarStyle by remember { mutableStateOf(sp.getString(BarPrefs.KEY_ADDRESS_BAR_STYLE, BarPrefs.STYLE_CLASSIC) ?: BarPrefs.STYLE_CLASSIC) }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             when (key) {
                 "sp_floating_tab_bar" -> floatingTabBar = sp.getBoolean("sp_floating_tab_bar", true)
-                "sp_address_bar_position" -> addressBarPosition = sp.getString("sp_address_bar_position", "TOP") ?: "TOP"
+                "sp_address_bar_position", BarPrefs.KEY_ADDRESS_BAR_POSITION -> {
+                    addressBarPosition = sp.getString("sp_address_bar_position", "TOP") ?: "TOP"
+                }
+                BarPrefs.KEY_ADDRESS_BAR_STYLE -> {
+                    addressBarStyle = sp.getString(BarPrefs.KEY_ADDRESS_BAR_STYLE, BarPrefs.STYLE_CLASSIC) ?: BarPrefs.STYLE_CLASSIC
+                }
             }
         }
         sp.registerOnSharedPreferenceChangeListener(listener)
@@ -158,6 +167,7 @@ fun PetalRootApp(
         }
     }
     val isBottomAddressBar = "BOTTOM".equals(addressBarPosition, ignoreCase = true)
+    val isMerge = BarPrefs.STYLE_MERGE.equals(addressBarStyle, ignoreCase = true)
     val effectiveFloating = floatingTabBar && !isBottomAddressBar
     val haptic = remember(context) { PetalHapticEngine.getInstance(context) }
 
@@ -194,7 +204,7 @@ fun PetalRootApp(
             isSafeLockerOpen ||
             pendingExtensionPopup != null
 
-    val isBottomBarVisible = !isOverlayShowing
+    val isBottomBarVisible = !isOverlayShowing && (!isMerge || isHome)
 
     val selectedTab = when {
         isMenuOpen -> PetalNavTab.MENU
@@ -269,69 +279,141 @@ fun PetalRootApp(
                 .background(MaterialTheme.colorScheme.background)
         ) {
             if (isHome) {
-                PetalHomeScreen(
-                    onSearch = { query ->
-                        if (query.isBlank()) {
-                            viewModel.openOmnibox()
-                        } else {
-                            viewModel.loadUrl(query)
-                        }
-                    },
-                    onOpenShortcutUrl = { url ->
-                        viewModel.loadUrl(url)
-                    },
-                    onOpenAccountSync = { viewModel.openAccountSync() },
-                    onOpenBookmarksAction = { viewModel.openBookmarks() },
-                    onOpenHistoryAction = { viewModel.openHistory() },
-                    onOpenDownloadsAction = { viewModel.openDownloads() },
-                    onNewTabAction = { viewModel.openNewTab("about:home", selectTab = true) },
-                    onOpenTabSwitcher = { viewModel.toggleTabSwitcher() }
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .appleDuoFoldEffect(isWebsite = false)
+                ) {
+                    PetalHomeScreen(
+                        onSearch = { query ->
+                            if (query.isBlank()) {
+                                viewModel.openOmnibox()
+                            } else {
+                                viewModel.loadUrl(query)
+                            }
+                        },
+                        onOpenShortcutUrl = { url ->
+                            viewModel.loadUrl(url)
+                        },
+                        onOpenAccountSync = { viewModel.openAccountSync() },
+                        onOpenBookmarksAction = { viewModel.openBookmarks() },
+                        onOpenHistoryAction = { viewModel.openHistory() },
+                        onOpenDownloadsAction = { viewModel.openDownloads() },
+                        onNewTabAction = { viewModel.openNewTab("about:home", selectTab = true) },
+                        onOpenTabSwitcher = { viewModel.toggleTabSwitcher() }
+                    )
+                }
             } else {
                 ComposeEngineViewport(
                     tab = activeTab,
                     isLoading = isLoading,
                     onRefresh = { viewModel.reload() },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .appleDuoFoldEffect(isWebsite = true)
                 )
 
-                // Top Address Bar on web content
-                PetalAddressBar(
-                    url = activeUrl,
-                    title = activeTitle.ifBlank { activeUrl },
-                    progress = loadProgress / 100f,
-                    isIncognito = isIncognito,
-                    isLoading = isLoading,
-                    canGoBack = canGoBack,
-                    onBackClick = { viewModel.goBack() },
-                    onShareClick = {
-                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
+                if (isMerge) {
+                    PetalMergedBar(
+                        url = activeUrl,
+                        title = activeTitle.ifBlank { activeUrl },
+                        progress = loadProgress / 100f,
+                        isIncognito = isIncognito,
+                        isLoading = isLoading,
+                        canGoBack = canGoBack,
+                        canGoForward = canGoForward,
+                        tabCount = tabCount,
+                        onBackClick = { viewModel.goBack() },
+                        onForwardClick = { viewModel.goForward() },
+                        onReloadClick = { viewModel.reload() },
+                        onShareClick = {
+                            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
+                            }
+                            activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
+                        },
+                        onAddressClick = { viewModel.openOmnibox() },
+                        onHomeClick = {
+                            haptic.playClick(context)
+                            viewModel.loadUrl("about:home")
+                        },
+                        onNewTabClick = {
+                            haptic.playClick(context)
+                            viewModel.openNewTab("about:home", selectTab = true, private = isIncognito)
+                        },
+                        onTabsClick = {
+                            haptic.playClick(context)
+                            viewModel.toggleTabSwitcher()
+                        },
+                        onMenuClick = {
+                            haptic.playClick(context)
+                            viewModel.toggleMenu()
+                        },
+                        onSearchClick = { viewModel.openOmnibox() },
+                        onDownloadsClick = { viewModel.openDownloads() },
+                        onFindInPageClick = { viewModel.openFindInPage() },
+                        onBookmarkClick = { viewModel.toggleBookmark(activeTitle, activeUrl) },
+                        onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
+                        onMediaClick = {
+                            com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
+                        },
+                        onSwipeNextTab = { viewModel.switchToNextTab() },
+                        onSwipePrevTab = { viewModel.switchToPreviousTab() },
+                        onHardRefresh = { viewModel.reload() },
+                        onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
+                        onCustomizeClick = { viewModel.openSettings(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR) },
+                        isBottom = isBottomAddressBar,
+                        modifier = if (isBottomAddressBar) {
+                            Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                                .zIndex(2f)
+                        } else {
+                            Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.TopCenter)
+                                .zIndex(2f)
                         }
-                        activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
-                    },
-                    onAddressClick = { viewModel.openOmnibox() },
-                    onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
-                    onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
-                    onHardRefresh = { viewModel.reload() },
-                    onSwipeNextTab = { viewModel.switchToNextTab() },
-                    onSwipePrevTab = { viewModel.switchToPreviousTab() },
-                    isBottom = isBottomAddressBar,
-                    hasBottomNav = isBottomBarVisible,
-                    modifier = if (isBottomAddressBar) {
-                        Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = if (isBottomBarVisible) 64.dp + navBarBottomInset else 0.dp)
-                            .zIndex(2f)
-                    } else {
-                        Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.TopCenter)
-                            .zIndex(2f)
-                    }
-                )
+                    )
+                } else {
+                    PetalAddressBar(
+                        url = activeUrl,
+                        title = activeTitle.ifBlank { activeUrl },
+                        progress = loadProgress / 100f,
+                        isIncognito = isIncognito,
+                        isLoading = isLoading,
+                        canGoBack = canGoBack,
+                        onBackClick = { viewModel.goBack() },
+                        onShareClick = {
+                            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
+                            }
+                            activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
+                        },
+                        onAddressClick = { viewModel.openOmnibox() },
+                        onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
+                        onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
+                        onHardRefresh = { viewModel.reload() },
+                        onSwipeNextTab = { viewModel.switchToNextTab() },
+                        onSwipePrevTab = { viewModel.switchToPreviousTab() },
+                        isBottom = isBottomAddressBar,
+                        hasBottomNav = isBottomBarVisible,
+                        modifier = if (isBottomAddressBar) {
+                            Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = if (isBottomBarVisible) 64.dp + navBarBottomInset else 0.dp)
+                                .zIndex(2f)
+                        } else {
+                            Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.TopCenter)
+                                .zIndex(2f)
+                        }
+                    )
+                }
             }
         }
 

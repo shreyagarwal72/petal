@@ -119,7 +119,8 @@ object PetalBackupManager {
 
     private val KNOWN_FLOAT_SUFFIXES = arrayOf(
         "_dim", "_blur", "_width", "_roundness", "_weight", "_opsz", "_grade",
-        "_slant", "_scale", "_spread", "_darkening", "_tilt", "_distance"
+        "_slant", "_scale", "_spread", "_darkening", "_tilt", "_distance",
+        "_alpha", "_sheen", "_refraction", "_refraction_width"
     )
 
     private fun isLikelyFloatKey(key: String?): Boolean {
@@ -153,6 +154,14 @@ object PetalBackupManager {
                 "sp_theme" == key || "sp_bg_shape_change_mode" == key ||
                 "sp_address_bar_position" == key || "sp_address_bar_action" == key ||
                 "sp_address_bar_height" == key || "sp_app_language" == key ||
+                "sp_address_bar_style" == key || "sp_merge_leading" == key ||
+                "sp_merge_trailing" == key || "sp_merge_layout" == key ||
+                "sp_bar_collapse_style" == key ||
+                "sp_liquid_glass_bg_mode" == key || "sp_liquid_glass_bg_image_uri" == key ||
+                "sp_liquid_glass_tint" == key ||
+                "sp_island_mode" == key || "sp_island_anim_style" == key ||
+                "sp_island_anim_speed" == key || "sp_island_anim_bounce" == key ||
+                "sp_island_alignment" == key || "sp_adblock_protection_mode" == key ||
                 "sp_app_lock_passcode" == key || "sp_app_lock_type" == key ||
                 "sp_private_dns_mode" == key || "sp_custom_doh_url" == key ||
                 "sp_nextdns_profile_id" == key ||

@@ -194,6 +194,7 @@ class MainActivity : FragmentActivity(), BrowserController {
             PetalMozillaSyncManager.getInstance()
             browserFeatures = PetalBrowserFeatures(this).also { it.start() }
             handleIncomingIntent(intent)
+            com.petal.browser.unit.PetalUpdateUtils.checkForUpdates(this, isLaunchCheck = true)
         }, 250L)
     }
 

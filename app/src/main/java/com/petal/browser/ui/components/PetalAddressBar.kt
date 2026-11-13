@@ -61,11 +61,13 @@ fun PetalAddressBar(
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     var addressBarHeight by remember { mutableStateOf(sp.getString("sp_address_bar_height", "COMPACT") ?: "COMPACT") }
     var collapseStyle by remember { mutableStateOf(sp.getString(BarPrefs.KEY_BAR_COLLAPSE_STYLE, BarPrefs.COLLAPSE_PILL) ?: BarPrefs.COLLAPSE_PILL) }
+    var floatingTabBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             when (key) {
                 "sp_address_bar_height" -> addressBarHeight = sp.getString("sp_address_bar_height", "COMPACT") ?: "COMPACT"
+                "sp_floating_tab_bar" -> floatingTabBar = sp.getBoolean("sp_floating_tab_bar", true)
                 BarPrefs.KEY_BAR_COLLAPSE_STYLE -> collapseStyle = sp.getString(BarPrefs.KEY_BAR_COLLAPSE_STYLE, BarPrefs.COLLAPSE_PILL) ?: BarPrefs.COLLAPSE_PILL
             }
         }
@@ -74,12 +76,17 @@ fun PetalAddressBar(
     }
 
     val resolvedIsBottom = if (isPreview) isBottom else (isBottom || "BOTTOM".equals(sp.getString("sp_address_bar_position", "TOP"), ignoreCase = true))
+    val isFloatingBar = resolvedIsBottom && floatingTabBar
     val isPillCollapse = if (isPreview) false else BarPrefs.COLLAPSE_PILL.equals(collapseStyle, ignoreCase = true)
     val collapsedFraction = if (isPreview) 0f else BarCollapseState.collapsedFraction
     val isFullyCollapsed = isPillCollapse && (collapsedFraction >= 0.95f || BarCollapseState.isCollapsed)
 
     val containerShape = if (resolvedIsBottom) {
-        RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+        if (isFloatingBar) {
+            RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp)
+        } else {
+            RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+        }
     } else {
         RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp)
     }
@@ -87,7 +94,7 @@ fun PetalAddressBar(
     LocalPetalGlassRevision.current
     val isLiquidGlass = !isPreview && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") && !isIncognito
     val samplesWallpaper = BarInsets.glassSamplesWallpaper(
-        sp, resolvedIsBottom, sp.getBoolean("sp_floating_tab_bar", true), false
+        sp, resolvedIsBottom, floatingTabBar, false
     )
     val activity = LocalContext.current as? android.app.Activity
     val glassSource = if (isPreview) null else activity?.findViewById<android.view.View>(
@@ -147,7 +154,11 @@ fun PetalAddressBar(
                     .fillMaxWidth()
                     .then(
                         if (resolvedIsBottom) {
-                            Modifier.padding(horizontal = 0.dp, vertical = 0.dp)
+                            if (isFloatingBar) {
+                                Modifier.padding(start = 12.dp, end = 12.dp, bottom = if (hasBottomNav) 0.dp else 4.dp)
+                            } else {
+                                Modifier.padding(horizontal = 0.dp, vertical = 0.dp)
+                            }
                         } else {
                             Modifier.padding(
                                 start = 12.dp,

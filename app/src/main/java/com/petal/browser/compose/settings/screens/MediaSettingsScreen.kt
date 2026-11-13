@@ -93,6 +93,27 @@ fun MediaSettingsScreen(
     var isNotch by remember { mutableStateOf(sp.getBoolean(IslandSettings.KEY_IS_NOTCH, false)) }
     var notchFlareDp by remember { mutableIntStateOf(sp.getInt(IslandSettings.KEY_NOTCH_FLARE, 20)) }
 
+    DisposableEffect(sp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                IslandSettings.KEY_LIVE_UPDATES -> liveUpdates = sp.getBoolean(IslandSettings.KEY_LIVE_UPDATES, true)
+                IslandSettings.KEY_MODE -> islandMode = (sp.getString(IslandSettings.KEY_MODE, IslandSettings.MODE_AUTO) ?: IslandSettings.MODE_AUTO).uppercase(Locale.US)
+                IslandSettings.KEY_STYLE -> animStyle = sp.getString(IslandSettings.KEY_STYLE, "EXPRESSIVE") ?: "EXPRESSIVE"
+                IslandSettings.KEY_SPEED -> animSpeed = sp.getString(IslandSettings.KEY_SPEED, "DEFAULT") ?: "DEFAULT"
+                IslandSettings.KEY_BOUNCE -> animBounce = sp.getString(IslandSettings.KEY_BOUNCE, "NORMAL") ?: "NORMAL"
+                IslandSettings.KEY_WAVY -> wavyProgress = sp.getBoolean(IslandSettings.KEY_WAVY, true)
+                IslandSettings.KEY_OVERLAY -> overlayEnabled = sp.getBoolean(IslandSettings.KEY_OVERLAY, false)
+                IslandSettings.KEY_ALIGNMENT -> alignmentMode = (sp.getString(IslandSettings.KEY_ALIGNMENT, IslandSettings.ALIGN_AUTO) ?: IslandSettings.ALIGN_AUTO).uppercase(Locale.US)
+                IslandSettings.KEY_OFFSET_X -> offsetXDp = sp.getInt(IslandSettings.KEY_OFFSET_X, 0)
+                IslandSettings.KEY_OFFSET_Y -> offsetYDp = sp.getInt(IslandSettings.KEY_OFFSET_Y, 0)
+                IslandSettings.KEY_IS_NOTCH -> isNotch = sp.getBoolean(IslandSettings.KEY_IS_NOTCH, false)
+                IslandSettings.KEY_NOTCH_FLARE -> notchFlareDp = sp.getInt(IslandSettings.KEY_NOTCH_FLARE, 20)
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+
     var showPermissionDialog by remember { mutableStateOf(false) }
     var showPromotedSettingsDialog by remember { mutableStateOf(false) }
 

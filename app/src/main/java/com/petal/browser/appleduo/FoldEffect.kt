@@ -31,12 +31,16 @@ private const val FALLBACK_PX_PER_MM = 6f
  * Gracefully degrades on Android versions below API 33 (Tiramisu).
  */
 fun Modifier.appleDuoFoldEffect(
+    isWebsite: Boolean = false,
     parameters: FoldParameters? = null
 ): Modifier = composed {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@composed this
 
     val isEnabled by AppleDuoManager.isEnabled.collectAsStateWithLifecycle()
     if (!isEnabled) return@composed this
+
+    val showInWebsites by AppleDuoManager.showInWebsites.collectAsStateWithLifecycle()
+    if (isWebsite && !showInWebsites) return@composed this
 
     val tiltDegrees by AppleDuoManager.currentTilt.collectAsStateWithLifecycle()
     val hingeSide by AppleDuoManager.currentHingeSide.collectAsStateWithLifecycle()

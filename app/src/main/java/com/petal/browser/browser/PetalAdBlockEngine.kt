@@ -96,6 +96,13 @@ object PetalAdBlockEngine {
             val whitelistSet = sp.getStringSet("sp_adblock_whitelisted_domains", emptySet()) ?: emptySet()
             whitelistedDomains.addAll(whitelistSet)
 
+            sp.registerOnSharedPreferenceChangeListener { prefs, key ->
+                if (key == "sp_adblock_whitelisted_domains") {
+                    whitelistedDomains.clear()
+                    whitelistedDomains.addAll(prefs.getStringSet("sp_adblock_whitelisted_domains", emptySet()) ?: emptySet())
+                }
+            }
+
             // Initialize active filter subscriptions
             // Multi-MB host lists: parse off the main thread so cold start isn't blocked.
             Thread({ PetalFilterSubscriptionManager.reloadActiveRules(appContext) }, "petal-adblock-rules")
