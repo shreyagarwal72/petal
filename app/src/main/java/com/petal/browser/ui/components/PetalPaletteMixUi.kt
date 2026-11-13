@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -42,6 +43,7 @@ import androidx.compose.ui.window.Dialog
 import com.petal.browser.ui.theme.PetalPaletteMix
 import com.petal.browser.ui.theme.PetalPaletteMix.Source
 import com.petal.browser.ui.theme.PetalPalettes
+import com.petal.browser.ui.containment.liquidGlassChrome
 
 /** Human-readable name of a mix source, for settings rows. */
 fun mixSourceLabel(source: Source, customArgb: Int): String = when (source) {
@@ -75,39 +77,65 @@ fun PetalMixSourceDialog(
     onPickCustom: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+    val shape = RoundedCornerShape(32.dp)
+
     Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(32.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-            Column(Modifier.padding(vertical = 20.dp)) {
-                Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
-                    SourceRow("Auto", "Derived from your primary colour", current == Source.Auto,
-                        swatch = { Icon(Icons.Rounded.AutoAwesome, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }) {
-                        onSelect(Source.Auto)
-                    }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        SourceRow("Material You", "Colours from your wallpaper", current == Source.Dynamic,
-                            swatch = { Icon(Icons.Rounded.ColorLens, null, tint = MaterialTheme.colorScheme.primary) }) {
-                            onSelect(Source.Dynamic)
+        val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        androidx.compose.runtime.SideEffect {
+            if (isGlass) {
+                dialogWindow?.setDimAmount(0.12f)
+            }
+        }
+        com.petal.browser.ui.glass.PetalGlassContainer(
+            modifier = Modifier.fillMaxWidth(0.92f).wrapContentHeight(),
+            enabled = isGlass,
+            live = true
+        ) {
+            Surface(
+                shape = shape,
+                color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .then(
+                        if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = sheen)
+                        else Modifier
+                    )
+            ) {
+                Column(Modifier.padding(vertical = 20.dp)) {
+                    Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                    Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                        SourceRow("Auto", "Derived from your primary colour", current == Source.Auto,
+                            swatch = { Icon(Icons.Rounded.AutoAwesome, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }) {
+                            onSelect(Source.Auto)
                         }
-                    }
-                    PetalPalettes.forEach { pal ->
-                        SourceRow(pal.label, "Preset palette", current == Source.Preset(pal.id),
-                            swatch = { Box(Modifier.size(28.dp).clip(ExpressiveButtonShape).background(pal.seed)) }) {
-                            onSelect(Source.Preset(pal.id))
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            SourceRow("Material You", "Colours from your wallpaper", current == Source.Dynamic,
+                                swatch = { Icon(Icons.Rounded.ColorLens, null, tint = MaterialTheme.colorScheme.primary) }) {
+                                onSelect(Source.Dynamic)
+                            }
                         }
-                    }
-                    SourceRow("Pick a colour", mixSourceLabel(Source.Custom, customArgb), current == Source.Custom,
-                        swatch = {
-                            Box(
-                                Modifier.size(28.dp).clip(ExpressiveButtonShape).background(
-                                    if (customArgb != 0) Brush.linearGradient(listOf(Color(customArgb), Color(customArgb)))
-                                    else Brush.sweepGradient(listOf(Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red))
+                        PetalPalettes.forEach { pal ->
+                            SourceRow(pal.label, "Preset palette", current == Source.Preset(pal.id),
+                                swatch = { Box(Modifier.size(28.dp).clip(ExpressiveButtonShape).background(pal.seed)) }) {
+                                onSelect(Source.Preset(pal.id))
+                            }
+                        }
+                        SourceRow("Pick a colour", mixSourceLabel(Source.Custom, customArgb), current == Source.Custom,
+                            swatch = {
+                                Box(
+                                    Modifier.size(28.dp).clip(ExpressiveButtonShape).background(
+                                        if (customArgb != 0) Brush.linearGradient(listOf(Color(customArgb), Color(customArgb)))
+                                        else Brush.sweepGradient(listOf(Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red))
+                                    )
                                 )
-                            )
-                        }) { onPickCustom() }
-                }
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Close") }
+                            }) { onPickCustom() }
+                    }
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = onDismiss) { Text("Close") }
+                    }
                 }
             }
         }

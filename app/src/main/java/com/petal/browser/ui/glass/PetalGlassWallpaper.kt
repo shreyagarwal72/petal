@@ -70,6 +70,7 @@ class PetalGlassWallpaper(val sharp: GraphicsLayer, val frosted: GraphicsLayer) 
     @Volatile var coords: LayoutCoordinates? = null
     var origin by mutableStateOf(Offset.Zero)
     var ready by mutableStateOf(false)
+    var frameVersion by mutableLongStateOf(0L)
     @Volatile var hasRecorded: Boolean = false
 }
 
@@ -122,6 +123,7 @@ fun Modifier.captureGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
                                 } catch (_: Throwable) {}
                             }
                             wallpaper.hasRecorded = true
+                            wallpaper.frameVersion++
                         } catch (_: Throwable) {
                             // Keep previous recording instead of dropping to flat fill.
                         }
@@ -167,6 +169,7 @@ fun Modifier.captureGlassWallpaperLive(
                         wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
                         wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
                         wallpaper.hasRecorded = true
+                        wallpaper.frameVersion++
                     } catch (_: Throwable) {
                     }
                 }
@@ -200,6 +203,7 @@ fun Modifier.recordGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
                     wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
                     wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
                     wallpaper.hasRecorded = true
+                    wallpaper.frameVersion++
                 }
             } catch (_: Throwable) {}
         }
@@ -253,7 +257,6 @@ private fun Modifier.liveGlassWallpaperImpl(
             val nowNs = System.nanoTime()
             if (wallpaper.hasRecorded) {
                 if (nowNs - lastLiveRecordNs < LIVE_RECORD_MIN_INTERVAL_NS) return@onDrawWithContent
-                if (com.petal.browser.motion.MotionGate.isRunning) return@onDrawWithContent
             }
             if (isRecordingLiveWallpaper) {
                 // Prevent recursive re-entry if source hierarchy includes the calling view
@@ -277,6 +280,7 @@ private fun Modifier.liveGlassWallpaperImpl(
                         }
                         wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
                         wallpaper.hasRecorded = true
+                        wallpaper.frameVersion++
                         lastLiveRecordNs = nowNs
                     } catch (_: Throwable) {
                     } finally {
@@ -398,21 +402,20 @@ fun Modifier.petalGlassPanel(
             )
             onDrawBehind {
                 try {
+                    val currentVersion = wallpaper.frameVersion
                     val stored = place.origin // read so a layout move (scroll) redraws the panel
                     val shift = glassShift(wallpaper, place.coords, stored)
                     clipPath(outline) {
                         if (wallpaper.ready && wallpaper.hasRecorded) {
                             try {
                                 if (effect != null && full.width > 0 && full.height > 0) {
-                                    // drawLayer(frosted) is a live reference, so the wallpaper's own updates
-                                    // show through without re-recording. Re-record only when the panel moved,
-                                    // resized or the wallpaper/effect object changed. Doing it every frame for
-                                    // every card kept the render thread saturated (ANR).
                                     if (!place.recorded || place.recWallpaper !== wallpaper || place.recEffect !== effect ||
+                                        place.recVersion != currentVersion ||
                                         place.recShiftX != shift.x || place.recShiftY != shift.y ||
                                         place.recW != full.width || place.recH != full.height || place.recPad != pad) {
                                         glass.record(full) { translate(shift.x + pad, shift.y + pad) { drawLayer(wallpaper.frosted) } }
                                         place.recorded = true
+                                        place.recVersion = currentVersion
                                         place.recWallpaper = wallpaper
                                         place.recEffect = effect
                                         place.recShiftX = shift.x; place.recShiftY = shift.y
@@ -460,6 +463,7 @@ private fun glassShift(wallpaper: PetalGlassWallpaper, panel: LayoutCoordinates?
 
 private class GlassPanelPlace {
     var recorded = false
+    var recVersion = 0L
     var recWallpaper: PetalGlassWallpaper? = null
     var recEffect: Any? = null
     var recShiftX = 0f
@@ -481,7 +485,7 @@ private class GlassPanelPlace {
 fun PetalGlassContainer(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    live: Boolean = false,
+    live: Boolean = true,
     content: @Composable () -> Unit
 ) {
     if (!enabled) {

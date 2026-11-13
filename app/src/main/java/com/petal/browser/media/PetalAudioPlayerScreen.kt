@@ -124,6 +124,12 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.LocalPetalGlassSource
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
+import com.petal.browser.ui.glass.captureGlassWallpaper
+import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.snapshotFlow
@@ -561,22 +567,35 @@ fun PetalAudioPlayerScreen(
         }
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = !hasSheetOpen,
-        onBack = onClose
+    val hostView = LocalView.current
+    val audioWallpaper = rememberPetalGlassWallpaper()
+
+    CompositionLocalProvider(
+        LocalPetalGlassSource provides hostView,
+        LocalPetalGlassWallpaper provides (if (isGlass) audioWallpaper else null)
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {
-            Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(bgGradient),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(
-                            top = WindowInsets.statusBars.union(WindowInsets.displayCutout)
-                                .asPaddingValues().calculateTopPadding().coerceAtLeast(12.dp),
+        com.petal.browser.predictive.PetalPredictiveBackSurface(
+            enabled = !hasSheetOpen,
+            onBack = onClose
+        ) {
+            com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {
+                Box(
+                    modifier = modifier.fillMaxSize(),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(bgGradient)
+                            .then(
+                                if (isGlass) Modifier.captureGlassWallpaper(audioWallpaper) else Modifier
+                            )
+                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+                                    .asPaddingValues().calculateTopPadding().coerceAtLeast(12.dp),
                             bottom = WindowInsets.navigationBars.asPaddingValues()
                                 .calculateBottomPadding().coerceAtLeast(16.dp),
                         )
@@ -1284,4 +1303,5 @@ fun PetalAudioPlayerScreen(
             }
         }
     }
+}
 }

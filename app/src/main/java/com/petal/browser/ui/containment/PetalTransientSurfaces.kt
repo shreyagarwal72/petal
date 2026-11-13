@@ -398,6 +398,14 @@ fun PetalMaterialAlertDialog(
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
     Dialog(onDismissRequest = onDismissRequest, properties = properties) {
+        val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        androidx.compose.runtime.SideEffect {
+            dialogWindow?.let { win ->
+                if (isGlass) {
+                    win.setDimAmount(0.12f)
+                }
+            }
+        }
         com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = modifier
                 .fillMaxWidth(0.92f)

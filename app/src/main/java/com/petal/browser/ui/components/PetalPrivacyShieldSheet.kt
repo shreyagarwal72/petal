@@ -253,7 +253,8 @@ object PetalPrivacyShieldSheet {
                     )
                     window.setGravity(android.view.Gravity.CENTER)
                     window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                    window.setDimAmount(0.40f)
+                    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+                    window.setDimAmount(if (isGlass) 0.12f else 0.40f)
                 }
                 dialog.setCanceledOnTouchOutside(true)
                 dialog.show()

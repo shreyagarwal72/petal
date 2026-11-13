@@ -224,7 +224,7 @@ object PetalDownloadBannerBridge {
                         com.petal.browser.ui.glass.PetalGlassContainer(
                             modifier = Modifier,
                             enabled = isGlass,
-                            live = hostSource != null && hostSource.id != com.petal.browser.R.id.main
+                            live = isGlass
                         ) {
                             PetalDownloadBanner(
                                 bannerData = currentBannerData.value,

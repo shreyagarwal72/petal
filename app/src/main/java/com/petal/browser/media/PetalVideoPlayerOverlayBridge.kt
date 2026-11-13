@@ -119,7 +119,7 @@ class PetalVideoPlayerOverlayBridge(
                 }
 
                 androidx.compose.runtime.CompositionLocalProvider(
-                    com.petal.browser.ui.glass.LocalPetalGlassSource provides hostView
+                    com.petal.browser.ui.glass.LocalPetalGlassSource provides (targetView ?: hostView)
                 ) {
                     PetalExpressiveTheme(
                         dynamicColor = dynamicColor,

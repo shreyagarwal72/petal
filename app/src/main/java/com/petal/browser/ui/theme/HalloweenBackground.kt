@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.petal.browser.ui.glass.PetalGlassWallpaper
 import com.petal.browser.ui.glass.captureGlassWallpaper
+import com.petal.browser.ui.glass.captureGlassWallpaperLive
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -116,7 +117,7 @@ fun HalloweenBackground(
     val animatedTime = rememberHalloweenAnimatedTime(speedMultiplier)
 
     val canvasModifier = if (glassWallpaper != null) {
-        modifier.captureGlassWallpaper(glassWallpaper).fillMaxSize()
+        modifier.captureGlassWallpaperLive(glassWallpaper) { (animatedTime.value * 1000f).toLong() }.fillMaxSize()
     } else {
         modifier.fillMaxSize()
     }

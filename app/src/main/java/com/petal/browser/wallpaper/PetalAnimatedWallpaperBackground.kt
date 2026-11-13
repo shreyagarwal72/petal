@@ -38,6 +38,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.glass.captureGlassWallpaper
+import com.petal.browser.ui.glass.captureGlassWallpaperLive
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -357,6 +358,13 @@ fun PetalGlassAwareWallpaperBackground(
     modifier: Modifier = Modifier
 ) {
     val isVideo = remember(wallpaperUri) { petalIsVideoWallpaper(wallpaperUri) }
+    val videoGlassTick = remember { mutableLongStateOf(0L) }
+    LaunchedEffect(isVideo, glassWallpaper) {
+        if (isVideo && glassWallpaper != null) {
+            while (true) withFrameNanos { videoGlassTick.longValue = it }
+        }
+    }
+
     when {
         glassWallpaper == null -> PetalAnimatedWallpaperBackground(
             wallpaperUri = wallpaperUri, dim = dim, blur = blur, modifier = modifier
@@ -370,18 +378,12 @@ fun PetalGlassAwareWallpaperBackground(
             )
         }
         else -> Box(modifier = modifier.fillMaxSize()) {
-            // What the glass sees: the preview frame only.
             PetalAnimatedWallpaperBackground(
                 wallpaperUri = wallpaperUri, dim = dim, blur = blur,
                 modifier = Modifier
                     .fillMaxSize()
-                    .captureGlassWallpaper(glassWallpaper),
-                renderVideo = false
-            )
-            // What you see: the live video, never recorded.
-            PetalAnimatedWallpaperBackground(
-                wallpaperUri = wallpaperUri, dim = dim, blur = blur,
-                modifier = Modifier.fillMaxSize()
+                    .captureGlassWallpaperLive(glassWallpaper) { videoGlassTick.longValue },
+                renderVideo = true
             )
         }
     }

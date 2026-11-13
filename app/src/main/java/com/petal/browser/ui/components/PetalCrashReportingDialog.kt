@@ -315,24 +315,36 @@ fun PetalCrashRecoveryHost(
         val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
         BasicAlertDialog(onDismissRequest = { showFullTraceDialog = false }) {
-            Surface(
-                shape = MaterialTheme.shapes.extraLarge,
-                color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+            androidx.compose.runtime.SideEffect {
+                if (isGlass) {
+                    dialogWindow?.setDimAmount(0.12f)
+                }
+            }
+            com.petal.browser.ui.glass.PetalGlassContainer(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.85f)
-                    .then(
-                        if (isGlass) Modifier.liquidGlassChrome(
-                            shape = MaterialTheme.shapes.extraLarge,
-                            enabled = true,
-                            sheenIntensity = sheen
-                        ) else Modifier
-                    )
+                    .fillMaxHeight(0.85f),
+                live = true,
+                enabled = isGlass
             ) {
-                Column(
+                Surface(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(20.dp)
+                        .then(
+                            if (isGlass) Modifier.liquidGlassChrome(
+                                shape = MaterialTheme.shapes.extraLarge,
+                                enabled = true,
+                                sheenIntensity = sheen
+                            ) else Modifier
+                        )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(20.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -451,6 +463,7 @@ fun PetalCrashRecoveryHost(
             }
         }
     }
+}
 }
 
 /**

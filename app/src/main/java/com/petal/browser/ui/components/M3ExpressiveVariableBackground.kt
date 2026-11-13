@@ -63,6 +63,7 @@ import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
 import com.petal.browser.ui.glass.LocalPetalGlassRevision
 import com.petal.browser.ui.glass.captureGlassWallpaper
+import com.petal.browser.ui.glass.captureGlassWallpaperLive
 import com.petal.browser.ui.glass.PetalGlassPattern
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -377,7 +378,9 @@ fun M3ExpressiveVariableBackground(
     val scratchMatrix = remember { Matrix() }
 
     Canvas(modifier = modifier.fillMaxSize()
-        .then(if (wallpaper != null) Modifier.captureGlassWallpaper(wallpaper) else Modifier)) {
+        .then(if (wallpaper != null) {
+            Modifier.captureGlassWallpaperLive(wallpaper) { ((drift + morphProgressA) * 1000f).toLong() }
+        } else Modifier)) {
         val width = size.width
         val height = size.height
 

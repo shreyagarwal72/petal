@@ -68,6 +68,12 @@ import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.petalGroupShape
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.glass.PetalGlassContainer
+import com.petal.browser.ui.glass.rememberGlassSheen
+import androidx.compose.foundation.layout.wrapContentHeight
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import kotlinx.coroutines.delay
 import kotlin.coroutines.resume
@@ -142,7 +148,8 @@ object PetalBackupPasswordPrompt {
         dialog.setOnShowListener {
             val window = dialog.window ?: return@setOnShowListener
             window.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
-            window.setDimAmount(0.68f)
+            val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+            window.setDimAmount(if (isGlass) 0.12f else 0.68f)
             window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
@@ -194,13 +201,25 @@ private fun BackupPasswordContent(
         if (password.isNotEmpty()) onUnlock(password)
     }
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = 12.dp
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = rememberGlassSheen(isGlass)
+    val shape = RoundedCornerShape(32.dp)
+
+    PetalGlassContainer(
+        modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+        live = true,
+        enabled = isGlass
     ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = sheen) else Modifier),
+            shape = shape,
+            color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            shadowElevation = if (isGlass) 0.dp else 12.dp,
+            border = null
+        ) {
         // Whole popup content scrolls, so nothing gets cut off on small screens or with the keyboard open.
         Column(
             modifier = Modifier
@@ -320,4 +339,5 @@ private fun BackupPasswordContent(
             }
         }
     }
+}
 }

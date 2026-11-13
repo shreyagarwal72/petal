@@ -377,6 +377,13 @@ fun PetalImageViewerScreen(
     val hostView = LocalView.current
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val imageWallpaper = rememberPetalGlassWallpaper()
+    val imageGlassTick = remember { mutableLongStateOf(0L) }
+    val isImageMoving = pagerState.isScrollInProgress || comicListState.isScrollInProgress
+    LaunchedEffect(isGlass, isImageMoving) {
+        if (isGlass && isImageMoving) {
+            while (true) withFrameNanos { imageGlassTick.longValue = it }
+        }
+    }
 
     CompositionLocalProvider(
         LocalPetalGlassSource provides hostView,
@@ -409,7 +416,7 @@ fun PetalImageViewerScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .then(
-                                if (isGlass) Modifier.captureGlassWallpaperLive(imageWallpaper) { pagerState.currentPage.toLong() }
+                                if (isGlass) Modifier.captureGlassWallpaperLive(imageWallpaper) { imageGlassTick.longValue + pagerState.currentPage.toLong() }
                                 else Modifier
                             )
                     ) {

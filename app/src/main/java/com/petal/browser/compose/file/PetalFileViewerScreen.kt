@@ -284,6 +284,13 @@ fun PetalFileViewerScreen(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val fileWallpaper = rememberPetalGlassWallpaper()
     val glassFrameTick = remember { mutableLongStateOf(0L) }
+    LaunchedEffect(isGlass) {
+        if (isGlass) {
+            while (true) {
+                withFrameNanos { glassFrameTick.longValue = it }
+            }
+        }
+    }
 
     CompositionLocalProvider(
         LocalPetalGlassSource provides hostView,
@@ -298,16 +305,21 @@ fun PetalFileViewerScreen(
             com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
                 // Glass backdrop: records the page background so cards and the top bar
                 // frost and refract it live with authentic liquid glass.
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .captureGlassWallpaperLive(fileWallpaper) { glassFrameTick.longValue }
-                ) {
-                    com.petal.browser.ui.components.M3ExpressiveVariableBackground(
-                        modifier = Modifier.fillMaxSize(),
-                        pageSeed = "petal_file_viewer"
-                    )
+                Box(Modifier.fillMaxSize()) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .then(
+                                if (isGlass) Modifier.captureGlassWallpaperLive(fileWallpaper) { glassFrameTick.longValue }
+                                else Modifier
+                            )
+                    ) {
+                        com.petal.browser.ui.components.M3ExpressiveVariableBackground(
+                            modifier = Modifier.fillMaxSize(),
+                            pageSeed = "petal_file_viewer"
+                        )
+                    }
                     Scaffold(
                         containerColor = Color.Transparent,
                         contentWindowInsets = WindowInsets(0, 0, 0, 0),

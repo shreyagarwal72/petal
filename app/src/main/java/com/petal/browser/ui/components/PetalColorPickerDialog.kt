@@ -115,6 +115,12 @@ fun PetalColorPickerDialog(
         modifier = Modifier.padding(16.dp).fillMaxWidth(),
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        androidx.compose.runtime.SideEffect {
+            if (isGlass) {
+                dialogWindow?.setDimAmount(0.12f)
+            }
+        }
         com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = Modifier.fillMaxWidth(),
             enabled = isGlass,

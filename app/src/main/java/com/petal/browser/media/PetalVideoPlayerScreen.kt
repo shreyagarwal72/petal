@@ -45,6 +45,12 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import androidx.compose.runtime.withFrameNanos
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.glass.LocalPetalGlassSource
+import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
+import com.petal.browser.ui.glass.captureGlassWallpaperLive
+import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -195,9 +201,12 @@ fun PetalVideoPlayerScreen(
 
     val hostView = androidx.compose.ui.platform.LocalView.current
     val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val videoWallpaper = rememberPetalGlassWallpaper()
 
     androidx.compose.runtime.CompositionLocalProvider(
-        com.petal.browser.ui.glass.LocalPetalGlassSource provides hostView
+        LocalPetalGlassSource provides hostView,
+        LocalPetalGlassWallpaper provides (if (isGlass) videoWallpaper else null)
     ) {
         com.petal.browser.predictive.PetalPredictiveBackSurface(
             enabled = true,
@@ -227,6 +236,21 @@ fun PetalVideoPlayerScreen(
                 playerView.resizeMode = resizeMode
             }
         )
+
+        // Live Liquid Glass wallpaper capture for video overlay controls
+        if (isGlass) {
+            val videoGlassTick = remember { mutableLongStateOf(0L) }
+            LaunchedEffect(isPlaying) {
+                if (isPlaying) {
+                    while (true) withFrameNanos { videoGlassTick.longValue = it }
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .captureGlassWallpaperLive(videoWallpaper) { videoGlassTick.longValue }
+            )
+        }
 
         // Custom Petal Overlay (Squiggly seekbar, HUD gestures, PiP, Speed, Back)
         // Hidden during Picture-in-Picture mode to prevent UI controls glitching/shuttering

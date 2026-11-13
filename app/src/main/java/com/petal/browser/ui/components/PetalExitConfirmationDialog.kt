@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import com.petal.browser.ui.containment.liquidGlassChrome
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import com.petal.browser.ui.containment.PetalMaterialAlertDialog
+import com.petal.browser.ui.glass.PetalGlassContainer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import com.petal.browser.ui.kit.Button
@@ -65,7 +67,7 @@ fun PetalExitConfirmationDialog(
     onExit: () -> Unit
 ) {
     if (visible) {
-        AlertDialog(
+        PetalMaterialAlertDialog(
             onDismissRequest = onDismissRequest,
             icon = {
                 Icon(
@@ -203,9 +205,10 @@ object PetalExitConfirmationDialog {
         dialog.show()
 
         // Dialog.show() creates the window after setOnShowListener registration.
+        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
         dialog.window?.let { window ->
             window.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
-            window.setDimAmount(0.68f)
+            window.setDimAmount(if (isGlass) 0.12f else 0.68f)
             window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             window.setLayout(
                 (activity.resources.displayMetrics.widthPixels * 0.84f).toInt().coerceAtMost(dp(activity, 360)),
@@ -230,16 +233,23 @@ private fun ExitDialogContent(
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val dialogShape = MaterialTheme.shapes.extraLarge
 
-    Surface(
+    PetalGlassContainer(
         modifier = Modifier
             .fillMaxWidth()
-            .liquidGlassChrome(dialogShape, enabled = isGlass, sheenIntensity = 0.55f),
-        shape = dialogShape,
-        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = if (isGlass) 0.dp else 6.dp,
-        shadowElevation = if (isGlass) 0.dp else 6.dp,
-        border = null
+            .wrapContentHeight(),
+        live = true,
+        enabled = isGlass
     ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .liquidGlassChrome(dialogShape, enabled = isGlass, sheenIntensity = 0.55f),
+            shape = dialogShape,
+            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = if (isGlass) 0.dp else 6.dp,
+            shadowElevation = if (isGlass) 0.dp else 6.dp,
+            border = null
+        ) {
         Column(
             modifier = Modifier.padding(start = 24.dp, top = 22.dp, end = 24.dp, bottom = 18.dp),
         ) {
@@ -323,4 +333,5 @@ private fun ExitDialogContent(
             }
         }
     }
+}
 }

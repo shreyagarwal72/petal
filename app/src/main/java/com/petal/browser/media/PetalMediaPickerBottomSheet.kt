@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.wrapContentHeight
+import com.petal.browser.ui.glass.PetalGlassContainer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -207,13 +209,18 @@ fun PetalMediaPickerBottomSheet(
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val sheetShape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape
 
-    Surface(
-        shape = sheetShape,
-        color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (isGlass) Modifier.liquidGlassChrome(shape = sheetShape, enabled = true, sheenIntensity = sheen) else Modifier)
+    PetalGlassContainer(
+        modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+        live = true,
+        enabled = isGlass
     ) {
+        Surface(
+            shape = sheetShape,
+            color = if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (isGlass) Modifier.liquidGlassChrome(shape = sheetShape, enabled = true, sheenIntensity = sheen) else Modifier)
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -714,4 +721,5 @@ fun PetalMediaPickerBottomSheet(
             }
         }
     }
+}
 }

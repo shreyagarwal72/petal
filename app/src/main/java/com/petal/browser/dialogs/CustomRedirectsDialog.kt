@@ -119,6 +119,10 @@ class CustomRedirectsDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+        if (isGlass) {
+            dialog.window?.setDimAmount(0.12f)
+        }
         return dialog
     }
 }
