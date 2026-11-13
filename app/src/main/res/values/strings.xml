@@ -1856,5 +1856,33 @@
     <string name="ui_prerelease_continue">Continue</string>
     <string name="ui_prerelease_warning">This is a pre-release version and might be unstable.</string>
     <string name="ui_channel_github_prerelease_last_checked">Channel: GitHub Pre-release • Last Checked: %1$s</string>
+
+    <!-- Mozilla account guide + simplified sign-in -->
+    <string name="fxa_info_cd">How Mozilla account sync works</string>
+    <string name="fxa_guide_title">Sync with a Mozilla account</string>
+    <string name="fxa_guide_intro">A Mozilla account (also called a Firefox account) is a free account that lets Petal and Firefox on your other devices share your bookmarks, history and open tabs. You can use Petal without it.</string>
+    <string name="fxa_guide_steps_label">How to get started</string>
+    <string name="fxa_guide_step1_title">Tap “Sign in or create account”</string>
+    <string name="fxa_guide_step1_body">A secure Mozilla page opens inside Petal. New to Mozilla? Enter your email and choose a password to create an account.</string>
+    <string name="fxa_guide_step2_title">Confirm with the code from your email</string>
+    <string name="fxa_guide_step2_body">Mozilla may send a short code to your inbox. Enter it on the page to finish signing in.</string>
+    <string name="fxa_guide_step3_title">Choose what to sync</string>
+    <string name="fxa_guide_step3_body">Back here, switch bookmarks, history and open tabs on or off, then tap Sync Now.</string>
+    <string name="fxa_guide_what_label">What can sync</string>
+    <string name="fxa_guide_what_bookmarks">Bookmarks (reading-list items stay on this device)</string>
+    <string name="fxa_guide_what_history">Browsing history from the last 90 days</string>
+    <string name="fxa_guide_what_tabs">Open tabs, plus Send Tab to your other devices</string>
+    <string name="fxa_guide_what_private">Your data is encrypted before it leaves your device. Mozilla cannot read it.</string>
+    <string name="fxa_guide_qr_label">Already use Firefox on a computer?</string>
+    <string name="fxa_guide_qr_body">On Firefox desktop open Settings → Sync → “Connect another device”, then tap “Scan QR from Firefox on your computer” here and point the camera at the code. You will still need your Mozilla account password once.</string>
+    <string name="fxa_guide_got_it">Got it</string>
+    <string name="fxa_signin_primary">Sign in or create account</string>
+    <string name="fxa_signin_qr">Scan QR from Firefox on your computer</string>
+    <string name="fxa_signin_tagline">Free Mozilla account. Takes about a minute.</string>
+    <string name="fxa_new_here">New here? See how it works</string>
+    <string name="fxa_needs_signin_again">Your Mozilla account needs you to sign in again.</string>
+    <string name="fxa_pair_scan_title">Scan the QR code</string>
+    <string name="fxa_pair_scan_hint">On Firefox desktop: Settings → Sync → Connect another device.</string>
+    <string name="fxa_pair_invalid">That isn’t a Firefox pairing code. Open “Connect another device” on desktop Firefox and scan that QR.</string>
 </resources>
 

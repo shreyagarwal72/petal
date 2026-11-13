@@ -177,9 +177,23 @@ object PetalBackupManager {
 
     private val BUILTIN_PREF_NAMES = arrayOf(
         "petal_settings", "petal_menu", "petal_tab_groups", "petal_inactive_tabs", "petal_ytdlp",
-        "petal_fx_sync_prefs", "MenuPreferences", "petal_tab_collections_prefs",
+        "MenuPreferences", "petal_tab_collections_prefs",
         "petal_inactive_tabs_prefs", "petal_tab_groups_prefs", "petal_ytdlp_engine_prefs"
     )
+
+    /**
+     * Preference files that hold credentials, tokens, device identity or crash/telemetry state.
+     * They must never be written to a backup file (plain JSON) and are never restored.
+     */
+    @JvmStatic
+    fun isSecretPrefName(name: String): Boolean {
+        val n = name.lowercase()
+        return n.startsWith("petal_fx") || n.startsWith("fxa") || n.contains("fxa.") ||
+                n.startsWith("mozac") || n.startsWith("__androidx_security") ||
+                n.startsWith("androidx.security") || n.startsWith("glean") ||
+                n.startsWith("petal_crash") || n.contains("token") || n.contains("secret") ||
+                n.contains("credential") || n.contains("keystore") || n.contains("securestate")
+    }
 
     @JvmStatic
     fun getAllKnownPreferenceNames(context: Context?): Set<String> {
@@ -204,6 +218,7 @@ object PetalBackupManager {
                 }
             } catch (ignored: Throwable) {}
         }
+        names.removeAll { isSecretPrefName(it) }
         return names
     }
 
@@ -344,7 +359,8 @@ object PetalBackupManager {
     ): JSONObject {
         val backupJson = JSONObject()
         try {
-            backupJson.put("version", 2)
+            backupJson.put("version", 3)
+            backupJson.put("app", "petal")
             backupJson.put("timestamp", System.currentTimeMillis())
 
             if (backupBookmarks) {
@@ -362,6 +378,7 @@ object PetalBackupManager {
                         val bTime = if (r.iconColor > 0) r.iconColor else (if (r.time > 0) r.time else System.currentTimeMillis())
                         obj.put("time", bTime)
                         obj.put("iconColor", if (r.iconColor > 0) r.iconColor else bTime)
+                        obj.put("readingList", r.isReadingList)
                         bookmarksArray.put(obj)
                     }
                     backupJson.put("bookmarks", bookmarksArray)
@@ -477,6 +494,12 @@ object PetalBackupManager {
                     }
                 } catch (e: Exception) {
                     Log.e("Petal", "Error extracting settings for JSON backup", e)
+                }
+                try {
+                    val filesObj = collectBackupFiles(context)
+                    if (filesObj.length() > 0) backupJson.put("files", filesObj)
+                } catch (e: Exception) {
+                    Log.e("Petal", "Error extracting files for JSON backup", e)
                 }
             }
         } catch (e: Exception) {
@@ -679,6 +702,217 @@ object PetalBackupManager {
         }
     }
 
+
+    // ── Files that belong to "themes & settings" (wallpapers, fonts, userscripts, avatars) ──────
+
+    private const val MAX_FILE_BYTES = 6L * 1024 * 1024
+    private const val MAX_TOTAL_FILE_BYTES = 16L * 1024 * 1024
+    private val BACKUP_FILE_DIRS = arrayOf("wallpapers", "user_scripts")
+    private val BACKUP_FILE_NAMES = arrayOf("custom_font.ttf", "petal_user_avatar.png")
+
+    private fun isSafeRelativePath(rel: String): Boolean {
+        if (rel.isBlank() || rel.startsWith("/") || rel.contains("..") || rel.contains('\\')) return false
+        val parts = rel.split("/")
+        if (parts.size > 2) return false
+        val top = parts[0]
+        return if (parts.size == 1) {
+            top in BACKUP_FILE_NAMES || (top.startsWith("petal_profile_avatar_") && top.endsWith(".png"))
+        } else {
+            top in BACKUP_FILE_DIRS && parts[1].isNotBlank()
+        }
+    }
+
+    /** @return JSON object {relativePath: base64}. Oversized files are skipped, never truncated. */
+    private fun collectBackupFiles(context: Context): JSONObject {
+        val out = JSONObject()
+        var total = 0L
+        fun add(rel: String, f: File) {
+            if (!f.isFile || f.length() <= 0L || f.length() > MAX_FILE_BYTES) return
+            if (total + f.length() > MAX_TOTAL_FILE_BYTES) return
+            out.put(rel, android.util.Base64.encodeToString(f.readBytes(), android.util.Base64.NO_WRAP))
+            total += f.length()
+        }
+        val root = context.filesDir
+        for (dir in BACKUP_FILE_DIRS) {
+            File(root, dir).listFiles()?.sortedBy { it.name }?.forEach { add("$dir/${it.name}", it) }
+        }
+        for (name in BACKUP_FILE_NAMES) add(name, File(root, name))
+        root.listFiles()?.filter { it.name.startsWith("petal_profile_avatar_") && it.name.endsWith(".png") }
+            ?.forEach { add(it.name, it) }
+        return out
+    }
+
+    private fun restoreBackupFiles(context: Context, filesObj: JSONObject): Int {
+        var n = 0
+        val keys = filesObj.keys()
+        val root = context.filesDir.canonicalFile
+        while (keys.hasNext()) {
+            val rel = keys.next()
+            if (!isSafeRelativePath(rel)) continue
+            try {
+                val bytes = android.util.Base64.decode(filesObj.getString(rel), android.util.Base64.DEFAULT)
+                if (bytes.size > MAX_FILE_BYTES) continue
+                val target = File(root, rel).canonicalFile
+                if (!target.path.startsWith(root.path + File.separator)) continue
+                target.parentFile?.mkdirs()
+                target.writeBytes(bytes)
+                n++
+            } catch (e: Exception) {
+                Log.w("Petal", "Skipped restoring file $rel", e)
+            }
+        }
+        return n
+    }
+
+    /**
+     * ONE restore implementation used by both the file-picker and the Documents-folder paths.
+     * Merges into existing data (never wipes), skips secret preference files, returns a summary.
+     */
+    private fun applyBackupJson(
+        context: Context,
+        backupJson: JSONObject,
+        restoreBookmarks: Boolean,
+        restoreHistory: Boolean,
+        restoreStartSites: Boolean,
+        restoreTabSessions: Boolean,
+        restoreSavedSites: Boolean,
+        restoreSettings: Boolean
+    ): String {
+        var bookmarksAdded = 0; var readingAdded = 0; var historyAdded = 0
+        var startAdded = 0; var sitesAdded = 0; var prefsFiles = 0; var filesRestored = 0
+        var tabsRestored = false
+        val problems = ArrayList<String>()
+
+        fun pick(o: JSONObject, vararg keys: String): String {
+            for (k in keys) { val v = o.optString(k, ""); if (v.isNotEmpty()) return v }
+            return ""
+        }
+        fun usable(url: String) = url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)
+
+        val repo = HistoryBookmarkRepository(context)
+        try {
+            repo.open(true)
+
+            if (restoreBookmarks) backupJson.optJSONArray("bookmarks")?.let { arr ->
+                try {
+                    for (i in 0 until arr.length()) {
+                        val o = arr.optJSONObject(i) ?: continue
+                        val url = pick(o, "url", "href", "link").trim()
+                        if (!usable(url)) continue
+                        val time = o.optLong("time", System.currentTimeMillis())
+                        val reading = o.optBoolean("readingList", false)
+                        if (!repo.checkUrl(url, HistoryBookmarkContract.TABLE_BOOKMARK)) {
+                            val rec = Record()
+                            rec.title = pick(o, "title", "name").ifEmpty { url }
+                            rec.url = url
+                            rec.time = time
+                            val ic = o.optLong("iconColor", if (time > 0) time else 1L)
+                            rec.iconColor = if (ic > 0) ic else (if (time > 0) time else 1L)
+                            repo.addBookmark(rec)
+                            if (reading) { repo.setBookmarkReadingList(url, true); readingAdded++ } else bookmarksAdded++
+                        } else if (reading) {
+                            repo.setBookmarkReadingList(url, true)
+                        }
+                    }
+                } catch (e: Exception) { Log.e("Petal", "restore bookmarks", e); problems.add("bookmarks") }
+            }
+
+            if (restoreHistory) backupJson.optJSONArray("history")?.let { arr ->
+                try {
+                    for (i in 0 until arr.length()) {
+                        val o = arr.optJSONObject(i) ?: continue
+                        val url = pick(o, "url", "href", "link").trim()
+                        if (!usable(url) || repo.checkUrl(url, HistoryBookmarkContract.TABLE_HISTORY)) continue
+                        repo.addHistory(Record(pick(o, "title", "name").ifEmpty { url }, url, o.optLong("time", System.currentTimeMillis()), 0L))
+                        historyAdded++
+                    }
+                } catch (e: Exception) { Log.e("Petal", "restore history", e); problems.add("history") }
+            }
+
+            if (restoreStartSites) backupJson.optJSONArray("start_sites")?.let { arr ->
+                try {
+                    for (i in 0 until arr.length()) {
+                        val o = arr.optJSONObject(i) ?: continue
+                        val url = o.optString("url", "")
+                        if (url.isEmpty() || repo.checkStartSite(url)) continue
+                        val rec = Record()
+                        rec.title = o.optString("title", "")
+                        rec.url = url
+                        rec.filename = o.optString("filename", "")
+                        rec.ordinal = o.optInt("ordinal", i)
+                        repo.addStartSite(rec)
+                        startAdded++
+                    }
+                } catch (e: Exception) { Log.e("Petal", "restore start sites", e); problems.add("home shortcuts") }
+            }
+
+            if (restoreSavedSites) {
+                fun domains(key: String, table: String) {
+                    val arr = backupJson.optJSONArray(key) ?: return
+                    try {
+                        for (i in 0 until arr.length()) {
+                            val d = arr.optString(i, "")
+                            if (d.isNotEmpty() && !repo.checkDomain(d, table)) { repo.addDomain(d, table); sitesAdded++ }
+                        }
+                    } catch (e: Exception) { Log.e("Petal", "restore $key", e); problems.add(key) }
+                }
+                domains("saved_sites", HistoryBookmarkContract.TABLE_STANDARD)
+                domains("trusted_sites", HistoryBookmarkContract.TABLE_TRUSTED)
+                domains("protected_sites", HistoryBookmarkContract.TABLE_PROTECTED)
+            }
+        } finally {
+            try { repo.close() } catch (_: Throwable) {}
+        }
+
+        if (restoreTabSessions && backupJson.has("tab_sessions")) {
+            try {
+                val obj = backupJson.opt("tab_sessions")
+                val json = when (obj) {
+                    is JSONObject, is JSONArray -> obj.toString()
+                    is String -> obj
+                    else -> null
+                }
+                if (!json.isNullOrBlank()) {
+                    PetalSessionRestoreManager.importSessionFromBackup(context, json)
+                    tabsRestored = true
+                }
+            } catch (e: Exception) { Log.e("Petal", "restore tabs", e); problems.add("tabs") }
+        }
+
+        if (restoreSettings) {
+            // Files first, so settings that point at them (wallpaper, font) resolve immediately.
+            backupJson.optJSONObject("files")?.let { filesRestored = restoreBackupFiles(context, it) }
+            try {
+                backupJson.optJSONObject("settings")?.let {
+                    restorePreferencesFromJsonObject(PreferenceManager.getDefaultSharedPreferences(context), it)
+                    prefsFiles++
+                }
+                backupJson.optJSONObject("custom_preferences")?.let { custom ->
+                    val names = custom.keys()
+                    while (names.hasNext()) {
+                        val name = names.next()
+                        if (isSecretPrefName(name)) continue
+                        val pj = custom.optJSONObject(name) ?: continue
+                        restorePreferencesFromJsonObject(context.getSharedPreferences(name, Context.MODE_PRIVATE), pj)
+                        prefsFiles++
+                    }
+                }
+            } catch (e: Exception) { Log.e("Petal", "restore settings", e); problems.add("settings") }
+        }
+
+        val parts = ArrayList<String>()
+        if (restoreBookmarks) parts.add("$bookmarksAdded bookmarks" + if (readingAdded > 0) " + $readingAdded reading list" else "")
+        if (restoreHistory) parts.add("$historyAdded history items")
+        if (restoreStartSites) parts.add("$startAdded shortcuts")
+        if (restoreTabSessions && tabsRestored) parts.add("tabs")
+        if (restoreSavedSites) parts.add("$sitesAdded site rules")
+        if (restoreSettings) parts.add("settings" + if (filesRestored > 0) " + $filesRestored files" else "")
+        val head = "Restored: " + parts.joinToString(", ")
+        val tail = if (problems.isEmpty()) "" else " (could not restore: ${problems.joinToString()})"
+        val hint = if (restoreSettings && prefsFiles > 0) ". Restart Petal to apply all settings." else "."
+        return head + tail + hint
+    }
+
     @JvmStatic
     fun restoreFromUri(
         context: Context,
@@ -722,193 +956,11 @@ object PetalBackupManager {
 
                 val backupJson = JSONObject(sb.toString())
 
-                if (restoreBookmarks && backupJson.has("bookmarks")) {
-                    try {
-                        val bookmarksArray = backupJson.getJSONArray("bookmarks")
-                        val action = HistoryBookmarkRepository(context)
-                        action.open(true)
-                        for (i in 0 until bookmarksArray.length()) {
-                            val obj = bookmarksArray.getJSONObject(i)
-                            var title = obj.optString("title", "")
-                            if (title.isEmpty()) title = obj.optString("name", "")
-                            var url = obj.optString("url", "")
-                            if (url.isEmpty()) url = obj.optString("href", "")
-                            if (url.isEmpty()) url = obj.optString("link", "")
-                            val time = obj.optLong("time", System.currentTimeMillis())
-                            val iconColor = obj.optLong("iconColor", if (time > 0) time else 1L)
-                            if (title.isEmpty()) title = url
-                            if (url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true) &&
-                                !action.checkUrl(url, HistoryBookmarkContract.TABLE_BOOKMARK)
-                            ) {
-                                val record = Record()
-                                record.title = title
-                                record.url = url
-                                record.time = time
-                                record.iconColor = if (iconColor > 0) iconColor else (if (time > 0) time else 1L)
-                                action.addBookmark(record)
-                            }
-                        }
-                        action.close()
-                    } catch (e: Exception) {
-                        Log.e("Petal", "Error restoring bookmarks", e)
-                    }
-                }
-
-                if (restoreHistory && backupJson.has("history")) {
-                    try {
-                        val historyArray = backupJson.getJSONArray("history")
-                        val action = HistoryBookmarkRepository(context)
-                        action.open(true)
-                        for (i in 0 until historyArray.length()) {
-                            val obj = historyArray.getJSONObject(i)
-                            var title = obj.optString("title", "")
-                            if (title.isEmpty()) title = obj.optString("name", "")
-                            var url = obj.optString("url", "")
-                            if (url.isEmpty()) url = obj.optString("href", "")
-                            if (url.isEmpty()) url = obj.optString("link", "")
-                            val time = obj.optLong("time", System.currentTimeMillis())
-                            if (title.isEmpty()) title = url
-                            if (url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true) &&
-                                !action.checkUrl(url, HistoryBookmarkContract.TABLE_HISTORY)
-                            ) {
-                                action.addHistory(Record(title, url, time, 0L))
-                            }
-                        }
-                        action.close()
-                    } catch (e: Exception) {
-                        Log.e("Petal", "Error restoring history", e)
-                    }
-                }
-
-                if (restoreStartSites && backupJson.has("start_sites")) {
-                    try {
-                        val startArray = backupJson.getJSONArray("start_sites")
-                        val action = HistoryBookmarkRepository(context)
-                        action.open(true)
-                        for (i in 0 until startArray.length()) {
-                            val obj = startArray.getJSONObject(i)
-                            val title = obj.optString("title", "")
-                            val url = obj.optString("url", "")
-                            val filename = obj.optString("filename", "")
-                            val ordinal = obj.optInt("ordinal", i)
-                            if (url.isNotEmpty() && !action.checkStartSite(url)) {
-                                val record = Record()
-                                record.title = title
-                                record.url = url
-                                record.filename = filename
-                                record.ordinal = ordinal
-                                action.addStartSite(record)
-                            }
-                        }
-                        action.close()
-                    } catch (e: Exception) {
-                        Log.e("Petal", "Error restoring start sites", e)
-                    }
-                }
-
-                if (restoreTabSessions && backupJson.has("tab_sessions")) {
-                    try {
-                        var sessionJson: String? = null
-                        val sessionObj = backupJson.opt("tab_sessions")
-                        if (sessionObj is JSONObject || sessionObj is JSONArray) {
-                            sessionJson = sessionObj.toString()
-                        } else if (sessionObj is String) {
-                            sessionJson = sessionObj
-                        }
-                        if (!sessionJson.isNullOrBlank()) {
-                            PetalSessionRestoreManager.importSessionFromBackup(context, sessionJson)
-                        }
-                    } catch (e: Exception) {
-                        Log.e("Petal", "Error restoring tab session", e)
-                    }
-                }
-
-                if (restoreSavedSites) {
-                    if (backupJson.has("saved_sites")) {
-                        try {
-                            val sitesArray = backupJson.getJSONArray("saved_sites")
-                            val action = HistoryBookmarkRepository(context)
-                            val listStandard = StandardDomainWhitelist(context)
-                            action.open(true)
-                            for (i in 0 until sitesArray.length()) {
-                                val domain = sitesArray.optString(i, "")
-                                if (domain.isNotEmpty() && !action.checkDomain(domain, HistoryBookmarkContract.TABLE_STANDARD)) {
-                                    listStandard.addDomain(domain)
-                                }
-                            }
-                            action.close()
-                        } catch (e: Exception) {
-                            Log.e("Petal", "Error restoring saved sites", e)
-                        }
-                    }
-                    if (backupJson.has("trusted_sites")) {
-                        try {
-                            val trustedArray = backupJson.getJSONArray("trusted_sites")
-                            val action = HistoryBookmarkRepository(context)
-                            action.open(true)
-                            for (i in 0 until trustedArray.length()) {
-                                val domain = trustedArray.optString(i, "")
-                                if (domain.isNotEmpty() && !action.checkDomain(domain, HistoryBookmarkContract.TABLE_TRUSTED)) {
-                                    action.addDomain(domain, HistoryBookmarkContract.TABLE_TRUSTED)
-                                }
-                            }
-                            action.close()
-                        } catch (e: Exception) {
-                            Log.e("Petal", "Error restoring trusted sites", e)
-                        }
-                    }
-                    if (backupJson.has("protected_sites")) {
-                        try {
-                            val protectArray = backupJson.getJSONArray("protected_sites")
-                            val action = HistoryBookmarkRepository(context)
-                            action.open(true)
-                            for (i in 0 until protectArray.length()) {
-                                val domain = protectArray.optString(i, "")
-                                if (domain.isNotEmpty() && !action.checkDomain(domain, HistoryBookmarkContract.TABLE_PROTECTED)) {
-                                    action.addDomain(domain, HistoryBookmarkContract.TABLE_PROTECTED)
-                                }
-                            }
-                            action.close()
-                        } catch (e: Exception) {
-                            Log.e("Petal", "Error restoring protected sites", e)
-                        }
-                    }
-                }
-
-                if (restoreSettings) {
-                    if (backupJson.has("settings")) {
-                        try {
-                            val settingsObj = backupJson.getJSONObject("settings")
-                            val defaultSp = PreferenceManager.getDefaultSharedPreferences(context)
-                            restorePreferencesFromJsonObject(defaultSp, settingsObj)
-                        } catch (e: Exception) {
-                            Log.e("Petal", "Error restoring settings", e)
-                        }
-                    }
-                    if (backupJson.has("custom_preferences")) {
-                        try {
-                            val customPrefsObj = backupJson.getJSONObject("custom_preferences")
-                            val pKeys = customPrefsObj.keys()
-                            while (pKeys.hasNext()) {
-                                val prefName = pKeys.next()
-                                val prefJson = customPrefsObj.optJSONObject(prefName)
-                                if (prefJson != null) {
-                                    val customSp = context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
-                                    restorePreferencesFromJsonObject(customSp, prefJson)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Log.e("Petal", "Error restoring custom preferences", e)
-                        }
-                    }
-                }
-
-                handler.post {
-                    PetalToast.show(
-                        context,
-                        "${context.getString(R.string.app_done)}: ${context.getString(R.string.settings_data_restore)}"
-                    )
-                }
+                val summary = applyBackupJson(
+                    context, backupJson, restoreBookmarks, restoreHistory, restoreStartSites,
+                    restoreTabSessions, restoreSavedSites, restoreSettings
+                )
+                handler.post { PetalToast.show(context, summary) }
             } catch (e: Exception) {
                 Log.e("Petal", "restoreFromUri error", e)
                 handler.post {
@@ -966,193 +1018,11 @@ object PetalBackupManager {
 
                 val backupJson = JSONObject(sb.toString())
 
-                if (restoreBookmarks && backupJson.has("bookmarks")) {
-                    try {
-                        val bookmarksArray = backupJson.getJSONArray("bookmarks")
-                        val action = HistoryBookmarkRepository(context)
-                        action.open(true)
-                        for (i in 0 until bookmarksArray.length()) {
-                            val obj = bookmarksArray.getJSONObject(i)
-                            var title = obj.optString("title", "")
-                            if (title.isEmpty()) title = obj.optString("name", "")
-                            var url = obj.optString("url", "")
-                            if (url.isEmpty()) url = obj.optString("href", "")
-                            if (url.isEmpty()) url = obj.optString("link", "")
-                            val time = obj.optLong("time", System.currentTimeMillis())
-                            val iconColor = obj.optLong("iconColor", if (time > 0) time else 1L)
-                            if (title.isEmpty()) title = url
-                            if (url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true) &&
-                                !action.checkUrl(url, HistoryBookmarkContract.TABLE_BOOKMARK)
-                            ) {
-                                val record = Record()
-                                record.title = title
-                                record.url = url
-                                record.time = time
-                                record.iconColor = if (iconColor > 0) iconColor else (if (time > 0) time else 1L)
-                                action.addBookmark(record)
-                            }
-                        }
-                        action.close()
-                    } catch (e: Exception) {
-                        Log.e("Petal", "Error restoring bookmarks", e)
-                    }
-                }
-
-                if (restoreHistory && backupJson.has("history")) {
-                    try {
-                        val historyArray = backupJson.getJSONArray("history")
-                        val action = HistoryBookmarkRepository(context)
-                        action.open(true)
-                        for (i in 0 until historyArray.length()) {
-                            val obj = historyArray.getJSONObject(i)
-                            var title = obj.optString("title", "")
-                            if (title.isEmpty()) title = obj.optString("name", "")
-                            var url = obj.optString("url", "")
-                            if (url.isEmpty()) url = obj.optString("href", "")
-                            if (url.isEmpty()) url = obj.optString("link", "")
-                            val time = obj.optLong("time", System.currentTimeMillis())
-                            if (title.isEmpty()) title = url
-                            if (url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true) &&
-                                !action.checkUrl(url, HistoryBookmarkContract.TABLE_HISTORY)
-                            ) {
-                                action.addHistory(Record(title, url, time, 0L))
-                            }
-                        }
-                        action.close()
-                    } catch (e: Exception) {
-                        Log.e("Petal", "Error restoring history", e)
-                    }
-                }
-
-                if (restoreStartSites && backupJson.has("start_sites")) {
-                    try {
-                        val startArray = backupJson.getJSONArray("start_sites")
-                        val action = HistoryBookmarkRepository(context)
-                        action.open(true)
-                        for (i in 0 until startArray.length()) {
-                            val obj = startArray.getJSONObject(i)
-                            val title = obj.optString("title", "")
-                            val url = obj.optString("url", "")
-                            val filename = obj.optString("filename", "")
-                            val ordinal = obj.optInt("ordinal", i)
-                            if (url.isNotEmpty() && !action.checkStartSite(url)) {
-                                val record = Record()
-                                record.title = title
-                                record.url = url
-                                record.filename = filename
-                                record.ordinal = ordinal
-                                action.addStartSite(record)
-                            }
-                        }
-                        action.close()
-                    } catch (e: Exception) {
-                        Log.e("Petal", "Error restoring start sites", e)
-                    }
-                }
-
-                if (restoreTabSessions && backupJson.has("tab_sessions")) {
-                    try {
-                        var sessionJson: String? = null
-                        val sessionObj = backupJson.opt("tab_sessions")
-                        if (sessionObj is JSONObject || sessionObj is JSONArray) {
-                            sessionJson = sessionObj.toString()
-                        } else if (sessionObj is String) {
-                            sessionJson = sessionObj
-                        }
-                        if (!sessionJson.isNullOrBlank()) {
-                            PetalSessionRestoreManager.importSessionFromBackup(context, sessionJson)
-                        }
-                    } catch (e: Exception) {
-                        Log.e("Petal", "Error restoring tab session", e)
-                    }
-                }
-
-                if (restoreSavedSites) {
-                    if (backupJson.has("saved_sites")) {
-                        try {
-                            val sitesArray = backupJson.getJSONArray("saved_sites")
-                            val action = HistoryBookmarkRepository(context)
-                            val listStandard = StandardDomainWhitelist(context)
-                            action.open(true)
-                            for (i in 0 until sitesArray.length()) {
-                                val domain = sitesArray.optString(i, "")
-                                if (domain.isNotEmpty() && !action.checkDomain(domain, HistoryBookmarkContract.TABLE_STANDARD)) {
-                                    listStandard.addDomain(domain)
-                                }
-                            }
-                            action.close()
-                        } catch (e: Exception) {
-                            Log.e("Petal", "Error restoring saved sites", e)
-                        }
-                    }
-                    if (backupJson.has("trusted_sites")) {
-                        try {
-                            val trustedArray = backupJson.getJSONArray("trusted_sites")
-                            val action = HistoryBookmarkRepository(context)
-                            action.open(true)
-                            for (i in 0 until trustedArray.length()) {
-                                val domain = trustedArray.optString(i, "")
-                                if (domain.isNotEmpty() && !action.checkDomain(domain, HistoryBookmarkContract.TABLE_TRUSTED)) {
-                                    action.addDomain(domain, HistoryBookmarkContract.TABLE_TRUSTED)
-                                }
-                            }
-                            action.close()
-                        } catch (e: Exception) {
-                            Log.e("Petal", "Error restoring trusted sites", e)
-                        }
-                    }
-                    if (backupJson.has("protected_sites")) {
-                        try {
-                            val protectArray = backupJson.getJSONArray("protected_sites")
-                            val action = HistoryBookmarkRepository(context)
-                            action.open(true)
-                            for (i in 0 until protectArray.length()) {
-                                val domain = protectArray.optString(i, "")
-                                if (domain.isNotEmpty() && !action.checkDomain(domain, HistoryBookmarkContract.TABLE_PROTECTED)) {
-                                    action.addDomain(domain, HistoryBookmarkContract.TABLE_PROTECTED)
-                                }
-                            }
-                            action.close()
-                        } catch (e: Exception) {
-                            Log.e("Petal", "Error restoring protected sites", e)
-                        }
-                    }
-                }
-
-                if (restoreSettings) {
-                    if (backupJson.has("settings")) {
-                        try {
-                            val settingsObj = backupJson.getJSONObject("settings")
-                            val sp = PreferenceManager.getDefaultSharedPreferences(context)
-                            restorePreferencesFromJsonObject(sp, settingsObj)
-                        } catch (e: Exception) {
-                            Log.e("Petal", "Error restoring settings", e)
-                        }
-                    }
-                    if (backupJson.has("custom_preferences")) {
-                        try {
-                            val customPrefsObj = backupJson.getJSONObject("custom_preferences")
-                            val pKeys = customPrefsObj.keys()
-                            while (pKeys.hasNext()) {
-                                val prefName = pKeys.next()
-                                val prefJson = customPrefsObj.optJSONObject(prefName)
-                                if (prefJson != null) {
-                                    val customSp = context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
-                                    restorePreferencesFromJsonObject(customSp, prefJson)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Log.e("Petal", "Error restoring custom preferences", e)
-                        }
-                    }
-                }
-
-                handler.post {
-                    PetalToast.show(
-                        context,
-                        "${context.getString(R.string.app_done)}: ${context.getString(R.string.settings_data_restore)}"
-                    )
-                }
+                val summary = applyBackupJson(
+                    context, backupJson, restoreBookmarks, restoreHistory, restoreStartSites,
+                    restoreTabSessions, restoreSavedSites, restoreSettings
+                )
+                handler.post { PetalToast.show(context, summary) }
             } catch (e: Exception) {
                 Log.e("Petal", "restoreFromJson error", e)
                 handler.post {

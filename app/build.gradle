@@ -231,6 +231,7 @@ dependencies {
     implementation 'androidx.profileinstaller:profileinstaller:1.4.1'
     implementation 'androidx.activity:activity-ktx:1.13.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.11.0'
+    implementation 'androidx.lifecycle:lifecycle-process:2.11.0'
     implementation 'androidx.savedstate:savedstate-ktx:1.5.0'
 
     // Compose Dependencies
@@ -302,6 +303,14 @@ dependencies {
     implementation 'org.mozilla.components:lib-state:159.0.1'
     implementation 'org.mozilla.components:support-base:159.0.1'
     implementation 'org.mozilla.components:support-utils:159.0.1'
+    // ── Mozilla Account (FxA) + Firefox Sync: official android-components ─────────────────────
+    // Real OAuth/PKCE + scoped keys + Sync15 crypto run in Mozilla's Rust application-services.
+    implementation 'org.mozilla.components:service-firefox-accounts:159.0.1'
+    implementation 'org.mozilla.components:concept-sync:159.0.1'
+    implementation 'org.mozilla.components:browser-storage-sync:159.0.1'
+    // Native library host for application-services. MUST equal the appservices version that
+    // service-firefox-accounts:159.0.1 depends on (see gradle.properties: appServicesVersion).
+    implementation "org.mozilla.appservices:full-megazord:${appServicesVersion}"
 
     // Android Components Features (159.0.1)
     implementation 'org.mozilla.components:feature-session:159.0.1'

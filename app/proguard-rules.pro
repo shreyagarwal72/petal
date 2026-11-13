@@ -113,3 +113,10 @@
 
 
 
+
+# ---- Mozilla application-services (FxA / Sync / Places) via UniFFI + JNA --------------------
+-keep class mozilla.appservices.** { *; }
+-keep class org.mozilla.appservices.** { *; }
+-keep class com.sun.jna.** { *; }
+-keepclassmembers class * extends com.sun.jna.** { public *; }
+-dontwarn java.awt.**

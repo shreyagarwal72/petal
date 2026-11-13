@@ -36,6 +36,9 @@ import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.unit.PetalBackupManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import com.petal.browser.passwords.PetalCredentialVault
+import com.petal.browser.view.PetalToast
 import com.petal.browser.R
 
 @Composable
@@ -76,6 +79,42 @@ fun DataBackupSettingsScreen(
                 backupSavedSites,
                 backupSettings
             )
+        }
+    }
+
+    // ── Passwords: always password-encrypted (AES-GCM via PetalCredentialVault), never plain text ──
+    var showPasswordsDialog by remember { mutableStateOf(false) }
+    var vaultPassword by remember { mutableStateOf("") }
+    var pendingVaultExport by remember { mutableStateOf<String?>(null) }
+
+    val vaultExportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        val content = pendingVaultExport
+        pendingVaultExport = null
+        if (uri != null && content != null) {
+            try {
+                context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(content.toByteArray(Charsets.UTF_8)) }
+                PetalToast.show(context, "Passwords exported (encrypted)")
+            } catch (e: Exception) {
+                PetalToast.show(context, "Export failed: ${e.message}")
+            }
+        }
+    }
+    val vaultImportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                val text = context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                    ?: throw IllegalStateException("Could not open the file")
+                PetalCredentialVault.init(context)
+                val n = PetalCredentialVault.importWithPasswordOrThrow(text, vaultPassword)
+                PetalToast.show(context, "Imported $n passwords")
+                vaultPassword = ""
+            } catch (e: Exception) {
+                PetalToast.show(context, e.message ?: "Import failed (wrong password?)")
+            }
         }
     }
 
@@ -245,15 +284,7 @@ fun DataBackupSettingsScreen(
                         FilledTonalButton(
                             onClick = {
                                 showBackupDialog = false
-                                com.petal.browser.passwords.PetalCredentialVault.init(context)
-                                val json = com.petal.browser.passwords.PetalCredentialVault.exportToJson()
-                                val timeStamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
-                                val fileName = "petal_passwords_backup_$timeStamp.json"
-                                val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-                                if (!downloadsDir.exists()) downloadsDir.mkdirs()
-                                val destFile = java.io.File(downloadsDir, fileName)
-                                destFile.writeText(json, Charsets.UTF_8)
-                                com.petal.browser.view.PetalToast.show(context, "Exported passwords to Downloads/$fileName")
+                                showPasswordsDialog = true
                             },
                             shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
@@ -507,6 +538,68 @@ fun DataBackupSettingsScreen(
         )
     }
 
+
+    if (showPasswordsDialog) {
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+            onDismissRequest = { showPasswordsDialog = false },
+            title = { Text("Passwords backup", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Choose a password to protect the file. You will need the same password to import it. Petal cannot recover it.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = vaultPassword,
+                        onValueChange = { vaultPassword = it },
+                        label = { Text("Backup password") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        try {
+                            PetalCredentialVault.init(context)
+                            pendingVaultExport = PetalCredentialVault.exportWithPassword(vaultPassword)
+                            showPasswordsDialog = false
+                            vaultExportLauncher.launch("petal_passwords_backup.json")
+                        } catch (e: IllegalArgumentException) {
+                            PetalToast.show(context, e.message ?: "Invalid password")
+                        }
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.heightIn(min = 44.dp)
+                ) { Text("Export") }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(
+                        onClick = {
+                            if (vaultPassword.isBlank()) {
+                                PetalToast.show(context, "Enter the backup password first")
+                            } else {
+                                showPasswordsDialog = false
+                                vaultImportLauncher.launch(arrayOf("application/json", "*/*"))
+                            }
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.height(44.dp)
+                    ) { Text("Import file…") }
+                    TextButton(
+                        onClick = { showPasswordsDialog = false; vaultPassword = "" },
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.height(44.dp)
+                    ) { Text(stringResource(R.string.ui_cancel)) }
+                }
+            }
+        )
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "data_storage_settings")
 
@@ -538,13 +631,13 @@ fun DataBackupSettingsScreen(
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                     )
 
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { index, position ->
                         when (index) {
                             0 -> {
                                 com.petal.browser.ui.containment.PetalGroupRow(
                                     icon = Icons.Rounded.CloudUpload,
                                     title = stringResource(R.string.ui_backup_json),
-                                    subtitle = "Export bookmarks, history, settings and vault",
+                                    subtitle = "Bookmarks, reading list, history, shortcuts, tabs, site rules, settings, wallpapers & fonts",
                                     position = position,
                                     onClick = { showBackupDialog = true },
                                     trailing = {
@@ -578,6 +671,15 @@ fun DataBackupSettingsScreen(
                                             Text(stringResource(R.string.ui_restore_json))
                                         }
                                     }
+                                )
+                            }
+                            2 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.Key,
+                                    title = "Passwords (encrypted)",
+                                    subtitle = "Export or import saved passwords, protected by a password you choose",
+                                    position = position,
+                                    onClick = { showPasswordsDialog = true }
                                 )
                             }
                         }

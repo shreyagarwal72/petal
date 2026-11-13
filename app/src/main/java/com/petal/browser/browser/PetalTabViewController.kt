@@ -2755,25 +2755,25 @@ private class ExternalSchemeNavigationDelegate(
             return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
         }
 
-        // Firefox Account OAuth Redirect Interception
+        // Mozilla Account sign-in redirect (only for a sign-in this app started; real code + state)
         val fxaManager = com.petal.browser.account.mozilla.FxAccountManager.getInstance()
-        if (fxaManager.isRedirectUrl(uri)) {
-            val code = fxaManager.extractQueryParam(uri, "code")
-            val state = fxaManager.extractQueryParam(uri, "state")
-            if (!code.isNullOrBlank() && fxaManager.consumePendingAuth(state)) {
-                val email = fxaManager.extractQueryParam(uri, "email") ?: ""
-                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-                    val ok = fxaManager.exchangeCodeForTokens(code, email)
-                    if (ok) {
-                        com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(context)
-                        android.os.Handler(android.os.Looper.getMainLooper()).post {
-                            android.widget.Toast.makeText(context, "Firefox Account connected & sync active!", android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    }
+        if (fxaManager.isRedirectUrl(uri) &&
+            fxaManager.hasPendingAuth(fxaManager.extractQueryParam(uri, "state"))
+        ) {
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                val ok = fxaManager.finishSignInFromRedirect(context, uri)
+                if (ok) {
+                    com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(context)
                 }
-                return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    android.widget.Toast.makeText(
+                        context,
+                        if (ok) "Mozilla account connected. Syncing…" else "Mozilla sign-in could not be completed.",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
-            // If not a pending OAuth flow from this app or missing code, do not intercept or fake auth
+            return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
         }
 
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
