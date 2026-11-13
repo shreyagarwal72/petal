@@ -404,7 +404,6 @@ fun PetalRootApp(
                             Modifier
                                 .fillMaxWidth()
                                 .align(Alignment.BottomCenter)
-                                .padding(bottom = if (isBottomBarVisible) 64.dp + navBarBottomInset else 0.dp)
                                 .zIndex(2f)
                         } else {
                             Modifier
