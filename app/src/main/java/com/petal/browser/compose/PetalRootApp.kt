@@ -83,7 +83,9 @@ import com.petal.browser.ui.components.PetalBottomNavBar
 import com.petal.browser.ui.components.PetalNavTab
 import com.petal.browser.ui.components.PetalOmniboxPage
 import com.petal.browser.ui.components.PetalOverflowMenuSheet
+import com.petal.browser.ui.components.PetalPrivacyShieldSheet
 import com.petal.browser.ui.components.PetalSiteInfoBridge
+import com.petal.browser.tools.PetalDevConsoleSheet
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.unit.PetalBrowserUtils
 
@@ -133,6 +135,9 @@ fun PetalRootApp(
     val aiSheetQuery by viewModel.aiSheetQuery.collectAsStateWithLifecycle()
     val isDesktopMode by viewModel.isDesktopMode.collectAsStateWithLifecycle()
     val isBookmarked by viewModel.isCurrentUrlBookmarked.collectAsStateWithLifecycle()
+    val isAdBlockEnabled by viewModel.isAdBlockEnabled.collectAsStateWithLifecycle()
+    val isDevConsoleOpen by viewModel.isDevConsoleOpen.collectAsStateWithLifecycle()
+    val isMediaPlaying = (activity as? MainActivity)?.isMediaPlaying == true
     val pendingExtensionPopup by PetalExtensionManager.pendingPopup.collectAsStateWithLifecycle()
     val settingsCategory by viewModel.settingsCategory.collectAsStateWithLifecycle()
 
@@ -708,6 +713,8 @@ fun PetalRootApp(
                     canGoBack = canGoBack,
                     canGoForward = canGoForward,
                     isDesktopSite = isDesktopMode,
+                    isAdBlockEnabled = isAdBlockEnabled,
+                    isMediaPlaying = isMediaPlaying,
                     onDismissRequest = { viewModel.setMenuOpen(false) },
                     onGoBack = { viewModel.goBack() },
                     onGoForward = { viewModel.goForward() },
@@ -728,6 +735,9 @@ fun PetalRootApp(
                     },
                     onToggleDesktopSite = { enabled ->
                         viewModel.toggleDesktopMode(enabled)
+                    },
+                    onToggleAdBlock = { enabled ->
+                        viewModel.toggleAdBlock(enabled)
                     },
                     onNewTab = {
                         viewModel.setMenuOpen(false)
@@ -761,6 +771,10 @@ fun PetalRootApp(
                         viewModel.setMenuOpen(false)
                         viewModel.openFindInPage()
                     },
+                    onShowReadingMode = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.showReaderMode()
+                    },
                     onPrintPdf = {
                         viewModel.setMenuOpen(false)
                         (activity as? MainActivity)?.createWebPrintJob(null)
@@ -773,11 +787,35 @@ fun PetalRootApp(
                         viewModel.setMenuOpen(false)
                         viewModel.shareLink(activeTitle, activeUrl)
                     },
+                    onCopyCleanLink = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.copyCleanLink(activeUrl)
+                    },
+                    onOpenShieldHud = {
+                        viewModel.setMenuOpen(false)
+                        activity?.let { act ->
+                            PetalPrivacyShieldSheet.show(act, activeUrl) { enabled ->
+                                viewModel.toggleAdBlock(enabled)
+                            }
+                        }
+                    },
                     onViewSource = {
                         viewModel.setMenuOpen(false)
                         if (activeUrl.isNotBlank() && !activeUrl.startsWith("about:") && !activeUrl.startsWith("view-source:")) {
                             viewModel.loadUrl("view-source:$activeUrl")
                         }
+                    },
+                    onOpenSettings = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openSettings(SettingsCategory.OVERVIEW)
+                    },
+                    onTriggerMediaMode = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.triggerSystemPipMode()
+                    },
+                    onOpenPetalAi = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openAiSheet()
                     },
                     onOpenExtensions = {
                         viewModel.setMenuOpen(false)
@@ -791,9 +829,25 @@ fun PetalRootApp(
                             }
                         } ?: viewModel.openExtensions()
                     },
+                    onOpenExtensionAction = { extensionId ->
+                        viewModel.setMenuOpen(false)
+                        activity?.let { PetalExtensionManager.triggerBrowserAction(extensionId, it) }
+                    },
                     onOpenExtensionSettings = { extensionId ->
                         viewModel.setMenuOpen(false)
                         activity?.let { PetalExtensionManager.openOptionsPage(extensionId, it) }
+                    },
+                    onOpenDevConsole = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openDevConsole()
+                    },
+                    onOpenSafeLocker = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openSafeLocker()
+                    },
+                    onOpenQuickTools = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.showQuickTools()
                     },
                     onOpenSettings = {
                         viewModel.setMenuOpen(false)
@@ -816,6 +870,7 @@ fun PetalRootApp(
                         viewModel.setBookmarksOpen(false)
                         viewModel.loadUrl(url)
                     },
+                    onBookmarksChanged = { viewModel.notifyBookmarksChanged() },
                     onDismiss = { viewModel.setBookmarksOpen(false) }
                 )
             }
@@ -833,6 +888,10 @@ fun PetalRootApp(
                     onOpenUrl = { url ->
                         viewModel.setHistoryOpen(false)
                         viewModel.loadUrl(url)
+                    },
+                    onClearBrowsingData = {
+                        viewModel.setHistoryOpen(false)
+                        viewModel.openDelete()
                     },
                     onDismiss = { viewModel.setHistoryOpen(false) }
                 )
@@ -974,6 +1033,18 @@ fun PetalRootApp(
                     query = aiSheetQuery,
                     onDismiss = { viewModel.setAiSheetOpen(false) }
                 )
+            }
+
+            // In-App Developer Console Sheet Overlay
+            if (isDevConsoleOpen) {
+                Box(modifier = Modifier.fillMaxSize().zIndex(11f)) {
+                    PetalDevConsoleSheet(
+                        onExecuteScript = { script, callback ->
+                            (activity as? MainActivity)?.evaluateJavascriptInActiveTab(script, callback)
+                        },
+                        onDismissRequest = { viewModel.setDevConsoleOpen(false) }
+                    )
+                }
             }
     }
 }

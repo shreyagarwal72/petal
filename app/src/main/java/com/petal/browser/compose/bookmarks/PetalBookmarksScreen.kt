@@ -145,6 +145,7 @@ object PetalBookmarksBridge {
 fun PetalBookmarksScreen(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onOpenUrl: (String) -> Unit = {},
+    onBookmarksChanged: () -> Unit = {},
     onDismiss: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -168,6 +169,7 @@ fun PetalBookmarksScreen(
                 val url = record.url?.trim() ?: ""
                 url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)
             }
+            onBookmarksChanged()
         } catch (e: Exception) {
             rawBookmarks = emptyList()
         }
@@ -457,7 +459,7 @@ fun PetalBookmarksScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
-                        itemsIndexed(filteredBookmarks, key = { _, record -> "${record.url}_${record.iconColor}" }) { index, record ->
+                        itemsIndexed(filteredBookmarks, key = { index, record -> "${record.url}_${record.time}_${record.iconColor}_$index" }) { index, record ->
                             val faviconUrl = remember(record.url) { getFaviconUrl(record.url) }
                             var isFaviconError by remember(record.url) { mutableStateOf(false) }
                             PetalGroupListRow(

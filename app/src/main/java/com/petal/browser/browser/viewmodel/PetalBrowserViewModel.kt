@@ -177,12 +177,32 @@ class PetalBrowserViewModel @Inject constructor(
     private val _isSafeLockerOpen = MutableStateFlow(false)
     val isSafeLockerOpen: StateFlow<Boolean> = _isSafeLockerOpen.asStateFlow()
 
+    private val _isDevConsoleOpen = MutableStateFlow(false)
+    val isDevConsoleOpen: StateFlow<Boolean> = _isDevConsoleOpen.asStateFlow()
+
+    private val _isAdBlockEnabled = MutableStateFlow(
+        com.petal.browser.browser.PetalAdBlockEngine.isAdBlockEnabled(context)
+    )
+    val isAdBlockEnabled: StateFlow<Boolean> = _isAdBlockEnabled.asStateFlow()
+
+    fun toggleAdBlock(enabled: Boolean? = null) {
+        val target = enabled ?: !_isAdBlockEnabled.value
+        com.petal.browser.browser.PetalAdBlockEngine.setAdBlockEnabled(context, target)
+        _isAdBlockEnabled.value = target
+    }
+
     private val _isDesktopMode = MutableStateFlow(
         PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_desktop_site", false)
     )
     val isDesktopMode: StateFlow<Boolean> = _isDesktopMode.asStateFlow()
 
-    val isCurrentUrlBookmarked: StateFlow<Boolean> = activeUrl.map { url ->
+    private val _bookmarkUpdateTrigger = MutableStateFlow(0L)
+
+    fun notifyBookmarksChanged() {
+        _bookmarkUpdateTrigger.value = System.currentTimeMillis()
+    }
+
+    val isCurrentUrlBookmarked: StateFlow<Boolean> = combine(activeUrl, _bookmarkUpdateTrigger) { url, _ ->
         if (url.isBlank() || url.startsWith("about:")) false
         else withContext(Dispatchers.IO) {
             try { HistoryBookmarkRepository(context).checkBookmark(url) } catch (_: Throwable) { false }
@@ -474,9 +494,21 @@ class PetalBrowserViewModel @Inject constructor(
                     }
                 }
                 repo.close()
+                _bookmarkUpdateTrigger.value = System.currentTimeMillis()
             } catch (t: Throwable) {
                 android.util.Log.w("PetalBrowserViewModel", "Failed to toggle bookmark", t)
             }
+        }
+    }
+
+    fun copyCleanLink(url: String) {
+        if (url.isNotBlank() && !PetalBrowserUtils.isHomePage(url)) {
+            val cleanUrl = PetalBrowserUtils.cleanTrackingParams(url)
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("Clean URL", cleanUrl)
+            clipboard?.setPrimaryClip(clip)
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.7f)
+            PetalToast.show(context, context.getString(R.string.ui_clean_url_copied))
         }
     }
 
@@ -667,6 +699,15 @@ class PetalBrowserViewModel @Inject constructor(
         _isSafeLockerOpen.value = open
     }
 
+    fun openDevConsole() {
+        _isMenuOpen.value = false
+        _isDevConsoleOpen.value = true
+    }
+
+    fun setDevConsoleOpen(open: Boolean) {
+        _isDevConsoleOpen.value = open
+    }
+
     fun openFindInPage() {
         _isMenuOpen.value = false
         _isFindInPageOpen.value = true
@@ -710,6 +751,7 @@ class PetalBrowserViewModel @Inject constructor(
     fun dismissTopOverlay(): Boolean {
         if (_isOmniboxOpen.value) { _isOmniboxOpen.value = false; return true }
         if (_isMenuOpen.value) { _isMenuOpen.value = false; return true }
+        if (_isDevConsoleOpen.value) { _isDevConsoleOpen.value = false; return true }
         if (_isAiSheetOpen.value) { _isAiSheetOpen.value = false; return true }
         if (_isExtensionsOpen.value) { _isExtensionsOpen.value = false; return true }
         if (_isSafeLockerOpen.value) { _isSafeLockerOpen.value = false; return true }
@@ -729,6 +771,7 @@ class PetalBrowserViewModel @Inject constructor(
                 _isBookmarksOpen.value || _isHistoryOpen.value ||
                 _isDownloadsOpen.value || _isMenuOpen.value ||
                 _isFindInPageOpen.value || _isAiSheetOpen.value ||
+                _isDevConsoleOpen.value ||
                 _isExtensionsOpen.value || _isAccountSyncOpen.value ||
                 _isDeleteOpen.value || _isSafeLockerOpen.value
 
