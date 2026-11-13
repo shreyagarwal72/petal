@@ -848,10 +848,6 @@ fun PetalRootApp(
                     onOpenQuickTools = {
                         viewModel.setMenuOpen(false)
                         (activity as? MainActivity)?.showQuickTools()
-                    },
-                    onOpenSettings = {
-                        viewModel.setMenuOpen(false)
-                        viewModel.openSettings(SettingsCategory.OVERVIEW)
                     }
                 )
             }
