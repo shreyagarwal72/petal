@@ -17,10 +17,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.preference.PreferenceManager
@@ -156,6 +160,7 @@ fun PetalRootApp(
     var floatingTabBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
     var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
     var addressBarStyle by remember { mutableStateOf(sp.getString(BarPrefs.KEY_ADDRESS_BAR_STYLE, BarPrefs.STYLE_CLASSIC) ?: BarPrefs.STYLE_CLASSIC) }
+    var addressBarHeight by remember { mutableStateOf(sp.getString("sp_address_bar_height", "STANDARD") ?: "STANDARD") }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -166,6 +171,9 @@ fun PetalRootApp(
                 }
                 BarPrefs.KEY_ADDRESS_BAR_STYLE -> {
                     addressBarStyle = sp.getString(BarPrefs.KEY_ADDRESS_BAR_STYLE, BarPrefs.STYLE_CLASSIC) ?: BarPrefs.STYLE_CLASSIC
+                }
+                "sp_address_bar_height" -> {
+                    addressBarHeight = sp.getString("sp_address_bar_height", "STANDARD") ?: "STANDARD"
                 }
             }
         }
@@ -341,7 +349,7 @@ fun PetalRootApp(
             modifier = Modifier
                 .fillMaxSize()
                 .then(
-                    if (!effectiveFloating && isBottomBarVisible) {
+                    if (isHome && !effectiveFloating && isBottomBarVisible) {
                         Modifier.padding(bottom = 64.dp + navBarBottomInset)
                     } else {
                         Modifier
@@ -419,10 +427,31 @@ fun PetalRootApp(
                     )
                 }
             } else {
+                val statusBarTopInset = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+                    .asPaddingValues().calculateTopPadding()
+                val isCompact = "COMPACT".equals(addressBarHeight, ignoreCase = true)
+                val barBaseHeight = if (isCompact) 50.dp else 56.dp
+                val barTotalTopHeight = statusBarTopInset + barBaseHeight + (if (isCompact) 6.dp else 10.dp)
+                val barTotalBottomHeight = navBarBottomInset + barBaseHeight + (if (isCompact) 6.dp else 10.dp)
+
+                val effectiveTopPadding = if (isBottomAddressBar) {
+                    statusBarTopInset
+                } else {
+                    barTotalTopHeight
+                }
+
+                val effectiveBottomPadding = if (isBottomAddressBar) {
+                    barTotalBottomHeight + (if (isBottomBarVisible) 64.dp else 0.dp)
+                } else {
+                    if (isBottomBarVisible) 64.dp + navBarBottomInset else navBarBottomInset
+                }
+
                 ComposeEngineViewport(
                     tab = activeTab,
                     isLoading = isLoading,
                     onRefresh = { viewModel.reload() },
+                    topPadding = effectiveTopPadding,
+                    bottomPadding = effectiveBottomPadding,
                     modifier = Modifier
                         .fillMaxSize()
                         .appleDuoFoldEffect(isWebsite = true)

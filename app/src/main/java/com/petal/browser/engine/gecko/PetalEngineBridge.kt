@@ -743,18 +743,30 @@ object PetalEngineBridge {
                 ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
                     val blockPopups = sp.getBoolean("sp_block_popups", sp.getBoolean("profileStandard_javascriptPopUp", true))
                     val target = prompt.targetUri
+                    val host = try { if (!target.isNullOrBlank()) android.net.Uri.parse(target).host else null } catch (_: Throwable) { null }
+                    val allowedHosts = sp.getStringSet("sp_popup_allowed_domains", emptySet()) ?: emptySet()
+                    if (host != null && allowedHosts.contains(host)) {
+                        return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
+                    }
                     return if (blockPopups) {
                         if (!target.isNullOrBlank()) {
                             val act = (context as? com.petal.browser.activity.MainActivity)
                                 ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.MainActivity
                             act?.runOnUiThread {
-                                val domain = try { android.net.Uri.parse(target).host ?: target } catch (_: Throwable) { target }
-                                com.petal.browser.view.PetalToast.show(
-                                    act,
-                                    act.getString(com.petal.browser.R.string.ui_block_popup_windows) + ": $domain",
-                                    com.petal.browser.view.PetalToast.LENGTH_LONG,
-                                    act.getString(com.petal.browser.R.string.app_ok),
-                                    { act.addAlbum(null, target, false, incognitoProvider()) }
+                                com.petal.browser.compose.menu.PetalPopupBlockedBridge.show(
+                                    activity = act,
+                                    targetUrl = target,
+                                    isIncognito = incognitoProvider(),
+                                    onAllowOnce = {
+                                        act.addAlbum(null, target, true, incognitoProvider())
+                                    },
+                                    onAlwaysAllow = {
+                                        if (host != null) {
+                                            val updated = (sp.getStringSet("sp_popup_allowed_domains", emptySet()) ?: emptySet()) + host
+                                            sp.edit().putStringSet("sp_popup_allowed_domains", updated).apply()
+                                        }
+                                        act.addAlbum(null, target, true, incognitoProvider())
+                                    }
                                 )
                             }
                         }

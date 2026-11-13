@@ -780,6 +780,63 @@ object BrowserContextMenuManager {
                         PetalToast.show(activity, "Petal AI summary unavailable")
                     }
                 }
+
+                override fun onSavePageAs() {
+                    try {
+                        val controller = activity.currentAlbumController
+                        val isPrivate = controller?.isIncognito ?: false
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, pageUrl) { fileName, mimeType ->
+                            val resolvedName = if (fileName.endsWith(".html", true) || fileName.endsWith(".htm", true)) fileName else "$fileName.html"
+                            com.petal.browser.download.PetalDownloadRouter.download(
+                                context = activity,
+                                url = pageUrl,
+                                fileName = resolvedName,
+                                mimeType = mimeType.ifBlank { "text/html" },
+                                referrerUrl = pageUrl,
+                                isPrivate = isPrivate
+                            )
+                            PetalToast.show(activity, "Saving page offline...")
+                        }
+                    } catch (e: Exception) {
+                        PetalToast.show(activity, "Failed to save page")
+                    }
+                }
+
+                override fun onAddToHomeScreen() {
+                    try {
+                        PetalAndroidUtils.createShortcut(activity, title, pageUrl, null)
+                        PetalToast.show(activity, "Added to Home screen")
+                    } catch (e: Exception) {
+                        PetalToast.show(activity, "Failed to add to Home screen")
+                    }
+                }
+
+                override fun onInspectPage() {
+                    try {
+                        val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
+                            setViewTreeLifecycleOwner(activity)
+                            setViewTreeViewModelStoreOwner(activity)
+                            setViewTreeSavedStateRegistryOwner(activity)
+                            setContent {
+                                com.petal.browser.ui.theme.PetalExpressiveTheme {
+                                    com.petal.browser.tools.PetalDevConsoleSheet(
+                                        onExecuteScript = { script, callback ->
+                                            activity.currentAlbumController?.evaluateJavascript(script, callback)
+                                                ?: callback("Error: Web session not active")
+                                        },
+                                        onDismissRequest = {
+                                            (parent as? android.view.ViewGroup)?.removeView(this)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        val decor = activity.window.decorView as? android.view.ViewGroup
+                        decor?.addView(composeView)
+                    } catch (e: Exception) {
+                        PetalToast.show(activity, "DevTools unavailable")
+                    }
+                }
             }
         )
     }

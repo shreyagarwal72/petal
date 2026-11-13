@@ -14,6 +14,7 @@ import com.petal.browser.R
 import com.petal.browser.unit.TabThumbnailCache
 import com.petal.browser.view.PetalCrashOverlayHelper
 import com.petal.browser.engine.gecko.PetalEngineStore
+import com.petal.browser.engine.gecko.PetalContentDelegateWrapper
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
@@ -2106,7 +2107,6 @@ class PetalTabViewController private constructor(
         if (contextMenuSubscription != null) return
         contextMenuSubscription = browserStore.observeManually { state ->
             val id = boundTabId ?: return@observeManually
-            if (state.selectedTabId != id) return@observeManually
             val hit = state.tabs.firstOrNull { it.id == id }?.content?.hitResult ?: return@observeManually
             // Consume first so the same long-press can never open the menu twice.
             browserStore.dispatch(mozilla.components.browser.state.action.ContentAction.ConsumeHitResultAction(id))
@@ -2336,171 +2336,7 @@ class PetalTabViewController private constructor(
  * 2. HTTPS-Only upgrade interceptor (GeckoView official pattern)
  * 3. Open Redirect Links in Background handling
  */
-/**
- * Preserves Mozilla engine's own ContentDelegate (for title, fullScreen, crash,
- * and firstContentfulPaint callbacks) while handling Petal's onExternalResponse and onContextMenu.
- */
-private class PetalContentDelegateWrapper(
-    val engine: org.mozilla.geckoview.GeckoSession.ContentDelegate?,
-    private var contextProvider: () -> android.content.Context,
-    private var isPrivateProvider: () -> Boolean = { false },
-    private var referrerProvider: () -> String? = { null },
-    private var onCrashCallback: (() -> Unit)? = null,
-    private var pageUrlProvider: () -> String? = { null },
-    private var pageTitleProvider: () -> String? = { null }
-) : org.mozilla.geckoview.GeckoSession.ContentDelegate, PetalOwnedDelegate {
 
-    /** Re-points every provider at a newly bound view (the session can outlive its view). */
-    fun rebind(
-        contextProvider: () -> android.content.Context,
-        isPrivateProvider: () -> Boolean,
-        referrerProvider: () -> String?,
-        onCrashCallback: (() -> Unit)?,
-        pageUrlProvider: () -> String?,
-        pageTitleProvider: () -> String?
-    ) {
-        this.contextProvider = contextProvider
-        this.isPrivateProvider = isPrivateProvider
-        this.referrerProvider = referrerProvider
-        this.onCrashCallback = onCrashCallback
-        this.pageUrlProvider = pageUrlProvider
-        this.pageTitleProvider = pageTitleProvider
-    }
-
-    private fun resolveActivity(): android.app.Activity? {
-        var ctx: android.content.Context? = contextProvider()
-        while (ctx is android.content.ContextWrapper) {
-            if (ctx is android.app.Activity) return ctx
-            ctx = ctx.baseContext
-        }
-        return ctx as? android.app.Activity
-    }
-
-    override fun onTitleChange(session: org.mozilla.geckoview.GeckoSession, title: String?) {
-        engine?.onTitleChange(session, title)
-    }
-
-    override fun onFullScreen(session: org.mozilla.geckoview.GeckoSession, fullScreen: Boolean) {
-        val act = resolveActivity()
-        if (act is com.petal.browser.activity.MainActivity) {
-            act.runOnUiThread {
-                act.setCustomFullscreen(fullScreen)
-            }
-        }
-        engine?.onFullScreen(session, fullScreen)
-    }
-
-    override fun onCloseRequest(session: org.mozilla.geckoview.GeckoSession) {
-        engine?.onCloseRequest(session)
-    }
-
-    override fun onFocusRequest(session: org.mozilla.geckoview.GeckoSession) {
-        engine?.onFocusRequest(session)
-    }
-
-    override fun onCrash(session: org.mozilla.geckoview.GeckoSession) {
-        val targetPage = pageUrlProvider() ?: "unknown URL"
-        val ctx = contextProvider().applicationContext
-        com.petal.browser.logger.PetalAppLogger.recordProcessCrash(
-            ctx,
-            "GeckoEngine",
-            "GeckoSession content process crashed on $targetPage",
-            "URL: $targetPage"
-        )
-        engine?.onCrash(session)
-        onCrashCallback?.invoke()
-    }
-
-    override fun onKill(session: org.mozilla.geckoview.GeckoSession) {
-        val targetPage = pageUrlProvider() ?: "unknown URL"
-        val ctx = contextProvider().applicationContext
-        com.petal.browser.logger.PetalAppLogger.recordProcessCrash(
-            ctx,
-            "GeckoEngine",
-            "GeckoSession content process was killed by OS on $targetPage",
-            "URL: $targetPage"
-        )
-        engine?.onKill(session)
-        onCrashCallback?.invoke()
-    }
-
-    override fun onFirstComposite(session: org.mozilla.geckoview.GeckoSession) {
-        engine?.onFirstComposite(session)
-    }
-
-    override fun onFirstContentfulPaint(session: org.mozilla.geckoview.GeckoSession) {
-        engine?.onFirstContentfulPaint(session)
-    }
-
-    // Mozilla's GeckoEngineSession turns this into onPreviewImageChange (page preview / og:image
-    // for the tab). Without forwarding it the callback was silently dropped.
-    override fun onPreviewImage(session: org.mozilla.geckoview.GeckoSession, previewImageUrl: String) {
-        engine?.onPreviewImage(session, previewImageUrl)
-    }
-
-    override fun onPaintStatusReset(session: org.mozilla.geckoview.GeckoSession) {
-        engine?.onPaintStatusReset(session)
-    }
-
-    override fun onContextMenu(
-        session: org.mozilla.geckoview.GeckoSession,
-        screenX: Int,
-        screenY: Int,
-        element: org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement
-    ) {
-        // Long-press parsing is Mozilla's: forwarding to the engine session lets GeckoEngineSession
-        // turn the element into a HitResult in the BrowserStore, and observeContextMenu() below
-        // shows Petal's own menu for it. No manual element parsing here.
-        //
-        // Mozilla produces no HitResult for a press on empty page area (no link, no media), so
-        // that single case keeps Petal's page menu.
-        val act = resolveActivity()
-        if (act is com.petal.browser.activity.MainActivity &&
-            element.linkUri.isNullOrBlank() && element.srcUri.isNullOrBlank() &&
-            element.type == org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement.TYPE_NONE
-        ) {
-            act.runOnUiThread {
-                com.petal.browser.compose.menu.BrowserContextMenuManager.handleContextMenu(
-                    activity = act,
-                    hitResult = null,
-                    pageUrl = pageUrlProvider(),
-                    pageTitle = pageTitleProvider()
-                )
-            }
-        }
-        engine?.onContextMenu(session, screenX, screenY, element)
-    }
-
-    override fun onExternalResponse(
-        session: org.mozilla.geckoview.GeckoSession,
-        response: org.mozilla.geckoview.WebResponse
-    ) {
-        val act = resolveActivity()
-        if (act != null) {
-            com.petal.browser.engine.gecko.PetalEngineBridge.handleExternalResponse(
-                act, response, isPrivateProvider(), referrerProvider()
-            )
-            // Handled here. Do NOT also forward to Mozilla's delegate: it would publish the same
-            // download as ContentState.download and PetalDownloadPromptObserver would prompt again.
-            return
-        }
-        // No activity to show UI on: let the engine publish it to the store; the observer
-        // (PetalDownloadPromptObserver) picks it up when an activity is available.
-        engine?.onExternalResponse(session, response)
-    }
-
-    override fun onShowDynamicToolbar(session: org.mozilla.geckoview.GeckoSession) {
-        engine?.onShowDynamicToolbar(session)
-    }
-
-    override fun onWebAppManifest(session: org.mozilla.geckoview.GeckoSession, manifest: org.json.JSONObject) {
-        engine?.onWebAppManifest(session, manifest)
-    }
-
-    override fun onMetaViewportFitChange(session: org.mozilla.geckoview.GeckoSession, viewportFit: String) {
-        engine?.onMetaViewportFitChange(session, viewportFit)
-    }
-}
 
 /**
  * Forwards every NavigationDelegate callback explicitly to Mozilla GeckoEngine's own delegate
