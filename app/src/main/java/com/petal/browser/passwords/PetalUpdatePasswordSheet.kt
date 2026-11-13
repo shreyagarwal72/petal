@@ -248,6 +248,7 @@ private fun UpdatePasswordSheetContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
+                    .imePadding()
                     .liquidGlassChrome(shape = sheetShape, enabled = isGlass, sheenIntensity = sheen)
             ) {
                 Column(

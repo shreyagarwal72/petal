@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.CancellationSignal
 import android.service.autofill.AutofillService
+import android.service.autofill.CharSequenceTransformation
 import android.service.autofill.CustomDescription
 import android.service.autofill.Dataset
 import android.service.autofill.FillCallback
@@ -25,19 +26,20 @@ import androidx.annotation.RequiresApi
 import androidx.autofill.inline.UiVersions
 import androidx.autofill.inline.v1.InlineSuggestionUi
 import com.petal.browser.R
-import com.petal.browser.activity.MainActivity
+import java.util.regex.Pattern
 
 /**
  * PetalAutofillService
  *
- * Petal's own system AutofillService.
+ * Petal's system AutofillService.
  *  - Shows saved logins in the keyboard's top bar (inline suggestions, Android 11+),
- *    and as a normal dropdown on older Android.
- *  - Never puts a password in the response directly. Every suggestion needs
- *    fingerprint / screen lock first (see PetalAutofillAuthActivity).
- *  - Only offers a login when the website (or app) matches. No domain = no suggestions.
- *  - Offers "Save password?" even when nothing is saved yet for the site.
- *  - Uses Material 3 Expressive layouts for both suggestions and the save dialog.
+ *    and as a Material 3 Expressive dropdown on older Android.
+ *  - Never exposes passwords directly in the response. Every suggestion requires
+ *    biometric / device credential unlock (see PetalAutofillAuthActivity).
+ *  - Matches websites and apps via centralized eTLD+1 matcher.
+ *  - Dynamic save dialog with CharSequenceTransformation to show the username.
+ *  - Supports "Never for this site" via SaveInfo.NEGATIVE_BUTTON_STYLE_NEVER.
+ *  - Fully handles compatibility mode requests.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 class PetalAutofillService : AutofillService() {
@@ -45,6 +47,21 @@ class PetalAutofillService : AutofillService() {
     companion object {
         private const val TAG = "PetalAutofillService"
         private const val MAX_SUGGESTIONS = 4
+
+        private val KNOWN_APP_LOCK_PACKAGES = setOf(
+            "com.domobile.applockwatcher",
+            "com.domobile.applock",
+            "com.sp.spapplock",
+            "com.innox.applock",
+            "com.alpha.applock",
+            "com.koodun.lock",
+            "com.morrison.applock",
+            "com.gamemalt.applocker",
+            "com.smartmobiletools.applock",
+            "com.keepsafe.keepsafe",
+            "com.calculator.vault.hidephoto",
+            "com.thinkyeah.galleryvault"
+        )
 
         /**
          * Material 3 Expressive suggestion chip.
@@ -57,7 +74,7 @@ class PetalAutofillService : AutofillService() {
                     setTextViewText(R.id.petal_autofill_domain, subtitle)
                 }
             } catch (_: Throwable) {
-                // Fallback to AOSP default if layout is missing at runtime (shouldn't happen)
+                // Fallback to AOSP default if layout is missing at runtime
                 RemoteViews(packageName, android.R.layout.simple_list_item_2).apply {
                     setTextViewText(android.R.id.text1, title)
                     setTextViewText(android.R.id.text2, subtitle)
@@ -68,10 +85,11 @@ class PetalAutofillService : AutofillService() {
         /**
          * Converts an Android package name or raw app URI (e.g. "app://com.example")
          * to a user-friendly application display name if possible.
+         * Web domains are cleaned of protocols and www, NEVER treated as package names.
          */
         fun cleanDisplayLabel(context: Context, rawTarget: String): String {
             if (rawTarget.isBlank()) return "Petal"
-            if (rawTarget.startsWith("app://") || rawTarget.contains('.')) {
+            if (rawTarget.startsWith("app://")) {
                 val pkg = rawTarget.removePrefix("app://").trim()
                 try {
                     val pm = context.packageManager
@@ -80,17 +98,12 @@ class PetalAutofillService : AutofillService() {
                     if (label.isNotBlank()) return label
                 } catch (_: Exception) {}
                 if (pkg == context.packageName) return "Petal Browser"
-                // Last resort: humanize the package name (e.g. "com.musheer360.swiftslate" → "Swiftslate")
-                val readable = pkg.substringAfterLast('.')
-                    .replaceFirstChar { it.uppercaseChar() }
+                val readable = pkg.substringAfterLast('.').replaceFirstChar { it.uppercaseChar() }
                 if (readable.isNotBlank()) return readable
+                return pkg
             }
-            // For web domains: remove protocols and www prefix
-            return rawTarget
-                .removePrefix("https://")
-                .removePrefix("http://")
-                .removePrefix("www.")
-                .trimEnd('/')
+            // For web domains: clean protocol, auth, www, port, paths
+            return PetalCredentialVault.cleanDomain(rawTarget)
         }
 
         /**
@@ -100,17 +113,17 @@ class PetalAutofillService : AutofillService() {
          */
         fun isAppLockOrInternalSecurity(context: Context, pkg: String?, domain: String?, activityName: String? = null): Boolean {
             val ownPkg = context.packageName
-            // Internal Petal activities that are NOT web browsing content
-            if (pkg == ownPkg && domain.isNullOrBlank()) {
-                return true
-            }
-            val act = activityName.orEmpty().lowercase()
-            if (act.contains("lock") || act.contains("security") || act.contains("passcode") || act.contains("vaultauth")) {
-                return true
-            }
             val p = pkg.orEmpty().lowercase()
-            // Well-known 3rd-party app lock packages
-            if (p.contains("applock") || p.contains("app.lock") || p.contains("vault.lock") || p.contains("smartapplock")) {
+            // Internal Petal activities that are NOT web browsing content or are auth screens
+            if (p == ownPkg.lowercase()) {
+                if (domain.isNullOrBlank()) return true
+                val act = activityName.orEmpty().lowercase()
+                if (act.contains("lock") || act.contains("security") || act.contains("auth") || act.contains("pin")) {
+                    return true
+                }
+            }
+            // Only check external packages against known App Lock packages (do not block innocent activities)
+            if (KNOWN_APP_LOCK_PACKAGES.contains(p) || p.startsWith("com.domobile.applock")) {
                 return true
             }
             return false
@@ -118,29 +131,53 @@ class PetalAutofillService : AutofillService() {
 
         /**
          * Material 3 Expressive save-password dialog content for SaveInfo.CustomDescription.
-         * The system wraps this inside its own bottom-sheet chrome (buttons etc.).
+         * Distinguishes "Save password?" vs "Update password?".
+         * Uses CharSequenceTransformation to dynamically display the username from the form.
          */
         @RequiresApi(Build.VERSION_CODES.O)
         fun buildSaveCustomDescription(
             packageName: String,
-            username: String,
+            usernameId: AutofillId?,
             domain: String,
-            context: Context? = null
+            context: Context? = null,
+            isUpdate: Boolean = false
         ): CustomDescription {
             val displayDomain = if (context != null) cleanDisplayLabel(context, domain) else domain
+            val titleText = if (isUpdate) "Update password?" else "Save to Petal Vault?"
             val views = try {
                 RemoteViews(packageName, R.layout.petal_autofill_save_dialog).apply {
-                    val usernameLabel = if (username.isNotBlank()) username else "New login"
-                    setTextViewText(R.id.petal_save_username, usernameLabel)
+                    setTextViewText(R.id.petal_save_title, titleText)
                     setTextViewText(R.id.petal_save_domain, displayDomain)
+                    if (usernameId == null) {
+                        setViewVisibility(R.id.petal_save_username, View.GONE)
+                        setViewVisibility(R.id.petal_save_dot, View.GONE)
+                    } else {
+                        setTextViewText(R.id.petal_save_username, "Account")
+                        setViewVisibility(R.id.petal_save_username, View.VISIBLE)
+                        setViewVisibility(R.id.petal_save_dot, View.VISIBLE)
+                    }
                 }
             } catch (_: Throwable) {
                 RemoteViews(packageName, android.R.layout.simple_list_item_2).apply {
-                    setTextViewText(android.R.id.text1, "Save to Petal Vault?")
+                    setTextViewText(android.R.id.text1, titleText)
                     setTextViewText(android.R.id.text2, displayDomain)
                 }
             }
-            return CustomDescription.Builder(views).build()
+
+            val builder = CustomDescription.Builder(views)
+            if (usernameId != null) {
+                try {
+                    val transformation = CharSequenceTransformation.Builder(
+                        usernameId,
+                        Pattern.compile("^(.+)$"),
+                        "$1"
+                    ).build()
+                    builder.addChild(R.id.petal_save_username, transformation)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to attach CharSequenceTransformation", e)
+                }
+            }
+            return builder.build()
         }
     }
 
@@ -165,6 +202,7 @@ class PetalAutofillService : AutofillService() {
 
         PetalCredentialVault.init(applicationContext)
 
+        val isCompatMode = (request.flags and FillRequest.FLAG_COMPATIBILITY_MODE_REQUEST) != 0
         val parsed = ParsedForm(forSave = false)
         parsed.parse(structure)
 
@@ -178,9 +216,9 @@ class PetalAutofillService : AutofillService() {
         val pkg = structure.activityComponent?.packageName
         val activityClass = structure.activityComponent?.className
         val domain = parsed.domain
-        Log.d(TAG, "Fill request: domain=${domain ?: "none"} pkg=$pkg user=${usernameId != null} pass=${passwordId != null}")
+        Log.d(TAG, "Fill request: domain=${domain ?: "none"} pkg=$pkg user=${usernameId != null} pass=${passwordId != null} compat=$isCompatMode")
 
-        // Never offer autofill or prompt to save for App Lock or internal security screens
+        // Never offer autofill for App Lock or internal security screens
         if (isAppLockOrInternalSecurity(applicationContext, pkg, domain, activityClass)) {
             Log.d(TAG, "Fill request ignored: App Lock or internal security screen detected")
             callback.onSuccess(null)
@@ -192,9 +230,7 @@ class PetalAutofillService : AutofillService() {
 
         matches.forEachIndexed { index, cred ->
             val appLabel = cleanDisplayLabel(applicationContext, cred.domain)
-            // Title shows the username; fall back to app/domain name when no username stored
             val title = cred.username.ifBlank { appLabel }
-            // Subtitle shows app/domain under the username, or a generic fallback
             val subtitle = if (cred.username.isNotBlank()) appLabel else "Saved password"
 
             val authIntent = Intent(this, PetalAutofillAuthActivity::class.java).apply {
@@ -202,7 +238,6 @@ class PetalAutofillService : AutofillService() {
                 if (usernameId != null) putExtra(PetalAutofillAuthActivity.EXTRA_USERNAME_ID, usernameId)
                 if (passwordId != null) putExtra(PetalAutofillAuthActivity.EXTRA_PASSWORD_ID, passwordId)
             }
-            // The system adds its own extras to this intent, so it has to be mutable.
             val pending = PendingIntent.getActivity(
                 this,
                 cred.id.hashCode(),
@@ -210,23 +245,44 @@ class PetalAutofillService : AutofillService() {
                 PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE
             )
 
-            val dataset = Dataset.Builder(buildPresentation(packageName, title, subtitle))
-            // null value = "locked". The real value only comes after the user unlocks.
-            if (usernameId != null) dataset.setValue(usernameId, null)
-            if (passwordId != null) dataset.setValue(passwordId, null)
-            dataset.setAuthentication(pending.intentSender)
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val presBuilder = android.service.autofill.Presentations.Builder()
+                    .setMenuPresentation(buildPresentation(packageName, title, subtitle))
                 buildInlinePresentation(request, index, title, subtitle)?.let {
-                    dataset.setInlinePresentation(it)
+                    presBuilder.setInlinePresentation(it)
                 }
-            }
+                val presentations = presBuilder.build()
+                val datasetBuilder = Dataset.Builder()
+                if (usernameId != null) {
+                    val field = android.service.autofill.Field.Builder()
+                        .setPresentations(presentations)
+                        .build()
+                    datasetBuilder.setField(usernameId, field)
+                }
+                if (passwordId != null) {
+                    val field = android.service.autofill.Field.Builder()
+                        .setPresentations(presentations)
+                        .build()
+                    datasetBuilder.setField(passwordId, field)
+                }
+                datasetBuilder.setAuthentication(pending.intentSender)
+                response.addDataset(datasetBuilder.build())
+            } else {
+                val dataset = Dataset.Builder(buildPresentation(packageName, title, subtitle))
+                if (usernameId != null) dataset.setValue(usernameId, null)
+                if (passwordId != null) dataset.setValue(passwordId, null)
+                dataset.setAuthentication(pending.intentSender)
 
-            response.addDataset(dataset.build())
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    buildInlinePresentation(request, index, title, subtitle)?.let {
+                        dataset.setInlinePresentation(it)
+                    }
+                }
+                response.addDataset(dataset.build())
+            }
         }
 
-        // Save prompt is set even when there are zero matches. Otherwise new sites
-        // can never be saved.
+        // Save prompt is set even when there are zero matches, so new sites can be saved.
         if (passwordId != null) {
             val type = if (usernameId != null) {
                 SaveInfo.SAVE_DATA_TYPE_USERNAME or SaveInfo.SAVE_DATA_TYPE_PASSWORD
@@ -237,18 +293,37 @@ class PetalAutofillService : AutofillService() {
                 if (usernameId != null) setOptionalIds(arrayOf(usernameId))
                 setFlags(SaveInfo.FLAG_SAVE_ON_ALL_VIEWS_INVISIBLE)
             }
-            // Attach the Material 3 Expressive custom description to the save dialog
+
+            val targetDomain = if (!domain.isNullOrBlank()) {
+                PetalCredentialVault.cleanDomain(domain)
+            } else if (!pkg.isNullOrBlank()) {
+                "app://$pkg"
+            } else ""
+
+            if (targetDomain.isNotBlank()) {
+                val neverIntent = Intent(this, PetalAutofillActionReceiver::class.java).apply {
+                    action = PetalAutofillActionReceiver.ACTION_NEVER_SAVE
+                    putExtra(PetalAutofillActionReceiver.EXTRA_DOMAIN, targetDomain)
+                }
+                val neverPending = PendingIntent.getBroadcast(
+                    this,
+                    targetDomain.hashCode(),
+                    neverIntent,
+                    PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                saveInfoBuilder.setNegativeAction(SaveInfo.NEGATIVE_BUTTON_STYLE_NEVER, neverPending.intentSender)
+            }
+
             try {
-                val domainLabel = if (!domain.isNullOrBlank()) domain else pkg.orEmpty()
-                val customDesc = buildSaveCustomDescription(packageName, parsed.usernameValue.orEmpty(), domainLabel, applicationContext)
+                val isUpdate = matches.isNotEmpty()
+                val customDesc = buildSaveCustomDescription(packageName, usernameId, targetDomain, applicationContext, isUpdate)
                 saveInfoBuilder.setCustomDescription(customDesc)
-            } catch (_: Throwable) {
-                // setCustomDescription is O+; guard silently
+            } catch (e: Throwable) {
+                Log.w(TAG, "Failed to attach custom description", e)
             }
             response.setSaveInfo(saveInfoBuilder.build())
         }
 
-        // A response with no datasets and no save info is invalid.
         if (matches.isEmpty() && passwordId == null) {
             callback.onSuccess(null)
             return
@@ -269,13 +344,12 @@ class PetalAutofillService : AutofillService() {
         if (specs.isEmpty() || index >= inlineRequest.maxSuggestionCount) return null
 
         val spec = specs[minOf(index, specs.size - 1)]
-        // Keyboard must support the v1 inline style, otherwise skip inline for this chip.
         if (!UiVersions.getVersions(spec.style).contains(UiVersions.INLINE_UI_VERSION_1)) return null
 
         val attribution = PendingIntent.getActivity(
             this,
             0,
-            Intent(this, MainActivity::class.java),
+            Intent(this, PetalPasswordsActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val content = InlineSuggestionUi.newContentBuilder(attribution)
@@ -293,34 +367,13 @@ class PetalAutofillService : AutofillService() {
     private fun credentialsFor(domain: String?, pkg: String?): List<PetalCredential> {
         val all = PetalCredentialVault.getAll()
         val matched = when {
-            !domain.isNullOrBlank() -> all.filter { domainMatches(it.domain, domain) }
+            !domain.isNullOrBlank() -> all.filter { PetalCredentialVault.domainMatches(it.domain, domain) }
             !pkg.isNullOrBlank() -> all.filter { it.domain.equals("app://$pkg", ignoreCase = true) }
-            // No idea where we are. Offer nothing instead of guessing.
             else -> emptyList()
         }
         return matched
             .sortedWith(compareByDescending<PetalCredential> { it.isFavorite }.thenByDescending { it.updatedAt })
             .take(MAX_SUGGESTIONS)
-    }
-
-    /**
-     * saved "example.com" matches page "example.com" and "login.example.com".
-     * saved "login.example.com" does NOT match page "example.com".
-     */
-    private fun domainMatches(saved: String, page: String): Boolean {
-        val s = normalizeDomain(saved)
-        val p = normalizeDomain(page)
-        if (s.isEmpty() || p.isEmpty()) return false
-        return p == s || p.endsWith(".$s")
-    }
-
-    private fun normalizeDomain(raw: String): String {
-        return raw.trim().lowercase()
-            .removePrefix("https://")
-            .removePrefix("http://")
-            .removePrefix("www.")
-            .substringBefore('/')
-            .substringBefore(':')
     }
 
     // ---------------------------------------------------------------------------------
@@ -330,50 +383,42 @@ class PetalAutofillService : AutofillService() {
     override fun onSaveRequest(request: SaveRequest, callback: SaveCallback) {
         PetalCredentialVault.init(applicationContext)
 
-        // --- FIX: Collect values from ALL fill contexts (not just the last one). ---
-        // The Android AutoFill framework sends all prior screens as separate FillContexts.
-        // When the user submits the form, the password field's value may only appear in
-        // an earlier context (e.g. if a spinner/overlay covered it in the last screen).
-        // We parse all contexts in reverse order so the most recent values win.
         val parsedSave = ParsedForm(forSave = true)
         for (context in request.fillContexts.asReversed()) {
             parsedSave.parse(context.structure)
         }
 
-        val password = parsedSave.passwordValue.orEmpty()
-        val username = parsedSave.usernameValue.orEmpty()
-        if (password.isBlank()) {
-            Log.d(TAG, "onSaveRequest: password blank after traversal – skip")
-            callback.onSuccess()
-            return
-        }
-
-        // Use the first context to resolve domain/package if needed
         val firstStructure = request.fillContexts.lastOrNull()?.structure
         val pkg = firstStructure?.activityComponent?.packageName
         val activityClass = firstStructure?.activityComponent?.className
         val rawDomain = parsedSave.domain
 
-        // Never save credentials entered on an App Lock or internal security screen
+        val password = parsedSave.passwordValue.orEmpty()
+        val username = parsedSave.usernameValue.orEmpty()
+        if (password.isBlank()) {
+            Log.d(TAG, "onSaveRequest: password blank for domain=$rawDomain pkg=$pkg – skip saving")
+            callback.onSuccess()
+            return
+        }
+
         if (isAppLockOrInternalSecurity(applicationContext, pkg, rawDomain, activityClass)) {
             Log.d(TAG, "onSaveRequest: App Lock or internal security screen detected – skip saving")
             callback.onSuccess()
             return
         }
 
-        // Brave-style Never-Save domain checking
         if (rawDomain != null && PetalCredentialVault.isNeverSave(applicationContext, rawDomain)) {
-            Log.d(TAG, "onSaveRequest: Domain  is in Never-Save list – skip saving")
+            Log.d(TAG, "onSaveRequest: Domain $rawDomain is in Never-Save list – skip saving")
             callback.onSuccess()
             return
         }
 
         val saveDomain = if (!rawDomain.isNullOrBlank()) {
-            normalizeDomain(rawDomain)
+            PetalCredentialVault.cleanDomain(rawDomain)
         } else if (!pkg.isNullOrBlank()) {
             "app://$pkg"
         } else {
-            Log.w(TAG, "onSaveRequest: cannot determine domain or package – skip")
+            Log.w(TAG, "onSaveRequest: cannot determine domain or package for domain=$rawDomain pkg=$pkg – skip")
             callback.onSuccess()
             return
         }
@@ -413,13 +458,8 @@ class PetalAutofillService : AutofillService() {
     // ---------------------------------------------------------------------------------
 
     /**
-     * Walks the screen AssistStructure and locates:
-     *  - the password field (id + current value)
-     *  - the username/email field (id + current value)
-     *  - the web domain / scheme
-     *
-     * @param forSave When true, the visibility filter is relaxed so that hidden/gone
-     *   fields (e.g. a password field that becomes invisible on submit) are still read.
+     * Walks AssistStructure and locates username, password (handling signup / change-password forms
+     * with confirmation or current passwords), and domain.
      */
     private class ParsedForm(private val forSave: Boolean = false) {
         var domain: String? = null
@@ -431,28 +471,42 @@ class PetalAutofillService : AutofillService() {
 
         private var explicitUsernameId: AutofillId? = null
         private var explicitUsernameValue: String? = null
-        private var lastTextId: AutofillId? = null
-        private var lastTextValue: String? = null
-        private var textBeforePasswordId: AutofillId? = null
-        private var textBeforePasswordValue: String? = null
+        private var plausibleTextBeforePasswordId: AutofillId? = null
+        private var plausibleTextBeforePasswordValue: String? = null
+        private var lastPlausibleTextId: AutofillId? = null
+        private var lastPlausibleTextValue: String? = null
+
+        // Track multiple password fields (e.g. signup: password + confirm; change: current + new + confirm)
+        private var newPasswordId: AutofillId? = null
+        private var newPasswordValue: String? = null
+        private var primaryPasswordId: AutofillId? = null
+        private var primaryPasswordValue: String? = null
+        private var confirmPasswordId: AutofillId? = null
+        private var confirmPasswordValue: String? = null
 
         fun parse(structure: AssistStructure) {
             for (i in 0 until structure.windowNodeCount) {
                 traverse(structure.getWindowNodeAt(i).rootViewNode)
             }
 
+            // Decide on primary password
+            passwordId = newPasswordId ?: primaryPasswordId
+            passwordValue = if (newPasswordId != null && !newPasswordValue.isNullOrBlank()) {
+                newPasswordValue
+            } else if (!primaryPasswordValue.isNullOrBlank()) {
+                primaryPasswordValue
+            } else if (!confirmPasswordValue.isNullOrBlank()) {
+                confirmPasswordValue
+            } else null
+
             if (passwordId != null) {
-                // Prefer a field clearly marked as username/email. Otherwise use the
-                // text field right before the password field.
-                usernameId = explicitUsernameId ?: textBeforePasswordId
-                usernameValue = if (explicitUsernameId != null) explicitUsernameValue else textBeforePasswordValue
+                usernameId = explicitUsernameId ?: plausibleTextBeforePasswordId
+                usernameValue = if (explicitUsernameId != null) explicitUsernameValue else plausibleTextBeforePasswordValue
             } else {
-                // Two-step login: only the username/email page is on screen.
                 usernameId = explicitUsernameId
                 usernameValue = explicitUsernameValue
             }
 
-            // Do not fill into plain http pages (except local testing).
             if (!forSave && scheme.equals("http", ignoreCase = true) && domain != "localhost") {
                 usernameId = null
                 passwordId = null
@@ -468,10 +522,6 @@ class PetalAutofillService : AutofillService() {
             }
 
             val id = node.autofillId
-            // FIX: When saving, drop the strict visibility check.
-            // Password fields are commonly hidden (gone/invisible) when the form is
-            // submitted (e.g. SPAs that hide the field after capture). Requiring
-            // VISIBLE means passwordValue is always null → save never fires.
             val isTextField = id != null &&
                     node.autofillType == View.AUTOFILL_TYPE_TEXT &&
                     (forSave || node.visibility == View.VISIBLE)
@@ -481,25 +531,37 @@ class PetalAutofillService : AutofillService() {
                     ?: node.text?.toString()
 
                 if (isPasswordField(node)) {
-                    if (passwordId == null || (forSave && !value.isNullOrBlank())) {
-                        // During save, prefer a non-blank value if we find a better one
-                        if (passwordId == null || !value.isNullOrBlank()) {
-                            passwordId = id
-                            if (!value.isNullOrBlank()) passwordValue = value
-                            textBeforePasswordId = lastTextId
-                            textBeforePasswordValue = lastTextValue
-                        }
+                    val isNewPass = isNewPasswordField(node)
+                    val isConfirm = isConfirmPasswordField(node)
+
+                    if (isNewPass) {
+                        newPasswordId = id
+                        if (!value.isNullOrBlank()) newPasswordValue = value
+                    } else if (isConfirm) {
+                        confirmPasswordId = id
+                        if (!value.isNullOrBlank()) confirmPasswordValue = value
+                    } else if (primaryPasswordId == null) {
+                        primaryPasswordId = id
+                        if (!value.isNullOrBlank()) primaryPasswordValue = value
+                        plausibleTextBeforePasswordId = lastPlausibleTextId
+                        plausibleTextBeforePasswordValue = lastPlausibleTextValue
+                    } else {
+                        // Second password encountered (confirmation)
+                        confirmPasswordId = id
+                        if (!value.isNullOrBlank()) confirmPasswordValue = value
                     }
-                } else {
-                    if (explicitUsernameId == null && isUsernameField(node)) {
+                } else if (isUsernameField(node)) {
+                    if (explicitUsernameId == null) {
                         explicitUsernameId = id
                         if (!value.isNullOrBlank()) explicitUsernameValue = value
-                    } else if (explicitUsernameId != null && isUsernameField(node) && forSave && !value.isNullOrBlank()) {
-                        // In save mode, update username value if we find a populated one
+                    } else if (forSave && !value.isNullOrBlank()) {
                         explicitUsernameValue = value
                     }
-                    lastTextId = id
-                    if (!value.isNullOrBlank()) lastTextValue = value
+                    lastPlausibleTextId = id
+                    if (!value.isNullOrBlank()) lastPlausibleTextValue = value
+                } else if (isPlausibleTextCandidate(node)) {
+                    lastPlausibleTextId = id
+                    if (!value.isNullOrBlank()) lastPlausibleTextValue = value
                 }
             }
 
@@ -530,22 +592,74 @@ class PetalAutofillService : AutofillService() {
             return names.contains("password") || names.contains("passwd") || names.contains("pwd")
         }
 
+        private fun isNewPasswordField(node: AssistStructure.ViewNode): Boolean {
+            val autocomplete = htmlAttr(node, "autocomplete")?.lowercase().orEmpty()
+            if (autocomplete.contains("new-password")) return true
+            val names = listOf(node.idEntry, node.hint, htmlAttr(node, "name"), htmlAttr(node, "id"))
+                .joinToString(" ") { it?.lowercase().orEmpty() }
+            return names.contains("newpassword") || names.contains("new_password") || names.contains("new-password")
+        }
+
+        private fun isConfirmPasswordField(node: AssistStructure.ViewNode): Boolean {
+            val names = listOf(node.idEntry, node.hint, htmlAttr(node, "name"), htmlAttr(node, "id"))
+                .joinToString(" ") { it?.lowercase().orEmpty() }
+            return names.contains("confirm") || names.contains("retype") || names.contains("repeat")
+        }
+
+        private fun isExcludedField(node: AssistStructure.ViewNode): Boolean {
+            val htmlType = htmlAttr(node, "type")?.lowercase()
+            if (htmlType in setOf("search", "submit", "button", "hidden", "checkbox", "radio", "file", "image")) {
+                return true
+            }
+            val raw = listOf(node.idEntry, node.hint, htmlAttr(node, "name"), htmlAttr(node, "id"), htmlAttr(node, "placeholder"))
+                .joinToString(" ") { it?.lowercase().orEmpty() }
+            val excluded = listOf("search", "captcha", "recaptcha", "otp", "token", "verification", "pin", "query", "find", "cvv", "cvc", "coupon")
+            return excluded.any { raw.contains(it) }
+        }
+
+        private fun isPlausibleTextCandidate(node: AssistStructure.ViewNode): Boolean {
+            if (isExcludedField(node)) return false
+            val inputClass = node.inputType and InputType.TYPE_MASK_CLASS
+            if (inputClass != InputType.TYPE_CLASS_TEXT && inputClass != InputType.TYPE_CLASS_PHONE) return false
+            val variation = node.inputType and InputType.TYPE_MASK_VARIATION
+            if (variation == InputType.TYPE_TEXT_VARIATION_PASSWORD ||
+                variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
+                variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD ||
+                variation == InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS) return false
+            return true
+        }
+
         private fun isUsernameField(node: AssistStructure.ViewNode): Boolean {
+            if (isExcludedField(node) || !isPlausibleTextCandidate(node)) return false
+
             val hints = node.autofillHints ?: emptyArray()
             if (hints.any {
                     it.equals(View.AUTOFILL_HINT_USERNAME, ignoreCase = true) ||
-                            it.equals(View.AUTOFILL_HINT_EMAIL_ADDRESS, ignoreCase = true)
+                    it.equals(View.AUTOFILL_HINT_EMAIL_ADDRESS, ignoreCase = true) ||
+                    it.equals(View.AUTOFILL_HINT_PHONE_NUMBER, ignoreCase = true)
                 }) return true
 
-            val type = htmlAttr(node, "type")?.lowercase()
-            if (type == "email") return true
+            val htmlType = htmlAttr(node, "type")?.lowercase()
+            if (htmlType == "email") return true
+
             val autocomplete = htmlAttr(node, "autocomplete")?.lowercase().orEmpty()
             if (autocomplete.contains("username") || autocomplete.contains("email")) return true
 
-            val names = listOf(node.idEntry, node.hint, htmlAttr(node, "name"), htmlAttr(node, "id"))
-                .joinToString(" ") { it?.lowercase().orEmpty() }
-            return names.contains("user") || names.contains("email") ||
-                    names.contains("login") || names.contains("identifier")
+            val variation = node.inputType and InputType.TYPE_MASK_VARIATION
+            if (variation == InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS ||
+                variation == InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS ||
+                variation == InputType.TYPE_TEXT_VARIATION_PERSON_NAME) return true
+
+            // Require distinct token match rather than arbitrary substring
+            val identifiers = listOf(node.idEntry, node.hint, htmlAttr(node, "name"), htmlAttr(node, "id"))
+            for (id in identifiers) {
+                if (id.isNullOrBlank()) continue
+                val tokens = id.lowercase().split(Regex("[^a-z0-9]+")).filter { it.isNotBlank() }
+                if (tokens.any { it in setOf("username", "user", "email", "account", "login", "identifier", "signin") }) {
+                    return true
+                }
+            }
+            return false
         }
     }
 }

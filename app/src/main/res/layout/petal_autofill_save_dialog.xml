@@ -12,17 +12,18 @@
     android:paddingStart="24dp"
     android:paddingEnd="24dp"
     android:paddingTop="20dp"
-    android:paddingBottom="20dp">
+    android:paddingBottom="20dp"
+    android:background="@drawable/petal_autofill_dialog_bg">
 
-    <!-- Material 3 Expressive Petal P Squircle Icon Container -->
+    <!-- Material 3 Expressive Cookie-12 Petal P Icon Container -->
     <LinearLayout
         android:layout_width="64dp"
         android:layout_height="64dp"
         android:gravity="center"
-        android:background="@drawable/petal_autofill_icon_bg">
+        android:background="@drawable/petal_autofill_cookie_badge">
         <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:src="@drawable/ic_petal_letter_p"
             android:tint="@color/petal_autofill_accent"
             android:contentDescription="@null"
@@ -35,7 +36,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:text="Save to Petal Vault?"
+        android:text="@string/petal_autofill_save_title"
         android:textSize="22sp"
         android:fontFamily="sans-serif-medium"
         android:textStyle="bold"
@@ -67,7 +68,7 @@
             android:maxLines="1"
             android:ellipsize="middle" />
 
-        <!-- Dot separator shown only when username is non-empty (set visibility via code if needed) -->
+        <!-- Dot separator shown only when username is non-empty -->
         <TextView
             android:id="@+id/petal_save_dot"
             android:layout_width="wrap_content"
@@ -114,7 +115,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AES-256 · Encrypted on device"
+            android:text="@string/petal_autofill_encryption_badge"
             android:textSize="11sp"
             android:fontFamily="sans-serif-medium"
             android:textColor="@color/petal_autofill_accent"

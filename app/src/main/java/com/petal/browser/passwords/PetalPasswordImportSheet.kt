@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
 import com.petal.browser.compose.file.PetalFilePickerBridge
 import com.petal.browser.ui.containment.PetalBadgeVariant
@@ -47,59 +49,68 @@ fun PetalPasswordImportSheet(
                 val content = withContext(Dispatchers.IO) {
                     file.readText(Charsets.UTF_8)
                 }
-                var count = 0
+                var batchResult = BatchImportResult(0, 0, 0)
                 when (parserType) {
                     "CHROME" -> {
                         val creds = PetalCredentialImporter.importFromChromeCsv(content)
-                        creds.forEach { PetalCredentialVault.save(it) }
-                        count = creds.size
+                        batchResult = withContext(Dispatchers.IO) { PetalCredentialVault.importBatch(creds) }
                     }
                     "FIREFOX" -> {
                         val creds = PetalCredentialImporter.importFromFirefoxCsv(content)
-                        creds.forEach { PetalCredentialVault.save(it) }
-                        count = creds.size
+                        batchResult = withContext(Dispatchers.IO) { PetalCredentialVault.importBatch(creds) }
                     }
                     "BITWARDEN" -> {
                         val creds = PetalCredentialImporter.importFromBitwardenJson(content)
-                        creds.forEach { PetalCredentialVault.save(it) }
-                        count = creds.size
+                        batchResult = withContext(Dispatchers.IO) { PetalCredentialVault.importBatch(creds) }
                     }
                     "ONE_PASSWORD" -> {
                         val creds = PetalCredentialImporter.importFromOnePasswordCsv(content)
-                        creds.forEach { PetalCredentialVault.save(it) }
-                        count = creds.size
+                        batchResult = withContext(Dispatchers.IO) { PetalCredentialVault.importBatch(creds) }
                     }
                     "DASHLANE" -> {
                         val creds = PetalCredentialImporter.importFromDashlaneCsv(content)
-                        creds.forEach { PetalCredentialVault.save(it) }
-                        count = creds.size
+                        batchResult = withContext(Dispatchers.IO) { PetalCredentialVault.importBatch(creds) }
                     }
                     "PETAL_JSON" -> {
-                        count = PetalCredentialVault.importFromJson(content)
-                    }
-                    "PETAL_ENC" -> {
-                        count = if (PetalCredentialVault.isPasswordBackup(content)) {
-                            val pw = withContext(Dispatchers.Main) { PetalBackupPasswordPrompt.ask(activity) }
-                                ?: throw IllegalStateException("Import cancelled")
-                            PetalCredentialVault.importWithPasswordOrThrow(content, pw)
+                        val type = object : TypeToken<List<PetalCredential>>() {}.type
+                        val list: List<PetalCredential>? = try {
+                            Gson().fromJson(content, type)
+                        } catch (e: Exception) {
+                            null
+                        }
+                        batchResult = if (!list.isNullOrEmpty()) {
+                            withContext(Dispatchers.IO) { PetalCredentialVault.importBatch(list) }
                         } else {
-                            PetalCredentialVault.importEncryptedOrThrow(content)
+                            BatchImportResult(0, 0, 0)
                         }
                     }
+                    "PETAL_ENC" -> {
+                        val count = if (PetalCredentialVault.isPasswordBackup(content)) {
+                            val pw = withContext(Dispatchers.Main) { PetalBackupPasswordPrompt.ask(activity) }
+                                ?: throw IllegalStateException("Import cancelled")
+                            withContext(Dispatchers.IO) { PetalCredentialVault.importWithPasswordOrThrow(content, pw) }
+                        } else {
+                            withContext(Dispatchers.IO) { PetalCredentialVault.importEncryptedOrThrow(content) }
+                        }
+                        batchResult = BatchImportResult(count, 0, 0)
+                    }
                     else -> {
-                        val (_, creds) = PetalCredentialImporter.detectAndImport(file.name, content)
-                        creds.forEach { PetalCredentialVault.save(it) }
-                        count = creds.size
+                        val detected = PetalCredentialImporter.detectAndImport(file.name, content)
+                        if (detected.errorMessage != null) {
+                            throw IllegalStateException(detected.errorMessage)
+                        }
+                        batchResult = if (detected.directImportCount > 0) {
+                            BatchImportResult(detected.directImportCount, 0, 0)
+                        } else {
+                            withContext(Dispatchers.IO) { PetalCredentialVault.importBatch(detected.credentials) }
+                        }
                     }
                 }
                 withContext(Dispatchers.Main) {
                     isImporting = false
-                    PetalToast.show(
-                        activity,
-                        if (count > 0) "Successfully imported $count passwords"
-                        else "No new passwords imported; the backup may be empty or its entries already exist."
-                    )
-                    onImportComplete(count)
+                    val msg = "${batchResult.imported} imported, ${batchResult.duplicates} duplicates, ${batchResult.skipped} skipped"
+                    PetalToast.show(activity, msg)
+                    onImportComplete(batchResult.imported)
                     onDismiss()
                 }
             } catch (e: Exception) {
@@ -141,6 +152,8 @@ fun PetalPasswordImportSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 28.dp),

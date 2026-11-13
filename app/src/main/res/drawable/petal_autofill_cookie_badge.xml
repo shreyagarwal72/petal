@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material 3 Expressive Cookie-12 scalloped badge background -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="44dp"
+    android:height="44dp"
+    android:viewportWidth="44"
+    android:viewportHeight="44">
+    <path
+        android:fillColor="@color/petal_autofill_badge_bg"
+        android:pathData="M 43.0,22.0 Q 37.5,26.1 40.2,32.5 Q 33.3,33.3 32.5,40.2 Q 26.1,37.5 22.0,43.0 Q 17.9,37.5 11.5,40.2 Q 10.7,33.3 3.8,32.5 Q 6.5,26.1 1.0,22.0 Q 6.5,17.9 3.8,11.5 Q 10.7,10.7 11.5,3.8 Q 17.9,6.5 22.0,1.0 Q 26.1,6.5 32.5,3.8 Q 33.3,10.7 40.2,11.5 Q 37.5,17.9 43.0,22.0 Z" />
+</vector>

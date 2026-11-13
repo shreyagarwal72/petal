@@ -15,7 +15,7 @@ import org.mozilla.geckoview.GeckoResult
  *                    so Gecko can offer them in the browser's own suggestion UI.
  *  • onLoginSave   – called by Gecko after the user fills in and submits a form;
  *                    saves or updates the credential directly in Petal's secure AES-256 vault.
- *  • onLoginUsed   – updates the credential's lastUsed timestamp.
+ *  • onLoginUsed   – updates the credential's lastUsed timestamp via debounced write.
  *
  * Register with: GeckoRuntime.autocompleteStorageDelegate = PetalAutofillGeckoDelegate(ctx)
  */
@@ -35,12 +35,19 @@ class PetalAutofillGeckoDelegate(private val context: Context) : Autocomplete.St
         ensureVault()
         Log.d(TAG, "onLoginFetch: $domain")
 
-        val norm = normalizeDomain(domain)
+        val cleanReqDomain = PetalCredentialVault.cleanDomain(domain)
+        val requestedOrigin = if (domain.startsWith("http://") || domain.startsWith("https://")) {
+            domain
+        } else {
+            "https://$cleanReqDomain"
+        }
+
         val matches = PetalCredentialVault.getAll()
-            .filter { domainMatches(it.domain, norm) }
+            .filter { PetalCredentialVault.domainMatches(it.domain, cleanReqDomain) }
             .map { cred ->
                 Autocomplete.LoginEntry.Builder()
-                    .origin("https://${normalizeDomain(cred.domain)}")
+                    .origin(requestedOrigin)
+                    .formActionOrigin(requestedOrigin)
                     .username(cred.username)
                     .password(cred.password)
                     .guid(cred.id)
@@ -48,7 +55,7 @@ class PetalAutofillGeckoDelegate(private val context: Context) : Autocomplete.St
             }
             .toTypedArray()
 
-        Log.d(TAG, "onLoginFetch: returning ${matches.size} credential(s) for $domain")
+        Log.d(TAG, "onLoginFetch: returning ${matches.size} credential(s) for $cleanReqDomain")
         return GeckoResult.fromValue(matches)
     }
 
@@ -60,22 +67,22 @@ class PetalAutofillGeckoDelegate(private val context: Context) : Autocomplete.St
         ensureVault()
         val username = login.username.orEmpty()
         val password = login.password.orEmpty()
-        val origin   = login.origin.orEmpty()
-        val saveDomain = normalizeDomain(origin.ifBlank { login.formActionOrigin.orEmpty() })
+        val origin = login.origin.orEmpty()
+        val saveDomain = PetalCredentialVault.cleanDomain(origin.ifBlank { login.formActionOrigin.orEmpty() })
 
         if (password.isBlank() || saveDomain.isBlank()) {
-            Log.d(TAG, "onLoginSave: blank password or domain – skip")
+            Log.d(TAG, "onLoginSave: blank password or domain (domain=$saveDomain) – skip")
             return
         }
 
-        // Brave-style Never-Save check
+        // Never-Save check
         if (PetalCredentialVault.isNeverSave(context, saveDomain)) {
-            Log.d(TAG, "onLoginSave:  is in Never-Save list – skip")
+            Log.d(TAG, "onLoginSave: $saveDomain is in Never-Save list – skip")
             return
         }
 
         val existing = PetalCredentialVault.getAll().firstOrNull {
-            normalizeDomain(it.domain) == saveDomain &&
+            PetalCredentialVault.cleanDomain(it.domain).equals(saveDomain, ignoreCase = true) &&
                     it.username.equals(username, ignoreCase = true)
         }
 
@@ -109,27 +116,7 @@ class PetalAutofillGeckoDelegate(private val context: Context) : Autocomplete.St
     override fun onLoginUsed(login: Autocomplete.LoginEntry, useFields: Int) {
         ensureVault()
         val id = login.guid ?: return
-        val existing = PetalCredentialVault.findById(id) ?: return
-        PetalCredentialVault.save(existing.copy(updatedAt = System.currentTimeMillis()))
-        Log.d(TAG, "onLoginUsed: updated last-used for ${existing.domain}")
-    }
-
-    // ------------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------------
-
-    private fun normalizeDomain(raw: String): String =
-        raw.trim().lowercase()
-            .removePrefix("https://")
-            .removePrefix("http://")
-            .removePrefix("www.")
-            .substringBefore('/')
-            .substringBefore(':')
-
-    private fun domainMatches(saved: String, page: String): Boolean {
-        val s = normalizeDomain(saved)
-        val p = normalizeDomain(page)
-        if (s.isEmpty() || p.isEmpty()) return false
-        return p == s || p.endsWith(".$s")
+        PetalCredentialVault.markUsed(id)
+        Log.d(TAG, "onLoginUsed: marked login used for id=$id")
     }
 }

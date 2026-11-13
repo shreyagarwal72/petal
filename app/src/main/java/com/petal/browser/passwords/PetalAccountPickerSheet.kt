@@ -142,6 +142,7 @@ private fun AccountPickerSheetContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
+                .imePadding()
                 .liquidGlassChrome(shape = sheetShape, enabled = isGlass, sheenIntensity = sheen)
         ) {
             Column(

@@ -5,11 +5,10 @@ import java.security.SecureRandom
 /**
  * PetalPasswordGenerator
  *
- * Configurable, high-entropy password generator supporting Brave-like presets:
- * - MEMORABLE (words / hyphen-delimited)
+ * Configurable, high-entropy password generator supporting presets:
  * - BALANCED (16 chars, mixed case, numbers, common symbols)
  * - HIGH_ENTROPY (24 chars, all character classes)
- * - PIN_ONLY (Numeric digits)
+ * - PIN (Numeric digits 0-9)
  * - CUSTOM (User-defined length and character sets)
  */
 object PetalPasswordGenerator {
@@ -23,7 +22,8 @@ object PetalPasswordGenerator {
 
     private const val UPPERCASE = "ABCDEFGHJKLMNPQRSTUVWXYZ" // Omitted easily confused: I, O
     private const val LOWERCASE = "abcdefghijkmnopqrstuvwxyz" // Omitted easily confused: l
-    private const val DIGITS = "23456789" // Omitted easily confused: 0, 1
+    private const val DIGITS = "23456789" // Omitted easily confused: 0, 1 for general passwords
+    private const val ALL_DIGITS = "0123456789" // Full digits 0-9 for PINs
     private const val SYMBOLS = "!@#$%^&*()-_=+[]{}<>?"
 
     private val secureRandom = SecureRandom()
@@ -33,10 +33,12 @@ object PetalPasswordGenerator {
         includeUppercase: Boolean = true,
         includeLowercase: Boolean = true,
         includeDigits: Boolean = true,
-        includeSymbols: Boolean = true
+        includeSymbols: Boolean = true,
+        useAllDigits: Boolean = false
     ): String {
         val pool = StringBuilder()
         val mandatory = mutableListOf<Char>()
+        val digitPool = if (useAllDigits) ALL_DIGITS else DIGITS
 
         if (includeUppercase) {
             pool.append(UPPERCASE)
@@ -47,8 +49,8 @@ object PetalPasswordGenerator {
             mandatory.add(LOWERCASE[secureRandom.nextInt(LOWERCASE.length)])
         }
         if (includeDigits) {
-            pool.append(DIGITS)
-            mandatory.add(DIGITS[secureRandom.nextInt(DIGITS.length)])
+            pool.append(digitPool)
+            mandatory.add(digitPool[secureRandom.nextInt(digitPool.length)])
         }
         if (includeSymbols) {
             pool.append(SYMBOLS)
@@ -56,7 +58,7 @@ object PetalPasswordGenerator {
         }
 
         if (pool.isEmpty()) {
-            pool.append(LOWERCASE).append(DIGITS)
+            pool.append(LOWERCASE).append(digitPool)
             mandatory.add(LOWERCASE[secureRandom.nextInt(LOWERCASE.length)])
         }
 
@@ -81,12 +83,20 @@ object PetalPasswordGenerator {
         return String(result)
     }
 
-    fun generateByPreset(preset: Preset): String {
+    fun generatePin(length: Int = 6): String {
+        val chars = CharArray(length)
+        for (i in 0 until length) {
+            chars[i] = ALL_DIGITS[secureRandom.nextInt(ALL_DIGITS.length)]
+        }
+        return String(chars)
+    }
+
+    fun generateByPreset(preset: Preset, customLength: Int = 16): String {
         return when (preset) {
             Preset.BALANCED -> generate(length = 16, includeUppercase = true, includeLowercase = true, includeDigits = true, includeSymbols = true)
             Preset.HIGH_ENTROPY -> generate(length = 24, includeUppercase = true, includeLowercase = true, includeDigits = true, includeSymbols = true)
-            Preset.PIN -> generate(length = 6, includeUppercase = false, includeLowercase = false, includeDigits = true, includeSymbols = false)
-            Preset.CUSTOM -> generate(length = 16)
+            Preset.PIN -> generatePin(if (customLength in 4..12) customLength else 6)
+            Preset.CUSTOM -> generate(length = customLength.coerceIn(6, 64))
         }
     }
 }

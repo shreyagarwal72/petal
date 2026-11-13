@@ -1,6 +1,8 @@
 package com.petal.browser.passwords
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -12,15 +14,26 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.security.KeyStore
 import java.security.SecureRandom
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
-import javax.crypto.CipherOutputStream
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
+
+/**
+ * Result data class for batch credential imports.
+ */
+data class BatchImportResult(
+    val imported: Int,
+    val duplicates: Int,
+    val skipped: Int,
+    val errors: List<String> = emptyList()
+)
 
 /**
  * PetalCredentialVault
@@ -35,7 +48,7 @@ object PetalCredentialVault {
     private const val KEY_ALIAS = "PetalVaultKey_v1"
     private const val TRANSFORMATION = "AES/GCM/NoPadding"
     private const val GCM_TAG_LENGTH = 128
-    private const val GCM_IV_LENGTH = 12 // 12 bytes recommended for GCM
+    const val GCM_IV_LENGTH = 12 // 12 bytes recommended for GCM
     private const val VAULT_FILE_NAME = "petal_vault.enc"
 
     private val gson = Gson()
@@ -44,9 +57,16 @@ object PetalCredentialVault {
     private const val NEVER_SAVE_PREF = "sp_autofill_never_save_domains"
     private var isInitialized = false
     private var vaultFile: File? = null
+
     // True when the vault file exists but could not be read for a temporary reason.
     // We then refuse to overwrite it, so a good file is never replaced by an empty one.
+    @Volatile
     private var writeBlocked = false
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val debouncedPersistScheduled = AtomicBoolean(false)
+
+    fun isWriteBlocked(): Boolean = writeBlocked
 
     @Synchronized
     fun init(context: Context) {
@@ -83,12 +103,19 @@ object PetalCredentialVault {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to ensure Keystore key", e)
+            writeBlocked = true
         }
     }
 
     private fun getSecretKey(): SecretKey {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        return keyStore.getKey(KEY_ALIAS, null) as SecretKey
+        val key = keyStore.getKey(KEY_ALIAS, null) as? SecretKey
+        if (key == null) {
+            ensureKeyExists()
+            return (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)
+                ?: throw IllegalStateException("Keystore master key '$KEY_ALIAS' is unavailable.")
+        }
+        return key
     }
 
     @Synchronized
@@ -104,9 +131,14 @@ object PetalCredentialVault {
         try {
             atomicFile.openRead().use { fis ->
                 val iv = ByteArray(GCM_IV_LENGTH)
-                val bytesRead = fis.read(iv)
-                if (bytesRead < GCM_IV_LENGTH) {
-                    Log.w(TAG, "Corrupt vault file, IV too short.")
+                var totalRead = 0
+                while (totalRead < GCM_IV_LENGTH) {
+                    val bytes = fis.read(iv, totalRead, GCM_IV_LENGTH - totalRead)
+                    if (bytes == -1) break
+                    totalRead += bytes
+                }
+                if (totalRead < GCM_IV_LENGTH) {
+                    Log.w(TAG, "Corrupt vault file, IV too short ($totalRead bytes).")
                     credentials.clear()
                     return
                 }
@@ -120,8 +152,9 @@ object PetalCredentialVault {
                     val type = object : TypeToken<List<PetalCredential>>() {}.type
                     val list: List<PetalCredential>? = gson.fromJson(json, type)
                     credentials.clear()
-                    if (list != null) {
-                        credentials.addAll(list)
+                    if (!list.isNullOrEmpty()) {
+                        val sanitized = list.map { sanitizeCredential(it) }
+                        credentials.addAll(sanitized)
                     }
                 }
             }
@@ -129,8 +162,6 @@ object PetalCredentialVault {
             Log.e(TAG, "Failed to decrypt and load credentials vault", e)
             credentials.clear()
             if (isKeyMismatch(e)) {
-                // File was made with a different key (for example restored onto a new phone).
-                // It can never be opened here. Move it aside instead of deleting or overwriting it.
                 try {
                     val aside = File(file.parentFile, VAULT_FILE_NAME + ".unreadable")
                     if (aside.exists()) aside.delete()
@@ -140,7 +171,6 @@ object PetalCredentialVault {
                     writeBlocked = true
                 }
             } else {
-                // Temporary problem (Keystore busy etc). Do not write until next app start.
                 writeBlocked = true
             }
         }
@@ -164,6 +194,7 @@ object PetalCredentialVault {
             Log.w(TAG, "Vault could not be read this session; refusing to overwrite it.")
             return
         }
+
         val atomicFile = androidx.core.util.AtomicFile(file)
         var fos: FileOutputStream? = null
         try {
@@ -171,13 +202,13 @@ object PetalCredentialVault {
             cipher.init(Cipher.ENCRYPT_MODE, getSecretKey())
             val iv = cipher.iv
 
+            val json = gson.toJson(credentials)
+            val encryptedBytes = cipher.doFinal(json.toByteArray(Charsets.UTF_8))
+
             fos = atomicFile.startWrite()
             fos.write(iv)
-            CipherOutputStream(fos, cipher).use { cos ->
-                val json = gson.toJson(credentials)
-                cos.write(json.toByteArray(Charsets.UTF_8))
-                cos.flush()
-            }
+            fos.write(encryptedBytes)
+            fos.flush()
             atomicFile.finishWrite(fos)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to encrypt and persist credentials vault", e)
@@ -186,6 +217,103 @@ object PetalCredentialVault {
             }
         }
     }
+
+    /**
+     * Debounces vault disk writes for frequent events like markUsed / onLoginUsed.
+     */
+    fun scheduleDebouncedPersist() {
+        if (debouncedPersistScheduled.compareAndSet(false, true)) {
+            mainHandler.postDelayed({
+                debouncedPersistScheduled.set(false)
+                synchronized(this) {
+                    persistVault()
+                }
+            }, 800L)
+        }
+    }
+
+    // ---------------------------------------------------------------------------------
+    // CENTRALIZED eTLD+1 & DOMAIN MATCHER
+    // ---------------------------------------------------------------------------------
+
+    /**
+     * Common two-part public suffixes (e.g. co.uk, com.au, co.jp) to prevent taking only the last part.
+     */
+    private val MULTI_PART_TLDS = setOf(
+        "co.uk", "org.uk", "gov.uk", "ac.uk", "me.uk",
+        "co.jp", "ne.jp", "ac.jp", "go.jp",
+        "com.au", "net.au", "org.au", "edu.au", "gov.au",
+        "co.nz", "net.nz", "org.nz",
+        "co.za", "org.za",
+        "com.br", "org.br", "net.br",
+        "co.in", "net.in", "org.in", "gen.in", "firm.in",
+        "com.sg", "edu.sg", "gov.sg",
+        "com.mx", "org.mx",
+        "com.tr", "org.tr",
+        "com.tw", "org.tw",
+        "github.io", "gitlab.io", "pages.dev"
+    )
+
+    fun cleanDomain(raw: String): String {
+        val trimmed = raw.trim().lowercase()
+        if (trimmed.startsWith("app://")) {
+            return "app://" + trimmed.removePrefix("app://").trimEnd('/')
+        }
+        return trimmed
+            .removePrefix("https://")
+            .removePrefix("http://")
+            .removePrefix("www.")
+            .substringBefore('/')
+            .substringBefore(':')
+    }
+
+    /**
+     * Returns the effective TLD+1 base domain for grouping and matching.
+     * E.g. "accounts.google.com" -> "google.com"
+     *      "news.bbc.co.uk" -> "bbc.co.uk"
+     *      "192.168.1.1" -> "192.168.1.1"
+     *      "app://com.example.app" -> "app://com.example.app"
+     */
+    fun getEffectiveTldPlusOne(domain: String): String {
+        val clean = cleanDomain(domain)
+        if (clean.startsWith("app://")) return clean
+        // If IP address, do not truncate
+        if (clean.matches(Regex("""^\d{1,3}(\.\d{1,3}){3}$"""))) return clean
+
+        val parts = clean.split(".")
+        if (parts.size <= 2) return clean
+
+        // Check if last two parts match multi-part TLD
+        val lastTwo = parts.takeLast(2).joinToString(".")
+        if (MULTI_PART_TLDS.contains(lastTwo) && parts.size >= 3) {
+            return parts.takeLast(3).joinToString(".")
+        }
+
+        return parts.takeLast(2).joinToString(".")
+    }
+
+    /**
+     * Unified domain matcher used across AutofillService, GeckoDelegate, and Vault lookups.
+     * Saved "example.com" matches page "example.com" and "login.example.com".
+     * Saved "login.example.com" matches page "login.example.com", and optionally other subdomains if base matches.
+     */
+    fun domainMatches(saved: String, page: String): Boolean {
+        val s = cleanDomain(saved)
+        val p = cleanDomain(page)
+        if (s.isEmpty() || p.isEmpty()) return false
+        if (s == p) return true
+        if (s.startsWith("app://") || p.startsWith("app://")) return s.equals(p, ignoreCase = true)
+
+        if (p.endsWith(".$s")) return true
+        // Same eTLD+1 base check
+        val baseS = getEffectiveTldPlusOne(s)
+        val baseP = getEffectiveTldPlusOne(p)
+        return baseS.isNotBlank() && baseS.equals(baseP, ignoreCase = true)
+    }
+
+    // ---------------------------------------------------------------------------------
+    // CRUD & REPOSITORIES
+    // ---------------------------------------------------------------------------------
 
     @Synchronized
     fun getNeverSaveDomains(context: Context): Set<String> {
@@ -200,7 +328,7 @@ object PetalCredentialVault {
 
     @Synchronized
     fun addNeverSaveDomain(context: Context, domain: String) {
-        val clean = domain.trim().lowercase().removePrefix("https://").removePrefix("http://").removePrefix("www.").split("/")[0]
+        val clean = cleanDomain(domain)
         if (clean.isBlank()) return
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
         synchronized(neverSaveDomains) {
@@ -211,7 +339,7 @@ object PetalCredentialVault {
 
     @Synchronized
     fun removeNeverSaveDomain(context: Context, domain: String) {
-        val clean = domain.trim().lowercase().removePrefix("https://").removePrefix("http://").removePrefix("www.").split("/")[0]
+        val clean = cleanDomain(domain)
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
         synchronized(neverSaveDomains) {
             neverSaveDomains.remove(clean)
@@ -221,8 +349,9 @@ object PetalCredentialVault {
 
     @Synchronized
     fun isNeverSave(context: Context, domain: String): Boolean {
-        val clean = domain.trim().lowercase().removePrefix("https://").removePrefix("http://").removePrefix("www.").split("/")[0]
-        return getNeverSaveDomains(context).contains(clean)
+        val clean = cleanDomain(domain)
+        val set = getNeverSaveDomains(context)
+        return set.contains(clean) || set.contains(getEffectiveTldPlusOne(clean))
     }
 
     @Synchronized
@@ -232,11 +361,8 @@ object PetalCredentialVault {
 
     @Synchronized
     fun findByDomain(domain: String): List<PetalCredential> {
-        val target = domain.trim().lowercase().removePrefix("https://").removePrefix("http://").removePrefix("www.").split("/")[0]
-        return credentials.filter {
-            val d = it.domain.trim().lowercase().removePrefix("https://").removePrefix("http://").removePrefix("www.").split("/")[0]
-            d.equals(target, ignoreCase = true) || d.endsWith(".$target") || target.endsWith(".$d")
-        }
+        val clean = cleanDomain(domain)
+        return credentials.filter { domainMatches(it.domain, clean) }
     }
 
     @Synchronized
@@ -246,19 +372,27 @@ object PetalCredentialVault {
 
     @Synchronized
     fun save(credential: PetalCredential) {
-        val index = credentials.indexOfFirst { it.id == credential.id }
+        val sanitized = sanitizeCredential(credential)
+        val index = credentials.indexOfFirst { it.id == sanitized.id }
         if (index >= 0) {
-            credentials[index] = credential
+            credentials[index] = sanitized
         } else {
-            // Check if exact same domain and username already exists, update if so
+            // Check if exact same domain and username already exists, update without losing metadata
             val existingIndex = credentials.indexOfFirst {
-                cleanDomain(it.domain).equals(cleanDomain(credential.domain), ignoreCase = true) &&
-                it.username.equals(credential.username, ignoreCase = true)
+                cleanDomain(it.domain).equals(cleanDomain(sanitized.domain), ignoreCase = true) &&
+                it.username.equals(sanitized.username, ignoreCase = true)
             }
             if (existingIndex >= 0) {
-                credentials[existingIndex] = credential
+                val existing = credentials[existingIndex]
+                credentials[existingIndex] = sanitized.copy(
+                    id = existing.id,
+                    createdAt = existing.createdAt,
+                    isFavorite = existing.isFavorite,
+                    notes = if (sanitized.notes.isNotBlank()) sanitized.notes else existing.notes,
+                    updatedAt = System.currentTimeMillis()
+                )
             } else {
-                credentials.add(0, credential)
+                credentials.add(0, sanitized)
             }
         }
         persistVault()
@@ -270,7 +404,7 @@ object PetalCredentialVault {
         if (index >= 0) {
             val curr = credentials[index]
             credentials[index] = curr.copy(lastUsedAt = System.currentTimeMillis())
-            persistVault()
+            scheduleDebouncedPersist()
         }
     }
 
@@ -297,14 +431,6 @@ object PetalCredentialVault {
         }
     }
 
-    fun cleanDomain(raw: String): String =
-        raw.trim().lowercase()
-            .removePrefix("https://")
-            .removePrefix("http://")
-            .removePrefix("www.")
-            .substringBefore('/')
-            .substringBefore(':')
-
     @Synchronized
     fun delete(id: String) {
         val removed = credentials.removeAll { it.id == id }
@@ -324,6 +450,16 @@ object PetalCredentialVault {
     }
 
     @Synchronized
+    fun setCompromised(id: String, isCompromised: Boolean) {
+        val index = credentials.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            val current = credentials[index]
+            credentials[index] = current.copy(isCompromised = isCompromised)
+            persistVault()
+        }
+    }
+
+    @Synchronized
     fun clear() {
         credentials.clear()
         writeBlocked = false
@@ -335,11 +471,100 @@ object PetalCredentialVault {
         return gson.toJson(credentials)
     }
 
+    // ---------------------------------------------------------------------------------
+    // BATCH IMPORT WITH DEDUPLICATION & MERGING
+    // ---------------------------------------------------------------------------------
+
+    @Synchronized
+    fun importBatch(list: List<PetalCredential>): BatchImportResult {
+        if (list.isEmpty()) return BatchImportResult(0, 0, 0)
+        var imported = 0
+        var duplicates = 0
+        var skipped = 0
+
+        for (raw in list) {
+            val cred = sanitizeCredential(raw)
+            if (cred.domain.isBlank() || (cred.username.isBlank() && cred.password.isBlank())) {
+                skipped++
+                continue
+            }
+
+            val existingIndex = credentials.indexOfFirst {
+                it.id == cred.id || (
+                    cleanDomain(it.domain).equals(cleanDomain(cred.domain), ignoreCase = true) &&
+                    it.username.equals(cred.username, ignoreCase = true)
+                )
+            }
+
+            if (existingIndex >= 0) {
+                val existing = credentials[existingIndex]
+                if (existing.password == cred.password) {
+                    duplicates++
+                } else if (cred.updatedAt > existing.updatedAt) {
+                    // Incoming credential is newer: update password and merge notes
+                    credentials[existingIndex] = existing.copy(
+                        password = cred.password,
+                        updatedAt = cred.updatedAt,
+                        notes = if (cred.notes.isNotBlank()) cred.notes else existing.notes
+                    )
+                    imported++
+                } else {
+                    duplicates++
+                }
+            } else {
+                credentials.add(cred)
+                imported++
+            }
+        }
+
+        if (imported > 0) {
+            persistVault()
+        }
+        return BatchImportResult(imported, duplicates, skipped)
+    }
+
+    @Synchronized
+    fun importFromJson(json: String): Int {
+        return try {
+            val type = object : TypeToken<List<PetalCredential>>() {}.type
+            val list: List<PetalCredential>? = gson.fromJson(json, type)
+            if (list.isNullOrEmpty()) return 0
+            val result = importBatch(list)
+            result.imported
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse and import backup JSON", e)
+            0
+        }
+    }
+
+    private fun sanitizeCredential(cred: PetalCredential): PetalCredential {
+        val id = if (cred.id.isNullOrBlank()) UUID.randomUUID().toString() else cred.id
+        val domain = cleanDomain(cred.domain.orEmpty())
+        val originUrl = if (cred.originUrl.isNullOrBlank()) {
+            if (domain.startsWith("app://")) domain else "https://$domain"
+        } else cred.originUrl
+        val username = cred.username.orEmpty()
+        val password = cred.password.orEmpty()
+        val notes = cred.notes.orEmpty()
+        val createdAt = if (cred.createdAt <= 0L) System.currentTimeMillis() else cred.createdAt
+        val updatedAt = if (cred.updatedAt <= 0L) createdAt else cred.updatedAt
+        val lastUsedAt = if (cred.lastUsedAt <= 0L) createdAt else cred.lastUsedAt
+
+        return cred.copy(
+            id = id,
+            domain = domain,
+            originUrl = originUrl,
+            username = username,
+            password = password,
+            notes = notes,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            lastUsedAt = lastUsedAt
+        )
+    }
 
     // ---------------------------------------------------------------------------------
-    // PASSWORD-PROTECTED BACKUP (V2). Works on any phone / any install with the password.
-    // The old V1 backup used the phone's Keystore key, which cannot leave the phone and
-    // is deleted on uninstall. V2 does not depend on the Keystore at all.
+    // PASSWORD-PROTECTED BACKUP (V2)
     // ---------------------------------------------------------------------------------
 
     private const val PASSWORD_BACKUP_MAGIC = "PETAL_ENC_VAULT_V2:"
@@ -361,7 +586,6 @@ object PetalCredentialVault {
         }
     }
 
-    /** Output: PETAL_ENC_VAULT_V2: + Base64(salt 16 bytes + iv 12 bytes + ciphertext). */
     @Synchronized
     fun exportWithPassword(password: String): String {
         require(password.length >= MIN_BACKUP_PASSWORD_LENGTH) {
@@ -382,7 +606,6 @@ object PetalCredentialVault {
         return PASSWORD_BACKUP_MAGIC + Base64.encodeToString(combined, Base64.NO_WRAP)
     }
 
-    /** Throws a readable error for wrong password, damaged file or wrong file type. */
     @Synchronized
     fun importWithPasswordOrThrow(content: String, password: String): Int {
         val trimmed = content.trim()
@@ -411,10 +634,6 @@ object PetalCredentialVault {
 
     private const val ENCRYPTED_BACKUP_MAGIC = "PETAL_ENC_VAULT_V1:"
 
-    /**
-     * Exports credentials encrypted with hardware-backed AES-256 GCM key so it can ONLY be restored by Petal.
-     * Returns a string prefixed with PETAL_ENC_VAULT_V1: followed by Base64(IV + Ciphertext).
-     */
     @Synchronized
     fun exportEncrypted(): String {
         val cipher = Cipher.getInstance(TRANSFORMATION)
@@ -428,16 +647,10 @@ object PetalCredentialVault {
         return ENCRYPTED_BACKUP_MAGIC + Base64.encodeToString(combined, Base64.NO_WRAP)
     }
 
-    /**
-     * Checks if a content string is an encrypted Petal backup.
-     */
     fun isEncryptedBackup(content: String): Boolean {
         return content.trim().startsWith(ENCRYPTED_BACKUP_MAGIC) || isPasswordBackup(content)
     }
 
-    /**
-     * Imports credentials from an encrypted Petal backup.
-     */
     @Synchronized
     fun importEncrypted(content: String): Int {
         return try {
@@ -448,7 +661,6 @@ object PetalCredentialVault {
         }
     }
 
-    /** Imports an encrypted backup and throws when the file cannot be decrypted or parsed. */
     @Synchronized
     fun importEncryptedOrThrow(content: String): Int {
         val trimmed = content.trim()
@@ -477,33 +689,5 @@ object PetalCredentialVault {
             )
         }
         return importFromJson(String(decryptedBytes, Charsets.UTF_8))
-    }
-
-    @Synchronized
-    fun importFromJson(json: String): Int {
-        return try {
-            val type = object : TypeToken<List<PetalCredential>>() {}.type
-            val list: List<PetalCredential>? = gson.fromJson(json, type)
-            if (list.isNullOrEmpty()) return 0
-
-            var count = 0
-            for (cred in list) {
-                val exists = credentials.any {
-                    it.domain.equals(cred.domain, ignoreCase = true) &&
-                    it.username.equals(cred.username, ignoreCase = true)
-                }
-                if (!exists) {
-                    credentials.add(cred)
-                    count++
-                }
-            }
-            if (count > 0) {
-                persistVault()
-            }
-            count
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to parse and import backup JSON", e)
-            0
-        }
     }
 }

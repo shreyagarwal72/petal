@@ -1,3 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <autofill-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:settingsActivity="com.petal.browser.activity.MainActivity" />
+    android:settingsActivity="com.petal.browser.passwords.PetalPasswordsActivity">
+    <compatibility-package android:name="com.android.chrome" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="com.chrome.beta" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="com.chrome.dev" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="com.chrome.canary" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="org.mozilla.firefox" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="org.mozilla.firefox_beta" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="org.mozilla.fenix" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="com.microsoft.emmx" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="com.brave.browser" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="com.opera.browser" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="com.opera.mini.native" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="com.sec.android.app.sbrowser" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="com.duckduckgo.mobile.android" android:maxLongVersionCode="10000000000" />
+    <compatibility-package android:name="com.vivaldi.browser" android:maxLongVersionCode="10000000000" />
+</autofill-service>

@@ -222,6 +222,19 @@
             android:exported="false"
             android:excludeFromRecents="true" />
 
+        <!-- Petal Passwords & Autofill standalone settings activity -->
+        <activity
+            android:name="com.petal.browser.passwords.PetalPasswordsActivity"
+            android:label="@string/petal_autofill_service_name"
+            android:exported="true"
+            android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Autofill Negative Action receiver for "Never for this site" -->
+        <receiver
+            android:name="com.petal.browser.passwords.PetalAutofillActionReceiver"
+            android:exported="false" />
+
         <activity
             android:name="com.petal.browser.activity.MainActivity"
             android:theme="@style/Theme.Petal.Splash"

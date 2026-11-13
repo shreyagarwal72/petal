@@ -1,6 +1,8 @@
 package com.petal.browser.passwords
 
 import android.app.Activity
+import android.app.KeyguardManager
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -19,8 +21,8 @@ import androidx.fragment.app.FragmentActivity
  * PetalAutofillAuthActivity
  *
  * Opened by the system when the user taps a Petal suggestion (keyboard chip or dropdown).
- * Asks for fingerprint / screen lock. Only after that does the real username and password
- * go back to the system. Without this step, the login never leaves the vault.
+ * Authenticates with fingerprint, face, or device screen lock (PIN/pattern).
+ * Only after verification does the credential get delivered to the system.
  */
 class PetalAutofillAuthActivity : FragmentActivity() {
 
@@ -29,9 +31,6 @@ class PetalAutofillAuthActivity : FragmentActivity() {
         const val EXTRA_USERNAME_ID = "petal_autofill_username_id"
         const val EXTRA_PASSWORD_ID = "petal_autofill_password_id"
     }
-
-    private val authenticators =
-        BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,19 +46,43 @@ class PetalAutofillAuthActivity : FragmentActivity() {
             return
         }
 
-        // No fingerprint and no screen lock on the phone = we refuse to hand out passwords.
-        val canAuth = BiometricManager.from(this).canAuthenticate(authenticators)
-        if (canAuth != BiometricManager.BIOMETRIC_SUCCESS) {
-            Toast.makeText(this, "Add a screen lock to use Petal Autofill securely", Toast.LENGTH_LONG).show()
-            cancel()
+        // Avoid showing duplicate biometric prompts on configuration changes or recreation
+        if (savedInstanceState != null) {
             return
         }
 
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+        val isDeviceSecure = keyguardManager?.isDeviceSecure == true
+
+        val promptInfoBuilder = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Verify it's you")
             .setSubtitle("Petal needs your fingerprint or PIN to fill this password")
-            .setAllowedAuthenticators(authenticators)
-            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val authenticators = BiometricManager.Authenticators.BIOMETRIC_WEAK or
+                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            val canAuth = BiometricManager.from(this).canAuthenticate(authenticators)
+            if (canAuth != BiometricManager.BIOMETRIC_SUCCESS && !isDeviceSecure) {
+                Toast.makeText(this, "Add a screen lock to use Petal Autofill securely", Toast.LENGTH_LONG).show()
+                cancel()
+                return
+            }
+            promptInfoBuilder.setAllowedAuthenticators(authenticators)
+        } else {
+            // API 28-29: BIOMETRIC_WEAK or DEVICE_CREDENTIAL is not supported by setAllowedAuthenticators
+            if (!isDeviceSecure) {
+                val canBio = BiometricManager.from(this).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+                if (canBio != BiometricManager.BIOMETRIC_SUCCESS) {
+                    Toast.makeText(this, "Add a screen lock to use Petal Autofill securely", Toast.LENGTH_LONG).show()
+                    cancel()
+                    return
+                }
+            }
+            @Suppress("DEPRECATION")
+            promptInfoBuilder.setDeviceCredentialAllowed(true)
+        }
+
+        val promptInfo = promptInfoBuilder.build()
 
         val prompt = BiometricPrompt(
             this,
@@ -74,7 +97,7 @@ class PetalAutofillAuthActivity : FragmentActivity() {
                 }
 
                 override fun onAuthenticationFailed() {
-                    // User can try again. The prompt stays open.
+                    // Retry allowed
                 }
             }
         )
@@ -119,6 +142,9 @@ class PetalAutofillAuthActivity : FragmentActivity() {
             cancel()
             return
         }
+
+        // Record usage without resetting updatedAt
+        PetalCredentialVault.markUsed(credentialId)
 
         val result = Intent().putExtra(AutofillManager.EXTRA_AUTHENTICATION_RESULT, dataset.build())
         setResult(Activity.RESULT_OK, result)
