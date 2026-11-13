@@ -81,8 +81,11 @@ class MainActivity : FragmentActivity(), BrowserController {
     var isCustomFullscreenState: Boolean = false
     var isDecorOverlayShowing: Boolean = false
     var isPetalHomeSurfaceShowing: Boolean = false
-    fun isBarAnimationRunning(): Boolean = false
-    fun isAddressBarCollapsed(): Boolean = false
+    private var pillMorphAnimator: android.animation.ValueAnimator? = null
+    private var isAddressBarCollapsedState = false
+
+    fun isBarAnimationRunning(): Boolean = pillMorphAnimator?.isRunning == true
+    fun isAddressBarCollapsed(): Boolean = isAddressBarCollapsedState
     var pendingOverlayBackAction: Runnable? = null
     var mediaService: PetalMediaSessionService? = null
     val activeMediaBridge: PetalMediaBridge? = null
@@ -482,8 +485,45 @@ class MainActivity : FragmentActivity(), BrowserController {
     fun updatePersistentBottomNav() { }
     fun updateBackCallbackState() { }
     fun updateOmniBox() { }
-    fun settlePillFraction(target: Float) { }
-    fun onScrollOffsetDelta(deltaY: Float) { }
+    fun settlePillFraction(target: Float) {
+        val current = com.petal.browser.ui.components.BarCollapseState.collapsedFraction
+        if (kotlin.math.abs(current - target) < 0.001f) {
+            com.petal.browser.ui.components.BarCollapseState.setFraction(target)
+            return
+        }
+        pillMorphAnimator?.cancel()
+        pillMorphAnimator = android.animation.ValueAnimator.ofFloat(current, target).apply {
+            duration = 320L
+            interpolator = android.view.animation.PathInterpolator(0.2f, 0f, 0f, 1f)
+            addUpdateListener { anim ->
+                val f = anim.animatedValue as Float
+                com.petal.browser.ui.components.BarCollapseState.setFraction(f)
+            }
+            start()
+        }
+    }
+
+    fun onScrollOffsetDelta(deltaY: Float) {
+        if (!sp.getBoolean("sp_hide_bars_on_scroll", true)) return
+        val density = resources.displayMetrics.density
+        val step = deltaY / (120f * density)
+        val current = com.petal.browser.ui.components.BarCollapseState.collapsedFraction
+        val next = (current + step).coerceIn(0f, 1f)
+        com.petal.browser.ui.components.BarCollapseState.setFraction(next)
+    }
+
+    fun animateAddressBarCollapse(collapse: Boolean) {
+        if (!sp.getBoolean("sp_hide_bars_on_scroll", true)) {
+            if (isAddressBarCollapsedState) {
+                isAddressBarCollapsedState = false
+                settlePillFraction(0f)
+            }
+            return
+        }
+        if (isAddressBarCollapsedState == collapse) return
+        isAddressBarCollapsedState = collapse
+        settlePillFraction(if (collapse) 1f else 0f)
+    }
 
     fun updateVideoDimensions(width: Int, height: Int) {
         currentVideoWidth = width
@@ -556,7 +596,6 @@ class MainActivity : FragmentActivity(), BrowserController {
         return false
     }
 
-    fun animateAddressBarCollapse(collapse: Boolean) { }
     fun applyAddressBarPosition() { }
     fun performBackNavigation() {
         if (dismissTopPresentedScreen()) {

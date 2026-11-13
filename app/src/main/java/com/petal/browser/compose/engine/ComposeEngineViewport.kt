@@ -69,9 +69,29 @@ fun ComposeEngineViewport(
     modifier: Modifier = Modifier,
     topPadding: Dp = 0.dp,
     bottomPadding: Dp = 0.dp,
+    onEngineViewReady: ((View) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
+    val act = (context as? MainActivity) ?: (context as? ContextWrapper)?.baseContext as? MainActivity
+
+    val nestedScrollConnection = remember(act) {
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+            override fun onPreScroll(
+                available: androidx.compose.ui.geometry.Offset,
+                source: androidx.compose.ui.input.nestedscroll.NestedScrollSource
+            ): androidx.compose.ui.geometry.Offset {
+                if (source == androidx.compose.ui.input.nestedscroll.NestedScrollSource.UserInput && act != null) {
+                    if (available.y < -12f) {
+                        act.animateAddressBarCollapse(true)
+                    } else if (available.y > 12f) {
+                        act.animateAddressBarCollapse(false)
+                    }
+                }
+                return androidx.compose.ui.geometry.Offset.Zero
+            }
+        }
+    }
     // Pull-to-refresh uses Mozilla's own stack (same as Firefox for Android): a vertical-only
     // SwipeRefreshLayout + android-components' SwipeRefreshFeature, which asks Gecko
     // (InputResultDetail.canOverscrollTop) whether the page is at the top. The loader is drawn by
@@ -165,6 +185,7 @@ fun ComposeEngineViewport(
     // Create and retain an EngineView instance across recompositions
     val engineView = remember(context) {
         PetalEngineStore.createEngineView(context).also { ev ->
+            ev.asView().id = com.petal.browser.R.id.main_content
             ev.asView().background = null
             ev.asView().isNestedScrollingEnabled = true
             findGeckoView(ev.asView())?.let { gv ->
@@ -176,6 +197,10 @@ fun ComposeEngineViewport(
                 } catch (_: Throwable) {}
             }
         }
+    }
+
+    LaunchedEffect(engineView) {
+        onEngineViewReady?.invoke(engineView.asView())
     }
 
     // Inform GeckoView of dynamic toolbar height for smooth scrolling and proper viewport calculations
@@ -261,6 +286,7 @@ fun ComposeEngineViewport(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .androidx.compose.ui.input.nestedscroll.nestedScroll(nestedScrollConnection)
             .background(MaterialTheme.colorScheme.background)
     ) {
         AndroidView(
@@ -394,7 +420,42 @@ private fun attachSessionDelegates(
         )
     }
 
-    // 5. Extensions
+    // 5. Scroll Delegate for Address Bar collapse and tactile scroll gestures
+    val currentScroll = session.scrollDelegate
+    session.scrollDelegate = object : GeckoSession.ScrollDelegate {
+        private var lastScrollY: Int = 0
+        private var scrollRun: Int = 0
+
+        override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+            try { currentScroll?.onScrollChanged(session, scrollX, scrollY) } catch (_: Throwable) {}
+            val act = actSupplier() ?: return
+            val density = context.resources.displayMetrics.density
+            val hideAfterPx = 28f * density
+            val showAfterPx = 16f * density
+
+            val deltaY = scrollY - lastScrollY
+            lastScrollY = scrollY
+
+            act.runOnUiThread {
+                if (scrollY <= (4f * density).toInt()) {
+                    scrollRun = 0
+                    act.animateAddressBarCollapse(false)
+                } else if (deltaY != 0) {
+                    if ((deltaY > 0) != (scrollRun > 0)) scrollRun = 0
+                    scrollRun += deltaY
+                    if (scrollRun > hideAfterPx) {
+                        scrollRun = 0
+                        act.animateAddressBarCollapse(true)
+                    } else if (scrollRun < -showAfterPx) {
+                        scrollRun = 0
+                        act.animateAddressBarCollapse(false)
+                    }
+                }
+            }
+        }
+    }
+
+    // 6. Extensions
     PetalExtensionManager.attachSession(session)
     PetalExtensionManager.setActiveBrowserSession(null, session)
 }

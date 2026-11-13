@@ -478,14 +478,12 @@ fun PetalOverflowMenuSheet(
     val liveSource = remember(liveContext) {
         var c: android.content.Context? = liveContext
         while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
-        (c as? android.app.Activity)?.let {
-            it.findViewById<android.view.View>(R.id.main) ?: it.findViewById<android.view.View>(android.R.id.content)
-        }
+        (c as? android.app.Activity)?.findViewById<android.view.View>(R.id.main)
     }
     val frameTick = remember { mutableLongStateOf(0L) }
-    LaunchedEffect(isLiquidGlass, liveSource, useBlurBg) {
-        if (isLiquidGlass && liveSource != null && useBlurBg) {
-            while (true) { withFrameNanos { frameTick.longValue = it } }
+    LaunchedEffect(isLiquidGlass, liveSource, useBlurBg, isVisible) {
+        if (isLiquidGlass && liveSource != null && useBlurBg && isVisible) {
+            while (isVisible) { withFrameNanos { frameTick.longValue = it } }
         }
     }
 

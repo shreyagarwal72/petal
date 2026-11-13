@@ -203,6 +203,9 @@ fun PetalBottomNavBar(
     val tabsLabel = "Tabs"
     val newTabLabel = "New"
 
+    val ambientGlassSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
+    val resolvedGlassSource = glassSource ?: ambientGlassSource
+
     val effectiveFloating = isFloatingStyle && !isBottomAddressBar
     val navCtx = androidx.compose.ui.platform.LocalContext.current
     val navPrefs = remember(navCtx) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(navCtx) }
@@ -276,7 +279,7 @@ fun PetalBottomNavBar(
                         selectedTab = selectedTab,
                         tabCount = tabCount,
                         badgeScale = badgeScale.value,
-                        glassSource = glassSource,
+                        glassSource = resolvedGlassSource,
                         onHomeClick = onHomeClick,
                         onNewTabClick = onNewTabClick,
                         onTabsClick = onTabsClick,
@@ -303,7 +306,7 @@ fun PetalBottomNavBar(
             }
             if (separateSearch) {
                 PetalSearchGlassButton(
-                    glassSource = glassSource,
+                    glassSource = resolvedGlassSource,
                     onClick = launchSearch,
                     modifier = Modifier.onGloballyPositioned { searchButtonBounds[0] = it.boundsInWindow() }.graphicsLayer {
                         val p = searchLaunch.value
@@ -336,7 +339,7 @@ fun PetalBottomNavBar(
             val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
             com.petal.browser.ui.glass.LocalPetalGlassRevision.current
             val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
-            val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isLiquidGlass) glassSource else null)
+            val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isLiquidGlass) resolvedGlassSource else null)
             val baseContainer = MaterialTheme.colorScheme.surfaceContainerHigh
 
             Surface(

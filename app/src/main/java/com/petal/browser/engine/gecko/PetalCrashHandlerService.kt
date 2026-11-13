@@ -23,10 +23,15 @@
 
 package com.petal.browser.engine.gecko
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import com.petal.browser.R
 import com.petal.browser.logger.PetalAppLogger
 import org.mozilla.geckoview.GeckoRuntime
 
@@ -54,19 +59,55 @@ class PetalCrashHandlerService : Service() {
         const val EXTRA_CRASH_IS_FATAL = "isFatal"
         const val EXTRA_CRASH_PROCESS = "processType"
         const val EXTRA_CRASH_PROCESS_VISIBILITY = "processVisibility"
+        private const val CRASH_NOTIFICATION_ID = 9021
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         try {
+            ensureForegroundNotification()
             handleCrashIntent(intent)
         } catch (t: Throwable) {
             Log.e(TAG, "Unexpected error in crash handler service", t)
         } finally {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                try { stopForeground(STOP_FOREGROUND_REMOVE) } catch (_: Throwable) {}
+            }
             stopSelf(startId)
         }
         return START_NOT_STICKY
+    }
+
+    private fun ensureForegroundNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelId = "petal_crash_handler_channel"
+            val nm = getSystemService(NotificationManager::class.java)
+            if (nm != null && nm.getNotificationChannel(channelId) == null) {
+                val channel = NotificationChannel(
+                    channelId,
+                    "Crash Diagnostics",
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    setShowBadge(false)
+                }
+                nm.createNotificationChannel(channel)
+            }
+            val notification = Notification.Builder(this, channelId)
+                .setContentTitle("Petal Browser")
+                .setContentText("Saving diagnostic report...")
+                .setSmallIcon(R.drawable.ic_petal_icon)
+                .build()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    CRASH_NOTIFICATION_ID,
+                    notification,
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                )
+            } else {
+                startForeground(CRASH_NOTIFICATION_ID, notification)
+            }
+        }
     }
 
     private fun handleCrashIntent(intent: Intent?) {

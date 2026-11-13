@@ -130,14 +130,11 @@ fun PetalMergedBar(
     val isGlassEnabledPref = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") ||
         (resolvedIsBottom && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")) ||
         (isPreview && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments"))
-    val isLiquidGlass = isGlassEnabledPref && !isIncognito
+    val isLiquidGlass = !isPreview && isGlassEnabledPref && !isIncognito
     val samplesWallpaper = BarInsets.glassSamplesWallpaper(sp, resolvedIsBottom, isFloatingBar, false)
+    val ambientGlassSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
     val activity = LocalContext.current as? android.app.Activity
-    val glassSource = if (isPreview) null else activity?.findViewById<android.view.View>(
-        if (samplesWallpaper) com.petal.browser.R.id.glass_wallpaper_backdrop else com.petal.browser.R.id.main_content
-    ) ?: LocalView.current.rootView.findViewById<android.view.View>(
-        if (samplesWallpaper) com.petal.browser.R.id.glass_wallpaper_backdrop else com.petal.browser.R.id.main_content
-    )
+    val glassSource = if (isPreview || samplesWallpaper) null else (ambientGlassSource ?: activity?.findViewById<android.view.View>(com.petal.browser.R.id.main_content))
     val glassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
     val pillGlassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
     val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh

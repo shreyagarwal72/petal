@@ -139,6 +139,7 @@ fun PetalRootApp(
     val rootView = remember(activity) {
         activity?.findViewById<android.view.View>(android.R.id.content) ?: activity?.window?.decorView
     }
+    var activeWebEngineView by remember { mutableStateOf<android.view.View?>(null) }
 
     val tabSwitcherSnapshot = remember(isTabSwitcherOpen) {
         if (isTabSwitcherOpen && rootView != null) {
@@ -190,11 +191,11 @@ fun PetalRootApp(
     // Synchronize page state with BarCollapseState
     LaunchedEffect(activeUrl, isIncognito) {
         BarCollapseState.updatePage(activeUrl, isIncognito)
-        BarCollapseState.setFraction(0f)
+        (activity as? MainActivity)?.animateAddressBarCollapse(false) ?: BarCollapseState.setFraction(0f)
     }
     LaunchedEffect(Unit) {
         BarCollapseState.onExpandRequested = {
-            BarCollapseState.setFraction(0f)
+            (activity as? MainActivity)?.animateAddressBarCollapse(false) ?: BarCollapseState.setFraction(0f)
         }
     }
 
@@ -452,12 +453,16 @@ fun PetalRootApp(
                     onRefresh = { viewModel.reload() },
                     topPadding = effectiveTopPadding,
                     bottomPadding = effectiveBottomPadding,
+                    onEngineViewReady = { activeWebEngineView = it },
                     modifier = Modifier
                         .fillMaxSize()
                         .appleDuoFoldEffect(isWebsite = true)
                 )
 
-                if (isMerge) {
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.petal.browser.ui.glass.LocalPetalGlassSource provides (if (isHome) null else activeWebEngineView)
+                ) {
+                    if (isMerge) {
                     PetalMergedBar(
                         url = activeUrl,
                         title = activeTitle.ifBlank { activeUrl },
@@ -557,6 +562,7 @@ fun PetalRootApp(
                         }
                     )
                 }
+                }
             }
         }
 
@@ -578,7 +584,7 @@ fun PetalRootApp(
                 isIncognito = isIncognito,
                 isFloatingStyle = floatingTabBar,
                 isBottomAddressBar = isBottomAddressBar,
-                glassSource = rootView,
+                glassSource = if (isHome) null else activeWebEngineView,
                 onHomeClick = {
                     haptic.playClick(context)
                     viewModel.loadUrl("about:home")

@@ -101,6 +101,10 @@ class GlassBackdrop internal constructor(private val source: View) {
         val w = source.width
         val h = source.height
         if (!source.isAttachedToWindow || w <= 0 || h <= 0) return false
+        for (bar in bars) {
+            val host = bar.host
+            if (host != null && isAncestor(source, host)) return false
+        }
         isRecording = true
         try {
             node.setPosition(0, 0, w, h)
@@ -501,7 +505,7 @@ half4 main(float2 coord) {
 }
 """
 
-private fun isAncestor(ancestor: View, descendant: View): Boolean {
+internal fun isAncestor(ancestor: View, descendant: View): Boolean {
     if (ancestor === descendant) return true
     var p = descendant.parent
     while (p != null) {

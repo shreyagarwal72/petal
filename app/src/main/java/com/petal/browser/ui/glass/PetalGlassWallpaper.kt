@@ -216,11 +216,16 @@ fun Modifier.recordGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
  * page changes behind the menu exactly like the in-window home screen containments do.
  * Draws nothing itself. [tick] must read a per-frame state so this redraws each frame.
  */
+@Composable
 fun Modifier.liveGlassWallpaper(
     wallpaper: PetalGlassWallpaper,
     source: android.view.View,
     tick: () -> Long
-): Modifier = liveGlassWallpaperImpl(wallpaper, source, tick, FloatArray(2))
+): Modifier {
+    val host = androidx.compose.ui.platform.LocalView.current
+    if (isAncestor(source, host)) return this
+    return liveGlassWallpaperImpl(wallpaper, source, tick, FloatArray(2), host)
+}
 
 private var isRecordingLiveWallpaper = false
 private const val LIVE_RECORD_MIN_INTERVAL_NS = 32_000_000L // ~30 fps
@@ -229,7 +234,8 @@ private fun Modifier.liveGlassWallpaperImpl(
     wallpaper: PetalGlassWallpaper,
     source: android.view.View,
     tick: () -> Long,
-    boxOnScreen: FloatArray
+    boxOnScreen: FloatArray,
+    host: android.view.View? = null
 ): Modifier =
     onGloballyPositioned {
         try {
@@ -258,7 +264,7 @@ private fun Modifier.liveGlassWallpaperImpl(
             if (wallpaper.hasRecorded) {
                 if (nowNs - lastLiveRecordNs < LIVE_RECORD_MIN_INTERVAL_NS) return@onDrawWithContent
             }
-            if (isRecordingLiveWallpaper) {
+            if (isRecordingLiveWallpaper || (host != null && isAncestor(source, host))) {
                 // Prevent recursive re-entry if source hierarchy includes the calling view
                 return@onDrawWithContent
             }

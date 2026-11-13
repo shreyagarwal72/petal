@@ -198,7 +198,8 @@
         <service
             android:name="com.petal.browser.engine.gecko.PetalCrashHandlerService"
             android:process=":gecko_crash"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <!-- Petal System Autofill Service -->
         <service
