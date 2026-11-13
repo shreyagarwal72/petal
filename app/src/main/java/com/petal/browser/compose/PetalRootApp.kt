@@ -11,7 +11,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -199,7 +198,7 @@ fun PetalRootApp(
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
     val predictiveBackStyle by PetalPredictiveJunction.backStyle.collectAsStateWithLifecycle()
     val predictiveBackExitDirection by PetalPredictiveJunction.backExitDirection.collectAsStateWithLifecycle()
-    val predictiveBlurEnabled by PetalPredictiveJunction.blurEnabled.collectAsStateWithLifecycle()
+    val predictiveBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsStateWithLifecycle()
 
     val lastExitBackAt = remember { longArrayOf(0L) }
     val progressAnim = remember { Animatable(0f) }
@@ -311,14 +310,11 @@ fun PetalRootApp(
                             )
                         )
                     } else {
-                        val settleAnim = Animatable(0f)
-                        settleAnim.animateTo(
+                        progressAnim.animateTo(
                             targetValue = 1f,
-                            animationSpec = tween(currentStyle.commitDurationMs, easing = LinearEasing)
+                            animationSpec = tween(currentStyle.commitDurationMs, easing = currentStyle.commitEasing)
                         ) {
-                            settleTime = value
-                            val eased = currentStyle.commitEasing.transform(value)
-                            progressAnim.snapTo(release + (1f - release) * eased)
+                            settleTime = ((value - release) / (1f - release).coerceAtLeast(0.01f)).coerceIn(0f, 1f)
                         }
                     }
                     activity?.finish()
