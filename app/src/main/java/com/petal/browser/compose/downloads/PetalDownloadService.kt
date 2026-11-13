@@ -123,7 +123,7 @@ class PetalDownloadService : Service() {
         }
 
         if (downloadId > 0) {
-            PetalLiveAlertManager.trackDownload(applicationContext, downloadId, fileName, startService = false)
+            PetalLiveAlertManager.trackDownload(applicationContext, downloadId, fileName)
         } else {
             restoreActiveDownloads()
         }

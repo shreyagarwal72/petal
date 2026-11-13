@@ -20,6 +20,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -174,7 +175,7 @@ object PetalFetchDownloadBridge {
 
     private class StartResult(val id: String?, val failure: DownloadFailure?)
 
-    private fun mozillaManager(appContext: Context): FetchDownloadManager = FetchDownloadManager(
+    private fun mozillaManager(appContext: Context): FetchDownloadManager<com.petal.browser.download.PetalMozillaDownloadService> = FetchDownloadManager(
         applicationContext = appContext,
         store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext),
         service = com.petal.browser.download.PetalMozillaDownloadService::class,
@@ -642,9 +643,26 @@ object PetalFetchDownloadBridge {
     private fun restartDownload(appContext: Context, uuid: String) {
         try {
             armStartGrace()
-            mozillaManager(appContext).tryAgain(uuid)
+            val alive = com.petal.browser.download.PetalDownloadServiceState.isRunning(appContext)
+            if (alive) {
+                sendMozillaDownloadAction(
+                    appContext,
+                    uuid,
+                    mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_TRY_AGAIN
+                )
+            } else {
+                val intent = Intent(appContext, com.petal.browser.download.PetalMozillaDownloadService::class.java).apply {
+                    action = mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_TRY_AGAIN
+                    putExtra(mozilla.components.feature.downloads.INTENT_EXTRA_DOWNLOAD_ID, uuid)
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    appContext.startForegroundService(intent)
+                } else {
+                    appContext.startService(intent)
+                }
+            }
         } catch (t: Throwable) {
-            android.util.Log.e(TAG, "tryAgain failed for $uuid: ${t.message}", t)
+            android.util.Log.e(TAG, "restartDownload failed for $uuid: ${t.message}", t)
             notifyFailure(appContext, DownloadFailure.START_FAILED)
         }
     }
