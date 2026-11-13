@@ -55,13 +55,7 @@ fun PetalSendToDeviceSheet(
     val fxaManager = remember { FxAccountManager.getInstance() }
 
     val accountState by fxaManager.accountState.collectAsStateWithLifecycle()
-    // Devices from Mozilla's device list that can receive tabs (Send Tab capability).
-    val deviceList by remember { syncManager.devices(context) }.collectAsStateWithLifecycle()
-    val remoteDevices = remember(deviceList) {
-        deviceList.filter { it.canReceiveTabs }.map {
-            RemoteDeviceTabs(deviceId = it.id, deviceName = it.name, deviceType = it.type, tabs = emptyList())
-        }
-    }
+    val remoteDevices by syncManager.tabBridge.remoteTabsFlow.collectAsStateWithLifecycle()
 
     var isSending by remember { mutableStateOf(false) }
     var sentTarget by remember { mutableStateOf<String?>(null) }
@@ -175,8 +169,9 @@ fun PetalSendToDeviceSheet(
                     Spacer(Modifier.height(4.dp))
                     PetalLiquidButton(
                         onClick = {
-                            syncManager.devices(context)
-                            PetalToast.show(context, "Checking for your other devices...")
+                            // Trigger sync cycle to refresh device list
+                            syncManager.syncNow(context)
+                            PetalToast.show(context, "Checking for paired Firefox devices...")
                         },
                         variant = PetalButtonVariant.Tonal,
                         modifier = Modifier.fillMaxWidth()

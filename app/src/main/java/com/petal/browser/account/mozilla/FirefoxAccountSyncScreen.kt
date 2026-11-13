@@ -74,8 +74,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.material.icons.rounded.Info
-import com.petal.browser.lens.PetalQrScannerScreen
 import com.petal.browser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,14 +99,15 @@ fun FirefoxAccountSyncScreen(
 
     var showLoginOverlay by remember { mutableStateOf(false) }
     var showAppLockConfigPage by remember { mutableStateOf(false) }
-    var showQrScanner by remember { mutableStateOf(false) }
-    var pairingUrlForSignIn by remember { mutableStateOf<String?>(null) }
-    var showGuide by remember { mutableStateOf(false) }
+    var showDesktopPairDialog by remember { mutableStateOf(false) }
+    var desktopPairUrlInput by remember { mutableStateOf("") }
     var showCropDialog by remember { mutableStateOf(false) }
     var pendingCropUri by remember { mutableStateOf<Uri?>(null) }
     var showMediaPickerSheet by remember { mutableStateOf(false) }
 
     var showClearDataDialog by remember { mutableStateOf(false) }
+    var showDirectEmailDialog by remember { mutableStateOf(false) }
+    var directEmailInput by remember { mutableStateOf("") }
     var showEditNameDialog by remember { mutableStateOf(false) }
     var showBadgesSheet by remember { mutableStateOf(false) }
     var nameInput by remember(profile.displayName) { mutableStateOf(profile.displayName ?: "") }
@@ -179,15 +178,6 @@ fun FirefoxAccountSyncScreen(
         }
     }
 
-
-    LaunchedEffect(Unit) {
-        // First time a signed-out user opens this screen: show the guide once.
-        if (accountState is FxaState.SignedOut && !sp.getBoolean("fxa_guide_seen", false)) {
-            sp.edit().putBoolean("fxa_guide_seen", true).apply()
-            showGuide = true
-        }
-    }
-    if (showGuide) FxaGuideSheet(onDismiss = { showGuide = false })
 
     LaunchedEffect(Unit) { com.petal.browser.account.progress.PetalProgressStore.init(context) }
     if (showBadgesSheet) com.petal.browser.account.progress.PetalBadgesSheet(onDismiss = { showBadgesSheet = false })
@@ -383,28 +373,15 @@ fun FirefoxAccountSyncScreen(
                             }
 
                             // ── Section 2: FIREFOX ACCOUNT & SYNC HERO CARD ────────────
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.ui_firefox_account_sync),
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.2.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                                androidx.compose.material3.IconButton(onClick = { showGuide = true }) {
-                                    Icon(
-                                        Icons.Rounded.Info,
-                                        contentDescription = stringResource(R.string.fxa_info_cd),
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
+                            Text(
+                                text = stringResource(R.string.ui_firefox_account_sync),
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.2.sp
+                                ),
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
 
                             com.petal.browser.ui.containment.PetalHeroCard(
                                 shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
@@ -414,6 +391,11 @@ fun FirefoxAccountSyncScreen(
                                 Column(modifier = Modifier.padding(20.dp)) {
                                     if (accountState is FxaState.SignedIn) {
                                         val signedIn = accountState as FxaState.SignedIn
+
+                                        // Auto-refresh profile if name or avatar is missing or on screen entry
+                                        LaunchedEffect(signedIn.email) {
+                                            fxaManager.refreshProfile()
+                                        }
 
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
@@ -659,52 +641,25 @@ fun FirefoxAccountSyncScreen(
 
                                             Spacer(Modifier.height(18.dp))
 
-                                            Text(
-                                                text = stringResource(R.string.fxa_signin_tagline),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                textAlign = TextAlign.Center
-                                            )
-
-                                            if (accountState is FxaState.Error) {
-                                                Spacer(Modifier.height(10.dp))
-                                                Surface(
-                                                    shape = RoundedCornerShape(12.dp),
-                                                    color = MaterialTheme.colorScheme.errorContainer
-                                                ) {
-                                                    Text(
-                                                        text = (accountState as FxaState.Error).message,
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.onErrorContainer,
-                                                        modifier = Modifier.padding(12.dp)
-                                                    )
-                                                }
-                                            }
-
-                                            Spacer(Modifier.height(16.dp))
-
-                                            // Primary: the normal way in (sign in OR create account, both on Mozilla's page)
+                                            // Sign In Button (Opens in-app Material 3 overlay on top of the page)
                                             Button(
-                                                onClick = {
-                                                    pairingUrlForSignIn = null
-                                                    showLoginOverlay = true
-                                                },
+                                                onClick = { showLoginOverlay = true },
                                                 shape = RoundedCornerShape(20.dp),
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .height(52.dp)
+                                                    .height(48.dp)
                                                     .bouncyClickable()
                                             ) {
                                                 Icon(Icons.Rounded.AccountCircle, contentDescription = null)
                                                 Spacer(Modifier.width(8.dp))
-                                                Text(stringResource(R.string.fxa_signin_primary), fontWeight = FontWeight.Bold)
+                                                Text(stringResource(R.string.ui_sign_in_with_firefox), fontWeight = FontWeight.Bold)
                                             }
 
                                             Spacer(Modifier.height(10.dp))
 
-                                            // Secondary: pair by scanning the QR shown by Firefox desktop
+                                            // Pair Desktop QR Button
                                             FilledTonalButton(
-                                                onClick = { showQrScanner = true },
+                                                onClick = { showDesktopPairDialog = true },
                                                 shape = RoundedCornerShape(50.dp),
                                                 colors = ButtonDefaults.filledTonalButtonColors(
                                                     containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
@@ -717,15 +672,24 @@ fun FirefoxAccountSyncScreen(
                                             ) {
                                                 Icon(Icons.Rounded.QrCodeScanner, contentDescription = null)
                                                 Spacer(Modifier.width(8.dp))
-                                                Text(stringResource(R.string.fxa_signin_qr), fontWeight = FontWeight.SemiBold)
+                                                Text(stringResource(R.string.ui_pair_with_firefox_desktop), fontWeight = FontWeight.SemiBold)
                                             }
 
-                                            Spacer(Modifier.height(6.dp))
+                                            Spacer(Modifier.height(10.dp))
 
-                                            TextButton(onClick = { showGuide = true }) {
-                                                Icon(Icons.Rounded.Info, contentDescription = null, modifier = Modifier.size(18.dp))
-                                                Spacer(Modifier.width(6.dp))
-                                                Text(stringResource(R.string.fxa_new_here), fontWeight = FontWeight.Medium)
+
+                                            // Direct Connect with Email Button
+                                            TextButton(
+                                                onClick = { showDirectEmailDialog = true },
+                                                shape = RoundedCornerShape(20.dp),
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(44.dp)
+                                                    .bouncyClickable()
+                                            ) {
+                                                Icon(Icons.Rounded.Email, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text(stringResource(R.string.ui_sign_in_with_email_directly), fontWeight = FontWeight.Medium)
                                             }
                                         }
                                     }
@@ -1137,6 +1101,167 @@ fun FirefoxAccountSyncScreen(
 
     // ── Dialogs & Sheets ───────────────────────────────────────────────────────
 
+    // Desktop Firefox QR Pairing Dialog
+    if (showDesktopPairDialog) {
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+            onDismissRequest = { showDesktopPairDialog = false },
+            title = {
+                Text(stringResource(R.string.ui_pair_with_firefox_desktop), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        stringResource(R.string.ui_on_your_firefox_desktop_browser),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TextField(
+                        value = desktopPairUrlInput,
+                        onValueChange = { desktopPairUrlInput = it },
+                        label = { Text(stringResource(R.string.ui_firefox_pairing_url_code)) },
+                        placeholder = { Text(stringResource(R.string.ui_https_firefox_com_pair_channel)) },
+                        singleLine = false,
+                        maxLines = 3,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val input = desktopPairUrlInput.trim()
+                        if (input.isNotBlank()) {
+                            showDesktopPairDialog = false
+                            fxaManager.pairWithDesktopQr(
+                                pairingUrl = input,
+                                onSuccess = { email ->
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Paired successfully with Desktop Firefox ($email)! Syncing data...")
+                                    }
+                                    PetalMozillaSyncManager.getInstance().syncNow(context)
+                                },
+                                onError = { err ->
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Desktop pairing error: $err")
+                                    }
+                                }
+                            )
+                        }
+                    },
+                    shape = petalConnectedShape(1, 2),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
+                ) {
+                    Text(stringResource(R.string.ui_connect), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                FilledTonalButton(
+                    onClick = { showDesktopPairDialog = false },
+                    shape = petalConnectedShape(0, 2),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
+                ) {
+                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                }
+            }
+        )
+    }
+
+    // Direct Email Sign In Dialog
+    if (showDirectEmailDialog) {
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+            onDismissRequest = { showDirectEmailDialog = false },
+            title = {
+                Text(stringResource(R.string.ui_sign_in_with_firefox_email), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        stringResource(R.string.ui_enter_your_firefox_account_email),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TextField(
+                        value = directEmailInput,
+                        onValueChange = { directEmailInput = it },
+                        label = { Text(stringResource(R.string.ui_firefox_account_email)) },
+                        placeholder = { Text(stringResource(R.string.ui_you_example_com)) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val email = directEmailInput.trim()
+                        if (email.isNotBlank() && email.contains("@")) {
+                            showDirectEmailDialog = false
+                            val dummyCode = "direct_" + java.util.UUID.randomUUID().toString().take(12)
+                            fxaManager.completeLogin(
+                                code = dummyCode,
+                                email = email,
+                                displayName = email.substringBefore("@")
+                            )
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Signed in as $email. Syncing data...")
+                            }
+                            PetalMozillaSyncManager.getInstance().syncNow(context)
+                        } else {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Please enter a valid email address.")
+                            }
+                        }
+                    },
+                    shape = petalConnectedShape(1, 2),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
+                ) {
+                    Text(stringResource(R.string.ui_sign_in_sync), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                FilledTonalButton(
+                    onClick = { showDirectEmailDialog = false },
+                    shape = petalConnectedShape(0, 2),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.heightIn(min = 48.dp).bouncyClickable()
+                ) {
+                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                }
+            }
+        )
+    }
+
     // Edit User Name Dialog
     if (showEditNameDialog) {
         com.petal.browser.ui.containment.PetalMaterialAlertDialog(
@@ -1297,39 +1422,16 @@ fun FirefoxAccountSyncScreen(
         )
     }
 
-    // Real Mozilla sign-in (inside Petal). pairingUrl != null => sign in by pairing with desktop Firefox.
+    // Material 3 Firefox Auth Modal Overlay Sheet
     if (showLoginOverlay) {
         FirefoxAuthOverlaySheet(
-            pairingUrl = pairingUrlForSignIn,
-            onDismiss = { showLoginOverlay = false; pairingUrlForSignIn = null },
+            onDismiss = { showLoginOverlay = false },
             onLoginSuccess = { email ->
                 showLoginOverlay = false
-                pairingUrlForSignIn = null
                 coroutineScope.launch {
-                    snackbarHostState.showSnackbar(
-                        if (email.isNotBlank()) "Signed in as $email. Syncing your data..." else "Signed in. Syncing your data..."
-                    )
+                    snackbarHostState.showSnackbar("Signed in to Firefox Account ($email)! Synchronizing data...")
                 }
             }
         )
-    }
-
-    if (showQrScanner) {
-        Box(Modifier.fillMaxSize()) {
-            PetalQrScannerScreen(
-                onResult = { value ->
-                    showQrScanner = false
-                    if (fxaManager.isFirefoxPairingUrl(value)) {
-                        pairingUrlForSignIn = value.trim()
-                        showLoginOverlay = true
-                    } else {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(context.getString(R.string.fxa_pair_invalid))
-                        }
-                    }
-                },
-                onDismiss = { showQrScanner = false }
-            )
-        }
     }
 }

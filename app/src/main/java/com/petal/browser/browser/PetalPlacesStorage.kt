@@ -30,10 +30,6 @@ object PetalPlacesStorage {
             action.addHistory(record)
             action.close()
         } catch (_: Throwable) {}
-        try {
-            com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance()
-                .onPageVisited(context, url, title)
-        } catch (_: Throwable) {}
     }
 
     /**
