@@ -235,7 +235,8 @@ private fun PetalWidgetCard(
                 contentDescription = null,
                 modifier = GlanceModifier.fillMaxSize(),
                 contentScale = ContentScale.FillBounds,
-                colorFilter = tint(if (pal.isDark) 0xFF1C1E27.toInt() else 0xFFF0F2FA.toInt())
+                // Frosted stand-in until the glass is aligned: translucent so it still reads as glass, not a dark slab.
+                colorFilter = tint(if (pal.isDark) 0xB3262A36.toInt() else 0xB3F4F6FC.toInt())
             )
             else -> Image(
                 provider = ImageProvider(PetalWidgetDrawables.fill(cfg.cornerRadius)),
@@ -256,7 +257,7 @@ private fun PetalWidgetCard(
             )
         }
 
-        if (isLiquidGlass && cfg.cornerRadius >= 16) {
+        if (isLiquidGlass && glassUri == null && cfg.cornerRadius >= 16) {
             Image(
                 provider = ImageProvider(
                     if (cfg.cornerRadius >= 24) R.drawable.widget_glass_sheen_pill else R.drawable.widget_glass_sheen_card
@@ -277,7 +278,7 @@ private fun PetalWidgetCard(
             ) {
                 Surface(
                     res = PetalWidgetDrawables.fill(12),
-                    color = 0xD910121A.toInt(),
+                    color = 0x99000000.toInt(),
                     modifier = GlanceModifier.clickable(actionStartActivity(PetalWidgetGlassActivity.intent(context, appWidgetId)))
                 ) {
                     Row(

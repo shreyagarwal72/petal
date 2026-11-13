@@ -29,6 +29,7 @@ object PetalPlacesStorage {
             }
             action.addHistory(record)
             action.close()
+            com.petal.browser.account.mozilla.PetalFxa.mirrorVisit(context, url, record.title ?: url)
         } catch (_: Throwable) {}
     }
 

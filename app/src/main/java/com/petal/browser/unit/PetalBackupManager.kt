@@ -187,7 +187,9 @@ object PetalBackupManager {
     private val BUILTIN_PREF_NAMES = arrayOf(
         "petal_settings", "petal_menu", "petal_tab_groups", "petal_inactive_tabs", "petal_ytdlp",
         "MenuPreferences", "petal_tab_collections_prefs",
-        "petal_inactive_tabs_prefs", "petal_tab_groups_prefs", "petal_ytdlp_engine_prefs"
+        "petal_inactive_tabs_prefs", "petal_tab_groups_prefs", "petal_ytdlp_engine_prefs",
+        // Firefox Sync choices (engines, device name). The account sign-in itself is never backed up.
+        "petal_sync_settings"
     )
 
     /**
@@ -918,7 +920,10 @@ object PetalBackupManager {
         if (restoreSettings) parts.add("settings" + if (filesRestored > 0) " + $filesRestored files" else "")
         val head = "Restored: " + parts.joinToString(", ")
         val tail = if (problems.isEmpty()) "" else " (could not restore: ${problems.joinToString()})"
-        val hint = if (restoreSettings && prefsFiles > 0) ". Restart Petal to apply all settings." else "."
+        if (restoreSettings) {
+            try { com.petal.browser.account.mozilla.PetalFxa.onSettingsRestored(context) } catch (_: Throwable) {}
+        }
+        val hint = if (restoreSettings && prefsFiles > 0) ". Restart Petal to apply all settings. Sign in to Firefox again to resume sync." else "."
         return head + tail + hint
     }
 

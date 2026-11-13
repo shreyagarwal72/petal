@@ -60,6 +60,8 @@ import com.petal.browser.ui.components.PetalLiquidButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -297,6 +299,19 @@ class PetalWidgetGlassActivity : ComponentActivity() {
         }
     }
 
+    /** Which Petal widget this id belongs to, so the preview uses the same corner radius as the real widget. */
+    private fun kindOf(context: Context, appWidgetId: Int): PetalWidgetKind {
+        val cls = try {
+            AppWidgetManager.getInstance(context).getAppWidgetInfo(appWidgetId)?.provider?.className.orEmpty()
+        } catch (_: Throwable) { "" }
+        return when {
+            cls.contains("Petal2") -> PetalWidgetKind.PETAL2
+            cls.contains("Petal3") -> PetalWidgetKind.PETAL3
+            else -> PetalWidgetKind.PETAL1
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
     @Composable
     private fun WallpaperAlignerView(
         wallpaper: Bitmap,
@@ -307,167 +322,151 @@ class PetalWidgetGlassActivity : ComponentActivity() {
     ) {
         val context = LocalContext.current
         val density = LocalDensity.current
-
         var screenSize by remember { mutableStateOf(IntSize.Zero) }
 
-        // Stored rect or default placement
-        val initialRect = remember(appWidgetId) {
-            PetalGlassWidgets.getRect(context, appWidgetId)
-        }
-        val initialSize = remember(appWidgetId) {
-            PetalGlassWidgets.getSize(context, appWidgetId)
+        val initialRect = remember(appWidgetId) { PetalGlassWidgets.getRect(context, appWidgetId) }
+        val liveSize = remember(appWidgetId) { PetalGlassWidgets.getSize(context, appWidgetId) }
+        val cfg = remember(appWidgetId) { PetalWidgetConfigStore.load(context, kindOf(context, appWidgetId)) }
+        val dark = remember { isWidgetDark(context) }
+
+        // The frame always has the widget's real pixel size, so the slice is never stretched.
+        val frameW = remember { (liveSize?.first ?: initialRect?.width() ?: with(density) { 320.dp.roundToPx() }).toFloat() }
+        val frameH = remember { (liveSize?.second ?: initialRect?.height() ?: with(density) { 64.dp.roundToPx() }).toFloat() }
+        val cornerDp = remember(cfg, frameW, frameH) {
+            val shortDp = with(density) { minOf(frameW, frameH).toDp().value }
+            if (cfg.cornerRadius >= PETAL_RADIUS_FULL) shortDp / 2f else cfg.cornerRadius.toFloat()
         }
 
-        // Widget frame coordinates in pixels
-        var frameWidthPx by remember {
-            mutableStateOf(
-                initialRect?.width()?.toFloat()
-                    ?: initialSize?.first?.toFloat()
-                    ?: with(density) { 320.dp.toPx() }
-            )
-        }
-        var frameHeightPx by remember {
-            mutableStateOf(
-                initialRect?.height()?.toFloat()
-                    ?: initialSize?.second?.toFloat()
-                    ?: with(density) { 64.dp.toPx() }
-            )
+        var offsetX by remember { mutableStateOf(initialRect?.left?.toFloat() ?: 0f) }
+        var offsetY by remember { mutableStateOf(initialRect?.top?.toFloat() ?: 0f) }
+        var ready by remember { mutableStateOf(initialRect != null) }
+        var preview by remember { mutableStateOf<Bitmap?>(null) }
+
+        fun clampX(v: Float) = v.coerceIn(0f, max(0f, screenSize.width - frameW))
+        fun clampY(v: Float) = v.coerceIn(0f, max(0f, screenSize.height - frameH))
+        fun center() {
+            offsetX = clampX((screenSize.width - frameW) / 2f)
+            offsetY = clampY(screenSize.height * 0.28f)
         }
 
-        var offsetX by remember {
-            mutableStateOf(initialRect?.left?.toFloat() ?: 0f)
+        // Live glass: re-slice whenever the frame moves, keeping only the newest request so dragging stays smooth.
+        LaunchedEffect(ready, screenSize, wallpaper) {
+            if (!ready) return@LaunchedEffect
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            snapshotFlow { Pair(offsetX.roundToInt(), offsetY.roundToInt()) }
+                .debounce(16)
+                .collectLatest { (x, y) ->
+                    val left = x.coerceIn(0, max(0, screenSize.width - frameW.roundToInt()))
+                    val top = y.coerceIn(0, max(0, screenSize.height - frameH.roundToInt()))
+                    val r = Rect(left, top, left + frameW.roundToInt(), top + frameH.roundToInt())
+                    val bmp = withContext(Dispatchers.Default) {
+                        PetalGlassWidgetRenderer.render(
+                            context,
+                            PetalGlassWidgetRenderer.Spec(
+                                rect = r,
+                                blurDp = 24f,
+                                cornerDp = cornerDp,
+                                dark = dark,
+                                edge = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f),
+                                refraction = sp.getFloat("sp_liquid_glass_refraction", 1.0f).coerceIn(0f, 2f),
+                                refractionWidth = sp.getFloat("sp_liquid_glass_refraction_width", 1.0f).coerceIn(0f, 2f)
+                            )
+                        )
+                    }
+                    if (bmp != null) preview = bmp
+                }
         }
-        var offsetY by remember {
-            mutableStateOf(initialRect?.top?.toFloat() ?: 0f)
-        }
-
-        // Center initially if no previous rect existed
-        var isInitialized by remember { mutableStateOf(false) }
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .onSizeChanged { size ->
                     screenSize = size
-                    if (!isInitialized && size.width > 0 && size.height > 0) {
-                        if (initialRect == null) {
-                            offsetX = ((size.width - frameWidthPx) / 2f).coerceAtLeast(0f)
-                            offsetY = (size.height * 0.28f).coerceAtLeast(0f)
-                        }
-                        isInitialized = true
+                    if (size.width > 0 && size.height > 0) {
+                        if (!ready) { center(); ready = true } else { offsetX = clampX(offsetX); offsetY = clampY(offsetY) }
                     }
                 }
         ) {
-            // Fullscreen home wallpaper
+            // Wallpaper is already display-sized, so FillBounds maps 1:1 to the real home screen.
             Image(
                 bitmap = wallpaper.asImageBitmap(),
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.FillBounds,
                 modifier = Modifier.fillMaxSize()
             )
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.18f)))
 
-            // High-contrast darkened scrim to clearly highlight the widget frame
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.45f))
-            )
-
-            // Draggable widget alignment frame
-            val frameLeft = offsetX.roundToInt().coerceIn(0, max(0, screenSize.width - frameWidthPx.roundToInt()))
-            val frameTop = offsetY.roundToInt().coerceIn(0, max(0, screenSize.height - frameHeightPx.roundToInt()))
-            val frameRight = frameLeft + frameWidthPx.roundToInt()
-            val frameBottom = frameTop + frameHeightPx.roundToInt()
-
-            Box(
-                modifier = Modifier
-                    .offset { IntOffset(frameLeft, frameTop) }
-                    .size(
-                        width = with(density) { frameWidthPx.toDp() },
-                        height = with(density) { frameHeightPx.toDp() }
-                    )
-                    .pointerInput(Unit) {
-                        detectDragGestures { change, dragAmount ->
-                            change.consume()
-                            val maxW = screenSize.width - frameWidthPx
-                            val maxH = screenSize.height - frameHeightPx
-                            offsetX = (offsetX + dragAmount.x).coerceIn(0f, max(0f, maxW))
-                            offsetY = (offsetY + dragAmount.y).coerceIn(0f, max(0f, maxH))
+            if (ready) {
+                val left = offsetX.roundToInt()
+                val top = offsetY.roundToInt()
+                val shape = RoundedCornerShape(cornerDp.dp)
+                Box(
+                    modifier = Modifier
+                        .offset { IntOffset(left, top) }
+                        .size(with(density) { frameW.toDp() }, with(density) { frameH.toDp() })
+                        .pointerInput(screenSize) {
+                            detectDragGestures { change, drag ->
+                                change.consume()
+                                offsetX = clampX(offsetX + drag.x)
+                                offsetY = clampY(offsetY + drag.y)
+                            }
                         }
+                        .clip(shape)
+                        .border(1.5.dp, Color.White.copy(alpha = 0.85f), shape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    preview?.let {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = null,
+                            contentScale = ContentScale.FillBounds,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color.White.copy(alpha = 0.22f))
-                    .shadow(12.dp, RoundedCornerShape(24.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Petal Widget Frame",
+                        text = "${with(density) { frameW.toDp().value.roundToInt() }} × ${with(density) { frameH.toDp().value.roundToInt() }} dp",
                         color = Color.White,
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = "${frameWidthPx.roundToInt()} × ${frameHeightPx.roundToInt()} px",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 11.sp
                     )
                 }
             }
 
-            // Top control header
+            // Header: close | title | wallpaper picker, never overlapping.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .systemBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 IconButton(
                     onClick = onClose,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.6f))
+                    modifier = Modifier.size(44.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.6f))
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = stringResource(android.R.string.cancel),
-                        tint = Color.White
-                    )
+                    Icon(Icons.Rounded.Close, stringResource(android.R.string.cancel), tint = Color.White)
                 }
-
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = Color.Black.copy(alpha = 0.65f),
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.widget_glass_align_title),
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                    )
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Surface(shape = RoundedCornerShape(22.dp), color = Color.Black.copy(alpha = 0.6f)) {
+                        Text(
+                            text = stringResource(R.string.widget_glass_align_title),
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                        )
+                    }
                 }
-
                 IconButton(
                     onClick = onPickNewWallpaper,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.6f))
+                    modifier = Modifier.size(44.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.6f))
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ImageIcon,
-                        contentDescription = stringResource(R.string.widget_glass_pick_wallpaper),
-                        tint = Color.White
-                    )
+                    Icon(ImageIcon, stringResource(R.string.widget_glass_pick_wallpaper), tint = Color.White)
                 }
             }
 
-            // Bottom control pill
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -476,57 +475,42 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.Black.copy(alpha = 0.72f),
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.Black.copy(alpha = 0.65f),
                     modifier = Modifier.padding(bottom = 12.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.widget_glass_align_hint),
-                        color = Color.White.copy(alpha = 0.85f),
+                        color = Color.White.copy(alpha = 0.9f),
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
                     )
                 }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    PetalLiquidButton(
-                        onClick = {
-                            if (screenSize.width > 0 && screenSize.height > 0) {
-                                offsetX = ((screenSize.width - frameWidthPx) / 2f).coerceAtLeast(0f)
-                                offsetY = (screenSize.height * 0.28f).coerceAtLeast(0f)
-                            }
-                        },
-                        variant = PetalButtonVariant.Tonal,
-                        modifier = Modifier.weight(1f).height(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Refresh,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = { center() },
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(26.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Black.copy(alpha = 0.6f), contentColor = Color.White
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.widget_glass_reset), fontSize = 13.sp)
+                    ) {
+                        Icon(Icons.Rounded.Refresh, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.widget_glass_reset), fontSize = 14.sp, maxLines = 1)
                     }
-
-                    PetalLiquidButton(
+                    Button(
                         onClick = {
-                            val targetRect = Rect(frameLeft, frameTop, frameRight, frameBottom)
-                            onSave(targetRect)
+                            val l = offsetX.roundToInt(); val t = offsetY.roundToInt()
+                            onSave(Rect(l, t, l + frameW.roundToInt(), t + frameH.roundToInt()))
                         },
-                        variant = PetalButtonVariant.Filled,
-                        modifier = Modifier.weight(1.3f).height(48.dp)
+                        modifier = Modifier.weight(1.3f).height(52.dp),
+                        shape = RoundedCornerShape(26.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.widget_glass_save), fontSize = 13.sp)
+                        Icon(Icons.Rounded.Check, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.widget_glass_save), fontSize = 14.sp, maxLines = 1)
                     }
                 }
             }

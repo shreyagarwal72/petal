@@ -27,8 +27,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
 import com.petal.browser.R
-import com.petal.browser.account.mozilla.FxAccountManager
-import com.petal.browser.account.mozilla.PetalMozillaSyncManager
+import com.petal.browser.account.mozilla.PetalFxa
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserController
 import com.petal.browser.browser.PetalBrowserFeatures
@@ -190,8 +189,7 @@ class MainActivity : FragmentActivity(), BrowserController {
             if (isFinishing || isDestroyed) return@postDelayed
             PetalExtensionManager.attach(applicationContext)
             PetalBuiltInExtensionManager.installAll(applicationContext)
-            FxAccountManager.getInstance().initialize(this)
-            PetalMozillaSyncManager.getInstance()
+            PetalFxa.init(this)
             browserFeatures = PetalBrowserFeatures(this).also { it.start() }
             handleIncomingIntent(intent)
             com.petal.browser.unit.PetalUpdateUtils.checkForUpdates(this, isLaunchCheck = true)

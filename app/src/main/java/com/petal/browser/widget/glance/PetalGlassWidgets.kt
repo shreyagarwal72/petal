@@ -91,8 +91,9 @@ object PetalGlassWidgets {
                     android.provider.MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
                 }
                 if (bmp != null) {
-                    saveWallpaperBitmap(context, bmp)
-                    return bmp
+                    val norm = normalizeToDisplay(context, bmp)
+                    saveWallpaperBitmap(context, norm)
+                    return norm
                 }
             } catch (_: Throwable) {}
         }
@@ -128,24 +129,45 @@ object PetalGlassWidgets {
         PetalGlassWidgetRenderer.deleteTilesFor(context, appWidgetId)
     }
 
+    /**
+     * Scales [src] to cover the display and centre-crops it, which is how a launcher lays out a non-scrolling
+     * wallpaper. Everything (aligner, renderer, slices) works in this one coordinate space, so a slice taken at
+     * a screen position always matches what is behind the widget.
+     */
+    fun normalizeToDisplay(context: Context, src: Bitmap): Bitmap {
+        val (dw, dh) = displaySize(context)
+        if (dw <= 0 || dh <= 0) return src
+        if (src.width == dw && src.height == dh) return src
+        val scale = max(dw.toFloat() / src.width, dh.toFloat() / src.height)
+        val sw = max(dw, (src.width * scale).roundToInt())
+        val sh = max(dh, (src.height * scale).roundToInt())
+        val soft = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && src.config == Bitmap.Config.HARDWARE)
+            src.copy(Bitmap.Config.ARGB_8888, false) ?: return src else src
+        val scaled = Bitmap.createScaledBitmap(soft, sw, sh, true)
+        val left = ((sw - dw) / 2).coerceAtLeast(0)
+        val top = ((sh - dh) / 2).coerceAtLeast(0)
+        val out = Bitmap.createBitmap(scaled, left, top, dw, dh)
+        if (scaled !== out && scaled !== src) scaled.recycle()
+        return out
+    }
+
     @SuppressLint("MissingPermission")
     fun tryExtractSystemWallpaper(context: Context): Bitmap? {
         return try {
             val wm = WallpaperManager.getInstance(context)
             val drawable = wm.drawable
             if (drawable != null) {
-                val (dispWidth, dispHeight) = displaySize(context)
-                val targetW = max(dispWidth, drawable.intrinsicWidth)
-                val targetH = max(dispHeight, drawable.intrinsicHeight)
-                val bitmap = if (drawable is BitmapDrawable && drawable.bitmap != null) {
+                val raw = if (drawable is BitmapDrawable && drawable.bitmap != null) {
                     drawable.bitmap
                 } else {
-                    val bmp = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
-                    val canvas = Canvas(bmp)
-                    drawable.setBounds(0, 0, targetW, targetH)
-                    drawable.draw(canvas)
+                    val tw = max(1, drawable.intrinsicWidth.takeIf { it > 0 } ?: displaySize(context).first)
+                    val th = max(1, drawable.intrinsicHeight.takeIf { it > 0 } ?: displaySize(context).second)
+                    val bmp = Bitmap.createBitmap(tw, th, Bitmap.Config.ARGB_8888)
+                    drawable.setBounds(0, 0, tw, th)
+                    drawable.draw(Canvas(bmp))
                     bmp
                 }
+                val bitmap = normalizeToDisplay(context, raw)
                 saveWallpaperBitmap(context, bitmap)
                 bitmap
             } else {

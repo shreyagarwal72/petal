@@ -313,6 +313,15 @@ dependencies {
     implementation 'org.mozilla.components:feature-webcompat:159.0.1'
     implementation 'org.mozilla.components:feature-media:159.0.1'
 
+    // Firefox Account + Firefox Sync (official Mozilla Android Components)
+    implementation 'org.mozilla.components:service-firefox-accounts:159.0.1'
+    implementation 'org.mozilla.components:concept-sync:159.0.1'
+    implementation 'org.mozilla.components:concept-storage:159.0.1'
+    implementation 'org.mozilla.components:browser-storage-sync:159.0.1'
+    implementation 'org.mozilla.components:feature-syncedtabs:159.0.1'
+    implementation 'org.mozilla.components:service-sync-logins:159.0.1'
+    implementation 'org.mozilla.components:lib-dataprotect:159.0.1'
+
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.60.1'
     ksp 'com.google.dagger:hilt-compiler:2.60.1'

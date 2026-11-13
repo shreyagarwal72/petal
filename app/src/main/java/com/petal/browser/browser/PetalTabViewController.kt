@@ -2755,25 +2755,9 @@ private class ExternalSchemeNavigationDelegate(
             return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
         }
 
-        // Firefox Account OAuth Redirect Interception
-        val fxaManager = com.petal.browser.account.mozilla.FxAccountManager.getInstance()
-        if (fxaManager.isRedirectUrl(uri)) {
-            val code = fxaManager.extractQueryParam(uri, "code")
-            val state = fxaManager.extractQueryParam(uri, "state")
-            if (!code.isNullOrBlank() && fxaManager.consumePendingAuth(state)) {
-                val email = fxaManager.extractQueryParam(uri, "email") ?: ""
-                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-                    val ok = fxaManager.exchangeCodeForTokens(code, email)
-                    if (ok) {
-                        com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(context)
-                        android.os.Handler(android.os.Looper.getMainLooper()).post {
-                            android.widget.Toast.makeText(context, "Firefox Account connected & sync active!", android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-                return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
-            }
-            // If not a pending OAuth flow from this app or missing code, do not intercept or fake auth
+        // Firefox Account sign-in redirect: hand the code/state to the official FxaAccountManager.
+        if (com.petal.browser.account.mozilla.PetalFxa.finishFromRedirect(uri)) {
+            return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
         }
 
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
