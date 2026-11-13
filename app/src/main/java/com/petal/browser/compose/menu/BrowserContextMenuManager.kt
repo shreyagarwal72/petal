@@ -6,6 +6,9 @@ import android.net.Uri
 import android.os.Build
 import android.webkit.URLUtil
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.compose.ai.ResearchMode
 import com.petal.browser.compose.mlkit.PetalImageScannerBridge
@@ -791,7 +794,7 @@ object BrowserContextMenuManager {
                                 context = activity,
                                 url = pageUrl,
                                 fileName = resolvedName,
-                                mimeType = mimeType.ifBlank { "text/html" },
+                                mimeType = mimeType?.ifBlank { "text/html" } ?: "text/html",
                                 referrerUrl = pageUrl,
                                 isPrivate = isPrivate
                             )
@@ -804,7 +807,7 @@ object BrowserContextMenuManager {
 
                 override fun onAddToHomeScreen() {
                     try {
-                        PetalAndroidUtils.createShortcut(activity, title, pageUrl, null)
+                        PetalAndroidUtils.createShortcut(activity, title ?: "Page", pageUrl)
                         PetalToast.show(activity, "Added to Home screen")
                     } catch (e: Exception) {
                         PetalToast.show(activity, "Failed to add to Home screen")
@@ -813,6 +816,8 @@ object BrowserContextMenuManager {
 
                 override fun onInspectPage() {
                     try {
+                        val tab = activity.currentAlbumController as? com.petal.browser.browser.PetalTabViewController
+                            ?: activity.getOrCreateTabViewController()
                         val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
                             setViewTreeLifecycleOwner(activity)
                             setViewTreeViewModelStoreOwner(activity)
@@ -821,7 +826,7 @@ object BrowserContextMenuManager {
                                 com.petal.browser.ui.theme.PetalExpressiveTheme {
                                     com.petal.browser.tools.PetalDevConsoleSheet(
                                         onExecuteScript = { script, callback ->
-                                            activity.currentAlbumController?.evaluateJavascript(script, callback)
+                                            tab?.evaluateJavascript(script, callback)
                                                 ?: callback("Error: Web session not active")
                                         },
                                         onDismissRequest = {
@@ -831,8 +836,7 @@ object BrowserContextMenuManager {
                                 }
                             }
                         }
-                        val decor = activity.window.decorView as? android.view.ViewGroup
-                        decor?.addView(composeView)
+                        activity.presentComposeScreen(composeView)
                     } catch (e: Exception) {
                         PetalToast.show(activity, "DevTools unavailable")
                     }

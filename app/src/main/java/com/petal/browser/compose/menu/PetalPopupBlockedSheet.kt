@@ -5,20 +5,21 @@ import android.net.Uri
 import android.view.Gravity
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
@@ -36,13 +37,14 @@ import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupPosition
-import com.petal.browser.ui.containment.PetalMotion
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.containment.rememberPetalGroupPressScale
 import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.glass.PetalGlassContainer
+import com.petal.browser.ui.kit.Card
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -52,6 +54,14 @@ import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.view.PetalToast
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+private data class PopupAction(
+    val id: String,
+    val label: String,
+    val icon: ImageVector,
+    val variant: PetalBadgeVariant,
+    val onClick: () -> Unit,
+)
 
 /**
  * PetalPopupBlockedSheet
@@ -91,6 +101,19 @@ fun PetalPopupBlockedSheet(
             onDismiss()
             action()
         }
+    }
+
+    val actions = remember(targetUrl, onAlwaysAllow, onAllowOnce, onOpenInBackground, onOpenInIncognito) {
+        listOf(
+            PopupAction("always_allow", "Always allow pop-ups from this site", Icons.Rounded.CheckCircle, PetalBadgeVariant.PRIMARY, onAlwaysAllow),
+            PopupAction("open_new_tab", "Open in new tab", Icons.Rounded.Tab, PetalBadgeVariant.SECONDARY, onAllowOnce),
+            PopupAction("open_bg_tab", "Open in background tab", Icons.Rounded.OpenInBrowser, PetalBadgeVariant.SECONDARY, onOpenInBackground),
+            PopupAction("open_incognito_tab", "Open in private tab", Icons.Rounded.VisibilityOff, PetalBadgeVariant.TERTIARY, onOpenInIncognito),
+            PopupAction("copy_url", "Copy link address", Icons.Rounded.Link, PetalBadgeVariant.SURFACE_TONAL) {
+                PetalAndroidUtils.copy(context, targetUrl)
+                PetalToast.show(context, "Pop-up link copied")
+            },
+        )
     }
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
@@ -150,79 +173,40 @@ fun PetalPopupBlockedSheet(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Actions Group
-                Column(
+                PetalGroup(
+                    rowCount = actions.size,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                ) {
+                ) { index, position ->
+                    val action = actions[index]
                     PopupBlockedRow(
-                        id = "always_allow",
-                        label = "Always allow pop-ups from this site",
-                        icon = Icons.Rounded.CheckCircle,
-                        variant = PetalBadgeVariant.PRIMARY,
-                        position = PetalGroupPosition.TOP,
-                        selected = selectedId == "always_allow",
-                        onClick = { choose("always_allow", onAlwaysAllow) }
-                    )
-                    PopupBlockedRow(
-                        id = "open_new_tab",
-                        label = "Open in new tab",
-                        icon = Icons.Rounded.Tab,
-                        variant = PetalBadgeVariant.SECONDARY,
-                        position = PetalGroupPosition.MIDDLE,
-                        selected = selectedId == "open_new_tab",
-                        onClick = { choose("open_new_tab", onAllowOnce) }
-                    )
-                    PopupBlockedRow(
-                        id = "open_bg_tab",
-                        label = "Open in background tab",
-                        icon = Icons.Rounded.OpenInBrowser,
-                        variant = PetalBadgeVariant.SECONDARY,
-                        position = PetalGroupPosition.MIDDLE,
-                        selected = selectedId == "open_bg_tab",
-                        onClick = { choose("open_bg_tab", onOpenInBackground) }
-                    )
-                    PopupBlockedRow(
-                        id = "open_incognito_tab",
-                        label = "Open in private tab",
-                        icon = Icons.Rounded.VisibilityOff,
-                        variant = PetalBadgeVariant.TERTIARY,
-                        position = PetalGroupPosition.MIDDLE,
-                        selected = selectedId == "open_incognito_tab",
-                        onClick = { choose("open_incognito_tab", onOpenInIncognito) }
-                    )
-                    PopupBlockedRow(
-                        id = "copy_url",
-                        label = "Copy link address",
-                        icon = Icons.Rounded.Link,
-                        variant = PetalBadgeVariant.NEUTRAL,
-                        position = PetalGroupPosition.BOTTOM,
-                        selected = selectedId == "copy_url",
-                        onClick = {
-                            choose("copy_url") {
-                                PetalAndroidUtils.copy(context, targetUrl)
-                                PetalToast.show(context, "Pop-up link copied")
-                            }
-                        }
+                        action = action,
+                        position = position,
+                        selected = selectedId == action.id,
+                        onClick = { choose(action.id, action.onClick) }
                     )
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // Dismiss
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 16.dp)
                 ) {
                     PopupBlockedRow(
-                        id = "dismiss",
-                        label = "Keep blocking",
-                        icon = Icons.Rounded.Close,
-                        variant = PetalBadgeVariant.NEUTRAL,
-                        position = PetalGroupPosition.SOLO,
+                        action = PopupAction(
+                            id = "dismiss",
+                            label = "Keep blocking",
+                            icon = Icons.Rounded.Close,
+                            variant = PetalBadgeVariant.SURFACE_TONAL,
+                            onClick = {}
+                        ),
+                        position = PetalGroupPosition.SINGLE,
                         selected = selectedId == "dismiss",
-                        onClick = { choose("dismiss") { /* no-op */ } }
+                        onClick = { choose("dismiss") {} }
                     )
                 }
             }
@@ -232,41 +216,45 @@ fun PetalPopupBlockedSheet(
 
 @Composable
 private fun PopupBlockedRow(
-    id: String,
-    label: String,
-    icon: ImageVector,
-    variant: PetalBadgeVariant,
+    action: PopupAction,
     position: PetalGroupPosition,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val pressScale = rememberPetalGroupPressScale()
-    PetalGroup(
-        position = position,
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressScale = rememberPetalGroupPressScale(interactionSource)
+    val shape = petalGroupShape(position)
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val container = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer
+
+    Card(
         onClick = onClick,
-        selected = selected,
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = container),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        interactionSource = interactionSource,
         modifier = Modifier
             .fillMaxWidth()
-            .graphicsLayer {
-                scaleX = pressScale.value
-                scaleY = pressScale.value
-            },
+            .scale(pressScale)
+            .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.45f) else Modifier),
+        glass = false
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 13.dp),
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PetalGroupIconBadge(
-                icon = icon,
-                variant = variant,
-                size = 36.dp,
+                icon = action.icon,
+                variant = action.variant,
+                size = 38.dp,
                 iconSize = 20.dp,
             )
             Spacer(modifier = Modifier.width(14.dp))
             Text(
-                text = label,
+                text = action.label,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface,
