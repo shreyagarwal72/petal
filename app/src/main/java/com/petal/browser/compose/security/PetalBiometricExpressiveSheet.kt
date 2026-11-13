@@ -100,7 +100,7 @@ fun PetalBiometricExpressiveSheet(
     val pulseScale = if (animActive) rawPulseScale else 1f
 
     fun authenticate() {
-        val appCompatActivity = context as? AppCompatActivity
+        val appCompatActivity = context as? androidx.fragment.app.FragmentActivity
         if (appCompatActivity != null) {
             BiometricLockManager.authenticate(
                 appCompatActivity,
@@ -333,7 +333,7 @@ object PetalBiometricOverlayBridge {
         onCancel: Runnable,
         onUsePassword: Runnable? = null
     ) {
-        val appCompat = activity as? AppCompatActivity ?: return
+        val appCompat = activity as? androidx.fragment.app.FragmentActivity ?: return
         if (appCompat.isFinishing || (Build.VERSION.SDK_INT >= 17 && appCompat.isDestroyed)) return
 
         val decorView = appCompat.window?.decorView as? ViewGroup ?: return

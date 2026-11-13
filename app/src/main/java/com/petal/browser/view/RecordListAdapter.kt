@@ -59,6 +59,7 @@ open class RecordListAdapter(
             holder.cardView?.let { FaviconHelper.setFavicon(context, it, record.url, R.id.iconView, R.drawable.icon_bookmark) }
         }
 
+        com.petal.browser.ui.theme.PetalFontHelper.applyTo(view)
         return view
     }
 }

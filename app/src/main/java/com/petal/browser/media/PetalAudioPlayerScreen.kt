@@ -411,7 +411,7 @@ fun PetalAudioPlayerScreen(
         onDispose {
             exoPlayer.removeListener(listener)
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-            val bgPlay = sp.getBoolean("sp_background_play", true)
+            val bgPlay = sp.getBoolean("sp_background_play", false)
             if (!bgPlay) {
                 exoPlayer.release()
                 PetalMediaSessionService.stopMediaSession(context)

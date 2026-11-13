@@ -27,6 +27,7 @@ class CustomSearchAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RedirectsViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_list, parent, false)
+        com.petal.browser.ui.theme.PetalFontHelper.applyTo(view)
         return RedirectsViewHolder(view)
     }
 

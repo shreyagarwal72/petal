@@ -101,6 +101,7 @@ class PetalAlertDialogBuilder : MaterialAlertDialogBuilder {
             pill(dialog.getButton(AlertDialog.BUTTON_POSITIVE), true)
             pill(dialog.getButton(AlertDialog.BUTTON_NEGATIVE), false)
             pill(dialog.getButton(AlertDialog.BUTTON_NEUTRAL), false)
+            com.petal.browser.ui.theme.PetalFontHelper.applyTo(root)
         }
     }
 }

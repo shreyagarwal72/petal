@@ -94,7 +94,7 @@ object PetalGeckoRuntime {
 
         val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
         val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", true))
-        val etpStrict = sp.getBoolean("sp_etp_strict", false) || (privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT)
+        val etpStrict = sp.getBoolean("sp_etp_strict", true) || (privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT)
         // Same rule as syncPreferences() so startup and later syncs never disagree.
         val sessionPartitioningAtStart = sp.getBoolean("sp_session_partitioning", true)
         val defaultCookieBehavior = if (sessionPartitioningAtStart || totalCookieProtection || blockThirdPartyCookies || isStrictOrHardened) {
@@ -309,7 +309,9 @@ object PetalGeckoRuntime {
             "sp_total_cookie_protection", "sp_cookies_isolate", "sp_session_partitioning",
             "sp_login_autofill_enabled", "sp_private_dns_mode", "sp_custom_doh_url",
             "sp_private_dns_custom_url", "sp_nextdns_profile_id", "sp_privacy_profile", "sp_security_slider",
-            "sp_https_only", "profileStandard_httpsOnly", "sp_theme_config", "sp_force_dark_mode"
+            "sp_https_only", "profileStandard_httpsOnly", "sp_theme_config", "sp_force_dark_mode",
+            "sp_trim_referrers", "sp_webauthn_enabled", "sp_fingerprint_protection", "sp_dnt_gpc",
+            "sp_cookie_banner_auto_reject"
         )
         val sb = StringBuilder()
         for (k in keys) sb.append(k).append('=').append(sp.all[k]).append(';')
@@ -353,7 +355,7 @@ object PetalGeckoRuntime {
                 }
 
                 // 2. Enhanced Tracking Protection & AdBlock
-                val etpStrict = sp.getBoolean("sp_etp_strict", false) || (privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT)
+                val etpStrict = sp.getBoolean("sp_etp_strict", true) || (privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT)
                 val etpLevel = if (etpStrict) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.DEFAULT
                 rt.settings.contentBlocking.setEnhancedTrackingProtectionLevel(etpLevel)
                 rt.settings.contentBlocking.setStrictSocialTrackingProtection(etpStrict)
@@ -377,7 +379,13 @@ object PetalGeckoRuntime {
                             ContentBlocking.AntiTracking.CONTENT or ContentBlocking.AntiTracking.STP or
                             ContentBlocking.AntiTracking.CRYPTOMINING or ContentBlocking.AntiTracking.FINGERPRINTING
                 }
+                if (sp.getBoolean("sp_fingerprint_protection", true)) {
+                    antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.FINGERPRINTING
+                }
                 rt.settings.contentBlocking.setAntiTracking(antiTrackingFlags)
+
+                // 4b. Privacy toggles applied live through Gecko prefs (no restart needed)
+                applyLivePrivacyPrefs(sp)
 
                 // 5. Safe Browsing Malware & Phishing Shield
                 rt.settings.contentBlocking.setSafeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
@@ -412,6 +420,60 @@ object PetalGeckoRuntime {
                 Log.w(TAG, "Error synchronizing GeckoRuntime preferences: ${e.message}")
             }
         }
+    }
+
+    /** Sets a Gecko pref at runtime via GeckoPreferenceController (reflection keeps older engines safe). */
+    private fun setGeckoPref(name: String, value: Any) {
+        try {
+            val cls = Class.forName("org.mozilla.geckoview.GeckoPreferenceController")
+            val valueType = when (value) {
+                is Boolean -> java.lang.Boolean::class.java
+                is Int -> java.lang.Integer::class.java
+                else -> String::class.java
+            }
+            val m = cls.getMethod("setGeckoPref", String::class.java, valueType, Int::class.javaPrimitiveType)
+            m.invoke(null, name, value, 1 /* PREF_BRANCH_USER */)
+        } catch (t: Throwable) {
+            Log.d(TAG, "setGeckoPref($name) unavailable: ${t.message}")
+        }
+    }
+
+    /**
+     * Applies the privacy toggles that have no dedicated GeckoRuntimeSettings API:
+     * referrer trimming, WebAuthn, DNT/GPC, fingerprint protection and cookie-banner handling.
+     */
+    private fun applyLivePrivacyPrefs(sp: SharedPreferences) {
+        val trim = sp.getBoolean("sp_trim_referrers", true)
+        setGeckoPref("network.http.referer.XOriginTrimmingPolicy", if (trim) 2 else 0)
+
+        setGeckoPref("security.webauth.webauthn", sp.getBoolean("sp_webauthn_enabled", true))
+
+        val dnt = sp.getBoolean("sp_dnt_gpc", true)
+        setGeckoPref("privacy.donottrackheader.enabled", dnt)
+        setGeckoPref("privacy.globalprivacycontrol.enabled", dnt)
+        setGeckoPref("privacy.globalprivacycontrol.functionality.enabled", dnt)
+        try {
+            rtSettingsGpc(dnt)
+        } catch (_: Throwable) {}
+
+        val fp = sp.getBoolean("sp_fingerprint_protection", true)
+        setGeckoPref("privacy.fingerprintingProtection", fp)
+
+        val banner = sp.getBoolean("sp_cookie_banner_auto_reject", sp.getBoolean("petal_builtin_consent_manager", true))
+        setGeckoPref("cookiebanners.service.mode", if (banner) 2 else 0)
+        setGeckoPref("cookiebanners.service.mode.privateBrowsing", if (banner) 2 else 0)
+        setGeckoPref("cookiebanners.bannerClicking.enabled", banner)
+
+        // Keep the on-disk user.js in step so the same values survive the next cold start.
+        try {
+            com.petal.browser.flags.PetalFlagsStore.syncToUserJs(appContextRef?.get() ?: return)
+        } catch (_: Throwable) {}
+    }
+
+    private fun rtSettingsGpc(enabled: Boolean) {
+        val rt = runtime ?: return
+        val m = rt.settings.javaClass.getMethod("setGlobalPrivacyControl", Boolean::class.javaPrimitiveType)
+        m.invoke(rt.settings, enabled)
     }
 
     /**

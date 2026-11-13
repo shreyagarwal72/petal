@@ -44,7 +44,7 @@ object PetalCrashOverlayHelper {
             val titleView = TextView(context).apply {
                 text = context.getString(R.string.tab_crash_error_title)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
-                typeface = Typeface.DEFAULT_BOLD
+                typeface = Typeface.create(com.petal.browser.ui.theme.PetalFontHelper.getAppTypeface(context), Typeface.BOLD)
                 setTextColor(
                     MaterialColors.getColor(
                         this,

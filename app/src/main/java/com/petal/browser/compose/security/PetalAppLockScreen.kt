@@ -94,7 +94,7 @@ fun PetalAppLockScreen(
     }
 
     fun triggerBiometricUnlock() {
-        val activity = context as? androidx.appcompat.app.AppCompatActivity
+        val activity = context as? androidx.fragment.app.FragmentActivity
         if (activity != null) {
             com.petal.browser.security.BiometricLockManager.authenticate(
                 activity,

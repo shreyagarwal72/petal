@@ -99,7 +99,7 @@ fun PetalAppLockConfigScreen(
     fun handleLockToggle(checked: Boolean) {
         if (checked) {
             if (selectedLockType == "FINGERPRINT") {
-                val activity = context as? AppCompatActivity
+                val activity = context as? androidx.fragment.app.FragmentActivity
                 if (activity != null) {
                     BiometricLockManager.authenticate(
                         activity,
@@ -136,7 +136,7 @@ fun PetalAppLockConfigScreen(
     }
 
     fun selectBiometricMethod() {
-        val activity = context as? AppCompatActivity
+        val activity = context as? androidx.fragment.app.FragmentActivity
         if (isLockEnabled && activity != null) {
             BiometricLockManager.authenticate(
                 activity,

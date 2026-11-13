@@ -67,6 +67,7 @@ class GridAdapter(
         } else {
             view = convertView
         }
+        com.petal.browser.ui.theme.PetalFontHelper.applyTo(view)
         return view
     }
 }

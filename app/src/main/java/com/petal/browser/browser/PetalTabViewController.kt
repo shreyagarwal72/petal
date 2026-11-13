@@ -2800,6 +2800,33 @@ private class ExternalSchemeNavigationDelegate(
             }
         }
 
+        // "Auto Open External Apps" (sp_auto_open_apps): hand web links to an installed non-browser app
+        // that claims them (YouTube, Maps, ...). Only for link taps that leave the current site.
+        if (sp.getBoolean("sp_auto_open_apps", false) &&
+            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R &&
+            (uri.startsWith("http://", ignoreCase = true) || uri.startsWith("https://", ignoreCase = true)) &&
+            !request.isDirectNavigation && !request.isRedirect &&
+            !isIncognitoSupplier()
+        ) {
+            val reqHost = try { android.net.Uri.parse(uri).host?.lowercase() } catch (_: Throwable) { null }
+            val curHost = try { android.net.Uri.parse(currentUrlSupplier()).host?.lowercase() } catch (_: Throwable) { null }
+            if (!reqHost.isNullOrBlank() && reqHost != curHost) {
+                try {
+                    val appIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(uri)).apply {
+                        addCategory(android.content.Intent.CATEGORY_BROWSABLE)
+                        addFlags(
+                            android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                                android.content.Intent.FLAG_ACTIVITY_REQUIRE_NON_BROWSER
+                        )
+                    }
+                    context.startActivity(appIntent)
+                    return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
+                } catch (_: android.content.ActivityNotFoundException) {
+                    // No non-browser app handles this link: keep loading it in Petal.
+                } catch (_: Throwable) {}
+            }
+        }
+
         return try {
             engine.onLoadRequest(session, request)
                 ?: org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.ALLOW)

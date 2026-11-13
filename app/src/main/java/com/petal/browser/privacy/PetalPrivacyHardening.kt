@@ -64,7 +64,7 @@ object PetalPrivacyHardening {
     @JvmStatic
     fun isWebRtcLeakProtectionEnabled(sp: SharedPreferences): Boolean {
         val profile = getPrivacyProfile(sp)
-        return sp.getBoolean(PREF_WEBRTC_LEAK_PROTECT, profile == PrivacyProfile.STRICT)
+        return sp.getBoolean(PREF_WEBRTC_LEAK_PROTECT, true)
     }
 
     /**
@@ -189,6 +189,21 @@ object PetalPrivacyHardening {
             user_pref("cookiebanners.service.mode", $cookieBannerMode);
             user_pref("cookiebanners.service.mode.privateBrowsing", $cookieBannerMode);
             user_pref("cookiebanners.bannerClicking.enabled", ${if (cookieBannerAutoReject) "true" else "false"});
+        """.trimIndent())
+
+        // 9. Explicit user toggles from Settings → Privacy (these win over profile baselines above)
+        val trimRef = sp.getBoolean("sp_trim_referrers", true)
+        val webauthn = sp.getBoolean("sp_webauthn_enabled", true)
+        val dntGpc = sp.getBoolean("sp_dnt_gpc", true)
+        val fpProtect = sp.getBoolean("sp_fingerprint_protection", true)
+        sb.appendLine("""
+            // User privacy toggles
+            user_pref("network.http.referer.XOriginTrimmingPolicy", ${if (trimRef) 2 else 0});
+            user_pref("security.webauth.webauthn", $webauthn);
+            user_pref("privacy.donottrackheader.enabled", $dntGpc);
+            user_pref("privacy.globalprivacycontrol.enabled", $dntGpc);
+            user_pref("privacy.globalprivacycontrol.functionality.enabled", $dntGpc);
+            user_pref("privacy.fingerprintingProtection", $fpProtect);
         """.trimIndent())
 
         return sb.toString()

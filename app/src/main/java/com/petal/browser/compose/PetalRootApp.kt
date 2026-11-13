@@ -177,6 +177,7 @@ fun PetalRootApp(
 
     val isHome = activeUrl.isBlank() || PetalBrowserUtils.isHomePage(activeUrl)
 
+    val lastExitBackAt = remember { longArrayOf(0L) }
     var backProgress by remember { mutableFloatStateOf(0f) }
     var backSwipeEdge by remember { mutableIntStateOf(BackEventCompat.EDGE_LEFT) }
 
@@ -214,7 +215,22 @@ fun PetalRootApp(
                 pendingExtensionPopup != null -> PetalExtensionManager.dismissPopup()
                 isOmniboxOpen -> viewModel.setOmniboxOpen(false)
                 viewModel.hasOpenOverlay -> viewModel.dismissTopOverlay()
-                !viewModel.goBack() -> activity?.finish()
+                !viewModel.goBack() -> {
+                    // "Double Back to Exit" (sp_double_back_exit): first back shows a hint,
+                    // a second back within 2s exits. Read live so the toggle applies instantly.
+                    val doubleBack = PreferenceManager.getDefaultSharedPreferences(context)
+                        .getBoolean("sp_double_back_exit", true)
+                    val now = android.os.SystemClock.elapsedRealtime()
+                    if (doubleBack && now - lastExitBackAt[0] > 2000L) {
+                        lastExitBackAt[0] = now
+                        com.petal.browser.view.PetalToast.show(
+                            context,
+                            com.petal.browser.R.string.ui_press_back_twice_quickly_to
+                        )
+                    } else {
+                        activity?.finish()
+                    }
+                }
             }
         } catch (_: CancellationException) {
             backProgress = 0f

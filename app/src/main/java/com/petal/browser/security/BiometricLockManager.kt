@@ -47,7 +47,7 @@ object BiometricLockManager {
      @JvmStatic
      @JvmOverloads
      fun authenticate(
-         activity: AppCompatActivity,
+         activity: androidx.fragment.app.FragmentActivity,
          title: String = "Petal Browser App Lock",
          subtitle: String = "Confirm fingerprint to continue",
          onSuccess: Runnable,

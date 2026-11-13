@@ -290,8 +290,35 @@ fun PetalTabGridSwitcher(
         selectedTabIds.clear()
         selectedTabIds.addAll(tabList.map { it.id })
     }
+    // "Biometric incognito tab lock" (sp_biometric_incognito_tab_lock): the private tab list stays
+    // hidden until the user authenticates once per switcher visit. Read live from prefs.
+    fun incognitoLockRequired(): Boolean =
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            .getBoolean("sp_biometric_incognito_tab_lock", false) &&
+            com.petal.browser.security.BiometricLockManager.canAuthenticate(context)
+    var incognitoUnlocked by remember { mutableStateOf(false) }
+    fun withIncognitoAccess(then: () -> Unit) {
+        val act = context as? androidx.fragment.app.FragmentActivity
+        if (incognitoUnlocked || act == null || !incognitoLockRequired()) {
+            incognitoUnlocked = true
+            then()
+            return
+        }
+        com.petal.browser.security.BiometricLockManager.authenticate(
+            activity = act,
+            title = "Unlock Incognito Tabs",
+            subtitle = "Verify your identity to view private tabs",
+            onSuccess = Runnable {
+                incognitoUnlocked = true
+                then()
+            },
+            onError = java.util.function.Consumer { }
+        )
+    }
     val initialCategory = remember {
-        if (tabs.any { it.isSelected && it.isIncognito }) TabCategory.INCOGNITO else TabCategory.REGULAR
+        val lockOn = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            .getBoolean("sp_biometric_incognito_tab_lock", false)
+        if (!lockOn && tabs.any { it.isSelected && it.isIncognito }) TabCategory.INCOGNITO else TabCategory.REGULAR
     }
     var selectedCategory by remember { mutableStateOf(initialCategory) }
 
@@ -822,8 +849,10 @@ fun PetalTabGridSwitcher(
                                     leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
                                     onClick = {
                                         isOverflowMenuExpanded = false
-                                        selectedCategory = TabCategory.INCOGNITO
-                                        launchNewTab(true)
+                                        withIncognitoAccess {
+                                            selectedCategory = TabCategory.INCOGNITO
+                                            launchNewTab(true)
+                                        }
                                     }
                                 )
                                 com.petal.browser.ui.containment.PetalMenuDivider()
@@ -869,9 +898,12 @@ fun PetalTabGridSwitcher(
                         selected = selectedCategory,
                         onSelect = { newCat ->
                             if (newCat != selectedCategory) {
-                                com.petal.browser.motion.MotionGate.withMotion("tab_category_switch") {
-                                    selectedCategory = newCat
+                                val applyCategory = {
+                                    com.petal.browser.motion.MotionGate.withMotion("tab_category_switch") {
+                                        selectedCategory = newCat
+                                    }
                                 }
+                                if (newCat == TabCategory.INCOGNITO) withIncognitoAccess { applyCategory() } else applyCategory()
                             }
                         }
                     )
@@ -2949,7 +2981,7 @@ object PetalTabGridBridge {
                     }
                 }
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                 val isAmoled = sp.getBoolean("sp_amoled", false)

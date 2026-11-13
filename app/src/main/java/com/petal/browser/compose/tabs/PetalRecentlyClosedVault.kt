@@ -111,7 +111,7 @@ fun PetalRecentlyClosedVault(
     // Trigger biometric if lockType is biometric
     LaunchedEffect(lockType) {
         if (lockType == "biometric" && !isUnlocked) {
-            val act = context as? AppCompatActivity
+            val act = context as? androidx.fragment.app.FragmentActivity
             if (act != null && canBiometric) {
                 BiometricLockManager.authenticate(
                     activity = act,
@@ -214,7 +214,7 @@ fun PetalRecentlyClosedVault(
                                 }
                             },
                             onBiometricClick = {
-                                val act = context as? AppCompatActivity
+                                val act = context as? androidx.fragment.app.FragmentActivity
                                 if (act != null && canBiometric) {
                                     BiometricLockManager.authenticate(
                                         activity = act,

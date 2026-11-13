@@ -86,6 +86,24 @@ class PetalCustomTabActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // "Custom Tabs" setting (sp_custom_tabs_enabled): when off, open the link in the full browser instead.
+        val customTabsEnabled = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+            .getBoolean("sp_custom_tabs_enabled", true)
+        if (!customTabsEnabled) {
+            val fallbackUrl = extractUrlFromIntent(intent)
+            val forward = android.content.Intent(
+                android.content.Intent.ACTION_VIEW,
+                android.net.Uri.parse(fallbackUrl)
+            ).apply {
+                setClass(this@PetalCustomTabActivity, com.petal.browser.activity.MainActivity::class.java)
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(forward)
+            finish()
+            return
+        }
+
         com.petal.browser.unit.PetalAndroidUtils.initTheme(this)
 
         parseCustomTabsIntentExtras(intent)
@@ -103,7 +121,7 @@ class PetalCustomTabActivity : ComponentActivity() {
 
         setContent {
             val sp = remember { PreferenceManager.getDefaultSharedPreferences(this@PetalCustomTabActivity) }
-            val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+            val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
             val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
             val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
             val isAmoled = sp.getBoolean("sp_amoled", false)

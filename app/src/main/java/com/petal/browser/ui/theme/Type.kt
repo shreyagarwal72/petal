@@ -23,6 +23,8 @@ enum class AppFont(val label: String) {
             if (name.isNullOrBlank()) return PETAL
             return when (name.trim().uppercase()) {
                 "CUSTOM", "CUSTOM_STORAGE", "CUSTOM_FONT", "CUSTOM_FILE", "CUSTOM_TTF" -> CUSTOM
+                // Google Sans Flex ("GS_FLEX") IS the Petal Signature family; presets live in GSFlexPreset.
+                "PETAL", "GS_FLEX", "GSFLEX", "GOOGLE_SANS_FLEX", "PETAL_SIGNATURE" -> PETAL
                 else -> PETAL
             }
         }
@@ -66,6 +68,27 @@ object PetalFontHelper {
             }
         }
         return petalSignatureTypeface(context)
+    }
+
+    /**
+     * Applies the user's chosen app font (Google Sans Flex preset or custom font) to a classic View tree
+     * (legacy dialogs, list rows, overlays), keeping each TextView's bold/italic style.
+     */
+    @JvmStatic
+    fun applyTo(root: android.view.View?) {
+        if (root == null) return
+        val base = try { getAppTypeface(root.context) } catch (_: Throwable) { return }
+        fun walk(v: android.view.View) {
+            if (v is android.widget.TextView) {
+                val style = v.typeface?.style ?: android.graphics.Typeface.NORMAL
+                v.typeface = if (style == android.graphics.Typeface.NORMAL) base
+                else android.graphics.Typeface.create(base, style)
+            }
+            if (v is android.view.ViewGroup) {
+                for (i in 0 until v.childCount) walk(v.getChildAt(i))
+            }
+        }
+        walk(root)
     }
 
     @Volatile private var signatureCache: android.graphics.Typeface? = null
