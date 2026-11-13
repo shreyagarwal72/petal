@@ -47,7 +47,9 @@ object PetalIncognitoSessionManager {
     fun getIncognitoCount(context: Context? = null): Int {
         val countFromStore = try {
             val ctx = context ?: com.petal.browser.PetalApplication.instance
-            com.petal.browser.engine.gecko.PetalEngineStore.getStore(ctx).state.tabs.count { it.content.private }
+            if (ctx != null) {
+                com.petal.browser.engine.gecko.PetalEngineStore.getStore(ctx).state.tabs.count { it.content.private }
+            } else 0
         } catch (_: Throwable) {
             0
         }

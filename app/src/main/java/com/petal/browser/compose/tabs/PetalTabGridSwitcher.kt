@@ -3008,7 +3008,7 @@ object PetalTabGridBridge {
                         onTabSelect = onTabSelectListener,
                         onTabClose = onTabCloseListener,
                         onNewTab = onNewTabListener,
-                        onCloseAllTabs = onCloseAllTabsListener,
+                        onCloseAllTabs = { onCloseAllTabsListener() },
                         onOpenSettings = onOpenSettingsListener,
                         onBookmarkTab = onBookmarkTabListener,
                         onShareTab = onShareTabListener,

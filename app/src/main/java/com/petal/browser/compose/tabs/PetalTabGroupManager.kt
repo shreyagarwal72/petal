@@ -110,7 +110,7 @@ object PetalTabGroupManager {
         if (tabA.isIncognito || tabB.isIncognito) {
             return findGroupByTabId(context, tabA.id)
                 ?: findGroupByTabId(context, tabB.id)
-                ?: PetalTabGroup(id = "", title = "", tabIds = emptyList())
+                ?: PetalTabGroup(id = "", title = "", colorHex = "#3B82F6", tabIds = emptyList())
         }
         val existingGroupA = findGroupByTabId(context, tabA.id)
         val existingGroupB = findGroupByTabId(context, tabB.id)

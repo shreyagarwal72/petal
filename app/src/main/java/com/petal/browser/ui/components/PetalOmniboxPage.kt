@@ -1364,11 +1364,11 @@ fun PetalOmniboxPage(
                                 val restoredSet = (removedSuggestions - targetQuery).toSet()
                                 removedSuggestions = restoredSet
                                 sp.edit().putStringSet("sp_removed_suggestions", restoredSet).apply()
-                                if (item.isHistory) {
+                                if (item.isHistory && !isIncognito) {
                                     val currentHistory = getSavedSearchHistory().toMutableList()
                                     if (currentHistory.none { it.equals(targetQuery, ignoreCase = true) }) {
                                         currentHistory.add(0, targetQuery)
-                                        sp.edit().putString(listKey, JSONArray(currentHistory).toString()).apply()
+                                        sp.edit().putString("sp_search_history_list", JSONArray(currentHistory).toString()).apply()
                                     }
                                 }
                             }
