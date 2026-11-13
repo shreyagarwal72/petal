@@ -2,10 +2,10 @@ package com.petal.browser.passwords
 
 import android.content.Context
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
-import com.petal.browser.ui.theme.PetalTheme
+import androidx.fragment.app.FragmentActivity
+import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.unit.PetalHighRefreshRateManager
 
@@ -13,7 +13,7 @@ import com.petal.browser.unit.PetalHighRefreshRateManager
  * Standalone activity for Petal Passwords & Autofill Control Center.
  * Pointed to by [PetalAutofillService] settingsActivity in petal_autofill_service_config.xml.
  */
-class PetalPasswordsActivity : ComponentActivity() {
+class PetalPasswordsActivity : FragmentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(PetalAndroidUtils.applyLanguage(newBase))
@@ -26,7 +26,7 @@ class PetalPasswordsActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
-            PetalTheme {
+            PetalExpressiveTheme {
                 PetalPasswordsScreen(
                     activity = this,
                     onNavigateBack = { finish() }

@@ -636,7 +636,8 @@ class PetalAutofillService : AutofillService() {
             if (hints.any {
                     it.equals(View.AUTOFILL_HINT_USERNAME, ignoreCase = true) ||
                     it.equals(View.AUTOFILL_HINT_EMAIL_ADDRESS, ignoreCase = true) ||
-                    it.equals(View.AUTOFILL_HINT_PHONE_NUMBER, ignoreCase = true)
+                    it.equals(View.AUTOFILL_HINT_PHONE, ignoreCase = true) ||
+                    it.equals("phoneNumber", ignoreCase = true)
                 }) return true
 
             val htmlType = htmlAttr(node, "type")?.lowercase()

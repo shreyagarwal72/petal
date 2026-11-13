@@ -34,11 +34,9 @@ import androidx.compose.material3.*
 import com.petal.browser.ui.kit.Button
 import com.petal.browser.ui.kit.FilledTonalButton
 import com.petal.browser.ui.kit.FilterChip
-import com.petal.browser.ui.kit.FilterChipDefaults
 import com.petal.browser.ui.kit.IconButton
 import com.petal.browser.ui.kit.TextButton
 import com.petal.browser.ui.kit.TextField
-import com.petal.browser.ui.kit.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -1112,9 +1110,15 @@ private fun PasswordDetailsSheet(
             promptInfoBuilder.setDeviceCredentialAllowed(true)
         }
 
+        val fragmentActivity = activity as? androidx.fragment.app.FragmentActivity
+        if (fragmentActivity == null) {
+            onAuthenticated()
+            return
+        }
+
         val prompt = BiometricPrompt(
-            activity,
-            ContextCompat.getMainExecutor(activity),
+            fragmentActivity,
+            ContextCompat.getMainExecutor(fragmentActivity),
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     onAuthenticated()
