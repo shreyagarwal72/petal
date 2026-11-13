@@ -135,7 +135,11 @@ data class DownloadItem(
     /** Parallel HTTP connections currently serving this download (1 = ordinary single stream). */
     val connections: Int = 1,
     /** Authoritative stable UUID or identifier from the unified download repository. */
-    val downloadId: String = ""
+    val downloadId: String = "",
+    /** Which subsystem produced this row (browser core, yt-dlp, updater, page data, ...). */
+    val source: com.petal.browser.download.DownloadSource = com.petal.browser.download.DownloadSource.HTTP_MOZILLA,
+    /** Short human-readable reason for a FAILED row (null when unknown or not failed). */
+    val failureReason: String? = null
 )
 
 object PetalDownloadBridge {
@@ -404,7 +408,7 @@ fun PetalDownloadManagerScreen(
         )
     }
     // PetalFetchDownloadBridge merges every engine (Mozilla's download service for browser/media
-    // downloads, Fetch2 for legacy rows and the updater) into one live list, so this screen updates
+    // downloads and the updater, plus yt-dlp and page-data rows) into one live list, so this screen updates
     // instantly on progress/pause/resume/completion without polling the system DownloadManager.
     var isLoading by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -666,6 +670,17 @@ fun PetalDownloadManagerScreen(
                                         onClick = {
                                             sortOption = option
                                             sortMenuExpanded = false
+                                        }
+                                    )
+                                }
+                                if (downloadList.any { it.status == DownloadStatus.STATUS_SUCCESSFUL }) {
+                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                        text = "Clear completed",
+                                        leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
+                                        onClick = {
+                                            sortMenuExpanded = false
+                                            // Removes the finished rows from the list; files stay on disk.
+                                            PetalFetchDownloadBridge.clearCompleted(context, deleteFile = false)
                                         }
                                     )
                                 }
@@ -1110,9 +1125,12 @@ private fun DownloadRowItem(
                     isSelectionMode = isSelectionMode,
                     onTogglePauseResume = {
                         when (item.status) {
-                            DownloadStatus.STATUS_RUNNING -> PetalLiveAlertManager.pauseDownload(context, item.id)
+                            // yt-dlp and page-data rows cannot be paused; only Mozilla-owned rows can.
+                            DownloadStatus.STATUS_RUNNING ->
+                                if (item.source.isMozillaOwned) PetalLiveAlertManager.pauseDownload(context, item.id)
                             DownloadStatus.STATUS_PAUSED -> PetalLiveAlertManager.resumeDownload(context, item.id)
-                            DownloadStatus.STATUS_FAILED -> PetalLiveAlertManager.retryDownload(context, item.id)
+                            DownloadStatus.STATUS_FAILED ->
+                                if (item.source != com.petal.browser.download.DownloadSource.BLOB) PetalLiveAlertManager.retryDownload(context, item.id)
                             else -> {}
                         }
                     }
@@ -1151,8 +1169,11 @@ private fun DownloadRowItem(
                                 if (item.etaSeconds > 0) parts.add("${formatEta(item.etaSeconds)} left")
                                 if (item.connections > 1) parts.add("×${item.connections} connections")
                             }
-                            DownloadStatus.STATUS_FAILED -> parts.add("Failed • $formattedSize")
+                            DownloadStatus.STATUS_FAILED -> parts.add(
+                                item.failureReason?.takeIf { it.isNotBlank() }?.let { "Failed • $it" } ?: "Failed • $formattedSize"
+                            )
                             DownloadStatus.STATUS_PAUSED -> parts.add("Paused • $formattedSize")
+                            DownloadStatus.STATUS_PENDING -> parts.add("Starting…")
                             else -> parts.add(formattedSize)
                         }
                         // A running row already carries progress, speed and ETA; adding time and
@@ -1167,10 +1188,27 @@ private fun DownloadRowItem(
                     Text(
                         text = subtitleText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
+                        color = if (item.status == DownloadStatus.STATUS_FAILED) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                        // A failure reason is the one line the user needs; let it wrap instead of truncating.
+                        maxLines = if (item.status == DownloadStatus.STATUS_FAILED) 3 else 1,
                         overflow = TextOverflow.Ellipsis
                     )
+
+                    // Source badge: shown for everything that is not an ordinary browser download.
+                    if (item.source != com.petal.browser.download.DownloadSource.HTTP_MOZILLA) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        androidx.compose.material3.Surface(
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer
+                        ) {
+                            Text(
+                                text = item.source.displayName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
             }
         },
         trailing = {
@@ -1197,7 +1235,7 @@ private fun DownloadRowItem(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false }
                     ) {
-                        if (item.status == DownloadStatus.STATUS_RUNNING) {
+                        if (item.status == DownloadStatus.STATUS_RUNNING && item.source.isMozillaOwned) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = stringResource(R.string.ui_pause),
                                 leadingIcon = { Icon(Icons.Rounded.Pause, contentDescription = null) },
@@ -1217,7 +1255,7 @@ private fun DownloadRowItem(
                                 }
                             )
                         }
-                        if (item.status == DownloadStatus.STATUS_FAILED) {
+                        if (item.status == DownloadStatus.STATUS_FAILED && item.source != com.petal.browser.download.DownloadSource.BLOB) {
                             com.petal.browser.ui.containment.PetalPopupMenuItem(
                                 text = stringResource(R.string.ui_retry),
                                 leadingIcon = { Icon(Icons.Rounded.Refresh, contentDescription = null) },

@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
  * from GeckoView's onExternalResponse, there is no live HTTP response object
  * carrying real Content-Disposition/Content-Type headers.
  *
- * [PetalDownloadEngine] hands the destination filename to Fetch2 up front,
+ * The download pipeline hands the destination filename to Mozilla's download service up front,
  * before the download connection opens, and never renames the file
  * afterward - so guessing the filename from the URL alone (no headers) is
  * what previously produced wrong/missing extensions for any URL that

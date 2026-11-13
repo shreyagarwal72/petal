@@ -33,22 +33,15 @@ object PetalLiveAlertManager {
 
     @JvmOverloads
     @JvmStatic
-    fun trackDownload(context: Context, downloadId: Long, fileName: String, startService: Boolean = true) {
+    fun trackDownload(context: Context, downloadId: Long, fileName: String) {
         if (downloadId <= 0L) return
         val appContext = context.applicationContext
 
         ensureNotificationChannel(appContext)
         PetalFetchDownloadBridge.ensureInitialized(appContext)
-
-        // Only start service if requested
-        if (startService) {
-            try {
-                PetalDownloadService.start(appContext, downloadId, fileName)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to start PetalDownloadService: ${e.message}")
-            }
-        }
-
+        // Process lifetime is held by the engine that owns the row: Mozilla's download service for
+        // HTTP downloads, PetalSocialDownloadService for yt-dlp. This manager only renders
+        // notifications for rows Mozilla's service does not own.
         startGlobalDownloadObserver(appContext)
     }
 
@@ -67,20 +60,6 @@ object PetalLiveAlertManager {
                             it.status == DownloadStatus.STATUS_RUNNING ||
                             it.status == DownloadStatus.STATUS_PENDING ||
                             it.status == DownloadStatus.STATUS_PAUSED
-                        }
-
-                        // Fetch2 can briefly publish an empty snapshot while the app is
-                        // backgrounded or its database is being reopened. Do not stop the
-                        // foreground service (which would make downloads appear paused) on
-                        // that transient state; only shut it down after a real non-empty,
-                        // terminal snapshot.
-                        if (items.isNotEmpty() && activeItems.isEmpty()) {
-                            PetalDownloadService.stopIfNoActiveDownloads(context)
-                        }
-
-                        // Keep the foreground service notification alive independently of the UI task.
-                        if (activeItems.isNotEmpty()) {
-                            PetalDownloadService.updatePersistentNotification(context)
                         }
 
                         val now = System.currentTimeMillis()
@@ -119,7 +98,7 @@ object PetalLiveAlertManager {
                                     if (handledTerminalStatusMap[item.id] != DownloadStatus.STATUS_FAILED) {
                                         handledTerminalStatusMap[item.id] = DownloadStatus.STATUS_FAILED
                                         lastNotifTimeMap.remove(item.id)
-                                        showFailureNotification(context, item.id, item.fileName)
+                                        showFailureNotification(context, item.id, item.fileName, item.failureReason, item.source.isMozillaOwned.not() && item.source != com.petal.browser.download.DownloadSource.BLOB)
                                     }
                                 }
                             }
@@ -146,7 +125,6 @@ object PetalLiveAlertManager {
         handledTerminalStatusMap.remove(downloadId)
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         nm?.cancel(downloadId.toInt())
-        PetalDownloadService.stopIfNoActiveDownloads(context.applicationContext)
     }
 
     private fun ensureNotificationChannel(context: Context) {
@@ -173,7 +151,7 @@ object PetalLiveAlertManager {
     fun pauseDownload(context: Context, downloadId: Long) {
         // android.app.DownloadManager has no public pause API - the "pauseDownload" method
         // this used to reach via reflection doesn't exist on that class, so this always threw
-        // and silently did nothing. Fetch2 (via the bridge) genuinely supports pausing.
+        // and silently did nothing. The bridge pauses through Mozilla's download service.
         PetalFetchDownloadBridge.pause(context, downloadId)
         // Mozilla-owned downloads already get their own paused notification from Mozilla's
         // service; posting ours as well produced two notifications for one download, and ours was
@@ -205,7 +183,13 @@ object PetalLiveAlertManager {
         PetalFetchDownloadBridge.retry(context, downloadId)
     }
 
-    private fun showFailureNotification(context: Context, downloadId: Long, fileName: String) {
+    private fun showFailureNotification(
+        context: Context,
+        downloadId: Long,
+        fileName: String,
+        reason: String?,
+        canRetry: Boolean
+    ) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
         val retryIntent = Intent(context, PetalDownloadCancelReceiver::class.java).apply {
@@ -222,11 +206,12 @@ object PetalLiveAlertManager {
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.icon_alert)
             .setContentTitle("Download Stopped / Failed")
-            .setContentText("Failed to download $fileName. Tap Retry to restart.")
+            .setContentText(reason?.takeIf { it.isNotBlank() }?.let { "$fileName: $it" } ?: "Failed to download $fileName.")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(reason?.takeIf { it.isNotBlank() }?.let { "$fileName\n$it" } ?: fileName))
             .setOngoing(false)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .addAction(R.drawable.icon_refresh, "Retry Download", retryPendingIntent)
+        if (canRetry) builder.addAction(R.drawable.icon_refresh, "Retry Download", retryPendingIntent)
 
         nm.notify(downloadId.toInt(), builder.build())
     }
@@ -317,18 +302,6 @@ object PetalLiveAlertManager {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Toggle action intent (Pause)
-        val pauseIntent = Intent(context, PetalDownloadCancelReceiver::class.java).apply {
-            action = PetalDownloadCancelReceiver.ACTION_PAUSE_DOWNLOAD
-            putExtra(PetalDownloadCancelReceiver.EXTRA_DOWNLOAD_ID, downloadId)
-        }
-        val pausePendingIntent = PendingIntent.getBroadcast(
-            context,
-            downloadId.toInt() + 20000,
-            pauseIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
         // Cancel action intent
         val cancelIntent = Intent(context, PetalDownloadCancelReceiver::class.java).apply {
             action = PetalDownloadCancelReceiver.ACTION_CANCEL_DOWNLOAD
@@ -355,7 +328,8 @@ object PetalLiveAlertManager {
             liveAlertChip,
             openAppPendingIntent,
             cancelPendingIntent,
-            pausePendingIntent
+            // Rows rendered here (yt-dlp, page data) cannot be paused, so no toggle action.
+            null
         )
 
         nm.notify(downloadId.toInt(), builderNotif)
@@ -369,10 +343,8 @@ object PetalLiveAlertManager {
     ) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
-        // downloadId is Fetch2's own id now (not a system DownloadManager row id, since
-        // addCompletedDownload() creates a separate row with its own id purely so the file
-        // shows up in the system Downloads app/Files app). Resolve the actual file via the
-        // bridge and hand it to a FileProvider content:// uri instead.
+        // downloadId is the bridge's stable row id. Resolve the actual file via the bridge and
+        // hand it to a FileProvider content:// uri (or the MediaStore uri for page-data rows).
         val item = PetalFetchDownloadBridge.downloadItems.value.firstOrNull { it.id == downloadId }
         val fileUri = try {
             val path = item?.localUri?.removePrefix("file://")

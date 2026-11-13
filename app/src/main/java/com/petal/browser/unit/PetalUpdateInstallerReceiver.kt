@@ -18,7 +18,7 @@ import java.io.File
 /**
  * Petal in-app update installer and downloader.
  * Uses Mozilla Firefox's official download pipeline exclusively.
- * Fully eliminates legacy android.app.DownloadManager and Fetch2 dependencies.
+ * Does not use the legacy android.app.DownloadManager.
  */
 class PetalUpdateInstallerReceiver : BroadcastReceiver() {
 
@@ -43,12 +43,11 @@ class PetalUpdateInstallerReceiver : BroadcastReceiver() {
             onProgressUpdate: (Int) -> Unit
         ): Boolean = withContext(Dispatchers.Main) {
             PetalUpdateManager.initialize(context)
-            PetalUpdateManager.startUpdateDownload(context, apkUrl, version)
-            true
+            PetalUpdateManager.startUpdateDownload(context, apkUrl, version) != 0L
         }
 
         /**
-         * Enqueues update download directly in Petal Download Manager (Fetch2 engine).
+         * Enqueues the update download through the shared Petal download bridge (Mozilla download engine).
          * Runs in background with notification and automatically prompts to install on completion.
          */
         @JvmStatic

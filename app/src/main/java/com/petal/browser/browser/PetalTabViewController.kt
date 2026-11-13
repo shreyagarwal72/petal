@@ -2480,7 +2480,12 @@ private class PetalContentDelegateWrapper(
             com.petal.browser.engine.gecko.PetalEngineBridge.handleExternalResponse(
                 act, response, isPrivateProvider(), referrerProvider()
             )
+            // Handled here. Do NOT also forward to Mozilla's delegate: it would publish the same
+            // download as ContentState.download and PetalDownloadPromptObserver would prompt again.
+            return
         }
+        // No activity to show UI on: let the engine publish it to the store; the observer
+        // (PetalDownloadPromptObserver) picks it up when an activity is available.
         engine?.onExternalResponse(session, response)
     }
 

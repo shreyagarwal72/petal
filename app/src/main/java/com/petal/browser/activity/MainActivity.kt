@@ -759,6 +759,14 @@ class MainActivity : FragmentActivity(), BrowserController {
     private fun handleIncomingIntent(intent: Intent?) {
         if (intent == null) return
 
+        // Download notifications (live progress, completion, failure) and the island open the
+        // Downloads screen with this extra. Consume it so a rotation/recreate does not reopen it.
+        if (intent.getBooleanExtra("open_downloads", false)) {
+            intent.removeExtra("open_downloads")
+            viewModel.openDownloads()
+            return
+        }
+
         val action = intent.action
         // A widget button's action is one-shot: clear it so a rotation or recreate doesn't run it again.
         if (action != null && action.startsWith("com.petal.browser.action.OPEN_")) {

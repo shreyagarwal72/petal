@@ -175,12 +175,6 @@
         </service>
 
         <service
-            android:name="com.petal.browser.compose.downloads.PetalDownloadService"
-            android:foregroundServiceType="dataSync"
-            android:stopWithTask="false"
-            android:exported="false" />
-
-        <service
             android:name="com.petal.browser.download.PetalMozillaDownloadService"
             android:foregroundServiceType="dataSync"
             android:stopWithTask="false"
@@ -553,16 +547,6 @@
         <receiver
             android:name="com.petal.browser.engine.gecko.WebNotificationActionReceiver"
             android:exported="false" />
-
-        <receiver
-            android:name="com.petal.browser.compose.downloads.PetalDownloadBootReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-            </intent-filter>
-        </receiver>
 
 
 

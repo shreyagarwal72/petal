@@ -13,9 +13,9 @@ import android.util.Log
  * Keeps the CPU and Wi-Fi radio awake while ANY download is transferring, whichever engine owns it.
  *
  * Why this exists: downloads stalled once the screen locked. The only code that took a
- * WakeLock/WifiLock was PetalDownloadService, which is a Fetch2-era service and is deliberately
- * never started for downloads owned by Mozilla's AbstractFetchDownloadService (the main browser
- * path), and that Mozilla service takes no wake lock of its own. With the screen off the CPU was
+ * WakeLock/WifiLock was a legacy service that never ran for downloads owned by Mozilla's
+ * AbstractFetchDownloadService (the main browser path), and that Mozilla service takes no wake
+ * lock of its own. With the screen off the CPU was
  * free to sleep between packets, so those transfers crawled or froze until the screen came back.
  *
  * The locks live in the app process, which both foreground services keep alive, so this does

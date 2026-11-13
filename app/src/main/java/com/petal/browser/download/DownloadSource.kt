@@ -28,7 +28,22 @@ enum class DownloadSource(val identifier: String, val displayName: String) {
     /**
      * External third-party download managers (1DM, ADM, Download Navi).
      */
-    EXTERNAL("external", "External Manager");
+    EXTERNAL("external", "External Manager"),
+
+    /**
+     * The built-in self-updater (GitHub flavor). Bytes still move through the Mozilla pipeline;
+     * this tag only classifies the row.
+     */
+    UPDATE("update", "App Update"),
+
+    /**
+     * blob:/data: payloads that exist only inside the page and are written out by Petal itself.
+     */
+    BLOB("blob", "Page Data");
+
+    /** True when Mozilla's download service owns the bytes and the notifications for this source. */
+    val isMozillaOwned: Boolean
+        get() = this == HTTP_MOZILLA || this == UPDATE
 
     companion object {
         @JvmStatic

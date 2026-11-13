@@ -29,8 +29,8 @@ import java.util.concurrent.locks.ReentrantLock
  * changes, and Gecko's cookies / private mode / proxy still apply to every segment.
  *
  * ── Why this cannot produce wrong-sized files ────────────────────────────────────────────
- * The old Fetch2 "PARALLEL" mode pre-allocated the destination to Content-Length and let
- * chunks land wherever they landed, so a server that ignored a Range quietly left holes.
+ * A naive parallel mode that pre-allocates the destination to Content-Length lets
+ * chunks land wherever they land, so a server that ignored a Range would quietly leave holes.
  * Here the body is reassembled strictly in order and every segment is verified before it is
  * released: it must be HTTP 206, its Content-Range must start exactly where we asked, the
  * total must match the probe, the ETag must be unchanged, and exactly the expected number of

@@ -312,7 +312,8 @@ object PetalYtDlpEngine {
         outputDir: File,
         taskId: String,
         cookies: String? = null,
-        onProgress: (Float, String) -> Unit = { _, _ -> }
+        /** (progress 0..1, raw yt-dlp output line, ETA in seconds or -1 when unknown) */
+        onProgress: (Float, String, Long) -> Unit = { _, _, _ -> }
     ): Result<String?> = withContext(Dispatchers.IO) {
         val cookiesFile = prepareCookies(context, url, cookies)
         try {
@@ -362,10 +363,11 @@ object PetalYtDlpEngine {
                 addOption("-P", outputDir.absolutePath)
             }
 
-            YoutubeDL.getInstance().execute(request, taskId) { progress, _, line ->
+            YoutubeDL.getInstance().execute(request, taskId) { progress, etaInSeconds, line ->
                 onProgress(
                     (progress / 100f).coerceIn(0f, 1f),
-                    line.orEmpty()
+                    line.orEmpty(),
+                    etaInSeconds
                 )
             }
 

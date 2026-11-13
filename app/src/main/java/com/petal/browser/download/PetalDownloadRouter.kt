@@ -42,6 +42,24 @@ object PetalDownloadRouter {
         return if (ua == webViewDefault) FIREFOX_MOBILE_UA else ua
     }
 
+    private val SCHEME_PREFIX = Regex("^([a-zA-Z][a-zA-Z0-9+.-]*):")
+    private val HOST_PORT = Regex("^[^/:?#]+:\\d+([/?#].*)?$")
+
+    /**
+     * Returns an absolute http(s) URL, adding https:// to a bare host, or null for blank input and
+     * for any other scheme (javascript:, file:, intent:, content:, ...).
+     */
+    @JvmStatic
+    fun normalizeDownloadUrl(raw: String?): String? {
+        val u = raw?.trim().orEmpty()
+        if (u.isEmpty()) return null
+        val scheme = SCHEME_PREFIX.find(u)?.groupValues?.get(1)?.lowercase()
+        if (scheme != null && !HOST_PORT.matches(u)) {
+            return if (scheme == "http" || scheme == "https") u else null
+        }
+        return "https://$u"
+    }
+
     @JvmStatic
     @JvmOverloads
     fun download(
@@ -57,19 +75,22 @@ object PetalDownloadRouter {
         onEnqueued: ((Long) -> Unit)? = null,
         onFailed: (() -> Unit)? = null
     ) {
-        if (url.isBlank()) {
+        // 0. Validate before anything else (including an external manager): only http(s) is
+        //    downloadable here. javascript:, file:, intent:, content: ... are refused with a message.
+        val verifiedUrl = normalizeDownloadUrl(url)
+        if (verifiedUrl == null || !SafeDownloadValues.isHttpUrl(verifiedUrl)) {
+            PetalFetchDownloadBridge.notifyFailure(
+                context,
+                com.petal.browser.compose.downloads.DownloadFailure.INVALID_URL
+            )
             onFailed?.invoke()
             return
         }
 
-        val verifiedUrl = if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) {
-            "https://$url"
-        } else {
-            url
-        }
-
-        // 1. External Download Manager preference check (1DM, ADM, AB Download Manager, Navi, Auto)
-        if (ExternalDownloadManagerHelper.isExternalPreferred(context)) {
+        // 1. External Download Manager preference check (1DM, ADM, AB Download Manager, Navi, Auto).
+        //    Private downloads never leave the browser: an external manager would receive the URL,
+        //    cookies and referrer of a private session.
+        if (!isPrivate && ExternalDownloadManagerHelper.isExternalPreferred(context)) {
             val launched = ExternalDownloadManagerHelper.launchDownloadInExternalManager(
                 context, verifiedUrl, fileName, mimeType, null, userAgent, cookie
             )

@@ -366,45 +366,17 @@ object PetalEngineBridge {
                         activity, responseUrl, contentDisposition, mimeType, contentLength
                     ) { confirmedName ->
                         val finalName = confirmedName.ifBlank { fileName }
+                        val appContext = activity.applicationContext
                         CoroutineScope(Dispatchers.IO).launch {
-                            try {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    val contentValues = android.content.ContentValues().apply {
-                                        put(MediaStore.MediaColumns.DISPLAY_NAME, finalName)
-                                        put(MediaStore.MediaColumns.MIME_TYPE, mimeType ?: "application/octet-stream")
-                                        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-                                    }
-                                    val resolver = activity.contentResolver
-                                    val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-                                    if (uri != null) {
-                                        resolver.openOutputStream(uri)?.use { output ->
-                                            bodyStream.use { input -> input.copyTo(output) }
-                                        }
-                                    }
-                                } else {
-                                    val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                                    val targetFile = File(downloadsDir, finalName)
-                                    bodyStream.use { input ->
-                                        FileOutputStream(targetFile).use { output ->
-                                            input.copyTo(output)
-                                        }
-                                    }
-                                    android.media.MediaScannerConnection.scanFile(
-                                        activity,
-                                        arrayOf(targetFile.absolutePath),
-                                        arrayOf(mimeType ?: "application/octet-stream"),
-                                        null
-                                    )
-                                }
-                                withContext(Dispatchers.Main) {
-                                    PetalToast.show(activity, "Download completed: $finalName")
-                                }
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Error downloading blob/data stream", e)
-                                withContext(Dispatchers.Main) {
-                                    PetalToast.show(activity, "Download failed")
-                                }
-                            }
+                            saveBlobStream(
+                                context = appContext,
+                                input = bodyStream,
+                                key = "blob_${java.util.UUID.randomUUID()}",
+                                finalName = finalName,
+                                sourceUrl = responseUrl,
+                                mimeType = mimeType,
+                                contentLength = contentLength
+                            )
                         }
                     }
                 }
@@ -425,9 +397,129 @@ object PetalEngineBridge {
                     context = activity,
                     url = responseUrl,
                     fileName = finalName,
-                    mimeType = mimeType
+                    mimeType = mimeType,
+                    referrerUrl = referrer,
+                    isPrivate = isPrivate
                 )
             }
+        }
+    }
+
+    /**
+     * Writes a blob:/data: payload (which exists only inside the page) to Downloads while keeping a
+     * tracked row in the download manager: live progress, success/failure, open/delete. Runs on an
+     * IO thread; [input] is always closed.
+     */
+    private fun saveBlobStream(
+        context: Context,
+        input: java.io.InputStream,
+        key: String,
+        finalName: String,
+        sourceUrl: String,
+        mimeType: String?,
+        contentLength: Long
+    ) {
+        val bridge = com.petal.browser.compose.downloads.PetalFetchDownloadBridge
+        val source = com.petal.browser.download.DownloadSource.BLOB
+        val running = com.petal.browser.compose.downloads.DownloadStatus.STATUS_RUNNING
+        val cancelled = java.util.concurrent.atomic.AtomicBoolean(false)
+        bridge.setLocalHandlers(key, { cancelled.set(true) }, null)
+
+        fun report(status: Int, bytes: Long, speed: Long, eta: Long, uri: String?, reason: String?) {
+            val progress = when {
+                status == com.petal.browser.compose.downloads.DownloadStatus.STATUS_SUCCESSFUL -> 1f
+                contentLength > 0 -> (bytes.toFloat() / contentLength).coerceIn(0f, 1f)
+                else -> null
+            }
+            val total = if (contentLength > 0) contentLength else if (status == com.petal.browser.compose.downloads.DownloadStatus.STATUS_SUCCESSFUL) bytes else 0L
+            bridge.updateLocalRow(context, key, source, finalName, sourceUrl, status, progress, bytes, total, speed, eta, uri, reason)
+        }
+
+        report(running, 0L, 0L, 0L, null, null)
+        var mediaUri: Uri? = null
+        var targetFile: File? = null
+        var uriString: String? = null
+        var copied = 0L
+        try {
+            val output: java.io.OutputStream = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = android.content.ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, finalName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, mimeType ?: "application/octet-stream")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
+                }
+                val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                    ?: throw java.io.IOException("Could not create the file in Downloads")
+                mediaUri = uri
+                uriString = uri.toString()
+                context.contentResolver.openOutputStream(uri)
+                    ?: throw java.io.IOException("Could not open the file in Downloads")
+            } else {
+                val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                dir.mkdirs()
+                val file = File(dir, finalName)
+                targetFile = file
+                uriString = "file://${file.absolutePath}"
+                FileOutputStream(file)
+            }
+            val meter = com.petal.browser.download.PetalSpeedMeter()
+            var lastReportAt = 0L
+            output.use { out ->
+                input.use { inp ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        if (cancelled.get()) break
+                        val read = inp.read(buffer)
+                        if (read < 0) break
+                        out.write(buffer, 0, read)
+                        copied += read
+                        val now = android.os.SystemClock.elapsedRealtime()
+                        if (now - lastReportAt >= 300L) {
+                            lastReportAt = now
+                            val speed = meter.update(System.currentTimeMillis(), copied)
+                            val eta = if (contentLength > 0) com.petal.browser.download.PetalSpeedMeter.etaSeconds(contentLength - copied, speed) else 0L
+                            report(running, copied, speed, eta, null, null)
+                        }
+                    }
+                }
+            }
+            if (cancelled.get()) {
+                mediaUri?.let { context.contentResolver.delete(it, null, null) }
+                targetFile?.delete()
+                bridge.removeLocalRow(key)
+                return
+            }
+            mediaUri?.let { uri ->
+                context.contentResolver.update(
+                    uri,
+                    android.content.ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) },
+                    null,
+                    null
+                )
+            }
+            targetFile?.let {
+                android.media.MediaScannerConnection.scanFile(
+                    context,
+                    arrayOf(it.absolutePath),
+                    arrayOf(mimeType ?: "application/octet-stream"),
+                    null
+                )
+            }
+            report(com.petal.browser.compose.downloads.DownloadStatus.STATUS_SUCCESSFUL, copied, 0L, 0L, uriString, null)
+            bridge.setLocalHandlers(key, null, null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error downloading blob/data stream", e)
+            mediaUri?.let { runCatching { context.contentResolver.delete(it, null, null) } }
+            targetFile?.let { runCatching { it.delete() } }
+            val noSpace = e.message?.contains("space", ignoreCase = true) == true ||
+                e.message?.contains("ENOSPC", ignoreCase = true) == true
+            val reason = if (noSpace) {
+                com.petal.browser.compose.downloads.DownloadFailure.INSUFFICIENT_STORAGE.userMessage
+            } else {
+                "Could not save this file: ${e.message ?: "unknown error"}"
+            }
+            report(com.petal.browser.compose.downloads.DownloadStatus.STATUS_FAILED, copied, 0L, 0L, null, reason)
+            bridge.setLocalHandlers(key, null, null)
         }
     }
 

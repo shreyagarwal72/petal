@@ -10,9 +10,9 @@ import java.util.Locale
  * App-level facade for the media sniffer.
  *
  * Detection remains independent from the UI. User-initiated direct-media
- * downloads are handed to Petal's own Fetch2/OkHttp download manager so they
- * appear in Petal's Download Manager and get Petal's pause/resume/retry,
- * progress and notification handling.
+ * downloads are handed to Petal's shared download bridge (Mozilla's download
+ * engine) so they appear in Petal's Download Manager and get its
+ * pause/resume/retry, progress and notification handling.
  */
 object PetalMediaSniffer {
     private val UNSAFE_DOWNLOAD_HEADERS = setOf(
@@ -101,10 +101,10 @@ object PetalMediaSniffer {
      * Sends a detected direct media URL through Petal's native download manager.
      *
      * HLS/DASH manifests intentionally return without enqueueing because Petal's
-     * normal Fetch2 downloader downloads files/byte streams; it does not remux a
+     * normal HTTP downloader downloads files/byte streams; it does not remux a
      * segmented .m3u8/.mpd presentation into a single media file.
      *
-     * [onEnqueued] is called only after Fetch2 has accepted the request and
+     * [onEnqueued] is called only after the download engine has accepted the request and
      * assigned its Petal download ID. This lets the UI close the media sheet only
      * after the download is actually handed to Petal's Download Manager.
      */

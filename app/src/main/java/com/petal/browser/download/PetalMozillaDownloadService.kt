@@ -28,11 +28,67 @@ class PetalFallbackFetchClient(
         // Primary client failed initial construction:
         if (request.private) {
             // Strict private-mode isolation: private requests must NEVER leave Gecko's network stack.
+            PetalDownloadFailureLog.record(request.url, "Private download blocked: the browser network engine is unavailable")
             throw java.io.IOException("GeckoViewFetchClient unavailable; private download aborted to prevent network stack leakage.")
         }
 
-        android.util.Log.w("PetalMozillaDownload", "Primary GeckoView fetch client unavailable, using OkHttp for non-private request")
+        // The OkHttp fallback has no access to Gecko's cookie jar. That is fine for a public URL, but
+        // an authenticated download (Cookie/Authorization header, URL credentials, or Gecko cookies
+        // known for the host) would silently come back as a login page or a 401/403. Fail loudly instead.
+        if (isAuthenticatedRequest(request)) {
+            PetalDownloadFailureLog.record(
+                request.url,
+                "This download needs your signed-in session and the browser engine is unavailable. Restart Petal and try again."
+            )
+            throw java.io.IOException("GeckoViewFetchClient unavailable; refusing cookie-less fallback for an authenticated download.")
+        }
+
+        android.util.Log.w("PetalMozillaDownload", "Primary GeckoView fetch client unavailable, using OkHttp for public non-private request")
         return fallback.fetch(request)
+    }
+
+    private fun isAuthenticatedRequest(request: mozilla.components.concept.fetch.Request): Boolean {
+        val hasAuthHeader = request.headers?.any { header ->
+            header.name.equals("Cookie", ignoreCase = true) ||
+                header.name.equals("Authorization", ignoreCase = true) ||
+                header.name.equals("Proxy-Authorization", ignoreCase = true)
+        } == true
+        if (hasAuthHeader) return true
+        val hasUserInfo = runCatching { java.net.URI(request.url).rawUserInfo != null }.getOrDefault(false)
+        if (hasUserInfo) return true
+        return !PetalGeckoCookieBridge.getCookies(request.url, request.private).isNullOrBlank()
+    }
+}
+
+/**
+ * Whether Petal's Mozilla download service process component is alive. Retry/pause/resume use this to
+ * choose between a broadcast to the running service and (re)starting the service for a download.
+ */
+object PetalDownloadServiceState {
+    @Volatile private var cachedAt = 0L
+    @Volatile private var cachedValue = false
+
+    @JvmStatic
+    fun isRunning(context: android.content.Context): Boolean {
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - cachedAt < 400L) return cachedValue
+        val value = try {
+            val am = context.applicationContext.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            val name = PetalMozillaDownloadService::class.java.name
+            @Suppress("DEPRECATION")
+            am.getRunningServices(Int.MAX_VALUE).any { it.service.className == name }
+        } catch (_: Throwable) {
+            false
+        }
+        cachedValue = value
+        cachedAt = now
+        return value
+    }
+
+    /** Forget the cached answer, e.g. right after starting the service. */
+    @JvmStatic
+    fun invalidate() {
+        cachedAt = 0L
     }
 }
 

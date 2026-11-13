@@ -60,23 +60,14 @@ class DownloadStageCTest {
         assertEquals(uuid, item.downloadId)
         assertEquals(4, item.connections)
         assertEquals(DownloadStatus.STATUS_RUNNING, item.status)
-        assertFalse(item.downloadId.startsWith("fetch_"))
+        assertEquals(DownloadSource.HTTP_MOZILLA, item.source)
     }
 
     @Test
-    fun testLegacyItem_MarkedAsFetchPlugin() {
-        val fetchItem = DownloadItem(
-            id = 42L,
-            fileName = "legacy.zip",
-            fileUrl = "https://example.org/legacy.zip",
-            progress = 1.0f,
-            status = DownloadStatus.STATUS_SUCCESSFUL,
-            bytesDownloaded = 1024L,
-            totalSize = 1024L,
-            localUri = "file:///storage/emulated/0/Download/legacy.zip",
-            downloadId = "fetch_42"
-        )
-
-        assertTrue(fetchItem.downloadId.startsWith("fetch_"))
+    fun testLocalRowKey_UsesSameStableIdScheme() {
+        // yt-dlp / page-data rows use their own task key but the same id scheme as Mozilla rows.
+        val key = "petal_social_ab12cd34"
+        assertEquals(PetalFetchDownloadBridge.stableId(key), PetalFetchDownloadBridge.stableId(key))
+        assertTrue(PetalFetchDownloadBridge.stableId(key) >= 0L)
     }
 }
