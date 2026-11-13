@@ -99,7 +99,7 @@ object PetalFxa {
             bridge = PetalPlacesBridge(appContext, history, bookmarks)
             GlobalSyncableStoreProvider.configureStore(SyncEngine.History to lazy { history })
             GlobalSyncableStoreProvider.configureStore(SyncEngine.Bookmarks to lazy { bookmarks })
-            val tabs = RemoteTabsStorage(appContext)
+            val tabs = RemoteTabsStorage(appContext, NoopCrashReporter)
             tabsStorage = tabs
             GlobalSyncableStoreProvider.configureStore(SyncEngine.Tabs to lazy { tabs })
             val loginsStorage = SyncableLoginsStorage(appContext, lazy { SecureAbove22Preferences(appContext, "petal_fxa_logins", false) })
@@ -318,7 +318,7 @@ object PetalFxa {
     suspend fun sendTab(deviceId: String, title: String, url: String): Boolean {
         val account = manager?.authenticatedAccount() ?: return false
         return try {
-            account.deviceConstellation().sendCommandToDevice(deviceId, DeviceCommandOutgoing.SendTab(title.ifBlank { url }, url))
+            account.deviceConstellation().sendCommandToDevice(deviceId, DeviceCommandOutgoing.SendTab(title.ifBlank { url }, url, TabPrivacy.Normal))
         } catch (_: Throwable) { false }
     }
 }

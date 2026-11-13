@@ -317,6 +317,7 @@ dependencies {
     implementation 'org.mozilla.components:service-firefox-accounts:159.0.1'
     implementation 'org.mozilla.components:concept-sync:159.0.1'
     implementation 'org.mozilla.components:concept-storage:159.0.1'
+    implementation 'org.mozilla.components:concept-toolbar:159.0.1'
     implementation 'org.mozilla.components:browser-storage-sync:159.0.1'
     implementation 'org.mozilla.components:feature-syncedtabs:159.0.1'
     implementation 'org.mozilla.components:service-sync-logins:159.0.1'

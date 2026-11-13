@@ -28,7 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Crop
-import androidx.compose.material.icons.rounded.Image as ImageIcon
+import androidx.compose.material.icons.rounded.Wallpaper as ImageIcon
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
 import androidx.compose.material3.IconButton

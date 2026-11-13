@@ -8,7 +8,7 @@ import mozilla.components.browser.storage.sync.PlacesBookmarksStorage
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
-import mozilla.components.concept.storage.BookmarkRoot
+import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.concept.storage.PageObservation
 import mozilla.components.concept.storage.PageVisit
 import mozilla.components.concept.storage.VisitType
@@ -44,7 +44,7 @@ internal class PetalPlacesBridge(
         localRecords.forEach { r -> r.url?.let { if (it.startsWith("http")) local[key(it)] = r } }
 
         val remote = LinkedHashMap<String, String>()
-        flatten(bookmarks.getTree(BookmarkRoot.Root.id, true), remote)
+        flatten(bookmarks.getTree(BookmarkRoot.Root.id, true).getOrNull(), remote)
         val last = state.getStringSet("bookmark_snapshot", emptySet()) ?: emptySet()
         val firstRun = !state.contains("bookmark_snapshot")
 
@@ -58,7 +58,7 @@ internal class PetalPlacesBridge(
                     write.deleteURL(rec.url, HistoryBookmarkContract.TABLE_BOOKMARK) // deleted on another device
                 } else {
                     try {
-                        bookmarks.addItem(BookmarkRoot.Mobile.id, url, rec.title?.ifBlank { url } ?: url, null)
+                        bookmarks.addItem(BookmarkRoot.Mobile.id, url, rec.title?.ifBlank { url } ?: url)
                         finalUrls += url
                     } catch (_: Throwable) {}
                 }
@@ -68,7 +68,7 @@ internal class PetalPlacesBridge(
                 if (!firstRun && url in last) {
                     try { bookmarks.deleteNode(guid) } catch (_: Throwable) {} // deleted in Petal
                 } else {
-                    val title = findTitle(bookmarks.getTree(BookmarkRoot.Root.id, true), guid) ?: url
+                    val title = findTitle(bookmarks.getTree(BookmarkRoot.Root.id, true).getOrNull(), guid) ?: url
                     write.addBookmark(Record(title, url, System.currentTimeMillis(), 0L))
                     finalUrls += url
                 }

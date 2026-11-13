@@ -912,14 +912,17 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setFontSizeScale(scale: Float) {
         sp.edit().putFloat("sp_font_size_scale", scale).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setZoomLevelScale(scale: Float) {
         sp.edit().putFloat("sp_zoom_level_scale", scale).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setForceZoom(enabled: Boolean) {
         sp.edit().putBoolean("sp_force_enable_zoom", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setReaderModeDetection(enabled: Boolean) {

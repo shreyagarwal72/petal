@@ -974,7 +974,25 @@ object PetalBackupManager {
                     context, backupJson, restoreBookmarks, restoreHistory, restoreStartSites,
                     restoreTabSessions, restoreSavedSites, restoreSettings
                 )
-                handler.post { PetalToast.show(context, summary) }
+                handler.post {
+                    PetalToast.show(context, summary)
+                    if (restoreSettings) {
+                        var act: androidx.activity.ComponentActivity? = null
+                        var c: Context? = context
+                        while (c is android.content.ContextWrapper) {
+                            if (c is androidx.activity.ComponentActivity) {
+                                act = c
+                                break
+                            }
+                            c = c.baseContext
+                        }
+                        act?.let { activity ->
+                            com.petal.browser.ui.components.PetalConfirmBottomSheet.showRestartConfirmation(activity) {
+                                com.petal.browser.flags.PetalRestartManager.restartApp(activity)
+                            }
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 Log.e("Petal", "restoreFromUri error", e)
                 handler.post {
@@ -1036,7 +1054,25 @@ object PetalBackupManager {
                     context, backupJson, restoreBookmarks, restoreHistory, restoreStartSites,
                     restoreTabSessions, restoreSavedSites, restoreSettings
                 )
-                handler.post { PetalToast.show(context, summary) }
+                handler.post {
+                    PetalToast.show(context, summary)
+                    if (restoreSettings) {
+                        var act: androidx.activity.ComponentActivity? = null
+                        var c: Context? = context
+                        while (c is android.content.ContextWrapper) {
+                            if (c is androidx.activity.ComponentActivity) {
+                                act = c
+                                break
+                            }
+                            c = c.baseContext
+                        }
+                        act?.let { activity ->
+                            com.petal.browser.ui.components.PetalConfirmBottomSheet.showRestartConfirmation(activity) {
+                                com.petal.browser.flags.PetalRestartManager.restartApp(activity)
+                            }
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 Log.e("Petal", "restoreFromJson error", e)
                 handler.post {
