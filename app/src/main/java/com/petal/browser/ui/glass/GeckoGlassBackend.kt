@@ -24,8 +24,10 @@ object GeckoGlassBackend {
     fun shouldSamplePage(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        val glassEnabled = sp.getBoolean("sp_liquid_glass_enabled", false)
-        if (!glassEnabled) return false
+        val exp = sp.getString("sp_ui_experience", null)
+        val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
+        val master = !isMiuix && (sp.getBoolean("sp_liquid_glass_enabled", false) || (exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key))
+        if (!master) return false
         val addressGlass = sp.getBoolean("sp_liquid_glass_address_bar", true)
         val bottomGlass = sp.getBoolean("sp_liquid_glass_bottom_nav", true)
         return addressGlass || bottomGlass

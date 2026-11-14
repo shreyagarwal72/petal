@@ -99,7 +99,8 @@ fun PetalIncognitoHomeScreen(
     }
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val glassWallpaper = rememberPetalGlassWallpaper()
+    val glassWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
+        ?: rememberPetalGlassWallpaper()
 
     val liveIncognitoCount = remember(tabCount) {
         if (tabCount > 0) tabCount else PetalIncognitoSessionManager.getIncognitoCount(context)

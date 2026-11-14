@@ -542,7 +542,7 @@ fun PetalRootApp(
                 )
 
                 androidx.compose.runtime.CompositionLocalProvider(
-                    com.petal.browser.ui.glass.LocalPetalGlassSource provides (if (isHome) null else activeWebEngineView)
+                    com.petal.browser.ui.glass.LocalPetalGlassSource provides (if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content)))
                 ) {
                     if (isMerge) {
                     PetalMergedBar(
@@ -666,7 +666,7 @@ fun PetalRootApp(
                 isIncognito = isIncognito,
                 isFloatingStyle = floatingTabBar,
                 isBottomAddressBar = isBottomAddressBar,
-                glassSource = if (isHome) null else activeWebEngineView,
+                glassSource = if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content)),
                 onHomeClick = {
                     haptic.playClick(context)
                     viewModel.loadUrl("about:home")
@@ -801,7 +801,17 @@ fun PetalRootApp(
             }
 
             // Overflow Menu Sheet
+            LaunchedEffect(isMenuOpen) {
+                if (isMenuOpen && activity != null) {
+                    val rv = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+                    com.petal.browser.predictive.PetalContentSnapshot.capture(rv)
+                }
+            }
             if (isMenuOpen) {
+                val menuSource = if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content))
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.petal.browser.ui.glass.LocalPetalGlassSource provides menuSource
+                ) {
                 PetalOverflowMenuSheet(
                     pageTitle = activeTitle,
                     pageUrl = activeUrl,
@@ -946,6 +956,7 @@ fun PetalRootApp(
                         (activity as? MainActivity)?.showQuickTools()
                     }
                 )
+                }
             }
 
             // Bookmarks Screen

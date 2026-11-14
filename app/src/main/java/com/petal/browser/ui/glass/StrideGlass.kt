@@ -127,7 +127,21 @@ class GlassBackdrop internal constructor(private val source: View) {
                 // Same for a bottom bar (docked nav, bottom address bar): the padded strip below the
                 // page is empty, so fill it with the page's last rows, mirrored about the strip's
                 // upper edge. The glass frosts and bends that instead of showing a hole or wallpaper.
-                val bottomStrip = source.paddingBottom
+                val bottomStrip = if (source.paddingBottom in 1 until h) {
+                    source.paddingBottom
+                } else {
+                    var maxOverlap = 0
+                    for (b in bars) {
+                        val c = b.coords?.takeIf { it.isAttached } ?: continue
+                        val inRoot = c.positionInRoot()
+                        val barBottom = inRoot.y + b.size.height
+                        val srcBottom = sourceOrigin().y + h
+                        if (barBottom >= srcBottom - 20f) {
+                            maxOverlap = maxOf(maxOverlap, b.size.height.toInt() + 40)
+                        }
+                    }
+                    maxOverlap.coerceIn(0, (h * 0.25f).toInt())
+                }
                 if (bottomStrip in 1 until h) {
                     val edge = h - bottomStrip
                     val save = canvas.save()

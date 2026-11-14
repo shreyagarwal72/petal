@@ -530,7 +530,8 @@ fun PetalHomeScreen(
         com.petal.browser.collections.PetalCollectionManager.init(context)
     }
 
-    val glassWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+    val glassWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
+        ?: com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
     val homeSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     var isGlassEnabled by remember { mutableStateOf(homeSp.getBoolean("sp_liquid_glass_enabled", false)) }
     var glassBgMode by remember { mutableStateOf(homeSp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE") }

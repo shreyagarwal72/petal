@@ -117,7 +117,7 @@ object PetalOverflowBridge {
             val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
             com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+            val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
             val useBlurBg = sp.getBoolean("sp_overflow_menu_blur_bg", true) && isLiquidGlass
 
             var pendingDismissAction: (() -> Unit)? = null
@@ -162,7 +162,8 @@ object PetalOverflowBridge {
                         try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                     }
 
-                    val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
+                    val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main_content)
+                        ?: activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
                         ?: activity.findViewById(android.R.id.content)
                     CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
                         PetalExpressiveTheme(
@@ -472,14 +473,22 @@ fun PetalOverflowMenuSheet(
         sp.registerOnSharedPreferenceChangeListener(l)
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(l) }
     }
-    val wallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
-    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
-    val liveContext = androidx.compose.ui.platform.LocalContext.current
-    val liveSource = remember(liveContext) {
-        var c: android.content.Context? = liveContext
-        while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
-        (c as? android.app.Activity)?.findViewById<android.view.View>(R.id.main)
+    val ambientWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
+    val ambientSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
+    val liveSource = remember(liveContext, ambientSource) {
+        if (ambientSource != null && ambientSource.isAttachedToWindow && ambientSource.width > 0) {
+            ambientSource
+        } else {
+            var c: android.content.Context? = liveContext
+            while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
+            (c as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main_content)
+                ?: (c as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main)
+        }
     }
+    val ownWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+    val isHomeGlass = liveSource == null && ambientWallpaper != null && ambientWallpaper.ready
+    val wallpaper = if (isHomeGlass) ambientWallpaper!! else ownWallpaper
+    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
     val frameTick = remember { mutableLongStateOf(0L) }
     LaunchedEffect(isLiquidGlass, liveSource, useBlurBg, isVisible) {
         if (isLiquidGlass && liveSource != null && useBlurBg && isVisible) {
@@ -510,6 +519,17 @@ fun PetalOverflowMenuSheet(
                     .fillMaxSize()
                     .liveGlassWallpaper(wallpaper, liveSource) { frameTick.longValue }
             )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.18f * alpha))
+            )
+        } else if (isLiquidGlass && isHomeGlass) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.18f * alpha))
+            )
         } else if (isLiquidGlass) {
             Box(
                 modifier = Modifier
@@ -527,6 +547,11 @@ fun PetalOverflowMenuSheet(
                     com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
                 }
             }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.20f * alpha))
+            )
         }
 
         val navBarBottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()

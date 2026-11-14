@@ -298,6 +298,11 @@ fun ComposeEngineViewport(
                 // Like Fenix, the EngineView is a direct child of the swipe-refresh layout:
                 // SwipeRefreshFeature inspects that child to ask Gecko if the page can still scroll up.
                 val view = engineView.asView()
+                val topPx = with(density) { topPadding.roundToPx() }
+                val bottomPx = with(density) { bottomPadding.roundToPx() }
+                view.setPadding(0, topPx, 0, bottomPx)
+                (view as? ViewGroup)?.clipToPadding = false
+                (view as? ViewGroup)?.clipChildren = false
                 if (view.parent !== swipeLayout) {
                     (view.parent as? ViewGroup)?.removeView(view)
                     swipeLayout.addView(
@@ -309,6 +314,8 @@ fun ComposeEngineViewport(
                     )
                 }
                 (swipeLayout.parent as? ViewGroup)?.removeView(swipeLayout)
+                swipeLayout.clipToPadding = false
+                swipeLayout.clipChildren = false
                 swipeLayout
             },
             update = {
@@ -319,10 +326,12 @@ fun ComposeEngineViewport(
                         GeckoGlassBackend.applyBackend(gv, context)
                     } catch (_: Throwable) {}
                 }
+                val topPx = with(density) { topPadding.roundToPx() }
+                val bottomPx = with(density) { bottomPadding.roundToPx() }
+                engineView.asView().setPadding(0, topPx, 0, bottomPx)
             },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = topPadding, bottom = bottomPadding)
         )
 
         RefreshBarLoadingIndicatorLazy(

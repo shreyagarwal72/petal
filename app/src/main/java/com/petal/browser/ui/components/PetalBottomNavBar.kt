@@ -203,8 +203,9 @@ fun PetalBottomNavBar(
     val tabsLabel = "Tabs"
     val newTabLabel = "New"
 
+    val isHomeTab = selectedTab == PetalNavTab.HOME
     val ambientGlassSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
-    val resolvedGlassSource = glassSource ?: ambientGlassSource
+    val resolvedGlassSource = if (isHomeTab) null else (glassSource ?: ambientGlassSource ?: (navCtx as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main_content))
 
     val effectiveFloating = isFloatingStyle && !isBottomAddressBar
     val navCtx = androidx.compose.ui.platform.LocalContext.current
