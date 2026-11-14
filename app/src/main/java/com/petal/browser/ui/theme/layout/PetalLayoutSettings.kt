@@ -72,8 +72,16 @@ data class PetalLayoutSettings(
         const val KEY_BADGE_SHAPE = "sp_containment_badge_shape"
 
         fun fromPreferences(sp: SharedPreferences): PetalLayoutSettings {
+            val expRaw = sp.getString(KEY_UI_EXPERIENCE, null)
+            val exp = if (expRaw != null) {
+                UiExperience.fromKey(expRaw)
+            } else if (sp.getBoolean("sp_liquid_glass_enabled", false)) {
+                UiExperience.LIQUID_GLASS
+            } else {
+                UiExperience.MATERIAL_EXPRESSIVE
+            }
             return PetalLayoutSettings(
-                uiExperience = UiExperience.fromKey(sp.getString(KEY_UI_EXPERIENCE, UiExperience.MATERIAL_EXPRESSIVE.key)),
+                uiExperience = exp,
                 switchType = PetalSwitchType.fromKey(sp.getString(KEY_SWITCH_TYPE, PetalSwitchType.COMPOSE.key)),
                 sliderType = PetalSliderType.fromKey(sp.getString(KEY_SLIDER_TYPE, PetalSliderType.FANCY.key)),
                 shapeType = PetalShapeType.fromKey(sp.getString(KEY_SHAPE_TYPE, PetalShapeType.ROUNDED.key)),

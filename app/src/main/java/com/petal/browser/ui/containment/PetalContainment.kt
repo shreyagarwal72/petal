@@ -126,7 +126,11 @@ val LocalPetalSectionHighlighted = compositionLocalOf { false }
  */
 fun isLiquidGlassDirect(context: android.content.Context, componentKey: String = "sp_liquid_glass_containments"): Boolean {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    return sp.getBoolean("sp_liquid_glass_enabled", false) && sp.getBoolean(componentKey, true)
+    val exp = sp.getString("sp_ui_experience", null)
+    val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
+    if (isMiuix) return false
+    val master = sp.getBoolean("sp_liquid_glass_enabled", false) || (exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key)
+    return master && sp.getBoolean(componentKey, true)
 }
 
 /**
@@ -147,7 +151,8 @@ fun isLiquidGlassEnabled(componentKey: String = "sp_liquid_glass_containments"):
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     var enabled by remember(sp, componentKey) {
         val exp = sp.getString("sp_ui_experience", null)
-        val master = if (exp != null) exp == "LIQUID_GLASS" else sp.getBoolean("sp_liquid_glass_enabled", false)
+        val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
+        val master = !isMiuix && (sp.getBoolean("sp_liquid_glass_enabled", false) || (exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key))
         val comp = sp.getBoolean(componentKey, true)
         mutableStateOf(master && comp)
     }
@@ -155,7 +160,8 @@ fun isLiquidGlassEnabled(componentKey: String = "sp_liquid_glass_containments"):
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "sp_ui_experience" || key == "sp_liquid_glass_unlocked" || key == "sp_liquid_glass_enabled" || key == componentKey) {
                 val exp = sp.getString("sp_ui_experience", null)
-                val master = if (exp != null) exp == "LIQUID_GLASS" else sp.getBoolean("sp_liquid_glass_enabled", false)
+                val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
+                val master = !isMiuix && (sp.getBoolean("sp_liquid_glass_enabled", false) || (exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key))
                 val comp = sp.getBoolean(componentKey, true)
                 enabled = master && comp
             }
@@ -189,7 +195,11 @@ fun Modifier.liquidGlassChrome(
     val fx = com.petal.browser.ui.glass.rememberGlassFx()
     val masterOn = PreferenceManager
         .getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
-        .getBoolean("sp_liquid_glass_enabled", false)
+        .let { sp ->
+            val exp = sp.getString("sp_ui_experience", null)
+            val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
+            !isMiuix && (sp.getBoolean("sp_liquid_glass_enabled", false) || (exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key))
+        }
     val press = if (pressFx && enabled && masterOn && fx.any) {
         com.petal.browser.ui.glass.rememberGlassPress(fx)
     } else null
@@ -220,7 +230,9 @@ private fun Modifier.liquidGlassChromeBase(
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val tuning = com.petal.browser.ui.glass.rememberRefractionTuning(refractionOverride, refractionWidthOverride)
-    val masterGlass = sp.getBoolean("sp_liquid_glass_enabled", false)
+    val exp = sp.getString("sp_ui_experience", null)
+    val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
+    val masterGlass = !isMiuix && (sp.getBoolean("sp_liquid_glass_enabled", false) || (exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key))
     if (!enabled || !masterGlass) return this
     // See liquidGlass(): never drop to a flat fill mid-transition, that causes the glass flash.
     if (com.petal.browser.motion.MotionGate.isLowEndDevice(context)) {
@@ -235,8 +247,7 @@ private fun Modifier.liquidGlassChromeBase(
     if (backdrop != null && petalRealGlassSupported) {
         val dark = isDark || (MaterialTheme.colorScheme.background.luminance() < .5f)
         val effectiveSheen = sheenOverride ?: sheenIntensity
-        val cloudyTuning = com.petal.browser.ui.glass.cloudy.rememberCloudyTuning()
-        return this.petalRealGlass(backdrop, shape, dark, tuning, backdropOpacity, cloudyTuning)
+        return this.petalRealGlass(backdrop, shape, dark, tuning, backdropOpacity)
             .liquidGlassSheen(shape, effectiveSheen, tintColor)
     }
     val wp = LocalPetalGlassWallpaper.current
@@ -318,10 +329,18 @@ fun petalGroupSurfaceColor(): Color {
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val isMiuix = isMiuixEnabled()
     LocalPetalGlassRevision.current
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
+    if (isMiuix) {
+        val target = if (LocalPetalSectionHighlighted.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+        else if (dark) Color(0xFF1C1C1E) else Color(0xFFFFFFFF)
+        val color by animateColorAsState(target, label = "petalGroupSurface")
+        return color
+    }
+
     if (isGlass && LocalPetalGlassWallpaper.current?.ready == true) {
         return if (LocalPetalSectionHighlighted.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .45f) else Color.Transparent
     }
-    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val glassAlpha = if (isGlass) sp.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.10f, 0.95f) else 1f
     val baseGlassColor = if (dark) {
         MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = (0.10f + glassAlpha * 0.45f).coerceIn(0f, 0.95f))
@@ -331,7 +350,6 @@ fun petalGroupSurfaceColor(): Color {
 
     val target = when {
         LocalPetalSectionHighlighted.current -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-        isMiuix -> if (dark) Color(0xFF1C1C1E) else Color(0xFFFFFFFF)
         isGlass -> baseGlassColor
         else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }

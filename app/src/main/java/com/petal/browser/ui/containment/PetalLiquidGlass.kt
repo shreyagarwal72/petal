@@ -16,7 +16,6 @@ import com.kyant.backdrop.effects.colorControls
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
-import com.petal.browser.ui.glass.cloudy.cloudyOpticalRefraction
 
 /**
  * Explicit sibling backdrops for headers. Repeated cards use the shared frosted wallpaper
@@ -55,11 +54,10 @@ internal fun Modifier.petalRealGlass(
     isDark: Boolean,
     refraction: com.petal.browser.ui.glass.RefractionTuning = com.petal.browser.ui.glass.RefractionTuning(),
     /** Translucency slider (0.10..0.95): higher = denser veil. */
-    opacity: Float = 0.70f,
-    cloudyTuning: com.petal.browser.ui.glass.cloudy.CloudyGlassTuning = com.petal.browser.ui.glass.cloudy.CloudyGlassTuning(),
+    opacity: Float = 0.70f
 ): Modifier {
     if (backdrop == null || !petalRealGlassSupported) return this
-    val glassModifier = this.drawBackdrop(
+    return this.drawBackdrop(
         backdrop = backdrop,
         shape = { shape },
         highlight = { Highlight.Default },
@@ -83,19 +81,4 @@ internal fun Modifier.petalRealGlass(
             drawRect((if (isDark) Color.Black else Color.White).copy(alpha = veil))
         }
     )
-
-    if (cloudyTuning.enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        val rim = (24.dp * refraction.width)
-        return glassModifier.then(
-            Modifier.cloudyOpticalRefraction(
-                cornerRadius = 20.dp,
-                rimWidth = rim,
-                refractionStrength = 16f * refraction.strength,
-                tuning = cloudyTuning,
-                isDark = isDark
-            )
-        )
-    }
-
-    return glassModifier
 }

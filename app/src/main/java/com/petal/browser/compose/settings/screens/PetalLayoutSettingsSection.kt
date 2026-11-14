@@ -313,6 +313,15 @@ fun PetalLayoutSettingsSection(
             selected = settings.uiExperience,
             banner = "Select your system UI design experience. Each style changes controls, containment, motion, shapes and surface materials across Petal.",
             onSelect = { exp ->
+                val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                when (exp) {
+                    com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS -> {
+                        sp.edit().putBoolean("sp_liquid_glass_enabled", true).apply()
+                    }
+                    else -> {
+                        sp.edit().putBoolean("sp_liquid_glass_enabled", false).apply()
+                    }
+                }
                 PetalLayoutState.update(context) { current ->
                     when (exp) {
                         com.petal.browser.ui.theme.layout.UiExperience.MIUIX -> current.copy(

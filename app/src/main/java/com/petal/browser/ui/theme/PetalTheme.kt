@@ -148,7 +148,7 @@ fun PetalExpressiveTheme(
     var themeRevision by remember(sp) { androidx.compose.runtime.mutableIntStateOf(0) }
     androidx.compose.runtime.DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == null || key.startsWith("sp_liquid_glass_") || key == "sp_stride_glass_nav") {
+            if (key == null || key.startsWith("sp_liquid_glass_") || key == "sp_stride_glass_nav" || key == "sp_ui_experience") {
                 glassRevision++
             } else if (key == "sp_app_font" || key.startsWith("sp_gs_") || key.startsWith("sp_font_") || key.startsWith("sp_custom_")) {
                 fontRevision++
