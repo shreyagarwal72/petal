@@ -13,6 +13,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.petal.browser.R
 import com.petal.browser.unit.TabThumbnailCache
 import com.petal.browser.view.PetalCrashOverlayHelper
+import com.petal.browser.offlinegame.PetalOfflineGameOverlay
 import com.petal.browser.engine.gecko.PetalEngineStore
 import com.petal.browser.engine.gecko.PetalContentDelegateWrapper
 import mozilla.components.browser.state.action.ContentAction
@@ -376,6 +377,7 @@ class PetalTabViewController private constructor(
     private val observer = object : EngineSession.Observer {
         override fun onLocationChange(url: String, hasUserGesture: Boolean) {
             dismissCrashErrorState()
+            maybeDismissOfflineGame(url)
             android.util.Log.d("PetalTabNav", "observer.onLocationChange: url=$url gesture=$hasUserGesture oldPageUrl=$pageUrl")
             if (isStaleInitialBlank(url)) {
                 android.util.Log.d("PetalTabNav", "ignoring initial about:blank while loading $pendingNavUrl")
@@ -835,6 +837,9 @@ class PetalTabViewController private constructor(
                 val act = resolveActivity(context)
                 act != null && com.petal.browser.engine.gecko.PetalEngineBridge.handleExternalScheme(act, uri)
             }
+            val connectivityErrorCallback: (String?, Int) -> Unit = { failedUrl, code ->
+                post { showOfflineGame(failedUrl, code) }
+            }
             if (engineNavigation !is ExternalSchemeNavigationDelegate) {
                 val inner = engineNavigation ?: object : org.mozilla.geckoview.GeckoSession.NavigationDelegate {}
                 gs.navigationDelegate = ExternalSchemeNavigationDelegate(
@@ -845,7 +850,8 @@ class PetalTabViewController private constructor(
                     onLocationChanged = locationCallback,
                     onCanGoBackChanged = canGoBackCallback,
                     onCanGoForwardChanged = canGoForwardCallback,
-                    handleExternal = externalSchemeCallback
+                    handleExternal = externalSchemeCallback,
+                    onConnectivityError = connectivityErrorCallback
                 )
             } else {
                 // Re-bind: every callback must point at THIS view. Keeping the old view's lambdas
@@ -857,7 +863,8 @@ class PetalTabViewController private constructor(
                     canGoBackCallback,
                     canGoForwardCallback,
                     locationCallback,
-                    externalSchemeCallback
+                    externalSchemeCallback,
+                    connectivityErrorCallback
                 )
             }
 
@@ -1054,6 +1061,7 @@ class PetalTabViewController private constructor(
 
     fun loadUrl(url: String) {
         dismissCrashErrorState()
+        dismissOfflineGame()
         val rawUrl = url.trim()
         if (rawUrl.isEmpty()) return
         if (rawUrl.equals("Petal Home", ignoreCase = true) || rawUrl.equals("Petal Start", ignoreCase = true)) {
@@ -1111,6 +1119,7 @@ class PetalTabViewController private constructor(
     fun reloadBypassCache(): Boolean = reloadInternal(org.mozilla.geckoview.GeckoSession.LOAD_FLAGS_BYPASS_CACHE)
 
     private fun reloadInternal(flags: Int): Boolean {
+        dismissOfflineGame()
         // Runs inside the touch-release callback of pull-to-refresh: nothing here may throw.
         // (Firefox's SwipeRefreshFeature just calls the reload use case.)
         try {
@@ -1815,6 +1824,56 @@ class PetalTabViewController private constructor(
         crashErrorView = PetalCrashOverlayHelper.dismissCrashErrorState(this, crashErrorView)
     }
 
+    // --- Petal Hop offline game (shown instead of the error page for connectivity failures) ---
+    private var offlineGameView: android.view.View? = null
+    private var offlineGameUrl: String? = null
+
+    private fun showOfflineGame(failedUrl: String?, errorCode: Int) {
+        if (!PetalOfflineGameOverlay.isEnabled(context)) return
+        if (!PetalOfflineGameOverlay.isConnectivityError(errorCode)) return
+        offlineGameUrl = failedUrl
+        offlineGameView = PetalOfflineGameOverlay.show(this, offlineGameView, failedUrl, errorCode) { url ->
+            val target = url ?: offlineGameUrl
+            dismissOfflineGame()
+            if (!target.isNullOrBlank()) loadUrl(target) else reload()
+        }
+        requestLayout()
+    }
+
+    private fun dismissOfflineGame() {
+        if (offlineGameView == null) return
+        offlineGameView = PetalOfflineGameOverlay.dismiss(this, offlineGameView)
+        offlineGameUrl = null
+    }
+
+    /** The error page itself (and the failed URL it reports) must not tear the game down. */
+    private fun maybeDismissOfflineGame(newUrl: String) {
+        if (offlineGameView == null) return
+        val lower = newUrl.lowercase()
+        if (lower.startsWith("data:") || lower.startsWith("about:")) return
+        val failed = offlineGameUrl
+        if (failed != null && newUrl.trimEnd('/').equals(failed.trimEnd('/'), ignoreCase = true)) return
+        dismissOfflineGame()
+    }
+
+    // SwipeRefreshLayout only measures/lays out its first child, so the overlay is placed by hand.
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        offlineGameView?.measure(
+            View.MeasureSpec.makeMeasureSpec(measuredWidth, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(measuredHeight, View.MeasureSpec.EXACTLY)
+        )
+    }
+
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        offlineGameView?.layout(0, 0, right - left, bottom - top)
+    }
+
+    // Taps and holds belong to the game; pull-to-refresh must not steal them.
+    override fun onInterceptTouchEvent(ev: android.view.MotionEvent): Boolean =
+        if (offlineGameView != null) false else super.onInterceptTouchEvent(ev)
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         dismissCrashErrorState()
@@ -2355,7 +2414,8 @@ private class ExternalSchemeNavigationDelegate(
     private var onLocationChanged: (String) -> Unit,
     private var onCanGoBackChanged: ((Boolean) -> Unit)? = null,
     private var onCanGoForwardChanged: ((Boolean) -> Unit)? = null,
-    private var handleExternal: (String) -> Boolean
+    private var handleExternal: (String) -> Boolean,
+    private var onConnectivityError: ((String?, Int) -> Unit)? = null
 ) : org.mozilla.geckoview.GeckoSession.NavigationDelegate, PetalOwnedDelegate {
 
     fun updateDependencies(
@@ -2365,7 +2425,8 @@ private class ExternalSchemeNavigationDelegate(
         newOnCanGoBack: ((Boolean) -> Unit)? = null,
         newOnCanGoForward: ((Boolean) -> Unit)? = null,
         newOnLocationChanged: ((String) -> Unit)? = null,
-        newHandleExternal: ((String) -> Boolean)? = null
+        newHandleExternal: ((String) -> Boolean)? = null,
+        newOnConnectivityError: ((String?, Int) -> Unit)? = null
     ) {
         context = newContext
         currentUrlSupplier = newUrlSupplier
@@ -2374,6 +2435,7 @@ private class ExternalSchemeNavigationDelegate(
         if (newOnCanGoForward != null) onCanGoForwardChanged = newOnCanGoForward
         if (newOnLocationChanged != null) onLocationChanged = newOnLocationChanged
         if (newHandleExternal != null) handleExternal = newHandleExternal
+        if (newOnConnectivityError != null) onConnectivityError = newOnConnectivityError
     }
 
     override fun onLocationChange(
@@ -2459,6 +2521,7 @@ private class ExternalSchemeNavigationDelegate(
     ): org.mozilla.geckoview.GeckoResult<String>? {
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLoadError uri=$uri error=${error.code}")
         com.petal.browser.logger.PetalLiveLogEngine.logLoadError(uri, error.code, error.category)
+        try { onConnectivityError?.invoke(uri, error.code) } catch (_: Throwable) {}
         if (uri != null && uri.startsWith("https://", ignoreCase = true)) {
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
             val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))

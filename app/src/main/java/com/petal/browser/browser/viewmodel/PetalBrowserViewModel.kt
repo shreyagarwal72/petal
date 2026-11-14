@@ -223,6 +223,14 @@ class PetalBrowserViewModel @Inject constructor(
     @Volatile
     var onBeforeTabSwitcherOpen: (() -> Unit)? = null
 
+    /**
+     * Set by the Compose root. Runs on the main thread right BEFORE the tab switcher flips to open,
+     * while the page is still on screen, so a real pre-hide snapshot (PixelCopy, which sees the
+     * GeckoView surface) can be taken for the page -> tile morph.
+     */
+    @Volatile
+    var beforeTabSwitcherOpen: (() -> Unit)? = null
+
     // The grid reads previews through tabItems; without this nudge a thumbnail stored after the
     // list was built (capture on leaving a tab, page finished loading) never reached the screen.
     private val thumbnailListener = TabThumbnailCache.ThumbnailListener { _thumbnailRevision.value = System.nanoTime() }
@@ -619,6 +627,7 @@ class PetalBrowserViewModel @Inject constructor(
 
     fun setTabSwitcherOpen(open: Boolean) {
         if (open && !_isTabSwitcherOpen.value) {
+            try { beforeTabSwitcherOpen?.invoke() } catch (_: Throwable) {}
             try { onBeforeTabSwitcherOpen?.invoke() } catch (_: Throwable) {}
         }
         _isTabSwitcherOpen.value = open

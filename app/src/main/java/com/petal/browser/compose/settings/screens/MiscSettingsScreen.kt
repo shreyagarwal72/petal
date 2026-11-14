@@ -208,6 +208,43 @@ fun MiscSettingsScreenContent(
                     )
                 }
 
+                // Petal Hop: offline mini-game shown when a page can't load because of connectivity
+                val offlineGameContext = LocalContext.current
+                val offlineGamePrefs = remember(offlineGameContext) {
+                    androidx.preference.PreferenceManager.getDefaultSharedPreferences(offlineGameContext)
+                }
+                var offlineGameEnabled by remember {
+                    mutableStateOf(
+                        offlineGamePrefs.getBoolean(
+                            com.petal.browser.offlinegame.PetalOfflineGameOverlay.PREF_ENABLED,
+                            true
+                        )
+                    )
+                }
+                PetalSettingsSection(
+                    title = stringResource(R.string.offline_game_section_title),
+                    icon = Icons.Rounded.SportsEsports,
+                    cardId = "misc_offline_game",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                        title = stringResource(R.string.offline_game_setting_title),
+                        subtitle = stringResource(R.string.offline_game_setting_subtitle),
+                        icon = Icons.Rounded.SportsEsports,
+                        checked = offlineGameEnabled,
+                        onCheckedChange = { enabled ->
+                            offlineGameEnabled = enabled
+                            offlineGamePrefs.edit()
+                                .putBoolean(
+                                    com.petal.browser.offlinegame.PetalOfflineGameOverlay.PREF_ENABLED,
+                                    enabled
+                                )
+                                .apply()
+                        }
+                    )
+                }
+
                 Spacer(Modifier.height(32.dp))
             }
         }

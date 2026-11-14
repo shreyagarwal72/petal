@@ -630,7 +630,8 @@ fun PetalTabGridSwitcher(
         hero.tabId = current?.id
         hero.image = backgroundSnapshot
         // Wait (briefly) for the tile to be laid out so we know where to land.
-        kotlinx.coroutines.withTimeoutOrNull(500) {
+        // Tile bounds normally land within 1-2 frames; never make the user wait half a second for them.
+        kotlinx.coroutines.withTimeoutOrNull(150) {
             snapshotFlow { hero.tabId?.let { tabCardBounds[it] } }
                 .filter { it != null }
                 .first()

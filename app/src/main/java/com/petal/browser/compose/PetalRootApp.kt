@@ -45,6 +45,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import com.petal.browser.predictive.PetalBackInput
 import com.petal.browser.predictive.PetalBackMotion
 import com.petal.browser.predictive.PetalPredictiveJunction
@@ -150,9 +152,43 @@ fun PetalRootApp(
 
     val tabSwitcherSnapshot = remember(isTabSwitcherOpen) {
         if (isTabSwitcherOpen && rootView != null) {
-            PetalContentSnapshot.capture(rootView)
+            PetalContentSnapshot.capture(rootView, forceFresh = true)
             PetalContentSnapshot.current?.asImageBitmap()
         } else null
+    }
+
+    // Take the page snapshot BEFORE the switcher opens. capture() above runs after the page is
+    // already hidden and falls back to a software draw that cannot see the GeckoView surface,
+    // which is why the page used to turn black the moment Tabs was tapped.
+    DisposableEffect(viewModel, rootView) {
+        viewModel.beforeTabSwitcherOpen = { rootView?.let { PetalContentSnapshot.capturePreview(it) } }
+        onDispose { viewModel.beforeTabSwitcherOpen = null }
+    }
+
+    // Keep the switcher mounted briefly after it closes. It used to be removed the instant
+    // isTabSwitcherOpen went false, so the close morph ended on a hole (page surface and bars
+    // still coming back = black flash). Now the full-screen hero stays on top while the page
+    // returns underneath, then the whole layer fades out.
+    val switcherHold = remember { TabSwitcherHold() }
+    if (isTabSwitcherOpen != switcherHold.wasOpen) {
+        switcherHold.wasOpen = isTabSwitcherOpen
+        if (isTabSwitcherOpen) {
+            switcherHold.snapshot = tabSwitcherSnapshot
+            switcherHold.generation++
+        }
+    }
+    var switcherMounted by remember { mutableStateOf(false) }
+    val switcherAlpha = remember { androidx.compose.animation.core.Animatable(1f) }
+    LaunchedEffect(isTabSwitcherOpen) {
+        if (isTabSwitcherOpen) {
+            switcherMounted = true
+            switcherAlpha.snapTo(1f)
+        } else if (switcherMounted) {
+            kotlinx.coroutines.delay(60)
+            switcherAlpha.animateTo(0f, androidx.compose.animation.core.tween(140))
+            switcherMounted = false
+            switcherHold.snapshot = null
+        }
     }
 
     DisposableEffect(isTabSwitcherOpen) {
@@ -698,10 +734,28 @@ fun PetalRootApp(
             }
 
             // Tab Switcher Grid
-            if (isTabSwitcherOpen) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(9f)) {
+            if (isTabSwitcherOpen || switcherMounted) {
+              androidx.compose.runtime.key(switcherHold.generation) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .zIndex(9f)
+                        .graphicsLayer { alpha = switcherAlpha.value }
+                        .then(
+                            if (!isTabSwitcherOpen) {
+                                // Closing: swallow touches so the fading layer can't be tapped.
+                                Modifier.pointerInput(Unit) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+                                        }
+                                    }
+                                }
+                            } else Modifier
+                        )
+                ) {
                     PetalTabGridSwitcher(
-                        backgroundSnapshot = tabSwitcherSnapshot,
+                        backgroundSnapshot = switcherHold.snapshot,
                         tabs = tabItems,
                         onTabSelect = { tab ->
                             viewModel.selectTab(tab.id)
@@ -743,6 +797,7 @@ fun PetalRootApp(
                         onBack = { viewModel.setTabSwitcherOpen(false) }
                     )
                 }
+              }
             }
 
             // Overflow Menu Sheet
@@ -1084,4 +1139,11 @@ fun PetalRootApp(
                 }
             }
     }
+}
+
+/** Plain holder (not Compose state): keeps the open-time snapshot alive while the switcher fades out. */
+private class TabSwitcherHold {
+    var wasOpen: Boolean = false
+    var snapshot: androidx.compose.ui.graphics.ImageBitmap? = null
+    var generation: Int = 0
 }

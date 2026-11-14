@@ -1891,5 +1891,25 @@
     <string name="fxa_pair_scan_title">Scan the QR code</string>
     <string name="fxa_pair_scan_hint">On Firefox desktop: Settings → Sync → Connect another device.</string>
     <string name="fxa_pair_invalid">That isn’t a Firefox pairing code. Open “Connect another device” on desktop Firefox and scan that QR.</string>
+    <!-- Petal Hop offline game -->
+    <string name="offline_game_error_no_internet_title">No internet connection</string>
+    <string name="offline_game_error_no_internet_desc">Check your data or Wi-Fi connection. Play a round while you wait.</string>
+    <string name="offline_game_error_host_title">Address not found</string>
+    <string name="offline_game_error_host_desc">Check the address for typing errors, or play a round while you wait.</string>
+    <string name="offline_game_play">Play while you wait</string>
+    <string name="offline_game_try_again">Try again</string>
+    <string name="offline_game_play_again">Play again</string>
+    <string name="offline_game_tap_to_hop">Tap to hop</string>
+    <string name="offline_game_score">Score %1$d</string>
+    <string name="offline_game_best">Best %1$d</string>
+    <string name="offline_game_oops">Oops!</string>
+    <string name="offline_game_new_best">New best!</string>
+    <string name="offline_game_back_online">You\'re back online</string>
+    <string name="offline_game_reload">Reload</string>
+    <string name="offline_game_cd_hop">Petal Hop game. Double tap to hop over obstacles.</string>
+    <string name="offline_game_hop_action">Hop</string>
+    <string name="offline_game_section_title">Offline game</string>
+    <string name="offline_game_setting_title">Petal Hop</string>
+    <string name="offline_game_setting_subtitle">Play a mini-game when a page can\'t load because of the connection</string>
 </resources>
 

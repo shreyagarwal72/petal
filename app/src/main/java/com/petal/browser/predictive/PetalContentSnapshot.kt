@@ -134,9 +134,14 @@ object PetalContentSnapshot {
         previewAt = SystemClock.uptimeMillis()
     }
 
+    /**
+     * @param forceFresh skip the cached transition snapshot. The tab switcher needs the page exactly
+     * as it is NOW; a snapshot left over from an earlier transition would morph the wrong picture.
+     */
     @JvmStatic
-    fun capture(rootView: View): Bitmap {
-        val existing = com.petal.browser.motion.MotionGate.getTransitionSnapshot()
+    @JvmOverloads
+    fun capture(rootView: View, forceFresh: Boolean = false): Bitmap {
+        val existing = if (forceFresh) null else com.petal.browser.motion.MotionGate.getTransitionSnapshot()
         if (existing != null && !existing.isRecycled) {
             _current = existing
             return existing
