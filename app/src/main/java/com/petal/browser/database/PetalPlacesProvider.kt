@@ -7,9 +7,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import mozilla.components.browser.storage.sync.PlacesBookmarksStorage
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
+import mozilla.components.concept.storage.BookmarkInfo
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
-import mozilla.components.concept.storage.BookmarkRoot
+import mozilla.components.concept.storage.PageVisit
 import mozilla.components.concept.storage.VisitType
 
 /**
@@ -24,6 +25,10 @@ import mozilla.components.concept.storage.VisitType
 object PetalPlacesProvider {
     private const val TAG = "PetalPlacesProvider"
     private const val PREF_MIGRATED = "sp_places_migrated_from_legacy_sqlite_v1"
+
+    // Mozilla Places Canonical Root GUIDs
+    private const val BOOKMARK_ROOT_GUID = "root________"
+    private const val BOOKMARK_MOBILE_GUID = "mobile______"
 
     @Volatile
     private var historyStorage: PlacesHistoryStorage? = null
@@ -58,20 +63,18 @@ object PetalPlacesProvider {
         val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
         if (sp.getBoolean(PREF_MIGRATED, false)) return
 
-        val dbFile = appContext.getDatabasePath(PetalDatabaseOpenHelper.DATABASE_NAME)
-        if (dbFile != null && dbFile.exists()) {
+        val helper = PetalDatabaseOpenHelper(appContext)
+        val oldDb = try { helper.readableDatabase } catch (_: Throwable) { null }
+        if (oldDb != null) {
             try {
-                val helper = PetalDatabaseOpenHelper(appContext)
-                val db = helper.readableDatabase
-
+                val db = oldDb
                 // 1. Migrate Bookmarks from TABLE_BOOKMARK
                 try {
                     val cursor = db.query(
                         HistoryBookmarkContract.TABLE_BOOKMARK,
                         arrayOf(
                             HistoryBookmarkContract.COLUMN_TITLE,
-                            HistoryBookmarkContract.COLUMN_URL,
-                            HistoryBookmarkContract.COLUMN_TIME
+                            HistoryBookmarkContract.COLUMN_URL
                         ),
                         null, null, null, null, null
                     )
@@ -85,7 +88,7 @@ object PetalPlacesProvider {
                                 runBlocking(Dispatchers.IO) {
                                     try {
                                         bookmarks.addItem(
-                                            parentGuid = BookmarkRoot.Mobile.id,
+                                            parentGuid = BOOKMARK_MOBILE_GUID,
                                             url = url.trim(),
                                             title = title.ifBlank { url }.trim(),
                                             position = null
@@ -111,18 +114,15 @@ object PetalPlacesProvider {
                         null, null, null, null, null
                     )
                     cursor?.use { c ->
-                        val titleCol = c.getColumnIndex(HistoryBookmarkContract.COLUMN_TITLE)
                         val urlCol = c.getColumnIndex(HistoryBookmarkContract.COLUMN_URL)
                         while (c.moveToNext()) {
-                            val title = if (titleCol >= 0) c.getString(titleCol) else ""
                             val url = if (urlCol >= 0) c.getString(urlCol) else ""
                             if (!url.isNullOrBlank() && url.startsWith("http")) {
                                 runBlocking(Dispatchers.IO) {
                                     try {
                                         history.recordVisit(
                                             url.trim(),
-                                            VisitType.LINK,
-                                            title.ifBlank { url }.trim()
+                                            PageVisit(VisitType.LINK)
                                         )
                                     } catch (_: Throwable) {}
                                 }
@@ -157,7 +157,7 @@ object PetalPlacesProvider {
     fun getAllBookmarks(context: Context): List<Record> {
         val bm = getBookmarksStorage(context)
         return runBlocking(Dispatchers.IO) {
-            val root = bm.getTree(BookmarkRoot.Root.id, true) ?: return@runBlocking emptyList<Record>()
+            val root = bm.getTree(BOOKMARK_ROOT_GUID, true).getOrNull() ?: return@runBlocking emptyList<Record>()
             val result = mutableListOf<Record>()
             fun traverse(node: BookmarkNode) {
                 val url = node.url
@@ -180,15 +180,18 @@ object PetalPlacesProvider {
 
         val bm = getBookmarksStorage(context)
         runBlocking(Dispatchers.IO) {
-            val root = bm.getTree(BookmarkRoot.Root.id, true)
+            val root = bm.getTree(BOOKMARK_ROOT_GUID, true).getOrNull()
             val existing = findBookmarkNode(root, url)
             if (existing != null) {
                 try {
-                    bm.updateNode(existing.guid, title = title, url = url)
+                    bm.updateNode(
+                        guid = existing.guid,
+                        info = BookmarkInfo(title = title, url = url)
+                    )
                 } catch (_: Throwable) {}
             } else {
                 try {
-                    bm.addItem(BookmarkRoot.Mobile.id, url, title, null)
+                    bm.addItem(BOOKMARK_MOBILE_GUID, url, title, null)
                 } catch (_: Throwable) {}
             }
         }
@@ -198,13 +201,15 @@ object PetalPlacesProvider {
         if (oldUrl.isNullOrBlank() || newUrl.isNullOrBlank()) return false
         val bm = getBookmarksStorage(context)
         return runBlocking(Dispatchers.IO) {
-            val root = bm.getTree(BookmarkRoot.Root.id, true)
+            val root = bm.getTree(BOOKMARK_ROOT_GUID, true).getOrNull()
             val existing = findBookmarkNode(root, oldUrl.trim()) ?: return@runBlocking false
             try {
                 bm.updateNode(
                     guid = existing.guid,
-                    title = if (!newTitle.isNullOrBlank()) newTitle.trim() else newUrl.trim(),
-                    url = newUrl.trim()
+                    info = BookmarkInfo(
+                        title = if (!newTitle.isNullOrBlank()) newTitle.trim() else newUrl.trim(),
+                        url = newUrl.trim()
+                    )
                 )
                 true
             } catch (_: Throwable) {
@@ -217,7 +222,7 @@ object PetalPlacesProvider {
         if (url.isNullOrBlank()) return
         val bm = getBookmarksStorage(context)
         runBlocking(Dispatchers.IO) {
-            val root = bm.getTree(BookmarkRoot.Root.id, true)
+            val root = bm.getTree(BOOKMARK_ROOT_GUID, true).getOrNull()
             val existing = findBookmarkNode(root, url.trim()) ?: return@runBlocking
             try {
                 bm.deleteNode(existing.guid)
@@ -229,7 +234,7 @@ object PetalPlacesProvider {
         if (url.isNullOrBlank()) return false
         val bm = getBookmarksStorage(context)
         return runBlocking(Dispatchers.IO) {
-            val root = bm.getTree(BookmarkRoot.Root.id, true)
+            val root = bm.getTree(BOOKMARK_ROOT_GUID, true).getOrNull()
             findBookmarkNode(root, url.trim()) != null
         }
     }
@@ -237,7 +242,7 @@ object PetalPlacesProvider {
     fun clearBookmarks(context: Context) {
         val bm = getBookmarksStorage(context)
         runBlocking(Dispatchers.IO) {
-            val root = bm.getTree(BookmarkRoot.Root.id, true) ?: return@runBlocking
+            val root = bm.getTree(BOOKMARK_ROOT_GUID, true).getOrNull() ?: return@runBlocking
             fun deleteRecursive(node: BookmarkNode) {
                 if (node.type == BookmarkNodeType.ITEM) {
                     try { bm.deleteNode(node.guid) } catch (_: Throwable) {}
@@ -272,7 +277,7 @@ object PetalPlacesProvider {
         val hs = getHistoryStorage(context)
         runBlocking(Dispatchers.IO) {
             try {
-                hs.recordVisit(url.trim(), VisitType.LINK, title.ifBlank { url }.trim())
+                hs.recordVisit(url.trim(), PageVisit(VisitType.LINK))
             } catch (_: Throwable) {}
         }
     }

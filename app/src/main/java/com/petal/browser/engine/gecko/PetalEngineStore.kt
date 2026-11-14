@@ -155,7 +155,7 @@ object PetalEngineStore {
         store = newStore
         try {
             mozilla.components.support.webextensions.WebExtensionSupport.initialize(
-                engine = currentEngine,
+                runtime = currentEngine,
                 store = newStore
             )
             Log.i(TAG, "Initialized Mozilla WebExtensionSupport")
@@ -179,7 +179,16 @@ object PetalEngineStore {
         recentlyClosedStorage?.let { return it }
 
         val appContext = context.applicationContext
-        val storage = RecentlyClosedTabsStorage(context = appContext)
+        val currentEngine = getEngine(appContext)
+        val crashReporter = object : mozilla.components.concept.base.crash.CrashReporting {
+            override fun submitReport(throwable: Throwable) {}
+            override fun recordCrashBreadcrumb(breadcrumb: mozilla.components.concept.base.crash.Breadcrumb) {}
+        }
+        val storage = RecentlyClosedTabsStorage(
+            context = appContext,
+            engine = currentEngine,
+            crashReporting = crashReporter
+        )
         recentlyClosedStorage = storage
         Log.i(TAG, "Initialized Mozilla RecentlyClosedTabsStorage")
         return storage

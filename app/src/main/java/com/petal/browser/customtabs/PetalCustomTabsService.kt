@@ -2,6 +2,7 @@ package com.petal.browser.customtabs
 
 import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.customtabs.AbstractCustomTabsService
+import mozilla.components.feature.customtabs.store.CustomTabsServiceStore
 import com.petal.browser.engine.gecko.PetalEngineStore
 
 /**
@@ -14,5 +15,9 @@ import com.petal.browser.engine.gecko.PetalEngineStore
 class PetalCustomTabsService : AbstractCustomTabsService() {
     override val engine: Engine by lazy {
         PetalEngineStore.getEngine(applicationContext)
+    }
+
+    override val customTabsServiceStore: CustomTabsServiceStore by lazy {
+        CustomTabsServiceStore()
     }
 }

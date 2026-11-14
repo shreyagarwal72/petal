@@ -2,14 +2,13 @@ package com.petal.browser.passwords
 
 import android.content.Context
 import android.net.Uri
-import android.security.keystore.KeyProperties
-import android.util.Base64
 import android.util.Log
 import androidx.preference.PreferenceManager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import mozilla.components.concept.storage.Login
 import mozilla.components.concept.storage.LoginEntry
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.service.sync.logins.SyncableLoginsStorage
@@ -72,19 +71,11 @@ object PetalLoginsProvider {
                                 origin = originUrl,
                                 formActionOrigin = c.formActionOrigin ?: originUrl,
                                 username = c.username,
-                                password = c.password,
-                                guid = c.id,
-                                timeCreated = c.createdAt,
-                                timeLastUsed = c.lastUsedAt,
-                                timePasswordChanged = c.updatedAt
+                                password = c.password
                             )
                             try {
-                                storage.add(entry)
-                            } catch (_: Throwable) {
-                                try {
-                                    storage.update(entry.guid, entry)
-                                } catch (_: Throwable) {}
-                            }
+                                storage.addOrUpdate(entry)
+                            } catch (_: Throwable) {}
                         }
                     }
                     Log.i(TAG, "Migrated ${legacyCreds.size} legacy credentials into SyncableLoginsStorage.")
@@ -159,20 +150,16 @@ object PetalLoginsProvider {
             origin = origin,
             formActionOrigin = credential.formActionOrigin ?: origin,
             username = credential.username,
-            password = credential.password,
-            guid = credential.id,
-            timeCreated = credential.createdAt,
-            timeLastUsed = credential.lastUsedAt,
-            timePasswordChanged = credential.updatedAt
+            password = credential.password
         )
         runBlocking(Dispatchers.IO) {
             try {
                 val existing = storage.list().firstOrNull {
-                    it.guid == entry.guid ||
+                    it.guid == credential.id ||
                     (it.origin.equals(entry.origin, ignoreCase = true) && it.username.equals(entry.username, ignoreCase = true))
                 }
                 if (existing != null) {
-                    storage.update(existing.guid, entry.copy(guid = existing.guid))
+                    storage.update(existing.guid, entry)
                 } else {
                     storage.add(entry)
                 }
@@ -193,12 +180,9 @@ object PetalLoginsProvider {
         val storage = getLoginsStorage(context)
         runBlocking(Dispatchers.IO) {
             try {
-                val existing = storage.list().firstOrNull { it.guid == id }
+                val existing = storage.get(id)
                 if (existing != null) {
-                    val updated = existing.copy(
-                        password = newPassword,
-                        timePasswordChanged = System.currentTimeMillis()
-                    )
+                    val updated = existing.toEntry().copy(password = newPassword)
                     storage.update(id, updated)
                 }
             } catch (_: Throwable) {}
@@ -209,14 +193,16 @@ object PetalLoginsProvider {
         val storage = getLoginsStorage(context)
         runBlocking(Dispatchers.IO) {
             try {
-                val existing = storage.list().firstOrNull { it.guid == id }
-                if (existing != null) {
-                    val updated = existing.copy(
-                        timeLastUsed = System.currentTimeMillis(),
-                        timesUsed = existing.timesUsed + 1
-                    )
-                    storage.update(id, updated)
-                }
+                storage.touch(id)
+            } catch (_: Throwable) {}
+        }
+    }
+
+    fun clear(context: Context) {
+        val storage = getLoginsStorage(context)
+        runBlocking(Dispatchers.IO) {
+            try {
+                storage.wipeLocal()
             } catch (_: Throwable) {}
         }
     }
