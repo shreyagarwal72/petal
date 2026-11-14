@@ -136,7 +136,7 @@ object PetalEngineStore {
         )
         val uploadCleaner = getFileUploadsDirCleaner(appContext)
         val rcStorage = getRecentlyClosedStorage(appContext)
-        val recentlyClosedMiddleware = RecentlyClosedMiddleware(rcStorage, mainScope)
+        val recentlyClosedMiddleware = RecentlyClosedMiddleware(lazy { rcStorage })
 
         val newStore = BrowserStore(
             initialState = BrowserState(),
@@ -181,7 +181,7 @@ object PetalEngineStore {
         val appContext = context.applicationContext
         val currentEngine = getEngine(appContext)
         val crashReporter = object : mozilla.components.concept.base.crash.CrashReporting {
-            override fun submitReport(throwable: Throwable) {}
+            override fun submitCaughtException(throwable: Throwable) = kotlinx.coroutines.Job().apply { complete() }
             override fun recordCrashBreadcrumb(breadcrumb: mozilla.components.concept.base.crash.Breadcrumb) {}
         }
         val storage = RecentlyClosedTabsStorage(

@@ -186,7 +186,12 @@ object PetalPlacesProvider {
                 try {
                     bm.updateNode(
                         guid = existing.guid,
-                        info = BookmarkInfo(title = title, url = url)
+                        info = BookmarkInfo(
+                            parentGuid = null,
+                            position = null,
+                            title = title,
+                            url = url
+                        )
                     )
                 } catch (_: Throwable) {}
             } else {
@@ -207,6 +212,8 @@ object PetalPlacesProvider {
                 bm.updateNode(
                     guid = existing.guid,
                     info = BookmarkInfo(
+                        parentGuid = null,
+                        position = null,
                         title = if (!newTitle.isNullOrBlank()) newTitle.trim() else newUrl.trim(),
                         url = newUrl.trim()
                     )
@@ -243,7 +250,7 @@ object PetalPlacesProvider {
         val bm = getBookmarksStorage(context)
         runBlocking(Dispatchers.IO) {
             val root = bm.getTree(BOOKMARK_ROOT_GUID, true).getOrNull() ?: return@runBlocking
-            fun deleteRecursive(node: BookmarkNode) {
+            suspend fun deleteRecursive(node: BookmarkNode) {
                 if (node.type == BookmarkNodeType.ITEM) {
                     try { bm.deleteNode(node.guid) } catch (_: Throwable) {}
                 }
