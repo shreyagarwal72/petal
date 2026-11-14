@@ -55,13 +55,12 @@ object PetalStreamDownloadEngine {
                     }
                     StreamContainerFormat.DASH -> {
                         val videoUrl = request.videoUrl ?: request.audioUrl ?: throw IllegalArgumentException("No stream URL")
-                        PetalDashSegmentResolver.resolve(
-                            manifestUrl = videoUrl,
-                            representationId = "",
-                            kind = if (request.videoUrl != null) TrackKind.VIDEO else TrackKind.AUDIO,
+                        PetalDashSegmentResolver.fetch(
+                            mpdUrl = videoUrl,
                             referer = request.referer,
                             cookies = request.cookies,
                             userAgent = request.userAgent,
+                            kind = if (request.videoUrl != null) TrackKind.VIDEO else TrackKind.AUDIO,
                             extraHeaders = request.headers
                         ) ?: throw IllegalStateException("Could not resolve DASH representation")
                     }

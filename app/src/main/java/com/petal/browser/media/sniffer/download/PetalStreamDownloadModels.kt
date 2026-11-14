@@ -2,6 +2,8 @@ package com.petal.browser.media.sniffer.download
 
 import okhttp3.Request
 
+class StreamCancelledException : Exception()
+
 enum class TrackKind { VIDEO, AUDIO }
 
 enum class StreamContainerFormat { HLS, DASH }

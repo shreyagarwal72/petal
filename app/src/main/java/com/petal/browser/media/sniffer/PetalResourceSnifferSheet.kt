@@ -380,6 +380,7 @@ private fun SniffedResourceRow(
     val categoryIcon: ImageVector = when (resource.category) {
         PetalResourceCategory.VIDEO -> Icons.Rounded.PlayCircle
         PetalResourceCategory.AUDIO -> Icons.Rounded.Audiotrack
+        PetalResourceCategory.SUBTITLE -> Icons.Rounded.Subtitles
         PetalResourceCategory.IMAGE -> Icons.Rounded.Image
         PetalResourceCategory.DOCUMENT -> Icons.Rounded.Description
         PetalResourceCategory.ALL -> Icons.Rounded.Attachment

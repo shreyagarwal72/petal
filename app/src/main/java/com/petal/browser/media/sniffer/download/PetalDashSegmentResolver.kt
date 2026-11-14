@@ -79,9 +79,9 @@ object PetalDashSegmentResolver {
         cookies: String,
         userAgent: String,
         kind: TrackKind,
-        targetWidth: Int?,
-        targetHeight: Int?,
-        targetBandwidth: Long?,
+        targetWidth: Int? = null,
+        targetHeight: Int? = null,
+        targetBandwidth: Long? = null,
         extraHeaders: Map<String, String> = emptyMap(),
         targetRepresentationId: String? = null
     ): ResolvedTrack? {
@@ -91,7 +91,7 @@ object PetalDashSegmentResolver {
         val text = try {
             okHttpClient.newCall(builder.build()).execute().use { resp ->
                 if (!resp.isSuccessful) return null
-                resp.body.string()
+                resp.body?.string() ?: return null
             }
         } catch (_: Exception) {
             return null

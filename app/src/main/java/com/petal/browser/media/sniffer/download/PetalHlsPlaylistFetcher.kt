@@ -4,9 +4,6 @@ import okhttp3.OkHttpClient
 import java.net.URI
 import okhttp3.Request
 
-
-import okhttp3.OkHttpClient
-
 object PetalHlsPlaylistFetcher {
     private val okHttpClient by lazy {
         OkHttpClient.Builder()
@@ -71,7 +68,7 @@ object PetalHlsPlaylistFetcher {
         val text = try {
             okHttpClient.newCall(builder.build()).execute().use { resp ->
                 if (!resp.isSuccessful) return null
-                resp.body.string()
+                resp.body?.string() ?: return null
             }
         } catch (_: Exception) {
             return null

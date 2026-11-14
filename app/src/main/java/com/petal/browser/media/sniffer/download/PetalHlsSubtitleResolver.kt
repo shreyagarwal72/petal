@@ -7,12 +7,11 @@ import java.util.Locale
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import kotlin.math.abs
-import okhttp3.OkHttpClient
 import okhttp3.Request
 
 object PetalHlsSubtitleResolver {
     private val okHttpClient by lazy {
-        okhttp3.OkHttpClient.Builder()
+        OkHttpClient.Builder()
             .callTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
             .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
@@ -51,7 +50,8 @@ object PetalHlsSubtitleResolver {
         return try {
             client.newCall(builder.build()).execute().use { resp ->
                 if (!resp.isSuccessful) return false
-                val prefix = readPrefix(resp.body.byteStream(), SNIFF_BYTES)
+                val stream = resp.body?.byteStream() ?: return false
+                val prefix = readPrefix(stream, SNIFF_BYTES)
                 looksLikePlaylist(String(prefix, Charsets.UTF_8))
             }
         } catch (_: Exception) {
@@ -64,7 +64,7 @@ object PetalHlsSubtitleResolver {
         pageUrl: String,
         userAgent: String,
         headers: Map<String, String>
-    ): ResolvedTrack? = HlsPlaylistFetcher.fetch(url, pageUrl, "", userAgent, TrackKind.VIDEO, headers)
+    ): ResolvedTrack? = PetalHlsPlaylistFetcher.fetch(url, pageUrl, "", userAgent, TrackKind.VIDEO, headers)
 
     fun fetch(
         url: String,
@@ -147,7 +147,7 @@ object PetalHlsSubtitleResolver {
             )
             if (data != null) {
                 val key = spec.key ?: return data
-                return HlsAesDecryptor.decrypt(data, key, pageUrl, "", userAgent, headers)
+                return PetalHlsAesDecryptor.decrypt(data, key, spec.sequenceNumber, pageUrl, "", userAgent, headers)
             }
             attempt++
             if (attempt < SEGMENT_ATTEMPTS) Thread.sleep(300L * attempt)
@@ -174,7 +174,8 @@ object PetalHlsSubtitleResolver {
         return try {
             client.newCall(builder.build()).execute().use { resp ->
                 if (!resp.isSuccessful) return null
-                val data = readLimited(resp.body.byteStream(), maxBytes) ?: return null
+                val stream = resp.body?.byteStream() ?: return null
+                val data = readLimited(stream, maxBytes) ?: return null
                 if (ranged && resp.code == 200) {
                     val start = rangeOffset.toInt()
                     val end = start + rangeLength.toInt()
