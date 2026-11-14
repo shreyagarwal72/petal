@@ -143,15 +143,35 @@ object PetalBuiltInExtensionManager {
             when (msgType) {
                 "GET_BLOCKER_CONFIG" -> {
                     val enabled = com.petal.browser.browser.PetalAdBlockEngine.isAdBlockEnabled(ctx)
+                    val mode = com.petal.browser.browser.PetalAdBlockEngine.getAdBlockMode(ctx).id
                     val whitelist = com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains().toList()
                     val totalBlocked = com.petal.browser.browser.PetalAdBlockEngine.getTotalBlockedCount()
                     val resp = JSONObject().apply {
                         put("type", "BLOCKER_CONFIG_RESPONSE")
                         put("enabled", enabled)
+                        put("mode", mode)
                         put("whitelist", org.json.JSONArray(whitelist))
                         put("totalBlocked", totalBlocked)
                     }
                     return GeckoResult.fromValue(resp)
+                }
+                "GET_ENGINE_DATA" -> {
+                    val rawSerialized = com.petal.browser.browser.PetalFilterSubscriptionManager.getCachedEngineBlobBase64(ctx)
+                    val rules = if (rawSerialized.isNullOrEmpty()) com.petal.browser.browser.PetalFilterSubscriptionManager.getCompiledRules(ctx) else emptyList()
+                    val resp = JSONObject().apply {
+                        put("type", "ENGINE_DATA_RESPONSE")
+                        put("serializedEngine", rawSerialized ?: "")
+                        put("rules", org.json.JSONArray(rules))
+                        put("rulesVersion", com.petal.browser.browser.PetalFilterSubscriptionManager.getLastUpdatedVersion(ctx))
+                    }
+                    return GeckoResult.fromValue(resp)
+                }
+                "SAVE_SERIALIZED_ENGINE" -> {
+                    val blobBase64 = json.optString("serializedEngine")
+                    if (blobBase64.isNotBlank()) {
+                        com.petal.browser.browser.PetalFilterSubscriptionManager.saveCachedEngineBlobBase64(ctx, blobBase64)
+                    }
+                    return GeckoResult.fromValue(JSONObject().apply { put("success", true) })
                 }
                 "RECORD_BLOCK" -> {
                     val pageUrl = json.optString("pageUrl").takeIf { it.isNotBlank() }

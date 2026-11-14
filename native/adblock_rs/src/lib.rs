@@ -1,124 +1,109 @@
+use wasm_bindgen::prelude::*;
 use adblock::engine::Engine;
 use adblock::lists::{FilterFormat, FilterSet};
-use jni::objects::{JClass, JObjectArray, JString};
-use jni::sys::{jboolean, jlong, jstring};
-use jni::JNIEnv;
-use std::sync::RwLock;
+use adblock::request::Request;
+use serde::{Deserialize, Serialize};
 
-struct EngineContainer {
-    engine: RwLock<Engine>,
+#[wasm_bindgen]
+pub struct AdblockEngine {
+    engine: Engine,
 }
 
-#[no_mangle]
-pub extern "system" fn Java_com_petal_browser_browser_adblock_BraveAdblockJni_nativeCreateEngine(
-    mut env: JNIEnv,
-    _class: JClass,
-    rules: JObjectArray,
-) -> jlong {
-    let mut filter_set = FilterSet::new(false);
-    let len = match env.get_array_length(&rules) {
-        Ok(l) => l,
-        Err(_) => return 0,
-    };
+#[derive(Serialize, Deserialize)]
+pub struct JsBlockerResult {
+    pub matched: bool,
+    pub important: bool,
+    pub redirect: Option<String>,
+    pub rewritten_url: Option<String>,
+    pub csp: Option<String>,
+    pub filter: Option<String>,
+}
 
-    for i in 0..len {
-        if let Ok(elem) = env.get_object_array_element(&rules, i) {
-            let jstr: JString = elem.into();
-            if let Ok(rule_str) = env.get_string(&jstr) {
-                let s: String = rule_str.into();
-                filter_set.add_filter_list(&s, FilterFormat::Standard);
-            }
+#[derive(Serialize, Deserialize)]
+pub struct JsCosmeticResources {
+    pub hide_selectors: Vec<String>,
+    pub exceptions: Vec<String>,
+    pub injected_scriptlets: Vec<String>,
+    pub generichide: bool,
+}
+
+#[wasm_bindgen]
+impl AdblockEngine {
+    #[wasm_bindgen(constructor)]
+    pub fn new(rules: JsValue) -> Result<AdblockEngine, JsValue> {
+        let rules_vec: Vec<String> = serde_wasm_bindgen::from_value(rules)
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        
+        let mut filter_set = FilterSet::new(false);
+        for rule_list in rules_vec {
+            filter_set.add_filter_list(&rule_list, FilterFormat::Standard);
         }
+
+        let engine = Engine::from_filter_set(filter_set, true);
+        Ok(AdblockEngine { engine })
     }
 
-    let engine = Engine::from_filter_set(filter_set, true);
-    let container = Box::new(EngineContainer {
-        engine: RwLock::new(engine),
-    });
-
-    Box::into_raw(container) as jlong
-}
-
-#[no_mangle]
-pub extern "system" fn Java_com_petal_browser_browser_adblock_BraveAdblockJni_nativeMatches(
-    mut env: JNIEnv,
-    _class: JClass,
-    engine_ptr: jlong,
-    url: JString,
-    host: JString,
-    request_type: JString,
-) -> jboolean {
-    if engine_ptr == 0 {
-        return 0;
+    #[wasm_bindgen(js_name = fromSerialized)]
+    pub fn from_serialized(bytes: &[u8]) -> Result<AdblockEngine, JsValue> {
+        let engine = Engine::deserialize_raw(bytes)
+            .map_err(|e| JsValue::from_str(&format!("Deserialization error: {:?}", e)))?;
+        Ok(AdblockEngine { engine })
     }
 
-    let container = unsafe { &*(engine_ptr as *const EngineContainer) };
-    let url_str: String = match env.get_string(&url) {
-        Ok(s) => s.into(),
-        Err(_) => return 0,
-    };
-    let host_str: String = match env.get_string(&host) {
-        Ok(s) => s.into(),
-        Err(_) => return 0,
-    };
-    let req_type_str: String = match env.get_string(&request_type) {
-        Ok(s) => s.into(),
-        Err(_) => return 0,
-    };
-
-    let engine = match container.engine.read() {
-        Ok(e) => e,
-        Err(_) => return 0,
-    };
-
-    let blocker_result = engine.check_network_urls(&url_str, &host_str, &req_type_str);
-    if blocker_result.matched {
-        1
-    } else {
-        0
-    }
-}
-
-#[no_mangle]
-pub extern "system" fn Java_com_petal_browser_browser_adblock_BraveAdblockJni_nativeCosmeticCss(
-    mut env: JNIEnv,
-    _class: JClass,
-    engine_ptr: jlong,
-    url: JString,
-) -> jstring {
-    if engine_ptr == 0 {
-        return std::ptr::null_mut();
+    #[wasm_bindgen(js_name = serializeRaw)]
+    pub fn serialize_raw(&self) -> Result<Vec<u8>, JsValue> {
+        self.engine.serialize_raw()
+            .map_err(|e| JsValue::from_str(&format!("Serialization error: {:?}", e)))
     }
 
-    let container = unsafe { &*(engine_ptr as *const EngineContainer) };
-    let url_str: String = match env.get_string(&url) {
-        Ok(s) => s.into(),
-        Err(_) => return std::ptr::null_mut(),
-    };
-
-    let engine = match container.engine.read() {
-        Ok(e) => e,
-        Err(_) => return std::ptr::null_mut(),
-    };
-
-    let cosmetic_resources = engine.url_cosmetic_resources(&url_str);
-    let css = cosmetic_resources.hide_selectors.join(", ") + " { display: none !important; }";
-
-    match env.new_string(css) {
-        Ok(js) => js.into_raw(),
-        Err(_) => std::ptr::null_mut(),
+    #[wasm_bindgen(js_name = checkNetworkRequest)]
+    pub fn check_network_request(&self, url: &str, source_url: &str, request_type: &str) -> Result<JsValue, JsValue> {
+        let req = Request::from_urls(url, source_url, request_type)
+            .map_err(|e| JsValue::from_str(&format!("Invalid request params: {:?}", e)))?;
+        
+        let blocker_result = self.engine.check_network_request(&req);
+        let res = JsBlockerResult {
+            matched: blocker_result.matched,
+            important: blocker_result.important,
+            redirect: blocker_result.redirect,
+            rewritten_url: blocker_result.rewritten_url,
+            csp: blocker_result.csp,
+            filter: blocker_result.filter,
+        };
+        serde_wasm_bindgen::to_value(&res)
+            .map_err(|e| JsValue::from_str(&e.to_string()))
     }
-}
 
-#[no_mangle]
-pub extern "system" fn Java_com_petal_browser_browser_adblock_BraveAdblockJni_nativeDestroyEngine(
-    _env: JNIEnv,
-    _class: JClass,
-    engine_ptr: jlong,
-) {
-    if engine_ptr != 0 {
-        unsafe {
-            let _ = Box::from_raw(engine_ptr as *mut EngineContainer);
-        }
+    #[wasm_bindgen(js_name = urlCosmeticResources)]
+    pub fn url_cosmetic_resources(&self, url: &str) -> Result<JsValue, JsValue> {
+        let cosmetic_resources = self.engine.url_cosmetic_resources(url);
+        let res = JsCosmeticResources {
+            hide_selectors: cosmetic_resources.hide_selectors,
+            exceptions: cosmetic_resources.exceptions,
+            injected_scriptlets: cosmetic_resources.injected_scriptlets,
+            generichide: cosmetic_resources.generichide,
+        };
+        serde_wasm_bindgen::to_value(&res)
+            .map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+
+    #[wasm_bindgen(js_name = hiddenClassIdSelectors)]
+    pub fn hidden_class_id_selectors(&self, classes: JsValue, ids: JsValue, exceptions: JsValue) -> Result<JsValue, JsValue> {
+        let classes_vec: Vec<String> = serde_wasm_bindgen::from_value(classes)
+            .unwrap_or_default();
+        let ids_vec: Vec<String> = serde_wasm_bindgen::from_value(ids)
+            .unwrap_or_default();
+        let exceptions_vec: Vec<String> = serde_wasm_bindgen::from_value(exceptions)
+            .unwrap_or_default();
+        
+        let selectors = self.engine.hidden_class_id_selectors(&classes_vec, &ids_vec, &exceptions_vec);
+        serde_wasm_bindgen::to_value(&selectors)
+            .map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+
+    #[wasm_bindgen(js_name = useResources)]
+    pub fn use_resources(&mut self, resources: &str) -> Result<(), JsValue> {
+        self.engine.use_resources(resources);
+        Ok(())
     }
 }

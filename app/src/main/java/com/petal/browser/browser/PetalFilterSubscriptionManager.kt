@@ -58,26 +58,66 @@ object PetalFilterSubscriptionManager {
             isCustom = false
         ),
         PetalFilterSubscription(
-            id = "adguard_base",
-            name = "AdGuard Base Filter",
-            description = "Comprehensive ad and banner blocking rules curated by the AdGuard Team.",
-            url = "https://filters.adtidy.org/windows/filters/2.txt",
+            id = "ubo_filters",
+            name = "uBlock Origin Filters",
+            description = "Core network and cosmetic filters maintained by uBlock Origin community.",
+            url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt",
             isEnabled = true,
             isCustom = false
         ),
         PetalFilterSubscription(
-            id = "adguard_mobile",
-            name = "AdGuard Mobile Filter",
-            description = "Specifically targeted at blocking advertisements and banners on mobile web browsers.",
-            url = "https://filters.adtidy.org/windows/filters/11.txt",
+            id = "ubo_privacy",
+            name = "uBlock Origin Privacy",
+            description = "Targeted tracker, analytics, and telemetry blocking rules from uBlock Origin.",
+            url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/privacy.txt",
             isEnabled = true,
             isCustom = false
         ),
         PetalFilterSubscription(
-            id = "fanboy_annoyance",
-            name = "Fanboy Annoyances & Cookies",
-            description = "Hides GDPR cookie consent dialogs, overlay nags, and in-page newsletter prompts.",
-            url = "https://secure.fanboy.co.nz/fanboy-annoyance.txt",
+            id = "ubo_unbreak",
+            name = "uBlock Origin Unbreak",
+            description = "Crucial site fixes preventing legitimate web features and logins from breaking.",
+            url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/unbreak.txt",
+            isEnabled = true,
+            isCustom = false
+        ),
+        PetalFilterSubscription(
+            id = "ubo_badware",
+            name = "uBlock Origin Badware",
+            description = "Blocks malware domains, phishing vectors, and malicious ad redirection.",
+            url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/badware.txt",
+            isEnabled = true,
+            isCustom = false
+        ),
+        PetalFilterSubscription(
+            id = "ubo_quick_fixes",
+            name = "uBlock Origin Quick Fixes",
+            description = "Rapid response rules addressing new anti-adblock scripts and popunder circulations.",
+            url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/quick-fixes.txt",
+            isEnabled = true,
+            isCustom = false
+        ),
+        PetalFilterSubscription(
+            id = "brave_unbreak",
+            name = "Brave Unbreak",
+            description = "Official Brave Shields compatibility fixes and exceptions from Brave Software.",
+            url = "https://raw.githubusercontent.com/brave/adblock-resources/master/filter_lists/brave-unbreak.txt",
+            isEnabled = true,
+            isCustom = false
+        ),
+        PetalFilterSubscription(
+            id = "brave_specific",
+            name = "Brave Specific Filters",
+            description = "Specialized filter list designed specifically for Brave Shields adblock-rust.",
+            url = "https://raw.githubusercontent.com/brave/adblock-resources/master/filter_lists/brave-specific.txt",
+            isEnabled = true,
+            isCustom = false
+        ),
+        PetalFilterSubscription(
+            id = "brave_social",
+            name = "Brave Social",
+            description = "Hides embedded social widgets, like buttons, and tracking plugins.",
+            url = "https://raw.githubusercontent.com/brave/adblock-resources/master/filter_lists/brave-social.txt",
             isEnabled = false,
             isCustom = false
         ),
@@ -333,6 +373,58 @@ object PetalFilterSubscriptionManager {
 
         compiledRulesCache.clear()
         compiledRulesCache.addAll(newSet)
+        invalidateCachedEngineBlob(context)
+    }
+
+    const val ENGINE_BLOB_FILE = "adblock_engine.blob"
+
+    fun getCachedEngineBlobBase64(context: Context): String? {
+        val file = File(context.filesDir, ENGINE_BLOB_FILE)
+        if (!file.exists() || file.length() == 0L) return null
+        return try {
+            val bytes = file.readBytes()
+            android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun saveCachedEngineBlobBase64(context: Context, base64: String) {
+        try {
+            val bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT)
+            val file = File(context.filesDir, ENGINE_BLOB_FILE)
+            file.writeBytes(bytes)
+        } catch (_: Exception) {}
+    }
+
+    fun invalidateCachedEngineBlob(context: Context) {
+        try {
+            File(context.filesDir, ENGINE_BLOB_FILE).delete()
+        } catch (_: Exception) {}
+    }
+
+    fun getCompiledRules(context: Context): List<String> {
+        val rulesDir = getRulesDir(context)
+        val activeSubscriptions = getSubscriptions(context).filter { it.isEnabled }
+        val allRules = ArrayList<String>()
+
+        for (sub in activeSubscriptions) {
+            val file = File(rulesDir, "${sub.id}.txt")
+            if (file.exists()) {
+                try {
+                    allRules.add(file.readText())
+                } catch (_: Exception) {}
+            }
+        }
+        val custom = getCustomUserRules(context)
+        if (custom.isNotBlank()) {
+            allRules.add(custom)
+        }
+        return allRules
+    }
+
+    fun getLastUpdatedVersion(context: Context): Long {
+        return getSubscriptions(context).maxOfOrNull { it.lastUpdatedMs } ?: 0L
     }
 
     private val DOMAIN_REGEX = Regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$")

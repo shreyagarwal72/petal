@@ -1,8 +1,8 @@
 {
     "manifest_version": 2,
     "name": "Petal Network Blocker",
-    "version": "1.0.1",
-    "description": "High-speed network subresource blocker & early cosmetic injector for Petal Browser.",
+    "version": "2.0.0",
+    "description": "Brave adblock-rust WASM network & cosmetic filter engine for Petal Browser.",
     "browser_specific_settings": {
         "gecko": {
             "id": "petal-network-blocker@petalbrowser.app"
@@ -13,7 +13,8 @@
         "webRequest",
         "webRequestBlocking",
         "nativeMessaging",
-        "nativeMessagingFromContent"
+        "storage",
+        "dns"
     ],
     "background": {
         "scripts": ["blocker_background.js"]

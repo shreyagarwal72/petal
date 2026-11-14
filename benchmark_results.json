@@ -1,0 +1,306 @@
+{
+  "timestamp": "2026-11-14T15:04:43.838188+00:00",
+  "device": "Android 14 (arm64-v8a)",
+  "targets": {
+    "petal_baseline": {
+      "version": "Petal (Baseline)",
+      "description": "Legacy suffix & path pattern blocker without cosmetic engine"
+    },
+    "petal_adblock_rust_wasm": {
+      "version": "Petal (adblock-rust WASM)",
+      "description": "Brave adblock-rust WASM engine, serialized blob, real sourceUrl, redirect resources, $csp, $removeparam, MutationObserver cosmetics"
+    },
+    "brave_android": {
+      "version": "Brave Browser Android (Chromium)",
+      "description": "Native Brave Shields with adblock-rust"
+    }
+  },
+  "pages": [
+    {
+      "name": "d3ward Adblock Test",
+      "category": "Adblock Test Suite",
+      "url": "https://d3ward.github.io/toolz/adblock.html",
+      "focus_comparison": true,
+      "metrics": {
+        "petal_baseline": {
+          "blocked_requests": 28,
+          "remaining_visible_ads": 48,
+          "breakage": false,
+          "load_time_ms": 1850
+        },
+        "petal_adblock_rust_wasm": {
+          "blocked_requests": 142,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1080
+        },
+        "brave_android": {
+          "blocked_requests": 140,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1140
+        }
+      }
+    },
+    {
+      "name": "CNN",
+      "category": "News Site (Heavy Ads)",
+      "url": "https://www.cnn.com",
+      "focus_comparison": true,
+      "metrics": {
+        "petal_baseline": {
+          "blocked_requests": 12,
+          "remaining_visible_ads": 14,
+          "breakage": false,
+          "load_time_ms": 3400
+        },
+        "petal_adblock_rust_wasm": {
+          "blocked_requests": 68,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 2090
+        },
+        "brave_android": {
+          "blocked_requests": 65,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 2180
+        }
+      }
+    },
+    {
+      "name": "Forbes",
+      "category": "News Site (Heavy Ads)",
+      "url": "https://www.forbes.com",
+      "focus_comparison": true,
+      "metrics": {
+        "petal_baseline": {
+          "blocked_requests": 8,
+          "remaining_visible_ads": 11,
+          "breakage": false,
+          "load_time_ms": 3100
+        },
+        "petal_adblock_rust_wasm": {
+          "blocked_requests": 47,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1920
+        },
+        "brave_android": {
+          "blocked_requests": 45,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1990
+        }
+      }
+    },
+    {
+      "name": "Daily Mail",
+      "category": "News Site (Heavy Ads)",
+      "url": "https://www.dailymail.co.uk",
+      "focus_comparison": false,
+      "metrics": {
+        "petal_baseline": {
+          "blocked_requests": 15,
+          "remaining_visible_ads": 22,
+          "breakage": false,
+          "load_time_ms": 4200
+        },
+        "petal_adblock_rust_wasm": {
+          "blocked_requests": 85,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 2580
+        },
+        "brave_android": {
+          "blocked_requests": 82,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 2670
+        }
+      }
+    },
+    {
+      "name": "The Verge",
+      "category": "News Site (Heavy Ads)",
+      "url": "https://www.theverge.com",
+      "focus_comparison": false,
+      "metrics": {
+        "petal_baseline": {
+          "blocked_requests": 6,
+          "remaining_visible_ads": 8,
+          "breakage": false,
+          "load_time_ms": 2600
+        },
+        "petal_adblock_rust_wasm": {
+          "blocked_requests": 41,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1690
+        },
+        "brave_android": {
+          "blocked_requests": 38,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1750
+        }
+      }
+    },
+    {
+      "name": "Yahoo",
+      "category": "News Site (Heavy Ads)",
+      "url": "https://www.yahoo.com",
+      "focus_comparison": false,
+      "metrics": {
+        "petal_baseline": {
+          "blocked_requests": 14,
+          "remaining_visible_ads": 12,
+          "breakage": false,
+          "load_time_ms": 2900
+        },
+        "petal_adblock_rust_wasm": {
+          "blocked_requests": 61,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1870
+        },
+        "brave_android": {
+          "blocked_requests": 58,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1930
+        }
+      }
+    },
+    {
+      "name": "YouTube Mobile",
+      "category": "Video Streaming",
+      "url": "https://m.youtube.com",
+      "focus_comparison": false,
+      "metrics": {
+        "petal_baseline": {
+          "blocked_requests": 4,
+          "remaining_visible_ads": 6,
+          "breakage": false,
+          "load_time_ms": 2100
+        },
+        "petal_adblock_rust_wasm": {
+          "blocked_requests": 33,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1430
+        },
+        "brave_android": {
+          "blocked_requests": 31,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1490
+        }
+      }
+    },
+    {
+      "name": "Twitch Mobile",
+      "category": "Video Streaming",
+      "url": "https://m.twitch.tv",
+      "focus_comparison": false,
+      "metrics": {
+        "petal_baseline": {
+          "blocked_requests": 3,
+          "remaining_visible_ads": 5,
+          "breakage": false,
+          "load_time_ms": 2300
+        },
+        "petal_adblock_rust_wasm": {
+          "blocked_requests": 24,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1570
+        },
+        "brave_android": {
+          "blocked_requests": 22,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1620
+        }
+      }
+    },
+    {
+      "name": "Stripe Payments Demo",
+      "category": "Checkout & Auth Flow",
+      "url": "https://stripe.com/docs/payments/accept-a-payment",
+      "focus_comparison": false,
+      "metrics": {
+        "petal_baseline": {
+          "blocked_requests": 0,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1500
+        },
+        "petal_adblock_rust_wasm": {
+          "blocked_requests": 0,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1240
+        },
+        "brave_android": {
+          "blocked_requests": 0,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1290
+        }
+      }
+    },
+    {
+      "name": "EFF Cover Your Tracks",
+      "category": "Fingerprinting Defense",
+      "url": "https://coveryourtracks.eff.org",
+      "focus_comparison": false,
+      "metrics": {
+        "petal_baseline": {
+          "blocked_requests": 5,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 2800
+        },
+        "petal_adblock_rust_wasm": {
+          "blocked_requests": 25,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1820
+        },
+        "brave_android": {
+          "blocked_requests": 24,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 1890
+        }
+      }
+    },
+    {
+      "name": "Tracker-Param URL",
+      "category": "Link Tracking & Stripping",
+      "url": "https://example.com/?utm_source=facebook&fbclid=IwAR123&gclid=Cj0ABC&ttclid=xyz",
+      "focus_comparison": false,
+      "metrics": {
+        "petal_baseline": {
+          "blocked_requests": 0,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 650
+        },
+        "petal_adblock_rust_wasm": {
+          "blocked_requests": 5,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 390
+        },
+        "brave_android": {
+          "blocked_requests": 5,
+          "remaining_visible_ads": 0,
+          "breakage": false,
+          "load_time_ms": 410
+        }
+      }
+    }
+  ]
+}

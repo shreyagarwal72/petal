@@ -26,6 +26,7 @@ object PetalPrivacyHardening {
     const val PREF_CANVAS_LETTERBOXING = "sp_canvas_letterboxing"
     const val PREF_WEBGL_ENABLED = "sp_webgl_enabled"
     const val PREF_WEBGL_DISABLED = "sp_webgl_disabled"
+    const val PREF_GECKO_NATIVE_CLASSIFIER_SPIKE = "sp_gecko_native_classifier_spike"
 
     enum class PrivacyProfile {
         STANDARD,   // High compatibility + ETP Strict
@@ -65,6 +66,18 @@ object PetalPrivacyHardening {
     fun isWebRtcLeakProtectionEnabled(sp: SharedPreferences): Boolean {
         val profile = getPrivacyProfile(sp)
         return sp.getBoolean(PREF_WEBRTC_LEAK_PROTECT, true)
+    }
+
+    @JvmStatic
+    fun isNativeClassifierSpikeEnabled(sp: SharedPreferences): Boolean {
+        return sp.getBoolean(PREF_GECKO_NATIVE_CLASSIFIER_SPIKE, true)
+    }
+
+    @JvmStatic
+    fun probeContentClassifierService(context: Context) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val active = isNativeClassifierSpikeEnabled(sp)
+        Log.i(TAG, "ContentClassifierService probe (GeckoView 159): spike active=$active, engines=[adblock-rust, content-classifier], test_list_urls=[EasyList, EasyPrivacy]")
     }
 
     /**
@@ -205,6 +218,18 @@ object PetalPrivacyHardening {
             user_pref("privacy.globalprivacycontrol.functionality.enabled", $dntGpc);
             user_pref("privacy.fingerprintingProtection", $fpProtect);
         """.trimIndent())
+
+        // 10. Native Gecko ContentClassifierService Spike (GeckoView 159 on Android)
+        val spikeClassifier = isNativeClassifierSpikeEnabled(sp)
+        if (spikeClassifier) {
+            sb.appendLine("""
+                // Native Gecko ContentClassifierService Spike (GeckoView 159 on Android)
+                user_pref("privacy.trackingprotection.content.protection.enabled", true);
+                user_pref("privacy.trackingprotection.content.protection.engines", "adblock-rust,content-classifier");
+                user_pref("privacy.trackingprotection.content.protection.test_list_urls", "https://easylist.to/easylist/easylist.txt,https://easylist.to/easylist/easyprivacy.txt");
+            """.trimIndent())
+            Log.d(TAG, "ContentClassifierService spike configured in user.js: native protection engines [adblock-rust, content-classifier]")
+        }
 
         return sb.toString()
     }

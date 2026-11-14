@@ -14,14 +14,19 @@ enum class PetalAdBlockMode(val id: String, val title: String, val description: 
     ),
     STANDARD(
         id = "standard",
-        title = "On",
-        description = "Blocks ads, trackers, fingerprinters and cryptominers using Gecko Strict tracking protection plus Petal filter lists."
+        title = "Standard",
+        description = "Blocks third-party ads, trackers, and malicious scripts while preserving first-party page functionality."
+    ),
+    AGGRESSIVE(
+        id = "aggressive",
+        title = "Aggressive",
+        description = "Aggressively blocks both first-party and third-party ad networks, telemetry pings, and tracking scripts."
     );
 
     companion object {
-        /** Legacy "aggressive"/"strict" values from older versions are folded into the single ON state. */
         fun fromId(id: String?): PetalAdBlockMode = when (id?.lowercase()) {
             "disabled", "off", "false" -> DISABLED
+            "aggressive", "strict", "high" -> AGGRESSIVE
             else -> STANDARD
         }
     }
