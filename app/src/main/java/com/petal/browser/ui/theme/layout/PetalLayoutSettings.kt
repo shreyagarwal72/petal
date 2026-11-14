@@ -50,6 +50,8 @@ data class PetalLayoutSettings(
     val containmentCornersSize: Float = 1.0f,
     /** Shape of the icon containers (badges) used across containment rows and cards. */
     val badgeShape: PetalBadgeShape = PetalBadgeShape.MIXED,
+    /** Whether Xiaomi HyperOS 2.0/3.0 UI4 features (AGSL fluid mesh background, glass pill nav, progressive blur) are enabled. */
+    val useMiuixOs4: Boolean = true,
 ) {
     /** Shape style actually used by containment surfaces. */
     val containmentShapeType: PetalShapeType
@@ -70,6 +72,7 @@ data class PetalLayoutSettings(
         const val KEY_CONTAINMENT_OWN_CORNERS = "sp_containment_own_corners"
         const val KEY_CONTAINMENT_CORNERS_SIZE = "sp_containment_corners_size"
         const val KEY_BADGE_SHAPE = "sp_containment_badge_shape"
+        const val KEY_MIUIX_OS4 = "sp_miuix_os4"
 
         fun fromPreferences(sp: SharedPreferences): PetalLayoutSettings {
             val expRaw = sp.getString(KEY_UI_EXPERIENCE, null)
@@ -95,6 +98,7 @@ data class PetalLayoutSettings(
                 containmentOwnCorners = sp.getBoolean(KEY_CONTAINMENT_OWN_CORNERS, false),
                 containmentCornersSize = sp.safeFloat(KEY_CONTAINMENT_CORNERS_SIZE, 1.0f).coerceIn(0f, 2f),
                 badgeShape = PetalBadgeShape.fromKey(sp.getString(KEY_BADGE_SHAPE, null)),
+                useMiuixOs4 = sp.getBoolean(KEY_MIUIX_OS4, true),
             )
         }
 

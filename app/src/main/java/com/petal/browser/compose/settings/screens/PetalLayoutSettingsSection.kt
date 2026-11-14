@@ -326,6 +326,7 @@ fun PetalLayoutSettingsSection(
                     when (exp) {
                         com.petal.browser.ui.theme.layout.UiExperience.MIUIX -> current.copy(
                             uiExperience = exp,
+                            useMiuixOs4 = true,
                             switchType = PetalSwitchType.HYPEROS,
                             sliderType = PetalSliderType.HYPEROS,
                             shapeType = PetalShapeType.SQUIRCLE,

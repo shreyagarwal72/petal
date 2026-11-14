@@ -401,13 +401,22 @@ fun PetalExpressiveTheme(
         com.petal.browser.haptics.LocalVibrationIntensity provides com.petal.browser.haptics.VibrationIntensity.LIGHT,
         androidx.compose.ui.platform.LocalHapticFeedback provides hapticFeedback
     ) {
-        androidx.compose.material3.MaterialExpressiveTheme(
-            colorScheme = colorScheme,
-            shapes = expressiveShapes,
-            motionScheme = motion,
-            typography = effectiveTypography,
-            content = { com.petal.browser.ui.selection.PetalTextToolbarProvider(content) }
-        )
+        if (isMiuix) {
+            com.petal.browser.ui.miuix.theme.PetalMiuixTheme(
+                darkTheme = darkTheme,
+                useAmoled = useAmoled,
+                useMiuixOs4 = layoutSettingsState.useMiuixOs4,
+                content = { com.petal.browser.ui.selection.PetalTextToolbarProvider(content) }
+            )
+        } else {
+            androidx.compose.material3.MaterialExpressiveTheme(
+                colorScheme = colorScheme,
+                shapes = expressiveShapes,
+                motionScheme = motion,
+                typography = effectiveTypography,
+                content = { com.petal.browser.ui.selection.PetalTextToolbarProvider(content) }
+            )
+        }
     }
 }
 

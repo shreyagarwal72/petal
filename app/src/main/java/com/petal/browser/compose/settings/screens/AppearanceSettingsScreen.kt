@@ -2065,6 +2065,24 @@ fun AppearanceSettingsScreenContent(
                         )
 
                         if (isMiuix) {
+                            val layoutSettings = com.petal.browser.ui.theme.layout.LocalPetalLayoutSettings.current
+                            com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                title = "HyperOS UI4 Mode",
+                                subtitle = "Dynamic AGSL fluid mesh background, floating glass navigation bar & progressive blur",
+                                icon = ImageToolboxIcons.Rounded.AutoAwesome,
+                                checked = layoutSettings.useMiuixOs4,
+                                position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                                onCheckedChange = { active ->
+                                    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                                    sp.edit().putBoolean(com.petal.browser.ui.theme.layout.PetalLayoutSettings.KEY_MIUIX_OS4, active).apply()
+                                    com.petal.browser.ui.theme.layout.PetalLayoutState.update(context) { current ->
+                                        current.copy(useMiuixOs4 = active)
+                                    }
+                                }
+                            )
+                        }
+
+                        if (isMiuix) {
                             var testToggle by remember { mutableStateOf(true) }
                             var testSlider by remember { mutableFloatStateOf(0.65f) }
 

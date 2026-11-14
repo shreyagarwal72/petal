@@ -274,6 +274,20 @@ fun PetalAlertDialog(
     confirmEnabled: Boolean = true,
     content: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
+    if (isMiuixEnabled()) {
+        com.petal.browser.ui.miuix.dialog.MiuiXDialog(
+            onDismissRequest = onDismissRequest,
+            title = title,
+            message = message,
+            confirmText = confirmText,
+            onConfirm = onConfirm,
+            dismissText = dismissText,
+            onDismiss = onDismiss,
+            modifier = modifier,
+            content = content?.let { c -> { Column { c() } } }
+        )
+        return
+    }
     PetalMaterialAlertDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
@@ -484,6 +498,9 @@ fun PetalDialog(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val isMiuix = isMiuixEnabled()
+    val effectiveShape = if (isMiuix) com.petal.browser.ui.miuix.theme.MiuiXShapes.Large else shape
+    val effectiveContainerColor = if (isMiuix) com.petal.browser.ui.miuix.theme.MiuiXTheme.colors.surface else containerColor
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
@@ -493,12 +510,12 @@ fun PetalDialog(
         LaunchedEffect(Unit) { isEntering = true }
         val dialogScale by animateFloatAsState(
             targetValue = if (isEntering) 1f else 0.85f,
-            animationSpec = if (isEntering) PetalSpring.dialogScaleIn() else PetalSpring.dialogScaleOut(),
+            animationSpec = if (isMiuix) com.petal.browser.ui.miuix.theme.MiuiXMotion.gentle() else if (isEntering) PetalSpring.dialogScaleIn() else PetalSpring.dialogScaleOut(),
             label = "dialog_scale"
         )
         val dialogAlpha by animateFloatAsState(
             targetValue = if (isEntering) 1f else 0f,
-            animationSpec = if (isEntering) PetalSpring.dialogFadeIn() else PetalSpring.dialogFadeOut(),
+            animationSpec = if (isMiuix) com.petal.browser.ui.miuix.theme.MiuiXMotion.gentle() else if (isEntering) PetalSpring.dialogFadeIn() else PetalSpring.dialogFadeOut(),
             label = "dialog_alpha"
         )
 
@@ -507,6 +524,8 @@ fun PetalDialog(
             dialogWindow?.let { win ->
                 if (isGlass) {
                     win.setDimAmount(0.12f)
+                } else if (isMiuix) {
+                    win.setDimAmount(0.40f)
                 }
             }
         }
@@ -526,13 +545,13 @@ fun PetalDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
-                    .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
-                shape = shape,
-                color = if (isGlass) petalGroupSurfaceColor() else containerColor,
-                contentColor = MaterialTheme.colorScheme.onSurface,
+                    .liquidGlassChrome(shape = effectiveShape, enabled = isGlass, sheenIntensity = sheen),
+                shape = effectiveShape,
+                color = if (isGlass) petalGroupSurfaceColor() else effectiveContainerColor,
+                contentColor = if (isMiuix) com.petal.browser.ui.miuix.theme.MiuiXTheme.colors.onSurface else MaterialTheme.colorScheme.onSurface,
                 tonalElevation = 0.dp,
-                shadowElevation = if (isGlass) 0.dp else 12.dp,
-                border = null,
+                shadowElevation = if (isGlass || isMiuix) 0.dp else 12.dp,
+                border = if (isMiuix) androidx.compose.foundation.BorderStroke(0.5.dp, com.petal.browser.ui.miuix.theme.MiuiXTheme.colors.outline) else null,
             ) {
                 Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
             }
