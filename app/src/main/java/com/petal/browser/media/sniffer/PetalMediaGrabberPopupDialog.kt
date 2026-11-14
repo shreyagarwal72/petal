@@ -2,6 +2,7 @@ package com.petal.browser.media.sniffer
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+import com.petal.browser.media.PetalVideoPlayerOverlayBridge
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -299,37 +300,57 @@ fun PetalMediaGrabberPopupDialog(
                                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                if (onPlayMedia != null) {
-                                                    Button(
-                                                        onClick = {
-                                                            haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                                Button(
+                                                    onClick = {
+                                                        haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                                        if (onPlayMedia != null) {
                                                             onPlayMedia(item.toPlaybackRequest())
-                                                            onDismiss()
-                                                        },
-                                                        modifier = Modifier.weight(1f),
-                                                        shape = RoundedCornerShape(12.dp),
-                                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-                                                    ) {
-                                                        Icon(Icons.Rounded.PlayArrow, null, modifier = Modifier.size(16.dp))
-                                                        Spacer(Modifier.width(4.dp))
-                                                        Text("Play", maxLines = 1)
-                                                    }
+                                                        } else {
+                                                            PetalVideoPlayerOverlayBridge.launchPreviewPlayer(
+                                                                context = context,
+                                                                mediaUrl = item.url,
+                                                                startInPip = false
+                                                            )
+                                                        }
+                                                        onDismiss()
+                                                    },
+                                                    modifier = Modifier.weight(1f),
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                                ) {
+                                                    Icon(Icons.Rounded.PlayArrow, null, modifier = Modifier.size(16.dp))
+                                                    Spacer(Modifier.width(4.dp))
+                                                    Text("Play", maxLines = 1)
                                                 }
 
-                                                if (!isStream) {
-                                                    FilledTonalButton(
-                                                        onClick = {
-                                                            haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
-                                                            PetalMediaSniffer.download(context, item, onEnqueued = { onDismiss() })
-                                                        },
-                                                        modifier = Modifier.weight(1f),
-                                                        shape = RoundedCornerShape(12.dp),
-                                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-                                                    ) {
-                                                        Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp))
-                                                        Spacer(Modifier.width(4.dp))
-                                                        Text("Download", maxLines = 1)
-                                                    }
+                                                FilledTonalIconButton(
+                                                    onClick = {
+                                                        haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                                        PetalVideoPlayerOverlayBridge.launchPreviewPlayer(
+                                                            context = context,
+                                                            mediaUrl = item.url,
+                                                            startInPip = true
+                                                        )
+                                                        onDismiss()
+                                                    },
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Icon(Icons.Rounded.PictureInPictureAlt, contentDescription = "PiP", modifier = Modifier.size(18.dp))
+                                                }
+
+                                                FilledTonalButton(
+                                                    onClick = {
+                                                        haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                                        PetalMediaSniffer.download(context, item, onEnqueued = { onDismiss() })
+                                                    },
+                                                    modifier = Modifier.weight(1f),
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                                ) {
+                                                    Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp))
+                                                    Spacer(Modifier.width(4.dp))
+                                                    Text("Download", maxLines = 1)
                                                 }
 
                                                 FilledTonalIconButton(

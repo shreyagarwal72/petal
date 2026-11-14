@@ -73,6 +73,43 @@ class PetalVideoPlayerOverlayBridge(
             }
             return false
         }
+
+        /**
+         * Launches the standalone Petal Video/Audio Player (ExoPlayer + PetalVideoPlayerOverlay)
+         * or enters floating Picture-in-Picture directly if [startInPip] is true.
+         */
+        @JvmStatic
+        @JvmOverloads
+        fun launchPreviewPlayer(
+            context: Context,
+            mediaUrl: String,
+            title: String? = null,
+            mimeType: String? = null,
+            startInPip: Boolean = false
+        ) {
+            val cleanMime = when {
+                !mimeType.isNullOrBlank() -> mimeType
+                mediaUrl.contains(".m3u8", ignoreCase = true) -> "application/x-mpegURL"
+                mediaUrl.contains(".mpd", ignoreCase = true) -> "application/dash+xml"
+                mediaUrl.contains(".mp3", ignoreCase = true) -> "audio/mpeg"
+                mediaUrl.contains(".m4a", ignoreCase = true) -> "audio/mp4"
+                else -> "video/mp4"
+            }
+            val intent = Intent(context, com.petal.browser.activity.MediaPlayerActivity::class.java).apply {
+                data = android.net.Uri.parse(mediaUrl)
+                type = cleanMime
+                if (!title.isNullOrBlank()) {
+                    putExtra(Intent.EXTRA_TITLE, title)
+                }
+                if (startInPip) {
+                    putExtra(com.petal.browser.activity.MediaPlayerActivity.EXTRA_START_IN_PIP, true)
+                }
+                if (context !is Activity) {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            }
+            context.startActivity(intent)
+        }
     }
 
     fun attachOverlay(container: ViewGroup, targetView: View?): View? {

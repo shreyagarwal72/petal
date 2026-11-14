@@ -48,6 +48,10 @@ import com.petal.browser.unit.PetalAndroidUtils
 
 class MediaPlayerActivity : ComponentActivity() {
 
+    companion object {
+        const val EXTRA_START_IN_PIP = "com.petal.browser.media.START_IN_PIP"
+    }
+
     private var isInPip by mutableStateOf(false)
     private var isAudioPlayback = false
 
@@ -71,11 +75,19 @@ class MediaPlayerActivity : ComponentActivity() {
             return
         }
 
-        val displayName = extractDisplayName(targetUri)
+        val displayName = intent.getStringExtra(Intent.EXTRA_TITLE)?.takeIf { it.isNotBlank() } ?: extractDisplayName(targetUri)
         val isAudio = isAudioMedia(targetUri, intent.type)
         isAudioPlayback = isAudio
         val initialPositionMs = intent.getLongExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_POSITION_MS, 0L)
         val initialSpeed = intent.getFloatExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_SPEED, 1.0f)
+
+        val startInPip = intent.getBooleanExtra(EXTRA_START_IN_PIP, false)
+        if (startInPip && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            window.decorView.post {
+                val aspect = if (isAudio) Rational(1, 1) else Rational(16, 9)
+                PetalPipController.enterPip(this@MediaPlayerActivity, isPlaying = true, aspect)
+            }
+        }
 
         setContent {
             PetalExpressiveTheme {

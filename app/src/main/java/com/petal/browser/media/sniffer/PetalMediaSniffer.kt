@@ -4,6 +4,9 @@ import android.content.Context
 import android.webkit.MimeTypeMap
 import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.download.SafeDownloadValues
+import com.petal.browser.media.sniffer.download.PetalStreamDownloadEngine
+import com.petal.browser.media.sniffer.download.StreamContainerFormat
+import com.petal.browser.media.sniffer.download.StreamDownloadRequest
 import java.util.Locale
 
 /**
@@ -117,6 +120,27 @@ object PetalMediaSniffer {
         val url = item.url.trim()
         if (!SafeDownloadValues.isHttpUrl(url)) {
             onFailed?.invoke()
+            return
+        }
+
+        if (item.type == MediaInterceptor.MediaType.HLS || item.type == MediaInterceptor.MediaType.DASH) {
+            val format = if (item.type == MediaInterceptor.MediaType.DASH) StreamContainerFormat.DASH else StreamContainerFormat.HLS
+            val title = SafeDownloadValues.fileName(url, null, "video/mp4")
+            val req = StreamDownloadRequest(
+                format = format,
+                videoUrl = url,
+                filename = title,
+                referer = item.referrer ?: "",
+                cookies = item.cookies ?: "",
+                headers = item.headers
+            )
+            PetalStreamDownloadEngine.startStreamDownload(
+                context = context,
+                request = req,
+                onComplete = { onEnqueued?.invoke(PetalFetchDownloadBridge.stableId(req.id)) },
+                onError = { onFailed?.invoke() }
+            )
+            onEnqueued?.invoke(PetalFetchDownloadBridge.stableId(req.id))
             return
         }
 

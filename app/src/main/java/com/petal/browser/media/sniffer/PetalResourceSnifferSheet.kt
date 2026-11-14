@@ -2,6 +2,7 @@ package com.petal.browser.media.sniffer
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+import com.petal.browser.media.PetalVideoPlayerOverlayBridge
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -56,7 +57,7 @@ import com.petal.browser.view.PetalToast
 @Composable
 fun PetalResourceSnifferSheet(
     onDismiss: () -> Unit,
-    onPlayVideo: (String) -> Unit
+    onPlayVideo: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val resources by PetalNativeSnifferEngine.currentTabResources.collectAsStateWithLifecycle()
@@ -254,7 +255,27 @@ fun PetalResourceSnifferSheet(
                             },
                             onPlay = {
                                 onDismiss()
-                                onPlayVideo(item.url)
+                                if (onPlayVideo != null) {
+                                    onPlayVideo(item.url)
+                                } else {
+                                    PetalVideoPlayerOverlayBridge.launchPreviewPlayer(
+                                        context = context,
+                                        mediaUrl = item.url,
+                                        title = item.title,
+                                        mimeType = item.mimeType,
+                                        startInPip = false
+                                    )
+                                }
+                            },
+                            onPip = {
+                                onDismiss()
+                                PetalVideoPlayerOverlayBridge.launchPreviewPlayer(
+                                    context = context,
+                                    mediaUrl = item.url,
+                                    title = item.title,
+                                    mimeType = item.mimeType,
+                                    startInPip = true
+                                )
                             },
                             onDownload = {
                                 PetalNativeSnifferEngine.downloadResource(context, item)
@@ -374,6 +395,7 @@ private fun SniffedResourceRow(
     isSelected: Boolean,
     onToggleSelect: () -> Unit,
     onPlay: () -> Unit,
+    onPip: () -> Unit,
     onDownload: () -> Unit,
     onCopyUrl: () -> Unit
 ) {
@@ -503,6 +525,22 @@ private fun SniffedResourceRow(
                         imageVector = Icons.Rounded.PlayArrow,
                         contentDescription = "Play",
                         modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                FilledTonalIconButton(
+                    onClick = onPip,
+                    shape = RoundedCornerShape(10.dp),
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = if (isGlass) 0.6f else 1f),
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    ),
+                    modifier = Modifier.size(34.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.PictureInPictureAlt,
+                        contentDescription = "Picture in Picture",
+                        modifier = Modifier.size(19.dp)
                     )
                 }
             }

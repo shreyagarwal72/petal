@@ -5,6 +5,9 @@ import android.net.Uri
 import android.util.Log
 import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.download.SafeDownloadValues
+import com.petal.browser.media.sniffer.download.PetalStreamDownloadEngine
+import com.petal.browser.media.sniffer.download.StreamContainerFormat
+import com.petal.browser.media.sniffer.download.StreamDownloadRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -233,17 +236,39 @@ object PetalNativeSnifferEngine {
 
     /**
      * Download a sniffed resource via Petal's native download manager.
+     * HLS and DASH manifests are automatically routed to PetalStreamDownloadEngine for TS-to-MP4 remuxing.
      */
     fun downloadResource(context: Context, resource: SniffedResource) {
         val fileName = resource.title.ifBlank {
             resource.url.substringAfterLast('/').substringBefore('?').ifBlank { "download_${System.currentTimeMillis()}" }
         }
-        PetalFetchDownloadBridge.enqueueGeckoDownload(
-            context = context,
-            url = resource.url,
-            fileName = fileName,
-            mimeType = resource.mimeType
-        )
+        val lowerUrl = resource.url.lowercase(Locale.ROOT)
+        val isM3u8 = lowerUrl.contains(".m3u8") || resource.mimeType?.contains("mpegurl", ignoreCase = true) == true
+        val isMpd = lowerUrl.contains(".mpd") || resource.mimeType?.contains("dash+xml", ignoreCase = true) == true
+
+        if (isM3u8 || isMpd) {
+            val format = if (isMpd) StreamContainerFormat.DASH else StreamContainerFormat.HLS
+            val isAudio = resource.category == PetalResourceCategory.AUDIO
+            val req = StreamDownloadRequest(
+                format = format,
+                videoUrl = if (!isAudio) resource.url else null,
+                audioUrl = if (isAudio) resource.url else null,
+                filename = fileName,
+                referer = resource.referrer ?: "",
+                cookies = resource.cookies ?: "",
+                pageUrl = resource.pageUrl
+            )
+            PetalStreamDownloadEngine.startStreamDownload(context, req)
+        } else {
+            PetalFetchDownloadBridge.enqueueUnifiedDownload(
+                context = context,
+                url = resource.url,
+                fileName = fileName,
+                mimeType = resource.mimeType,
+                referrerUrl = resource.referrer,
+                cookie = resource.cookies
+            )
+        }
     }
 
     /**

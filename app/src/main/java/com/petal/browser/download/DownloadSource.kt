@@ -39,7 +39,12 @@ enum class DownloadSource(val identifier: String, val displayName: String) {
     /**
      * blob:/data: payloads that exist only inside the page and are written out by Petal itself.
      */
-    BLOB("blob", "Page Data");
+    BLOB("blob", "Page Data"),
+
+    /**
+     * Reconstructed and remuxed streams (HLS / DASH TS-to-MP4) managed by PetalStreamDownloadEngine.
+     */
+    STREAM("stream", "Stream / HLS");
 
     /** True when Mozilla's download service owns the bytes and the notifications for this source. */
     val isMozillaOwned: Boolean

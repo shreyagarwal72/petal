@@ -53,7 +53,8 @@ data class StreamDownloadRequest(
     val convertTsToMp4: Boolean = true,
     val subtitleOnly: Boolean = false,
     val audioLanguage: String? = null,
-    val audioLabel: String? = null
+    val audioLabel: String? = null,
+    val id: String = java.util.UUID.randomUUID().toString()
 )
 
 object StreamBackoff {
