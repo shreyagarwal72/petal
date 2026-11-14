@@ -2006,6 +2006,114 @@ fun AppearanceSettingsScreenContent(
                     }
                 }
 
+                // Section 6: Xiaomi HyperOS / MiuiX Flagship Experience
+                run {
+                    val isMiuix = com.petal.browser.ui.containment.isMiuixEnabled()
+                    PetalSettingsSection(
+                        title = "Xiaomi HyperOS / MiuiX Experience",
+                        icon = com.petal.browser.ui.icons.imagetoolbox.ImageToolboxIcons.Rounded.HyperOS,
+                        cardId = "appearance_miuix",
+                        targetHighlightId = targetHighlightItemId
+                    ) {
+                        Text(
+                            text = "Flagship Xiaomi HyperOS design language with continuous curvature squircles, high-contrast spring physics, and acrylic blur.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                            title = "MiuiX UI Experience",
+                            subtitle = if (isMiuix) "Active system-wide across controls, cards, sheets & back gestures" else "Switch to Xiaomi HyperOS / MIUI flagship UI",
+                            icon = com.petal.browser.ui.icons.imagetoolbox.ImageToolboxIcons.Rounded.HyperOS,
+                            checked = isMiuix,
+                            position = if (isMiuix) com.petal.browser.ui.containment.PetalGroupPosition.TOP else com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                            onCheckedChange = { active ->
+                                com.petal.browser.ui.theme.layout.PetalLayoutState.update(context) { current ->
+                                    if (active) {
+                                        current.copy(
+                                            uiExperience = com.petal.browser.ui.theme.layout.UiExperience.MIUIX,
+                                            switchType = com.petal.browser.ui.theme.layout.PetalSwitchType.HYPEROS,
+                                            sliderType = com.petal.browser.ui.theme.layout.PetalSliderType.HYPEROS,
+                                            shapeType = com.petal.browser.ui.theme.layout.PetalShapeType.SQUIRCLE,
+                                            containmentShape = com.petal.browser.ui.theme.layout.PetalContainmentShapeChoice.SQUIRCLE,
+                                            badgeShape = com.petal.browser.ui.theme.layout.PetalBadgeShape.FOLLOW
+                                        )
+                                    } else {
+                                        current.copy(
+                                            uiExperience = com.petal.browser.ui.theme.layout.UiExperience.MATERIAL_EXPRESSIVE,
+                                            switchType = com.petal.browser.ui.theme.layout.PetalSwitchType.MATERIAL_YOU,
+                                            sliderType = com.petal.browser.ui.theme.layout.PetalSliderType.FANCY,
+                                            shapeType = com.petal.browser.ui.theme.layout.PetalShapeType.ROUNDED,
+                                            containmentShape = com.petal.browser.ui.theme.layout.PetalContainmentShapeChoice.FOLLOW_APP,
+                                            badgeShape = com.petal.browser.ui.theme.layout.PetalBadgeShape.MIXED
+                                        )
+                                    }
+                                }
+                            }
+                        )
+
+                        if (isMiuix) {
+                            var testToggle by remember { mutableStateOf(true) }
+                            var testSlider by remember { mutableFloatStateOf(0.65f) }
+
+                            // Live Demo Card
+                            com.petal.browser.ui.miuix.containment.MiuiXGroup(
+                                title = "MiuiX Live Preview",
+                                footer = "Continuous squircle cards with tactile spring toggles & capsule sliders.",
+                                modifier = Modifier.padding(top = 8.dp)
+                            ) {
+                                com.petal.browser.ui.miuix.containment.MiuiXPreferenceRow(
+                                    title = "Continuous Squircle Curvature",
+                                    subtitle = "Superellipse G2 curvature with 0.68f smoothing factor",
+                                    icon = Icons.Rounded.AutoAwesome,
+                                    showChevron = true,
+                                    showDivider = true,
+                                )
+
+                                com.petal.browser.ui.miuix.containment.MiuiXSwitchRow(
+                                    title = "HyperOS Spring Switch",
+                                    subtitle = "Bouncy low-damping spring toggle with tactile haptics",
+                                    icon = com.petal.browser.ui.icons.imagetoolbox.ImageToolboxIcons.Outlined.ToggleOn,
+                                    checked = testToggle,
+                                    onCheckedChange = { testToggle = it },
+                                    showDivider = true,
+                                )
+
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "HyperOS Capsule Slider",
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                fontWeight = FontWeight.Medium,
+                                                fontSize = 15.sp
+                                            ),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "${(testSlider * 100).toInt()}%",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    com.petal.browser.ui.miuix.components.MiuiXSlider(
+                                        value = testSlider,
+                                        onValueChange = { testSlider = it },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Text selection toolbar (Material 3 Expressive / liquid glass), app-wide.
                 com.petal.browser.ui.selection.PetalSelectionToolbarSettingsSection(targetHighlightId = targetHighlightItemId)
 

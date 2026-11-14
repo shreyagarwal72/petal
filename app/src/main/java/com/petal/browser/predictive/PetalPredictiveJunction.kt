@@ -129,7 +129,9 @@ object PetalPredictiveJunction {
         _isLiveUnderlayEnabled.value = prefs.getBoolean(KEY_LIVE_UNDERLAY_ENABLED, true)
         _isPredictiveBackEnabled.value = prefs.getBoolean(KEY_PREDICTIVE_BACK_ENABLED, true)
         _isDepthBlurEnabled.value = prefs.getBoolean(KEY_DEPTH_BLUR_ENABLED, true)
-        _backStyle.value = PetalBackStyle.fromKey(prefs.getString(KEY_BACK_STYLE, null))
+        val exp = prefs.getString("sp_ui_experience", null)
+        val defaultBackStyle = if (exp == "MIUIX") PetalBackStyle.Miuix else PetalBackStyle.Petal
+        _backStyle.value = PetalBackStyle.fromKey(prefs.getString(KEY_BACK_STYLE, defaultBackStyle.key))
         _backExitDirection.value = PetalBackExitDirection.fromKey(prefs.getString(KEY_BACK_EXIT_DIRECTION, null))
     }
 

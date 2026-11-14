@@ -104,6 +104,10 @@ private fun morphingShape(
     pressedFactor: Float = 0.56f,
 ): Shape {
     if (explicit != null) return explicit
+    if (com.petal.browser.ui.containment.isMiuixEnabled()) {
+        val pressed by source.collectIsPressedAsState()
+        return com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(if (pressed) 12.dp else 16.dp, smoothing = 0.68f)
+    }
     val type = PetalLayoutState.settings.shapeType
     val scale = PetalLayoutState.displayCorners
     val pressed by source.collectIsPressedAsState()

@@ -13,12 +13,27 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.preference.PreferenceManager
 
 /**
+ * Top-level system UI Experience choice: Material 3 Expressive, Liquid Glass, or MiuiX (HyperOS).
+ */
+enum class UiExperience(val key: String, val title: String, val subtitle: String) {
+    MATERIAL_EXPRESSIVE("M3_EXPRESSIVE", "Material 3 Expressive", "Google Expressive M3 with bouncy shapes & kinetic pills"),
+    LIQUID_GLASS("LIQUID_GLASS", "Liquid Glass", "Translucent glass with backdrop refraction & specular lighting"),
+    MIUIX("MIUIX", "MiuiX (HyperOS)", "Xiaomi HyperOS flagship experience with continuous squircles & acrylic blur");
+
+    companion object {
+        fun fromKey(key: String?): UiExperience =
+            entries.firstOrNull { it.key.equals(key, ignoreCase = true) } ?: MATERIAL_EXPRESSIVE
+    }
+}
+
+/**
  * Expressive layout & control settings (ported from ImageToolbox's appearance settings).
  * Liquid Glass has no switch/slider "type" of its own: when Liquid Glass is active every switch
  * and slider automatically renders in its glass form (see PetalSwitch / PetalSlider).
  */
 @Immutable
 data class PetalLayoutSettings(
+    val uiExperience: UiExperience = UiExperience.MATERIAL_EXPRESSIVE,
     val switchType: PetalSwitchType = PetalSwitchType.COMPOSE,
     val sliderType: PetalSliderType = PetalSliderType.FANCY,
     val shapeType: PetalShapeType = PetalShapeType.ROUNDED,
@@ -41,6 +56,7 @@ data class PetalLayoutSettings(
         get() = containmentShape.type ?: shapeType
 
     companion object {
+        const val KEY_UI_EXPERIENCE = "sp_ui_experience"
         const val KEY_SWITCH_TYPE = "sp_switch_type"
         const val KEY_SLIDER_TYPE = "sp_slider_type"
         const val KEY_SHAPE_TYPE = "sp_shapes_type"
@@ -57,6 +73,7 @@ data class PetalLayoutSettings(
 
         fun fromPreferences(sp: SharedPreferences): PetalLayoutSettings {
             return PetalLayoutSettings(
+                uiExperience = UiExperience.fromKey(sp.getString(KEY_UI_EXPERIENCE, UiExperience.MATERIAL_EXPRESSIVE.key)),
                 switchType = PetalSwitchType.fromKey(sp.getString(KEY_SWITCH_TYPE, PetalSwitchType.COMPOSE.key)),
                 sliderType = PetalSliderType.fromKey(sp.getString(KEY_SLIDER_TYPE, PetalSliderType.FANCY.key)),
                 shapeType = PetalShapeType.fromKey(sp.getString(KEY_SHAPE_TYPE, PetalShapeType.ROUNDED.key)),
@@ -129,6 +146,7 @@ object PetalLayoutState {
         displayCorners = next.cornersSize
         val sp = prefs ?: PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
         sp.edit()
+            .putString(PetalLayoutSettings.KEY_UI_EXPERIENCE, next.uiExperience.key)
             .putString(PetalLayoutSettings.KEY_SWITCH_TYPE, next.switchType.key)
             .putString(PetalLayoutSettings.KEY_SLIDER_TYPE, next.sliderType.key)
             .putString(PetalLayoutSettings.KEY_SHAPE_TYPE, next.shapeType.key)
@@ -146,6 +164,7 @@ object PetalLayoutState {
     }
 
     private val KEYS = setOf(
+        PetalLayoutSettings.KEY_UI_EXPERIENCE,
         PetalLayoutSettings.KEY_SWITCH_TYPE,
         PetalLayoutSettings.KEY_SLIDER_TYPE,
         PetalLayoutSettings.KEY_SHAPE_TYPE,

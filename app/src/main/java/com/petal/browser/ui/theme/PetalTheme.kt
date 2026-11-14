@@ -357,14 +357,27 @@ fun PetalExpressiveTheme(
     }
 
     val reduceMotion = com.petal.browser.ui.components.rememberReduceMotion()
+    val isMiuix = layoutSettingsState.uiExperience == com.petal.browser.ui.theme.layout.UiExperience.MIUIX
+    val miuixColors = if (darkTheme) com.petal.browser.ui.miuix.theme.MiuiXDarkColors else com.petal.browser.ui.miuix.theme.MiuiXLightColors
+
     val corners = layoutSettingsState.cornersSize
-    val expressiveShapes = remember(expressiveShapesState, layoutSettingsState.shapeType, corners) {
-        val type = layoutSettingsState.shapeType
-        fun c(dp: Int) = type.cornerShape(dp.dp, multiplier = corners)
-        if (expressiveShapesState) {
-            Shapes(extraSmall = c(8), small = c(12), medium = c(16), large = c(24), extraLarge = c(32))
+    val expressiveShapes = remember(isMiuix, expressiveShapesState, layoutSettingsState.shapeType, corners) {
+        if (isMiuix) {
+            Shapes(
+                extraSmall = com.petal.browser.ui.miuix.theme.MiuiXShapes.ExtraSmall,
+                small = com.petal.browser.ui.miuix.theme.MiuiXShapes.Small,
+                medium = com.petal.browser.ui.miuix.theme.MiuiXShapes.Medium,
+                large = com.petal.browser.ui.miuix.theme.MiuiXShapes.Large,
+                extraLarge = com.petal.browser.ui.miuix.theme.MiuiXShapes.ExtraLarge,
+            )
         } else {
-            Shapes(extraSmall = c(4), small = c(8), medium = c(12), large = c(16), extraLarge = c(28))
+            val type = layoutSettingsState.shapeType
+            fun c(dp: Int) = type.cornerShape(dp.dp, multiplier = corners)
+            if (expressiveShapesState) {
+                Shapes(extraSmall = c(8), small = c(12), medium = c(16), large = c(24), extraLarge = c(32))
+            } else {
+                Shapes(extraSmall = c(4), small = c(8), medium = c(12), large = c(16), extraLarge = c(28))
+            }
         }
     }
 
@@ -377,6 +390,7 @@ fun PetalExpressiveTheme(
     }
 
     CompositionLocalProvider(
+        com.petal.browser.ui.miuix.theme.LocalMiuiXColors provides miuixColors,
         com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper,
         com.petal.browser.ui.glass.LocalPetalGlassRevision provides glassRevision,
         LocalPetalBlurEffectEnabled provides blurEffectEnabled,

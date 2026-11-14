@@ -737,14 +737,29 @@ fun PetalSheet(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val isMiuix = isMiuixEnabled()
     val context = androidx.compose.ui.platform.LocalContext.current
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val sheetShape = com.petal.browser.ui.theme.layout.PetalLayoutState.settings.shapeType.cornerShape(
-        topStart = 28.dp, topEnd = 28.dp, bottomEnd = 0.dp, bottomStart = 0.dp,
-        multiplier = com.petal.browser.ui.theme.layout.PetalLayoutState.displayCorners
-    )
+    val sheetShape = if (isMiuix) {
+        com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(
+            smoothing = 0.68f,
+            topStart = androidx.compose.foundation.shape.CornerSize(28.dp),
+            topEnd = androidx.compose.foundation.shape.CornerSize(28.dp),
+            bottomEnd = androidx.compose.foundation.shape.CornerSize(0.dp),
+            bottomStart = androidx.compose.foundation.shape.CornerSize(0.dp)
+        )
+    } else {
+        com.petal.browser.ui.theme.layout.PetalLayoutState.settings.shapeType.cornerShape(
+            topStart = 28.dp, topEnd = 28.dp, bottomEnd = 0.dp, bottomStart = 0.dp,
+            multiplier = com.petal.browser.ui.theme.layout.PetalLayoutState.displayCorners
+        )
+    }
     val dark = MaterialTheme.colorScheme.background.luminance() < .5f
-    val fallbackColor = if (dark) Color(0xE61A1C1E) else Color(0xE6F2F4F7)
+    val fallbackColor = if (isMiuix) {
+        if (dark) Color(0xFF1C1C1E) else Color(0xFFFFFFFF)
+    } else {
+        if (dark) Color(0xE61A1C1E) else Color(0xE6F2F4F7)
+    }
 
     val ownWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
     val activeWallpaper = if (isGlass && ownsGlassBackdrop) ownWallpaper else com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current

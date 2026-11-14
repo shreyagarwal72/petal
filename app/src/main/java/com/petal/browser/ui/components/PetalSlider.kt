@@ -58,8 +58,9 @@ fun PetalSlider(
     glassOverride: Boolean? = null,
 ) {
     val settings = LocalSettingsState.current
-    val sliderType = typeOverride ?: settings.sliderType
     val isGlass = glassOverride ?: isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val isMiuix = com.petal.browser.ui.containment.isMiuixEnabled()
+    val sliderType = typeOverride ?: if (isMiuix) PetalSliderType.HYPEROS else settings.sliderType
     val sheen = rememberGlassSheen(isGlass)
     val scheme = MaterialTheme.colorScheme
     val haptics = LocalHapticFeedback.current

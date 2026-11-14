@@ -67,7 +67,8 @@ fun PetalSwitch(
 ) {
     val settings = LocalSettingsState.current
     val isGlass = glassOverride ?: isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val type = typeOverride ?: settings.switchType
+    val isMiuix = com.petal.browser.ui.containment.isMiuixEnabled()
+    val type = typeOverride ?: if (isMiuix) PetalSwitchType.HYPEROS else settings.switchType
     val scheme = MaterialTheme.colorScheme
     val haptics = LocalHapticFeedback.current
     val focus = LocalFocusManager.current
