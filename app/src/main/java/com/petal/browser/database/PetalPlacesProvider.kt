@@ -5,11 +5,11 @@ import android.util.Log
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.storage.sync.PlacesBookmarksStorage
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
+import mozilla.components.concept.storage.BookmarkRoot
 import mozilla.components.concept.storage.VisitType
 
 /**
@@ -157,13 +157,13 @@ object PetalPlacesProvider {
     fun getAllBookmarks(context: Context): List<Record> {
         val bm = getBookmarksStorage(context)
         return runBlocking(Dispatchers.IO) {
-            val root = bm.getTree(BookmarkRoot.Root.id, true).getOrNull() ?: return@runBlocking emptyList<Record>()
+            val root = bm.getTree(BookmarkRoot.Root.id, true) ?: return@runBlocking emptyList<Record>()
             val result = mutableListOf<Record>()
             fun traverse(node: BookmarkNode) {
                 val url = node.url
                 if (node.type == BookmarkNodeType.ITEM && !url.isNullOrBlank()) {
                     val title = node.title?.ifBlank { url } ?: url
-                    val timestamp = node.dateAdded ?: System.currentTimeMillis()
+                    val timestamp = System.currentTimeMillis()
                     result.add(Record(title, url, timestamp, timestamp))
                 }
                 node.children?.forEach { traverse(it) }
@@ -180,7 +180,7 @@ object PetalPlacesProvider {
 
         val bm = getBookmarksStorage(context)
         runBlocking(Dispatchers.IO) {
-            val root = bm.getTree(BookmarkRoot.Root.id, true).getOrNull()
+            val root = bm.getTree(BookmarkRoot.Root.id, true)
             val existing = findBookmarkNode(root, url)
             if (existing != null) {
                 try {
@@ -198,7 +198,7 @@ object PetalPlacesProvider {
         if (oldUrl.isNullOrBlank() || newUrl.isNullOrBlank()) return false
         val bm = getBookmarksStorage(context)
         return runBlocking(Dispatchers.IO) {
-            val root = bm.getTree(BookmarkRoot.Root.id, true).getOrNull()
+            val root = bm.getTree(BookmarkRoot.Root.id, true)
             val existing = findBookmarkNode(root, oldUrl.trim()) ?: return@runBlocking false
             try {
                 bm.updateNode(
@@ -217,7 +217,7 @@ object PetalPlacesProvider {
         if (url.isNullOrBlank()) return
         val bm = getBookmarksStorage(context)
         runBlocking(Dispatchers.IO) {
-            val root = bm.getTree(BookmarkRoot.Root.id, true).getOrNull()
+            val root = bm.getTree(BookmarkRoot.Root.id, true)
             val existing = findBookmarkNode(root, url.trim()) ?: return@runBlocking
             try {
                 bm.deleteNode(existing.guid)
@@ -229,7 +229,7 @@ object PetalPlacesProvider {
         if (url.isNullOrBlank()) return false
         val bm = getBookmarksStorage(context)
         return runBlocking(Dispatchers.IO) {
-            val root = bm.getTree(BookmarkRoot.Root.id, true).getOrNull()
+            val root = bm.getTree(BookmarkRoot.Root.id, true)
             findBookmarkNode(root, url.trim()) != null
         }
     }
@@ -237,7 +237,7 @@ object PetalPlacesProvider {
     fun clearBookmarks(context: Context) {
         val bm = getBookmarksStorage(context)
         runBlocking(Dispatchers.IO) {
-            val root = bm.getTree(BookmarkRoot.Root.id, true).getOrNull() ?: return@runBlocking
+            val root = bm.getTree(BookmarkRoot.Root.id, true) ?: return@runBlocking
             fun deleteRecursive(node: BookmarkNode) {
                 if (node.type == BookmarkNodeType.ITEM) {
                     try { bm.deleteNode(node.guid) } catch (_: Throwable) {}
@@ -282,7 +282,7 @@ object PetalPlacesProvider {
         val hs = getHistoryStorage(context)
         runBlocking(Dispatchers.IO) {
             try {
-                hs.deleteVisits(url.trim())
+                hs.deleteVisitsFor(url.trim())
             } catch (_: Throwable) {}
         }
     }
@@ -303,7 +303,7 @@ object PetalPlacesProvider {
             try {
                 val visits = hs.getDetailedVisits(0L, Long.MAX_VALUE)
                 val matches = visits.filter { it.title.equals(title, ignoreCase = true) }
-                matches.forEach { v -> hs.deleteVisits(v.url) }
+                matches.forEach { v -> hs.deleteVisitsFor(v.url) }
             } catch (_: Throwable) {}
         }
     }
