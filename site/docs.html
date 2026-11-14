@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" data-theme-mode="light" data-palette="petal" data-amoled="false">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Documentation — Petal Browser</title>
+  <meta name="description" content="User guide for Petal Browser: install, tabs and the floating bar, privacy and ad blocking, add-ons, downloads, customization, the Petal Hop offline game and building from source.">
+  <link rel="canonical" href="https://my-petal-browser.vercel.app/docs">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#fff7f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1013" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Petal Browser">
+  <meta property="og:url" content="https://my-petal-browser.vercel.app/docs">
+  <meta property="og:title" content="Petal Browser Documentation">
+  <meta property="og:description" content="User guide for Petal Browser: install, tabs and the floating bar, privacy and ad blocking, add-ons, downloads, customization, the Petal Hop offline game and building from source.">
+  <meta property="og:image" content="https://my-petal-browser.vercel.app/assets/banner.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Petal Browser Documentation">
+  <meta name="twitter:description" content="User guide for Petal Browser: install, tabs and the floating bar, privacy and ad blocking, add-ons, downloads, customization, the Petal Hop offline game and building from source.">
+  <meta name="twitter:image" content="https://my-petal-browser.vercel.app/assets/banner.jpg">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicons/favicon-48.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Petal Browser", "item": "https://my-petal-browser.vercel.app/"}, {"@type": "ListItem", "position": 2, "name": "Documentation", "item": "https://my-petal-browser.vercel.app/docs"}]}
+  </script>
+  <script>
+    (function () {
+      var d = document.documentElement;
+      d.classList.add('js');
+      try {
+        var s = JSON.parse(localStorage.getItem('petal-theme') || 'null') || {};
+        var dark = s.mode ? s.mode === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        d.setAttribute('data-theme-mode', dark ? 'dark' : 'light');
+        if (s.palette) d.setAttribute('data-palette', s.palette);
+        if (s.amoled && dark) d.setAttribute('data-amoled', 'true');
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=158.0.1">
+  <link rel="stylesheet" href="/pages.css?v=158.0.1">
+<style>
+.docs-hero-shapes{display:flex;gap:14px;flex-wrap:wrap;margin:22px 0 4px}
+.docs-shape{width:84px;height:84px;display:grid;place-items:center;color:var(--on-primary-container);animation:docs-float 6s ease-in-out infinite}
+.docs-shape svg{width:100%;height:100%;position:absolute;inset:0}
+.docs-shape{position:relative}.docs-shape span{position:relative;font:750 1.05rem var(--font-display)}
+.docs-shape:nth-child(2){animation-delay:-1.5s}.docs-shape:nth-child(3){animation-delay:-3s}
+@keyframes docs-float{50%{transform:translateY(-6px) rotate(6deg)}}
+.docs-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:18px 0 28px}
+.docs-tile{display:block;padding:20px 22px;background:var(--surface-container);color:var(--on-surface);text-decoration:none!important;transition:transform .45s cubic-bezier(.34,1.56,.64,1),border-radius .45s cubic-bezier(.34,1.56,.64,1),background .2s}
+.docs-tile:nth-child(4n+1){border-radius:36px 36px 36px 10px}.docs-tile:nth-child(4n+2){border-radius:10px 36px 36px 36px}
+.docs-tile:nth-child(4n+3){border-radius:36px 10px 36px 36px}.docs-tile:nth-child(4n){border-radius:36px 36px 10px 36px}
+.docs-tile:hover,.docs-tile:focus-visible{transform:scale(1.03);background:var(--primary-container);border-radius:28px}
+.docs-tile b{display:block;font:750 1.1rem var(--font-display);margin-bottom:4px}
+.docs-tile small{color:var(--on-surface-variant);font-size:.9rem;line-height:1.45}
+@media (prefers-reduced-motion:reduce){.docs-shape{animation:none}.docs-tile{transition:none}}
+</style>
+</head>
+<body>
+
+  <!-- Icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/></symbol>
+      <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></symbol>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-tabs" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.5" height="15" rx="1.6"/><rect x="13.5" y="4.5" width="4.5" height="15" rx="1.6"/></symbol>
+      <symbol id="i-undo" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.9-6.4M3.5 4v4.6H8"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V7a2 2 0 0 1 2-2h8"/></symbol>
+      <symbol id="i-engine" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2.5"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></symbol>
+      <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.6 0 2.2-1 2.2-2s-1-1.6-.5-2.6S15.2 15 17 15h1a3 3 0 0 0 3-3 9 9 0 0 0-9-9z"/><circle cx="7.5" cy="11" r="1" fill="currentColor"/><circle cx="10.5" cy="7" r="1" fill="currentColor"/><circle cx="15.5" cy="7.5" r="1" fill="currentColor"/></symbol>
+      <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9"/></symbol>
+      <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3 7h3.5c5 0 6 10 11 10H21M3 17h3.5c1.6 0 2.8-.7 3.8-1.8M14 8.8C15 7.7 16.2 7 17.5 7H21M18.5 4.5L21 7l-2.5 2.5M18.5 14.5L21 17l-2.5 2.5"/></symbol>
+    </defs>
+  </svg>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="appbar scrolled" id="appbar">
+    <div class="appbar-inner">
+      <a href="/" class="brand" aria-label="Petal home">
+        <svg class="brand-mark" viewBox="0 0 512 512" fill="none" aria-hidden="true">
+          <defs>
+            <clip-path id="headerSwirlClip">
+              <path d="M220.6,291.4 C234.0,256.2 230.3,200.8 262.6,171.7 C286.7,150.6 332.5,160.8 362.1,149.9 C351.2,179.5 361.4,225.3 340.3,249.4 C311.2,281.7 255.8,278.0 220.6,291.4 Z M291.4,220.6 C278.0,255.8 281.7,311.2 249.4,340.3 C225.3,361.4 179.5,351.2 149.9,362.1 C160.8,332.5 150.6,286.7 171.7,262.6 C200.8,230.3 256.2,234.0 291.4,220.6 Z" />
+            </clip-path>
+          </defs>
+          <path fill="#026065" d="M220.6,291.4 C234.0,256.2 230.3,200.8 262.6,171.7 C286.7,150.6 332.5,160.8 362.1,149.9 C351.2,179.5 361.4,225.3 340.3,249.4 C311.2,281.7 255.8,278.0 220.6,291.4 Z M291.4,220.6 C278.0,255.8 281.7,311.2 249.4,340.3 C225.3,361.4 179.5,351.2 149.9,362.1 C160.8,332.5 150.6,286.7 171.7,262.6 C200.8,230.3 256.2,234.0 291.4,220.6 Z" />
+          <path fill="#A04106" d="M291.4,291.4 C256.2,278.0 200.8,281.7 171.7,249.4 C150.6,225.3 160.8,179.5 149.9,149.9 C179.5,160.8 225.3,150.6 249.4,171.7 C281.7,200.8 278.0,256.2 291.4,291.4 Z M220.6,220.6 C255.8,234.0 311.2,230.3 340.3,262.6 C361.4,286.7 351.2,332.5 362.1,362.1 C332.5,351.2 286.7,361.4 262.6,340.3 C230.3,311.2 234.0,255.8 220.6,220.6 Z" />
+          <g clip-path="url(#headerSwirlClip)">
+            <path fill="#E45B24" d="M291.4,291.4 C256.2,278.0 200.8,281.7 171.7,249.4 C150.6,225.3 160.8,179.5 149.9,149.9 C179.5,160.8 225.3,150.6 249.4,171.7 C281.7,200.8 278.0,256.2 291.4,291.4 Z M220.6,220.6 C255.8,234.0 311.2,230.3 340.3,262.6 C361.4,286.7 351.2,332.5 362.1,362.1 C332.5,351.2 286.7,361.4 262.6,340.3 C230.3,311.2 234.0,255.8 220.6,220.6 Z" />
+          </g>
+        </svg>
+        <span>Petal</span>
+        <span class="brand-tag">GeckoView 158</span>
+      </a>
+      <nav aria-label="Main">
+        <ul class="nav-links" id="nav-links"><li><a href="/#differentiators">Why Petal</a></li><li><a href="/download">Download</a></li><li><a href="/faq">FAQ</a></li><li><a href="/changelog">Changelog</a></li><li><a href="/support">Support</a></li><li><a href="/privacy">Privacy</a></li></ul>
+      </nav>
+      <div class="nav-actions">
+        <button id="theme-toggle-btn" class="icon-btn" type="button" aria-label="Switch to dark theme" data-ripple>
+          <svg class="i i-moon"><use href="#i-moon"/></svg>
+          <svg class="i i-sun" hidden><use href="#i-sun"/></svg>
+        </button>
+        <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="icon-btn nav-github" aria-label="GitHub repository" data-ripple>
+          <svg class="i"><use href="#i-github"/></svg>
+        </a>
+        <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--filled nav-download" aria-label="Download APK" data-ripple>
+          <svg class="i i--sm"><use href="#i-download"/></svg>
+          <span class="btn-label">Download</span>
+        </a>
+        <button id="menu-btn" class="icon-btn menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu" data-ripple>
+          <svg class="i i-menu"><use href="#i-menu"/></svg>
+          <svg class="i i-close"><use href="#i-close"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="menu" id="menu" aria-hidden="true">
+    <div class="menu-scrim" id="menu-scrim"></div>
+    <div class="menu-panel" role="dialog" aria-modal="true" aria-label="Site menu">
+      <div class="menu-head">
+        <span class="brand"><span>Petal</span></span>
+        <button class="icon-btn" id="menu-close" type="button" aria-label="Close menu" data-ripple><svg class="i"><use href="#i-close"/></svg></button>
+      </div>
+      <ul class="menu-list" id="menu-list"><li style="--i:0"><a href="/#differentiators">Why Petal <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:1"><a href="/download">Download <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:2"><a href="/faq">FAQ <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:3"><a href="/changelog">Changelog <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:4"><a href="/support">Support <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:5"><a href="/privacy">Privacy <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:6"><a href="/terms">Terms of Use <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:7"><a href="/licenses">Licenses <svg class="i"><use href="#i-arrow"/></svg></a></li></ul>
+      <div class="menu-foot">
+        <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--filled btn--lg btn--block" data-ripple>
+          <svg class="i"><use href="#i-download"/></svg><span>Download signed APK</span>
+        </a>
+        <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="btn btn--tonal btn--block" data-ripple>
+          <svg class="i i--sm"><use href="#i-github"/></svg><span>View on GitHub</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <main id="main-content" class="page">
+    <div class="container">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">Documentation</span></nav>
+      <header class="page-hero">
+        <p class="eyebrow">Docs</p>
+        <h1 class="page-title">Petal documentation</h1>
+        <p class="lead">Everything you need to install, use and customize Petal.</p>
+        <div class="docs-hero-shapes"><div class="docs-shape" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M96.00,50.00 L95.52,52.39 L94.19,54.64 L92.27,56.69 L90.13,58.53 L88.17,60.23 L86.70,61.92 L85.90,63.78 L85.75,65.92 L86.07,68.38 L86.55,71.10 L86.84,73.92 L86.63,76.61 L85.71,78.92 L84.05,80.66 L81.74,81.74 L79.02,82.23 L76.18,82.34 L73.49,82.34 L71.14,82.56 L69.20,83.26 L67.62,84.59 L66.26,86.51 L64.91,88.84 L63.40,91.25 L61.62,93.36 L59.53,94.81 L57.19,95.39 L54.73,95.03 L52.30,93.87 L50.00,92.20 L47.88,90.42 L45.91,88.91 L43.99,87.98 L41.98,87.75 L39.77,88.17 L37.32,89.02 L34.66,89.95 L31.93,90.59 L29.30,90.62 L27.00,89.84 L25.17,88.23 L23.88,85.95 L23.07,83.26 L22.55,80.49 L22.06,77.94 L21.32,75.82 L20.12,74.20 L18.34,73.00 L16.05,72.05 L13.45,71.10 L10.86,69.94 L8.64,68.41 L7.10,66.47 L6.43,64.16 L6.64,61.62 L7.57,59.02 L8.90,56.51 L10.25,54.18 L11.24,52.03 L11.60,50.00 L11.24,47.97 L10.25,45.82 L8.90,43.49 L7.57,40.98 L6.64,38.38 L6.43,35.84 L7.10,33.53 L8.64,31.59 L10.86,30.06 L13.45,28.90 L16.05,27.95 L18.34,27.00 L20.12,25.80 L21.32,24.18 L22.06,22.06 L22.55,19.51 L23.07,16.74 L23.88,14.05 L25.17,11.77 L27.00,10.16 L29.30,9.38 L31.93,9.41 L34.66,10.05 L37.32,10.98 L39.77,11.83 L41.98,12.25 L43.99,12.02 L45.91,11.09 L47.88,9.58 L50.00,7.80 L52.30,6.13 L54.73,4.97 L57.19,4.61 L59.53,5.19 L61.62,6.64 L63.40,8.75 L64.91,11.16 L66.26,13.49 L67.62,15.41 L69.20,16.74 L71.14,17.44 L73.49,17.66 L76.18,17.66 L79.02,17.77 L81.74,18.26 L84.05,19.34 L85.71,21.08 L86.63,23.39 L86.84,26.08 L86.55,28.90 L86.07,31.62 L85.75,34.08 L85.90,36.22 L86.70,38.08 L88.17,39.77 L90.13,41.47 L92.27,43.31 L94.19,45.36 L95.52,47.61 L96.00,50.00Z" fill="var(--primary-container)"/></svg><span>Aa</span></div><div class="docs-shape" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M96.00,50.00 L95.44,52.38 L93.96,54.62 L92.07,56.66 L90.39,58.58 L89.40,60.56 L89.27,62.76 L89.76,65.26 L90.38,67.98 L90.54,70.66 L89.84,73.00 L88.16,74.78 L85.76,75.98 L83.10,76.80 L80.68,77.63 L78.84,78.84 L77.63,80.68 L76.80,83.10 L75.98,85.76 L74.78,88.16 L73.00,89.84 L70.66,90.54 L67.98,90.38 L65.26,89.76 L62.76,89.27 L60.56,89.40 L58.58,90.39 L56.66,92.07 L54.62,93.96 L52.38,95.44 L50.00,96.00 L47.62,95.44 L45.38,93.96 L43.34,92.07 L41.42,90.39 L39.44,89.40 L37.24,89.27 L34.74,89.76 L32.02,90.38 L29.34,90.54 L27.00,89.84 L25.22,88.16 L24.02,85.76 L23.20,83.10 L22.37,80.68 L21.16,78.84 L19.32,77.63 L16.90,76.80 L14.24,75.98 L11.84,74.78 L10.16,73.00 L9.46,70.66 L9.62,67.98 L10.24,65.26 L10.73,62.76 L10.60,60.56 L9.61,58.58 L7.93,56.66 L6.04,54.62 L4.56,52.38 L4.00,50.00 L4.56,47.62 L6.04,45.38 L7.93,43.34 L9.61,41.42 L10.60,39.44 L10.73,37.24 L10.24,34.74 L9.62,32.02 L9.46,29.34 L10.16,27.00 L11.84,25.22 L14.24,24.02 L16.90,23.20 L19.32,22.37 L21.16,21.16 L22.37,19.32 L23.20,16.90 L24.02,14.24 L25.22,11.84 L27.00,10.16 L29.34,9.46 L32.02,9.62 L34.74,10.24 L37.24,10.73 L39.44,10.60 L41.42,9.61 L43.34,7.93 L45.38,6.04 L47.62,4.56 L50.00,4.00 L52.38,4.56 L54.62,6.04 L56.66,7.93 L58.58,9.61 L60.56,10.60 L62.76,10.73 L65.26,10.24 L67.98,9.62 L70.66,9.46 L73.00,10.16 L74.78,11.84 L75.98,14.24 L76.80,16.90 L77.63,19.32 L78.84,21.16 L80.68,22.37 L83.10,23.20 L85.76,24.02 L88.16,25.22 L89.84,27.00 L90.54,29.34 L90.38,32.02 L89.76,34.74 L89.27,37.24 L89.40,39.44 L90.39,41.42 L92.07,43.34 L93.96,45.38 L95.44,47.62 L96.00,50.00Z" fill="var(--secondary-container)"/></svg><span>M3</span></div><div class="docs-shape" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M96.00,50.00 L95.70,52.39 L94.81,54.71 L93.43,56.88 L91.66,58.86 L89.67,60.63 L87.61,62.22 L85.64,63.68 L83.88,65.08 L82.42,66.52 L81.30,68.07 L80.51,69.82 L80.00,71.80 L79.67,74.02 L79.39,76.46 L79.04,79.04 L78.50,81.65 L77.67,84.17 L76.48,86.45 L74.92,88.38 L73.00,89.84 L70.77,90.77 L68.33,91.16 L65.76,91.05 L63.16,90.51 L60.63,89.67 L58.22,88.68 L55.97,87.70 L53.88,86.88 L51.90,86.33 L50.00,86.14 L48.10,86.33 L46.12,86.88 L44.03,87.70 L41.78,88.68 L39.37,89.67 L36.84,90.51 L34.24,91.05 L31.67,91.16 L29.23,90.77 L27.00,89.84 L25.08,88.38 L23.52,86.45 L22.33,84.17 L21.50,81.65 L20.96,79.04 L20.61,76.46 L20.33,74.02 L20.00,71.80 L19.49,69.82 L18.70,68.07 L17.58,66.52 L16.12,65.08 L14.36,63.68 L12.39,62.22 L10.33,60.63 L8.34,58.86 L6.57,56.88 L5.19,54.71 L4.30,52.39 L4.00,50.00 L4.30,47.61 L5.19,45.29 L6.57,43.12 L8.34,41.14 L10.33,39.37 L12.39,37.78 L14.36,36.32 L16.12,34.92 L17.58,33.48 L18.70,31.93 L19.49,30.18 L20.00,28.20 L20.33,25.98 L20.61,23.54 L20.96,20.96 L21.50,18.35 L22.33,15.83 L23.52,13.55 L25.08,11.62 L27.00,10.16 L29.23,9.23 L31.67,8.84 L34.24,8.95 L36.84,9.49 L39.37,10.33 L41.78,11.32 L44.03,12.30 L46.12,13.12 L48.10,13.67 L50.00,13.86 L51.90,13.67 L53.88,13.12 L55.97,12.30 L58.22,11.32 L60.63,10.33 L63.16,9.49 L65.76,8.95 L68.33,8.84 L70.77,9.23 L73.00,10.16 L74.92,11.62 L76.48,13.55 L77.67,15.83 L78.50,18.35 L79.04,20.96 L79.39,23.54 L79.67,25.98 L80.00,28.20 L80.51,30.18 L81.30,31.93 L82.42,33.48 L83.88,34.92 L85.64,36.32 L87.61,37.78 L89.67,39.37 L91.66,41.14 L93.43,43.12 L94.81,45.29 L95.70,47.61 L96.00,50.00Z" fill="var(--tertiary-container)"/></svg><span>E</span></div></div>
+      </header>
+      <div class="page-grid">
+        <aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li><a href="#overview">Overview</a></li><li><a href="#getting-started">Getting started</a></li><li><a href="#browsing">Browsing</a></li><li><a href="#privacy">Privacy & security</a></li><li><a href="#addons">Add-ons</a></li><li><a href="#downloads">Downloads & media</a></li><li><a href="#customize">Customize</a></li><li><a href="#petal-hop">Petal Hop</a></li><li><a href="#build">Build from source</a></li></ol></aside>
+        <div class="prose">
+<section id="overview"><h2>Overview</h2>
+<p>Petal is a private, open-source Android browser built on Mozilla's <strong>GeckoView</strong> engine rather than the system WebView, with a Jetpack Compose interface designed in Material 3 Expressive. This page is the quick user guide; the <a href="/faq">FAQ</a> covers troubleshooting and the <a href="/architecture">architecture page</a> covers internals.</p>
+<div class="docs-tiles"><a class="docs-tile" href="#getting-started"><b>Getting started</b><small>Install Petal and set it up in a minute.</small></a><a class="docs-tile" href="#browsing"><b>Browsing</b><small>Tabs, the floating pill bar, search and AI.</small></a><a class="docs-tile" href="#privacy"><b>Privacy & security</b><small>Ad blocking, site shield, vault, permissions.</small></a><a class="docs-tile" href="#addons"><b>Add-ons</b><small>Firefox WebExtensions inside Petal.</small></a><a class="docs-tile" href="#downloads"><b>Downloads & media</b><small>Downloader, picture-in-picture, PDFs.</small></a><a class="docs-tile" href="#customize"><b>Customize</b><small>Dynamic color, AMOLED, expressive shapes.</small></a><a class="docs-tile" href="#petal-hop"><b>Petal Hop</b><small>The offline mini-game.</small></a><a class="docs-tile" href="#build"><b>Build from source</b><small>For contributors and tinkerers.</small></a></div>
+</section>
+<section id="getting-started"><h2>Getting started</h2>
+<ol>
+<li><strong>Install.</strong> Get Petal from <a href="https://play.google.com/store/apps/details?id=com.petal.browser">Google Play</a> or download the signed APK from <a href="https://github.com/shreyagarwal72/petal/releases/latest">GitHub Releases</a>. Petal needs Android 8.0 or newer.</li>
+<li><strong>Open and browse.</strong> There is no account to create. Type or paste an address, or search straight from the address bar.</li>
+<li><strong>Make it yours.</strong> Open Settings to pick a palette, theme and layout (see <a href="#customize">Customize</a>).</li>
+</ol>
+<div class="callout tip">The GitHub build updates itself from GitHub Releases; the Play build updates through Google Play.</div>
+</section>
+<section id="browsing"><h2>Browsing</h2>
+<ul>
+<li><strong>Floating pill bar.</strong> The tab and navigation bar can float as a pill. Toggle it in the layout settings.</li>
+<li><strong>Back gestures.</strong> Predictive back shows the previous page while you swipe.</li>
+<li><strong>Optional AI search.</strong> Bring your own key (Gemini, OpenAI, Anthropic, Groq) or point Petal at a local Ollama server. Nothing is sent unless you set a key.</li>
+</ul>
+</section>
+<section id="privacy"><h2>Privacy &amp; security</h2>
+<ul>
+<li><strong>Ad and tracker blocking</strong> runs in a native Rust engine with uBlock and Hagezi lists, before content loads.</li>
+<li><strong>Per-site shield</strong> lets you tune tracking protection for each website.</li>
+<li><strong>Password vault</strong> is stored locally, encrypted, and unlocked with biometrics.</li>
+<li><strong>No telemetry and no accounts.</strong></li>
+</ul>
+<p>Petal asks for permissions only when you use the related feature:</p>
+<div class="table-wrap"><table><thead><tr><th>Permission</th><th>Why</th></tr></thead><tbody>
+<tr><td><code>CAMERA</code>, <code>RECORD_AUDIO</code></td><td>Only when a page or the QR scanner asks.</td></tr>
+<tr><td><code>ACCESS_FINE_LOCATION</code></td><td>Optional, prompted per site.</td></tr>
+<tr><td><code>USE_BIOMETRIC</code></td><td>Unlock the password vault.</td></tr>
+<tr><td><code>ACCESS_NETWORK_STATE</code></td><td>Detect connection state.</td></tr>
+</tbody></table></div>
+</section>
+<section id="addons"><h2>Add-ons</h2>
+<p>Because Petal runs on Gecko, it supports Firefox WebExtensions. Open the extensions screen from the menu to install and manage add-ons.</p>
+</section>
+<section id="downloads"><h2>Downloads &amp; media</h2>
+<ul>
+<li>A multi-threaded download manager keeps going in the background.</li>
+<li>Video can continue in a floating picture-in-picture player.</li>
+<li>PDFs open in the built-in viewer.</li>
+</ul>
+</section>
+<section id="customize"><h2>Customize</h2>
+<ul>
+<li><strong>Dynamic color</strong> follows your wallpaper on Android 12 and newer; older devices use the Petal palette.</li>
+<li><strong>Dark, light and true-black AMOLED</strong> themes.</li>
+<li><strong>Expressive shapes and motion</strong> use spring physics and morphing shapes throughout the app. Haptics follow your system touch-feedback setting.</li>
+</ul>
+</section>
+<section id="petal-hop"><h2>Petal Hop (offline game)</h2>
+<p>When a page can't load because of the connection, Petal can show a small endless-runner instead of a dead end. Tap to hop over clouds, thorns and bees; hold for a higher jump. A host-not-found error waits for you to press <strong>Play while you wait</strong>, since that is often a typo. When the connection returns, a pill offers to reload the page.</p>
+<p>Turn it off any time in <strong>Settings → Misc → Offline game</strong> to see the normal error page.</p>
+</section>
+<section id="build"><h2>Build from source</h2>
+<p>Petal is GPL-3.0 and lives at <a href="https://github.com/shreyagarwal72/petal">github.com/shreyagarwal72/petal</a>. It uses Gradle product flavors (<code>github</code>, <code>play</code>, <code>fdroid</code>). See the README's build section and <a href="/architecture">architecture</a> before opening a pull request; <a href="/code-of-conduct">community rules</a> apply.</p>
+</section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="brand"><span>Petal Browser</span></span>
+          <p>A browser that respects your attention, privacy, and device. Powered by Mozilla GeckoView 158 and Material 3 Expressive.</p>
+          <div class="badges">
+            <img src="/assets/badges/android.svg" height="28" alt="Android 8.0+">
+            <img src="/assets/badges/license.svg" height="28" alt="GPLv3 License">
+          </div>
+        </div>
+        <div class="footer-links-wrap">
+          <div>
+            <h4>Product</h4>
+            <ul class="footer-links">
+              <li><a href="/">Overview</a></li>
+              <li><a href="/#differentiators">Why Petal</a></li>
+              <li><a href="/download">Download &amp; install</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer">Releases</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Help</h4>
+            <ul class="footer-links">
+              <li><a href="/faq">FAQ</a></li>
+              <li><a href="/support">Support &amp; contact</a></li>
+              <li><a href="/changelog">Changelog</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal/issues" target="_blank" rel="noopener noreferrer">Issue tracker</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Legal</h4>
+            <ul class="footer-links">
+              <li><a href="/privacy">Privacy Policy</a></li>
+              <li><a href="/terms">Terms of Use</a></li>
+              <li><a href="/licenses">Open-source licenses</a></li>
+              <li><a href="/gpl">GNU GPL v3.0 (full text)</a></li>
+              <li><a href="/code-of-conduct">Code of conduct</a></li>
+              <li><a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer">Source repository</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Architecture</h4>
+            <ul class="footer-links">
+              <li><a href="/prd">Product requirements</a></li>
+              <li><a href="/design">Design system</a></li>
+              <li><a href="/architecture">GeckoView pipeline</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2024–2026 Vanshu Agarwal and contributors. Distributed under the GNU General Public License v3.0.</span>
+        <span>GeckoView 158.0 · Jetpack Compose M3</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/page.js?v=158.0.1" defer></script>
+</body>
+</html>

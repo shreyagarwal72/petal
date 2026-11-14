@@ -36,7 +36,7 @@
 
 <br>
 
-[Features](#features) · [Screenshots](#screenshots) · [Quick Facts](#quick-facts) · [Permissions](#permissions) · [Build](#build-it-yourself) · [FAQ](FAQs.md)
+[Docs](https://my-petal-browser.vercel.app/docs) · [Features](#features) · [Screenshots](#screenshots) · [Quick Facts](#quick-facts) · [Permissions](#permissions) · [Build](#build-it-yourself) · [FAQ](FAQs.md)
 
 </div>
 
