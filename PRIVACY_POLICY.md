@@ -44,7 +44,7 @@ Petal Browser includes Google Mobile Ads SDK (AdMob) to provide non-intrusive, s
 
 ## 4. Web Engine & Cookies
 
-- **WebView:** The browser operates on top of the Android system WebView (Chromium core).
+- **Engine:** The browser runs on Mozilla's GeckoView engine, bundled inside the app. It does not use the Android system WebView.
 - **Cookie Control:** You can manage or disable first-party and third-party cookies, clear browsing data, and toggle Incognito / Private browsing modes at any time within **Settings > Privacy & Security**.
 
 ---

@@ -43,9 +43,9 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=158.0.1">
-  <link rel="stylesheet" href="/pages.css?v=158.0.1">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,25..151,100..1000&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=159.0.1">
+  <link rel="stylesheet" href="/pages.css?v=159.0.1">
 </head>
 <body>
 
@@ -96,7 +96,7 @@
           </g>
         </svg>
         <span>Petal</span>
-        <span class="brand-tag">GeckoView 158</span>
+        <span class="brand-tag">v4.8 · Gecko 159</span>
       </a>
       <nav aria-label="Main">
         <ul class="nav-links" id="nav-links"><li><a href="/#differentiators">Why Petal</a></li><li><a href="/download">Download</a></li><li><a href="/faq">FAQ</a></li><li><a href="/changelog">Changelog</a></li><li><a href="/support">Support</a></li><li><a href="/privacy">Privacy</a></li></ul>
@@ -162,12 +162,12 @@
 <li><strong>Artifact</strong>: <code>org.mozilla.geckoview:geckoview</code>.</li>
 <li><strong>Runtime Management</strong>: Managed by the thread-safe process singleton <code>com.petal.browser.engine.gecko.PetalGeckoRuntime</code>. Configures Firefox Enhanced Tracking Protection (ETP), Total Cookie Protection, cookie banner blocker, safe browsing, and full WebExtensions support.</li>
 <li><strong>View &amp; Tab Layer</strong>: Implemented in <code>com.petal.browser.view.PetalGeckoView</code>, which encapsulates <code>GeckoView</code> and <code>GeckoSession</code>. Implements <code>AlbumController</code> and AndroidX <code>NestedScrollingChild3</code> to integrate smoothly with the browser's address bar collapse, swipe refresh, and tab overview.</li>
-<li><strong>Controller Wiring</strong>: Managed through <code>com.petal.browser.controller.BrowserWebViewController</code> and official Mozilla Android Components.</li>
+<li><strong>Controller Wiring</strong>: Managed through <code>com.petal.browser.browser.PetalTabViewController</code> and official Mozilla Android Components.</li>
 </ul>
 </li>
 </ol>
 <pre><code class="language-mermaid">graph TD
-    A[BrowserActivity.java] --&gt; B[BrowserWebViewController.kt]
+    A[BrowserActivity.java] --&gt; B[PetalTabViewController.kt]
     B --&gt; D[PetalGeckoView.kt]
     D --&gt; E[GeckoRuntime Singleton / GeckoSession]
     A --&gt; G[ComposeView Bridging Container]
@@ -225,7 +225,7 @@
 <li><code>com.petal.browser.compose</code>: Jetpack Compose UI surfaces (settings, tabs, omnibox, context menus, video player).</li>
 <li><code>com.petal.browser.predictive</code>: Predictive back gesture coordination, blur snapshots, and transition curves.</li>
 <li><code>com.petal.browser.media</code>: Video overlays, PiP coordination (<code>BrowserMediaDelegate</code>), and <code>PetalMediaBridge</code>.</li>
-<li><code>com.petal.browser.download</code>: Background file download management leveraging Fetch2.</li>
+<li><code>com.petal.browser.download</code>: Download UI and state, backed by Mozilla's AbstractFetchDownloadService.</li>
 <li><code>com.petal.browser.security</code>: App lock, biometric authentication, and sandboxed storage protection.</li>
 <li><code>com.petal.browser.passkey</code>: Hardware-backed FIDO2 / Passkey authentication bridge.</li>
 <li><code>com.petal.browser.pwa</code>: Progressive Web App (PWA) manifest installation and notification manager.</li>
@@ -248,7 +248,7 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <span class="brand"><span>Petal Browser</span></span>
-          <p>A browser that respects your attention, privacy, and device. Powered by Mozilla GeckoView 158 and Material 3 Expressive.</p>
+          <p>A private, open-source Android browser. Built on Mozilla GeckoView 159 with Material 3 Expressive.</p>
           <div class="badges">
             <img src="/assets/badges/android.svg" height="28" alt="Android 8.0+">
             <img src="/assets/badges/license.svg" height="28" alt="GPLv3 License">
@@ -296,11 +296,11 @@
       </div>
       <div class="footer-bottom">
         <span>&copy; 2024–2026 Vanshu Agarwal and contributors. Distributed under the GNU General Public License v3.0.</span>
-        <span>GeckoView 158.0 · Jetpack Compose M3</span>
+        <span>v4.8 · GeckoView 159 · Kotlin &amp; Compose</span>
       </div>
     </div>
   </footer>
 
-  <script src="/page.js?v=158.0.1" defer></script>
+  <script src="/page.js?v=159.0.1" defer></script>
 </body>
 </html>

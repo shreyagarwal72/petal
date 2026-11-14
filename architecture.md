@@ -80,7 +80,7 @@ composeView.apply {
 - `com.petal.browser.compose`: Jetpack Compose UI surfaces (settings, tabs, omnibox, context menus, video player).
 - `com.petal.browser.predictive`: Predictive back gesture coordination, blur snapshots, and transition curves.
 - `com.petal.browser.media`: Video overlays, PiP coordination, and `PetalMediaBridge`.
-- `com.petal.browser.download`: Background file download management leveraging Fetch2.
+- `com.petal.browser.download`: Download UI and state, backed by Mozilla's `AbstractFetchDownloadService`.
 - `com.petal.browser.pwa`: Progressive Web App (PWA) manifest installation and notification manager.
 - `com.petal.browser.passwords`: Hardware-backed credential vault and autofill.
 - `com.petal.browser.ui.glass`: Liquid glass material rendering and background blurs.

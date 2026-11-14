@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- Primary Meta Tags -->
-  <title>Petal Browser — Material 3 Expressive GeckoView Browser for Android</title>
-  <meta name="title" content="Petal Browser — Material 3 Expressive GeckoView Browser for Android">
-  <meta name="description" content="A browser that respects your attention, privacy, and device. Material 3 Expressive, powered by Mozilla GeckoView 158, with pure and live Liquid Glass, zero telemetry, local AI translation, wavy media controls, and full WebExtension support.">
-  <meta name="keywords" content="Petal Browser, Android Browser, Material 3 Expressive, GeckoView, Firefox for Android, Privacy Browser, Open Source Browser, Offline AI Translation">
+  <title>Petal Browser — Firefox engine, Material 3 Expressive design, for Android</title>
+  <meta name="title" content="Petal Browser — Firefox engine, Material 3 Expressive design, for Android">
+  <meta name="description" content="Petal is a free, open-source Android browser on Mozilla GeckoView 159. Firefox add-ons, built-in ad and tracker blocking, Firefox Account sync and a Material 3 Expressive interface written in Kotlin and Jetpack Compose. GPL-3.0.">
+  <meta name="keywords" content="Petal Browser, Android browser, GeckoView, Material 3 Expressive, Firefox add-ons, open source browser, Kotlin, Jetpack Compose">
   <meta name="author" content="Vanshu Agarwal">
   <meta name="google-site-verification" content="zSTdL39e1QNIV1d1ztA2T9CU52CLI9fd3guegCONwWY" />
   <meta name="google-site-verification" content="KYowygvsrbCJwszF1adTZ1WltiKdP6Mvx_YMChVKKBQ">
@@ -24,8 +24,8 @@
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://my-petal-browser.vercel.app/">
-  <meta property="og:title" content="Petal Browser — Material 3 Expressive GeckoView Browser for Android">
-  <meta property="og:description" content="A fast, private, and customizable Android browser built with Mozilla GeckoView 158, Material 3 Expressive, live Liquid Glass, zero telemetry, and native WebExtension support.">
+  <meta property="og:title" content="Petal Browser — Firefox engine, Material 3 Expressive design, for Android">
+  <meta property="og:description" content="A free, open-source Android browser on Mozilla GeckoView 159 with Firefox add-ons, built-in blocking and a Material 3 Expressive interface.">
   <meta property="og:image" content="https://my-petal-browser.vercel.app/assets/banner.jpg">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="640">
@@ -34,8 +34,8 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://my-petal-browser.vercel.app/">
-  <meta name="twitter:title" content="Petal Browser — Material 3 Expressive Android Browser">
-  <meta name="twitter:description" content="Material 3 Expressive design meets Mozilla GeckoView 158. Zero telemetry, open source, and full WebExtension power.">
+  <meta name="twitter:title" content="Petal Browser — Firefox engine, Material 3 Expressive design">
+  <meta name="twitter:description" content="Mozilla GeckoView 159 and Material 3 Expressive in one open-source Android browser.">
   <meta name="twitter:image" content="https://my-petal-browser.vercel.app/assets/banner.jpg">
   <meta name="twitter:image:alt" content="Petal Browser interface preview banner">
 
@@ -55,7 +55,7 @@
     "name": "Petal Browser",
     "operatingSystem": "Android",
     "applicationCategory": "WebBrowser",
-    "description": "Material 3 Expressive Android browser powered by Mozilla GeckoView 158 with zero telemetry and total privacy.",
+    "description": "Open-source Android browser on Mozilla GeckoView 159 with Firefox add-ons and a Material 3 Expressive interface.",
     "url": "https://my-petal-browser.vercel.app/",
     "image": "https://my-petal-browser.vercel.app/assets/favicons/icon-512.png",
     "screenshot": "https://my-petal-browser.vercel.app/assets/banner.jpg",
@@ -68,6 +68,7 @@
       "@type": "Person",
       "name": "Vanshu Agarwal"
     },
+    "softwareVersion": "4.8.0",
     "downloadUrl": "https://github.com/shreyagarwal72/petal/releases/latest"
   }
   </script>
@@ -89,8 +90,8 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=158.0.1">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,25..151,100..1000&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=159.0.1">
 </head>
 <body>
 
@@ -142,16 +143,17 @@
           </g>
         </svg>
         <span>Petal</span>
-        <span class="brand-tag">GeckoView 158</span>
+        <span class="brand-tag">v4.8 · Gecko 159</span>
       </a>
 
       <nav aria-label="Main">
         <ul class="nav-links" id="nav-links">
           <li><a href="#differentiators">Why Petal</a></li>
+          <li><a href="#features">Features</a></li>
           <li><a href="#liquid-glass">Glass</a></li>
           <li><a href="#shapes">Shapes</a></li>
           <li><a href="#media-player">Player</a></li>
-          <li><a href="#architecture">Architecture</a></li>
+          <li><a href="#architecture">Stack</a></li>
           <li><a href="#specs">Specs</a></li>
           <li><a href="/faq">FAQ</a></li><li><a href="/changelog">Changelog</a></li>
           <li><a href="/support">Support</a></li>
@@ -188,10 +190,11 @@
       </div>
       <ul class="menu-list" id="menu-list">
         <li style="--i:0"><a href="#differentiators">Why Petal <svg class="i"><use href="#i-arrow"/></svg></a></li>
+        <li style="--i:0"><a href="#features">Features <svg class="i"><use href="#i-arrow"/></svg></a></li>
         <li style="--i:1"><a href="#liquid-glass">Liquid Glass <svg class="i"><use href="#i-arrow"/></svg></a></li>
-        <li style="--i:2"><a href="#shapes">35 shapes <svg class="i"><use href="#i-arrow"/></svg></a></li>
-        <li style="--i:3"><a href="#media-player">Wavy player <svg class="i"><use href="#i-arrow"/></svg></a></li>
-        <li style="--i:4"><a href="#architecture">Architecture <svg class="i"><use href="#i-arrow"/></svg></a></li>
+        <li style="--i:2"><a href="#shapes">Shapes <svg class="i"><use href="#i-arrow"/></svg></a></li>
+        <li style="--i:3"><a href="#media-player">Media player <svg class="i"><use href="#i-arrow"/></svg></a></li>
+        <li style="--i:4"><a href="#architecture">Stack <svg class="i"><use href="#i-arrow"/></svg></a></li>
         <li style="--i:5"><a href="#specs">Specs <svg class="i"><use href="#i-arrow"/></svg></a></li>
         <li style="--i:6"><a href="/faq">FAQ <svg class="i"><use href="#i-arrow"/></svg></a></li><li style="--i:7"><a href="/changelog">Changelog <svg class="i"><use href="#i-arrow"/></svg></a></li>
         <li style="--i:8"><a href="/support">Support <svg class="i"><use href="#i-arrow"/></svg></a></li>
@@ -201,7 +204,7 @@
       </ul>
       <div class="menu-foot">
         <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--filled btn--lg btn--block" data-ripple>
-          <svg class="i"><use href="#i-download"/></svg><span>Download signed APK</span>
+          <svg class="i"><use href="#i-download"/></svg><span>Download APK</span>
         </a>
         <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="btn btn--tonal btn--block" data-ripple>
           <svg class="i i--sm"><use href="#i-github"/></svg><span>View on GitHub</span>
@@ -216,21 +219,22 @@
     <section id="hero" class="hero" aria-labelledby="hero-title">
       <div class="container hero-grid">
         <div class="hero-copy">
-          <h1 id="hero-title" class="display enter" style="--i:0">A browser that respects your attention, privacy, and device.</h1>
+          <h1 id="hero-title" class="display enter" style="--i:0">The Firefox engine in an Android browser that feels like Android.</h1>
           <p class="lead enter" style="--i:1">
-            Petal breaks free from the Chromium monopoly. Built natively on Mozilla's GeckoView 158 engine with Jetpack Compose Material 3 Expressive, delivering quantum rendering, 35 adaptive polygon shapes, and authentic zero telemetry.
+            Petal renders pages with Mozilla's GeckoView 159, so sites behave like they do in Firefox and your Firefox add-ons work. The interface is Kotlin and Jetpack Compose in Material 3 Expressive: springy motion, shapes that morph, and colours that follow your wallpaper.
           </p>
-          <div class="hero-cta enter" style="--i:2">
+          <div class="hero-cta btn-group enter" style="--i:2" role="group" aria-label="Get Petal">
             <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--filled btn--lg" data-ripple>
-              <svg class="i"><use href="#i-download"/></svg><span>Download signed APK</span>
+              <svg class="i"><use href="#i-download"/></svg><span>Download APK</span>
             </a>
-            <a href="#shapes" class="btn btn--tonal btn--lg" data-ripple><span>Explore 35 shapes</span></a>
+            <a href="/changelog" class="btn btn--tonal btn--lg" data-ripple><span>What's new</span></a>
+            <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="btn btn--tonal btn--lg btn--icon-only" aria-label="Source code on GitHub" data-ripple><svg class="i"><use href="#i-github"/></svg></a>
           </div>
           <dl class="facts enter" style="--i:3">
-            <div class="fact"><span>Engine</span><strong>GeckoView 158.0</strong></div>
-            <div class="fact"><span>UI framework</span><strong>Jetpack Compose M3</strong></div>
-            <div class="fact"><span>Min Android</span><strong>8.0+ (API 26–36)</strong></div>
-            <div class="fact"><span>License</span><strong>GPL-3.0</strong></div>
+            <div class="fact"><span>Latest release</span><strong>v4.8.0</strong></div>
+            <div class="fact"><span>Engine</span><strong>GeckoView 159</strong></div>
+            <div class="fact"><span>Written in</span><strong>Kotlin + Compose</strong></div>
+            <div class="fact"><span>Runs on</span><strong>Android 8.0+</strong></div>
           </dl>
         </div>
 
@@ -253,11 +257,11 @@
 
               <div class="sim-webview" id="sim-webview" tabindex="0" aria-label="Demo page. Scroll to collapse the address bar.">
                 <h3>Scroll down to collapse the bar</h3>
-                <div class="sim-card"><strong>GeckoView multi-process</strong>Isolated renderer tabs with separate content process memory spaces.</div>
-                <div class="sim-card"><strong>Strict tracking shield</strong>12 trackers blocked. Third-party cookie storage partitioned.</div>
-                <div class="sim-card"><strong>On-device AI hub</strong>Summarize page articles directly via local or API LLM bridges.</div>
-                <div class="sim-card"><strong>Material 3 motion</strong>Spring physics with 0.75f damping ratio and waveform haptic ticks.</div>
-                <div class="sim-card"><strong>WebExtensions ecosystem</strong>Mozilla AMO add-ons and desktop scripts running without restrictions.</div>
+                <div class="sim-card"><strong>Real Gecko engine</strong>Firefox's multi-process renderer, not Android WebView.</div>
+                <div class="sim-card"><strong>Tracking protection</strong>Strict mode on by default. Third-party cookies are partitioned per site.</div>
+                <div class="sim-card"><strong>Bring-your-own-key AI</strong>Optional. Connect Gemini, OpenAI, Anthropic, Groq or a local Ollama.</div>
+                <div class="sim-card"><strong>Expressive motion</strong>Spring animations and haptic ticks on scroll and swipe.</div>
+                <div class="sim-card"><strong>Firefox add-ons</strong>Install from addons.mozilla.org or import an .xpi file.</div>
               </div>
 
               <button class="sim-fab" id="sim-fab" type="button" aria-label="Show address bar"><svg class="i"><use href="#i-search"/></svg></button>
@@ -277,7 +281,7 @@
                 <ul>
                   <li><svg class="i"><use href="#i-check"/></svg>Trackers stripped from the link</li>
                   <li><svg class="i"><use href="#i-shield"/></svg>Enhanced Tracking Protection: Strict</li>
-                  <li><svg class="i"><use href="#i-moon"/></svg>Dark pages extension enabled</li>
+                  <li><svg class="i"><use href="#i-moon"/></svg>Dark mode follows the system</li>
                 </ul>
               </div>
             </div>
@@ -293,7 +297,7 @@
         <div class="theme-card" data-reveal>
           <div class="theme-copy">
             <h2 class="h3">Try a palette</h2>
-            <p>Petal follows your wallpaper on Android 12+. Pick a color here and the whole page follows you.</p>
+            <p>Petal takes its colours from your wallpaper on Android 12+. Pick a seed colour here and this page re-themes the same way.</p>
           </div>
           <div class="swatches" role="radiogroup" aria-label="Palette">
             <button class="swatch" data-palette="petal" style="--h:5;--c:.21" role="radio" aria-checked="true" aria-label="Petal pink" title="Petal Pink"><svg class="i"><use href="#i-check"/></svg></button>
@@ -321,32 +325,54 @@
     <section id="differentiators" class="section">
       <div class="container">
         <div class="section-head" data-reveal>
-          <h2 class="h2">Engineered to be the anti-Chromium.</h2>
-          <p>Most Android browsers are repackaged Chromium shells bundled with tracking services. Petal is an independent, native engineering achievement.</p>
+          <p class="eyebrow">Why Petal</p>
+          <h2 class="h2">Not another Chromium wrapper.</h2>
+          <p>Most Android browsers sit on top of the system WebView. Petal ships Mozilla's own engine and the Firefox component stack instead.</p>
         </div>
 
         <div class="cards">
           <article class="card card--a" data-reveal style="--i:0">
             <div class="shape-badge" data-shape="cookie6" aria-hidden="true"><svg viewBox="0 0 100 100"><path d=""/></svg></div>
-            <h3 class="h3">GeckoView 158 quantum pipeline</h3>
-            <p>Petal does not delegate web rendering to the manufacturer's Android WebView. It bundles Mozilla's quantum engine with full multi-process isolation, native Firefox add-ons, and standards compliance.</p>
-            <ul class="chips"><li>Standalone engine</li><li>Firefox Add-ons (AMO)</li><li>Quantum multi-process</li></ul>
+            <h3 class="h3">Mozilla's engine, bundled</h3>
+            <p>GeckoView 159 with Mozilla Android Components 159.0.1. Rendering, WebExtensions, Total Cookie Protection and the download service all come from Mozilla's code, so they update when Firefox does.</p>
+            <ul class="chips"><li>GeckoView 159</li><li>Firefox add-ons</li><li>Total Cookie Protection</li></ul>
           </article>
 
           <article class="card card--b" data-reveal style="--i:1">
             <div class="shape-badge" data-shape="softburst" aria-hidden="true"><svg viewBox="0 0 100 100"><path d=""/></svg></div>
-            <h3 class="h3">Zero telemetry by construction</h3>
-            <p>Privacy is not a toggle in a submenu. Petal bundles zero analytics SDKs, zero telemetry endpoints, and zero cloud reporting beacons. Strict Enhanced Tracking Protection is active on first launch.</p>
-            <ul class="chips"><li>No Google Firebase</li><li>No Sentry</li><li>Isolated cookie jars</li></ul>
+            <h3 class="h3">Blocking that runs first</h3>
+            <p>A bundled WebExtension cancels ad and tracker requests before they leave the device, using EasyList, uBlock uAssets and Hagezi lists. Strict tracking protection is on from the first launch, and there is no Firebase or analytics SDK.</p>
+            <ul class="chips"><li>petal_network_blocker</li><li>Strict ETP</li><li>HTTPS-only option</li></ul>
           </article>
 
           <article class="card card--c" data-reveal style="--i:2">
             <div class="shape-badge" data-shape="flower" aria-hidden="true"><svg viewBox="0 0 100 100"><path d=""/></svg></div>
-            <h3 class="h3">Material 3 Expressive &amp; AMOLED ladder</h3>
-            <p>Crafted in Jetpack Compose 1.5 with 35 dynamic polygon shape tokens, predictive back gesture morphing, tactile waveform haptics, and true pitch-black surfaces (<code>#000000</code>) for OLED battery conservation.</p>
-            <ul class="chips"><li>Spring damping 0.75f</li><li>35 shape tokens</li><li>Pure AMOLED black</li></ul>
+            <h3 class="h3">Material 3 Expressive in the details</h3>
+            <p>Jetpack Compose with Material 3 1.5, 35 expressive shapes, spring motion, predictive back, dynamic colour and a true-black AMOLED theme. Most of the settings you see on this page are the real app settings.</p>
+            <ul class="chips"><li>35 shapes</li><li>Dynamic colour</li><li>AMOLED black</li></ul>
           </article>
         </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="section">
+      <div class="container">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow">In the app today</p>
+          <h2 class="h2">What you get in 4.8</h2>
+          <p>A short list of what is shipping in the current release. The <a class="link" href="/changelog">changelog</a> has the rest.</p>
+        </div>
+
+        <ul class="feature-list" data-reveal>
+          <li class="feature"><span class="feature-ico"><svg class="i"><use href="#i-tabs"/></svg></span><div><h3>Workspaces, folders and pinned tabs</h3><p>Group tabs into workspaces, collapse them into folders, pin essentials, and peek at a link in a Glance sheet without leaving the page.</p></div></li>
+          <li class="feature"><span class="feature-ico"><svg class="i"><use href="#i-engine"/></svg></span><div><h3>A proper add-on manager</h3><p>Installed, Explore and Tweaks tabs, a permissions inspector, per-add-on private-window control, and .xpi import. Ten small built-in add-ons ship with the app.</p></div></li>
+          <li class="feature"><span class="feature-ico"><svg class="i"><use href="#i-shield"/></svg></span><div><h3>One Privacy &amp; Security page</h3><p>Ad and tracker blocking, tracking protection, fingerprinting, connection security (HTTPS-only, DNS-over-HTTPS, WebRTC leak shield), site permissions, private browsing and passwords.</p></div></li>
+          <li class="feature"><span class="feature-ico"><svg class="i"><use href="#i-download"/></svg></span><div><h3>Downloads on Mozilla's service</h3><p>Browser downloads go through Mozilla's download service, so cookies, logins and private mode carry over. Files you delete are removed from storage.</p></div></li>
+          <li class="feature"><span class="feature-ico"><svg class="i"><use href="#i-lock"/></svg></span><div><h3>Firefox Account sync</h3><p>Sign in with a Firefox Account to sync bookmarks, history, passwords and open tabs, and to send a tab to any device you own.</p></div></li>
+          <li class="feature"><span class="feature-ico"><svg class="i"><use href="#i-film"/></svg></span><div><h3>Media, reader and AI</h3><p>Video and audio player with picture-in-picture, a reader mode with read-aloud, and an optional AI assistant that uses your own API key.</p></div></li>
+        </ul>
+        <p class="feature-note" data-reveal>Petal is translated into 28 languages. The GitHub and Google Play builds include one opt-in rewarded ad to support development; the F-Droid build has no ad code.</p>
       </div>
     </section>
 
@@ -355,8 +381,9 @@
       <div class="container">
         <div class="panel">
           <div class="section-head" data-reveal>
-            <h2 class="h2">Pure, live Liquid Glass</h2>
-            <p>One sharp wallpaper, one shared frost and a lens at every edge. Panels refract whatever moves behind them while text and icons stay crisp. Change the background, opacity and sheen below, the same controls you get in <code class="inline">Settings → Appearance → Liquid Glass UI</code>.</p>
+            <p class="eyebrow">Appearance</p>
+            <h2 class="h2">Liquid Glass</h2>
+            <p>The address bar, sheets and dock can turn to frosted glass that bends whatever is behind them, while text and icons stay sharp. Try the background, opacity and sheen below. They match the controls in <code class="inline">Settings → Appearance → Liquid Glass UI</code>.</p>
           </div>
 
           <div class="lg" data-reveal>
@@ -379,8 +406,8 @@
                   <h3>Quick tools</h3>
                   <ul>
                     <li><svg class="i i--sm"><use href="#i-shield"/></svg><span>Strict tracking shield<small>12 trackers blocked</small></span></li>
-                    <li><svg class="i i--sm"><use href="#i-moon"/></svg><span>Dark webpages<small>Per-site whitelist</small></span></li>
-                    <li><svg class="i i--sm"><use href="#i-search"/></svg><span>Find in page<small>Floating pill bar</small></span></li>
+                    <li><svg class="i i--sm"><use href="#i-moon"/></svg><span>Dark mode<small>Follows the system</small></span></li>
+                    <li><svg class="i i--sm"><use href="#i-search"/></svg><span>Find in page<small>Floating bar</small></span></li>
                   </ul>
                 </div>
 
@@ -420,7 +447,7 @@
           </div>
 
           <ul class="chips lg-chips" data-reveal>
-            <li>Android 12+: real backdrop blur</li><li>Android 13+: lens refraction</li><li>Older: stronger tint fallback</li><li>No new dependencies</li>
+            <li>Android 12+: backdrop blur</li><li>Android 13+: lens refraction</li><li>Older versions: stronger tint instead</li>
           </ul>
         </div>
       </div>
@@ -431,8 +458,9 @@
       <div class="container">
         <div class="panel">
           <div class="section-head" data-reveal>
-            <h2 class="h2">The 35 dynamic Material 3 Expressive shapes</h2>
-            <p>Directly from <code class="inline">PetalMaterialShapes.kt</code>: every shortcut pill, dialog container, and FAB adapts across 35 mathematical geometries. Tap one and watch the shape spring into place.</p>
+            <p class="eyebrow">Shapes</p>
+            <h2 class="h2">35 Material 3 Expressive shapes</h2>
+            <p>The full set from <code class="inline">PetalMaterialShapes.kt</code>. Petal uses them for shortcut tiles, album art, dialogs and buttons, and morphs between them as you tap. Tap one to see it spring into place.</p>
           </div>
 
           <div class="shapes" data-reveal>
@@ -455,14 +483,15 @@
     <section id="media-player" class="section">
       <div class="container">
         <div class="section-head" data-reveal>
-          <h2 class="h2">mpvEx-inspired player with a wavy seekbar</h2>
-          <p>As specified in <code class="inline">PRD.md §3.3</code>: an active sine-wave seekbar ripples while a video plays, then flattens the moment you pause or scrub.</p>
+          <p class="eyebrow">Media</p>
+          <h2 class="h2">A player with a wavy seekbar</h2>
+          <p>Inspired by mpvEx. The seekbar ripples while media plays and flattens when you pause or scrub. This is a demo, so press play and drag it.</p>
         </div>
 
         <div class="player playing" id="player" data-reveal>
           <div class="player-screen">
             <div class="player-art" data-shape="cookie9" aria-hidden="true"><svg viewBox="0 0 100 100"><path d=""/></svg></div>
-            <small>GeckoView quantum video stream</small>
+            <small>Demo, not a real video</small>
           </div>
 
           <div class="wavy" id="wavy" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="245" aria-valuenow="93">
@@ -490,15 +519,16 @@
       <div class="container">
         <div class="panel">
           <div class="section-head" data-reveal>
-            <h2 class="h2">Modular multi-process architecture</h2>
-            <p>Explore how Petal stitches together Mozilla GeckoView C++ runtime bindings with modern Jetpack Compose Kotlin layers.</p>
+            <p class="eyebrow">How it works</p>
+            <h2 class="h2">What sits under the interface</h2>
+            <p>Petal is one Kotlin app. Mozilla's engine renders pages, Mozilla's components manage tabs and downloads, and Compose draws everything you touch.</p>
           </div>
 
           <div class="arch" data-reveal>
             <div class="arch-tabs" role="tablist" aria-label="Architecture components">
               <button class="arch-tab" id="tab-geckoview" data-node="geckoview" role="tab" aria-selected="true" aria-controls="arch-panel" type="button" data-ripple>
                 <span class="ico"><svg class="i"><use href="#i-engine"/></svg></span>
-                <span class="t"><b>Mozilla GeckoView 158 core</b><small>Engine</small></span>
+                <span class="t"><b>GeckoView 159 engine</b><small>Engine</small></span>
               </button>
               <button class="arch-tab" id="tab-compose" data-node="compose" role="tab" aria-selected="false" aria-controls="arch-panel" tabindex="-1" type="button" data-ripple>
                 <span class="ico"><svg class="i"><use href="#i-palette"/></svg></span>
@@ -506,22 +536,21 @@
               </button>
               <button class="arch-tab" id="tab-etp" data-node="etp" role="tab" aria-selected="false" aria-controls="arch-panel" tabindex="-1" type="button" data-ripple>
                 <span class="ico"><svg class="i"><use href="#i-shield"/></svg></span>
-                <span class="t"><b>Zero telemetry &amp; strict ETP</b><small>Security</small></span>
+                <span class="t"><b>Blocking &amp; privacy</b><small>Security</small></span>
               </button>
               <button class="arch-tab" id="tab-media" data-node="media" role="tab" aria-selected="false" aria-controls="arch-panel" tabindex="-1" type="button" data-ripple>
                 <span class="ico"><svg class="i"><use href="#i-film"/></svg></span>
-                <span class="t"><b>mpvEx &amp; media grabber</b><small>Media</small></span>
+                <span class="t"><b>Media &amp; downloads</b><small>Media</small></span>
               </button>
             </div>
 
             <div class="arch-panel" id="arch-panel" role="tabpanel" aria-labelledby="tab-geckoview">
-              <span id="arch-detail-badge" class="arch-badge">Independent Quantum Core</span>
-              <h3 id="arch-detail-title" class="h3">GeckoView 158 Standalone Engine</h3>
-              <p id="arch-detail-desc">Petal embeds Mozilla GeckoView 158 with an isolated quantum multi-process pipeline. It does not use the OEM Android WebView, preventing vendor delays and third-party tracking hooks.</p>
-              <pre class="code" tabindex="0"><code id="arch-detail-code">GeckoRuntime.create(context, GeckoRuntimeSettings.Builder()
-  .aboutConfigEnabled(true)
-  .contentBlocking(ContentBlocking.STRICT)
-  .build())</code></pre>
+              <span id="arch-detail-badge" class="arch-badge">Engine</span>
+              <h3 id="arch-detail-title" class="h3">GeckoView 159 with Mozilla Android Components</h3>
+              <p id="arch-detail-desc">Petal embeds GeckoView 159.0 and Mozilla Android Components 159.0.1. One active tab is mounted at a time and background tabs live in Mozilla's BrowserStore, which keeps GPU memory low. The system WebView is not used.</p>
+              <pre class="code" tabindex="0"><code id="arch-detail-code">implementation 'org.mozilla.geckoview:geckoview:159.0.20261102144711'
+implementation 'org.mozilla.components:browser-engine-gecko:159.0.1'
+implementation 'org.mozilla.components:browser-state:159.0.1'</code></pre>
             </div>
           </div>
         </div>
@@ -532,20 +561,22 @@
     <section id="specs" class="section">
       <div class="container">
         <div class="section-head" data-reveal>
-          <h2 class="h2">Complete technical stack</h2>
-          <p>Verified details from the codebase, kept apart from marketing assumptions.</p>
+          <p class="eyebrow">Specs</p>
+          <h2 class="h2">Versions and tooling</h2>
+          <p>Read straight from the project's build files.</p>
         </div>
 
         <ul class="specs" data-reveal>
-          <li class="spec"><h3>Browsing engine</h3><div class="v">Mozilla GeckoView <code class="inline">158.0</code></div><div class="b">Desktop-grade standards compliance, independent of Chromium WebView.</div></li>
-          <li class="spec"><h3>Liquid Glass</h3><div class="v">Live backdrop blur + lens refraction</div><div class="b">Android 12+ blur, Android 13+ AGSL lens shader, tinted fallback on older versions. Text and icons are drawn after the effect.</div></li>
-          <li class="spec"><h3>Language &amp; toolchain</h3><div class="v">Kotlin <code class="inline">2.0+</code>, Java 17, Gradle 8.x</div><div class="b">Type-safe coroutines, Flow-based state, and null safety throughout.</div></li>
-          <li class="spec"><h3>UI framework</h3><div class="v">Jetpack Compose + Material 3 Expressive <code class="inline">1.5.0-alpha17</code></div><div class="b">Spring animations, adaptive polygon morphing, fluid 120Hz gesture handling.</div></li>
-          <li class="spec"><h3>Target architectures</h3><div class="v"><code class="inline">arm64-v8a</code> <code class="inline">armeabi-v7a</code> <code class="inline">x86</code> <code class="inline">x86_64</code></div><div class="b">Universal APK and ABI-split builds for legacy and modern Android devices.</div></li>
-          <li class="spec"><h3>Operating system range</h3><div class="v">Android 8.0 (API 26) through Android 15/16 (API 36)</div><div class="b">Broad compatibility with backward-compatible Room database migrations.</div></li>
-          <li class="spec"><h3>Haptic feedback</h3><div class="v">Custom <code class="inline">PetalHapticEngine</code></div><div class="b">Synthesizes tactile waveform ticks on scroll, swipe, and seekbar thresholds.</div></li>
-          <li class="spec"><h3>Authentication</h3><div class="v">FIDO2 / Passkey hardware bridge</div><div class="b">Passwordless biometric login directly compatible with WebAuthn specs.</div></li>
-          <li class="spec"><h3>License</h3><div class="v">GNU General Public License v3.0 (<code class="inline">GPL-3.0</code>)</div><div class="b">100% open-source software ensuring complete auditability and user freedom.</div></li>
+          <li class="spec"><h3>Release</h3><div class="v">v4.8.0</div><div class="b">Full notes on the <a class="link" href="/changelog">changelog</a> page.</div></li>
+          <li class="spec"><h3>Browser engine</h3><div class="v">Mozilla GeckoView <code class="inline">159.0</code></div><div class="b">With Mozilla Android Components <code class="inline">159.0.1</code> for tabs, downloads, sync and prompts.</div></li>
+          <li class="spec"><h3>Language</h3><div class="v">100% Kotlin <code class="inline">2.4</code></div><div class="b">About 660 Kotlin source files, no Java. JVM 17 target, built with Android Gradle Plugin 9.4, KSP and Hilt.</div></li>
+          <li class="spec"><h3>UI toolkit</h3><div class="v">Jetpack Compose (BOM <code class="inline">2026.09</code>) + Material 3 <code class="inline">1.5.0-alpha22</code></div><div class="b">Expressive APIs such as shape morphing, springs and the new button groups.</div></li>
+          <li class="spec"><h3>Android versions</h3><div class="v">Android 8.0 (API 26) to API 36</div><div class="b">Compile and target SDK 36.</div></li>
+          <li class="spec"><h3>CPU architectures</h3><div class="v"><code class="inline">arm64-v8a</code> <code class="inline">armeabi-v7a</code> <code class="inline">x86</code> <code class="inline">x86_64</code></div><div class="b">A universal APK plus per-ABI builds.</div></li>
+          <li class="spec"><h3>Ad &amp; tracker blocking</h3><div class="v">Bundled WebExtension + Gecko ETP</div><div class="b">EasyList, uBlock uAssets and Hagezi lists. Licences are in <a class="link" href="/licenses">open-source licences</a>.</div></li>
+          <li class="spec"><h3>Builds</h3><div class="v">GitHub, Google Play, F-Droid</div><div class="b">GitHub has an in-app updater. Play uses Google's update API. F-Droid has no ad or Google code.</div></li>
+          <li class="spec"><h3>Languages</h3><div class="v">28 translations</div><div class="b">From Arabic and Chinese to Ukrainian and Vietnamese.</div></li>
+          <li class="spec"><h3>Licence</h3><div class="v">GNU GPL v3.0</div><div class="b">Source on <a class="link" href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer">GitHub</a>.</div></li>
         </ul>
 
         <div class="cli" data-reveal>
@@ -567,11 +598,11 @@
       <div class="container">
         <div class="cta" data-reveal>
           <div class="cta-shape" data-shape="cookie12" aria-hidden="true"><svg viewBox="0 0 100 100"><path d=""/></svg></div>
-          <h2 class="h2">Take your browser back.</h2>
-          <p>Free, open source, and built without a single tracker. Install the signed APK in under a minute.</p>
+          <h2 class="h2">Try Petal.</h2>
+          <p>Free and open source. Download the APK from GitHub Releases, or get it on Google Play.</p>
           <div class="cta-row">
             <a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn--inverse btn--lg" data-ripple>
-              <svg class="i"><use href="#i-download"/></svg><span>Download signed APK</span>
+              <svg class="i"><use href="#i-download"/></svg><span>Download APK</span>
             </a>
             <a href="https://github.com/shreyagarwal72/petal" target="_blank" rel="noopener noreferrer" class="btn btn--ghost-inverse btn--lg" data-ripple>
               <svg class="i"><use href="#i-github"/></svg><span>Source code</span>
@@ -588,7 +619,7 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <span class="brand"><span>Petal Browser</span></span>
-          <p>A browser that respects your attention, privacy, and device. Powered by Mozilla GeckoView 158 and Material 3 Expressive.</p>
+          <p>A private, open-source Android browser. Built on Mozilla GeckoView 159 with Material 3 Expressive.</p>
           <div class="badges">
             <img src="assets/badges/android.svg" height="28" alt="Android 8.0+">
             <img src="assets/badges/license.svg" height="28" alt="GPLv3 License">
@@ -601,8 +632,8 @@
             <ul class="footer-links">
               <li><a href="#hero">Overview</a></li>
               <li><a href="#differentiators">Why Petal</a></li>
-              <li><a href="#shapes">35 M3 shapes</a></li>
-              <li><a href="#media-player">Wavy seekbar</a></li>
+              <li><a href="#features">Features</a></li>
+              <li><a href="#shapes">35 shapes</a></li>
               <li><a href="/download">Download &amp; install</a></li>
             </ul>
           </div>
@@ -631,7 +662,7 @@
             <ul class="footer-links">
               <li><a href="/prd">Product requirements</a></li>
               <li><a href="/design">Design system</a></li>
-              <li><a href="/architecture">GeckoView pipeline</a></li>
+              <li><a href="/architecture">Architecture</a></li>
               <li><a href="https://github.com/shreyagarwal72/petal/releases/latest" target="_blank" rel="noopener noreferrer">Releases</a></li>
             </ul>
           </div>
@@ -640,13 +671,13 @@
 
       <div class="footer-bottom">
         <span>&copy; 2024–2026 Vanshu Agarwal and contributors. Distributed under the GNU General Public License v3.0.</span>
-        <span>GeckoView 158.0 · Jetpack Compose M3</span>
+        <span>v4.8 · GeckoView 159 · Kotlin &amp; Compose</span>
       </div>
     </div>
   </footer>
 
   <div class="snackbar" id="snackbar" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=158.0.1"></script>
+  <script src="app.js?v=159.0.1"></script>
 </body>
 </html>

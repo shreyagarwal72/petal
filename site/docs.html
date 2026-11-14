@@ -43,9 +43,9 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=158.0.1">
-  <link rel="stylesheet" href="/pages.css?v=158.0.1">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,25..151,100..1000&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=159.0.1">
+  <link rel="stylesheet" href="/pages.css?v=159.0.1">
 <style>
 .docs-hero-shapes{display:flex;gap:14px;flex-wrap:wrap;margin:22px 0 4px}
 .docs-shape{width:84px;height:84px;display:grid;place-items:center;color:var(--on-primary-container);animation:docs-float 6s ease-in-out infinite}
@@ -112,7 +112,7 @@
           </g>
         </svg>
         <span>Petal</span>
-        <span class="brand-tag">GeckoView 158</span>
+        <span class="brand-tag">v4.8 · Gecko 159</span>
       </a>
       <nav aria-label="Main">
         <ul class="nav-links" id="nav-links"><li><a href="/#differentiators">Why Petal</a></li><li><a href="/download">Download</a></li><li><a href="/faq">FAQ</a></li><li><a href="/changelog">Changelog</a></li><li><a href="/support">Support</a></li><li><a href="/privacy">Privacy</a></li></ul>
@@ -175,7 +175,7 @@
 <section id="getting-started"><h2>Getting started</h2>
 <ol>
 <li><strong>Install.</strong> Get Petal from <a href="https://play.google.com/store/apps/details?id=com.petal.browser">Google Play</a> or download the signed APK from <a href="https://github.com/shreyagarwal72/petal/releases/latest">GitHub Releases</a>. Petal needs Android 8.0 or newer.</li>
-<li><strong>Open and browse.</strong> There is no account to create. Type or paste an address, or search straight from the address bar.</li>
+<li><strong>Open and browse.</strong> There is no account to create (a Firefox Account is optional, for sync). Type or paste an address, or search straight from the address bar.</li>
 <li><strong>Make it yours.</strong> Open Settings to pick a palette, theme and layout (see <a href="#customize">Customize</a>).</li>
 </ol>
 <div class="callout tip">The GitHub build updates itself from GitHub Releases; the Play build updates through Google Play.</div>
@@ -189,10 +189,10 @@
 </section>
 <section id="privacy"><h2>Privacy &amp; security</h2>
 <ul>
-<li><strong>Ad and tracker blocking</strong> runs in a native Rust engine with uBlock and Hagezi lists, before content loads.</li>
+<li><strong>Ad and tracker blocking</strong> uses a built-in add-on with EasyList, uBlock and Hagezi lists, and cancels requests before they load.</li>
 <li><strong>Per-site shield</strong> lets you tune tracking protection for each website.</li>
 <li><strong>Password vault</strong> is stored locally, encrypted, and unlocked with biometrics.</li>
-<li><strong>No telemetry and no accounts.</strong></li>
+<li><strong>No analytics and no required account.</strong> You can optionally sign in with a Firefox Account to sync.</li>
 </ul>
 <p>Petal asks for permissions only when you use the related feature:</p>
 <div class="table-wrap"><table><thead><tr><th>Permission</th><th>Why</th></tr></thead><tbody>
@@ -236,7 +236,7 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <span class="brand"><span>Petal Browser</span></span>
-          <p>A browser that respects your attention, privacy, and device. Powered by Mozilla GeckoView 158 and Material 3 Expressive.</p>
+          <p>A private, open-source Android browser. Built on Mozilla GeckoView 159 with Material 3 Expressive.</p>
           <div class="badges">
             <img src="/assets/badges/android.svg" height="28" alt="Android 8.0+">
             <img src="/assets/badges/license.svg" height="28" alt="GPLv3 License">
@@ -284,11 +284,11 @@
       </div>
       <div class="footer-bottom">
         <span>&copy; 2024–2026 Vanshu Agarwal and contributors. Distributed under the GNU General Public License v3.0.</span>
-        <span>GeckoView 158.0 · Jetpack Compose M3</span>
+        <span>v4.8 · GeckoView 159 · Kotlin &amp; Compose</span>
       </div>
     </div>
   </footer>
 
-  <script src="/page.js?v=158.0.1" defer></script>
+  <script src="/page.js?v=159.0.1" defer></script>
 </body>
 </html>

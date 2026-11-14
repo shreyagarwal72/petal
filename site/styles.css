@@ -6,8 +6,8 @@
    ========================================================================== */
 
 :root {
-  --font-display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-body: 'Figtree', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Roboto Flex', 'Google Sans Flex', system-ui, sans-serif;
+  --font-body: 'Roboto Flex', Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-code: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Motion: spatial springs (can overshoot) and effect easing (never overshoots) */
@@ -224,7 +224,7 @@ code { font-family: var(--font-code); }
   box-shadow: inset 0 0 0 1px var(--outline-variant), 0 10px 30px -12px color-mix(in oklab, var(--on-surface) 35%, transparent);
 }
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; margin-right: auto; font-family: var(--font-display); font-weight: 800; font-size: 1.375rem; letter-spacing: -.03em; }
-.brand-mark { width: 38px; height: 38px; flex: none; padding: 4px; border-radius: 12px; background: linear-gradient(135deg, #FFF0EA, #FEE2D5); box-shadow: inset 0 0 0 1px rgba(160, 65, 6, 0.15), 0 2px 8px -2px rgba(160, 65, 6, 0.2); transition: border-radius var(--spring-slow-ms) var(--spring-slow), transform var(--spring-slow-ms) var(--spring-slow); }
+.brand-mark { width: 38px; height: 38px; flex: none; padding: 4px; border-radius: 12px; background: #FEE2D5; transition: border-radius var(--spring-slow-ms) var(--spring-slow), transform var(--spring-slow-ms) var(--spring-slow); }
 .brand:hover .brand-mark { border-radius: 50%; transform: rotate(45deg); }
 .brand-tag { display: none; padding: 4px 10px; border-radius: 999px; background: var(--surface-highest); color: var(--on-surface-variant); font-family: var(--font-body); font-size: .75rem; font-weight: 700; letter-spacing: 0; }
 
@@ -676,3 +676,75 @@ html[data-theme-mode="dark"] .lg-stage { --lg-tint: #000; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .lg-glass { background: color-mix(in srgb, var(--lg-tint) calc(var(--lg-op) * 100% + 25%), transparent); }
 }
+
+
+/* ==========================================================================
+   Material 3 Expressive layer
+   - Roboto Flex (the M3 Expressive typeface) with emphasised, width-tuned headlines
+   - Connected button group, grouped feature list with shape-shifting corners
+   - Eyebrow labels, flat tonal surfaces (no gradients, no glow)
+   ========================================================================== */
+body { font-variation-settings: 'opsz' 16, 'wdth' 100; }
+.display { font-weight: 900; font-variation-settings: 'opsz' 144, 'wdth' 110; letter-spacing: -.03em; line-height: .98; }
+.h2 { font-weight: 850; font-variation-settings: 'opsz' 96, 'wdth' 108; letter-spacing: -.025em; line-height: 1.04; }
+.h3 { font-weight: 750; font-variation-settings: 'opsz' 36, 'wdth' 104; letter-spacing: -.012em; }
+.eyebrow { font-size: .8125rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--primary); font-variation-settings: 'wdth' 112; }
+.panel .eyebrow, .section-head .eyebrow { margin-bottom: -6px; }
+a.link { color: var(--primary); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+
+/* Connected button group: outer ends fully round, inner corners small; pressed item swells */
+.btn-group { display: flex; flex-wrap: nowrap; gap: 2px; width: auto; max-width: 100%; }
+.btn-group .btn { flex: 0 1 auto; border-radius: 6px; min-width: 0; padding-inline: 18px; }
+.btn-group .btn:first-child { border-radius: 999px 6px 6px 999px; }
+.btn-group .btn:last-child { border-radius: 6px 999px 999px 6px; }
+.btn-group .btn:active { border-radius: 999px; transform: none; flex-grow: 1.15; }
+.btn-group .btn--lg { white-space: nowrap; padding-inline: 20px; }
+.btn--icon-only { width: 60px; padding: 0 !important; flex: 0 0 60px !important; }
+@media (max-width: 559px) {
+  .btn-group { display: grid; grid-template-columns: 1fr 1fr 60px; width: 100%; }
+  .btn-group .btn--filled { grid-column: 1 / -1; border-radius: 30px 30px 6px 6px; }
+  .btn-group .btn:nth-child(2) { border-radius: 6px 6px 6px 30px; }
+  .btn-group .btn:last-child { border-radius: 6px 6px 30px 6px; }
+}
+
+/* Grouped list: first and last items get large outer corners, middle items are tight */
+.feature-list { display: grid; gap: 3px; }
+.feature { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(14px, 3vw, 24px); align-items: start; padding: clamp(18px, 3vw, 28px); background: var(--surface-container); border-radius: 8px; transition: background-color .25s var(--ease), border-radius var(--spring-default-ms) var(--spring-default); }
+.feature:first-child { border-radius: clamp(28px, 4vw, 40px) clamp(28px, 4vw, 40px) 8px 8px; }
+.feature:last-child { border-radius: 8px 8px clamp(28px, 4vw, 40px) clamp(28px, 4vw, 40px); }
+@media (hover: hover) { .feature:hover { background: var(--surface-high); border-radius: 28px; } }
+.feature-ico { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 18px; background: var(--primary-container); color: var(--on-primary-container); transition: border-radius var(--spring-default-ms) var(--spring-default); }
+.feature:nth-child(3n+2) .feature-ico { background: var(--secondary-container); color: var(--on-secondary-container); border-radius: 50%; }
+.feature:nth-child(3n) .feature-ico { background: var(--tertiary-container); color: var(--on-tertiary-container); border-radius: 14px 26px 14px 26px; }
+.feature:hover .feature-ico { border-radius: 50%; }
+.feature .i { width: 24px; height: 24px; }
+.feature h3 { font-family: var(--font-display); font-size: 1.1875rem; font-weight: 750; letter-spacing: -.01em; margin-bottom: 4px; }
+.feature p { color: var(--on-surface-variant); text-wrap: pretty; }
+.feature-note { margin-top: 18px; padding-inline: clamp(4px, 2vw, 16px); color: var(--on-surface-variant); font-size: .9375rem; max-width: 52rem; text-wrap: pretty; }
+
+/* Plain tonal surfaces for the simulated phone, no tinted drop shadow */
+.phone { box-shadow: inset 0 0 0 1.5px oklch(.34 .02 var(--h)); }
+.cta .btn--inverse { background: var(--on-primary); color: var(--primary); }
+@media (prefers-reduced-motion: reduce) { .feature, .feature-ico, .btn-group .btn { transition: none; } }
+
+/* Nav: keep labels on one line; show the version tag only when there is room */
+.nav-links a { white-space: nowrap; padding-inline: 12px; }
+.brand-tag { white-space: nowrap; }
+@media (min-width: 560px) { .brand-tag { display: none; } }
+@media (min-width: 1240px) { .brand-tag { display: inline-block; } .nav-links a { padding-inline: 14px; } }
+/* Mobile button group: columns may shrink, labels may wrap */
+@media (max-width: 559px) {
+  .btn-group { grid-template-columns: minmax(0, 1fr) 60px; }
+  .btn-group .btn--lg { white-space: normal; padding-inline: 14px; }
+  .btn-group .btn--filled { grid-column: 1 / -1; }
+  .btn-group .btn:nth-child(2) { border-radius: 6px 6px 6px 30px; }
+}
+
+.brand-tag { display: none !important; }
+@media (max-width: 559px) {
+  .btn-group .btn--filled:first-child { border-radius: 30px 30px 6px 6px; }
+  .btn-group .btn:nth-child(2) { border-radius: 6px 6px 6px 30px; }
+  .btn-group .btn:last-child { border-radius: 6px 6px 30px 6px; }
+}
+@media (min-width: 960px) { .appbar-inner .brand { margin-right: 20px; } .nav-links { gap: 0; } .nav-links a { padding-inline: 11px; } }
+@media (min-width: 1240px) { .nav-links a { padding-inline: 14px; } }
