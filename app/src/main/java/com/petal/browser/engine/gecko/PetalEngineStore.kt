@@ -136,7 +136,11 @@ object PetalEngineStore {
         )
         val uploadCleaner = getFileUploadsDirCleaner(appContext)
         val rcStorage = getRecentlyClosedStorage(appContext)
-        val recentlyClosedMiddleware = RecentlyClosedMiddleware(lazy { rcStorage })
+        val recentlyClosedMiddleware = RecentlyClosedMiddleware(
+            storage = lazy { rcStorage },
+            maxSavedTabs = 25,
+            scope = mainScope
+        )
 
         val newStore = BrowserStore(
             initialState = BrowserState(),
