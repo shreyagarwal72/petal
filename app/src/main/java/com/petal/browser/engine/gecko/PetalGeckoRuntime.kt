@@ -169,6 +169,7 @@ object PetalGeckoRuntime {
             // intercept login forms via the WebExtension loginAutofill API. Without this,
             // extensions receive the form events but cannot fill credentials.
             .loginAutofillEnabled(sp.getBoolean("sp_login_autofill_enabled", true))
+            .forceUserScalableEnabled(sp.getBoolean("sp_force_enable_zoom", true))
 
         if (userChangedFontSize && fontScale != 1.0f) {
             settingsBuilder.automaticFontSizeAdjustment(false)
@@ -352,6 +353,12 @@ object PetalGeckoRuntime {
                     }
                 } catch (t: Throwable) {
                     Log.w(TAG, "Could not sync fontSizeFactor: ${t.message}")
+                }
+
+                try {
+                    rt.settings.forceUserScalableEnabled = sp.getBoolean("sp_force_enable_zoom", true)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Could not sync forceUserScalableEnabled: ${t.message}")
                 }
 
                 // 2. Enhanced Tracking Protection & AdBlock
