@@ -1255,7 +1255,7 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
 // ==========================================
 @Composable
 private fun DefaultFontStepPage(sp: SharedPreferences) {
-    var fontSelection by remember { mutableStateOf(sp.getString("sp_font_family_option", "GS_FLEX_PERMANENT") ?: "GS_FLEX_PERMANENT") }
+    var fontSelection by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
 
     Spacer(Modifier.height(12.dp))
 
@@ -1281,7 +1281,7 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = stringResource(R.string.ui_choose_between_petal_signature_google),
+        text = "Choose your preferred typography style or import a custom font file.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -1295,11 +1295,12 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            val isFlexSelected = fontSelection == "GS_FLEX_PERMANENT"
+            val isFlexSelected = fontSelection == "PETAL" || fontSelection == "GS_FLEX"
             Surface(
                 onClick = {
-                    fontSelection = "GS_FLEX_PERMANENT"
-                    sp.edit().putString("sp_app_font", "PETAL").putString("sp_font_family_option", "GS_FLEX_PERMANENT").apply()
+                    fontSelection = "PETAL"
+                    sp.edit().putString("sp_app_font", "PETAL").apply()
+                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
                 },
                 color = if (isFlexSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 shape = RoundedCornerShape(16.dp),
@@ -1309,18 +1310,63 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                     Icon(Icons.Rounded.FontDownload, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.ui_petal_signature), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text("Google Sans Flex", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
                         Text(stringResource(R.string.ui_google_sans_flex_variable_font), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (isFlexSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
             }
 
-            val isCustomSelected = fontSelection == "CUSTOM_STORAGE"
+            val isNunitoSelected = fontSelection == "NUNITO"
             Surface(
                 onClick = {
-                    fontSelection = "CUSTOM_STORAGE"
-                    sp.edit().putString("sp_app_font", "CUSTOM").putString("sp_font_family_option", "CUSTOM_STORAGE").apply()
+                    fontSelection = "NUNITO"
+                    sp.edit().putString("sp_app_font", "NUNITO").apply()
+                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                },
+                color = if (isNunitoSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Nunito", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text("Zenith soft geometric rounded variable font", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (isNunitoSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+
+            val isSystemSelected = fontSelection == "SYSTEM"
+            Surface(
+                onClick = {
+                    fontSelection = "SYSTEM"
+                    sp.edit().putString("sp_app_font", "SYSTEM").apply()
+                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                },
+                color = if (isSystemSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Devices, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("System Default", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text("Follows device OS typography and accessibility scale", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (isSystemSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+
+            val isCustomSelected = fontSelection == "CUSTOM"
+            Surface(
+                onClick = {
+                    fontSelection = "CUSTOM"
+                    sp.edit().putString("sp_app_font", "CUSTOM").apply()
+                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
                 },
                 color = if (isCustomSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 shape = RoundedCornerShape(16.dp),

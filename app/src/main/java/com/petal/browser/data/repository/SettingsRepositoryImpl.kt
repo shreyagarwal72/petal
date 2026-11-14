@@ -562,6 +562,7 @@ class SettingsRepositoryImpl @Inject constructor(
     // ── Setters ───────────────────────────────────────────────────────────────
     override suspend fun setAppFont(font: AppFont) {
         sp.edit().putString("sp_app_font", font.name).apply()
+        com.petal.browser.ui.theme.PetalThemePrefs.bump()
     }
 
     override suspend fun setFontWidth(width: Float) {
@@ -578,10 +579,12 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setGsFlexPreset(preset: GSFlexPreset) {
         sp.edit().putString("sp_gs_flex_preset", preset.name).apply()
+        com.petal.browser.ui.theme.PetalThemePrefs.bump()
     }
 
     override suspend fun setGsFlexSettings(settings: com.petal.browser.ui.theme.GSFlexSettings) {
         com.petal.browser.ui.theme.saveGSFlexSettings(sp, settings)
+        com.petal.browser.ui.theme.PetalThemePrefs.bump()
     }
 
     override suspend fun setColorStyle(style: ColorStyle) {

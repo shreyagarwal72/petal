@@ -1091,6 +1091,7 @@ fun AppearanceSettingsScreenContent(
                         },
                         selected = appFont,
                         minHeight = 44.dp,
+                        scrollableIfCrowded = true,
                         onSelect = { font ->
                             if (font == AppFont.CUSTOM) {
                                 val isUnlocked = com.petal.browser.account.progress.PetalProgressStore.isUnlocked(
@@ -1350,6 +1351,88 @@ fun AppearanceSettingsScreenContent(
                                         )
                                     }
                                 }
+                            }
+                        }
+                    }
+
+                    // Nunito Typography Preview (Zenith Rounded Variable)
+                    AnimatedVisibility(visible = appFont == AppFont.NUNITO) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                .padding(20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Nunito",
+                                    style = com.petal.browser.ui.theme.NunitoTypography.displayLarge.copy(
+                                        fontSize = 38.sp,
+                                        lineHeight = 42.sp,
+                                        letterSpacing = (-1.0).sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "Zenith Soft Geometric Rounded",
+                                    style = com.petal.browser.ui.theme.NunitoTypography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "Warm, balanced, rounded typography inspired by the Zenith design language.",
+                                    style = com.petal.browser.ui.theme.NunitoTypography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // System Typography Preview (Device Platform Default)
+                    AnimatedVisibility(visible = appFont == AppFont.SYSTEM) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                .padding(20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "System Default",
+                                    style = com.petal.browser.ui.theme.SystemTypography.displayLarge.copy(
+                                        fontSize = 38.sp,
+                                        lineHeight = 42.sp,
+                                        letterSpacing = (-0.5).sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "Platform Native Typescale",
+                                    style = com.petal.browser.ui.theme.SystemTypography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "Uses your device's system font and follows OS accessibility typography settings.",
+                                    style = com.petal.browser.ui.theme.SystemTypography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
                             }
                         }
                     }

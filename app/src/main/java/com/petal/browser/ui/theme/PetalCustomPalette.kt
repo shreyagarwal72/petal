@@ -194,6 +194,7 @@ object PetalThemePrefs {
         PetalCustomPalette.KEY_SEED, PetalCustomPalette.KEY_SECONDARY, PetalCustomPalette.KEY_TERTIARY,
         PetalPaletteMix.KEY_ENABLED, PetalPaletteMix.KEY_SECONDARY, PetalPaletteMix.KEY_TERTIARY,
         "sp_app_font", "sp_font_width", "sp_font_weight", "sp_font_roundness", "sp_custom_font_path",
+        "sp_gs_flex_preset",
         "sp_blur_effect_enabled", "sp_expressive_shapes_35_enabled", "sp_corner_radius",
         "sp_high_refresh_rate", "sp_touch_haptics"
     )
@@ -202,7 +203,11 @@ object PetalThemePrefs {
         if (installed) return
         installed = true
         PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
-            .registerOnSharedPreferenceChangeListener { _, key -> if (key == null || key in keys) revision++ }
+            .registerOnSharedPreferenceChangeListener { _, key ->
+                if (key == null || key in keys || key.startsWith("sp_gs_") || key.startsWith("sp_custom_") || key.startsWith("sp_font_")) {
+                    revision++
+                }
+            }
     }
 
     /** Synchronously bumps theme revision to trigger instantaneous recomposition in Compose. */

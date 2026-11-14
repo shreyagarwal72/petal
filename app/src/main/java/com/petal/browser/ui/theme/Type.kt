@@ -15,7 +15,9 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 
 enum class AppFont(val label: String) {
-    PETAL("Petal Signature"),
+    PETAL("Google Sans Flex"),
+    NUNITO("Nunito"),
+    SYSTEM("System"),
     CUSTOM("Custom Font");
 
     companion object {
@@ -23,8 +25,10 @@ enum class AppFont(val label: String) {
             if (name.isNullOrBlank()) return PETAL
             return when (name.trim().uppercase()) {
                 "CUSTOM", "CUSTOM_STORAGE", "CUSTOM_FONT", "CUSTOM_FILE", "CUSTOM_TTF" -> CUSTOM
-                // Google Sans Flex ("GS_FLEX") IS the Petal Signature family; presets live in GSFlexPreset.
-                "PETAL", "GS_FLEX", "GSFLEX", "GOOGLE_SANS_FLEX", "PETAL_SIGNATURE" -> PETAL
+                "NUNITO" -> NUNITO
+                "SYSTEM", "DEFAULT" -> SYSTEM
+                // Google Sans Flex ("GS_FLEX") IS the Petal / Zenith Signature family; presets live in GSFlexPreset.
+                "PETAL", "GS_FLEX", "GSFLEX", "GOOGLE_SANS_FLEX", "PETAL_SIGNATURE", "ZENITH" -> PETAL
                 else -> PETAL
             }
         }
@@ -57,17 +61,32 @@ object PetalFontHelper {
     fun getAppTypeface(context: android.content.Context): android.graphics.Typeface {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
         val appFont = AppFont.fromName(sp.getString("sp_app_font", "PETAL"))
-        if (appFont == AppFont.CUSTOM) {
-            val path = sp.getString("sp_custom_font_path", null)
-            val defaultCustom = context.filesDir.resolve("custom_font.ttf")
-            val file = if (!path.isNullOrBlank() && java.io.File(path).exists()) java.io.File(path) else if (defaultCustom.exists()) defaultCustom else null
-            if (file != null && file.canRead()) {
+        return when (appFont) {
+            AppFont.SYSTEM -> android.graphics.Typeface.DEFAULT
+            AppFont.NUNITO -> {
                 try {
-                    return android.graphics.Typeface.createFromFile(file)
-                } catch (_: Exception) {}
+                    androidx.core.content.res.ResourcesCompat.getFont(context, R.font.nunito_variable)
+                        ?: android.graphics.Typeface.DEFAULT
+                } catch (_: Throwable) {
+                    android.graphics.Typeface.DEFAULT
+                }
             }
+            AppFont.CUSTOM -> {
+                val path = sp.getString("sp_custom_font_path", null)
+                val defaultCustom = context.filesDir.resolve("custom_font.ttf")
+                val file = if (!path.isNullOrBlank() && java.io.File(path).exists()) java.io.File(path) else if (defaultCustom.exists()) defaultCustom else null
+                if (file != null && file.canRead()) {
+                    try {
+                        android.graphics.Typeface.createFromFile(file)
+                    } catch (_: Exception) {
+                        petalSignatureTypeface(context)
+                    }
+                } else {
+                    petalSignatureTypeface(context)
+                }
+            }
+            AppFont.PETAL -> petalSignatureTypeface(context)
         }
-        return petalSignatureTypeface(context)
     }
 
     /**
@@ -208,112 +227,41 @@ fun saveCustomFontSettings(sp: android.content.SharedPreferences, settings: Cust
 }
 
 @OptIn(ExperimentalTextApi::class)
-private fun variableFont(
-    resId: Int,
-    weight: Int,
-    width: Float = 100f,
-    roundness: Float = 0f
-): FontFamily {
-    val clampedWeight = weight.coerceIn(100, 900)
-    val clampedWidth = width.coerceIn(75f, 125f)
-    val clampedRoundness = roundness.coerceIn(0f, 100f)
-
-    return try {
-        FontFamily(
-            Font(
-                resId = resId,
-                variationSettings = FontVariation.Settings(
-                    FontVariation.weight(clampedWeight),
-                    FontVariation.width(clampedWidth),
-                    FontVariation.Setting("ROND", clampedRoundness),
-                    FontVariation.Setting("wght", clampedWeight.toFloat()),
-                    FontVariation.Setting("wdth", clampedWidth)
-                ),
-                weight = FontWeight(clampedWeight)
-            )
-        )
-    } catch (e: Throwable) {
-        try {
-            FontFamily(Font(resId = resId, weight = FontWeight(clampedWeight)))
-        } catch (t: Throwable) {
-            FontFamily.Default
-        }
-    }
-}
-
-private fun nunitoFont(weight: Int, width: Float, roundness: Float): FontFamily =
-    variableFont(R.font.nunito_variable, weight, width, roundness)
-
-private data class Tiers(
-    val display: FontFamily,
-    val headline: FontFamily,
-    val title: FontFamily,
-    val body: FontFamily,
-    val label: FontFamily
+private fun nunitoFont(weight: FontWeight, axisWeight: Int): Font = Font(
+    resId = R.font.nunito_variable,
+    weight = weight,
+    variationSettings = FontVariation.Settings(FontVariation.weight(axisWeight))
 )
 
-private fun buildTypography(t: Tiers): Typography = Typography(
-    displayLarge = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Normal, fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
-    displayMedium = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Normal, fontSize = 45.sp, lineHeight = 52.sp, letterSpacing = 0.sp),
-    displaySmall = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Normal, fontSize = 36.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
-    headlineLarge = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.SemiBold, fontSize = 32.sp, lineHeight = 40.sp, letterSpacing = 0.sp),
-    headlineMedium = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 36.sp, letterSpacing = 0.sp),
-    headlineSmall = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 32.sp, letterSpacing = 0.sp),
-    titleLarge = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp, letterSpacing = 0.sp),
-    titleMedium = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
-    titleSmall = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-    bodyLarge = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.5.sp),
-    bodyMedium = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.25.sp),
-    bodySmall = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
-    labelLarge = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-    labelMedium = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp),
-    labelSmall = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp)
+val NunitoFontFamily = FontFamily(
+    nunitoFont(FontWeight.Normal, 400),
+    nunitoFont(FontWeight.Medium, 500),
+    nunitoFont(FontWeight.SemiBold, 600),
+    nunitoFont(FontWeight.Bold, 700)
 )
 
-@OptIn(ExperimentalTextApi::class)
-private fun expressivePetalTypography(): Typography {
-    fun flex(weight: Float, width: Float, rond: Float, opsz: Float): FontFamily = try {
-        FontFamily(Font(
-            resId = R.font.google_sans_flex_variable,
-            weight = FontWeight(weight.toInt().coerceIn(1, 1000)),
-            variationSettings = FontVariation.Settings(
-                FontVariation.weight(weight.toInt().coerceIn(1, 1000)),
-                FontVariation.width(width),
-                FontVariation.Setting("ROND", rond),
-                FontVariation.Setting("opsz", opsz),
-                FontVariation.grade(0),
-                FontVariation.slant(0f),
-            ),
-        ))
-    } catch (_: Throwable) { FontFamily.Default }
+fun createBasicTypography(fontFamily: FontFamily): Typography = Typography(
+    displayLarge = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.Normal, fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
+    displayMedium = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.Normal, fontSize = 45.sp, lineHeight = 52.sp, letterSpacing = 0.sp),
+    displaySmall = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.Normal, fontSize = 36.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
+    headlineLarge = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.SemiBold, fontSize = 32.sp, lineHeight = 40.sp, letterSpacing = 0.sp),
+    headlineMedium = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 36.sp, letterSpacing = 0.sp),
+    headlineSmall = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 32.sp, letterSpacing = 0.sp),
+    titleLarge = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp, letterSpacing = 0.sp),
+    titleMedium = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
+    titleSmall = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+    bodyLarge = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.5.sp),
+    bodyMedium = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.25.sp),
+    bodySmall = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
+    labelLarge = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+    labelMedium = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp),
+    labelSmall = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp)
+)
 
-    fun style(weight: Float, width: Float, rond: Float, size: Int, line: Int) = TextStyle(
-        fontFamily = flex(weight, width, rond, size.toFloat()),
-        fontWeight = FontWeight(weight.toInt().coerceIn(1, 1000)), fontSize = size.sp, lineHeight = line.sp,
-    )
+val NunitoTypography: Typography = createBasicTypography(NunitoFontFamily)
+val SystemTypography: Typography = createBasicTypography(FontFamily.Default)
 
-    return Typography(
-        displayLarge = style(760f, 122f, 42f, 57, 64), displayMedium = style(740f, 120f, 40f, 45, 52),
-        displaySmall = style(720f, 118f, 38f, 36, 44), headlineLarge = style(800f, 122f, 40f, 32, 40),
-        headlineMedium = style(780f, 120f, 38f, 28, 36), headlineSmall = style(760f, 116f, 36f, 24, 32),
-        titleLarge = style(640f, 110f, 30f, 22, 28), titleMedium = style(600f, 106f, 28f, 16, 24),
-        titleSmall = style(580f, 105f, 26f, 14, 20), bodyLarge = style(440f, 102f, 18f, 16, 24),
-        bodyMedium = style(430f, 102f, 18f, 15, 22), bodySmall = style(420f, 100f, 16f, 13, 18),
-        labelLarge = style(680f, 108f, 46f, 14, 20), labelMedium = style(660f, 108f, 44f, 12, 16),
-        labelSmall = style(660f, 108f, 44f, 11, 16),
-    )
-}
-
-private fun systemTypography(fontWeight: Int): Typography {
-    val boldWeight = fontWeight.coerceAtLeast(750)
-    val displayF = variableFont(R.font.google_sans_flex_variable, 950, 92f, 100f)
-    val headlineF = variableFont(R.font.google_sans_flex_variable, 900, 92f, 100f)
-    val titleF = variableFont(R.font.google_sans_flex_variable, 850, 92f, 100f)
-    val bodyF = variableFont(R.font.google_sans_flex_variable, boldWeight, 92f, 100f)
-    val labelF = variableFont(R.font.google_sans_flex_variable, (boldWeight + 50).coerceAtMost(900), 92f, 100f)
-    val t = Tiers(displayF, headlineF, titleF, bodyF, labelF)
-    return buildTypography(t)
-}
+private fun systemTypography(fontWeight: Int = 400): Typography = SystemTypography
 
 enum class GSFlexPreset(val label: String) {
     PETAL_SIGNATURE("Petal Signature"),
@@ -533,34 +481,30 @@ fun petalTypography(
     customFontSettings: CustomFontSettings = CustomFontSettings()
 ): Typography = try {
     when (appFont) {
-        AppFont.PETAL -> {
-            createGsFlexTypography(gsFlexSettings)
-        }
+        AppFont.PETAL -> createGsFlexTypography(gsFlexSettings)
+        AppFont.NUNITO -> NunitoTypography
+        AppFont.SYSTEM -> SystemTypography
         AppFont.CUSTOM -> {
             val validPath = customFontPath?.takeIf { it.isNotBlank() }
             val file = if (validPath != null) java.io.File(validPath) else null
 
             if (file != null && file.exists() && file.canRead()) {
-                val displayFont = try {
+                val customFamily = try {
                     FontFamily(Font(file, variationSettings = customFontSettings.display.toVariationSettings()))
                 } catch (_: Throwable) {
-                    try { FontFamily(Font(file)) } catch (_: Throwable) {
-                        try { FontFamily(android.graphics.Typeface.createFromFile(file)) } catch (_: Throwable) { null }
+                    try {
+                        FontFamily(Font(file))
+                    } catch (_: Throwable) {
+                        try {
+                            FontFamily(android.graphics.Typeface.createFromFile(file))
+                        } catch (_: Throwable) {
+                            null
+                        }
                     }
                 }
-                val headlineFont = try {
-                    FontFamily(Font(file, variationSettings = customFontSettings.headline.toVariationSettings()))
-                } catch (_: Throwable) {
-                    displayFont
-                }
-                val bodyFont = try {
-                    FontFamily(Font(file, variationSettings = customFontSettings.body.toVariationSettings()))
-                } catch (_: Throwable) {
-                    displayFont
-                }
 
-                if (displayFont != null && headlineFont != null && bodyFont != null) {
-                    buildTypography(Tiers(displayFont, headlineFont, headlineFont, bodyFont, bodyFont))
+                if (customFamily != null) {
+                    createBasicTypography(customFamily)
                 } else {
                     createGsFlexTypography(gsFlexSettings)
                 }
@@ -570,7 +514,7 @@ fun petalTypography(
         }
     }
 } catch (e: Throwable) {
-    systemTypography(fontWeight)
+    SystemTypography
 }
 
 val StrideTypography: Typography = Typography()

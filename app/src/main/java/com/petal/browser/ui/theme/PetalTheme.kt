@@ -406,6 +406,7 @@ fun PetalExpressiveTheme(
                 darkTheme = darkTheme,
                 useAmoled = useAmoled,
                 useMiuixOs4 = layoutSettingsState.useMiuixOs4,
+                typography = effectiveTypography,
                 content = { com.petal.browser.ui.selection.PetalTextToolbarProvider(content) }
             )
         } else {

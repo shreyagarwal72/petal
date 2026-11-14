@@ -68,6 +68,7 @@ fun PetalMiuixTheme(
     useAmoled: Boolean = false,
     useMiuixOs4: Boolean = true,
     backdrop: PetalBackdrop? = null,
+    typography: Typography = MaterialTheme.typography,
     content: @Composable () -> Unit,
 ) {
     val view = LocalView.current
@@ -153,6 +154,7 @@ fun PetalMiuixTheme(
         MaterialTheme(
             colorScheme = bridgeColorScheme,
             shapes = squircleShapes,
+            typography = typography,
             content = content,
         )
     }
