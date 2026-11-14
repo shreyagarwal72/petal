@@ -5,7 +5,7 @@
     <string name="app_always">دائماً</string>
     <string name="app_restart">عند إعادة التشغيل</string>
     <string name="app_session">… في الدورة الحالية؟</string>
-    <string name="app_name">المتصفح الحر Petal</string>
+    <string name="app_name">متصفح Petal</string>
     <string name="app_ok">موافق</string>
     <string name="app_no">لا يوجد</string>
     <string name="app_help">مساعدة</string>
@@ -139,8 +139,8 @@
     <string name="settings_data_restore">يعيد</string>
     <string name="toast_input_empty">لم تُدخل أي شيء.</string>
     <string name="toast_webview_forward">لا يمكن تحميل الموقع التالي</string>
-    <string name="toast_restart">يجب عليك إعادة تشغيل المتصفح الحر\"Petal\" لتطبيق التغييرات. أغلق الآن؟</string>
-    <string name="toast_quit">أتريد إنهاء المتصفح الحر\"Petal\"؟</string>
+    <string name="toast_restart">يجب عليك إعادة تشغيل متصفح Petal لتطبيق التغييرات. أغلق الآن؟</string>
+    <string name="toast_quit">أتريد إنهاء متصفح Petal؟</string>
     <string name="toast_quit_TAB">أتريد إغلاق التبويب؟</string>
     <string name="toast_unsecured">يستخدم الموقع اتصالا غير آمن (\"http\"). أجرب اتصالا آمنا (\"https\")؟</string>
     <string name="toast_backup">اعمل نسخا احتياطيا للبيانات؟ هذا سيستبدل النسخ الاحتياطي القديم.</string>
@@ -151,8 +151,8 @@
     <string name="menu_nightView">عرض ليلي</string>
     <string name="setting_title_camera">السماح باستخدام الكاميرا</string>
     <string name="setting_title_microphone">السماح باستخدام لاقط الصوت</string>
-    <string name="setting_summary_tabsReload">إعادة تحميل آخر علامات التبويب المفتوحة، عند بدء المتصفح الحر Petal.</string>
-    <string name="setting_summary_tabsRestore">استعادة علامات التبويب عندما يقتل المتصفح الحر Petal بواسطة النظام.</string>
+    <string name="setting_summary_tabsReload">إعادة تحميل آخر علامات التبويب المفتوحة، عند بدء متصفح Petal.</string>
+    <string name="setting_summary_tabsRestore">استعادة علامات التبويب عندما يقتل متصفح Petal بواسطة النظام.</string>
     <string name="hint_DRM_Media">السماح بتشغيل الوسائط محمية الحقوق الرقمية DRM؟</string>
     <string name="menu_reload">إعادة تحميل</string>
     <string name="menu_restart">إعادة تشغيل وإعادة تحميل علامات التبويب</string>

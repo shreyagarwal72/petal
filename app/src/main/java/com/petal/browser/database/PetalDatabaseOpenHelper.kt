@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper
 
 /**
  * Modern SQLiteOpenHelper managing Petal's local bookmarks, history, whitelist, and session databases.
- * Modernized from legacy FOSS Browser RecordHelper.
+ * Modernized from legacy Petal Browser RecordHelper.
  */
 class PetalDatabaseOpenHelper(context: Context?) :
     SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {

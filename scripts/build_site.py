@@ -210,13 +210,13 @@ def build_changelog() -> None:
     )
     upstream_block = (
         '<section id="foss-browser-history" class="upstream">'
-        "<h2>Before the fork: FOSS Browser history</h2>"
+        "<h2>Before the fork: Petal Browser history</h2>"
         "<p>Petal began as a fork of FOSS Browser. These are that project&rsquo;s own release notes, kept for "
         "attribution and completeness. Version numbers here belong to FOSS Browser, not Petal.</p>"
-        f'<details class="faq" id="fb-details"><summary>Show {len(up_html)} earlier FOSS Browser releases</summary>'
+        f'<details class="faq" id="fb-details"><summary>Show {len(up_html)} earlier Petal Browser releases</summary>'
         f'<div class="faq-a">{"".join(up_html)}</div></details></section>'
     )
-    toc.append(("foss-browser-history", "FOSS Browser history"))
+    toc.append(("foss-browser-history", "Petal Browser history"))
     body = tools + "\n".join(petal_html) + "\n" + upstream_block
     make_page(
         "/changelog", "Changelog",
@@ -400,7 +400,7 @@ CSS = f"""
 .license-text {{ max-height: 70vh; overflow: auto; padding: 20px; border-radius: 20px; background: var(--surface-container); font-family: var(--font-code); font-size: .8125rem; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--on-surface); }}
 """
 
-JS = """/* Petal changelog: live search over releases, and opens the FOSS Browser history when a link points into it. */
+JS = """/* Petal changelog: live search over releases, and opens the Petal Browser history when a link points into it. */
 (function () {
   var q = document.getElementById('cl-search');
   if (!q) return;

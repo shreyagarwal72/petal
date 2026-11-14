@@ -13,7 +13,7 @@ import java.util.LinkedList
 
 /**
  * Modern repository managing bookmarks, browsing history, and protected/standard domain lists.
- * Modernized from legacy FOSS Browser database access object.
+ * Modernized from legacy Petal Browser database access object.
  */
 open class HistoryBookmarkRepository(context: Context?) {
 

@@ -1,4 +1,4 @@
-/* Petal changelog: live search over releases, and opens the FOSS Browser history when a link points into it. */
+/* Petal changelog: live search over releases, and opens the Petal Browser history when a link points into it. */
 (function () {
   var q = document.getElementById('cl-search');
   if (!q) return;

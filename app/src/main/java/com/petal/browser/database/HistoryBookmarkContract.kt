@@ -3,7 +3,7 @@ package com.petal.browser.database
 /**
  * SQLite database contract for Petal Browser.
  * Defines table names, column names, and SQL schema strings for bookmarks, history, and domain profiles.
- * Modernized from legacy FOSS Browser RecordUnit.
+ * Modernized from legacy Petal Browser RecordUnit.
  */
 open class HistoryBookmarkContract {
     companion object {

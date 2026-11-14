@@ -4,7 +4,7 @@ import com.petal.browser.unit.PetalAndroidUtils
 
 /**
  * Modern data model representing a browser history entry or bookmark item.
- * Refactored from legacy FOSS Browser Record POJO.
+ * Refactored from legacy Petal Browser Record POJO.
  */
 open class HistoryBookmarkItem(
     var title: String = "",

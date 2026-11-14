@@ -1,9 +1,9 @@
 package com.petal.browser.database
 
 /**
- * @deprecated Legacy FOSS Browser model class. Use [HistoryBookmarkItem] instead.
+ * @deprecated Legacy Petal Browser model class. Use [HistoryBookmarkItem] instead.
  */
-@Deprecated("Legacy FOSS Browser model class. Use HistoryBookmarkItem instead.")
+@Deprecated("Legacy Petal Browser model class. Use HistoryBookmarkItem instead.")
 open class Record : HistoryBookmarkItem {
     constructor() : super()
     constructor(title: String?, url: String?, time: Long, iconColor: Long) : super(title, url, time, iconColor)

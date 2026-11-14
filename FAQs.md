@@ -22,7 +22,7 @@ Petal Browser includes:
 - High-speed download manager with status bar live alerts
 - Native full-screen media player with PiP and gesture controls
 
-Aside from the features above, FOSS Browser is designed with all the basic features of a browser. 
+Aside from the features above, Petal Browser is designed with all the basic features of a browser. 
 
 ---
 
@@ -43,7 +43,7 @@ To customize the app's UI;
 
 ### How do I bookmark a webpage, or add it to home?
 
-Bookmarking a webpage on FOSS Browser is quite simple. First;
+Bookmarking a webpage on Petal Browser is quite simple. First;
 
 - Be on the webpage you wish to add to bookmarks or homepage. 
 - Access the options menu by clicking the 3 dots beside the navigation bar
