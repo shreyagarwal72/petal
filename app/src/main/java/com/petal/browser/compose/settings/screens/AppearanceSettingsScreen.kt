@@ -9,6 +9,15 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.theme.layout.UiExperience
+import com.petal.browser.ui.theme.layout.PetalLayoutState
+import com.petal.browser.ui.theme.layout.PetalLayoutSettings
+import com.petal.browser.ui.theme.layout.PetalSwitchType
+import com.petal.browser.ui.theme.layout.PetalSliderType
+import com.petal.browser.ui.theme.layout.PetalShapeType
+import com.petal.browser.ui.theme.layout.PetalContainmentShapeChoice
+import com.petal.browser.ui.theme.layout.PetalBadgeShape
+import com.petal.browser.ui.theme.layout.rememberPetalLayoutSettings
 
 import android.app.Activity
 import android.content.Context
@@ -375,6 +384,40 @@ fun AppearanceSettingsScreenContent(
                 onBack = onNavigateBack
             )
 
+            val petalLayoutSettings = rememberPetalLayoutSettings()
+            val activeUiExperience = petalLayoutSettings.uiExperience
+
+            val onSelectExperience: (UiExperience) -> Unit = { exp ->
+                val isGlass = (exp == UiExperience.LIQUID_GLASS)
+                onLiquidGlassEnabledChange(isGlass)
+                val sp = PreferenceManager.getDefaultSharedPreferences(context)
+                sp.edit().putBoolean("sp_liquid_glass_enabled", isGlass).apply()
+                PetalLayoutState.update(context) { current ->
+                    when (exp) {
+                        UiExperience.MIUIX -> current.copy(
+                            uiExperience = exp,
+                            useMiuixOs4 = true,
+                            switchType = PetalSwitchType.HYPEROS,
+                            sliderType = PetalSliderType.HYPEROS,
+                            shapeType = PetalShapeType.SQUIRCLE,
+                            containmentShape = PetalContainmentShapeChoice.SQUIRCLE,
+                            badgeShape = PetalBadgeShape.FOLLOW
+                        )
+                        UiExperience.LIQUID_GLASS -> current.copy(
+                            uiExperience = exp,
+                        )
+                        UiExperience.MATERIAL_EXPRESSIVE -> current.copy(
+                            uiExperience = exp,
+                            switchType = PetalSwitchType.MATERIAL_YOU,
+                            sliderType = PetalSliderType.FANCY,
+                            shapeType = PetalShapeType.ROUNDED,
+                            containmentShape = PetalContainmentShapeChoice.FOLLOW_APP,
+                            badgeShape = PetalBadgeShape.MIXED
+                        )
+                    }
+                }
+            }
+
             val scrollState = rememberScrollState()
             Column(
                 modifier = Modifier
@@ -528,16 +571,6 @@ fun AppearanceSettingsScreenContent(
                     }
                 }
 
-                // Expressive button shapes (Expressive Keyboard style shape system)
-                PetalSettingsSection(
-                    title = "Button Shapes",
-                    iconRes = com.petal.browser.R.drawable.icon_cookie,
-                    cardId = "appearance_button_shapes",
-                    targetHighlightId = targetHighlightItemId
-                ) {
-                    PetalButtonShapePicker()
-                }
-
                 // Section 1: App Theme & Dynamic Color Palette
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_theme_color_palette),
@@ -545,65 +578,6 @@ fun AppearanceSettingsScreenContent(
                     cardId = "appearance_theme",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    var appLaunchAnim by remember {
-                        mutableStateOf(PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_app_launch_animation", true))
-                    }
-                    var showSplashPreview by remember { mutableStateOf(false) }
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
-                        title = "Quantum Web Launch Animation",
-                        subtitle = "Procedural particle stream of web icons during app startup",
-                        icon = Icons.Rounded.AutoAwesome,
-                        checked = appLaunchAnim,
-                        onCheckedChange = { checked ->
-                            appLaunchAnim = checked
-                            PreferenceManager.getDefaultSharedPreferences(context).edit()
-                                .putBoolean("sp_app_launch_animation", checked)
-                                .apply()
-                        }
-                    )
-
-                    if (appLaunchAnim) {
-                        Spacer(Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            FilledTonalButton(
-                                onClick = { showSplashPreview = true },
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.PlayArrow,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text("Preview Animation")
-                            }
-                        }
-                    }
-
-                    if (showSplashPreview) {
-                        androidx.compose.ui.window.Dialog(
-                            onDismissRequest = { showSplashPreview = false },
-                            properties = androidx.compose.ui.window.DialogProperties(
-                                usePlatformDefaultWidth = false,
-                                decorFitsSystemWindows = false
-                            )
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                com.petal.browser.compose.splash.PetalSplashScreen(
-                                    onSplashComplete = { showSplashPreview = false },
-                                    durationMs = 2200L
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-
                     Text(
                         stringResource(R.string.ui_customize_app_color_schemes_dynamic),
                         style = MaterialTheme.typography.bodySmall,
@@ -1094,18 +1068,6 @@ fun AppearanceSettingsScreenContent(
                         scrollableIfCrowded = true,
                         onSelect = { font ->
                             if (font == AppFont.CUSTOM) {
-                                val isUnlocked = com.petal.browser.account.progress.PetalProgressStore.isUnlocked(
-                                    context,
-                                    com.petal.browser.account.progress.PetalUnlockable.CUSTOM_FONT
-                                )
-                                if (!isUnlocked) {
-                                    val req = com.petal.browser.account.progress.PetalProgressStore.getRemainingRequirement(
-                                        context,
-                                        com.petal.browser.account.progress.PetalUnlockable.CUSTOM_FONT
-                                    )
-                                    com.petal.browser.view.PetalToast.show(context, "Custom Font locked! $req")
-                                    return@PetalChoiceButtonGroup
-                                }
                                 showFontPicker = true
                             }
                             onAppFontChange(font)
@@ -1210,20 +1172,6 @@ fun AppearanceSettingsScreenContent(
                                 checked = gsFlexSettings.preset == GSFlexPreset.CUSTOM,
                                 position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
                                 onCheckedChange = { checked ->
-                                    if (checked) {
-                                        val isUnlocked = com.petal.browser.account.progress.PetalProgressStore.isUnlocked(
-                                            context,
-                                            com.petal.browser.account.progress.PetalUnlockable.FONT_VARIABLES
-                                        )
-                                        if (!isUnlocked) {
-                                            val req = com.petal.browser.account.progress.PetalProgressStore.getRemainingRequirement(
-                                                context,
-                                                com.petal.browser.account.progress.PetalUnlockable.FONT_VARIABLES
-                                            )
-                                            com.petal.browser.view.PetalToast.show(context, "Font Variables locked! $req")
-                                            return@PetalSettingsToggleRow
-                                        }
-                                    }
                                     val newPreset = if (checked) GSFlexPreset.CUSTOM else lastNonCustomPreset
                                     onGsFlexPresetChange(newPreset)
                                     // Entering Custom starts from the preset that was active, not stale saved axes.
@@ -1497,24 +1445,6 @@ fun AppearanceSettingsScreenContent(
                         onCheckedChange = onFloatingTabBarChange
                     )
                     PetalDesktopTabBarModeRow()
-                    // Stride-style liquid glass on the floating bar (Android 12+). Web pages
-                    // switch renderer to show through it, so it applies to tabs opened after.
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                        val glassContext = androidx.compose.ui.platform.LocalContext.current
-                        val glassPrefs = remember(glassContext) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(glassContext) }
-                        var glassNav by remember { mutableStateOf(glassPrefs.getBoolean(com.petal.browser.ui.glass.StrideGlassPrefs.KEY, true)) }
-                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                            title = "Liquid glass nav bar",
-                            subtitle = "Blur and bend the page behind the floating bar. Applies to tabs opened after the change",
-                            icon = Icons.Rounded.BlurOn,
-                            checked = glassNav,
-                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                            onCheckedChange = {
-                                glassNav = it
-                                glassPrefs.edit().putBoolean(com.petal.browser.ui.glass.StrideGlassPrefs.KEY, it).apply()
-                            }
-                        )
-                    }
                     // Material 3 Expressive Background Morphing Shapes Toggle
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = stringResource(R.string.ui_m3_expressive_morphing_shapes),
@@ -1599,6 +1529,16 @@ fun AppearanceSettingsScreenContent(
                     targetHighlightItemId = targetHighlightItemId
                 )
 
+                // Button Shapes & Expressive Keyboard Geometry
+                PetalSettingsSection(
+                    title = "Button Shapes",
+                    iconRes = com.petal.browser.R.drawable.icon_cookie,
+                    cardId = "appearance_button_shapes",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    PetalButtonShapePicker()
+                }
+
                 // Section 4: Display Refresh Rate & Performance
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_display_performance),
@@ -1607,6 +1547,11 @@ fun AppearanceSettingsScreenContent(
                     targetHighlightId = targetHighlightItemId,
                     onInfoClick = { showMotionBlurExplainer = true }
                 ) {
+                    var appLaunchAnim by remember {
+                        mutableStateOf(PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_app_launch_animation", true))
+                    }
+                    var showSplashPreview by remember { mutableStateOf(false) }
+
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = stringResource(R.string.ui_high_refresh_rate_120hz),
                         subtitle = stringResource(R.string.ui_force_120hz_144hz_peak_display, maxDetectedRefreshRate.toInt()),
@@ -1624,6 +1569,58 @@ fun AppearanceSettingsScreenContent(
                             }
                         }
                     )
+
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                        title = "Quantum Web Launch Animation",
+                        subtitle = "Procedural particle stream of web icons during app startup",
+                        icon = Icons.Rounded.AutoAwesome,
+                        checked = appLaunchAnim,
+                        onCheckedChange = { checked ->
+                            appLaunchAnim = checked
+                            PreferenceManager.getDefaultSharedPreferences(context).edit()
+                                .putBoolean("sp_app_launch_animation", checked)
+                                .apply()
+                        }
+                    )
+
+                    if (appLaunchAnim) {
+                        Spacer(Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            FilledTonalButton(
+                                onClick = { showSplashPreview = true },
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.PlayArrow,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text("Preview Animation")
+                            }
+                        }
+                    }
+
+                    if (showSplashPreview) {
+                        androidx.compose.ui.window.Dialog(
+                            onDismissRequest = { showSplashPreview = false },
+                            properties = androidx.compose.ui.window.DialogProperties(
+                                usePlatformDefaultWidth = false,
+                                decorFitsSystemWindows = false
+                            )
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                com.petal.browser.compose.splash.PetalSplashScreen(
+                                    onSplashComplete = { showSplashPreview = false },
+                                    durationMs = 2200L
+                                )
+                            }
+                        }
+                    }
 
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         title = stringResource(R.string.ui_app_launch_ripple_effect),
@@ -1683,8 +1680,42 @@ fun AppearanceSettingsScreenContent(
                     }
                 }
 
-                // Section 5: Liquid Glass UI & Surfaces. Always shown: its old unlock (a long
-                // press in the About Developer sheet) is no longer reachable from the app.
+                // Section: UI Experience & Design Language
+                PetalSettingsSection(
+                    title = "UI Experience & Design Language",
+                    icon = ImageToolboxIcons.Outlined.HyperOS,
+                    cardId = "appearance_ui_experience",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    Text(
+                        text = "Select your system design language. Controls, surfaces, motion, squircles, and materials adapt across the entire browser.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                        options = listOf(
+                            com.petal.browser.ui.components.PetalButtonGroupItem(
+                                UiExperience.MATERIAL_EXPRESSIVE,
+                                "Material 3"
+                            ),
+                            com.petal.browser.ui.components.PetalButtonGroupItem(
+                                UiExperience.LIQUID_GLASS,
+                                "Liquid Glass"
+                            ),
+                            com.petal.browser.ui.components.PetalButtonGroupItem(
+                                UiExperience.MIUIX,
+                                "HyperOS / MiuiX"
+                            ),
+                        ),
+                        selected = activeUiExperience,
+                        minHeight = 44.dp,
+                        scrollableIfCrowded = true,
+                        onSelect = { onSelectExperience(it) }
+                    )
+                }
+
+                // Section 5: Liquid Glass UI & Surfaces.
                 run {
                     PetalSettingsSection(
                         title = "Liquid Glass UI & Surfaces",
@@ -1707,25 +1738,9 @@ fun AppearanceSettingsScreenContent(
                             position = if (liquidGlassEnabled) com.petal.browser.ui.containment.PetalGroupPosition.TOP else com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
                             onCheckedChange = { checked ->
                                 if (checked) {
-                                    val isUnlocked = com.petal.browser.account.progress.PetalProgressStore.isUnlocked(
-                                        context,
-                                        com.petal.browser.account.progress.PetalUnlockable.LIQUID_GLASS
-                                    )
-                                    if (!isUnlocked) {
-                                        val req = com.petal.browser.account.progress.PetalProgressStore.getRemainingRequirement(
-                                            context,
-                                            com.petal.browser.account.progress.PetalUnlockable.LIQUID_GLASS
-                                        )
-                                        com.petal.browser.view.PetalToast.show(context, "Liquid Glass locked! $req")
-                                        return@PetalSettingsToggleRow
-                                    }
-                                }
-                                onLiquidGlassEnabledChange(checked)
-                                com.petal.browser.ui.theme.layout.PetalLayoutState.update(context) { current ->
-                                    current.copy(
-                                        uiExperience = if (checked) com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS
-                                        else com.petal.browser.ui.theme.layout.UiExperience.MATERIAL_EXPRESSIVE
-                                    )
+                                    onSelectExperience(UiExperience.LIQUID_GLASS)
+                                } else {
+                                    onSelectExperience(UiExperience.MATERIAL_EXPRESSIVE)
                                 }
                             }
                         )
@@ -2121,28 +2136,9 @@ fun AppearanceSettingsScreenContent(
                             position = if (isMiuix) com.petal.browser.ui.containment.PetalGroupPosition.TOP else com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
                             onCheckedChange = { active ->
                                 if (active) {
-                                    onLiquidGlassEnabledChange(false)
-                                }
-                                com.petal.browser.ui.theme.layout.PetalLayoutState.update(context) { current ->
-                                    if (active) {
-                                        current.copy(
-                                            uiExperience = com.petal.browser.ui.theme.layout.UiExperience.MIUIX,
-                                            switchType = com.petal.browser.ui.theme.layout.PetalSwitchType.HYPEROS,
-                                            sliderType = com.petal.browser.ui.theme.layout.PetalSliderType.HYPEROS,
-                                            shapeType = com.petal.browser.ui.theme.layout.PetalShapeType.SQUIRCLE,
-                                            containmentShape = com.petal.browser.ui.theme.layout.PetalContainmentShapeChoice.SQUIRCLE,
-                                            badgeShape = com.petal.browser.ui.theme.layout.PetalBadgeShape.FOLLOW
-                                        )
-                                    } else {
-                                        current.copy(
-                                            uiExperience = com.petal.browser.ui.theme.layout.UiExperience.MATERIAL_EXPRESSIVE,
-                                            switchType = com.petal.browser.ui.theme.layout.PetalSwitchType.MATERIAL_YOU,
-                                            sliderType = com.petal.browser.ui.theme.layout.PetalSliderType.FANCY,
-                                            shapeType = com.petal.browser.ui.theme.layout.PetalShapeType.ROUNDED,
-                                            containmentShape = com.petal.browser.ui.theme.layout.PetalContainmentShapeChoice.FOLLOW_APP,
-                                            badgeShape = com.petal.browser.ui.theme.layout.PetalBadgeShape.MIXED
-                                        )
-                                    }
+                                    onSelectExperience(UiExperience.MIUIX)
+                                } else {
+                                    onSelectExperience(UiExperience.MATERIAL_EXPRESSIVE)
                                 }
                             }
                         )
