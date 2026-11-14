@@ -54,10 +54,11 @@ internal fun Modifier.petalRealGlass(
     isDark: Boolean,
     refraction: com.petal.browser.ui.glass.RefractionTuning = com.petal.browser.ui.glass.RefractionTuning(),
     /** Translucency slider (0.10..0.95): higher = denser veil. */
-    opacity: Float = 0.70f
+    opacity: Float = 0.70f,
+    cloudyTuning: com.petal.browser.ui.glass.cloudy.CloudyGlassTuning = com.petal.browser.ui.glass.cloudy.CloudyGlassTuning(),
 ): Modifier {
     if (backdrop == null || !petalRealGlassSupported) return this
-    return this.drawBackdrop(
+    val glassModifier = this.drawBackdrop(
         backdrop = backdrop,
         shape = { shape },
         highlight = { Highlight.Default },
@@ -81,4 +82,19 @@ internal fun Modifier.petalRealGlass(
             drawRect((if (isDark) Color.Black else Color.White).copy(alpha = veil))
         }
     )
+
+    if (cloudyTuning.enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val rim = (24.dp * refraction.width)
+        return glassModifier.then(
+            Modifier.com.petal.browser.ui.glass.cloudy.cloudyOpticalRefraction(
+                cornerRadius = 20.dp,
+                rimWidth = rim,
+                refractionStrength = 16f * refraction.strength,
+                tuning = cloudyTuning,
+                isDark = isDark
+            )
+        )
+    }
+
+    return glassModifier
 }

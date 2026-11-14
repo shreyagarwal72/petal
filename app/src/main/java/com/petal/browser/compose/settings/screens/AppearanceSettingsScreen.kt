@@ -1818,6 +1818,96 @@ fun AppearanceSettingsScreenContent(
 
                                 com.petal.browser.ui.glass.GlassEffectsSettings()
 
+                                // Optional Cloudy Optical Refraction (skydoves/Cloudy)
+                                run {
+                                    val cloudyTuning = com.petal.browser.ui.glass.cloudy.rememberCloudyTuning()
+                                    var cloudyEnabled by remember { mutableStateOf(cloudyTuning.enabled) }
+                                    var dispersion by remember { mutableFloatStateOf(cloudyTuning.dispersion) }
+                                    var dispersionMode by remember { mutableStateOf(cloudyTuning.dispersionMode) }
+                                    val lens33Supported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 4.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = "Cloudy Optical Refraction (Optional)",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+
+                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                            title = "Cloudy 2D SDF Refraction",
+                                            subtitle = if (cloudyEnabled) {
+                                                if (lens33Supported) "Active: 2D SDF normal refraction & chromatic prism dispersion"
+                                                else "Active (Requires Android 13+ for AGSL prism dispersion)"
+                                            } else {
+                                                "Enable 2D SDF normal refraction & chromatic dispersion (Cloudy)"
+                                            },
+                                            icon = Icons.Rounded.AutoAwesome,
+                                            checked = cloudyEnabled,
+                                            position = if (cloudyEnabled) com.petal.browser.ui.containment.PetalGroupPosition.TOP else com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                                            onCheckedChange = { active ->
+                                                cloudyEnabled = active
+                                                sp.edit().putBoolean(com.petal.browser.ui.glass.cloudy.CloudyPrefs.PREF_CLOUDY_OPTICS, active).apply()
+                                            }
+                                        )
+
+                                        if (cloudyEnabled && lens33Supported) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 4.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                com.petal.browser.ui.glass.cloudy.CloudyDispersionMode.entries.forEach { mode ->
+                                                    com.petal.browser.ui.kit.FilterChip(
+                                                        selected = dispersionMode == mode,
+                                                        onClick = {
+                                                            dispersionMode = mode
+                                                            sp.edit().putString(com.petal.browser.ui.glass.cloudy.CloudyPrefs.PREF_CLOUDY_DISPERSION_MODE, mode.key).apply()
+                                                        },
+                                                        label = { Text(mode.title, fontSize = 12.sp) },
+                                                        glass = false
+                                                    )
+                                                }
+                                            }
+
+                                            Column(
+                                                modifier = Modifier.padding(horizontal = 4.dp),
+                                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = "Chromatic Dispersion Intensity",
+                                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Text(
+                                                        text = "${Math.round(dispersion * 100)}%",
+                                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                                PetalSlider(
+                                                    value = dispersion,
+                                                    onValueChange = {
+                                                        dispersion = it
+                                                        sp.edit().putFloat(com.petal.browser.ui.glass.cloudy.CloudyPrefs.PREF_CLOUDY_DISPERSION, it).apply()
+                                                    },
+                                                    valueRange = 0f..1f,
+                                                    modifier = Modifier.fillMaxWidth()
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
 
                                 Divider(
                                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),

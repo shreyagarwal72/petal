@@ -235,7 +235,8 @@ private fun Modifier.liquidGlassChromeBase(
     if (backdrop != null && petalRealGlassSupported) {
         val dark = isDark || (MaterialTheme.colorScheme.background.luminance() < .5f)
         val effectiveSheen = sheenOverride ?: sheenIntensity
-        return this.petalRealGlass(backdrop, shape, dark, tuning, backdropOpacity)
+        val cloudyTuning = com.petal.browser.ui.glass.cloudy.rememberCloudyTuning()
+        return this.petalRealGlass(backdrop, shape, dark, tuning, backdropOpacity, cloudyTuning)
             .liquidGlassSheen(shape, effectiveSheen, tintColor)
     }
     val wp = LocalPetalGlassWallpaper.current
