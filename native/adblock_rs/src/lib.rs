@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use wasm_bindgen::prelude::*;
 use adblock::engine::Engine;
 use adblock::lists::{FilterFormat, FilterSet};
@@ -95,8 +96,9 @@ impl AdblockEngine {
             .unwrap_or_default();
         let exceptions_vec: Vec<String> = serde_wasm_bindgen::from_value(exceptions)
             .unwrap_or_default();
+        let exceptions_set: HashSet<String> = exceptions_vec.into_iter().collect();
         
-        let selectors = self.engine.hidden_class_id_selectors(&classes_vec, &ids_vec, &exceptions_vec);
+        let selectors = self.engine.hidden_class_id_selectors(&classes_vec, &ids_vec, &exceptions_set);
         serde_wasm_bindgen::to_value(&selectors)
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
