@@ -108,6 +108,7 @@ jobs:
             cargo install wasm-pack --version 0.13.1 || true
           fi
           cd native/adblock_rs
+          cargo update -p rmp --precise 0.8.11 || true
           wasm-pack build --target web --release --out-dir ../../app/src/main/assets/web_extensions/petal_network_blocker/wasm
           echo "✅ adblock-rust WASM compiled successfully"
 

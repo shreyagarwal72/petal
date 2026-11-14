@@ -45,15 +45,15 @@ impl AdblockEngine {
 
     #[wasm_bindgen(js_name = fromSerialized)]
     pub fn from_serialized(bytes: &[u8]) -> Result<AdblockEngine, JsValue> {
-        let engine = Engine::deserialize_raw(bytes)
+        let mut engine = Engine::default();
+        engine.deserialize(bytes)
             .map_err(|e| JsValue::from_str(&format!("Deserialization error: {:?}", e)))?;
         Ok(AdblockEngine { engine })
     }
 
     #[wasm_bindgen(js_name = serializeRaw)]
     pub fn serialize_raw(&self) -> Result<Vec<u8>, JsValue> {
-        self.engine.serialize_raw()
-            .map_err(|e| JsValue::from_str(&format!("Serialization error: {:?}", e)))
+        Ok(self.engine.serialize())
     }
 
     #[wasm_bindgen(js_name = checkNetworkRequest)]
