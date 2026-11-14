@@ -10,6 +10,7 @@ enum class PetalResourceCategory(val label: String) {
     ALL("All"),
     VIDEO("Video"),
     AUDIO("Audio"),
+    SUBTITLE("Subtitles"),
     IMAGE("Image"),
     DOCUMENT("Doc");
 
@@ -17,6 +18,12 @@ enum class PetalResourceCategory(val label: String) {
         fun fromUrlAndMime(url: String, mimeType: String?): PetalResourceCategory? {
             val lowerMime = mimeType?.lowercase(Locale.ROOT) ?: ""
             val lowerUrl = url.lowercase(Locale.ROOT)
+
+            if (lowerMime.contains("vtt") || lowerMime.contains("subrip") ||
+                lowerUrl.contains(".vtt") || lowerUrl.contains(".srt")
+            ) {
+                return SUBTITLE
+            }
 
             if (lowerMime.startsWith("video/") ||
                 lowerUrl.contains(".m3u8") ||

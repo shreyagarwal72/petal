@@ -284,5 +284,13 @@ window.addEventListener('message', (event) => {
             type: 'INNER_SCROLL_STATE',
             isScrolled: data.isScrolled
         });
+    } else if (data.type === 'PETAL_DOM_MEDIA_SNIFFED') {
+        if (data.payload && Array.isArray(data.payload.items)) {
+            chrome.runtime.sendMessage({
+                type: 'DOM_RESOURCES_SNIFFED',
+                items: JSON.stringify(data.payload.items),
+                pageUrl: data.payload.pageUrl || window.location.href
+            }).catch(() => {});
+        }
     }
 });

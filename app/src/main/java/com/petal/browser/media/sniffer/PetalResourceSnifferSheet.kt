@@ -165,6 +165,7 @@ fun PetalResourceSnifferSheet(
                         PetalResourceCategory.ALL -> Icons.Rounded.Category
                         PetalResourceCategory.VIDEO -> Icons.Rounded.PlayCircle
                         PetalResourceCategory.AUDIO -> Icons.Rounded.Audiotrack
+                        PetalResourceCategory.SUBTITLE -> Icons.Rounded.Subtitles
                         PetalResourceCategory.IMAGE -> Icons.Rounded.Image
                         PetalResourceCategory.DOCUMENT -> Icons.Rounded.Description
                     }

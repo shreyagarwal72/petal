@@ -135,9 +135,11 @@ fun AddressPill(
     }
     val hasPlayableMedia by PetalMediaSniffer.interceptor.hasPlayableMedia.collectAsStateWithLifecycle()
     val nativeResources by PetalNativeSnifferEngine.currentTabResources.collectAsStateWithLifecycle()
+    val capturedMedia by com.petal.browser.media.sniffer.PetalMediaCaptureStore.currentTabMedia.collectAsStateWithLifecycle()
 
+    val totalMediaCount = maxOf(capturedMedia.size, nativeResources.size + (if (hasPlayableMedia) 1 else 0))
     val isBlankOrSearch = url.isEmpty() || url == "about:blank" || url.startsWith("file:///android_asset/")
-    val showMediaButton = isMediaButtonPrefEnabled && (hasPlayableMedia || nativeResources.isNotEmpty()) && !isBlankOrSearch
+    val showMediaButton = isMediaButtonPrefEnabled && (totalMediaCount > 0 || hasPlayableMedia) && !isBlankOrSearch
 
     val isHttps = url.startsWith("https://")
     val isHttp = url.startsWith("http://")
@@ -412,10 +414,16 @@ fun AddressPill(
                         enter = fadeIn() + scaleIn(initialScale = 0.8f),
                         exit = fadeOut() + scaleOut(targetScale = 0.8f)
                     ) {
-                        val count = nativeResources.size
+                        val hasVideo = capturedMedia.any { it.kind == com.petal.browser.media.sniffer.capture.MediaKind.VIDEO } || hasPlayableMedia
+                        val hasAudio = capturedMedia.any { it.kind == com.petal.browser.media.sniffer.capture.MediaKind.AUDIO }
+                        val icon = when {
+                            hasVideo -> Icons.Rounded.VideoLibrary
+                            hasAudio -> Icons.Rounded.Audiotrack
+                            else -> Icons.Rounded.TravelExplore
+                        }
                         Surface(
                             shape = ExpressiveButtonShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
                             modifier = Modifier
                                 .padding(end = 4.dp)
                                 .clickable {
@@ -424,19 +432,19 @@ fun AddressPill(
                                 }
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.5.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.TravelExplore,
-                                    contentDescription = "Sniffer — $count resources found",
+                                    imageVector = icon,
+                                    contentDescription = "Media Grabber — $totalMediaCount found",
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(16.dp)
                                 )
-                                if (count > 0) {
-                                    Spacer(Modifier.width(3.dp))
+                                if (totalMediaCount > 0) {
+                                    Spacer(Modifier.width(3.5.dp))
                                     Text(
-                                        text = if (count > 99) "99+" else count.toString(),
+                                        text = if (totalMediaCount > 99) "99+" else totalMediaCount.toString(),
                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.primary
                                     )

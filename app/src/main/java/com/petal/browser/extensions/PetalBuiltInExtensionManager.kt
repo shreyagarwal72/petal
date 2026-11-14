@@ -224,6 +224,7 @@ object PetalBuiltInExtensionManager {
                     val tabId = json.optString("tabId").takeIf { it.isNotBlank() } ?: com.petal.browser.media.sniffer.PetalNativeSnifferEngine.activeTabId.value
                     if (!items.isNullOrBlank()) {
                         com.petal.browser.media.sniffer.PetalNativeSnifferEngine.parseDomScanResult(tabId, sniffedPageUrl, items)
+                        com.petal.browser.media.sniffer.PetalMediaCaptureStore.parseDomScanResult(tabId, sniffedPageUrl, items)
                     }
                 }
                 "MEDIA_GRABBED", "REQUEST_DOWNLOAD", "SITE_DOWNLOAD_REQUEST" -> {
@@ -238,6 +239,11 @@ object PetalBuiltInExtensionManager {
                         url = url,
                         mimeType = mime,
                         sizeBytes = size,
+                        pageUrl = pageUrl ?: ""
+                    )
+                    com.petal.browser.media.sniffer.PetalMediaCaptureStore.registerMediaCandidate(
+                        url = url,
+                        tabId = tabId,
                         pageUrl = pageUrl ?: ""
                     )
                 }

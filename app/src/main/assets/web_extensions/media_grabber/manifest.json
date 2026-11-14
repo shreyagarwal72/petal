@@ -14,7 +14,7 @@
     "content_scripts": [
         {
             "matches": ["<all_urls>"],
-            "js": ["content.js"],
+            "js": ["petal_media_scanner.js", "content.js"],
             "run_at": "document_start",
             "all_frames": true
         }
