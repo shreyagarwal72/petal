@@ -3,7 +3,6 @@ package com.petal.browser.browser
 import androidx.fragment.app.FragmentActivity
 import mozilla.components.browser.state.store.BrowserStore
 import androidx.core.app.ActivityCompat
-import mozilla.components.feature.sitepermissions.SitePermissionsFeature
 import mozilla.components.feature.media.fullscreen.MediaSessionFullscreenFeature
 import mozilla.components.feature.session.PictureInPictureFeature
 import mozilla.components.feature.prompts.PromptFeature
@@ -13,16 +12,6 @@ import mozilla.components.feature.tabs.TabsUseCases
 class PetalBrowserFeatures(private val activity: FragmentActivity) {
     private val store: BrowserStore =
         com.petal.browser.engine.gecko.PetalEngineStore.getStore(activity)
-
-    private val sitePermissions = SitePermissionsFeature(
-        context = activity,
-        fragmentManager = activity.supportFragmentManager,
-        onNeedToRequestPermissions = { permissions ->
-            ActivityCompat.requestPermissions(activity, permissions, REQUEST_SITE_PERMISSIONS)
-        },
-        onShouldShowRequestPermissionRationale = activity::shouldShowRequestPermissionRationale,
-        store = store
-    )
 
     private val mediaFullscreen = MediaSessionFullscreenFeature(activity, store, null)
     private val pictureInPicture = PictureInPictureFeature(store, activity)
@@ -41,7 +30,7 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
         androidPhotoPicker = null
     )
     fun start() {
-        // Suppress stock Mozilla DialogFragments (SitePermissions, Prompts, Choices)
+        // Suppress stock Mozilla DialogFragments (Prompts, Choices)
         // so only Petal's Live Liquid Glass & Material 3 Expressive overlays / bottom sheets render
         activity.supportFragmentManager.registerFragmentLifecycleCallbacks(
             object : androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
@@ -53,7 +42,6 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
                     val name = f.javaClass.name
                     val simpleName = f.javaClass.simpleName
                     if (name.contains("mozilla.components.feature.prompts") ||
-                        simpleName.contains("SitePermissions", ignoreCase = true) ||
                         simpleName.contains("PromptDialog", ignoreCase = true) ||
                         simpleName.contains("ChoiceDialog", ignoreCase = true)
                     ) {
@@ -67,20 +55,17 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
             },
             true
         )
-        sitePermissions.start()
         mediaFullscreen.start()
         prompts.start()
     }
 
     fun stop() {
-        sitePermissions.stop()
         mediaFullscreen.stop()
         prompts.stop()
     }
 
     fun onPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {
-            REQUEST_SITE_PERMISSIONS -> sitePermissions.onPermissionsResult(permissions, grantResults)
             REQUEST_PROMPT_PERMISSIONS -> prompts.onPermissionsResult(permissions, grantResults)
         }
     }
@@ -93,7 +78,6 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
     }
 
     private companion object {
-        const val REQUEST_SITE_PERMISSIONS = 17321
         const val REQUEST_PROMPT_PERMISSIONS = 17322
     }
 }

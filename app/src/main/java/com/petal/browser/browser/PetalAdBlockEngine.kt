@@ -17,80 +17,23 @@ package com.petal.browser.browser
 import android.content.Context
 import android.net.Uri
 import androidx.preference.PreferenceManager
-import com.petal.browser.engine.petal.blocking.PetalCosmeticScript
-import com.petal.browser.engine.petal.blocking.PetalProceduralCosmeticScript
-import com.petal.browser.engine.petal.blocking.ContentBlocker
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
-class TrieNode {
-    val children = HashMap<Char, TrieNode>()
-    var isTerminal = false
-}
-
-class FastRuleTrie {
-    val root = TrieNode()
-
-    fun insert(pattern: String) {
-        if (pattern.isBlank()) return
-        var curr = root
-        for (ch in pattern.lowercase(Locale.US)) {
-            curr = curr.children.getOrPut(ch) { TrieNode() }
-        }
-        curr.isTerminal = true
-    }
-
-    fun containsSubstring(text: String): Boolean {
-        val lower = text.lowercase(Locale.US)
-        val len = lower.length
-        for (i in 0 until len) {
-            var curr: TrieNode? = root
-            for (j in i until len) {
-                curr = curr?.children?.get(lower[j])
-                if (curr == null) break
-                if (curr.isTerminal) return true
-            }
-        }
-        return false
-    }
-}
-
 object PetalAdBlockEngine {
 
-    private val trieEngine = FastRuleTrie()
     private val whitelistedDomains = ConcurrentHashMap.newKeySet<String>()
     private val domainBlockedCount = ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger>()
     private val totalBlockedCount = java.util.concurrent.atomic.AtomicLong(0)
     @Volatile private var isInitialized = false
-    @Volatile private var contentBlocker: ContentBlocker? = null
-
-    // Default EasyList / uBlock / AdGuard high-frequency ad & tracker patterns
-    private val defaultRules = listOf(
-        "doubleclick.net", "googlesyndication.com", "google-analytics.com",
-        "adservice.google.com", "adnxs.com", "popads.net", "popcash.net",
-        "adform.net", "taboola.com", "outbrain.com", "adroll.com", "criteo.com",
-        "rubiconproject.com", "pubmatic.com", "smartadserver.com", "zedo.com",
-        "amazon-adsystem.com", "adk2.com", "propellerads.com", "exoclick.com",
-        "scorecardresearch.com", "quantserve.com", "openx.net", "monetag.com",
-        "hilltopads.com", "adcash.com", "adsterra.com", "a-ads.com", "mgid.com",
-        "revcontent.com", "juicyads.com", "trafficjunky.com", "coinhive.com",
-        "statcounter.com", "pixel.facebook.com",
-        "/pagead/", "/ad_banner", "/popunder", "/popup.js", "adsbygoogle.js"
-    )
 
     @JvmStatic
     fun ensureInitialized(context: Context) {
-        if (isInitialized && contentBlocker != null) return
+        if (isInitialized) return
         synchronized(this) {
-            if (isInitialized && contentBlocker != null) return
+            if (isInitialized) return
             val appContext = context.applicationContext ?: context
-            if (contentBlocker == null) {
-                contentBlocker = ContentBlocker(appContext)
-            }
             val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
-
-            // Populate fallback Trie with default filters
-            defaultRules.forEach { trieEngine.insert(it) }
 
             // Load user domain whitelist
             val whitelistSet = sp.getStringSet("sp_adblock_whitelisted_domains", emptySet()) ?: emptySet()
@@ -110,14 +53,6 @@ object PetalAdBlockEngine {
                 .start()
 
             isInitialized = true
-        }
-    }
-
-    @JvmStatic
-    fun getContentBlocker(context: Context): ContentBlocker {
-        ensureInitialized(context)
-        return contentBlocker ?: synchronized(this) {
-            contentBlocker ?: ContentBlocker(context.applicationContext ?: context).also { contentBlocker = it }
         }
     }
 
@@ -212,45 +147,7 @@ object PetalAdBlockEngine {
     @JvmStatic
     fun getWhitelistedDomains(): Set<String> = whitelistedDomains.toSet()
 
-    @JvmStatic
-    fun shouldBlockUrl(context: Context, requestUrl: String, pageUrl: String? = null): Boolean {
-        if (requestUrl.isBlank()) return false
-        val pageHost = try { Uri.parse(pageUrl ?: "").host ?: "" } catch (e: Exception) { "" }
-        val effectiveMode = getEffectiveMode(context, pageHost)
-        if (effectiveMode == PetalAdBlockMode.DISABLED) return false
 
-        // Check if request host is in active subscription lists (Cromite-style)
-        val requestHost = try { Uri.parse(requestUrl).host ?: "" } catch (e: Exception) { "" }
-        if (requestHost.isNotEmpty() && PetalFilterSubscriptionManager.isDomainInActiveSubscriptions(requestHost)) {
-            recordBlock(pageUrl)
-            return true
-        }
-
-        // 1. Petal ContentBlocker advanced rules & host indexes (EasyList, uAssets, HaGeZi)
-        val blocker = contentBlocker
-        if (blocker != null) {
-            try {
-                val blocked = blocker.shouldBlock(requestUrl, pageUrl)
-                if (blocked) {
-                    recordBlock(pageUrl)
-                    com.petal.browser.logger.PetalLiveLogEngine.logBlock("ContentBlocker", requestUrl, "Page: $pageUrl")
-                    return true
-                }
-            } catch (_: Throwable) {
-                // Fall through to Trie matching if engine is still loading
-            }
-        }
-
-        // 2. Fast Trie fallback
-        val trieBlocked = trieEngine.containsSubstring(requestUrl)
-        if (trieBlocked) {
-            recordBlock(pageUrl)
-            com.petal.browser.logger.PetalLiveLogEngine.logBlock("TrieFilter", requestUrl, "Page: $pageUrl")
-            return true
-        }
-
-        return false
-    }
 
     data class BlockedCategoryCounts(
         val ads: Int = 0,

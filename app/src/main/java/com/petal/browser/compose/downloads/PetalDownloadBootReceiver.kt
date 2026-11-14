@@ -41,7 +41,7 @@ class PetalDownloadBootReceiver : BroadcastReceiver() {
                     it.status == mozilla.components.browser.state.state.content.DownloadState.Status.INITIATED
                 }
                 if (hasActive) {
-                    Log.i("PetalDownloadBoot", "Unfinished downloads found. Starting PetalDownloadService...")
+                    Log.i("PetalDownloadBoot", "Unfinished downloads found. Starting PetalMozillaDownloadService...")
                     startServiceOrNotify(appContext)
                 }
             } catch (t: Throwable) {
@@ -52,9 +52,7 @@ class PetalDownloadBootReceiver : BroadcastReceiver() {
 
     private fun startServiceOrNotify(appContext: Context) {
         try {
-            val serviceIntent = Intent(appContext, PetalDownloadService::class.java).apply {
-                setAction(PetalDownloadService.ACTION_RESTORE_DOWNLOADS)
-            }
+            val serviceIntent = Intent(appContext, com.petal.browser.download.PetalMozillaDownloadService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 appContext.startForegroundService(serviceIntent)
             } else {
