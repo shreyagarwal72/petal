@@ -717,6 +717,7 @@ class PetalTabViewController private constructor(
         }
         engineView.render(session)
         session.register(observer)
+        com.petal.browser.offlinegame.PetalOfflineGameRegistry.register(session, this)
         val geckoSession = getGeckoSession()
         com.petal.browser.extensions.PetalExtensionManager.attachSession(geckoSession)
         geckoSession?.let { gs ->
@@ -838,7 +839,7 @@ class PetalTabViewController private constructor(
                 act != null && com.petal.browser.engine.gecko.PetalEngineBridge.handleExternalScheme(act, uri)
             }
             val connectivityErrorCallback: (String?, Int) -> Unit = { failedUrl, code ->
-                post { showOfflineGame(failedUrl, code) }
+                PetalOfflineGameOverlay.nameForWebRequestCode(code)?.let { onEngineLoadError(failedUrl, it) }
             }
             if (engineNavigation !is ExternalSchemeNavigationDelegate) {
                 val inner = engineNavigation ?: object : org.mozilla.geckoview.GeckoSession.NavigationDelegate {}
@@ -1827,12 +1828,20 @@ class PetalTabViewController private constructor(
     // --- Petal Hop offline game (shown instead of the error page for connectivity failures) ---
     private var offlineGameView: android.view.View? = null
     private var offlineGameUrl: String? = null
+    private var offlineGameShownAt = 0L
 
-    private fun showOfflineGame(failedUrl: String?, errorCode: Int) {
+    /** Called by [PetalOfflineGameRegistry] from the engine's error-page interceptor. */
+    fun onEngineLoadError(failedUrl: String?, errorName: String) {
+        post { showOfflineGame(failedUrl, errorName) }
+    }
+
+    private fun showOfflineGame(failedUrl: String?, errorName: String) {
         if (!PetalOfflineGameOverlay.isEnabled(context)) return
-        if (!PetalOfflineGameOverlay.isConnectivityError(errorCode)) return
+        if (!PetalOfflineGameOverlay.isConnectivityErrorName(errorName)) return
         offlineGameUrl = failedUrl
-        offlineGameView = PetalOfflineGameOverlay.show(this, offlineGameView, failedUrl, errorCode) { url ->
+        if (offlineGameView == null) offlineGameShownAt = android.os.SystemClock.uptimeMillis()
+        val hostError = PetalOfflineGameOverlay.isHostErrorName(errorName)
+        offlineGameView = PetalOfflineGameOverlay.show(this, offlineGameView, failedUrl, hostError) { url ->
             val target = url ?: offlineGameUrl
             dismissOfflineGame()
             if (!target.isNullOrBlank()) loadUrl(target) else reload()
@@ -1849,6 +1858,8 @@ class PetalTabViewController private constructor(
     /** The error page itself (and the failed URL it reports) must not tear the game down. */
     private fun maybeDismissOfflineGame(newUrl: String) {
         if (offlineGameView == null) return
+        // The error page's own location events arrive right after the error; never react to those.
+        if (android.os.SystemClock.uptimeMillis() - offlineGameShownAt < 2000L) return
         val lower = newUrl.lowercase()
         if (lower.startsWith("data:") || lower.startsWith("about:")) return
         val failed = offlineGameUrl

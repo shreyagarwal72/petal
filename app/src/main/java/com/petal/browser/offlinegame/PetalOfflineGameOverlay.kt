@@ -59,7 +59,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -92,13 +91,13 @@ import org.mozilla.geckoview.WebRequestError
 
 /** Mutable details of the failed load, shared between the tab view and the Compose overlay. */
 @Stable
-class PetalOfflineGameModel(url: String?, code: Int) {
+class PetalOfflineGameModel(url: String?, hostError: Boolean) {
     var url by mutableStateOf(url)
-    var code by mutableIntStateOf(code)
+    var hostError by mutableStateOf(hostError)
 
-    fun update(newUrl: String?, newCode: Int) {
+    fun update(newUrl: String?, newHostError: Boolean) {
         url = newUrl
-        code = newCode
+        hostError = newHostError
     }
 }
 
@@ -115,15 +114,34 @@ object PetalOfflineGameOverlay {
     fun isEnabled(context: Context): Boolean =
         PreferenceManager.getDefaultSharedPreferences(context).getBoolean(PREF_ENABLED, true)
 
+    private val CONNECTIVITY_ERRORS = setOf(
+        "ERROR_UNKNOWN_HOST",
+        "ERROR_NET_TIMEOUT",
+        "ERROR_NET_RESET",
+        "ERROR_NET_INTERRUPT",
+        "ERROR_CONNECTION_REFUSED",
+        "ERROR_NO_INTERNET",
+        "ERROR_OFFLINE",
+        "ERROR_UNKNOWN_PROXY_HOST",
+        "ERROR_PROXY_CONNECTION_REFUSED"
+    )
+
     /** Errors where "you are offline / the network is flaky" is a plausible explanation. */
     @JvmStatic
-    fun isConnectivityError(code: Int): Boolean = when (code) {
-        WebRequestError.ERROR_UNKNOWN_HOST,
-        WebRequestError.ERROR_NET_TIMEOUT,
-        WebRequestError.ERROR_NET_RESET,
-        WebRequestError.ERROR_NET_INTERRUPT,
-        WebRequestError.ERROR_CONNECTION_REFUSED -> true
-        else -> false
+    fun isConnectivityErrorName(name: String): Boolean = name in CONNECTIVITY_ERRORS
+
+    @JvmStatic
+    fun isHostErrorName(name: String): Boolean = name == "ERROR_UNKNOWN_HOST"
+
+    /** Maps a raw GeckoView error code to the same names Mozilla's ErrorType enum uses. */
+    @JvmStatic
+    fun nameForWebRequestCode(code: Int): String? = when (code) {
+        WebRequestError.ERROR_UNKNOWN_HOST -> "ERROR_UNKNOWN_HOST"
+        WebRequestError.ERROR_NET_TIMEOUT -> "ERROR_NET_TIMEOUT"
+        WebRequestError.ERROR_NET_RESET -> "ERROR_NET_RESET"
+        WebRequestError.ERROR_NET_INTERRUPT -> "ERROR_NET_INTERRUPT"
+        WebRequestError.ERROR_CONNECTION_REFUSED -> "ERROR_CONNECTION_REFUSED"
+        else -> null
     }
 
     @JvmStatic
@@ -131,15 +149,20 @@ object PetalOfflineGameOverlay {
         parent: ViewGroup,
         existing: View?,
         failedUrl: String?,
-        errorCode: Int,
+        hostError: Boolean,
         onTryAgain: (String?) -> Unit
     ): View? {
         if (existing != null) {
-            (existing.tag as? PetalOfflineGameModel)?.update(failedUrl, errorCode)
+            (existing.tag as? PetalOfflineGameModel)?.update(failedUrl, hostError)
             return existing
         }
-        val activity = findActivity(parent.context) ?: return null
-        val model = PetalOfflineGameModel(failedUrl, errorCode)
+        val activity = findActivity(parent.context)
+        if (activity == null) {
+            android.util.Log.w("PetalHop", "No ComponentActivity found for ${parent.context}; overlay skipped")
+            return null
+        }
+        android.util.Log.d("PetalHop", "Showing offline game overlay for $failedUrl (hostError=$hostError)")
+        val model = PetalOfflineGameModel(failedUrl, hostError)
         val view = ComposeView(activity).apply {
             tag = model
             layoutParams = FrameLayout.LayoutParams(
@@ -193,7 +216,7 @@ private fun PetalOfflineGameScreen(
     val reduceMotion = remember(context) { MotionGate.isReduceMotion(context) }
 
     // A mistyped address is the likelier cause for "unknown host", so the game waits for a tap there.
-    val hostError = model.code == WebRequestError.ERROR_UNKNOWN_HOST
+    val hostError = model.hostError
     var started by remember { mutableStateOf(!hostError) }
 
     // Connectivity: only offer "back online" if we actually saw the device offline first.

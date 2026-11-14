@@ -85,6 +85,11 @@ object PetalEngineStore {
                     errorType: ErrorType,
                     uri: String?
                 ): RequestInterceptor.ErrorResponse? {
+                    try {
+                        com.petal.browser.offlinegame.PetalOfflineGameRegistry.notifyError(session, uri, errorType.name)
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Offline game hook failed", t)
+                    }
                     return try {
                         val errorPageUri = mozilla.components.browser.errorpages.ErrorPages.createUrlEncodedErrorPage(
                             appContext,
