@@ -178,4 +178,28 @@ class PetalContentDelegateWrapper(
     override fun onMetaViewportFitChange(session: GeckoSession, viewportFit: String) {
         engine?.onMetaViewportFitChange(session, viewportFit)
     }
+
+    override fun onSlowScript(
+        session: GeckoSession,
+        scriptFileName: String
+    ): org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.SlowScriptResponse>? {
+        val act = resolveActivity()
+        if (act == null || act.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && act.isDestroyed)) {
+            return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.SlowScriptResponse.CONTINUE)
+        }
+        val result = org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.SlowScriptResponse>()
+        act.runOnUiThread {
+            try {
+                com.petal.browser.ui.dialog.PetalSlowScriptDialog.show(
+                    activity = act,
+                    scriptFileName = scriptFileName,
+                    onWait = { result.complete(org.mozilla.geckoview.SlowScriptResponse.CONTINUE) },
+                    onStop = { result.complete(org.mozilla.geckoview.SlowScriptResponse.STOP) }
+                )
+            } catch (t: Throwable) {
+                result.complete(org.mozilla.geckoview.SlowScriptResponse.CONTINUE)
+            }
+        }
+        return result
+    }
 }

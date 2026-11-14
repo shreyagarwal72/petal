@@ -81,6 +81,18 @@ class PrivacySettingsViewModel @Inject constructor(
     val webglEnabled: StateFlow<Boolean> = settingsRepository.webglEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val bounceTracking: StateFlow<Boolean> = settingsRepository.bounceTracking
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val canvasLetterboxing: StateFlow<Boolean> = settingsRepository.canvasLetterboxing
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val drmEnabled: StateFlow<Boolean> = settingsRepository.drmEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val loginAutofillEnabled: StateFlow<Boolean> = settingsRepository.loginAutofillEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     fun setAdBlockEnabled(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setAdBlockEnabled(enabled)
     }
@@ -167,5 +179,21 @@ class PrivacySettingsViewModel @Inject constructor(
 
     fun setWebglEnabled(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setWebglEnabled(enabled)
+    }
+
+    fun setBounceTracking(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setBounceTracking(enabled)
+    }
+
+    fun setCanvasLetterboxing(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setCanvasLetterboxing(enabled)
+    }
+
+    fun setDrmEnabled(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setDrmEnabled(enabled)
+    }
+
+    fun setLoginAutofillEnabled(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setLoginAutofillEnabled(enabled)
     }
 }

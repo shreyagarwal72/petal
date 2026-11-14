@@ -77,6 +77,10 @@ fun PrivacySettingsScreen(
     val privateDnsMode by viewModel.privateDnsMode.collectAsStateWithLifecycle()
     val customDohUrl by viewModel.customDohUrl.collectAsStateWithLifecycle()
     val nextDnsProfileId by viewModel.nextDnsProfileId.collectAsStateWithLifecycle()
+    val bounceTracking by viewModel.bounceTracking.collectAsStateWithLifecycle()
+    val canvasLetterboxing by viewModel.canvasLetterboxing.collectAsStateWithLifecycle()
+    val drmEnabled by viewModel.drmEnabled.collectAsStateWithLifecycle()
+    val loginAutofillEnabled by viewModel.loginAutofillEnabled.collectAsStateWithLifecycle()
 
     PrivacySettingsScreenContent(
         adBlockEnabled = adBlockEnabled,
@@ -97,6 +101,10 @@ fun PrivacySettingsScreen(
         privateDnsMode = privateDnsMode,
         customDohUrl = customDohUrl,
         nextDnsProfileId = nextDnsProfileId,
+        bounceTracking = bounceTracking,
+        canvasLetterboxing = canvasLetterboxing,
+        drmEnabled = drmEnabled,
+        loginAutofillEnabled = loginAutofillEnabled,
         onAdBlockEnabledChange = viewModel::setAdBlockEnabled,
         onBlockThirdPartyCookiesChange = viewModel::setBlockThirdPartyCookies,
         onTotalCookieProtectionChange = viewModel::setTotalCookieProtection,
@@ -115,6 +123,10 @@ fun PrivacySettingsScreen(
         onPrivateDnsModeChange = viewModel::setPrivateDnsMode,
         onCustomDohUrlChange = viewModel::setCustomDohUrl,
         onNextDnsProfileIdChange = viewModel::setNextDnsProfileId,
+        onBounceTrackingChange = viewModel::setBounceTracking,
+        onCanvasLetterboxingChange = viewModel::setCanvasLetterboxing,
+        onDrmEnabledChange = viewModel::setDrmEnabled,
+        onLoginAutofillEnabledChange = viewModel::setLoginAutofillEnabled,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -142,6 +154,10 @@ fun PrivacySettingsScreenContent(
     privateDnsMode: String,
     customDohUrl: String,
     nextDnsProfileId: String = "",
+    bounceTracking: Boolean = false,
+    canvasLetterboxing: Boolean = false,
+    drmEnabled: Boolean = true,
+    loginAutofillEnabled: Boolean = true,
     onAdBlockEnabledChange: (Boolean) -> Unit,
     onBlockThirdPartyCookiesChange: (Boolean) -> Unit,
     onTotalCookieProtectionChange: (Boolean) -> Unit = {},
@@ -160,6 +176,10 @@ fun PrivacySettingsScreenContent(
     onPrivateDnsModeChange: (String) -> Unit,
     onCustomDohUrlChange: (String) -> Unit,
     onNextDnsProfileIdChange: (String) -> Unit = {},
+    onBounceTrackingChange: (Boolean) -> Unit = {},
+    onCanvasLetterboxingChange: (Boolean) -> Unit = {},
+    onDrmEnabledChange: (Boolean) -> Unit = {},
+    onLoginAutofillEnabledChange: (Boolean) -> Unit = {},
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
@@ -442,12 +462,21 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalSettingsToggleRow(
-                            position = PetalGroupPosition.BOTTOM,
+                            position = PetalGroupPosition.MIDDLE,
                             title = "Unlinkable Session Partitioning",
                             subtitle = "Isolates client network state per tab session to defeat bounce tracking",
                             icon = Icons.Rounded.Splitscreen,
                             checked = sessionPartitioning,
                             onCheckedChange = onSessionPartitioningChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.BOTTOM,
+                            title = "Bounce Tracking Protection",
+                            subtitle = "Purges redirect tracker state when traversing bounce redirect intermediaries",
+                            icon = Icons.Rounded.AltRoute,
+                            checked = bounceTracking,
+                            onCheckedChange = onBounceTrackingChange
                         )
                     }
 
@@ -459,12 +488,21 @@ fun PrivacySettingsScreenContent(
                         targetHighlightId = targetHighlightItemId
                     ) {
                         PetalSettingsToggleRow(
-                            position = PetalGroupPosition.SINGLE,
+                            position = PetalGroupPosition.TOP,
                             title = "Resist Fingerprinting (Gecko RFP)",
                             subtitle = "Uniform canvas, audio context, hardware metrics, and reduced timer precision",
                             icon = Icons.Rounded.Fingerprint,
                             checked = fingerprintProtection,
                             onCheckedChange = onFingerprintProtectionChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.BOTTOM,
+                            title = "Canvas Letterboxing",
+                            subtitle = "Appends margins to canvas viewport to prevent display dimension fingerprinting",
+                            icon = Icons.Rounded.AspectRatio,
+                            checked = canvasLetterboxing,
+                            onCheckedChange = onCanvasLetterboxingChange
                         )
                     }
 
@@ -642,12 +680,21 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalSettingsToggleRow(
-                            position = PetalGroupPosition.BOTTOM,
+                            position = PetalGroupPosition.MIDDLE,
                             title = "JavaScript",
                             subtitle = "Enable JavaScript execution for web pages",
                             icon = Icons.Rounded.Code,
                             checked = javaScriptEnabled,
                             onCheckedChange = onJavaScriptEnabledChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.BOTTOM,
+                            title = "DRM Content Playback",
+                            subtitle = "Allow playing DRM-protected digital media (Widevine)",
+                            icon = Icons.Rounded.PlayCircle,
+                            checked = drmEnabled,
+                            onCheckedChange = onDrmEnabledChange
                         )
                     }
 
@@ -701,9 +748,18 @@ fun PrivacySettingsScreenContent(
                         PetalGroupNavigationRow(
                             title = "Password Manager & Autofill Vault",
                             subtitle = "Encrypted local credentials, passkeys, and breach alert monitoring",
-                            position = PetalGroupPosition.SINGLE,
+                            position = PetalGroupPosition.TOP,
                             onClick = { showPasswordsScreen = true },
                             leadingIcon = { Icon(Icons.Rounded.VpnKey, contentDescription = null) }
+                        )
+
+                        PetalSettingsToggleRow(
+                            position = PetalGroupPosition.BOTTOM,
+                            title = "Autofill Logins & Passwords",
+                            subtitle = "Automatically suggest and fill saved credentials on web forms",
+                            icon = Icons.Rounded.Password,
+                            checked = loginAutofillEnabled,
+                            onCheckedChange = onLoginAutofillEnabledChange
                         )
                     }
                 }

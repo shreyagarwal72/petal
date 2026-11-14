@@ -315,6 +315,9 @@ dependencies {
     implementation 'org.mozilla.components:feature-recentlyclosed:159.0.1'
     implementation 'org.mozilla.components:feature-webcompat:159.0.1'
     implementation 'org.mozilla.components:feature-media:159.0.1'
+    implementation 'org.mozilla.components:feature-findinpage:159.0.1'
+    implementation 'org.mozilla.components:feature-webnotifications:159.0.1'
+    implementation 'org.mozilla.components:feature-push:159.0.1'
 
     // Android Components Phase 2: Web Platform Features (159.0.1)
     implementation 'org.mozilla.components:feature-addons:159.0.1'
@@ -326,7 +329,6 @@ dependencies {
 
     // Android Components Phase 3: Omnibox & Assets (159.0.1)
     implementation 'org.mozilla.components:feature-search:159.0.1'
-    implementation 'org.mozilla.components:feature-awesomebar:159.0.1'
     implementation 'org.mozilla.components:feature-top-sites:159.0.1'
     implementation 'org.mozilla.components:browser-icons:159.0.1'
     implementation 'org.mozilla.components:browser-thumbnails:159.0.1'
@@ -338,7 +340,6 @@ dependencies {
     implementation 'org.mozilla.components:service-firefox-accounts:159.0.1'
     implementation 'org.mozilla.components:concept-sync:159.0.1'
     implementation 'org.mozilla.components:concept-storage:159.0.1'
-    implementation 'org.mozilla.components:concept-toolbar:159.0.1'
     implementation 'org.mozilla.components:browser-storage-sync:159.0.1'
     implementation 'org.mozilla.components:feature-syncedtabs:159.0.1'
     implementation 'org.mozilla.components:service-sync-logins:159.0.1'

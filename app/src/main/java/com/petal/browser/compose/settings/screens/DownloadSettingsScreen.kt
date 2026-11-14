@@ -202,15 +202,46 @@ fun DownloadSettingsScreenContent(
                     val notificationsAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 1) { _, rowPosition ->
-                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                            title = stringResource(R.string.ui_auto_preview_downloaded_images),
-                            subtitle = stringResource(R.string.ui_show_downloaded_photos_in_the),
-                            icon = Icons.Rounded.Image,
-                            checked = autoPreviewDownloadedImages,
-                            position = rowPosition,
-                            onCheckedChange = onAutoPreviewDownloadedImagesChange
-                        )
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, rowPosition ->
+                        when (index) {
+                            0 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                title = stringResource(R.string.ui_auto_preview_downloaded_images),
+                                subtitle = stringResource(R.string.ui_show_downloaded_photos_in_the),
+                                icon = Icons.Rounded.Image,
+                                checked = autoPreviewDownloadedImages,
+                                position = rowPosition,
+                                onCheckedChange = onAutoPreviewDownloadedImagesChange
+                            )
+                            1 -> {
+                                val downloadPrefs = remember(context) {
+                                    PreferenceManager.getDefaultSharedPreferences(context)
+                                }
+                                var smartRouting by remember {
+                                    mutableStateOf(
+                                        downloadPrefs.getBoolean(
+                                            com.petal.browser.download.PetalSmartDownloadRouter.PREF_SMART_ROUTING,
+                                            false
+                                        )
+                                    )
+                                }
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = "Smart download routing",
+                                    subtitle = "Automatically sort downloaded files into subfolders by type (Images, Video, Audio, Documents, Apps)",
+                                    icon = Icons.Rounded.FolderSpecial,
+                                    checked = smartRouting,
+                                    position = rowPosition,
+                                    onCheckedChange = { isChecked ->
+                                        smartRouting = isChecked
+                                        downloadPrefs.edit()
+                                            .putBoolean(
+                                                com.petal.browser.download.PetalSmartDownloadRouter.PREF_SMART_ROUTING,
+                                                isChecked
+                                            )
+                                            .apply()
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
 

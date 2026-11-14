@@ -290,7 +290,7 @@ object PetalPrivacyShieldSheet {
             mutableStateOf(sp.getBoolean("sp_block_third_party_cookies", !sp.getBoolean("profileStandard_cookiesThirdParty", false)))
         }
         var fingerprintProtection by remember {
-            mutableStateOf(sp.getBoolean("sp_fingerprint_protection", sp.getBoolean("profileStandard_fingerPrintProtection", true)))
+            mutableStateOf(sp.getBoolean("sp_fingerprint_protection", sp.getBoolean("profileStandard_fingerPrintProtection", false)))
         }
         var webrtcProtection by remember {
             mutableStateOf(sp.getBoolean("sp_webrtc_protection", sp.getBoolean("profileStandard_webrtcProtection", true)))

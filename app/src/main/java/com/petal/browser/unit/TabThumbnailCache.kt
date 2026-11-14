@@ -13,6 +13,12 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.LruCache
+import androidx.preference.PreferenceManager
+import com.petal.browser.PetalApplication
+import com.petal.browser.engine.gecko.PetalEngineStore
+import kotlinx.coroutines.runBlocking
+import mozilla.components.concept.base.images.ImageLoadRequest
+import mozilla.components.concept.base.images.ImageSaveRequest
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -161,6 +167,11 @@ object TabThumbnailCache {
                 deleteQuietly(file)
             }
         }
+    }
+
+    private fun isAcPhase1(): Boolean {
+        val app = PetalApplication.getInstance() ?: return false
+        return PreferenceManager.getDefaultSharedPreferences(app).getBoolean("sp_ac_phase1", false)
     }
 
     private fun getDiskCacheDir(): File? {
@@ -324,6 +335,27 @@ object TabThumbnailCache {
                     }
                     loaded = null
                 }
+                if (loaded == null && isAcPhase1()) {
+                    val app = PetalApplication.getInstance()
+                    if (app != null) {
+                        try {
+                            val acStorage = PetalEngineStore.getThumbnailStorage(app)
+                            for (id in ids) {
+                                val deferred = acStorage.loadThumbnail(ImageLoadRequest(id, MAX_PREVIEW_WIDTH, false))
+                                val acBitmap = runBlocking {
+                                    try { deferred.await() } catch (_: Throwable) { null }
+                                }
+                                if (acBitmap != null && !acBitmap.isRecycled) {
+                                    loaded = acBitmap
+                                    loadedId = id
+                                    break
+                                }
+                            }
+                        } catch (e: Throwable) {
+                            Log.w(TAG, "Failed loading thumbnail from Mozilla ThumbnailStorage", e)
+                        }
+                    }
+                }
                 val valid = generation == GENERATION.get() && !versionsChanged(ids, versions)
                 if (!valid) {
                     if (loaded != null && !loaded.isRecycled) loaded.recycle()
@@ -366,6 +398,15 @@ object TabThumbnailCache {
             deleteQuietly(File(dir, diskKey(tabId) + ".thumb"))
             deleteQuietly(File(dir, legacyKey(tabId) + ".webp"))
             deleteQuietly(File(dir, legacyKey(tabId) + ".png"))
+            if (isAcPhase1()) {
+                val app = PetalApplication.getInstance()
+                if (app != null) {
+                    try {
+                        val acStorage = PetalEngineStore.getThumbnailStorage(app)
+                        acStorage.deleteThumbnail(tabId, false)
+                    } catch (_: Throwable) {}
+                }
+            }
             regularVersions.remove(tabId, token)
         }
     }
@@ -416,6 +457,15 @@ object TabThumbnailCache {
             for (file in files) {
                 if (generation != GENERATION.get()) return@execute
                 if (file.isFile) deleteQuietly(file)
+            }
+            if (isAcPhase1()) {
+                val app = PetalApplication.getInstance()
+                if (app != null) {
+                    try {
+                        val acStorage = PetalEngineStore.getThumbnailStorage(app)
+                        acStorage.clearThumbnails()
+                    } catch (_: Throwable) {}
+                }
             }
         }
     }
@@ -485,6 +535,17 @@ object TabThumbnailCache {
                 if (!temp.renameTo(target)) throw IOException("Could not publish thumbnail file")
             }
             if (!isCurrent(tabId, token, generation)) deleteQuietly(target)
+            if (isAcPhase1()) {
+                val app = PetalApplication.getInstance()
+                if (app != null) {
+                    try {
+                        val acStorage = PetalEngineStore.getThumbnailStorage(app)
+                        acStorage.saveThumbnail(ImageSaveRequest(tabId, false), bitmap)
+                    } catch (e: Throwable) {
+                        Log.w(TAG, "Failed saving thumbnail to Mozilla ThumbnailStorage", e)
+                    }
+                }
+            }
             if (WRITES_SINCE_TRIM.incrementAndGet() >= TRIM_EVERY_N_WRITES) {
                 WRITES_SINCE_TRIM.set(0)
                 trimDiskCache(dir)

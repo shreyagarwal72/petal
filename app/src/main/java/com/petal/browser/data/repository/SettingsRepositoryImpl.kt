@@ -274,7 +274,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override val etpStrict: Flow<Boolean> = preferenceFlow("sp_etp_strict") {
-        sp.getBoolean("sp_etp_strict", true)
+        sp.getBoolean("sp_etp_strict", false)
     }
 
     override val biometricTabLock: Flow<Boolean> = preferenceFlow("sp_biometric_incognito_tab_lock") {
@@ -290,7 +290,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override val fingerprintProtection: Flow<Boolean> = preferenceFlow("sp_fingerprint_protection") {
-        sp.getBoolean("sp_fingerprint_protection", true)
+        sp.getBoolean("sp_fingerprint_protection", false)
     }
 
     override val webrtcProtection: Flow<Boolean> = preferenceFlow("sp_webrtc_protection") {
@@ -343,6 +343,22 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override val nextDnsProfileId: Flow<String> = preferenceFlow("sp_nextdns_profile_id") {
         sp.getString("sp_nextdns_profile_id", "") ?: ""
+    }
+
+    override val bounceTracking: Flow<Boolean> = preferenceFlow("sp_bounce_tracking") {
+        sp.getBoolean("sp_bounce_tracking", false)
+    }
+
+    override val canvasLetterboxing: Flow<Boolean> = preferenceFlow("sp_canvas_letterboxing") {
+        sp.getBoolean("sp_canvas_letterboxing", false)
+    }
+
+    override val drmEnabled: Flow<Boolean> = preferenceFlow("sp_drm") {
+        sp.getBoolean("sp_drm", true)
+    }
+
+    override val loginAutofillEnabled: Flow<Boolean> = preferenceFlow("sp_login_autofill_enabled") {
+        sp.getBoolean("sp_login_autofill_enabled", true)
     }
 
     // ── Accessibility & Display ───────────────────────────────────────────────
@@ -882,6 +898,26 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setWebglEnabled(enabled: Boolean) {
         sp.edit().putBoolean("sp_webgl_enabled", enabled)
             .putBoolean("sp_webgl_disabled", !enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun setBounceTracking(enabled: Boolean) {
+        sp.edit().putBoolean("sp_bounce_tracking", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun setCanvasLetterboxing(enabled: Boolean) {
+        sp.edit().putBoolean("sp_canvas_letterboxing", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun setDrmEnabled(enabled: Boolean) {
+        sp.edit().putBoolean("sp_drm", enabled).apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun setLoginAutofillEnabled(enabled: Boolean) {
+        sp.edit().putBoolean("sp_login_autofill_enabled", enabled).apply()
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 

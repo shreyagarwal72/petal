@@ -2651,8 +2651,29 @@ private class ExternalSchemeNavigationDelegate(
     ): org.mozilla.geckoview.GeckoResult<org.mozilla.geckoview.AllowOrDeny>? {
         val uri = request.uri
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLoadRequest uri=$uri target=${request.target}")
-        if (handleExternal(uri)) {
-            return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
+
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+        val isAcPhase1 = sp.getBoolean("sp_ac_phase1", false)
+
+        if (isAcPhase1) {
+            val act = resolveActivity()
+            if (act != null && com.petal.browser.engine.gecko.PetalAppLinksBridge.handleExternalLoadRequest(
+                activity = act,
+                uri = uri,
+                hasUserGesture = request.hasUserGesture,
+                isIncognito = isIncognitoSupplier(),
+                isRedirect = request.isRedirect,
+                isDirectNavigation = request.isDirectNavigation,
+                onLoadFallbackUrl = { fallbackUrl ->
+                    (act as? com.petal.browser.activity.MainActivity)?.viewModel?.loadUrl(fallbackUrl)
+                }
+            )) {
+                return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
+            }
+        } else {
+            if (handleExternal(uri)) {
+                return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
+            }
         }
 
         // Interactive Element Zapper (petal://zap-element?domain=...&selector=...)

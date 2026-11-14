@@ -26,7 +26,14 @@ import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.request.RequestInterceptor
 import mozilla.components.concept.engine.request.ErrorType
-import mozilla.components.browser.errorpages.ErrorPages
+import androidx.preference.PreferenceManager
+import mozilla.components.browser.thumbnails.ThumbnailsMiddleware
+import mozilla.components.browser.thumbnails.storage.ThumbnailStorage
+import mozilla.components.browser.icons.BrowserIcons
+import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
+import mozilla.components.support.base.android.NotificationsDelegate
+import androidx.core.app.NotificationManagerCompat
+import mozilla.components.feature.webnotifications.WebNotificationFeature
 
 /**
  * PetalEngineStore
@@ -52,6 +59,18 @@ object PetalEngineStore {
 
     @Volatile
     private var recentlyClosedStorage: RecentlyClosedTabsStorage? = null
+
+    @Volatile
+    private var thumbnailStorage: ThumbnailStorage? = null
+
+    @Volatile
+    private var browserIcons: BrowserIcons? = null
+
+    @Volatile
+    private var notificationsDelegate: NotificationsDelegate? = null
+
+    @Volatile
+    private var webNotificationFeature: WebNotificationFeature? = null
 
     @Volatile
     private var autoSave: AutoSave? = null
@@ -112,6 +131,68 @@ object PetalEngineStore {
         )
         engine = newEngine
         Log.i(TAG, "Initialized Mozilla GeckoEngine wrapping PetalGeckoRuntime")
+
+        // Register official Mozilla concept-engine ServiceWorkerDelegate
+        try {
+            newEngine.registerServiceWorkerDelegate(object : mozilla.components.concept.engine.serviceworker.ServiceWorkerDelegate {
+                override fun addNewTab(engineSession: EngineSession): Boolean {
+                    val act = PetalGeckoRuntime.getForegroundActivity()
+                    val tabId = java.util.UUID.randomUUID().toString()
+                    PetalEngineStore.adoptPreparedSession(
+                        context = appContext,
+                        tabId = tabId,
+                        url = "about:blank",
+                        title = "",
+                        isIncognito = false,
+                        session = engineSession,
+                        select = true
+                    )
+                    (act as? com.petal.browser.activity.MainActivity)?.runOnUiThread {
+                        (act as? com.petal.browser.activity.MainActivity)?.viewModel?.selectTab(tabId)
+                    }
+                    return true
+                }
+            })
+            Log.i(TAG, "Registered Mozilla concept-engine ServiceWorkerDelegate on GeckoEngine")
+        } catch (t: Throwable) {
+            Log.w(TAG, "Could not register ServiceWorkerDelegate on GeckoEngine: ${t.message}")
+        }
+
+        // Web Notification + Web Push feature wiring when Phase 1 is active
+        val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
+        if (sp.getBoolean("sp_ac_phase1", false)) {
+            try {
+                val icons = getBrowserIcons(appContext)
+                val delegate = getNotificationsDelegate(appContext)
+                val permissionsStorage = object : mozilla.components.concept.engine.permission.SitePermissionsStorage {
+                    override suspend fun findSitePermissionsBy(origin: String, private: Boolean): mozilla.components.concept.engine.permission.SitePermissions? {
+                        return mozilla.components.concept.engine.permission.SitePermissions(
+                            origin = origin,
+                            notification = mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOWED
+                        )
+                    }
+                    override suspend fun getSitePermissions(): List<mozilla.components.concept.engine.permission.SitePermissions> = emptyList()
+                    override suspend fun getSitePermissionsFor(origin: String): List<mozilla.components.concept.engine.permission.SitePermissions> = emptyList()
+                    override suspend fun remove(origin: String, private: Boolean) {}
+                    override suspend fun removeAll() {}
+                    override suspend fun removeAll(private: Boolean) {}
+                    override suspend fun save(sitePermissions: mozilla.components.concept.engine.permission.SitePermissions, private: Boolean) {}
+                }
+                webNotificationFeature = WebNotificationFeature(
+                    context = appContext,
+                    engine = newEngine,
+                    browserIcons = icons,
+                    smallIcon = com.petal.browser.R.drawable.icon_live_notification,
+                    sitePermissionsStorage = permissionsStorage,
+                    activityClass = com.petal.browser.activity.MainActivity::class.java,
+                    notificationsDelegate = delegate
+                )
+                Log.i(TAG, "Registered Mozilla WebNotificationFeature on GeckoEngine")
+            } catch (t: Throwable) {
+                Log.w(TAG, "Could not register WebNotificationFeature: ${t.message}")
+            }
+        }
+
         try {
             com.petal.browser.extensions.PetalBuiltInExtensions.installAll(newEngine)
         } catch (t: Throwable) {
@@ -147,6 +228,15 @@ object PetalEngineStore {
             scope = mainScope
         )
 
+        val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
+        val isAcPhase1 = sp.getBoolean("sp_ac_phase1", false)
+
+        val thumbnailsMiddleware = if (isAcPhase1) {
+            ThumbnailsMiddleware(getThumbnailStorage(appContext))
+        } else {
+            PetalThumbnailsMiddleware()
+        }
+
         val newStore = BrowserStore(
             initialState = BrowserState(),
             middleware = listOf(
@@ -158,7 +248,7 @@ object PetalEngineStore {
                 SessionPrioritizationMiddleware(),
                 recentlyClosedMiddleware,
                 ReaderViewMiddleware(),
-                PetalThumbnailsMiddleware()
+                thumbnailsMiddleware
             ) + engineMiddleware
         )
         store = newStore
@@ -201,6 +291,38 @@ object PetalEngineStore {
         recentlyClosedStorage = storage
         Log.i(TAG, "Initialized Mozilla RecentlyClosedTabsStorage")
         return storage
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getThumbnailStorage(context: Context): ThumbnailStorage {
+        thumbnailStorage?.let { return it }
+        val storage = ThumbnailStorage(context.applicationContext)
+        thumbnailStorage = storage
+        Log.i(TAG, "Initialized Mozilla ThumbnailStorage")
+        return storage
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getBrowserIcons(context: Context): BrowserIcons {
+        browserIcons?.let { return it }
+        val appContext = context.applicationContext
+        val rt = PetalGeckoRuntime.getOrCreate(appContext)
+        val client = GeckoViewFetchClient(context = appContext, runtime = rt)
+        val icons = BrowserIcons(context = appContext, httpClient = client)
+        browserIcons = icons
+        Log.i(TAG, "Initialized Mozilla BrowserIcons")
+        return icons
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getNotificationsDelegate(context: Context): NotificationsDelegate {
+        notificationsDelegate?.let { return it }
+        val delegate = NotificationsDelegate(NotificationManagerCompat.from(context.applicationContext))
+        notificationsDelegate = delegate
+        return delegate
     }
 
     @JvmStatic

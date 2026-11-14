@@ -94,7 +94,7 @@ object PetalGeckoRuntime {
 
         val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
         val totalCookieProtection = sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", true))
-        val etpStrict = sp.getBoolean("sp_etp_strict", true) || (privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT)
+        val etpStrict = sp.getBoolean("sp_etp_strict", false) || (privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT)
         // Same rule as syncPreferences() so startup and later syncs never disagree.
         val sessionPartitioningAtStart = sp.getBoolean("sp_session_partitioning", true)
         val defaultCookieBehavior = if (sessionPartitioningAtStart || totalCookieProtection || blockThirdPartyCookies || isStrictOrHardened) {
@@ -256,6 +256,34 @@ object PetalGeckoRuntime {
             Log.w(TAG, "Could not register web notification delegate: ${t.message}")
         }
 
+        try {
+            newRuntime.serviceWorkerDelegate = object : GeckoRuntime.ServiceWorkerDelegate {
+                override fun onOpenWindow(url: String): GeckoResult<org.mozilla.geckoview.GeckoSession>? {
+                    val activity = foregroundActivity?.get() ?: return null
+                    val result = GeckoResult<org.mozilla.geckoview.GeckoSession>()
+                    activity.runOnUiThread {
+                        try {
+                            val pair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+                                context = activity,
+                                tabId = java.util.UUID.randomUUID().toString(),
+                                url = url,
+                                isIncognito = false,
+                                select = true
+                            )
+                            val gs = (pair.second as? mozilla.components.browser.engine.gecko.GeckoEngineSession)?.geckoSession
+                            result.complete(gs)
+                        } catch (t: Throwable) {
+                            result.completeExceptionally(t)
+                        }
+                    }
+                    return result
+                }
+            }
+            Log.i(TAG, "Registered GeckoRuntime.ServiceWorkerDelegate for openWindow")
+        } catch (t: Throwable) {
+            Log.w(TAG, "Could not register serviceWorkerDelegate: ${t.message}")
+        }
+
         runtime = newRuntime
         Log.i(TAG, "Initialized GeckoRuntime with standard tracking protection and high-performance pipeline")
         return newRuntime
@@ -362,7 +390,7 @@ object PetalGeckoRuntime {
                 }
 
                 // 2. Enhanced Tracking Protection & AdBlock
-                val etpStrict = sp.getBoolean("sp_etp_strict", true) || (privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT)
+                val etpStrict = sp.getBoolean("sp_etp_strict", false) || (privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT)
                 val etpLevel = if (etpStrict) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.DEFAULT
                 rt.settings.contentBlocking.setEnhancedTrackingProtectionLevel(etpLevel)
                 rt.settings.contentBlocking.setStrictSocialTrackingProtection(etpStrict)
@@ -386,7 +414,7 @@ object PetalGeckoRuntime {
                             ContentBlocking.AntiTracking.CONTENT or ContentBlocking.AntiTracking.STP or
                             ContentBlocking.AntiTracking.CRYPTOMINING or ContentBlocking.AntiTracking.FINGERPRINTING
                 }
-                if (sp.getBoolean("sp_fingerprint_protection", true)) {
+                if (sp.getBoolean("sp_fingerprint_protection", false)) {
                     antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.FINGERPRINTING
                 }
                 rt.settings.contentBlocking.setAntiTracking(antiTrackingFlags)
@@ -463,7 +491,7 @@ object PetalGeckoRuntime {
             rtSettingsGpc(dnt)
         } catch (_: Throwable) {}
 
-        val fp = sp.getBoolean("sp_fingerprint_protection", true)
+        val fp = sp.getBoolean("sp_fingerprint_protection", false)
         setGeckoPref("privacy.fingerprintingProtection", fp)
 
         val banner = sp.getBoolean("sp_cookie_banner_auto_reject", sp.getBoolean("petal_builtin_consent_manager", true))

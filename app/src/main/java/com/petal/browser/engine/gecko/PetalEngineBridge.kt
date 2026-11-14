@@ -246,9 +246,7 @@ object PetalEngineBridge {
      */
     @JvmStatic
     fun isInternalScheme(url: String?): Boolean {
-        if (url.isNullOrBlank()) return false
-        val trimmedLower = url.trim().lowercase(Locale.ROOT)
-        return INTERNAL_SCHEMES.any { trimmedLower.startsWith(it) }
+        return PetalAppLinksBridge.isInternalScheme(url)
     }
 
     /**
@@ -258,13 +256,24 @@ object PetalEngineBridge {
      */
     @JvmStatic
     fun isExternalScheme(url: String?): Boolean {
-        if (url.isNullOrBlank()) return false
-        return !isInternalScheme(url)
+        return PetalAppLinksBridge.isExternalScheme(url)
     }
 
     @JvmStatic
     fun handleExternalScheme(activity: Activity, url: String?): Boolean {
         if (url.isNullOrBlank() || isInternalScheme(url)) return false
+
+        val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+        if (sp.getBoolean("sp_ac_phase1", false)) {
+            return PetalAppLinksBridge.handleExternalLoadRequest(
+                activity = activity,
+                uri = url,
+                hasUserGesture = true,
+                isIncognito = false,
+                isRedirect = false,
+                isDirectNavigation = true
+            )
+        }
 
         val trimmedUrl = url.trim()
         if (trimmedUrl.startsWith("intent:", ignoreCase = true)) {

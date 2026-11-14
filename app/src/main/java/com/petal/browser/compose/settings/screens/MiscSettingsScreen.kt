@@ -245,6 +245,32 @@ fun MiscSettingsScreenContent(
                     )
                 }
 
+                // Advanced Developer Tools (about:config)
+                val developerPrefs = remember(context) {
+                    androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                }
+                var aboutConfigEnabled by remember {
+                    mutableStateOf(developerPrefs.getBoolean("sp_enable_about_config", com.petal.browser.BuildConfig.DEBUG))
+                }
+                PetalSettingsSection(
+                    title = "Developer & Advanced",
+                    icon = Icons.Rounded.DeveloperMode,
+                    cardId = "misc_developer",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                        title = "Enable about:config",
+                        subtitle = "Allow viewing and modifying internal GeckoView preferences via about:config",
+                        icon = Icons.Rounded.Terminal,
+                        checked = aboutConfigEnabled,
+                        onCheckedChange = { enabled ->
+                            aboutConfigEnabled = enabled
+                            developerPrefs.edit().putBoolean("sp_enable_about_config", enabled).apply()
+                        }
+                    )
+                }
+
                 Spacer(Modifier.height(32.dp))
             }
         }

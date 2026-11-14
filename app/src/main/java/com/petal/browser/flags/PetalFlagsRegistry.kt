@@ -161,6 +161,34 @@ object PetalFlagsRegistry {
             description = "Injects native anti-adblock and tracker defusing scriptlets before DOMContentLoaded.",
             category = FlagCategory.EXTENSIONS,
             prefKey = "petal.scriptlet.defuser"
+        ),
+        PetalFlagDefinition(
+            id = "ac-phase1",
+            title = "Mozilla AC Phase 1 (AppLinks, WebNotifications, FindInPage, Thumbnails/Icons)",
+            description = "Switches link intent dispatch, web notifications, find-in-page, and thumbnails/favicons to official Mozilla Android Components.",
+            category = FlagCategory.SYSTEM,
+            prefKey = "sp_ac_phase1"
+        ),
+        PetalFlagDefinition(
+            id = "ac-phase2",
+            title = "Mozilla AC Phase 2 (SitePermissions, Prompts, Search, Top Sites)",
+            description = "Switches site permissions, web prompts, search engine management, and top sites to official Mozilla Android Components.",
+            category = FlagCategory.SYSTEM,
+            prefKey = "sp_ac_phase2"
+        ),
+        PetalFlagDefinition(
+            id = "ac-phase3",
+            title = "Mozilla AC Phase 3 (Places Storage, Logins, Session Restore)",
+            description = "Switches browser history, bookmarks, password autocomplete vault, and tab session save/restore to official Mozilla Android Components.",
+            category = FlagCategory.SYSTEM,
+            prefKey = "sp_ac_phase3"
+        ),
+        PetalFlagDefinition(
+            id = "ac-phase4",
+            title = "Mozilla AC Phase 4 (Add-ons, PWA, Custom Tabs, Suspension)",
+            description = "Switches WebExtensions management, progressive web apps, and custom tabs to official Mozilla Android Components.",
+            category = FlagCategory.SYSTEM,
+            prefKey = "sp_ac_phase4"
         )
     )
 

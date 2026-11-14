@@ -87,6 +87,10 @@ interface SettingsRepository {
     val privateDnsMode: Flow<String>
     val customDohUrl: Flow<String>
     val nextDnsProfileId: Flow<String>
+    val bounceTracking: Flow<Boolean>
+    val canvasLetterboxing: Flow<Boolean>
+    val drmEnabled: Flow<Boolean>
+    val loginAutofillEnabled: Flow<Boolean>
 
     // Accessibility & Display
     val immersiveFullScreen: Flow<Boolean>
@@ -220,6 +224,10 @@ interface SettingsRepository {
     suspend fun setNextDnsProfileId(id: String)
     suspend fun setPrivacyProfile(profile: String)
     suspend fun setWebglEnabled(enabled: Boolean)
+    suspend fun setBounceTracking(enabled: Boolean)
+    suspend fun setCanvasLetterboxing(enabled: Boolean)
+    suspend fun setDrmEnabled(enabled: Boolean)
+    suspend fun setLoginAutofillEnabled(enabled: Boolean)
 
     suspend fun setTouchHaptics(enabled: Boolean)
     suspend fun setImmersiveFullScreen(enabled: Boolean)

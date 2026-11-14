@@ -208,7 +208,7 @@ object PetalPrivacyHardening {
         val trimRef = sp.getBoolean("sp_trim_referrers", true)
         val webauthn = sp.getBoolean("sp_webauthn_enabled", true)
         val dntGpc = sp.getBoolean("sp_dnt_gpc", true)
-        val fpProtect = sp.getBoolean("sp_fingerprint_protection", true)
+        val fpProtect = sp.getBoolean("sp_fingerprint_protection", false)
         sb.appendLine("""
             // User privacy toggles
             user_pref("network.http.referer.XOriginTrimmingPolicy", ${if (trimRef) 2 else 0});
