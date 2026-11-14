@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 use wasm_bindgen::prelude::*;
 use adblock::engine::Engine;
-use adblock::lists::{FilterFormat, FilterSet};
+use adblock::lists::{FilterSet, ParseOptions};
 use adblock::request::Request;
+use adblock::resources::Resource;
 use serde::{Deserialize, Serialize};
 
 #[wasm_bindgen]
@@ -37,10 +38,10 @@ impl AdblockEngine {
         
         let mut filter_set = FilterSet::new(false);
         for rule_list in rules_vec {
-            filter_set.add_filter_list(&rule_list, FilterFormat::Standard);
+            filter_set.add_filter_list(rule_list, ParseOptions::default());
         }
 
-        let engine = Engine::from_filter_set(filter_set, true);
+        let engine = Engine::new_with_filter_set(filter_set);
         Ok(AdblockEngine { engine })
     }
 
@@ -59,17 +60,29 @@ impl AdblockEngine {
 
     #[wasm_bindgen(js_name = checkNetworkRequest)]
     pub fn check_network_request(&self, url: &str, source_url: &str, request_type: &str) -> Result<JsValue, JsValue> {
-        let req = Request::from_urls(url, source_url, request_type)
+        let req = Request::new(url, source_url, request_type, "GET")
             .map_err(|e| JsValue::from_str(&format!("Invalid request params: {:?}", e)))?;
         
         let blocker_result = self.engine.check_network_request(&req);
+        let matched = blocker_result.filter.is_some() 
+            || blocker_result.redirect.is_some() 
+            || blocker_result.rewritten_url.is_some();
+        let filter_str = blocker_result.filter.as_ref().map(|f| format!("{:?}", f));
+        let csp = filter_str.as_ref().and_then(|f_str| {
+            if f_str.contains("$csp=") {
+                f_str.split("$csp=").nth(1).map(|s| s.split(',').next().unwrap_or(s).to_string())
+            } else {
+                None
+            }
+        });
+
         let res = JsBlockerResult {
-            matched: blocker_result.matched,
+            matched,
             important: blocker_result.important,
             redirect: blocker_result.redirect,
             rewritten_url: blocker_result.rewritten_url,
-            csp: blocker_result.csp,
-            filter: blocker_result.filter,
+            csp,
+            filter: filter_str,
         };
         serde_wasm_bindgen::to_value(&res)
             .map_err(|e| JsValue::from_str(&e.to_string()))
@@ -78,10 +91,15 @@ impl AdblockEngine {
     #[wasm_bindgen(js_name = urlCosmeticResources)]
     pub fn url_cosmetic_resources(&self, url: &str) -> Result<JsValue, JsValue> {
         let cosmetic_resources = self.engine.url_cosmetic_resources(url);
+        let injected = if cosmetic_resources.injected_script.is_empty() {
+            vec![]
+        } else {
+            vec![cosmetic_resources.injected_script]
+        };
         let res = JsCosmeticResources {
-            hide_selectors: cosmetic_resources.hide_selectors,
-            exceptions: cosmetic_resources.exceptions,
-            injected_scriptlets: cosmetic_resources.injected_scriptlets,
+            hide_selectors: cosmetic_resources.hide_selectors.into_iter().collect(),
+            exceptions: cosmetic_resources.exceptions.into_iter().collect(),
+            injected_scriptlets: injected,
             generichide: cosmetic_resources.generichide,
         };
         serde_wasm_bindgen::to_value(&res)
@@ -105,7 +123,9 @@ impl AdblockEngine {
 
     #[wasm_bindgen(js_name = useResources)]
     pub fn use_resources(&mut self, resources: &str) -> Result<(), JsValue> {
-        self.engine.use_resources(resources);
+        let parsed_resources: Vec<Resource> = serde_json::from_str(resources)
+            .map_err(|e| JsValue::from_str(&format!("Resource parse error: {:?}", e)))?;
+        self.engine.use_resources(parsed_resources);
         Ok(())
     }
 }
