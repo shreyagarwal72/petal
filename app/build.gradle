@@ -325,7 +325,6 @@ dependencies {
     implementation 'org.mozilla.components:feature-readerview:159.0.1'
 
     // Android Components Phase 3: Omnibox & Assets (159.0.1)
-    implementation 'org.mozilla.components:browser-search:159.0.1'
     implementation 'org.mozilla.components:feature-search:159.0.1'
     implementation 'org.mozilla.components:feature-awesomebar:159.0.1'
     implementation 'org.mozilla.components:feature-top-sites:159.0.1'
