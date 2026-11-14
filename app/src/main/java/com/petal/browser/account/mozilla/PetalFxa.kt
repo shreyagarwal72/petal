@@ -16,6 +16,8 @@ import mozilla.components.feature.syncedtabs.storage.SyncedTabsStorage
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.service.sync.logins.SyncableLoginsStorage
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
+import com.petal.browser.database.PetalPlacesProvider
+import com.petal.browser.passwords.PetalLoginsProvider
 import mozilla.components.concept.sync.*
 import mozilla.components.service.fxa.*
 import mozilla.components.service.fxa.manager.*
@@ -63,8 +65,6 @@ object PetalFxa {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var manager: FxaAccountManager? = null
-    private var bridge: PetalPlacesBridge? = null
-    private var loginsBridge: PetalLoginsBridge? = null
     private var syncedTabs: SyncedTabsStorage? = null
     private var tabsStorage: RemoteTabsStorage? = null
     private var started = false
@@ -94,16 +94,14 @@ object PetalFxa {
         appContext = activity.applicationContext
         _lastSync.value = PetalFxaSettings.lastSync(appContext)
         if (manager == null) {
-            val history = PlacesHistoryStorage(appContext)
-            val bookmarks = PlacesBookmarksStorage(appContext)
-            bridge = PetalPlacesBridge(appContext, history, bookmarks)
+            val history = PetalPlacesProvider.getHistoryStorage(appContext)
+            val bookmarks = PetalPlacesProvider.getBookmarksStorage(appContext)
             GlobalSyncableStoreProvider.configureStore(SyncEngine.History to lazy { history })
             GlobalSyncableStoreProvider.configureStore(SyncEngine.Bookmarks to lazy { bookmarks })
             val tabs = RemoteTabsStorage(appContext, NoopCrashReporter)
             tabsStorage = tabs
             GlobalSyncableStoreProvider.configureStore(SyncEngine.Tabs to lazy { tabs })
-            val loginsStorage = SyncableLoginsStorage(appContext, lazy { SecureAbove22Preferences(appContext, "petal_fxa_logins", false) })
-            loginsBridge = PetalLoginsBridge(appContext, loginsStorage)
+            val loginsStorage = PetalLoginsProvider.getLoginsStorage(appContext)
             GlobalSyncableStoreProvider.configureStore(SyncEngine.Passwords to lazy { loginsStorage })
             applyEngineSettings()
 
@@ -170,8 +168,6 @@ object PetalFxa {
             val now = System.currentTimeMillis()
             PetalFxaSettings.setLastSync(appContext, now); _lastSync.value = now
             scope.launch {
-                try { bridge?.pullHistory(); bridge?.reconcileBookmarks() } catch (_: Throwable) {}
-                reconcilePasswords()
                 refreshRemoteTabs()
             }
         }
@@ -226,8 +222,6 @@ object PetalFxa {
     fun syncNow(reason: SyncReason = SyncReason.User) {
         val mgr = manager ?: return
         scope.launch {
-            try { bridge?.reconcileBookmarks() } catch (_: Throwable) {}
-            reconcilePasswords()
             mgr.syncNow(reason)
             refreshDevices()
         }
@@ -271,14 +265,8 @@ object PetalFxa {
     }
 
     fun mirrorVisit(context: Context, url: String, title: String) {
-        val b = bridge ?: return
         if (_state.value !is FxaUi.SignedIn || !PetalFxaSettings.history(context)) return
-        scope.launch { try { b.mirrorVisit(url, title) } catch (_: Throwable) {} }
-    }
-
-    private suspend fun reconcilePasswords() {
-        if (!PetalFxaSettings.passwords(appContext) || _state.value !is FxaUi.SignedIn) return
-        try { loginsBridge?.reconcile() } catch (e: Throwable) { _error.value = "Password sync: ${e.message}" }
+        scope.launch { try { PetalPlacesProvider.recordVisit(context, url, title) } catch (_: Throwable) {} }
     }
 
     /** Tabs open on the account's other devices, from the official synced-tabs storage. */

@@ -310,6 +310,7 @@ dependencies {
     implementation 'org.mozilla.components:feature-prompts:159.0.1'
     implementation 'org.mozilla.components:feature-tabs:159.0.1'
     implementation 'org.mozilla.components:feature-downloads:159.0.1'
+    implementation 'org.mozilla.components:feature-recentlyclosed:159.0.1'
     implementation 'org.mozilla.components:feature-webcompat:159.0.1'
     implementation 'org.mozilla.components:feature-media:159.0.1'
 

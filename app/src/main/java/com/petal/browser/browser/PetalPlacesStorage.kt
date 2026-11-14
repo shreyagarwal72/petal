@@ -1,16 +1,14 @@
 package com.petal.browser.browser
 
 import android.content.Context
-import com.petal.browser.database.HistoryBookmarkContract
-import com.petal.browser.database.HistoryBookmarkRepository
+import com.petal.browser.database.PetalPlacesProvider
 import com.petal.browser.database.Record
 
 /**
  * PetalPlacesStorage
  * ─────────────────────────────────────────────────────────────────────────
- * Clean storage abstraction layer for browsing history and bookmarks.
- * Powered by high-speed SQLite [HistoryBookmarkRepository] engine with zero overhead,
- * maintaining persistent access without requiring native Rust storage-sync dependencies.
+ * Clean storage abstraction layer for browsing history and bookmarks,
+ * backed by Mozilla's Places engine via [PetalPlacesProvider].
  */
 object PetalPlacesStorage {
 
@@ -19,44 +17,20 @@ object PetalPlacesStorage {
      */
     fun recordVisit(context: Context, url: String, title: String) {
         if (url.isBlank() || url.startsWith("about:") || url.startsWith("moz-extension://")) return
-        try {
-            val action = HistoryBookmarkRepository(context)
-            action.open(true)
-            val record = Record().apply {
-                this.title = title.ifBlank { url }
-                this.url = url
-                this.time = System.currentTimeMillis()
-            }
-            action.addHistory(record)
-            action.close()
-            com.petal.browser.account.mozilla.PetalFxa.mirrorVisit(context, url, record.title ?: url)
-        } catch (_: Throwable) {}
+        PetalPlacesProvider.recordVisit(context, url, title)
     }
 
     /**
      * Returns visited history records.
      */
     fun getVisited(context: Context): List<Record> {
-        return try {
-            val action = HistoryBookmarkRepository(context)
-            action.open(false)
-            val list = action.listHistory(context)
-            action.close()
-            list ?: emptyList()
-        } catch (_: Throwable) {
-            emptyList()
-        }
+        return PetalPlacesProvider.getHistory(context)
     }
 
     /**
      * Clears all visited browsing history.
      */
     fun clearHistory(context: Context) {
-        try {
-            val action = HistoryBookmarkRepository(context)
-            action.open(true)
-            action.clearTable(HistoryBookmarkContract.TABLE_HISTORY)
-            action.close()
-        } catch (_: Throwable) {}
+        PetalPlacesProvider.clearHistory(context)
     }
 }

@@ -42,27 +42,12 @@ open class HistoryBookmarkRepository(context: Context?) {
         ) {
             return
         }
-        val db = database ?: helper.writableDatabase
-        val values = ContentValues().apply {
-            put(HistoryBookmarkContract.COLUMN_TITLE, record.title.trim())
-            put(HistoryBookmarkContract.COLUMN_URL, record.url.trim())
-            put(HistoryBookmarkContract.COLUMN_TIME, if (record.iconColor > 0) record.iconColor else System.currentTimeMillis())
-            put(HistoryBookmarkContract.COLUMN_IS_READING_LIST, if (record.isReadingList) 1 else 0)
-        }
-        if (checkBookmark(record.url)) {
-            db.update(
-                HistoryBookmarkContract.TABLE_BOOKMARK,
-                values,
-                HistoryBookmarkContract.COLUMN_URL + "=?",
-                arrayOf(record.url.trim())
-            )
-        } else {
-            db.insert(HistoryBookmarkContract.TABLE_BOOKMARK, null, values)
-        }
-        if (context != null) {
+        val ctx = context ?: com.petal.browser.PetalApplication.instance
+        if (ctx != null) {
+            PetalPlacesProvider.addBookmark(ctx, record)
             try {
                 com.petal.browser.account.progress.PetalProgressStore.bump(
-                    context,
+                    ctx,
                     com.petal.browser.account.progress.PetalCounter.BOOKMARKS,
                     1L,
                     3L
@@ -75,21 +60,8 @@ open class HistoryBookmarkRepository(context: Context?) {
         if (oldUrl.isNullOrBlank() || newUrl.isNullOrBlank()) {
             return false
         }
-        val db = database ?: helper.writableDatabase
-        val values = ContentValues().apply {
-            put(
-                HistoryBookmarkContract.COLUMN_TITLE,
-                if (!newTitle.isNullOrBlank()) newTitle.trim() else newUrl.trim()
-            )
-            put(HistoryBookmarkContract.COLUMN_URL, newUrl.trim())
-        }
-        val updated = db.update(
-            HistoryBookmarkContract.TABLE_BOOKMARK,
-            values,
-            HistoryBookmarkContract.COLUMN_URL + "=?",
-            arrayOf(oldUrl.trim())
-        )
-        return updated > 0
+        val ctx = context ?: com.petal.browser.PetalApplication.instance ?: return false
+        return PetalPlacesProvider.updateBookmark(ctx, oldUrl, newTitle, newUrl)
     }
 
     fun setBookmarkReadingList(url: String?, isReadingList: Boolean): Boolean {
@@ -110,46 +82,21 @@ open class HistoryBookmarkRepository(context: Context?) {
     }
 
     fun deleteBookmark(url: String?) {
-        deleteURL(url, HistoryBookmarkContract.TABLE_BOOKMARK)
+        val ctx = context ?: com.petal.browser.PetalApplication.instance
+        if (ctx != null && !url.isNullOrBlank()) {
+            PetalPlacesProvider.deleteBookmark(ctx, url)
+        }
     }
 
     fun listBookmark(context: Context, filter: Boolean, filterBy: Long): List<Record> {
-        val list = LinkedList<Record>()
+        val list = PetalPlacesProvider.getAllBookmarks(context).toMutableList()
         val sp: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val sortBy = sp.getString("sort_bookmark", "title") ?: "title"
-        val db = database ?: helper.readableDatabase
-        val cursor = db.query(
-            HistoryBookmarkContract.TABLE_BOOKMARK,
-            arrayOf(
-                HistoryBookmarkContract.COLUMN_TITLE,
-                HistoryBookmarkContract.COLUMN_URL,
-                HistoryBookmarkContract.COLUMN_TIME,
-                HistoryBookmarkContract.COLUMN_IS_READING_LIST
-            ),
-            null,
-            null,
-            null,
-            null,
-            "$sortBy COLLATE NOCASE;"
-        )
-        cursor.use { c ->
-            if (c.moveToFirst()) {
-                while (!c.isAfterLast) {
-                    val rec = getRecord(c, BOOKMARK_ITEM)
-                    if (filter) {
-                        if (rec.iconColor == filterBy) {
-                            list.add(rec)
-                        }
-                    } else {
-                        list.add(rec)
-                    }
-                    c.moveToNext()
-                }
-            }
-        }
 
         if (sortBy == "time") {
             list.sortWith(compareBy({ it.title }, { it.iconColor }))
+        } else {
+            list.sortBy { it.title?.lowercase() ?: "" }
         }
         if (sp.getBoolean("sort_bookmarkDomain", false)) {
             list.sortBy { it.domain }
@@ -168,39 +115,14 @@ open class HistoryBookmarkRepository(context: Context?) {
         ) {
             return
         }
-        val db = database ?: helper.writableDatabase
-        val values = ContentValues().apply {
-            put(HistoryBookmarkContract.COLUMN_TITLE, record.title.trim())
-            put(HistoryBookmarkContract.COLUMN_URL, record.url.trim())
-            put(HistoryBookmarkContract.COLUMN_TIME, record.time)
+        val ctx = context ?: com.petal.browser.PetalApplication.instance
+        if (ctx != null) {
+            PetalPlacesProvider.recordVisit(ctx, record.url, record.title)
         }
-        db.insert(HistoryBookmarkContract.TABLE_HISTORY, null, values)
     }
 
     fun listHistory(context: Context): List<Record> {
-        val list = ArrayList<Record>()
-        val db = database ?: helper.readableDatabase
-        val cursor = db.query(
-            HistoryBookmarkContract.TABLE_HISTORY,
-            arrayOf(
-                HistoryBookmarkContract.COLUMN_TITLE,
-                HistoryBookmarkContract.COLUMN_URL,
-                HistoryBookmarkContract.COLUMN_TIME
-            ),
-            null,
-            null,
-            null,
-            null,
-            HistoryBookmarkContract.COLUMN_TIME + " DESC"
-        )
-        cursor.use { c ->
-            if (c.moveToFirst()) {
-                while (!c.isAfterLast) {
-                    list.add(getRecord(c, HISTORY_ITEM))
-                    c.moveToNext()
-                }
-            }
-        }
+        val list = PetalPlacesProvider.getHistory(context).toMutableList()
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         if (sp.getBoolean("sort_historyDomain", false)) {
             list.sortBy { it.domain }
@@ -261,7 +183,10 @@ open class HistoryBookmarkRepository(context: Context?) {
         return list
     }
 
-    fun checkBookmark(url: String?): Boolean = checkUrl(url, HistoryBookmarkContract.TABLE_BOOKMARK)
+    fun checkBookmark(url: String?): Boolean {
+        val ctx = context ?: com.petal.browser.PetalApplication.instance ?: return false
+        return PetalPlacesProvider.checkBookmark(ctx, url)
+    }
 
     fun addStartSite(record: HistoryBookmarkItem?) {
         if (record == null || record.title.trim().isEmpty() || record.url.trim().isEmpty()) return
@@ -327,12 +252,26 @@ open class HistoryBookmarkRepository(context: Context?) {
 
     fun deleteURL(domain: String?, table: String) {
         if (domain.isNullOrBlank()) return
+        val ctx = context ?: com.petal.browser.PetalApplication.instance
+        if (table == HistoryBookmarkContract.TABLE_BOOKMARK && ctx != null) {
+            PetalPlacesProvider.deleteBookmark(ctx, domain)
+            return
+        }
+        if (table == HistoryBookmarkContract.TABLE_HISTORY && ctx != null) {
+            PetalPlacesProvider.deleteHistory(ctx, domain)
+            return
+        }
         val db = database ?: helper.writableDatabase
         db.execSQL("DELETE FROM $table WHERE ${HistoryBookmarkContract.COLUMN_URL} = \"${domain.trim()}\"")
     }
 
     fun deleteHistoryByTitle(title: String?) {
         if (title.isNullOrBlank()) return
+        val ctx = context ?: com.petal.browser.PetalApplication.instance
+        if (ctx != null) {
+            PetalPlacesProvider.deleteHistoryByTitle(ctx, title)
+            return
+        }
         val db = database ?: helper.writableDatabase
         db.delete(
             HistoryBookmarkContract.TABLE_HISTORY,
@@ -342,6 +281,15 @@ open class HistoryBookmarkRepository(context: Context?) {
     }
 
     fun clearTable(table: String) {
+        val ctx = context ?: com.petal.browser.PetalApplication.instance
+        if (table == HistoryBookmarkContract.TABLE_BOOKMARK && ctx != null) {
+            PetalPlacesProvider.clearBookmarks(ctx)
+            return
+        }
+        if (table == HistoryBookmarkContract.TABLE_HISTORY && ctx != null) {
+            PetalPlacesProvider.clearHistory(ctx)
+            return
+        }
         val db = database ?: helper.writableDatabase
         db.execSQL("DELETE FROM $table")
     }

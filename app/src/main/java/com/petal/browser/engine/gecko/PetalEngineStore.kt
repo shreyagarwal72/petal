@@ -15,6 +15,8 @@ import mozilla.components.feature.downloads.DownloadMiddleware
 import mozilla.components.feature.prompts.PromptMiddleware
 import mozilla.components.feature.prompts.file.FileUploadsDirCleaner
 import mozilla.components.feature.prompts.file.FileUploadsDirCleanerMiddleware
+import mozilla.components.feature.recentlyclosed.RecentlyClosedMiddleware
+import mozilla.components.feature.recentlyclosed.RecentlyClosedTabsStorage
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -46,6 +48,9 @@ object PetalEngineStore {
 
     @Volatile
     private var sessionStorage: SessionStorage? = null
+
+    @Volatile
+    private var recentlyClosedStorage: RecentlyClosedTabsStorage? = null
 
     @Volatile
     private var autoSave: AutoSave? = null
@@ -129,6 +134,8 @@ object PetalEngineStore {
             deleteFileFromStorage = { true }
         )
         val uploadCleaner = getFileUploadsDirCleaner(appContext)
+        val rcStorage = getRecentlyClosedStorage(appContext)
+        val recentlyClosedMiddleware = RecentlyClosedMiddleware(rcStorage, mainScope)
 
         val newStore = BrowserStore(
             initialState = BrowserState(),
@@ -139,6 +146,7 @@ object PetalEngineStore {
                 PromptMiddleware(),
                 FileUploadsDirCleanerMiddleware(uploadCleaner),
                 SessionPrioritizationMiddleware(),
+                recentlyClosedMiddleware,
                 PetalThumbnailsMiddleware()
             ) + engineMiddleware
         )
@@ -152,6 +160,18 @@ object PetalEngineStore {
         }
         Log.i(TAG, "Initialized Mozilla BrowserStore with Prioritization, EngineMiddleware and DownloadMiddleware")
         return newStore
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getRecentlyClosedStorage(context: Context): RecentlyClosedTabsStorage {
+        recentlyClosedStorage?.let { return it }
+
+        val appContext = context.applicationContext
+        val storage = RecentlyClosedTabsStorage(context = appContext)
+        recentlyClosedStorage = storage
+        Log.i(TAG, "Initialized Mozilla RecentlyClosedTabsStorage")
+        return storage
     }
 
     @JvmStatic

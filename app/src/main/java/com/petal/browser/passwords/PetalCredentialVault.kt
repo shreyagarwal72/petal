@@ -57,6 +57,7 @@ object PetalCredentialVault {
     private const val NEVER_SAVE_PREF = "sp_autofill_never_save_domains"
     private var isInitialized = false
     private var vaultFile: File? = null
+    private var appContext: Context? = null
 
     // True when the vault file exists but could not be read for a temporary reason.
     // We then refuse to overwrite it, so a good file is never replaced by an empty one.
@@ -70,13 +71,25 @@ object PetalCredentialVault {
 
     @Synchronized
     fun init(context: Context) {
-        if (isInitialized && vaultFile != null) return
-        val appContext = context.applicationContext
-        vaultFile = File(appContext.filesDir, VAULT_FILE_NAME)
+        val appCtx = context.applicationContext
+        appContext = appCtx
+        if (isInitialized) return
+        vaultFile = File(appCtx.filesDir, VAULT_FILE_NAME)
         ensureKeyExists()
-        loadVault()
+        // Ensure Logins storage is initialized and one-time migration executed
+        PetalLoginsProvider.getLoginsStorage(appCtx)
+        val loaded = PetalLoginsProvider.getAll(appCtx)
+        credentials.clear()
+        if (loaded.isNotEmpty()) {
+            credentials.addAll(loaded)
+        } else {
+            loadVault()
+            if (credentials.isNotEmpty()) {
+                credentials.forEach { PetalLoginsProvider.save(appCtx, it) }
+            }
+        }
         isInitialized = true
-        Log.i(TAG, "Vault initialized with ${credentials.size} credentials.")
+        Log.i(TAG, "Vault initialized with ${credentials.size} credentials from SyncableLoginsStorage.")
     }
 
     private fun ensureKeyExists() {
@@ -396,6 +409,7 @@ object PetalCredentialVault {
             }
         }
         persistVault()
+        appContext?.let { PetalLoginsProvider.save(it, sanitized) }
     }
 
     @Synchronized
@@ -405,6 +419,7 @@ object PetalCredentialVault {
             val curr = credentials[index]
             credentials[index] = curr.copy(lastUsedAt = System.currentTimeMillis())
             scheduleDebouncedPersist()
+            appContext?.let { PetalLoginsProvider.markUsed(it, id) }
         }
     }
 
@@ -419,6 +434,7 @@ object PetalCredentialVault {
                 lastUsedAt = System.currentTimeMillis()
             )
             persistVault()
+            appContext?.let { PetalLoginsProvider.updatePassword(it, id, newPassword) }
         }
     }
 
@@ -436,6 +452,7 @@ object PetalCredentialVault {
         val removed = credentials.removeAll { it.id == id }
         if (removed) {
             persistVault()
+            appContext?.let { PetalLoginsProvider.delete(it, id) }
         }
     }
 
@@ -444,8 +461,10 @@ object PetalCredentialVault {
         val index = credentials.indexOfFirst { it.id == id }
         if (index >= 0) {
             val current = credentials[index]
-            credentials[index] = current.copy(isFavorite = !current.isFavorite)
+            val updated = current.copy(isFavorite = !current.isFavorite)
+            credentials[index] = updated
             persistVault()
+            appContext?.let { PetalLoginsProvider.save(it, updated) }
         }
     }
 
@@ -454,8 +473,10 @@ object PetalCredentialVault {
         val index = credentials.indexOfFirst { it.id == id }
         if (index >= 0) {
             val current = credentials[index]
-            credentials[index] = current.copy(isCompromised = isCompromised)
+            val updated = current.copy(isCompromised = isCompromised)
+            credentials[index] = updated
             persistVault()
+            appContext?.let { PetalLoginsProvider.save(it, updated) }
         }
     }
 
@@ -464,6 +485,7 @@ object PetalCredentialVault {
         credentials.clear()
         writeBlocked = false
         vaultFile?.delete()
+        appContext?.let { PetalLoginsProvider.clear(it) }
     }
 
     @Synchronized
@@ -519,6 +541,11 @@ object PetalCredentialVault {
 
         if (imported > 0) {
             persistVault()
+            appContext?.let { ctx ->
+                for (cred in credentials) {
+                    PetalLoginsProvider.save(ctx, cred)
+                }
+            }
         }
         return BatchImportResult(imported, duplicates, skipped)
     }
