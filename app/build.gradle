@@ -183,7 +183,9 @@ tasks.withType(com.android.build.gradle.internal.tasks.CheckAarMetadataTask).con
 }
 
 configurations.all {
+    exclude group: 'org.mozilla.geckoview', module: 'geckoview-omni'
     resolutionStrategy {
+        force 'org.mozilla.geckoview:geckoview:159.0.20261102144711'
         force 'org.jetbrains.kotlin:kotlin-stdlib:2.4.0'
         force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.0'
         force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.0'
@@ -313,6 +315,25 @@ dependencies {
     implementation 'org.mozilla.components:feature-recentlyclosed:159.0.1'
     implementation 'org.mozilla.components:feature-webcompat:159.0.1'
     implementation 'org.mozilla.components:feature-media:159.0.1'
+
+    // Android Components Phase 2: Web Platform Features (159.0.1)
+    implementation 'org.mozilla.components:feature-addons:159.0.1'
+    implementation 'org.mozilla.components:support-webextensions:159.0.1'
+    implementation 'org.mozilla.components:feature-customtabs:159.0.1'
+    implementation 'org.mozilla.components:feature-pwa:159.0.1'
+    implementation 'org.mozilla.components:feature-contextmenu:159.0.1'
+    implementation 'org.mozilla.components:feature-readerview:159.0.1'
+
+    // Android Components Phase 3: Omnibox & Assets (159.0.1)
+    implementation 'org.mozilla.components:browser-search:159.0.1'
+    implementation 'org.mozilla.components:feature-search:159.0.1'
+    implementation 'org.mozilla.components:feature-awesomebar:159.0.1'
+    implementation 'org.mozilla.components:feature-top-sites:159.0.1'
+    implementation 'org.mozilla.components:browser-icons:159.0.1'
+    implementation 'org.mozilla.components:browser-thumbnails:159.0.1'
+    implementation 'org.mozilla.components:lib-publicsuffixlist:159.0.1'
+    implementation 'org.mozilla.components:feature-intent:159.0.1'
+    implementation 'org.mozilla.components:feature-app-links:159.0.1'
 
     // Firefox Account + Firefox Sync (official Mozilla Android Components)
     implementation 'org.mozilla.components:service-firefox-accounts:159.0.1'

@@ -17,6 +17,7 @@ import mozilla.components.feature.prompts.file.FileUploadsDirCleaner
 import mozilla.components.feature.prompts.file.FileUploadsDirCleanerMiddleware
 import mozilla.components.feature.recentlyclosed.RecentlyClosedMiddleware
 import mozilla.components.feature.recentlyclosed.RecentlyClosedTabsStorage
+import mozilla.components.feature.readerview.ReaderViewMiddleware
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -147,10 +148,20 @@ object PetalEngineStore {
                 FileUploadsDirCleanerMiddleware(uploadCleaner),
                 SessionPrioritizationMiddleware(),
                 recentlyClosedMiddleware,
+                ReaderViewMiddleware(),
                 PetalThumbnailsMiddleware()
             ) + engineMiddleware
         )
         store = newStore
+        try {
+            mozilla.components.support.webextensions.WebExtensionSupport.initialize(
+                engine = currentEngine,
+                store = newStore
+            )
+            Log.i(TAG, "Initialized Mozilla WebExtensionSupport")
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to initialize WebExtensionSupport: ${t.message}")
+        }
         // Reload persisted (non-private) downloads so history and unfinished downloads survive
         // process death, the same way Fenix does at startup.
         try {

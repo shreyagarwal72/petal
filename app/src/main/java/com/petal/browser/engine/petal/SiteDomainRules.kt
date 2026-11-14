@@ -1,11 +1,25 @@
 package com.petal.browser.engine.petal
 
-import com.google.common.net.InternetDomainName
 import com.petal.browser.engine.petal.blocking.PetalHostCanonicalizer
 import com.petal.browser.engine.petal.blocking.PrivacyRequestSanitizer
+import mozilla.components.lib.publicsuffixlist.PublicSuffixList
+import kotlinx.coroutines.runBlocking
 
 object SiteDomainRules {
     const val MAX_PER_PROFILE = 64
+
+    @Volatile
+    private var psl: PublicSuffixList? = null
+
+    private fun getPsl(): PublicSuffixList? {
+        if (psl == null) {
+            val ctx = try { com.petal.browser.PetalApplication.instance } catch (_: Throwable) { null }
+            if (ctx != null) {
+                psl = PublicSuffixList(ctx)
+            }
+        }
+        return psl
+    }
 
     fun domainForUrl(url: String?): String? {
         val safeUrl = url ?: return null
@@ -14,11 +28,10 @@ object SiteDomainRules {
 
     fun normalizedDomain(host: String?): String? {
         val normalizedHost = PetalHostCanonicalizer.canonicalHost(host) ?: return null
-        val domain = runCatching { InternetDomainName.from(normalizedHost) }.getOrNull()
-            ?: return null
-        return if (domain.isUnderPublicSuffix) {
-            domain.topPrivateDomain().toString()
-        } else {
+        val pslInstance = getPsl() ?: return normalizedHost
+        return try {
+            runBlocking { pslInstance.getPublicSuffixPlusOne(normalizedHost).await() } ?: normalizedHost
+        } catch (_: Throwable) {
             normalizedHost
         }
     }
