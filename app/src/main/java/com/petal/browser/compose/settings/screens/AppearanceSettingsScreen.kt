@@ -1,6 +1,10 @@
 package com.petal.browser.compose.settings.screens
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.icons.imagetoolbox.AutoAwesome
+import com.petal.browser.ui.icons.imagetoolbox.HyperOS
+import com.petal.browser.ui.icons.imagetoolbox.ImageToolboxIcons
+import com.petal.browser.ui.icons.imagetoolbox.ToggleOn
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import com.petal.browser.ui.containment.PetalSettingsSection
@@ -2101,7 +2105,7 @@ fun AppearanceSettingsScreenContent(
                     val isMiuix = com.petal.browser.ui.containment.isMiuixEnabled()
                     PetalSettingsSection(
                         title = "Xiaomi HyperOS / MiuiX Experience",
-                        icon = com.petal.browser.ui.icons.imagetoolbox.ImageToolboxIcons.Rounded.HyperOS,
+                        icon = ImageToolboxIcons.Outlined.HyperOS,
                         cardId = "appearance_miuix",
                         targetHighlightId = targetHighlightItemId
                     ) {
@@ -2114,7 +2118,7 @@ fun AppearanceSettingsScreenContent(
                         com.petal.browser.ui.containment.PetalSettingsToggleRow(
                             title = "MiuiX UI Experience",
                             subtitle = if (isMiuix) "Active system-wide across controls, cards, sheets & back gestures" else "Switch to Xiaomi HyperOS / MIUI flagship UI",
-                            icon = com.petal.browser.ui.icons.imagetoolbox.ImageToolboxIcons.Rounded.HyperOS,
+                            icon = ImageToolboxIcons.Outlined.HyperOS,
                             checked = isMiuix,
                             position = if (isMiuix) com.petal.browser.ui.containment.PetalGroupPosition.TOP else com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
                             onCheckedChange = { active ->
@@ -2155,7 +2159,7 @@ fun AppearanceSettingsScreenContent(
                                 com.petal.browser.ui.miuix.containment.MiuiXPreferenceRow(
                                     title = "Continuous Squircle Curvature",
                                     subtitle = "Superellipse G2 curvature with 0.68f smoothing factor",
-                                    icon = Icons.Rounded.AutoAwesome,
+                                    icon = ImageToolboxIcons.Rounded.AutoAwesome,
                                     showChevron = true,
                                     showDivider = true,
                                 )
@@ -2163,7 +2167,7 @@ fun AppearanceSettingsScreenContent(
                                 com.petal.browser.ui.miuix.containment.MiuiXSwitchRow(
                                     title = "HyperOS Spring Switch",
                                     subtitle = "Bouncy low-damping spring toggle with tactile haptics",
-                                    icon = com.petal.browser.ui.icons.imagetoolbox.ImageToolboxIcons.Outlined.ToggleOn,
+                                    icon = ImageToolboxIcons.Outlined.ToggleOn,
                                     checked = testToggle,
                                     onCheckedChange = { testToggle = it },
                                     showDivider = true,

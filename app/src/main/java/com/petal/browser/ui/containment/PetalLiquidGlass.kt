@@ -16,6 +16,7 @@ import com.kyant.backdrop.effects.colorControls
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
+import com.petal.browser.ui.glass.cloudy.cloudyOpticalRefraction
 
 /**
  * Explicit sibling backdrops for headers. Repeated cards use the shared frosted wallpaper
@@ -86,7 +87,7 @@ internal fun Modifier.petalRealGlass(
     if (cloudyTuning.enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val rim = (24.dp * refraction.width)
         return glassModifier.then(
-            Modifier.com.petal.browser.ui.glass.cloudy.cloudyOpticalRefraction(
+            Modifier.cloudyOpticalRefraction(
                 cornerRadius = 20.dp,
                 rimWidth = rim,
                 refractionStrength = 16f * refraction.strength,

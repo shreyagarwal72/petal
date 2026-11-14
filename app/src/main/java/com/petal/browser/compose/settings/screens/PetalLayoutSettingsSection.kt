@@ -151,7 +151,7 @@ fun PetalLayoutSettingsSection(
         )
 
         PetalGroupRow(
-            icon = ImageToolboxIcons.Rounded.HyperOS,
+            icon = ImageToolboxIcons.Outlined.HyperOS,
             title = "UI Experience",
             subtitle = "${settings.uiExperience.title} · ${settings.uiExperience.subtitle}",
             position = pos(0),
@@ -308,7 +308,7 @@ fun PetalLayoutSettingsSection(
     if (sheet == SHEET_UI_EXPERIENCE) {
         ChoiceSheet(
             title = "UI Experience",
-            headerIcon = ImageToolboxIcons.Rounded.HyperOS,
+            headerIcon = ImageToolboxIcons.Outlined.HyperOS,
             items = com.petal.browser.ui.theme.layout.UiExperience.entries,
             selected = settings.uiExperience,
             banner = "Select your system UI design experience. Each style changes controls, containment, motion, shapes and surface materials across Petal.",
@@ -344,9 +344,9 @@ fun PetalLayoutSettingsSection(
                 title = item.title,
                 subtitle = item.subtitle,
                 icon = when (item) {
-                    com.petal.browser.ui.theme.layout.UiExperience.MIUIX -> ImageToolboxIcons.Rounded.HyperOS
-                    com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS -> Icons.Rounded.AutoAwesome
-                    com.petal.browser.ui.theme.layout.UiExperience.MATERIAL_EXPRESSIVE -> ImageToolboxIcons.Rounded.MaterialDesign
+                    com.petal.browser.ui.theme.layout.UiExperience.MIUIX -> ImageToolboxIcons.Outlined.HyperOS
+                    com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS -> ImageToolboxIcons.Rounded.AutoAwesome
+                    com.petal.browser.ui.theme.layout.UiExperience.MATERIAL_EXPRESSIVE -> ImageToolboxIcons.Outlined.MaterialDesign
                 },
                 position = position,
                 onClick = onClick

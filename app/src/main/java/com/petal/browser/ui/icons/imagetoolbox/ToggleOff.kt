@@ -24,6 +24,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
+val ImageToolboxIcons.Rounded.ToggleOff: ImageVector
+    get() = ImageToolboxIcons.Outlined.ToggleOff
+
+val ImageToolboxIcons.Filled.ToggleOff: ImageVector
+    get() = ImageToolboxIcons.Outlined.ToggleOff
+
 val ImageToolboxIcons.Outlined.ToggleOff: ImageVector by lazy(LazyThreadSafetyMode.NONE) {
     ImageVector.Builder(
         name = "Outlined.ToggleOff",

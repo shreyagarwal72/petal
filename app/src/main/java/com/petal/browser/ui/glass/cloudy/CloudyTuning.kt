@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.platform.LocalContext
 import androidx.preference.PreferenceManager
-import com.petal.browser.ui.theme.LocalPetalGlassRevision
+import com.petal.browser.ui.glass.LocalPetalGlassRevision
 
 /**
  * Chromatic dispersion intensity presets inspired by skydoves/Cloudy.

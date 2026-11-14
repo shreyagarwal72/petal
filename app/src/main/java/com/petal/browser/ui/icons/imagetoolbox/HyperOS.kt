@@ -8,6 +8,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
+val ImageToolboxIcons.Rounded.HyperOS: ImageVector
+    get() = ImageToolboxIcons.Outlined.HyperOS
+
+val ImageToolboxIcons.Filled.HyperOS: ImageVector
+    get() = ImageToolboxIcons.Outlined.HyperOS
+
 val ImageToolboxIcons.Outlined.HyperOS: ImageVector by lazy(LazyThreadSafetyMode.NONE) {
     ImageVector.Builder(
         name = "Outlined.HyperOS",
