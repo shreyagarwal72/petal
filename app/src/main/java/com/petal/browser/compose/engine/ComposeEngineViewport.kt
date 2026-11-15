@@ -214,20 +214,24 @@ fun ComposeEngineViewport(
         onEngineViewReady?.invoke(engineView.asView())
     }
 
-    // Keep the page padding glued to the bars: full padding at rest, collapsed padding when the
-    // bars are minimized, and everything in between while they animate. Without this the padding
-    // stayed at its resting size and showed up as a black gap above/below the page.
+    // The page viewport is resized ONCE per collapse/expand (BarCollapseState.viewportCollapsed),
+    // never per animation frame: resizing Gecko every frame reflowed the page (content jumped) and
+    // left an unpainted black block where the bar had been. The visual slide between the two
+    // layouts is a plain translation of the view, so the page still follows the bars smoothly.
     val fullTopPx = with(density) { topPadding.roundToPx() }
     val fullBottomPx = with(density) { bottomPadding.roundToPx() }
     val minTopPx = with(density) { collapsedTopPadding.roundToPx() }
     val minBottomPx = with(density) { collapsedBottomPadding.roundToPx() }
-    LaunchedEffect(engineView, fullTopPx, fullBottomPx, minTopPx, minBottomPx) {
-        snapshotFlow { BarCollapseState.collapsedFraction }.collect { f ->
-            val top = lerp(fullTopPx, minTopPx, f)
-            val bottom = lerp(fullBottomPx, minBottomPx, f)
-            val v = engineView.asView()
-            if (v.paddingTop != top || v.paddingBottom != bottom) v.setPadding(0, top, 0, bottom)
-        }
+    LaunchedEffect(engineView, swipeLayout, fullTopPx, fullBottomPx, minTopPx, minBottomPx) {
+        snapshotFlow { BarCollapseState.viewportCollapsed to BarCollapseState.collapsedFraction }
+            .collect { (collapsedLayout, f) ->
+                val top = if (collapsedLayout) minTopPx else fullTopPx
+                val bottom = if (collapsedLayout) minBottomPx else fullBottomPx
+                val v = engineView.asView()
+                if (v.paddingTop != top || v.paddingBottom != bottom) v.setPadding(0, top, 0, bottom)
+                val shift = if (collapsedLayout) (fullTopPx - minTopPx).coerceAtLeast(0) * (1f - f) else 0f
+                if (swipeLayout.translationY != shift) swipeLayout.translationY = shift
+            }
     }
 
     // Inform GeckoView of dynamic toolbar height for smooth scrolling and proper viewport calculations
@@ -321,8 +325,13 @@ fun ComposeEngineViewport(
                 // Like Fenix, the EngineView is a direct child of the swipe-refresh layout:
                 // SwipeRefreshFeature inspects that child to ask Gecko if the page can still scroll up.
                 val view = engineView.asView()
-                val f = BarCollapseState.collapsedFraction
-                view.setPadding(0, lerp(fullTopPx, minTopPx, f), 0, lerp(fullBottomPx, minBottomPx, f))
+                val collapsedLayout = BarCollapseState.viewportCollapsed
+                view.setPadding(
+                    0,
+                    if (collapsedLayout) minTopPx else fullTopPx,
+                    0,
+                    if (collapsedLayout) minBottomPx else fullBottomPx
+                )
                 (view as? ViewGroup)?.clipToPadding = false
                 (view as? ViewGroup)?.clipChildren = false
                 if (view.parent !== swipeLayout) {

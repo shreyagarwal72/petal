@@ -118,20 +118,20 @@ fun PetalAddressBar(
         .asPaddingValues().calculateBottomPadding()
 
     val collapseProgress = if (isPillCollapse) collapsedFraction.coerceIn(0f, 1f) else 0f
-    val fullBarAlpha = if (isPillCollapse) ((1f - collapseProgress) / 0.65f).coerceIn(0f, 1f) else 1f
+    val fullBarAlpha = if (isPillCollapse) ((0.45f - collapseProgress) / 0.45f).coerceIn(0f, 1f) else 1f
     val fullBarScaleX = if (isPillCollapse) (0.94f + 0.06f * (1f - collapseProgress)) else 1f
     val fullBarScaleY = if (isPillCollapse) (0.90f + 0.10f * (1f - collapseProgress)) else 1f
     val fullBarTranslationY = if (isPillCollapse) ((if (resolvedIsBottom) 10.dp else (-10).dp) * collapseProgress) else 0.dp
 
-    val sideButtonAlpha = if (isPillCollapse) (1f - collapseProgress * 1.8f).coerceIn(0f, 1f) else 1f
+    val sideButtonAlpha = if (isPillCollapse) (1f - collapseProgress * 2.2f).coerceIn(0f, 1f) else 1f
     val sideButtonScale = if (isPillCollapse) (0.80f + 0.20f * sideButtonAlpha) else 1f
     val leftButtonOffset = if (isPillCollapse) ((-12).dp * collapseProgress) else 0.dp
     val rightButtonOffset = if (isPillCollapse) (12.dp * collapseProgress) else 0.dp
 
-    val pillAlpha = if (isPillCollapse) ((collapseProgress - 0.20f) / 0.80f).coerceIn(0f, 1f) else 0f
+    val pillAlpha = if (isPillCollapse) ((collapseProgress - 0.40f) / 0.60f).coerceIn(0f, 1f) else 0f
     val pillScale = if (isPillCollapse) (0.88f + 0.12f * pillAlpha) else 1f
     val pillTranslationY = if (isPillCollapse) ((if (resolvedIsBottom) (-10).dp else 10.dp) * (1f - pillAlpha)) else 0.dp
-    val outerBgAlpha = if (isPillCollapse) (1f - collapseProgress * 1.5f).coerceIn(0f, 1f) else 1f
+    val outerBgAlpha = if (isPillCollapse) fullBarAlpha else 1f
 
     val animatedContainerColor = if (isLiquidGlass) Color.Transparent else containerColor.copy(alpha = containerColor.alpha * outerBgAlpha)
     val animatedElevation = (if (isLiquidGlass) 0.dp else if (resolvedIsBottom) 2.dp else 4.dp) * outerBgAlpha
