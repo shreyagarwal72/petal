@@ -1,5 +1,6 @@
-### Unreleased — Address bar & bottom navbar scroll fixes
+### Unreleased — Selectable App Icons & Address Bar Scroll Fixes
 
+- **Selectable App Icons & Dynamic Launch Themes:** Choose how Petal looks on your home screen in Settings > App Icon (Bloom, Classic Swirl, Tab Bloom, Petal P, Lens, Shield) with adaptive monochrome styling, dynamic wallpaper coloring, and animated splash screen synchronization on Android 13+ (`AppIconSettingsScreen.kt`, `PetalAppIcons.kt`).
 - **No more black/gray block or page jump when the bars minimize or return:** the page viewport is no longer resized on every animation frame. It resizes once per collapse/expand (`BarCollapseState.viewportCollapsed`), the page follows the bars with a view translation, and on collapse the bars wait ~110 ms so Gecko has painted the freed area before they fade (`ComposeEngineViewport.kt`, `MainActivity.settlePillFraction`).
 - **No ghost double text while the address bar becomes the pill:** the full bar and the pill now cross-fade in sequence instead of overlapping, and the bar container fades together with its content (`PetalAddressBar.kt`, `PetalMergedBar.kt`).
 

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shield bloom. Colours come from @color/petal_icon_* so Material You (API 31+) recolours the whole icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+  <group android:scaleX="0.88" android:scaleY="0.88" android:pivotX="256" android:pivotY="256" android:translateX="0" android:translateY="0">
+    <path android:fillColor="@color/petal_icon_petal_primary" android:strokeColor="@color/petal_icon_petal_primary" android:strokeWidth="22" android:strokeLineJoin="round" android:pathData="M256,100 L388,152 V262 C388,344 326,394 256,424 C186,394 124,344 124,262 V152Z"/>
+    <path android:fillColor="@color/petal_icon_background" android:pathData="M232,190a24,40,0 1,0 48,0a24,40,0 1,0 -48,0z"/>
+    <path android:fillColor="@color/petal_icon_highlight" android:pathData="M301.16,202.22a24,40,60 1,0 24,41.57a24,40,60 1,0 -24,-41.57z"/>
+    <path android:fillColor="@color/petal_icon_background" android:pathData="M325.16,268.22a24,40,120 1,0 -24,41.57a24,40,120 1,0 24,-41.57z"/>
+    <path android:fillColor="@color/petal_icon_highlight" android:pathData="M280,322a24,40,180 1,0 -48,0a24,40,180 1,0 48,0z"/>
+    <path android:fillColor="@color/petal_icon_background" android:pathData="M210.84,309.78a24,40,240 1,0 -24,-41.57a24,40,240 1,0 24,41.57z"/>
+    <path android:fillColor="@color/petal_icon_highlight" android:pathData="M186.84,243.78a24,40,300 1,0 24,-41.57a24,40,300 1,0 -24,41.57z"/>
+    <path android:fillColor="@color/petal_icon_background" android:pathData="M240,256a16,16 0 1,0 32,0a16,16 0 1,0 -32,0z"/>
+  </group>
+</vector>

@@ -156,6 +156,8 @@ class MainActivity : FragmentActivity(), BrowserController {
             } catch (_: Throwable) { }
         }
         super.onCreate(savedInstanceState)
+        // Keep the next cold-start splash in sync with the selected app icon (Android 13+; no-op elsewhere).
+        com.petal.browser.appicon.PetalAppIcons.syncSplashTheme(this)
         com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this)
         com.petal.browser.engine.gecko.PetalFileUploadMiddleware.attachActivity(this)
         enableEdgeToEdge()

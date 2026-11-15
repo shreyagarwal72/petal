@@ -33,6 +33,21 @@ data class SettingsSearchResult(
 object PetalSettingsSearchIndex {
 
     val allItems: List<SettingsSearchItem> = listOf(
+        // ==================== APP ICON ====================
+        SettingsSearchItem(
+            id = "app_icon_choose",
+            title = "App Icon",
+            subtitle = "Choose the Petal launcher icon: Bloom, Classic, Tab bloom, Petal P, Lens or Shield",
+            category = SettingsCategory.APP_ICON,
+            keywords = listOf("icon", "app icon", "launcher", "logo", "alias", "bloom", "swirl", "classic", "shield", "lens", "home screen", "themed icon", "material you")
+        ),
+        SettingsSearchItem(
+            id = "app_icon_intro",
+            title = "Launch Animation Preview",
+            subtitle = "Preview the intro animation of the selected app icon",
+            category = SettingsCategory.APP_ICON,
+            keywords = listOf("intro", "splash", "launch", "animation", "startup", "icon")
+        ),
         // ==================== API & INTEGRATIONS ====================
         SettingsSearchItem(
             id = "ai_provider",
@@ -528,6 +543,7 @@ object PetalSettingsSearchIndex {
     private val allCategories: List<SettingsCategory> = listOf(
         SettingsCategory.API_INTEGRATIONS,
         SettingsCategory.APPEARANCE,
+        SettingsCategory.APP_ICON,
         SettingsCategory.PRIVACY,
         SettingsCategory.APP_LOCK,
         SettingsCategory.SEARCH_HOMEPAGE,
@@ -552,7 +568,7 @@ object PetalSettingsSearchIndex {
         "reader", "caret", "language", "backup", "restore", "export", "import", "bookmarks",
         "history", "updater", "updates", "developer", "about", "model", "provider", "groq",
         "gemini", "claude", "ollama", "deepseek", "openai", "token", "key", "gestures",
-        "swipe", "lock", "passcode", "blur", "scaling", "audio", "video", "pip", "cache"
+        "swipe", "lock", "passcode", "blur", "scaling", "audio", "video", "pip", "cache", "icon", "launcher", "splash", "intro"
     )
 
     /**
