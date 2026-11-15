@@ -21,6 +21,15 @@ object BarCollapseState {
     var isCollapsed by mutableStateOf(false)
         private set
 
+    /**
+     * True while the web page is laid out for MINIMIZED bars (edge to edge). The page viewport is
+     * resized only when this flips, never per animation frame: a Gecko resize is expensive and
+     * leaves an unpainted block where the bar was while it catches up. The remaining distance is
+     * covered by a translation that [ComposeEngineViewport] animates from [collapsedFraction].
+     */
+    var viewportCollapsed by mutableStateOf(false)
+        private set
+
     /** Extracted domain of the active web page (e.g. "google.com", "wikipedia.org"). */
     var currentDomain by mutableStateOf("")
 
@@ -54,6 +63,7 @@ object BarCollapseState {
     @JvmStatic
     fun updateCollapsed(collapsed: Boolean) {
         isCollapsed = collapsed
+        viewportCollapsed = collapsed
         if (!collapsed) {
             collapsedFraction = 0f
         } else {
@@ -66,6 +76,16 @@ object BarCollapseState {
         val clamped = fraction.coerceIn(0f, 1f)
         collapsedFraction = clamped
         isCollapsed = clamped >= 0.5f
+        viewportCollapsed = clamped > 0.001f
+    }
+
+    /**
+     * Grow the page into the space of the bars BEFORE they start to fade, so Gecko has painted the
+     * new area by the time the bar stops covering it.
+     */
+    @JvmStatic
+    fun beginViewportCollapse() {
+        viewportCollapsed = true
     }
 
     @JvmStatic

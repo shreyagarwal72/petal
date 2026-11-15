@@ -1,3 +1,8 @@
+### Unreleased — Address bar & bottom navbar scroll fixes
+
+- **No more black/gray block or page jump when the bars minimize or return:** the page viewport is no longer resized on every animation frame. It resizes once per collapse/expand (`BarCollapseState.viewportCollapsed`), the page follows the bars with a view translation, and on collapse the bars wait ~110 ms so Gecko has painted the freed area before they fade (`ComposeEngineViewport.kt`, `MainActivity.settlePillFraction`).
+- **No ghost double text while the address bar becomes the pill:** the full bar and the pill now cross-fade in sequence instead of overlapping, and the bar container fades together with its content (`PetalAddressBar.kt`, `PetalMergedBar.kt`).
+
 ### v4.8 (480) — 🚀 Mozilla GeckoView Beta 161 & Android Components 161.0b3 Migration
 
 > *"Petal Browser v4.8 (build 480) upgrades to the latest Mozilla GeckoView Beta 161 engine (161.0.20261113104103) and Mozilla Android Components 161.0b3 across all architectural phases. Features standalone viewer task affinity isolation with document launch modes, native predictive back animations, complete 4-phase Android Components migration, and high-performance CI/CD pipeline with cached WASM packaging."*

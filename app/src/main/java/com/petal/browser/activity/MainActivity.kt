@@ -84,7 +84,7 @@ class MainActivity : FragmentActivity(), BrowserController {
     private var pillMorphAnimator: android.animation.ValueAnimator? = null
     private var isAddressBarCollapsedState = false
 
-    fun isBarAnimationRunning(): Boolean = pillMorphAnimator?.isRunning == true
+    fun isBarAnimationRunning(): Boolean = pillMorphAnimator?.isStarted == true
     fun isAddressBarCollapsed(): Boolean = isAddressBarCollapsedState
     var pendingOverlayBackAction: Runnable? = null
     var mediaService: PetalMediaSessionService? = null
@@ -491,13 +491,18 @@ class MainActivity : FragmentActivity(), BrowserController {
     fun updateOmniBox() { }
     fun settlePillFraction(target: Float) {
         val current = com.petal.browser.ui.components.BarCollapseState.collapsedFraction
+        pillMorphAnimator?.cancel()
         if (kotlin.math.abs(current - target) < 0.001f) {
             com.petal.browser.ui.components.BarCollapseState.setFraction(target)
             return
         }
-        pillMorphAnimator?.cancel()
+        // Collapsing from fully open: resize the page first (bars still fully visible on top),
+        // then fade the bars once Gecko has painted the freed area. No black block, no jump.
+        val startsCollapse = target > current && current <= 0.001f
+        if (startsCollapse) com.petal.browser.ui.components.BarCollapseState.beginViewportCollapse()
         pillMorphAnimator = android.animation.ValueAnimator.ofFloat(current, target).apply {
             duration = 320L
+            startDelay = if (startsCollapse) 110L else 0L
             interpolator = android.view.animation.PathInterpolator(0.2f, 0f, 0f, 1f)
             addUpdateListener { anim ->
                 val f = anim.animatedValue as Float
