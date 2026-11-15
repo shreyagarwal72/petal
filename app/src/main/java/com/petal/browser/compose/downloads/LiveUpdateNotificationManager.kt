@@ -17,6 +17,7 @@ import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.ui.theme.WidgetColors
@@ -266,20 +267,43 @@ object LiveUpdateNotificationManager {
         iconRes: Int
     ): Notification? {
         return try {
+            // Material 3 Expressive dual-tone progress segments:
+            // 1. Active progress segment with theme accent color
+            // 2. Remaining track segment with translucent tonal container
+            val activeLength = clampedProgress.coerceIn(1, 100)
+            val activeSegment = Notification.ProgressStyle.Segment(activeLength).setColor(accentColor)
+            val trackColor = ColorUtils.setAlphaComponent(accentColor, 75)
+            val remainingLength = 100 - activeLength
+            val segments = if (remainingLength > 0 && !isIndeterminate) {
+                listOf(activeSegment, Notification.ProgressStyle.Segment(remainingLength).setColor(trackColor))
+            } else {
+                listOf(activeSegment)
+            }
+
+            // Material 3 Expressive Progress Tracker Icon:
+            // Blooming Petal filled emblem when actively downloading, pause icon when paused
+            val trackerIconRes = if (isPaused) R.drawable.icon_pause else R.drawable.ic_petal_filled
+            val trackerIcon = Icon.createWithResource(context, trackerIconRes)
+
             val style = Notification.ProgressStyle()
                 .setStyledByProgress(false)
                 .setProgress(clampedProgress)
-                .setProgressSegments(
-                    listOf(Notification.ProgressStyle.Segment(100).setColor(accentColor))
-                )
-                .setProgressTrackerIcon(Icon.createWithResource(context, iconRes))
+                .setProgressSegments(segments)
+                .setProgressTrackerIcon(trackerIcon)
+
+            // Material 3 Expressive Status Bar / Live capsule chip text
+            val m3eStatusText = when {
+                isPaused -> "⏸ Paused • $clampedProgress%"
+                !chipText.isNullOrEmpty() -> "⚡ $chipText • $clampedProgress%"
+                else -> "⚡ $clampedProgress%"
+            }
 
             val builder = Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(iconRes)
                 .setContentTitle(title)
                 .setContentText(contentText)
                 .setStyle(style)
-                .setShortCriticalText(if (!chipText.isNullOrEmpty()) chipText else "$clampedProgress%")
+                .setShortCriticalText(m3eStatusText)
                 .setProgress(100, clampedProgress, isIndeterminate)
                 .setOngoing(!isPaused)
                 .setOnlyAlertOnce(true)
@@ -301,11 +325,11 @@ object LiveUpdateNotificationManager {
             }
 
             val extras = Bundle().apply {
-                putString("android.liveAlertText", chipText)
+                putString("android.liveAlertText", m3eStatusText)
                 putBoolean("android.isLiveAlert", true)
                 putBoolean("android.requestPromotedOngoing", !isPaused && promoteLiveUpdate)
                 putBoolean("android.promotedOngoing", !isPaused && promoteLiveUpdate)
-                putString("android.shortCriticalText", chipText)
+                putString("android.shortCriticalText", m3eStatusText)
                 putInt("android.accentColor", accentColor)
                 putInt("android.progress", clampedProgress)
                 putInt("android.progressMax", 100)
