@@ -32,6 +32,7 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
         const val ACTION_BUTTON_CLICK = "com.petal.browser.action.WEB_NOTIFICATION_BUTTON_CLICK"
         const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
         const val EXTRA_ACTION_NAME = "extra_action_name"
+        const val EXTRA_WEB_NOTIFICATION_CLICK_ID = "com.petal.browser.extra.WEB_NOTIFICATION_CLICK_ID"
 
         private val activeNotifications = ConcurrentHashMap<Int, WebNotification>()
 
@@ -109,11 +110,11 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
             val id = tag?.hashCode() ?: notification.hashCode()
             activeNotifications[id] = notification
 
-            val clickIntent = Intent(context, WebNotificationActionReceiver::class.java).apply {
-                action = ACTION_CLICK
-                putExtra(EXTRA_NOTIFICATION_ID, id)
+            val clickIntent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra(EXTRA_WEB_NOTIFICATION_CLICK_ID, id)
             }
-            val clickPending = PendingIntent.getBroadcast(
+            val clickPending = PendingIntent.getActivity(
                 context,
                 id,
                 clickIntent,
@@ -217,11 +218,6 @@ class WebNotificationActionReceiver : BroadcastReceiver() {
         when (intent.action) {
             PetalWebNotificationDelegate.ACTION_CLICK -> {
                 PetalWebNotificationDelegate.handleClick(id)
-                // Bring browser to foreground
-                val launchIntent = Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                }
-                context.startActivity(launchIntent)
             }
             PetalWebNotificationDelegate.ACTION_DISMISS -> {
                 PetalWebNotificationDelegate.handleDismiss(id)

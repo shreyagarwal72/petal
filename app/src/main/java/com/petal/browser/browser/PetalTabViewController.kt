@@ -354,6 +354,7 @@ class PetalTabViewController private constructor(
     private var attachedLifecycle: Lifecycle? = null
     private val engineLifecycleObserver = mozilla.components.concept.engine.LifecycleObserver(this)
     private var lastRecordedHistoryUrl: String? = null
+    private var lastRecordedHistoryTitle: String? = null
 
     /** Receives browser-relevant session updates without coupling the activity to GeckoView. */
     var onBrowserStateChanged: ((State) -> Unit)? = null
@@ -2372,18 +2373,6 @@ class PetalTabViewController private constructor(
     }
 
     private fun recordHistoryVisit(targetUrl: String, titleToRecord: String? = null, force: Boolean = false) {
-        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
-            com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(targetUrl)
-            lastRecordedHistoryUrl = targetUrl
-            return
-        }
-        if (isIncognito() || targetUrl.isBlank() || targetUrl.equals("about:blank", ignoreCase = true) ||
-            targetUrl.startsWith("about:", ignoreCase = true) || com.petal.browser.unit.PetalBrowserUtils.isHomePage(targetUrl)) {
-            return
-        }
-        if (!force && targetUrl == lastRecordedHistoryUrl) {
-            return
-        }
         val rawTitle = titleToRecord ?: pageTitle
         val effectiveTitle = if (rawTitle.isBlank() || rawTitle == "Petal Start" || rawTitle == "Petal Home") {
             try {
@@ -2396,6 +2385,20 @@ class PetalTabViewController private constructor(
             rawTitle
         }
 
+        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
+            com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(targetUrl)
+            lastRecordedHistoryUrl = targetUrl
+            lastRecordedHistoryTitle = effectiveTitle
+            return
+        }
+        if (isIncognito() || targetUrl.isBlank() || targetUrl.equals("about:blank", ignoreCase = true) ||
+            targetUrl.startsWith("about:", ignoreCase = true) || com.petal.browser.unit.PetalBrowserUtils.isHomePage(targetUrl)) {
+            return
+        }
+        if (!force && targetUrl == lastRecordedHistoryUrl && effectiveTitle == lastRecordedHistoryTitle) {
+            return
+        }
+
         try {
             val action = com.petal.browser.database.HistoryBookmarkRepository(appContext)
             action.open(true)
@@ -2406,6 +2409,7 @@ class PetalTabViewController private constructor(
             action.close()
             com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(targetUrl)
             lastRecordedHistoryUrl = targetUrl
+            lastRecordedHistoryTitle = effectiveTitle
         } catch (_: Exception) {}
     }
 

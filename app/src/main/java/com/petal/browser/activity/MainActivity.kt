@@ -798,6 +798,13 @@ class MainActivity : FragmentActivity(), BrowserController {
     private fun handleIncomingIntent(intent: Intent?) {
         if (intent == null) return
 
+        if (intent.hasExtra(com.petal.browser.engine.gecko.PetalWebNotificationDelegate.EXTRA_WEB_NOTIFICATION_CLICK_ID)) {
+            val notificationId = intent.getIntExtra(com.petal.browser.engine.gecko.PetalWebNotificationDelegate.EXTRA_WEB_NOTIFICATION_CLICK_ID, 0)
+            intent.removeExtra(com.petal.browser.engine.gecko.PetalWebNotificationDelegate.EXTRA_WEB_NOTIFICATION_CLICK_ID)
+            com.petal.browser.engine.gecko.PetalWebNotificationDelegate.handleClick(notificationId)
+            return
+        }
+
         // Download notifications (live progress, completion, failure) and the island open the
         // Downloads screen with this extra. Consume it so a rotation/recreate does not reopen it.
         if (intent.getBooleanExtra("open_downloads", false)) {
