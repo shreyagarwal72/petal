@@ -57,6 +57,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     OVERVIEW("Settings", "Browse all settings categories", com.petal.browser.R.drawable.settings_filled),
     API_INTEGRATIONS("API & Integrations Hub", "AndroidX WebKit, Google Credential Manager & Palette APIs", com.petal.browser.R.drawable.ic_ai_stars),
     APPEARANCE("Appearance & Theme", "Fonts, theme modes, color palettes, AMOLED & Material You", com.petal.browser.R.drawable.brightness_medium_filled),
+    APP_ICON("App Icon & Intro", "Pick your Petal icon and preview its launch animation", com.petal.browser.R.drawable.ic_petal_filled),
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", com.petal.browser.R.drawable.layers_filled),
     APP_LOCK("App Lock", "Fingerprint or passcode protection for Petal", com.petal.browser.R.drawable.layers_filled),
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", com.petal.browser.R.drawable.home_filled),
@@ -366,6 +367,9 @@ private fun RenderCategoryContent(
         }
         SettingsCategory.APPEARANCE -> {
             AppearanceSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
+        }
+        SettingsCategory.APP_ICON -> {
+            AppIconSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
         }
         SettingsCategory.PRIVACY -> {
             PrivacySettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)

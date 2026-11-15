@@ -1913,5 +1913,30 @@
     <string name="offline_game_section_title">Offline game</string>
     <string name="offline_game_setting_title">Petal Hop</string>
     <string name="offline_game_setting_subtitle">Play a mini-game when a page can\'t load because of the connection</string>
+    <string name="app_icon_title">App Icon</string>
+    <string name="app_icon_subtitle">Choose how Petal looks on your home screen</string>
+    <string name="app_icon_choose">Choose an icon</string>
+    <string name="app_icon_choose_hint">Icons follow your wallpaper colors on Android 12 and later.</string>
+    <string name="app_icon_bloom">Bloom</string>
+    <string name="app_icon_swirl">Classic</string>
+    <string name="app_icon_tabs">Tab bloom</string>
+    <string name="app_icon_p">Petal P</string>
+    <string name="app_icon_lens">Lens</string>
+    <string name="app_icon_shield">Shield</string>
+    <string name="app_icon_bloom_desc">Eight petals around a globe. The default.</string>
+    <string name="app_icon_swirl_desc">The original four-wing Petal swirl.</string>
+    <string name="app_icon_tabs_desc">Four browser-tab petals around a single dot.</string>
+    <string name="app_icon_p_desc">A bold P whose bowl is a petal.</string>
+    <string name="app_icon_lens_desc">A search lens with a petal inside.</string>
+    <string name="app_icon_shield_desc">A privacy shield in full bloom.</string>
+    <string name="app_icon_intro_title">Launch animation</string>
+    <string name="app_icon_intro_desc">Every icon opens with its own animation. Preview how the selected icon plays when Petal starts.</string>
+    <string name="app_icon_intro_preview">Preview animation</string>
+    <string name="app_icon_intro_replay">Replay</string>
+    <string name="app_icon_intro_done">Done</string>
+    <string name="app_icon_changed">Icon changed. Your launcher may take a few seconds to update.</string>
+    <string name="app_icon_failed">Couldn\'t change the icon.</string>
+    <string name="app_icon_note">On Android 12 the launch animation always uses Bloom; Android 13 and later play the animation of the icon you pick.</string>
+    <string name="app_icon_selected">Selected</string>
 </resources>
 

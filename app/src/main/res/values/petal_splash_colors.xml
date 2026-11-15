@@ -7,4 +7,7 @@
     <color name="petal_splash_teal">#026065</color>
     <color name="petal_splash_orange">#A04106</color>
     <color name="petal_splash_orange_light">#E45B24</color>
+    <color name="petal_splash_mark_primary">#026065</color>
+    <color name="petal_splash_mark_secondary">#A04106</color>
+    <color name="petal_splash_mark_highlight">#E45B24</color>
 </resources>

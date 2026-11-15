@@ -261,7 +261,8 @@
                 <action android:name="android.intent.action.MAIN" />
                 <action android:name="android.intent.action.WEB_SEARCH" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <!-- No LAUNCHER category here: the home-screen entry is provided by exactly one of the
+                     com.petal.browser.appicon.* activity-aliases below (see PetalAppIcons). -->
             </intent-filter>
 
             <!-- Standard Web Navigation (HTTP/HTTPS/PETAL) -->
@@ -341,6 +342,89 @@
             android:name="com.petal.browser.activity.BrowserActivity"
             android:targetActivity="com.petal.browser.activity.MainActivity"
             android:exported="true" />
+
+        <!--
+          Selectable app icons (Settings > App Icon). Exactly one alias is enabled at a time; it owns the
+          LAUNCHER entry. Bloom is the default. PetalAppIcons switches them with PackageManager.
+        -->
+        <activity-alias
+            android:name="com.petal.browser.appicon.Bloom"
+            android:targetActivity="com.petal.browser.activity.MainActivity"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name="com.petal.browser.appicon.Swirl"
+            android:targetActivity="com.petal.browser.activity.MainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_swirl"
+            android:roundIcon="@mipmap/ic_launcher_swirl_round"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name="com.petal.browser.appicon.Tabs"
+            android:targetActivity="com.petal.browser.activity.MainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_tabs"
+            android:roundIcon="@mipmap/ic_launcher_tabs_round"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name="com.petal.browser.appicon.P"
+            android:targetActivity="com.petal.browser.activity.MainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_p"
+            android:roundIcon="@mipmap/ic_launcher_p_round"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name="com.petal.browser.appicon.Lens"
+            android:targetActivity="com.petal.browser.activity.MainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_lens"
+            android:roundIcon="@mipmap/ic_launcher_lens_round"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name="com.petal.browser.appicon.Shield"
+            android:targetActivity="com.petal.browser.activity.MainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_shield"
+            android:roundIcon="@mipmap/ic_launcher_shield_round"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <!--
           Standalone Dedicated Viewers & Players:
