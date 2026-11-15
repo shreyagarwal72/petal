@@ -380,13 +380,35 @@ private fun attachSessionDelegates(
     }
 
     // 2. Content Delegate (wraps Mozilla's delegate for onContextMenu, fullScreen, crashes)
+    val crashCallback: () -> Unit = {
+        (context as? android.app.Activity)?.runOnUiThread {
+            try {
+                val store = PetalEngineStore.getStore(context)
+                val eng = PetalEngineStore.getEngine(context)
+                val newSession = eng.createSession(private = tab.content.private)
+                store.dispatch(
+                    mozilla.components.browser.state.action.EngineAction.LinkEngineSessionAction(
+                        tabId = tab.id,
+                        engineSession = newSession,
+                        skipLoading = false
+                    )
+                )
+                val restoreUrl = tab.content.url
+                if (restoreUrl.isNotBlank() && !restoreUrl.equals("about:blank", ignoreCase = true)) {
+                    newSession.loadUrl(restoreUrl)
+                }
+            } catch (t: Throwable) {
+                android.util.Log.e("ComposeEngineViewport", "Failed to recover session after kill/crash", t)
+            }
+        }
+    }
     val currentContent = session.contentDelegate
     if (currentContent is PetalContentDelegateWrapper) {
         currentContent.rebind(
             contextProvider = { context },
             isPrivateProvider = { tab.content.private },
             referrerProvider = { tab.content.url },
-            onCrashCallback = { },
+            onCrashCallback = crashCallback,
             pageUrlProvider = { tab.content.url },
             pageTitleProvider = { tab.content.title }
         )
@@ -396,7 +418,7 @@ private fun attachSessionDelegates(
             contextProvider = { context },
             isPrivateProvider = { tab.content.private },
             referrerProvider = { tab.content.url },
-            onCrashCallback = { },
+            onCrashCallback = crashCallback,
             pageUrlProvider = { tab.content.url },
             pageTitleProvider = { tab.content.title }
         )

@@ -167,23 +167,32 @@ jobs:
             -storepass "$KEYSTORE_STORE_PASS" \
             -alias "$KEYSTORE_ALIAS" >/dev/null
 
-          BUILD_TASKS=":app:assembleGithubRelease"
           EXTRA_GRADLE_ARGS=""
           if [[ "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" || "${{ github.event.inputs.build_play_bundle }}" == "true" ]]; then
             echo "📦 Official release tag or Play bundle requested: building full ABI suite and Play Store AAB bundle..."
-            BUILD_TASKS="$BUILD_TASKS :app:bundlePlayRelease"
           else
             echo "⚡ Fast build active: passing -PfastBuild (building arm64-v8a only)..."
             EXTRA_GRADLE_ARGS="-PfastBuild"
           fi
 
-          ./gradlew $BUILD_TASKS $EXTRA_GRADLE_ARGS \
+          ./gradlew :app:assembleGithubRelease $EXTRA_GRADLE_ARGS \
             -PRELEASE_STORE_FILE="$KEYSTORE_PATH" \
             -PRELEASE_STORE_PASSWORD="$KEYSTORE_STORE_PASS" \
             -PRELEASE_KEY_ALIAS="$KEYSTORE_ALIAS" \
             -PRELEASE_KEY_PASSWORD="$KEYSTORE_KEY_PASS" \
             --build-cache --parallel \
             --stacktrace
+
+          if [[ "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" || "${{ github.event.inputs.build_play_bundle }}" == "true" ]]; then
+            echo "📦 Building Google Play Store AAB bundle..."
+            ./gradlew :app:bundlePlayRelease -PnoSplits \
+              -PRELEASE_STORE_FILE="$KEYSTORE_PATH" \
+              -PRELEASE_STORE_PASSWORD="$KEYSTORE_STORE_PASS" \
+              -PRELEASE_KEY_ALIAS="$KEYSTORE_ALIAS" \
+              -PRELEASE_KEY_PASSWORD="$KEYSTORE_KEY_PASS" \
+              --build-cache --parallel \
+              --stacktrace
+          fi
           find app/build/outputs/apk/ -name "*.apk" -exec cp {} raw_apks/ \;
           if [ -d app/build/outputs/bundle ]; then
             find app/build/outputs/bundle/ -name "*.aab" -exec cp {} raw_aabs/ \;

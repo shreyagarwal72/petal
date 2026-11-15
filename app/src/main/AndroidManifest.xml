@@ -137,6 +137,7 @@
     <application
         android:name=".PetalApplication"
         android:allowBackup="true"
+        android:largeHeap="true"
         android:fullBackupContent="@xml/petal_backup_rules"
         android:dataExtractionRules="@xml/petal_data_extraction_rules"
         android:hardwareAccelerated="true"

@@ -74,13 +74,16 @@ android {
         }
     }
 
+    def isBundleTask = gradle.startParameter.taskNames.any { it.toLowerCase().contains('bundle') }
+    def disableSplits = project.hasProperty('fastBuild') || project.hasProperty('noSplits') || (isBundleTask && !gradle.startParameter.taskNames.any { it.toLowerCase().contains('assemble') })
+
     splits {
         abi {
-            enable !project.hasProperty('fastBuild')
+            enable !disableSplits
             reset()
             include 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
             // Keep the universal APK so all supported ABIs are available in one package.
-            universalApk !project.hasProperty('fastBuild')
+            universalApk !disableSplits
         }
     }
 
