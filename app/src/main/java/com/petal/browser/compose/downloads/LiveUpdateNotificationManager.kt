@@ -284,20 +284,26 @@ object LiveUpdateNotificationManager {
                 .setOngoing(!isPaused)
                 .setOnlyAlertOnce(true)
                 .setColor(accentColor)
-                .setColorized(true)
+                .setColorized(false)
                 .setContentIntent(contentPendingIntent)
                 .setCategory(Notification.CATEGORY_PROGRESS)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
 
             if (promoteLiveUpdate && !isPaused) {
                 try {
-                    builder.setFlag(Notification.FLAG_PROMOTED_ONGOING, true)
-                } catch (_: Throwable) {}
+                    val method = builder.javaClass.getMethod("setRequestPromotedOngoing", Boolean::class.javaPrimitiveType)
+                    method.invoke(builder, true)
+                } catch (_: Throwable) {
+                    try {
+                        builder.setFlag(0x40000000, true) // Notification.FLAG_PROMOTED_ONGOING
+                    } catch (_: Throwable) {}
+                }
             }
 
             val extras = Bundle().apply {
                 putString("android.liveAlertText", chipText)
                 putBoolean("android.isLiveAlert", true)
+                putBoolean("android.requestPromotedOngoing", !isPaused && promoteLiveUpdate)
                 putBoolean("android.promotedOngoing", !isPaused && promoteLiveUpdate)
                 putString("android.shortCriticalText", chipText)
                 putInt("android.accentColor", accentColor)
@@ -327,7 +333,15 @@ object LiveUpdateNotificationManager {
                 )
             }
 
-            builder.build()
+            val notification = builder.build()
+            try {
+                val hasPromotable = Notification::class.java.getMethod("hasPromotableCharacteristics")
+                val isPromotable = hasPromotable.invoke(notification) as? Boolean
+                if (isPromotable != null) {
+                    Log.d(TAG, "Android 16 Live Update promotable: $isPromotable")
+                }
+            } catch (_: Throwable) {}
+            notification
         } catch (_: Throwable) {
             null
         }
