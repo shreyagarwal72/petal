@@ -1439,16 +1439,19 @@ fun PetalSelectableOptionCard(title: String, selected: Boolean, onClick: () -> U
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-    val cardShape = petalContainmentShape(20.dp)
+    val cardShape = petalContainmentShape(24.dp)
+    val source = remember { MutableInteractionSource() }
+    val scale = rememberPetalGroupPressScale(source)
     val defaultContainer = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh
     val container by animateColorAsState(if (selected) MaterialTheme.colorScheme.primaryContainer else defaultContainer, label = "petalOptionContainer")
     val border = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
     Surface(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth().liquidGlassChrome(shape = cardShape, enabled = isGlass, sheenIntensity = sheen),
+        modifier = modifier.fillMaxWidth().scale(scale).liquidGlassChrome(shape = cardShape, enabled = isGlass, sheenIntensity = sheen, pressFx = true),
         shape = cardShape,
         color = container,
         contentColor = MaterialTheme.colorScheme.onSurface,
+        interactionSource = source,
         border = BorderStroke(if (selected) 2.dp else 1.dp, border)
     ) {
         Row(Modifier.heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
