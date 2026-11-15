@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed-icon layer (Android 13+): petals + globe outline, tinted by the launcher. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+  <group android:scaleX="0.8" android:scaleY="0.8" android:pivotX="256" android:pivotY="256">
+    <path android:fillColor="#FF000000" android:pathData="M212,124a44,64,0 1,0 88,0a44,64,0 1,0 -88,-0z M318.23,131.55a44,64,45 1,0 62.23,62.23a44,64,45 1,0 -62.23,-62.23z M388,212a44,64,90 1,0 0,88a44,64,90 1,0 -0,-88z M380.45,318.23a44,64,135 1,0 -62.23,62.23a44,64,135 1,0 62.23,-62.23z M300,388a44,64,180 1,0 -88,0a44,64,180 1,0 88,-0z M193.77,380.45a44,64,225 1,0 -62.23,-62.23a44,64,225 1,0 62.23,62.23z M124,300a44,64,270 1,0 -0,-88a44,64,270 1,0 0,88z M131.55,193.77a44,64,315 1,0 62.23,-62.23a44,64,315 1,0 -62.23,62.23z"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="9" android:strokeLineCap="round" android:pathData="M206,256a50,50 0 1,0 100,0a50,50 0 1,0 -100,0z M234,256a22,50 0 1,0 44,0a22,50 0 1,0 -44,0z M206,256h100"/>
+  </group>
+</vector>

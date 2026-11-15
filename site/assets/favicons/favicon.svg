@@ -1,28 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <defs>
-    <!-- Background rounded squircle / circle container -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFF0EA" />
-      <stop offset="100%" stop-color="#FEE2D5" />
-    </linearGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="125%" height="125%">
-      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#5A2208" flood-opacity="0.18"/>
-    </filter>
-    <clip-path id="swirlClip">
-      <path d="M220.6,291.4 C234.0,256.2 230.3,200.8 262.6,171.7 C286.7,150.6 332.5,160.8 362.1,149.9 C351.2,179.5 361.4,225.3 340.3,249.4 C311.2,281.7 255.8,278.0 220.6,291.4 Z M291.4,220.6 C278.0,255.8 281.7,311.2 249.4,340.3 C225.3,361.4 179.5,351.2 149.9,362.1 C160.8,332.5 150.6,286.7 171.7,262.6 C200.8,230.3 256.2,234.0 291.4,220.6 Z" />
-    </clip-path>
-  </defs>
-  <!-- Background Squircle -->
-  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
-  <!-- Petal Cross-Swirl Emblem with subtle drop shadow -->
-  <g filter="url(#shadow)">
-    <!-- Teal Wing (#026065) -->
-    <path fill="#026065" d="M220.6,291.4 C234.0,256.2 230.3,200.8 262.6,171.7 C286.7,150.6 332.5,160.8 362.1,149.9 C351.2,179.5 361.4,225.3 340.3,249.4 C311.2,281.7 255.8,278.0 220.6,291.4 Z M291.4,220.6 C278.0,255.8 281.7,311.2 249.4,340.3 C225.3,361.4 179.5,351.2 149.9,362.1 C160.8,332.5 150.6,286.7 171.7,262.6 C200.8,230.3 256.2,234.0 291.4,220.6 Z" />
-    <!-- Dark Orange Wing (#A04106) -->
-    <path fill="#A04106" d="M291.4,291.4 C256.2,278.0 200.8,281.7 171.7,249.4 C150.6,225.3 160.8,179.5 149.9,149.9 C179.5,160.8 225.3,150.6 249.4,171.7 C281.7,200.8 278.0,256.2 291.4,291.4 Z M220.6,220.6 C255.8,234.0 311.2,230.3 340.3,262.6 C361.4,286.7 351.2,332.5 362.1,362.1 C332.5,351.2 286.7,361.4 262.6,340.3 C230.3,311.2 234.0,255.8 220.6,220.6 Z" />
-    <!-- Intersection Swirl Overlay Burnt Orange (#E45B24) -->
-    <g clip-path="url(#swirlClip)">
-      <path fill="#E45B24" d="M291.4,291.4 C256.2,278.0 200.8,281.7 171.7,249.4 C150.6,225.3 160.8,179.5 149.9,149.9 C179.5,160.8 225.3,150.6 249.4,171.7 C281.7,200.8 278.0,256.2 291.4,291.4 Z M220.6,220.6 C255.8,234.0 311.2,230.3 340.3,262.6 C361.4,286.7 351.2,332.5 362.1,362.1 C332.5,351.2 286.7,361.4 262.6,340.3 C230.3,311.2 234.0,255.8 220.6,220.6 Z" />
-    </g>
+  <style>
+    .bg{fill:#FEE2D5} .a{fill:#026065} .b{fill:#A04106} .petals path{stroke:#FEE2D5;stroke-width:6}
+    .globe{fill:#FEE2D5} .lines{fill:none;stroke:#026065;stroke-width:9;stroke-linecap:round}
+    @media (prefers-color-scheme: dark){
+      .bg{fill:#1F1B19} .a{fill:#7CCBCF} .b{fill:#F0A072} .petals path{stroke:#1F1B19}
+      .globe{fill:#1F1B19} .lines{stroke:#7CCBCF}
+    }
+  </style>
+  <rect class="bg" width="512" height="512" rx="128"/>
+  <g transform="translate(256 256) scale(.9) translate(-256 -256)">
+    <g class="petals"><path class="a" d="M210,164a46,82,0 1,0 92,0a46,82,0 1,0 -92,-0z"/><path class="b" d="M288.53,158.42a46,82,45 1,0 65.05,65.05a46,82,45 1,0 -65.05,-65.05z"/><path class="a" d="M348,210a46,82,90 1,0 0,92a46,82,90 1,0 -0,-92z"/><path class="b" d="M353.58,288.53a46,82,135 1,0 -65.05,65.05a46,82,135 1,0 65.05,-65.05z"/><path class="a" d="M302,348a46,82,180 1,0 -92,0a46,82,180 1,0 92,-0z"/><path class="b" d="M223.47,353.58a46,82,225 1,0 -65.05,-65.05a46,82,225 1,0 65.05,65.05z"/><path class="a" d="M164,302a46,82,270 1,0 -0,-92a46,82,270 1,0 0,92z"/><path class="b" d="M158.42,223.47a46,82,315 1,0 65.05,-65.05a46,82,315 1,0 -65.05,65.05z"/></g>
+    <path class="globe" d="M192,256a64,64 0 1,0 128,0a64,64 0 1,0 -128,0z"/>
+    <path class="lines" d="M206,256a50,50 0 1,0 100,0a50,50 0 1,0 -100,0z M234,256a22,50 0 1,0 44,0a22,50 0 1,0 -44,0z M206,256h100"/>
   </g>
 </svg>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Petal bloom + globe as a single-tone settings glyph (tinted by the badge, like the other icons). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+  <path
+      android:fillColor="@android:color/white"
+      android:pathData="M9.62,4.86a2.38,3.46,0 1,0 4.76,0a2.38,3.46,0 1,0 -4.76,-0z M15.37,5.27a2.38,3.46,45 1,0 3.37,3.37a2.38,3.46,45 1,0 -3.37,-3.37z M19.14,9.62a2.38,3.46,90 1,0 0,4.76a2.38,3.46,90 1,0 -0,-4.76z M18.73,15.37a2.38,3.46,135 1,0 -3.37,3.37a2.38,3.46,135 1,0 3.37,-3.37z M14.38,19.14a2.38,3.46,180 1,0 -4.76,0a2.38,3.46,180 1,0 4.76,-0z M8.63,18.73a2.38,3.46,225 1,0 -3.37,-3.37a2.38,3.46,225 1,0 3.37,3.37z M4.86,14.38a2.38,3.46,270 1,0 -0,-4.76a2.38,3.46,270 1,0 0,4.76z M5.27,8.63a2.38,3.46,315 1,0 3.37,-3.37a2.38,3.46,315 1,0 -3.37,3.37z"/>
+  <path
+      android:strokeColor="@android:color/white"
+      android:strokeWidth="0.54"
+      android:strokeLineCap="round"
+      android:pathData="M9.3,12a2.7,2.7 0 1,0 5.41,0a2.7,2.7 0 1,0 -5.41,0z M10.81,12a1.19,2.7 0 1,0 2.38,0a1.19,2.7 0 1,0 -2.38,0z M9.3,12h5.41"/>
+</vector>
