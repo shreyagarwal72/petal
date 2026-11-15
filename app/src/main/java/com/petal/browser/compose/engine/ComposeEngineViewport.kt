@@ -18,6 +18,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.util.lerp
+import com.petal.browser.ui.components.BarCollapseState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,6 +76,10 @@ fun ComposeEngineViewport(
     modifier: Modifier = Modifier,
     topPadding: Dp = 0.dp,
     bottomPadding: Dp = 0.dp,
+    // Padding the page keeps once the bars are minimized. The page grows into the freed space
+    // as BarCollapseState.collapsedFraction goes 0 -> 1, so no empty band is left behind.
+    collapsedTopPadding: Dp = topPadding,
+    collapsedBottomPadding: Dp = bottomPadding,
     onEngineViewReady: ((View) -> Unit)? = null,
 ) {
     val context = LocalContext.current
@@ -207,6 +214,22 @@ fun ComposeEngineViewport(
         onEngineViewReady?.invoke(engineView.asView())
     }
 
+    // Keep the page padding glued to the bars: full padding at rest, collapsed padding when the
+    // bars are minimized, and everything in between while they animate. Without this the padding
+    // stayed at its resting size and showed up as a black gap above/below the page.
+    val fullTopPx = with(density) { topPadding.roundToPx() }
+    val fullBottomPx = with(density) { bottomPadding.roundToPx() }
+    val minTopPx = with(density) { collapsedTopPadding.roundToPx() }
+    val minBottomPx = with(density) { collapsedBottomPadding.roundToPx() }
+    LaunchedEffect(engineView, fullTopPx, fullBottomPx, minTopPx, minBottomPx) {
+        snapshotFlow { BarCollapseState.collapsedFraction }.collect { f ->
+            val top = lerp(fullTopPx, minTopPx, f)
+            val bottom = lerp(fullBottomPx, minBottomPx, f)
+            val v = engineView.asView()
+            if (v.paddingTop != top || v.paddingBottom != bottom) v.setPadding(0, top, 0, bottom)
+        }
+    }
+
     // Inform GeckoView of dynamic toolbar height for smooth scrolling and proper viewport calculations
     val totalToolbarHeightPx = with(density) { (topPadding + bottomPadding).roundToPx() }
     LaunchedEffect(totalToolbarHeightPx, engineView) {
@@ -298,9 +321,8 @@ fun ComposeEngineViewport(
                 // Like Fenix, the EngineView is a direct child of the swipe-refresh layout:
                 // SwipeRefreshFeature inspects that child to ask Gecko if the page can still scroll up.
                 val view = engineView.asView()
-                val topPx = with(density) { topPadding.roundToPx() }
-                val bottomPx = with(density) { bottomPadding.roundToPx() }
-                view.setPadding(0, topPx, 0, bottomPx)
+                val f = BarCollapseState.collapsedFraction
+                view.setPadding(0, lerp(fullTopPx, minTopPx, f), 0, lerp(fullBottomPx, minBottomPx, f))
                 (view as? ViewGroup)?.clipToPadding = false
                 (view as? ViewGroup)?.clipChildren = false
                 if (view.parent !== swipeLayout) {
@@ -326,9 +348,6 @@ fun ComposeEngineViewport(
                         GeckoGlassBackend.applyBackend(gv, context)
                     } catch (_: Throwable) {}
                 }
-                val topPx = with(density) { topPadding.roundToPx() }
-                val bottomPx = with(density) { bottomPadding.roundToPx() }
-                engineView.asView().setPadding(0, topPx, 0, bottomPx)
             },
             modifier = Modifier
                 .fillMaxSize()
