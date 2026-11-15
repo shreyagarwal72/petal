@@ -51,7 +51,6 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -115,6 +114,7 @@ import com.petal.browser.ui.glass.LocalPetalGlassRevision
 import com.petal.browser.ui.glass.petalGlassPanel
 import com.petal.browser.ui.glass.glassPressOverlay
 import com.petal.browser.ui.glass.glassPressScale
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 enum class PetalGroupPosition { SINGLE, TOP, MIDDLE, BOTTOM }
 
@@ -333,7 +333,7 @@ fun petalGroupSurfaceColor(): Color {
 
     if (isMiuix) {
         val target = if (LocalPetalSectionHighlighted.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-        else if (dark) Color(0xFF1C1C1E) else Color(0xFFFFFFFF)
+        else top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme.surfaceContainer
         val color by animateColorAsState(target, label = "petalGroupSurface")
         return color
     }
@@ -398,23 +398,19 @@ fun rememberPetalGroupShape(position: PetalGroupPosition): androidx.compose.foun
 fun petalGroupShape(position: PetalGroupPosition): androidx.compose.foundation.shape.CornerBasedShape {
     val isMiuix = com.petal.browser.ui.theme.layout.PetalLayoutState.settings.uiExperience == com.petal.browser.ui.theme.layout.UiExperience.MIUIX
     if (isMiuix) {
-        val r = 20.dp
+        // Real Miuix Card: one seamless 16dp surface (CardDefaults.CornerRadius). Rows inside a
+        // group have square inner corners, only the outer corners of the group are rounded.
+        val r = 16.dp
+        val flat = androidx.compose.foundation.shape.CornerSize(0.dp)
+        val round = androidx.compose.foundation.shape.CornerSize(r)
         return when (position) {
             PetalGroupPosition.SINGLE -> com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(r, smoothing = 0.68f)
             PetalGroupPosition.TOP -> com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(
-                smoothing = 0.68f,
-                topStart = androidx.compose.foundation.shape.CornerSize(r),
-                topEnd = androidx.compose.foundation.shape.CornerSize(r),
-                bottomEnd = androidx.compose.foundation.shape.CornerSize(4.dp),
-                bottomStart = androidx.compose.foundation.shape.CornerSize(4.dp)
+                smoothing = 0.68f, topStart = round, topEnd = round, bottomEnd = flat, bottomStart = flat
             )
-            PetalGroupPosition.MIDDLE -> com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(4.dp, smoothing = 0.68f)
+            PetalGroupPosition.MIDDLE -> com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(0.dp, smoothing = 0.68f)
             PetalGroupPosition.BOTTOM -> com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(
-                smoothing = 0.68f,
-                topStart = androidx.compose.foundation.shape.CornerSize(4.dp),
-                topEnd = androidx.compose.foundation.shape.CornerSize(4.dp),
-                bottomEnd = androidx.compose.foundation.shape.CornerSize(r),
-                bottomStart = androidx.compose.foundation.shape.CornerSize(r)
+                smoothing = 0.68f, topStart = flat, topEnd = flat, bottomEnd = round, bottomStart = round
             )
         }
     }

@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.ui.components.bouncyClickable
 import kotlinx.coroutines.launch
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /** Send the current page to another Firefox device using the account's official device commands. */
 @Composable

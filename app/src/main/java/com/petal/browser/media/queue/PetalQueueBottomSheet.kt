@@ -70,10 +70,8 @@ import com.petal.browser.ui.containment.petalSheenIntensity
 import com.petal.browser.ui.kit.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -93,6 +91,8 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.media.PetalAudioPalette
 import java.util.Locale
+import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

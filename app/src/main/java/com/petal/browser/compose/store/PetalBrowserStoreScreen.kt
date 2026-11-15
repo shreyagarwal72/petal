@@ -63,6 +63,7 @@ import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.*
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import kotlinx.coroutines.launch
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * PetalBrowserStoreScreen

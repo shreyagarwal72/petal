@@ -46,6 +46,7 @@ import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.toShape
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Top Developer Containment Section for Petal About & Developer screens.

@@ -29,6 +29,7 @@ import com.petal.browser.view.PetalToast
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @Composable
 fun PetalPasswordExportDialog(

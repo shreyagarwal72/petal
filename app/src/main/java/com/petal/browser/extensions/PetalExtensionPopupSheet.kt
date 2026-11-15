@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import com.petal.browser.ui.containment.liquidGlassChrome
 import androidx.compose.ui.Modifier
@@ -21,6 +20,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.engine.gecko.PetalEngineStore
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import mozilla.components.concept.engine.EngineSession
+import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
 
 /**
  * PetalExtensionPopupSheet

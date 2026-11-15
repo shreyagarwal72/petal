@@ -27,11 +27,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material3.AlertDialog
 import com.petal.browser.ui.kit.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.petal.browser.ui.kit.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -55,6 +53,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.containment.PetalSheet
+import com.petal.browser.ui.miuix.wrappers.AlertDialog
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Zen Browser-style Workspace Sheet.

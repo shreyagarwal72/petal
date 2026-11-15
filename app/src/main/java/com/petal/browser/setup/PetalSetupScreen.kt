@@ -51,6 +51,7 @@ import com.petal.browser.extensions.PetalBuiltInExtensionManager
 import com.petal.browser.ui.components.*
 import com.petal.browser.ui.containment.*
 import com.petal.browser.unit.PetalBackupManager
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 private data class SetupPermission(val id: String, val title: Int, val reason: Int, val permissions: List<String>, val optional: Boolean = false)
 

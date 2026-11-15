@@ -32,46 +32,6 @@ data class MiuiXColors(
     val isDark: Boolean,
 )
 
-val MiuiXLightColors = MiuiXColors(
-    primary = Color(0xFF007DFF),
-    onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFE5F1FF),
-    onPrimaryContainer = Color(0xFF0056B3),
-    background = Color(0xFFF2F2F7),
-    onBackground = Color(0xFF111111),
-    surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF1C1C1E),
-    surfaceVariant = Color(0xFFF7F7FA),
-    onSurfaceVariant = Color(0xFF8E8E93),
-    outline = Color(0x0F000000),
-    divider = Color(0x0C000000),
-    track = Color(0xFFE5E5EA),
-    error = Color(0xFFFF3B30),
-    onError = Color(0xFFFFFFFF),
-    isDark = false,
-)
-
-val MiuiXDarkColors = MiuiXColors(
-    primary = Color(0xFF1A8CFF),
-    onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFF0D3366),
-    onPrimaryContainer = Color(0xFF99CCFF),
-    background = Color(0xFF000000),
-    onBackground = Color(0xFFF5F5F7),
-    surface = Color(0xFF1C1C1E),
-    onSurface = Color(0xFFF2F2F7),
-    surfaceVariant = Color(0xFF28282A),
-    onSurfaceVariant = Color(0xFF8E8E93),
-    outline = Color(0x1FFFFFFF),
-    divider = Color(0x14FFFFFF),
-    track = Color(0xFF38383A),
-    error = Color(0xFFFF453A),
-    onError = Color(0xFFFFFFFF),
-    isDark = true,
-)
-
-val LocalMiuiXColors = compositionLocalOf { MiuiXLightColors }
-
 /** HyperOS fluid spring motion tokens. */
 object MiuiXMotion {
     /** Standard snappy HyperOS interaction spring. */
@@ -110,4 +70,39 @@ object MiuiXDimensions {
     val DividerIndent: Dp = 54.dp // BadgeSize (38) + 16dp padding
     val DragHandleWidth: Dp = 38.dp
     val DragHandleHeight: Dp = 4.dp
+}
+
+/**
+ * Maps the real Miuix color scheme ([top.yukonga.miuix.kmp.theme.Colors]) onto the legacy
+ * [MiuiXColors] shape so not-yet-migrated call sites keep compiling while reading real tokens.
+ * There are no guessed colors left in Petal: every value below comes from MiuixTheme.colorScheme.
+ */
+fun top.yukonga.miuix.kmp.theme.Colors.toMiuiXColors(isDark: Boolean): MiuiXColors = MiuiXColors(
+    primary = primary,
+    onPrimary = onPrimary,
+    primaryContainer = primaryContainer,
+    onPrimaryContainer = onPrimaryContainer,
+    background = background,
+    onBackground = onBackground,
+    surface = surface,
+    onSurface = onSurface,
+    surfaceVariant = surfaceVariant,
+    onSurfaceVariant = onSurfaceVariantSummary,
+    outline = outline,
+    divider = dividerLine,
+    track = secondaryContainer,
+    error = error,
+    onError = onError,
+    isDark = isDark,
+)
+
+/**
+ * Source-compatible shim for the old CompositionLocal. `LocalMiuiXColors.current` now resolves
+ * to the real Miuix tokens (MiuixTheme.colorScheme); there is nothing to provide any more.
+ * Removed once the Step 3/4 adapters replace the legacy MiuiX components.
+ */
+object LocalMiuiXColors {
+    val current: MiuiXColors
+        @Composable
+        get() = top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme.toMiuiXColors(LocalIsDark.current)
 }

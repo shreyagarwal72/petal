@@ -65,6 +65,7 @@ import com.petal.browser.ui.containment.PetalDialog
 import com.petal.browser.ui.glass.LocalPetalGlassSource
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Material 3 Expressive Crash Recovery Dialog for Petal Browser.

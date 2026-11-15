@@ -47,6 +47,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 private fun Context.findActivity(): Activity? {
     var c: Context? = this

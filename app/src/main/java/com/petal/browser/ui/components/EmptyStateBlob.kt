@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.theme.PetalMaterialShapes
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 enum class EmptyStateIllustrationType {
     DEFAULT,

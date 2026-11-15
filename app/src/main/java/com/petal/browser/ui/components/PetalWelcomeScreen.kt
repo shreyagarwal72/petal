@@ -82,6 +82,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.PetalAndroidUtils
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 object PetalWelcomeBridge {
     @JvmStatic

@@ -24,6 +24,7 @@ import com.petal.browser.ui.containment.PetalFilterChip
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * ExpressiveQuickActionsPill renders a floating quick-settings bottom pill bar for web toggles

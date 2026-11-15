@@ -45,7 +45,6 @@ import com.petal.browser.ui.kit.Button
 import androidx.compose.material3.ButtonDefaults
 import com.petal.browser.ui.kit.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -113,6 +112,7 @@ import com.petal.browser.ui.theme.layout.petalFlingBehavior
 import com.petal.browser.ui.theme.layout.rememberPetalLayoutSettings
 import kotlinx.coroutines.delay
 import java.util.Locale
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Expressive Layout & Controls (ImageToolbox-style).
@@ -160,6 +160,7 @@ fun PetalLayoutSettingsSection(
             trailing = { EditGlyph() },
             onClick = { sheet = SHEET_UI_EXPERIENCE }
         )
+        if (!isMiuix) { // Miuix mode uses the real Miuix switch and slider only
         PetalGroupRow(
             icon = ImageToolboxIcons.Outlined.ToggleOn,
             title = "Switch Type",
@@ -180,6 +181,7 @@ fun PetalLayoutSettingsSection(
             trailing = { EditGlyph() },
             onClick = { sheet = SHEET_SLIDER }
         )
+        }
         PetalGroupRow(
             icon = ImageToolboxIcons.Rounded.RoundedCorner,
             title = "Shapes Type",

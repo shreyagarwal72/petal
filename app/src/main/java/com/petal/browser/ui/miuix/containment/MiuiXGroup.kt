@@ -1,39 +1,27 @@
 package com.petal.browser.ui.miuix.containment
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.containment.PetalBackdrop
-import com.petal.browser.ui.miuix.glass.miuixAcrylicGlass
-import com.petal.browser.ui.miuix.theme.LocalMiuiXColors
-import com.petal.browser.ui.miuix.theme.MiuiXDimensions
-import com.petal.browser.ui.miuix.theme.MiuiXShapes
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * Xiaomi HyperOS Inset Card Group Container.
- *
- * Implements the signature HyperOS containment pattern:
- * - 16dp horizontal inset margins with 20dp continuous squircle corners.
- * - Uppercase section header with optional trailing action/caption.
- * - Flagship acrylic glass surface when blur is enabled.
- * - Optional bottom caption footer.
+ * Miuix inset section: SmallTitle above a real Miuix [Card] with 12dp horizontal inset and 12dp
+ * bottom spacing, exactly like InstallerX's settings pages. Optional header action and footer
+ * caption are kept for source compatibility. [backdrop], [glassEnabled] and [shape] are accepted
+ * but unused (the real Card owns surface and corners).
  */
 @Composable
 fun MiuiXGroup(
@@ -41,77 +29,39 @@ fun MiuiXGroup(
     title: String? = null,
     footer: String? = null,
     headerAction: (@Composable () -> Unit)? = null,
-    backdrop: PetalBackdrop? = null,
-    glassEnabled: Boolean = true,
-    shape: Shape = MiuiXShapes.Card,
-    content: @Composable ColumnScope.() -> Unit
+    @Suppress("UNUSED_PARAMETER") backdrop: PetalBackdrop? = null,
+    @Suppress("UNUSED_PARAMETER") glassEnabled: Boolean = true,
+    @Suppress("UNUSED_PARAMETER") shape: Shape? = null,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
-    val colors = LocalMiuiXColors.current
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = MiuiXDimensions.ScreenMarginHorizontal)
-    ) {
-        // Section Header
-        if (title != null || headerAction != null) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        if (headerAction != null) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth().padding(end = 28.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                if (title != null) {
-                    Text(
-                        text = title.uppercase(),
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.8.sp,
-                            fontSize = 11.sp
-                        ),
-                        color = colors.onSurfaceVariant,
-                        modifier = Modifier.weight(1f)
-                    )
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-
-                headerAction?.invoke()
+                if (title != null) SmallTitle(text = title)
+                headerAction()
             }
+        } else if (title != null) {
+            SmallTitle(text = title)
         }
 
-        // Inset Squircle Card Surface
-        Box(
+        Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .miuixAcrylicGlass(
-                    shape = shape,
-                    isDark = colors.isDark,
-                    backdrop = backdrop,
-                    enabled = glassEnabled,
-                    drawBorder = true
-                )
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                content()
-            }
-        }
+                .padding(horizontal = 12.dp)
+                .padding(bottom = 12.dp),
+            content = content,
+        )
 
-        // Section Footer Caption
         if (!footer.isNullOrBlank()) {
             Text(
                 text = footer,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp
-                ),
-                color = colors.onSurfaceVariant.copy(alpha = 0.8f),
-                modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 6.dp, bottom = 4.dp)
+                style = MiuixTheme.textStyles.footnote1,
+                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                modifier = Modifier.padding(start = 28.dp, end = 28.dp, bottom = 12.dp),
             )
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
     }
 }

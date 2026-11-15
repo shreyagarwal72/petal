@@ -153,6 +153,9 @@ jobs:
           echo "✅ Verified adblock-rust WASM output present."
 
       - name: Build Release APKs & AAB Bundle
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p raw_apks raw_aabs

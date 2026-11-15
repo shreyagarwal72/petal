@@ -55,7 +55,6 @@ import com.petal.browser.view.PetalToast
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.petal.browser.ui.kit.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -90,6 +89,7 @@ import com.petal.browser.media.ytdlp.YtDlpMediaInfo
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 // ── Social downloader state machine ───────────────────────────────────────────
 private sealed class SocialState {

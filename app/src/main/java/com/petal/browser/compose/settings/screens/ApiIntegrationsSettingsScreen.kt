@@ -36,6 +36,7 @@ import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.ScrollFadeRow
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @Composable
 fun ApiIntegrationsSettingsScreen(

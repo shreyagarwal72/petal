@@ -61,6 +61,7 @@ import com.petal.browser.ui.glass.liveGlassWallpaper
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 interface PetalOverflowMenuActionHandler {
     fun onGoBack()

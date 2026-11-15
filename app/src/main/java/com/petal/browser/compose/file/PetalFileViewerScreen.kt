@@ -103,6 +103,7 @@ import java.io.OutputStreamWriter
 import java.util.Locale
 import java.util.zip.GZIPInputStream
 import java.util.zip.ZipInputStream
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 object PetalFileViewerBridge {
 

@@ -83,7 +83,6 @@ import com.petal.browser.media.sheets.PetalSongInfoSheet
 import com.petal.browser.media.sheets.PetalSpeedSelectorSheet
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -139,6 +138,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.util.Locale
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 data class AudioTrackMetadata(
     val title: String,

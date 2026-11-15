@@ -24,7 +24,6 @@ import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.glass.PetalGlassContainer
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
@@ -32,6 +31,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.unit.PetalBrowserUtils
+import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
 
 object PetalLensBridge {
 

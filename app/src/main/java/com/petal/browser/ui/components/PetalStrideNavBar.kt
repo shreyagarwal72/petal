@@ -17,7 +17,6 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +56,7 @@ import com.petal.browser.ui.glass.glassPressScale
 import com.petal.browser.ui.glass.navIconMotion
 import com.petal.browser.ui.glass.rememberGlassBar
 import kotlin.math.roundToInt
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 private val NavOrder4 = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
 /** With search in the centre. */

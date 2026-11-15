@@ -43,6 +43,7 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.glass.LocalPetalGlassRevision
 import com.petal.browser.ui.glass.liquidGlass
 import com.petal.browser.ui.glass.rememberGlassBar
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * PetalFindInPageBar

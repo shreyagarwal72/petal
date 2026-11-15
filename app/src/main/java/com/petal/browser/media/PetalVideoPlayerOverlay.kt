@@ -45,7 +45,6 @@ import androidx.compose.material.icons.rounded.Subtitles
 import com.petal.browser.media.subtitle.PetalSubtitleEngine
 import com.petal.browser.media.subtitle.SubtitleCue
 import com.petal.browser.media.subtitle.PetalSubtitleConfigSheet
-import androidx.compose.material3.Icon
 import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -78,6 +77,7 @@ import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.delay
 import kotlin.math.abs
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Petal Video Player Overlay (Completely Rebuilt)

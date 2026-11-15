@@ -58,6 +58,7 @@ import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.unit.ClosedTabRecord
 import com.petal.browser.unit.PetalRecentlyClosedManager
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Closed Tabs Vault — a true full page (not a dialog/overlay window).

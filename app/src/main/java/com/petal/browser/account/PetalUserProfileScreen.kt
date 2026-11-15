@@ -73,6 +73,7 @@ import android.graphics.Paint
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @Composable
 fun ProfileAvatarDisplay(

@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.petal.browser.passwords.PetalCredentialVault
 import com.petal.browser.view.PetalToast
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @Composable
 fun DataBackupSettingsScreen(

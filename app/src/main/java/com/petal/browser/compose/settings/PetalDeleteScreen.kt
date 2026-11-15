@@ -52,6 +52,7 @@ import com.petal.browser.ui.containment.PetalSectionLabel
 import com.petal.browser.ui.theme.*
 import com.petal.browser.unit.PetalBrowserUtils
 import androidx.compose.ui.res.stringResource
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 object PetalDeleteBridge {
     @JvmStatic

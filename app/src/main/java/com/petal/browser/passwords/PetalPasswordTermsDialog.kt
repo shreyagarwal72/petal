@@ -31,6 +31,7 @@ import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 object PetalPasswordTermsManager {
     const val PREF_TERMS_ACCEPTED = "sp_password_terms_accepted_v1"

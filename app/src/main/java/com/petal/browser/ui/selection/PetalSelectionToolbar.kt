@@ -33,7 +33,6 @@ import androidx.compose.material.icons.rounded.ContentPaste
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.TextFields
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -87,6 +86,7 @@ import com.petal.browser.ui.glass.PetalGlassContainer
 import com.petal.browser.ui.glass.petalGlassPanel
 import kotlin.math.max
 import kotlin.math.roundToInt
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Petal's own text-selection toolbar, used by every Compose text field in the app (through

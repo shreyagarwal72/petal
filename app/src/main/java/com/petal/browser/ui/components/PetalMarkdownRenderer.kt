@@ -38,6 +38,7 @@ import com.petal.browser.unit.PetalBrowserUtils
 import java.util.regex.Pattern
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 sealed class MarkdownBlock {
     data class Heading(val level: Int, val text: String) : MarkdownBlock()

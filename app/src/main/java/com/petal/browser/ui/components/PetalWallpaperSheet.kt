@@ -65,6 +65,7 @@ import com.petal.browser.R
 import android.graphics.Bitmap
 import coil.request.ImageRequest
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 data class WallpaperPreset(
     val id: String,

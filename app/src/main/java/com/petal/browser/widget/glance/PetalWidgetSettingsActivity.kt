@@ -44,7 +44,6 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.petal.browser.ui.kit.FilledTonalButton
 import com.petal.browser.ui.kit.FilterChip
-import androidx.compose.material3.Icon
 import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.MaterialTheme
 import com.petal.browser.ui.kit.TextField
@@ -79,6 +78,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * The widget customization screen: the widget's configure activity (opens when a Petal widget is added on launchers

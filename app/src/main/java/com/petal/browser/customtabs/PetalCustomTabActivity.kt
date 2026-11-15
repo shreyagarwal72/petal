@@ -61,6 +61,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.view.PetalToast
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * PetalCustomTabActivity

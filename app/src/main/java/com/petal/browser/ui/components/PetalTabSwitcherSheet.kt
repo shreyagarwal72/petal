@@ -66,6 +66,7 @@ import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @Immutable
 data class TabModel(

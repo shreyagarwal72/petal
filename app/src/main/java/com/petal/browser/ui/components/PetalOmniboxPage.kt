@@ -102,6 +102,7 @@ import org.json.JSONArray
 import java.net.URI
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 enum class SuggestionSource { RECENT_SEARCH, BROWSING_HISTORY, SEARCH_ENGINE, SWITCH_TO_TAB, BOOKMARK }
 
