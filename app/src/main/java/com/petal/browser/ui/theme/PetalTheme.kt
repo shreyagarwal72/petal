@@ -97,7 +97,7 @@ fun PetalExpressiveTheme(
     },
     expressiveColors: Boolean = run {
         val sp = themePrefs()
-        sp.getBoolean("sp_expressive_colors", false)
+        sp.getBoolean("sp_expressive_colors", true)
     },
     appFont: AppFont? = null,
     customFontPath: String? = null,
@@ -216,9 +216,12 @@ fun PetalExpressiveTheme(
             }
         } else {
             // Light theme expressive tonal container depth
+            val baseLow = colorScheme.surfaceContainerLow
             colorScheme.copy(
+                background = Color(0xFFFAF9FD),
+                surface = Color(0xFFFAF9FD),
                 surfaceContainerLowest = Color(0xFFFFFFFF),
-                surfaceContainerLow = colorScheme.surfaceContainerLow,
+                surfaceContainerLow = if (baseLow != Color.Unspecified) baseLow else Color(0xFFF3F2F8),
                 surfaceContainer = colorScheme.surfaceContainer,
                 surfaceContainerHigh = colorScheme.surfaceContainerHigh,
                 surfaceContainerHighest = colorScheme.surfaceContainerHighest
