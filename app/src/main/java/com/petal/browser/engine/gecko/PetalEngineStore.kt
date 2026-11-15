@@ -182,20 +182,10 @@ object PetalEngineStore {
             try {
                 val icons = getBrowserIcons(appContext)
                 val delegate = getNotificationsDelegate(appContext)
-                val permissionsStorage = object : mozilla.components.concept.engine.permission.SitePermissionsStorage {
-                    override suspend fun findSitePermissionsBy(origin: String, private: Boolean): mozilla.components.concept.engine.permission.SitePermissions? {
-                        return mozilla.components.concept.engine.permission.SitePermissions(
-                            origin = origin,
-                            notification = mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOWED
-                        )
-                    }
-                    override suspend fun getSitePermissions(): List<mozilla.components.concept.engine.permission.SitePermissions> = emptyList()
-                    override suspend fun getSitePermissionsFor(origin: String): List<mozilla.components.concept.engine.permission.SitePermissions> = emptyList()
-                    override suspend fun remove(origin: String, private: Boolean) {}
-                    override suspend fun removeAll() {}
-                    override suspend fun removeAll(private: Boolean) {}
-                    override suspend fun save(sitePermissions: mozilla.components.concept.engine.permission.SitePermissions, private: Boolean) {}
-                }
+                val permissionsStorage = mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage(
+                    appContext,
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
+                )
                 webNotificationFeature = WebNotificationFeature(
                     context = appContext,
                     engine = newEngine,
@@ -273,12 +263,7 @@ object PetalEngineStore {
             emptyList()
         }
 
-        val isAcPhase4 = sp.getBoolean("sp_ac_phase4", false)
-        val phase4Middlewares = if (isAcPhase4) {
-            listOf(mozilla.components.browser.state.engine.middleware.TabsRemovedMiddleware(mainScope))
-        } else {
-            emptyList()
-        }
+        val phase4Middlewares = emptyList<mozilla.components.lib.state.Middleware<BrowserState, BrowserAction>>()
 
         val newStore = BrowserStore(
             initialState = BrowserState(),
@@ -417,7 +402,8 @@ object PetalEngineStore {
     fun getDefaultTopSitesStorage(context: Context): mozilla.components.feature.top.sites.DefaultTopSitesStorage {
         defaultTopSitesStorage?.let { return it }
         val pinned = getPinnedSiteStorage(context)
-        val storage = mozilla.components.feature.top.sites.DefaultTopSitesStorage(pinned)
+        val history = com.petal.browser.database.PetalPlacesProvider.getHistoryStorage(context)
+        val storage = mozilla.components.feature.top.sites.DefaultTopSitesStorage(pinned, history)
         defaultTopSitesStorage = storage
         Log.i(TAG, "Initialized Mozilla DefaultTopSitesStorage")
         return storage
@@ -432,7 +418,7 @@ object PetalEngineStore {
                 val customEngine = mozilla.components.browser.state.search.SearchEngine(
                     id = "custom_petal_engine",
                     name = "Custom",
-                    icon = null,
+                    icon = android.graphics.Bitmap.createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888),
                     inputEncoding = "UTF-8",
                     type = mozilla.components.browser.state.search.SearchEngine.Type.CUSTOM,
                     resultUrls = listOf(customUrl),
@@ -451,7 +437,7 @@ object PetalEngineStore {
     private fun migrateTopSitesOnce(context: Context, storage: mozilla.components.feature.top.sites.PinnedSiteStorage) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         if (sp.getBoolean("sp_top_sites_migrated_v1", false)) return
-        ioScope.launch {
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             try {
                 val existing = com.petal.browser.compose.home.loadHomeShortcuts(context)
                 for (shortcut in existing) {
@@ -565,8 +551,8 @@ object PetalEngineStore {
             client = client
         )
         val updater = mozilla.components.feature.addons.update.DefaultAddonUpdater(
-            applicationContext = appContext,
-            notificationsDelegate = getNotificationsDelegate(appContext)
+            context = appContext,
+            store = currentStore
         )
         val manager = mozilla.components.feature.addons.AddonManager(
             store = currentStore,

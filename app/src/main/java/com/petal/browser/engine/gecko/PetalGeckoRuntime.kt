@@ -247,9 +247,17 @@ object PetalGeckoRuntime {
                     lazy { loginsStorage },
                     kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
                 )
+                val noopCreditCardDelegate = object : mozilla.components.concept.storage.CreditCardsAddressesStorageDelegate {
+                    override suspend fun decrypt(key: mozilla.components.concept.storage.ManagedKey, encrypted: mozilla.components.concept.storage.CreditCardNumber.Encrypted) = mozilla.components.concept.storage.CreditCardNumber.Plaintext("")
+                    override suspend fun onAddressesFetch(): List<mozilla.components.concept.storage.Address> = emptyList()
+                    override suspend fun onAddressSave(address: mozilla.components.concept.storage.Address) {}
+                    override suspend fun onCreditCardsFetch(): List<mozilla.components.concept.storage.CreditCard> = emptyList()
+                    override suspend fun onCreditCardSave(card: mozilla.components.concept.storage.CreditCardEntry) {}
+                    override fun getKey(name: String) = null
+                }
                 newRuntime.autocompleteStorageDelegate =
                     mozilla.components.browser.engine.gecko.autofill.GeckoAutocompleteStorageDelegate(
-                        null,
+                        noopCreditCardDelegate,
                         loginDelegate,
                         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
                     )
@@ -273,9 +281,13 @@ object PetalGeckoRuntime {
 
         try {
             newRuntime.serviceWorkerDelegate = object : GeckoRuntime.ServiceWorkerDelegate {
-                override fun onOpenWindow(url: String): GeckoResult<org.mozilla.geckoview.GeckoSession>? {
-                    val activity = foregroundActivity?.get() ?: return null
+                override fun onOpenWindow(url: String): GeckoResult<org.mozilla.geckoview.GeckoSession> {
                     val result = GeckoResult<org.mozilla.geckoview.GeckoSession>()
+                    val activity = foregroundActivity?.get()
+                    if (activity == null) {
+                        result.complete(null)
+                        return result
+                    }
                     activity.runOnUiThread {
                         try {
                             val pair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
@@ -285,7 +297,7 @@ object PetalGeckoRuntime {
                                 isIncognito = false,
                                 select = true
                             )
-                            val gs = (pair.second as? mozilla.components.browser.engine.gecko.GeckoEngineSession)?.geckoSession
+                            val gs = com.petal.browser.engine.gecko.PetalEngineBridge.getEngineGeckoSession(pair.second)
                             result.complete(gs)
                         } catch (t: Throwable) {
                             result.completeExceptionally(t)

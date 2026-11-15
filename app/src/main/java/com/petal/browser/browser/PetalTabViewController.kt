@@ -2723,8 +2723,6 @@ private class ExternalSchemeNavigationDelegate(
             return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
         }
 
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-
         // Open Redirect Links in Background
         val openRedirectsInBackground = sp.getBoolean("sp_open_redirects_in_background", false)
         if (openRedirectsInBackground && request.target != org.mozilla.geckoview.GeckoSession.NavigationDelegate.TARGET_WINDOW_CURRENT) {

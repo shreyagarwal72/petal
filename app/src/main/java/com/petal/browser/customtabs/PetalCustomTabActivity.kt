@@ -48,6 +48,9 @@ import com.petal.browser.R
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.compose.composable.PetalRefreshBarState
+import mozilla.components.feature.customtabs.createCustomTabConfigFromIntent
+import mozilla.components.feature.customtabs.getConfiguredColorSchemeParams
+import mozilla.components.feature.customtabs.getToolbarBackgroundColor
 import com.petal.browser.compose.composable.RefreshBarLoadingIndicatorLazy
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -290,14 +293,14 @@ class PetalCustomTabActivity : ComponentActivity() {
 
             if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase4Enabled()) {
                 try {
-                    val config = mozilla.components.feature.customtabs.CustomTabConfigHelperKt.createCustomTabConfigFromIntent(intent, resources)
+                    val config = createCustomTabConfigFromIntent(intent, resources)
                     config.closeButtonIcon?.let { customCloseButtonBitmap = it }
-                    val params = mozilla.components.feature.customtabs.CustomTabConfigHelperKt.getConfiguredColorSchemeParams(
+                    val params = getConfiguredColorSchemeParams(
                         config,
                         resources.configuration.uiMode,
                         null
                     )
-                    mozilla.components.feature.customtabs.CustomTabConfigHelperKt.getToolbarBackgroundColor(params, false)?.let {
+                    getToolbarBackgroundColor(params, false)?.let {
                         customToolbarColor = Color(it)
                     }
                 } catch (_: Throwable) {}

@@ -55,7 +55,7 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.AlertPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
-        if (isPhase2) return engine!!.onAlertPrompt(session, prompt)
+        if (isPhase2) return engine?.onAlertPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
         val act = activityProvider()
         val res = if (act != null) inner().onAlertPrompt(session, prompt) else null
         return res ?: engine?.onAlertPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -65,7 +65,7 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.ButtonPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
-        if (isPhase2) return engine!!.onButtonPrompt(session, prompt)
+        if (isPhase2) return engine?.onButtonPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
         val act = activityProvider()
         val res = if (act != null) inner().onButtonPrompt(session, prompt) else null
         return res ?: engine?.onButtonPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())

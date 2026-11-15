@@ -389,7 +389,7 @@ fun PetalOmniboxPage(
                             site.url.contains("news") -> Icons.Rounded.RssFeed
                             else -> Icons.Rounded.Public
                         }
-                        TopSiteShortcut(site.title, site.url, icon)
+                        TopSiteShortcut(site.title ?: site.url, site.url, icon)
                     }
                 } else null
             } catch (_: Throwable) { null }

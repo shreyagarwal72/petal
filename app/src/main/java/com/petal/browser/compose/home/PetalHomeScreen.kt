@@ -156,7 +156,7 @@ fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
                         else -> "globe"
                     }
                     PetalShortcut(
-                        label = topSite.title,
+                        label = topSite.title ?: host,
                         url = topSite.url,
                         siteId = siteId,
                         containerColor = paletteColors[idx % paletteColors.size]

@@ -192,7 +192,7 @@ object PetalFxa {
     suspend fun beginSignIn(): String? {
         val mgr = manager ?: return null
         _state.value = FxaUi.Connecting
-        val url = try { mgr.beginAuthentication(entrypoint = PetalEntryPoint) } catch (e: Throwable) { _error.value = e.message; null }
+        val url = try { mgr.beginAuthentication(service = "sync", entrypoint = PetalEntryPoint) } catch (e: Throwable) { _error.value = e.message; null }
         if (url == null) _state.value = FxaUi.SignedOut
         return url
     }

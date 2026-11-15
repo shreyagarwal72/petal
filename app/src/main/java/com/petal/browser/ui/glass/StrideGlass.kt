@@ -214,7 +214,7 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
     // Geometry, kept by the Compose side.
     internal var host: View? = null
     internal var coords: LayoutCoordinates? = null
-    private var size = Size.Zero
+    internal var size = Size.Zero
     private var shape: Shape? = null
     private var direction: LayoutDirection? = null
     private var outline: android.graphics.Path? = null

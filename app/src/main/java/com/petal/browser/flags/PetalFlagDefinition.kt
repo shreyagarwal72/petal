@@ -23,7 +23,8 @@ enum class FlagCategory(val displayName: String) {
     PRIVACY("Privacy & Security"),
     RENDERING("Rendering & GPU"),
     NETWORK("Networking"),
-    EXTENSIONS("Add-ons & Scripts")
+    EXTENSIONS("Add-ons & Scripts"),
+    SYSTEM("System & Architecture")
 }
 
 enum class FlagType {

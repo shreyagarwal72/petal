@@ -195,4 +195,28 @@ object PetalFlagsRegistry {
     fun findById(id: String): PetalFlagDefinition? = flags.firstOrNull { it.id == id }
     fun findByPrefKey(key: String): PetalFlagDefinition? = flags.firstOrNull { it.prefKey == key }
     fun isEnabled(context: android.content.Context, id: String): Boolean = PetalFlagsStore.isEnabled(context, id)
+
+    fun isAcPhase1Enabled(): Boolean {
+        val app = runCatching { com.petal.browser.PetalApplication.instance }.getOrNull() ?: return false
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(app)
+        return sp.getBoolean("sp_ac_phase1", false) || PetalFlagsStore.isEnabled(app, "ac-phase1")
+    }
+
+    fun isAcPhase2Enabled(): Boolean {
+        val app = runCatching { com.petal.browser.PetalApplication.instance }.getOrNull() ?: return false
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(app)
+        return sp.getBoolean("sp_ac_phase2", false) || PetalFlagsStore.isEnabled(app, "ac-phase2")
+    }
+
+    fun isAcPhase3Enabled(): Boolean {
+        val app = runCatching { com.petal.browser.PetalApplication.instance }.getOrNull() ?: return false
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(app)
+        return sp.getBoolean("sp_ac_phase3", false) || PetalFlagsStore.isEnabled(app, "ac-phase3")
+    }
+
+    fun isAcPhase4Enabled(): Boolean {
+        val app = runCatching { com.petal.browser.PetalApplication.instance }.getOrNull() ?: return false
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(app)
+        return sp.getBoolean("sp_ac_phase4", false) || PetalFlagsStore.isEnabled(app, "ac-phase4")
+    }
 }

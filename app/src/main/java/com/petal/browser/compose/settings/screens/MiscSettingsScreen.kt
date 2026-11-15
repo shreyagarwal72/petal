@@ -246,8 +246,9 @@ fun MiscSettingsScreenContent(
                 }
 
                 // Advanced Developer Tools (about:config)
-                val developerPrefs = remember(context) {
-                    androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                val currentContext = androidx.compose.ui.platform.LocalContext.current
+                val developerPrefs = remember(currentContext) {
+                    androidx.preference.PreferenceManager.getDefaultSharedPreferences(currentContext)
                 }
                 var aboutConfigEnabled by remember {
                     mutableStateOf(developerPrefs.getBoolean("sp_enable_about_config", com.petal.browser.BuildConfig.DEBUG))

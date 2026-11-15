@@ -37,6 +37,7 @@ import com.petal.browser.logger.PetalAppLogger
 import com.petal.browser.ui.components.PetalAlertDialogBuilder
 import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.view.PetalToast
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader

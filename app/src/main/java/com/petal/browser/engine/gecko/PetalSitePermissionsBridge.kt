@@ -43,7 +43,7 @@ object PetalSitePermissionsBridge {
 
     fun getStorage(context: Context): OnDiskSitePermissionsStorage {
         return storageInstance ?: synchronized(this) {
-            storageInstance ?: OnDiskSitePermissionsStorage(context.applicationContext).also {
+            storageInstance ?: OnDiskSitePermissionsStorage(context.applicationContext, kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)).also {
                 storageInstance = it
                 migrateLegacyPreferences(context.applicationContext, it)
             }
@@ -107,7 +107,7 @@ object PetalSitePermissionsBridge {
                                 }
                                 if (permission != null && origin.isNotBlank()) {
                                     try {
-                                        val existing = storage.findSitePermissionsBy(origin, isPrivate = false, createIfNotFound = true)
+                                        val existing = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
                                         val updated = when (permission) {
                                             Permission.CAMERA -> existing.copy(camera = status)
                                             Permission.MICROPHONE -> existing.copy(microphone = status)
@@ -118,7 +118,7 @@ object PetalSitePermissionsBridge {
                                             Permission.MEDIA_KEY_SYSTEM_ACCESS -> existing.copy(mediaKeySystemAccess = status)
                                             else -> existing
                                         }
-                                        storage.update(updated, isPrivate = false)
+                                        storage.update(updated, false)
                                     } catch (_: Throwable) {}
                                 }
                             }
@@ -169,7 +169,7 @@ object PetalSitePermissionsBridge {
         val storage = getStorage(context)
 
         scope.launch {
-            val sitePerms = storage.findSitePermissionsBy(origin, isPrivate = isPrivate, createIfNotFound = false)
+            val sitePerms = storage.findSitePermissionsBy(origin, isPrivate, false)
             val sessionCam = sessionGrants["camera#$origin"]
             val sessionMic = sessionGrants["microphone#$origin"]
 
@@ -197,8 +197,8 @@ object PetalSitePermissionsBridge {
                         onAllow = { remember ->
                             if (remember && !isPrivate) {
                                 scope.launch {
-                                    val current = storage.findSitePermissionsBy(origin, isPrivate = false, createIfNotFound = true)
-                                    storage.update(current.copy(camera = SitePermissions.Status.ALLOWED, microphone = SitePermissions.Status.ALLOWED), isPrivate = false)
+                                    val current = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
+                                    storage.update(current.copy(camera = SitePermissions.Status.ALLOWED, microphone = SitePermissions.Status.ALLOWED), false)
                                 }
                             } else {
                                 sessionGrants["camera#$origin"] = SitePermissions.Status.ALLOWED
@@ -211,8 +211,8 @@ object PetalSitePermissionsBridge {
                         onDeny = { remember ->
                             if (remember && !isPrivate) {
                                 scope.launch {
-                                    val current = storage.findSitePermissionsBy(origin, isPrivate = false, createIfNotFound = true)
-                                    storage.update(current.copy(camera = SitePermissions.Status.BLOCKED, microphone = SitePermissions.Status.BLOCKED), isPrivate = false)
+                                    val current = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
+                                    storage.update(current.copy(camera = SitePermissions.Status.BLOCKED, microphone = SitePermissions.Status.BLOCKED), false)
                                 }
                             } else {
                                 sessionGrants["camera#$origin"] = SitePermissions.Status.BLOCKED
@@ -249,9 +249,9 @@ object PetalSitePermissionsBridge {
                     onAllow = { remember ->
                         if (remember && !isPrivate) {
                             scope.launch {
-                                val current = storage.findSitePermissionsBy(origin, isPrivate = false, createIfNotFound = true)
+                                val current = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
                                 val updated = if (hasVideo) current.copy(camera = SitePermissions.Status.ALLOWED) else current.copy(microphone = SitePermissions.Status.ALLOWED)
-                                storage.update(updated, isPrivate = false)
+                                storage.update(updated, false)
                             }
                         } else {
                             sessionGrants["$permKey#$origin"] = SitePermissions.Status.ALLOWED
@@ -262,9 +262,9 @@ object PetalSitePermissionsBridge {
                     onDeny = { remember ->
                         if (remember && !isPrivate) {
                             scope.launch {
-                                val current = storage.findSitePermissionsBy(origin, isPrivate = false, createIfNotFound = true)
+                                val current = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
                                 val updated = if (hasVideo) current.copy(camera = SitePermissions.Status.BLOCKED) else current.copy(microphone = SitePermissions.Status.BLOCKED)
-                                storage.update(updated, isPrivate = false)
+                                storage.update(updated, false)
                             }
                         } else {
                             sessionGrants["$permKey#$origin"] = SitePermissions.Status.BLOCKED
@@ -335,7 +335,7 @@ object PetalSitePermissionsBridge {
         val sessionStatus = sessionGrants["$permKey#$origin"]
 
         scope.launch {
-            val sitePerms = storage.findSitePermissionsBy(origin, isPrivate = isPrivate, createIfNotFound = false)
+            val sitePerms = storage.findSitePermissionsBy(origin, isPrivate, false)
             val storedStatus = acPermission?.let { sitePerms?.get(it) } ?: SitePermissions.Status.NO_DECISION
             val effectiveStatus = sessionStatus ?: storedStatus
 
@@ -355,7 +355,7 @@ object PetalSitePermissionsBridge {
                     onAllow = { remember ->
                         if (remember && !isPrivate && acPermission != null) {
                             scope.launch {
-                                val current = storage.findSitePermissionsBy(origin, isPrivate = false, createIfNotFound = true)
+                                val current = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
                                 val updated = when (acPermission) {
                                     Permission.LOCATION -> current.copy(location = SitePermissions.Status.ALLOWED)
                                     Permission.NOTIFICATION -> current.copy(notification = SitePermissions.Status.ALLOWED)
@@ -365,7 +365,7 @@ object PetalSitePermissionsBridge {
                                     Permission.LOCAL_NETWORK_ACCESS -> current.copy(localNetworkAccess = SitePermissions.Status.ALLOWED)
                                     else -> current
                                 }
-                                storage.update(updated, isPrivate = false)
+                                storage.update(updated, false)
                             }
                         } else {
                             sessionGrants["$permKey#$origin"] = SitePermissions.Status.ALLOWED
@@ -375,7 +375,7 @@ object PetalSitePermissionsBridge {
                     onDeny = { remember ->
                         if (remember && !isPrivate && acPermission != null) {
                             scope.launch {
-                                val current = storage.findSitePermissionsBy(origin, isPrivate = false, createIfNotFound = true)
+                                val current = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
                                 val updated = when (acPermission) {
                                     Permission.LOCATION -> current.copy(location = SitePermissions.Status.BLOCKED)
                                     Permission.NOTIFICATION -> current.copy(notification = SitePermissions.Status.BLOCKED)
@@ -385,7 +385,7 @@ object PetalSitePermissionsBridge {
                                     Permission.LOCAL_NETWORK_ACCESS -> current.copy(localNetworkAccess = SitePermissions.Status.BLOCKED)
                                     else -> current
                                 }
-                                storage.update(updated, isPrivate = false)
+                                storage.update(updated, false)
                             }
                         } else {
                             sessionGrants["$permKey#$origin"] = SitePermissions.Status.BLOCKED

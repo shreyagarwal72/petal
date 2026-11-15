@@ -117,7 +117,10 @@ object PetalOverflowBridge {
             val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
             com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-            val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+            val exp = sp.getString("sp_ui_experience", null)
+            val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
+            val defGlass = if (isMiuix) false else com.petal.browser.ui.glass.StrideGlassPrefs.isEnabled(activity)
+            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_containments", defGlass)
             val useBlurBg = sp.getBoolean("sp_overflow_menu_blur_bg", true) && isLiquidGlass
 
             var pendingDismissAction: (() -> Unit)? = null
@@ -475,11 +478,11 @@ fun PetalOverflowMenuSheet(
     }
     val ambientWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
     val ambientSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
-    val liveSource = remember(liveContext, ambientSource) {
+    val liveSource = remember(context, ambientSource) {
         if (ambientSource != null && ambientSource.isAttachedToWindow && ambientSource.width > 0) {
             ambientSource
         } else {
-            var c: android.content.Context? = liveContext
+            var c: android.content.Context? = context
             while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
             (c as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main_content)
                 ?: (c as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main)

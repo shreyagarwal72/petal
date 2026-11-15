@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.ContentAction
+import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
@@ -44,7 +45,7 @@ class PetalBrowserPromptBridge(
 
     fun start() {
         scope.launch {
-            store.flow()
+            store.stateFlow
                 .map { state -> state.selectedTab?.let { tab -> tab.id to tab.content.promptRequests } }
                 .distinctUntilChanged()
                 .collect { pair ->
@@ -89,7 +90,7 @@ class PetalBrowserPromptBridge(
                         request.onConfirmPositiveButton(false)
                         consume(tabId, request)
                     },
-                    onDismiss = {
+                    onCancel = {
                         request.onConfirmNegativeButton(false)
                         consume(tabId, request)
                     }
@@ -107,7 +108,7 @@ class PetalBrowserPromptBridge(
                         request.onConfirm(false, value)
                         consume(tabId, request)
                     },
-                    onDismiss = {
+                    onCancel = {
                         request.onDismiss()
                         consume(tabId, request)
                     }
@@ -128,7 +129,7 @@ class PetalBrowserPromptBridge(
                     activity,
                     null,
                     rows,
-                    isMultiple = false,
+                    multiple = false,
                     onConfirm = { selectedIds ->
                         val selectedId = selectedIds.firstOrNull()
                         val choice = request.choices.firstOrNull { it.id == selectedId }
@@ -139,7 +140,7 @@ class PetalBrowserPromptBridge(
                         }
                         consume(tabId, request)
                     },
-                    onDismiss = {
+                    onCancel = {
                         request.onDismiss()
                         consume(tabId, request)
                     }
@@ -160,13 +161,13 @@ class PetalBrowserPromptBridge(
                     activity,
                     null,
                     rows,
-                    isMultiple = true,
+                    multiple = true,
                     onConfirm = { selectedIds ->
                         val selected = request.choices.filter { selectedIds.contains(it.id) }.toTypedArray()
                         request.onConfirm(selected)
                         consume(tabId, request)
                     },
-                    onDismiss = {
+                    onCancel = {
                         request.onDismiss()
                         consume(tabId, request)
                     }
@@ -187,7 +188,7 @@ class PetalBrowserPromptBridge(
                     activity,
                     null,
                     rows,
-                    isMultiple = false,
+                    multiple = false,
                     onConfirm = { selectedIds ->
                         val selectedId = selectedIds.firstOrNull()
                         val choice = request.choices.firstOrNull { it.id == selectedId }
@@ -198,7 +199,7 @@ class PetalBrowserPromptBridge(
                         }
                         consume(tabId, request)
                     },
-                    onDismiss = {
+                    onCancel = {
                         request.onDismiss()
                         consume(tabId, request)
                     }
@@ -214,7 +215,7 @@ class PetalBrowserPromptBridge(
                         request.onConfirm(hex)
                         consume(tabId, request)
                     },
-                    onDismiss = {
+                    onCancel = {
                         request.onDismiss()
                         consume(tabId, request)
                     }
@@ -249,7 +250,7 @@ class PetalBrowserPromptBridge(
                         }
                         consume(tabId, request)
                     },
-                    onDismiss = {
+                    onCancel = {
                         request.onDismiss()
                         consume(tabId, request)
                     }
@@ -269,7 +270,7 @@ class PetalBrowserPromptBridge(
                         request.onConfirm(user, pass)
                         consume(tabId, request)
                     },
-                    onDismiss = {
+                    onCancel = {
                         request.onDismiss()
                         consume(tabId, request)
                     }
@@ -352,7 +353,7 @@ class PetalBrowserPromptBridge(
                         request.onLeave()
                         consume(tabId, request)
                     },
-                    onDismiss = {
+                    onCancel = {
                         request.onStay()
                         consume(tabId, request)
                     }
@@ -369,7 +370,7 @@ class PetalBrowserPromptBridge(
                         request.onConfirm()
                         consume(tabId, request)
                     },
-                    onDismiss = {
+                    onCancel = {
                         request.onDismiss()
                         consume(tabId, request)
                     }
