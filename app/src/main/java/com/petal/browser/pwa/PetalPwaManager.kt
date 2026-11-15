@@ -850,6 +850,20 @@ class PetalPwaManager(
                 }
 
                 val successMsg = activity.getString(R.string.pwa_install_success, title)
+                if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase4Enabled()) {
+                    try {
+                        val appManifest = mozilla.components.concept.engine.manifest.WebAppManifest(
+                            name = manifest.name.ifBlank { title },
+                            startUrl = targetUrl,
+                            shortName = title
+                        )
+                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                            try {
+                                PetalEngineStore.getManifestStorage(activity).saveManifest(appManifest)
+                            } catch (_: Throwable) {}
+                        }
+                    } catch (_: Throwable) {}
+                }
                 activity.runOnUiThread { PetalToast.show(activity, successMsg) }
             } catch (e: Exception) {
                 Log.e(TAG, "Error pinning PWA shortcut", e)

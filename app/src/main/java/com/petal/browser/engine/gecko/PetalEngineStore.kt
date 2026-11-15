@@ -88,6 +88,15 @@ object PetalEngineStore {
     private var defaultTopSitesStorage: mozilla.components.feature.top.sites.DefaultTopSitesStorage? = null
 
     @Volatile
+    private var manifestStorage: mozilla.components.feature.pwa.ManifestStorage? = null
+
+    @Volatile
+    private var webAppShortcutManager: mozilla.components.feature.pwa.WebAppShortcutManager? = null
+
+    @Volatile
+    private var addonManager: mozilla.components.feature.addons.AddonManager? = null
+
+    @Volatile
     private var autoSaveStarted = false
 
     /**
@@ -264,6 +273,13 @@ object PetalEngineStore {
             emptyList()
         }
 
+        val isAcPhase4 = sp.getBoolean("sp_ac_phase4", false)
+        val phase4Middlewares = if (isAcPhase4) {
+            listOf(mozilla.components.browser.state.engine.middleware.TabsRemovedMiddleware(mainScope))
+        } else {
+            emptyList()
+        }
+
         val newStore = BrowserStore(
             initialState = BrowserState(),
             middleware = listOf(
@@ -276,7 +292,7 @@ object PetalEngineStore {
                 recentlyClosedMiddleware,
                 ReaderViewMiddleware(),
                 thumbnailsMiddleware
-            ) + searchMiddlewares + engineMiddleware
+            ) + searchMiddlewares + phase4Middlewares + engineMiddleware
         )
         store = newStore
         try {
@@ -508,6 +524,59 @@ object PetalEngineStore {
         ).also {
             fileUploadsDirCleaner = it
         }
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getManifestStorage(context: Context): mozilla.components.feature.pwa.ManifestStorage {
+        manifestStorage?.let { return it }
+        val appContext = context.applicationContext
+        val storage = mozilla.components.feature.pwa.ManifestStorage(appContext)
+        manifestStorage = storage
+        return storage
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getWebAppShortcutManager(context: Context): mozilla.components.feature.pwa.WebAppShortcutManager {
+        webAppShortcutManager?.let { return it }
+        val appContext = context.applicationContext
+        val storage = getManifestStorage(appContext)
+        val client = com.petal.browser.download.PetalOkHttpFetchClient()
+        val manager = mozilla.components.feature.pwa.WebAppShortcutManager(
+            context = appContext,
+            httpClient = client,
+            storage = storage
+        )
+        webAppShortcutManager = manager
+        return manager
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getAddonManager(context: Context): mozilla.components.feature.addons.AddonManager {
+        addonManager?.let { return it }
+        val appContext = context.applicationContext
+        val currentStore = getStore(appContext)
+        val currentEngine = getEngine(appContext)
+        val client = com.petal.browser.download.PetalOkHttpFetchClient()
+        val provider = mozilla.components.feature.addons.amo.AMOAddonsProvider(
+            context = appContext,
+            client = client
+        )
+        val updater = mozilla.components.feature.addons.update.DefaultAddonUpdater(
+            applicationContext = appContext,
+            notificationsDelegate = getNotificationsDelegate(appContext)
+        )
+        val manager = mozilla.components.feature.addons.AddonManager(
+            store = currentStore,
+            runtime = currentEngine,
+            addonsProvider = provider,
+            addonUpdater = updater,
+            ioDispatcher = kotlinx.coroutines.Dispatchers.IO
+        )
+        addonManager = manager
+        return manager
     }
 
     @JvmStatic

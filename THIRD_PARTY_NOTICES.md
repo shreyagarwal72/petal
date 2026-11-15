@@ -24,3 +24,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## Mozilla Android Components
+
+Portions of this software incorporate components from Mozilla Android Components (version 159.0.1),
+licensed under the Mozilla Public License, v. 2.0. You may obtain a copy of the
+MPL 2.0 at https://mozilla.org/MPL/2.0/.
+Source code for Mozilla Android Components is available at https://github.com/mozilla-mobile/firefox-android.
+

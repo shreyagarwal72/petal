@@ -1,3 +1,31 @@
+### v4.9.0 — 🚀 Mozilla Android Components 159.0.1 Full Migration (Phases 1–4)
+
+> *"Complete architectural modernization migrating Petal Browser to official Mozilla Android Components 159.0.1 across all 4 phases, gated behind debug-visible feature flags: Phase 1 (app-links, webnotifications, findinpage, thumbnails/icons), Phase 2 (site permissions, prompts, search, top sites), Phase 3 (Places history/bookmarks sync, Logins SyncableLoginsStorage, session restore), and Phase 4 (Add-ons AddonManager, PWA ManifestStorage, Custom Tabs, tab suspension). All existing Petal features, privacy safeguards, Material 3 Expressive UI, and Liquid Glass design system preserved with zero regressions."*
+
+#### 🔗 Phase 1 — External Schemes, Notifications, Find in Page & Media Assets
+- Migrated external scheme handling to `feature-app-links` (`AppLinksFeature` / `AppLinksUseCases`) and `feature-intent`.
+- Delegated Web Notifications to `feature-webnotifications` (`WebNotificationFeature` / `NotificationsDelegate`) and `feature-webpush`.
+- Integrated `feature-findinpage` (`FindInPageFeature` / `FindInPageInteractor`) into Petal's merged bar.
+- Migrated tab thumbnails to `browser-thumbnails` (`ThumbnailStorage`) and favicons to `browser-icons` (`BrowserIcons`).
+
+#### 🛡️ Phase 2 — Site Permissions, Engine Prompts, Search & Top Sites
+- Added `feature-sitepermissions` with `OnDiskSitePermissionsStorage` and `SitePermissionsRules`, preserving DRM (`sp_drm`), private-mode rules, and Android runtime permission requests.
+- Integrated `feature-prompts` (`PetalBrowserPromptBridge`), mapping all 14 prompt types to Petal Material 3 Expressive and Liquid Glass bottom sheets and dialogs.
+- Migrated default and custom search engines to `feature-search` (`SearchMiddleware`, `SearchEngine`).
+- Migrated top sites and pinned shortcuts to `feature-top-sites` (`PinnedSiteStorage`, `DefaultTopSitesStorage`).
+
+#### 📚 Phase 3 — Places History & Bookmarks, Syncable Logins & Session Restore
+- Migrated History and Bookmarks storage to Mozilla `browser-storage-sync` (`PlacesHistoryStorage`, `PlacesBookmarksStorage`) via `PetalPlacesProvider`.
+- Registered `HistoryDelegate` on `GeckoEngine.settings.historyTrackingDelegate` for automatic visit and link coloring.
+- Upgraded password and credential storage to `service-sync-logins` (`SyncableLoginsStorage`) encrypted via `lib-dataprotect` (`SecureAbove22Preferences`) and fed to `GeckoAutocompleteStorageDelegate`.
+- Connected session restore to `browser-session-storage` (`SessionStorage`, `AutoSave`, `TabsUseCases`).
+
+#### 🧩 Phase 4 — Add-ons Manager, Progressive Web Apps & Custom Tabs
+- Connected `feature-addons` (`AddonManager`, `AMOAddonsProvider`, `DefaultAddonUpdater`) to `PetalExtensionManager`.
+- Wired `feature-pwa` (`ManifestStorage`, `WebAppShortcutManager`) to `PetalPwaManager`.
+- Integrated `feature-customtabs` (`CustomTabConfigHelper`) to `PetalCustomTabActivity`.
+- Added `TabsRemovedMiddleware` and verified tab suspension with `SessionPrioritizationMiddleware`.
+
 ### v4.8.0 — 🛡️ Full-Spectrum Master Engine, Privacy & Download Consolidation
 
 > *"The defining architectural completion release for Petal Browser: completely closes the privacy and engine gap vs Brave. Eradicates wrong cookie jars via PetalGeckoCookieBridge, finalizes the download core onto Mozilla AbstractFetchDownloadService with zero Fetch2 remnants, unifies tab surfaces with PetalTabSurface, introduces the petal_network_blocker WebExtension for true subresource ad and tracker blocking, neutralizes late javascript: loadUri loops, delivers a streamlined 7-pillar Privacy & Security control center, and prunes manifest bloat and dead dependencies."*

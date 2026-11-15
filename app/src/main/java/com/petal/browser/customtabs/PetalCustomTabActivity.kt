@@ -287,13 +287,29 @@ class PetalCustomTabActivity : ComponentActivity() {
             isIncognitoCustomTab = intent.getBooleanExtra("androidx.browser.customtabs.extra.INCOGNITO", false)
                 || intent.getBooleanExtra("org.mozilla.fenix.EXTRA_IS_PRIVATE", false)
                 || intent.getBooleanExtra("com.google.android.apps.chrome.EXTRA_OPEN_NEW_INCOGNITO_TAB", false)
-            if (intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR)) {
+
+            if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase4Enabled()) {
+                try {
+                    val config = mozilla.components.feature.customtabs.CustomTabConfigHelperKt.createCustomTabConfigFromIntent(intent, resources)
+                    config.closeButtonIcon?.let { customCloseButtonBitmap = it }
+                    val params = mozilla.components.feature.customtabs.CustomTabConfigHelperKt.getConfiguredColorSchemeParams(
+                        config,
+                        resources.configuration.uiMode,
+                        null
+                    )
+                    mozilla.components.feature.customtabs.CustomTabConfigHelperKt.getToolbarBackgroundColor(params, false)?.let {
+                        customToolbarColor = Color(it)
+                    }
+                } catch (_: Throwable) {}
+            }
+
+            if (customToolbarColor == null && intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR)) {
                 val colorInt = intent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0)
                 if (colorInt != 0) {
                     customToolbarColor = Color(colorInt)
                 }
             }
-            if (intent.hasExtra(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON)) {
+            if (customCloseButtonBitmap == null && intent.hasExtra(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON)) {
                 @Suppress("DEPRECATION")
                 customCloseButtonBitmap = intent.getParcelableExtra<Bitmap>(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON)
             }

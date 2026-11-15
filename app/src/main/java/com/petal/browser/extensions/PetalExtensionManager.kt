@@ -1643,6 +1643,12 @@ object PetalExtensionManager {
         autoConfirm: Boolean = false,
         onResult: (success: Boolean, message: String?) -> Unit = { _, _ -> }
     ) {
+        val appCtx = appContext
+        if (appCtx != null && com.petal.browser.flags.PetalFlagsRegistry.isAcPhase4Enabled()) {
+            try {
+                com.petal.browser.engine.gecko.PetalEngineStore.getAddonManager(appCtx)
+            } catch (_: Throwable) {}
+        }
         val installUri = normalizeInstallUri(uri)
         if (installUri == null) {
             val message = "Use a secure Firefox .xpi download link, an addons.mozilla.org add-on page, or import an .xpi file."
@@ -1722,6 +1728,11 @@ object PetalExtensionManager {
 
     fun uninstall(extension: WebExtension, onResult: (Boolean) -> Unit = {}) {
         val ctx = appContext ?: return
+        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase4Enabled()) {
+            try {
+                com.petal.browser.engine.gecko.PetalEngineStore.getAddonManager(ctx)
+            } catch (_: Throwable) {}
+        }
         val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
         controller.uninstall(extension)
             .accept({
@@ -1734,6 +1745,11 @@ object PetalExtensionManager {
 
     fun setEnabled(extension: WebExtension, enabled: Boolean) {
         val ctx = appContext ?: return
+        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase4Enabled()) {
+            try {
+                com.petal.browser.engine.gecko.PetalEngineStore.getAddonManager(ctx)
+            } catch (_: Throwable) {}
+        }
         val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
         val op = if (enabled) {
             controller.enable(extension, WebExtensionController.EnableSource.USER)
@@ -1745,6 +1761,11 @@ object PetalExtensionManager {
 
     fun setAllowedInPrivateBrowsing(extension: WebExtension, allowed: Boolean) {
         val ctx = appContext ?: return
+        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase4Enabled()) {
+            try {
+                com.petal.browser.engine.gecko.PetalEngineStore.getAddonManager(ctx)
+            } catch (_: Throwable) {}
+        }
         val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
         controller.setAllowedInPrivateBrowsing(extension, allowed)
             .accept({ refresh() }, { refresh() })
