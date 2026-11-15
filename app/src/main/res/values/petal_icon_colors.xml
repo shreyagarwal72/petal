@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="petal_icon_background">#FEE2D5</color>
+    <color name="petal_icon_petal_primary">#026065</color>
+    <color name="petal_icon_petal_secondary">#A04106</color>
+</resources>
