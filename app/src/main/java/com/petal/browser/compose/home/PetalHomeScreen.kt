@@ -136,6 +136,36 @@ fun saveRemovedShortcutUrls(context: Context, set: Set<String>) {
 }
 
 fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
+    if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled()) {
+        try {
+            val pinned = com.petal.browser.engine.gecko.PetalEngineStore.getPinnedSiteStorage(context)
+            val sites = kotlinx.coroutines.runBlocking { pinned.getPinnedSites() }
+            if (sites.isNotEmpty()) {
+                val paletteColors = listOf(
+                    Color(0xFF4285F4), Color(0xFF34A853), Color(0xFFEA4335),
+                    Color(0xFFFBBC05), Color(0xFF9C27B0), Color(0xFF00BCD4)
+                )
+                return sites.mapIndexed { idx, topSite ->
+                    val host = try { Uri.parse(topSite.url).host ?: topSite.url } catch (_: Throwable) { topSite.url }
+                    val siteId = when {
+                        host.contains("youtube") -> "youtube"
+                        host.contains("github") -> "github"
+                        host.contains("wikipedia") -> "wikipedia"
+                        host.contains("duckduckgo") -> "duckduckgo"
+                        host.contains("google") -> "google"
+                        else -> "globe"
+                    }
+                    PetalShortcut(
+                        label = topSite.title,
+                        url = topSite.url,
+                        siteId = siteId,
+                        containerColor = paletteColors[idx % paletteColors.size]
+                    )
+                }
+            }
+        } catch (_: Throwable) {}
+    }
+
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val scopedKey = com.petal.browser.profile.PetalProfileManager.getScopedKey("sp_custom_home_shortcuts_json_v3")
     val jsonStr = sp.getString(scopedKey, null) ?: if (com.petal.browser.profile.PetalProfileManager.activeProfile.isDefault) {
@@ -221,6 +251,21 @@ fun fetchTopVisitedShortcuts(context: Context): List<PetalShortcut> {
 }
 
 fun saveHomeShortcuts(context: Context, list: List<PetalShortcut>) {
+    if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled()) {
+        try {
+            val pinned = com.petal.browser.engine.gecko.PetalEngineStore.getPinnedSiteStorage(context)
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                val existing = pinned.getPinnedSites()
+                for (site in existing) {
+                    pinned.removePinnedSite(site)
+                }
+                for (item in list) {
+                    pinned.addPinnedSite(title = item.label, url = item.url)
+                }
+            }
+        } catch (_: Throwable) {}
+    }
+
     val array = JSONArray()
     for (item in list) {
         val obj = JSONObject()

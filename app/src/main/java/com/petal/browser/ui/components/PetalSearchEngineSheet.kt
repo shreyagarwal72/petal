@@ -201,6 +201,21 @@ object PetalSearchEngineBridge {
                                             .putBoolean("sp_search_engine_chosen", true)
                                             .putBoolean("searchEngineSwitch", false)
                                             .apply()
+                                        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled()) {
+                                            try {
+                                                val all = allSearchEngines(activity)
+                                                val chosen = all.firstOrNull { it.index == index }
+                                                if (chosen != null) {
+                                                    val useCases = com.petal.browser.engine.gecko.PetalEngineStore.getSearchUseCases(activity)
+                                                    val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(activity)
+                                                    val mozillaEngines = store.state.search.regionSearchEngines + store.state.search.customSearchEngines
+                                                    val matched = mozillaEngines.firstOrNull { it.name.equals(chosen.name, ignoreCase = true) }
+                                                    if (matched != null) {
+                                                        useCases.selectSearchEngine(matched)
+                                                    }
+                                                }
+                                            } catch (_: Throwable) {}
+                                        }
                                         cleanup()
                                     }
                                 )

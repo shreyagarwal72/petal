@@ -79,6 +79,15 @@ object PetalEngineStore {
     private var fileUploadsDirCleaner: FileUploadsDirCleaner? = null
 
     @Volatile
+    private var searchUseCases: mozilla.components.feature.search.SearchUseCases? = null
+
+    @Volatile
+    private var pinnedSiteStorage: mozilla.components.feature.top.sites.PinnedSiteStorage? = null
+
+    @Volatile
+    private var defaultTopSitesStorage: mozilla.components.feature.top.sites.DefaultTopSitesStorage? = null
+
+    @Volatile
     private var autoSaveStarted = false
 
     /**
@@ -230,11 +239,18 @@ object PetalEngineStore {
 
         val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
         val isAcPhase1 = sp.getBoolean("sp_ac_phase1", false)
+        val isAcPhase2 = sp.getBoolean("sp_ac_phase2", false)
 
         val thumbnailsMiddleware = if (isAcPhase1) {
             ThumbnailsMiddleware(getThumbnailStorage(appContext))
         } else {
             PetalThumbnailsMiddleware()
+        }
+
+        val searchMiddlewares = if (isAcPhase2) {
+            listOf(mozilla.components.feature.search.middleware.SearchMiddleware(appContext))
+        } else {
+            emptyList()
         }
 
         val newStore = BrowserStore(
@@ -249,7 +265,7 @@ object PetalEngineStore {
                 recentlyClosedMiddleware,
                 ReaderViewMiddleware(),
                 thumbnailsMiddleware
-            ) + engineMiddleware
+            ) + searchMiddlewares + engineMiddleware
         )
         store = newStore
         try {
@@ -340,6 +356,83 @@ object PetalEngineStore {
         sessionStorage = storage
         Log.i(TAG, "Initialized Mozilla SessionStorage")
         return storage
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getSearchUseCases(context: Context): mozilla.components.feature.search.SearchUseCases {
+        searchUseCases?.let { return it }
+        val s = getStore(context)
+        val useCases = mozilla.components.feature.search.SearchUseCases(
+            s,
+            mozilla.components.feature.tabs.TabsUseCases(s),
+            mozilla.components.feature.session.SessionUseCases(s)
+        )
+        searchUseCases = useCases
+        migrateSearchSettingsOnce(context.applicationContext, useCases)
+        Log.i(TAG, "Initialized Mozilla SearchUseCases")
+        return useCases
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getPinnedSiteStorage(context: Context): mozilla.components.feature.top.sites.PinnedSiteStorage {
+        pinnedSiteStorage?.let { return it }
+        val storage = mozilla.components.feature.top.sites.PinnedSiteStorage(context.applicationContext)
+        pinnedSiteStorage = storage
+        migrateTopSitesOnce(context.applicationContext, storage)
+        Log.i(TAG, "Initialized Mozilla PinnedSiteStorage")
+        return storage
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getDefaultTopSitesStorage(context: Context): mozilla.components.feature.top.sites.DefaultTopSitesStorage {
+        defaultTopSitesStorage?.let { return it }
+        val pinned = getPinnedSiteStorage(context)
+        val storage = mozilla.components.feature.top.sites.DefaultTopSitesStorage(pinned)
+        defaultTopSitesStorage = storage
+        Log.i(TAG, "Initialized Mozilla DefaultTopSitesStorage")
+        return storage
+    }
+
+    private fun migrateSearchSettingsOnce(context: Context, useCases: mozilla.components.feature.search.SearchUseCases) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        if (sp.getBoolean("sp_search_migrated_v1", false)) return
+        val customUrl = sp.getString("sp_search_engine_custom", "")?.trim()
+        if (!customUrl.isNullOrEmpty()) {
+            try {
+                val customEngine = mozilla.components.browser.state.search.SearchEngine(
+                    id = "custom_petal_engine",
+                    name = "Custom",
+                    icon = null,
+                    inputEncoding = "UTF-8",
+                    type = mozilla.components.browser.state.search.SearchEngine.Type.CUSTOM,
+                    resultUrls = listOf(customUrl),
+                    suggestUrl = null,
+                    trendingUrl = null,
+                    isGeneral = true,
+                    isOptional = false,
+                    telemetrySuffix = null
+                )
+                useCases.addSearchEngine(customEngine)
+            } catch (_: Throwable) {}
+        }
+        sp.edit().putBoolean("sp_search_migrated_v1", true).apply()
+    }
+
+    private fun migrateTopSitesOnce(context: Context, storage: mozilla.components.feature.top.sites.PinnedSiteStorage) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        if (sp.getBoolean("sp_top_sites_migrated_v1", false)) return
+        ioScope.launch {
+            try {
+                val existing = com.petal.browser.compose.home.loadHomeShortcuts(context)
+                for (shortcut in existing) {
+                    storage.addPinnedSite(title = shortcut.label, url = shortcut.url)
+                }
+                sp.edit().putBoolean("sp_top_sites_migrated_v1", true).apply()
+            } catch (_: Throwable) {}
+        }
     }
 
     @JvmStatic

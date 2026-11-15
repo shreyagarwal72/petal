@@ -15,6 +15,7 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
 
     private val mediaFullscreen = MediaSessionFullscreenFeature(activity, store, null)
     private val pictureInPicture = PictureInPictureFeature(store, activity)
+    private val promptBridge = com.petal.browser.engine.gecko.PetalBrowserPromptBridge(activity, store)
     private val prompts = PromptFeature(
         activity = activity,
         store = store,
@@ -57,6 +58,9 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
         )
         mediaFullscreen.start()
         prompts.start()
+        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled()) {
+            promptBridge.start()
+        }
     }
 
     fun stop() {

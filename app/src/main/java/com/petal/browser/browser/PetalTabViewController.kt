@@ -888,12 +888,16 @@ class PetalTabViewController private constructor(
             // the current Activity after a configuration change.
             val existingPerm = gs.permissionDelegate
             if (existingPerm is PetalPermissionDelegateWrapper) {
-                existingPerm.rebind { resolveActivity(context) }
+                existingPerm.rebind(
+                    newActivitySupplier = { resolveActivity(context) },
+                    newIsPrivateProvider = { isIncognito }
+                )
             } else {
                 gs.permissionDelegate = PetalPermissionDelegateWrapper(
                     engine = existingPerm,
                     context = appContext,
-                    activitySupplier = { resolveActivity(context) }
+                    activitySupplier = { resolveActivity(context) },
+                    isPrivateProvider = { isIncognito }
                 )
             }
 

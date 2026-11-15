@@ -424,12 +424,16 @@ private fun attachSessionDelegates(
     // 4. Permission Delegate
     val currentPerm = session.permissionDelegate
     if (currentPerm is PetalPermissionDelegateWrapper) {
-        currentPerm.rebind(actSupplier)
+        currentPerm.rebind(
+            newActivitySupplier = actSupplier,
+            newIsPrivateProvider = { tab.content.private }
+        )
     } else {
         session.permissionDelegate = PetalPermissionDelegateWrapper(
             engine = currentPerm,
             context = context.applicationContext,
-            activitySupplier = actSupplier
+            activitySupplier = actSupplier,
+            isPrivateProvider = { tab.content.private }
         )
     }
 
