@@ -295,12 +295,11 @@ class PetalCustomTabActivity : ComponentActivity() {
                 try {
                     val config = createCustomTabConfigFromIntent(intent, resources)
                     config.closeButtonIcon?.let { customCloseButtonBitmap = it }
-                    val params = getConfiguredColorSchemeParams(
-                        config,
+                    val params = config.getConfiguredColorSchemeParams(
                         resources.configuration.uiMode,
                         null
                     )
-                    getToolbarBackgroundColor(params, false)?.let {
+                    params?.getToolbarBackgroundColor(false)?.let {
                         customToolbarColor = Color(it)
                     }
                 } catch (_: Throwable) {}

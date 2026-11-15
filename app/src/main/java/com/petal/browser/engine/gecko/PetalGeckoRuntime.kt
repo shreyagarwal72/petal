@@ -248,12 +248,10 @@ object PetalGeckoRuntime {
                     kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
                 )
                 val noopCreditCardDelegate = object : mozilla.components.concept.storage.CreditCardsAddressesStorageDelegate {
-                    override suspend fun decrypt(key: mozilla.components.concept.storage.ManagedKey, encrypted: mozilla.components.concept.storage.CreditCardNumber.Encrypted) = mozilla.components.concept.storage.CreditCardNumber.Plaintext("")
                     override suspend fun onAddressesFetch(): List<mozilla.components.concept.storage.Address> = emptyList()
                     override suspend fun onAddressSave(address: mozilla.components.concept.storage.Address) {}
                     override suspend fun onCreditCardsFetch(): List<mozilla.components.concept.storage.CreditCard> = emptyList()
                     override suspend fun onCreditCardSave(card: mozilla.components.concept.storage.CreditCardEntry) {}
-                    override fun getKey(name: String) = null
                 }
                 newRuntime.autocompleteStorageDelegate =
                     mozilla.components.browser.engine.gecko.autofill.GeckoAutocompleteStorageDelegate(

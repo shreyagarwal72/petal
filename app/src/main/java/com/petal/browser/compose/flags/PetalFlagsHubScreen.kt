@@ -37,6 +37,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Warning
@@ -404,7 +405,8 @@ private fun FlagRowItem(
             FlagCategory.PRIVACY -> PetalBadgeVariant.TERTIARY
             FlagCategory.RENDERING -> PetalBadgeVariant.SECONDARY
             FlagCategory.NETWORK -> PetalBadgeVariant.PRIMARY
-            FlagCategory.EXTENSIONS, FlagCategory.ALL -> PetalBadgeVariant.SURFACE_TONAL
+            FlagCategory.EXTENSIONS, FlagCategory.ALL, FlagCategory.SYSTEM -> PetalBadgeVariant.SURFACE_TONAL
+            else -> PetalBadgeVariant.SURFACE_TONAL
         }
     }
 
@@ -415,7 +417,9 @@ private fun FlagRowItem(
             FlagCategory.RENDERING -> Icons.Rounded.FlashOn
             FlagCategory.NETWORK -> Icons.Rounded.Language
             FlagCategory.EXTENSIONS -> Icons.Rounded.Extension
+            FlagCategory.SYSTEM -> Icons.Rounded.Settings
             FlagCategory.ALL -> Icons.Rounded.Tune
+            else -> Icons.Rounded.Tune
         }
     }
 

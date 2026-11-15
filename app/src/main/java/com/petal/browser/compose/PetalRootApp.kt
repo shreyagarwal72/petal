@@ -1105,7 +1105,7 @@ fun PetalRootApp(
             // Find In Page Bar Overlay
             if (isFindInPageOpen) {
                 val currentMatch = activeTab?.content?.findResults?.lastOrNull()?.activeMatchOrdinal ?: 0
-                val totalMatches = activeTab?.content?.findResults?.lastOrNull()?.totalMatches ?: 0
+                val totalMatches = activeTab?.content?.findResults?.lastOrNull()?.numberOfMatches ?: 0
                 PetalFindInPageBar(
                     visible = isFindInPageOpen,
                     query = findInPageQuery,

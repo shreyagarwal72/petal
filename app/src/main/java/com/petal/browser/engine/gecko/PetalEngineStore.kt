@@ -2,7 +2,10 @@ package com.petal.browser.engine.gecko
 
 import android.content.Context
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import mozilla.components.browser.engine.gecko.GeckoEngine
 import mozilla.components.browser.session.storage.AutoSave
 import mozilla.components.browser.session.storage.SessionStorage
@@ -551,7 +554,7 @@ object PetalEngineStore {
             client = client
         )
         val updater = mozilla.components.feature.addons.update.DefaultAddonUpdater(
-            context = appContext,
+            applicationContext = appContext,
             store = currentStore
         )
         val manager = mozilla.components.feature.addons.AddonManager(
