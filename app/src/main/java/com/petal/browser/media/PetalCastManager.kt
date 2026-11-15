@@ -46,7 +46,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
@@ -62,6 +61,8 @@ import java.net.HttpURLConnection
 import java.net.InetAddress
 import java.net.URL
 import java.util.regex.Pattern
+import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * PetalCastDevice represents a discovered DLNA / UPnP / Smart TV / Cast receiver.

@@ -45,7 +45,6 @@ import com.petal.browser.ui.kit.Card
 import androidx.compose.material3.CardDefaults
 import com.petal.browser.ui.kit.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
 import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.MaterialTheme
 import com.petal.browser.ui.kit.TextField
@@ -100,6 +99,7 @@ import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
 import com.petal.browser.ui.glass.captureGlassWallpaper
 import com.petal.browser.ui.glass.rememberGlassSheen
 import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * PetalFlagsHubScreen

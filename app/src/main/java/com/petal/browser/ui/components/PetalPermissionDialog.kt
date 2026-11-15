@@ -71,6 +71,7 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 enum class PetalPermissionType(
     val title: String,

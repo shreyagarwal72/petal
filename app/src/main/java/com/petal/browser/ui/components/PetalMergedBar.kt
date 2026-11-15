@@ -31,6 +31,7 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.glass.LocalPetalGlassRevision
 import com.petal.browser.ui.glass.liquidGlass
 import com.petal.browser.ui.glass.rememberGlassBar
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Material 3 Expressive Unified "Merge" Bar.

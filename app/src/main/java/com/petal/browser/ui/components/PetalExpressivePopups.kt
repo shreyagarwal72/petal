@@ -35,6 +35,7 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Shared popup/dialog language for Petal.

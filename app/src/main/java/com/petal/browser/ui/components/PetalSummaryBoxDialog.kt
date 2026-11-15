@@ -39,6 +39,7 @@ import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import androidx.preference.PreferenceManager
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable

@@ -358,7 +358,6 @@ fun PetalExpressiveTheme(
 
     val reduceMotion = com.petal.browser.ui.components.rememberReduceMotion()
     val isMiuix = layoutSettingsState.uiExperience == com.petal.browser.ui.theme.layout.UiExperience.MIUIX
-    val miuixColors = if (darkTheme) com.petal.browser.ui.miuix.theme.MiuiXDarkColors else com.petal.browser.ui.miuix.theme.MiuiXLightColors
 
     val corners = layoutSettingsState.cornersSize
     val expressiveShapes = remember(isMiuix, expressiveShapesState, layoutSettingsState.shapeType, corners) {
@@ -390,7 +389,6 @@ fun PetalExpressiveTheme(
     }
 
     CompositionLocalProvider(
-        com.petal.browser.ui.miuix.theme.LocalMiuiXColors provides miuixColors,
         com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper,
         com.petal.browser.ui.glass.LocalPetalGlassRevision provides glassRevision,
         LocalPetalBlurEffectEnabled provides blurEffectEnabled,

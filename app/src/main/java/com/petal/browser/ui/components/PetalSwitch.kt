@@ -8,7 +8,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwitchColors
@@ -41,6 +40,8 @@ import com.petal.browser.ui.components.expressive.switches.OneUISwitch
 import com.petal.browser.ui.components.expressive.switches.PixelSwitch
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.theme.layout.PetalSwitchType
+import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Switch
 
 /**
  * Petal's switch. Renders whichever [PetalSwitchType] the user picked (live - changing the choice
@@ -180,7 +181,15 @@ fun PetalSwitch(
                     colors = CupertinoSwitchDefaults.colors()
                 )
 
-                PetalSwitchType.HYPEROS -> HyperOSSwitch(
+                PetalSwitchType.HYPEROS -> if (isMiuix) {
+                    // Real Miuix switch (springs, press feedback, colors from MiuixTheme).
+                    top.yukonga.miuix.kmp.basic.Switch(
+                        checked = checked,
+                        onCheckedChange = onChange,
+                        modifier = modifier,
+                        enabled = enabled,
+                    )
+                } else HyperOSSwitch(
                     modifier = switchModifier,
                     colors = switchColors.copy(uncheckedTrackColor = scheme.surfaceContainerHigh),
                     checked = checked,

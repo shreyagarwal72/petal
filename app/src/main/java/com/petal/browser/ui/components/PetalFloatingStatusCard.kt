@@ -53,7 +53,6 @@ import com.petal.browser.ui.kit.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
 import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
@@ -88,6 +87,7 @@ import kotlin.math.roundToInt
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Data specification for configuring a [PetalFloatingStatusCard].

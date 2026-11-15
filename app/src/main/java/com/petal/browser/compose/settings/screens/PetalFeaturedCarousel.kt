@@ -57,7 +57,6 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.*
 import com.petal.browser.ui.kit.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -93,6 +92,7 @@ import com.petal.browser.ui.containment.PetalHeroCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Data model for an item displayed in the Petal feature carousel.

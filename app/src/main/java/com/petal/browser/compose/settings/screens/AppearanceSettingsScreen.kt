@@ -71,6 +71,7 @@ import com.petal.browser.unit.PetalHighRefreshRateManager
 import com.petal.browser.widget.PetalSearchWidgetProvider
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @Composable
 fun AppearanceSettingsScreen(

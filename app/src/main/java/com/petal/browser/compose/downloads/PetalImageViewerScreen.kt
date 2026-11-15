@@ -94,9 +94,7 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.petal.browser.ui.glass.PetalGlassContainer
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -160,6 +158,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.petal.browser.ui.miuix.wrappers.Icon
+import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
 
 // ─── Unified image entry — covers local files AND remote/network URLs ─────────
 

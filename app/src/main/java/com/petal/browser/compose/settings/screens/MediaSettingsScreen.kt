@@ -56,6 +56,7 @@ import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.PetalSettingsToggleRow
 import kotlinx.coroutines.launch
 import java.util.Locale
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @Composable
 fun MediaSettingsScreen(

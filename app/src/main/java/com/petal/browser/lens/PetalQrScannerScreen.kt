@@ -68,6 +68,8 @@ import java.util.concurrent.Executors
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.miuix.wrappers.AlertDialog
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @Composable
 fun PetalQrScannerScreen(

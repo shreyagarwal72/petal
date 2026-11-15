@@ -58,6 +58,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.sync.SyncEngine
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * The one account page: identity and personalisation, Mozilla sign-in and sync, security, and data.

@@ -30,6 +30,7 @@ import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.containment.PetalAlertDialog
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 enum class ExplainerFeatureType {
     APPLE_DUO,

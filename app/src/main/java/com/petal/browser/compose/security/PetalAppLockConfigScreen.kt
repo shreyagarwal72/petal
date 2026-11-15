@@ -66,6 +66,7 @@ import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.PetalSettingsToggleRow
 import com.petal.browser.ui.containment.PetalStatusHeroCard
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

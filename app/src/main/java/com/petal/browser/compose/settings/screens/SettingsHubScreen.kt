@@ -45,6 +45,7 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Main Settings Hub Screen matching RvSystem-Monitor's SettingsScreen.kt visual structure:

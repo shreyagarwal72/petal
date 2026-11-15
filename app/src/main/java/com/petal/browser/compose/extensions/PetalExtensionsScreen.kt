@@ -86,6 +86,7 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.WebExtension
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 object PetalExtensionsBridge {
     @JvmStatic

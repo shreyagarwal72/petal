@@ -15,7 +15,6 @@ import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.VisibilityOff
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -38,6 +37,7 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.glass.GlassBar
 import com.petal.browser.ui.glass.liquidGlass
 import com.petal.browser.ui.glass.rememberGlassBar
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Chrome Android-style compact minimized toolbar pill shown on downward scroll.

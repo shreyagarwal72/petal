@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,6 +118,20 @@ fun PetalPopupMenu(
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = androidx.compose.runtime.remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
+
+    if (isMiuixEnabled()) {
+        // Real Miuix popup (dim + blur background, press feedback, spring in/out from the library).
+        top.yukonga.miuix.kmp.window.WindowListPopup(
+            show = expanded,
+            alignment = top.yukonga.miuix.kmp.basic.PopupPositionProvider.Align.End,
+            onDismissRequest = onDismissRequest,
+        ) {
+            top.yukonga.miuix.kmp.basic.ListPopupColumn {
+                Column { content() }
+            }
+        }
+        return
+    }
 
     val menuScale by animateFloatAsState(
         targetValue = if (expanded) 1f else 0.82f,
@@ -755,6 +770,27 @@ fun PetalSheet(
     dragHandle: (@Composable () -> Unit)? = { BottomSheetDefaults.DragHandle() },
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    if (isMiuixEnabled()) {
+        com.petal.browser.ui.miuix.sheet.MiuiXBottomSheet(
+            onDismissRequest = onDismissRequest,
+            modifier = modifier,
+            title = title,
+            showCloseButton = false,
+        ) {
+            if (titleContent != null || actionContent != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    if (titleContent != null) titleContent()
+                    if (actionContent != null) Row(content = actionContent)
+                }
+            }
+            content()
+        }
+        return
+    }
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val isMiuix = isMiuixEnabled()
     val context = androidx.compose.ui.platform.LocalContext.current

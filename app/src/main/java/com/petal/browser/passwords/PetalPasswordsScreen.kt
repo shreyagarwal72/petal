@@ -76,6 +76,7 @@ import com.petal.browser.view.PetalToast
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * PetalPasswordsScreen

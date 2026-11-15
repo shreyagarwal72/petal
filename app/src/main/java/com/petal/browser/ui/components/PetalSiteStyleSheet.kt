@@ -34,6 +34,7 @@ import com.petal.browser.R
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 enum class SiteStylePreset(
     val title: String,

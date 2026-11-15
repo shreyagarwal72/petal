@@ -55,6 +55,7 @@ import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.theme.PetalIncognitoTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.toShape
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

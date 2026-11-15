@@ -30,7 +30,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonElevation
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
@@ -66,6 +65,7 @@ import androidx.compose.material3.FilterChip as M3FilterChip
 import androidx.compose.material3.TextField as M3TextField
 import androidx.compose.material3.OutlinedButton as M3OutlinedButton
 import androidx.compose.material3.TextButton as M3TextButton
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /*
  * Petal Material 3 Expressive kit.

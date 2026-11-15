@@ -53,6 +53,8 @@ import kotlinx.coroutines.withContext
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.miuix.wrappers.AlertDialog
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Petal Lens Sheet Content & BottomSheet launcher wrapper.

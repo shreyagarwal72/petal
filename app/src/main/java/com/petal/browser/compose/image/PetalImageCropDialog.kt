@@ -47,6 +47,7 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import kotlin.math.max
 import kotlin.math.min
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 enum class CropAspectRatio(val label: String, val ratio: Float?) {
     FREE("Free", null),

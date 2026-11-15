@@ -53,7 +53,6 @@ import com.petal.browser.ui.kit.Button
 import androidx.compose.material3.ButtonDefaults
 import com.petal.browser.ui.kit.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.MaterialTheme
 import com.petal.browser.ui.kit.TextField
@@ -90,6 +89,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.view.PetalToast
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Pure Kotlin & Compose Material 3 Expressive implementation of CustomRedirectsDialog.

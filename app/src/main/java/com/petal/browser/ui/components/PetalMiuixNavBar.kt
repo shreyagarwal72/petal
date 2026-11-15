@@ -26,7 +26,6 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,6 +51,7 @@ import com.petal.browser.ui.miuix.theme.MiuiXMotion
 import com.petal.browser.ui.miuix.theme.MiuiXShapes
 import com.petal.browser.ui.miuix.theme.MiuiXSquircleShape
 import com.petal.browser.ui.miuix.theme.MiuiXTheme
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Xiaomi HyperOS / MIUIX UI4 Signature Floating Glass Navigation Bar.

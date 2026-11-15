@@ -55,6 +55,7 @@ import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.unit.PetalAndroidUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 interface PetalLinkContextMenuHandler {
     fun onOpenInNewTab() {}

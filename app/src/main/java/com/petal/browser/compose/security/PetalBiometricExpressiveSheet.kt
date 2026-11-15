@@ -71,6 +71,8 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.containment.petalConnectedShape
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

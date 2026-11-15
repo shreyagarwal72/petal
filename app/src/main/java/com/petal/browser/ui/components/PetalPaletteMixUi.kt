@@ -26,7 +26,6 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ColorLens
 import com.petal.browser.ui.kit.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,6 +43,7 @@ import com.petal.browser.ui.theme.PetalPaletteMix
 import com.petal.browser.ui.theme.PetalPaletteMix.Source
 import com.petal.browser.ui.theme.PetalPalettes
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /** Human-readable name of a mix source, for settings rows. */
 fun mixSourceLabel(source: Source, customArgb: Int): String = when (source) {

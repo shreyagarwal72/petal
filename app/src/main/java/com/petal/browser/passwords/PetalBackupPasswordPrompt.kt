@@ -34,7 +34,6 @@ import androidx.compose.material3.ButtonDefaults
 import com.petal.browser.ui.kit.Card
 import androidx.compose.material3.CardDefaults
 import com.petal.browser.ui.kit.FilledTonalButton
-import androidx.compose.material3.Icon
 import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -78,6 +77,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import kotlinx.coroutines.delay
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Popup that asks for the password of a V2 .petal backup.

@@ -65,6 +65,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.petal.browser.ui.containment.liquidGlassChrome
+import androidx.compose.foundation.layout.height
+import top.yukonga.miuix.kmp.icon.extended.Back
 
 /** Large continuous-curvature bottom corners (squircle) for the expressive header silhouette. */
 private val HeaderShape = com.petal.browser.ui.theme.SmoothRoundedShape(
@@ -98,6 +100,52 @@ fun ExpressiveHeader(
     val isHoisted = com.petal.browser.predictive.LocalZenithHeaderHoisted.current
     if (isHoisted && !isRootHeader) {
         // Child screen yields to the hoisted top-level Zenith header
+        return
+    }
+
+    if (com.petal.browser.ui.containment.isMiuixEnabled()) {
+        // Miuix mode: large title under a slim action row (InstallerX look). Static, not collapsing:
+        // a collapsing Miuix TopAppBar has to own the screen's scroll behavior.
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .zIndex(1f)
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (onBack != null) {
+                    top.yukonga.miuix.kmp.basic.IconButton(onClick = onBack) {
+                        top.yukonga.miuix.kmp.basic.Icon(
+                            imageVector = top.yukonga.miuix.kmp.icon.MiuixIcons.Regular.Back,
+                            contentDescription = "Back",
+                            tint = top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme.onBackground,
+                        )
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                Row(verticalAlignment = Alignment.CenterVertically, content = actions)
+            }
+            top.yukonga.miuix.kmp.basic.Text(
+                text = title,
+                style = top.yukonga.miuix.kmp.theme.MiuixTheme.textStyles.title1.copy(fontSize = 34.sp),
+                color = top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme.onBackground,
+                maxLines = maxTitleLines,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            )
+            if (!subtitle.isNullOrBlank()) {
+                top.yukonga.miuix.kmp.basic.Text(
+                    text = subtitle,
+                    style = top.yukonga.miuix.kmp.theme.MiuixTheme.textStyles.footnote1,
+                    color = top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme.onBackgroundVariant,
+                    maxLines = maxSubtitleLines,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                )
+            }
+        }
         return
     }
 

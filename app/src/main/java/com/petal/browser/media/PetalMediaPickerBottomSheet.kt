@@ -52,7 +52,6 @@ import com.petal.browser.ui.kit.Button
 import androidx.compose.material3.ButtonDefaults
 import com.petal.browser.ui.kit.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
 import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.MaterialTheme
 import com.petal.browser.ui.kit.FilledTonalButton
@@ -87,6 +86,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @Composable
 fun PetalMediaPickerBottomSheet(

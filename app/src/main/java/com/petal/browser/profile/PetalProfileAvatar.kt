@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FolderShared
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.petal.browser.account.PetalUserProfileManager
 import com.petal.browser.account.ProfileAvatarDisplay
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /** Shows the account-page avatar for the default profile and the saved gallery avatar for others. */
 @Composable

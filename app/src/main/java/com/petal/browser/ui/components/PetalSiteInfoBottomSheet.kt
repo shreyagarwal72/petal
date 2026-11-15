@@ -35,6 +35,7 @@ import com.petal.browser.ui.containment.PetalFilterChip
 import com.petal.browser.ui.containment.PetalSuggestionChip
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

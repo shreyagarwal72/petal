@@ -126,6 +126,7 @@ import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 // ─── Annotation Data Models ──────────────────────────────────────────────────
 

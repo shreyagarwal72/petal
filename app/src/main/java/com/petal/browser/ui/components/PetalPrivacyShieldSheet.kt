@@ -64,7 +64,6 @@ import com.petal.browser.ui.containment.PetalSuggestionChip
 import android.widget.Toast
 import androidx.compose.runtime.collectAsState
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -116,6 +115,7 @@ import com.petal.browser.ui.theme.ColorStyle
 import androidx.compose.runtime.CompositionLocalProvider
 import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 object PetalPrivacyShieldSheet {
 

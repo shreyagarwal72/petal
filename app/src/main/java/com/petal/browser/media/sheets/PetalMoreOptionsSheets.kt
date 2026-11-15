@@ -70,10 +70,8 @@ import androidx.compose.material3.FilledTonalIconButton
 import com.petal.browser.ui.kit.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import com.petal.browser.ui.components.PetalSwitch
 import androidx.compose.material3.Text
@@ -102,6 +100,8 @@ import com.petal.browser.media.PetalAudioPalette
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.util.Locale
+import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Sleep Timer Sheet

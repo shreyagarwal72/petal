@@ -18,5 +18,29 @@ allprojects {
         google()
         maven { url 'https://jitpack.io' }
         maven { url 'https://maven.mozilla.org/maven2/' }
+        // GitHub Packages (compose-miuix-ui/miuix)
+        //
+        // GitHub Packages does NOT support anonymous access, so credentials are required
+        // even for public packages.
+        //
+        // Recommended: environment variables
+        //   - GITHUB_ACTOR : your GitHub username
+        //   - GITHUB_TOKEN : GitHub Actions token, or a classic PAT with `read:packages`
+        // Alternative: define `gpr.user` and `gpr.key` in ~/.gradle/gradle.properties
+        // (NOT in this repo).
+        def miuixGprUser = providers.gradleProperty('gpr.user')
+                .orElse(providers.environmentVariable('GITHUB_ACTOR'))
+        def miuixGprKey = providers.gradleProperty('gpr.key')
+                .orElse(providers.environmentVariable('GITHUB_TOKEN'))
+        maven {
+            name = 'GitHubPackagesMiuix'
+            url = uri('https://maven.pkg.github.com/compose-miuix-ui/miuix')
+            if (miuixGprUser.isPresent() && miuixGprKey.isPresent()) {
+                credentials {
+                    username = miuixGprUser.get()
+                    password = miuixGprKey.get()
+                }
+            }
+        }
     }
 }

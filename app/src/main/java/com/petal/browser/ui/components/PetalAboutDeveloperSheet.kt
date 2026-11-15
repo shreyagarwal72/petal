@@ -62,6 +62,7 @@ import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.unit.PetalBrowserUtils
 import kotlinx.coroutines.launch
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 @Composable
 fun PetalAboutDeveloperSheet(

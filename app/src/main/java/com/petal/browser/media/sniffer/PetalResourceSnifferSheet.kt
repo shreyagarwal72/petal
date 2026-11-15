@@ -47,6 +47,7 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.view.PetalToast
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Soul Browser-Style Sniffer Bottom Sheet.

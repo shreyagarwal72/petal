@@ -74,7 +74,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import com.petal.browser.ui.kit.FilledTonalButton
-import androidx.compose.material3.Icon
 import com.petal.browser.ui.kit.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -125,6 +124,7 @@ import com.petal.browser.media.PetalAudioColorEngine
 import com.petal.browser.media.PetalCookieShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /** How long an expanded card stays open with no touch before it folds back into the pill. */
 private const val AUTO_COLLAPSE_MS = 8_000L

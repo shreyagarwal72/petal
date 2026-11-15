@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 import com.petal.browser.ui.theme.PetalBrowserShapes
 import androidx.compose.ui.res.stringResource
+import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Shared Material 3 Expressive themed Snackbar composable.
