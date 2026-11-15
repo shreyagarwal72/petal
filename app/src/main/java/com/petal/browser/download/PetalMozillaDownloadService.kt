@@ -102,6 +102,11 @@ object PetalDownloadServiceState {
  * notifications, pause/resume and completion exactly as before.
  */
 class PetalMozillaDownloadService : AbstractFetchDownloadService() {
+    override fun onCreate() {
+        super.onCreate()
+        PetalNotificationChannelOptimizer.install()
+    }
+
     override val store: BrowserStore
         get() = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this)
 

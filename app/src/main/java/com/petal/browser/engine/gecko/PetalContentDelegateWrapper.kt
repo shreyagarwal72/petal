@@ -90,12 +90,11 @@ class PetalContentDelegateWrapper(
 
     override fun onKill(session: GeckoSession) {
         val targetPage = pageUrlProvider() ?: "unknown URL"
-        val ctx = contextProvider().applicationContext
-        PetalAppLogger.recordProcessCrash(
-            ctx,
+        // onKill is an OS memory reclamation lifecycle event (low memory killer), NOT an app crash.
+        // Log as diagnostic warning without dumping a fatal crash log or triggering the crash dialog.
+        PetalAppLogger.w(
             "GeckoEngine",
-            "GeckoSession content process was killed by OS on $targetPage",
-            "URL: $targetPage"
+            "GeckoSession content process was reclaimed by OS on $targetPage (low memory reclamation)"
         )
         engine?.onKill(session)
         onCrashCallback?.invoke()

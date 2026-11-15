@@ -402,19 +402,47 @@ private fun attachSessionDelegates(
     val crashCallback: () -> Unit = {
         (context as? android.app.Activity)?.runOnUiThread {
             try {
+                android.util.Log.i("ComposeEngineViewport", "Recovering terminated GeckoSession for tab ${tab.id}")
+                try {
+                    com.petal.browser.extensions.PetalExtensionManager.detachSession(session)
+                } catch (_: Throwable) {}
+                try {
+                    engineView.release()
+                } catch (_: Throwable) {}
+                try {
+                    if (session.isOpen) session.close()
+                } catch (_: Throwable) {}
+
                 val store = PetalEngineStore.getStore(context)
                 val eng = PetalEngineStore.getEngine(context)
-                val newSession = eng.createSession(private = tab.content.private)
+                val newEngineSession = eng.createSession(private = tab.content.private)
                 store.dispatch(
                     mozilla.components.browser.state.action.EngineAction.LinkEngineSessionAction(
                         tabId = tab.id,
-                        engineSession = newSession,
-                        skipLoading = false
+                        engineSession = newEngineSession,
+                        skipLoading = true
                     )
                 )
+
+                try {
+                    engineView.render(newEngineSession)
+                } catch (t: Throwable) {
+                    android.util.Log.w("ComposeEngineViewport", "Error rendering recovered session: ${t.message}")
+                }
+
+                val newGs = PetalEngineBridge.extractGeckoSession(newEngineSession)
+                if (newGs != null) {
+                    attachSessionDelegates(
+                        context = context,
+                        session = newGs,
+                        tab = tab,
+                        engineView = engineView
+                    )
+                }
+
                 val restoreUrl = tab.content.url
-                if (restoreUrl.isNotBlank() && !restoreUrl.equals("about:blank", ignoreCase = true)) {
-                    newSession.loadUrl(restoreUrl)
+                if (restoreUrl.isNotBlank() && !PetalBrowserUtils.isHomePage(restoreUrl)) {
+                    newEngineSession.loadUrl(restoreUrl)
                 }
             } catch (t: Throwable) {
                 android.util.Log.e("ComposeEngineViewport", "Failed to recover session after kill/crash", t)
