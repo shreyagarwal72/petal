@@ -212,7 +212,7 @@ object PetalEngineBridge {
 
     @JvmStatic
     fun getDerivedDesktopUserAgent(context: Context): String {
-        return "Mozilla/5.0 (X11; Linux x86_64; rv:159.0) Gecko/20100101 Firefox/159.0"
+        return "Mozilla/5.0 (X11; Linux x86_64; rv:161.0) Gecko/20100101 Firefox/161.0"
     }
 
     /**

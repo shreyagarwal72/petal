@@ -57,7 +57,7 @@ import org.mozilla.geckoview.GeckoView
 /**
  * ComposeEngineViewport
  * ─────────────────────────────────────────────────────────────────────────────
- * Modern Jetpack Compose wrapper hosting Mozilla's [EngineView] (GeckoView 159).
+ * Modern Jetpack Compose wrapper hosting Mozilla's [EngineView] (GeckoView 161).
  *
  * Provides direct GPU compositing for Petal's Liquid Glass and Material 3
  * Expressive layers with zero legacy ViewTree hacks. Fully wires Mozilla HitResult

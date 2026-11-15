@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-gecko.svg"><img src="docs/readme/light/badge-gecko.svg" alt="GeckoView 159" height="28"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-gecko.svg"><img src="docs/readme/light/badge-gecko.svg" alt="GeckoView 161" height="28"></picture>
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-m3e.svg"><img src="docs/readme/light/badge-m3e.svg" alt="Material 3 Expressive" height="28"></picture>
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-extensions.svg"><img src="docs/readme/light/badge-extensions.svg" alt="Add-ons Ready" height="28"></picture>
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/dark/badge-android.svg"><img src="docs/readme/light/badge-android.svg" alt="Android 8.0+" height="28"></picture>

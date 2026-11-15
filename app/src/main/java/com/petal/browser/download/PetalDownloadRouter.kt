@@ -30,7 +30,7 @@ object PetalDownloadRouter {
     /** Real Firefox for Android format: "Android <release>" is part of the platform token. */
     @JvmField
     val FIREFOX_MOBILE_UA: String =
-        "Mozilla/5.0 (Android ${Build.VERSION.RELEASE}; Mobile; rv:159.0) Gecko/159.0 Firefox/159.0"
+        "Mozilla/5.0 (Android ${Build.VERSION.RELEASE}; Mobile; rv:161.0) Gecko/161.0 Firefox/161.0"
 
     /**
      * Pages are loaded by Gecko, so cookies (e.g. Cloudflare clearance) and CDN tokens are bound to

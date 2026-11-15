@@ -1,30 +1,28 @@
-### v4.9.0 — 🚀 Mozilla Android Components 159.0.1 Full Migration (Phases 1–4)
+### v4.8 (480) — 🚀 Mozilla GeckoView Beta 161 & Android Components 161.0b3 Migration
 
-> *"Complete architectural modernization migrating Petal Browser to official Mozilla Android Components 159.0.1 across all 4 phases, gated behind debug-visible feature flags: Phase 1 (app-links, webnotifications, findinpage, thumbnails/icons), Phase 2 (site permissions, prompts, search, top sites), Phase 3 (Places history/bookmarks sync, Logins SyncableLoginsStorage, session restore), and Phase 4 (Add-ons AddonManager, PWA ManifestStorage, Custom Tabs, tab suspension). All existing Petal features, privacy safeguards, Material 3 Expressive UI, and Liquid Glass design system preserved with zero regressions."*
+> *"Petal Browser v4.8 (build 480) upgrades to the latest Mozilla GeckoView Beta 161 engine (161.0.20261113104103) and Mozilla Android Components 161.0b3 across all architectural phases. Features standalone viewer task affinity isolation with document launch modes, native predictive back animations, complete 4-phase Android Components migration, and high-performance CI/CD pipeline with cached WASM packaging."*
 
-#### 🔗 Phase 1 — External Schemes, Notifications, Find in Page & Media Assets
-- Migrated external scheme handling to `feature-app-links` (`AppLinksFeature` / `AppLinksUseCases`) and `feature-intent`.
-- Delegated Web Notifications to `feature-webnotifications` (`WebNotificationFeature` / `NotificationsDelegate`) and `feature-webpush`.
-- Integrated `feature-findinpage` (`FindInPageFeature` / `FindInPageInteractor`) into Petal's merged bar.
-- Migrated tab thumbnails to `browser-thumbnails` (`ThumbnailStorage`) and favicons to `browser-icons` (`BrowserIcons`).
+#### 🌐 Latest Engine & Component Upgrades
+- **GeckoView Beta 161:** Upgraded to `org.mozilla.geckoview:geckoview-beta:161.0.20261113104103`, delivering the bleeding-edge web platform capabilities, security patches, and performance enhancements.
+- **Mozilla Android Components 161.0b3:** Upgraded all 38 Mozilla components to `161.0b3`, bringing synchronized feature layers across browser state, engine sessions, downloads, site permissions, search, top sites, sync, and add-on management.
+- **Updated User-Agent Profiles:** Refreshed mobile and desktop Firefox user agent identifiers to `rv:161.0` / `Firefox/161.0`.
 
-#### 🛡️ Phase 2 — Site Permissions, Engine Prompts, Search & Top Sites
-- Added `feature-sitepermissions` with `OnDiskSitePermissionsStorage` and `SitePermissionsRules`, preserving DRM (`sp_drm`), private-mode rules, and Android runtime permission requests.
-- Integrated `feature-prompts` (`PetalBrowserPromptBridge`), mapping all 14 prompt types to Petal Material 3 Expressive and Liquid Glass bottom sheets and dialogs.
-- Migrated default and custom search engines to `feature-search` (`SearchMiddleware`, `SearchEngine`).
-- Migrated top sites and pinned shortcuts to `feature-top-sites` (`PinnedSiteStorage`, `DefaultTopSitesStorage`).
+#### 📱 Standalone Viewers & Native Predictive Back
+- **Task Affinity Isolation:** Assigned distinct task affinities to Petal's standalone viewers (`com.petal.browser.viewer.pdf`, `.file`, `.image`, `.media`), opening each document into its own Recents task card without nesting in the browser task stack.
+- **Document Launch Modes:** Configured `documentLaunchMode="always"` for PDF, File, and Image viewers, and `intoExisting` for the Media Player.
+- **Native Predictive Back:** Integrated `enableOnBackInvokedCallback="true"` with system-level back handlers for fluid back-gesture animations that finish the standalone viewer directly without double animations or lingering process state.
+- **Clean Intent Separation:** Retained browser handling for web links, HTML/XHTML, password vault, and extensions while delegating media and file viewing directly to the isolated viewers.
 
-#### 📚 Phase 3 — Places History & Bookmarks, Syncable Logins & Session Restore
-- Migrated History and Bookmarks storage to Mozilla `browser-storage-sync` (`PlacesHistoryStorage`, `PlacesBookmarksStorage`) via `PetalPlacesProvider`.
-- Registered `HistoryDelegate` on `GeckoEngine.settings.historyTrackingDelegate` for automatic visit and link coloring.
-- Upgraded password and credential storage to `service-sync-logins` (`SyncableLoginsStorage`) encrypted via `lib-dataprotect` (`SecureAbove22Preferences`) and fed to `GeckoAutocompleteStorageDelegate`.
-- Connected session restore to `browser-session-storage` (`SessionStorage`, `AutoSave`, `TabsUseCases`).
+#### 🏗️ Full Mozilla Android Components Migration (Phases 1–4)
+- **Phase 1 (External Schemes, Notifications, Find in Page & Assets):** Handled external schemes via `feature-app-links` and `feature-intent`, Web Notifications via `feature-webnotifications` and `feature-webpush`, Find-in-page via `feature-findinpage`, and tabs/icons via `browser-thumbnails` and `browser-icons`.
+- **Phase 2 (Permissions, Prompts, Search, Top Sites):** Wired `feature-sitepermissions` with DRM gating, integrated `feature-prompts` across all 14 engine prompt types with Petal M3E + Liquid Glass sheets, and synchronized search engines and top sites.
+- **Phase 3 (Places, Syncable Logins & Session Restore):** Migrated bookmarks and history to `PlacesHistoryStorage` and `PlacesBookmarksStorage` with automated engine tracking (`HistoryDelegate`), upgraded credential vault to `SyncableLoginsStorage` with `GeckoAutocompleteStorageDelegate`, and connected `SessionStorage` / `AutoSave`.
+- **Phase 4 (Add-on Manager, PWA, Custom Tabs & Memory Management):** Integrated `feature-addons` with `AddonManager` and `AMOAddonsProvider`, persisted PWA manifests via `ManifestStorage`, refined Custom Tabs with `CustomTabConfigHelper`, and added `TabsRemovedMiddleware` alongside `SessionPrioritizationMiddleware`.
 
-#### 🧩 Phase 4 — Add-ons Manager, Progressive Web Apps & Custom Tabs
-- Connected `feature-addons` (`AddonManager`, `AMOAddonsProvider`, `DefaultAddonUpdater`) to `PetalExtensionManager`.
-- Wired `feature-pwa` (`ManifestStorage`, `WebAppShortcutManager`) to `PetalPwaManager`.
-- Integrated `feature-customtabs` (`CustomTabConfigHelper`) to `PetalCustomTabActivity`.
-- Added `TabsRemovedMiddleware` and verified tab suspension with `SessionPrioritizationMiddleware`.
+#### ⚡ Build System & CI/CD Speed Optimization
+- **WASM & Rust Engine Caching:** Added `taiki-e/install-action@v2` for `wasm-pack`, `Swatinem/rust-cache@v2` for `native/adblock_rs`, and cached `petal_network_blocker/wasm` assets to bypass redundant compiles.
+- **Fast Build ABI Filtering:** Added `-PfastBuild` property to build only `arm64-v8a` during normal PR and branch pushes, preserving full 4-ABI + Universal APK bundles for tags and releases.
+
 
 ### v4.8.0 — 🛡️ Full-Spectrum Master Engine, Privacy & Download Consolidation
 

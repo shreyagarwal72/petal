@@ -25,8 +25,8 @@ android {
         applicationId "com.petal.browser"
         minSdkVersion 26
         targetSdkVersion 36
-        versionCode 462
-        versionName "4.7"
+        versionCode 480
+        versionName "4.8"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
         resConfigs "ar", "b+hi+Latn", "b+sr+Latn", "cs", "de", "el", "es", "et", "fa", "fr", "he", "hi", "hu", "id", "it", "ja", "nl", "pl", "pt", "ro", "ru", "sr", "sv", "tr", "uk", "vi", "zh", "zh-rTW"
@@ -189,8 +189,9 @@ tasks.withType(com.android.build.gradle.internal.tasks.CheckAarMetadataTask).con
 
 configurations.all {
     exclude group: 'org.mozilla.geckoview', module: 'geckoview-omni'
+    exclude group: 'org.mozilla.geckoview', module: 'geckoview-beta-omni'
     resolutionStrategy {
-        force 'org.mozilla.geckoview:geckoview:159.0.20261102144711'
+        force 'org.mozilla.geckoview:geckoview-beta:161.0.20261113104103'
         force 'org.jetbrains.kotlin:kotlin-stdlib:2.4.0'
         force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.0'
         force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.0'
@@ -298,58 +299,59 @@ dependencies {
     implementation 'io.github.junkfood02.youtubedl-android:ffmpeg:0.18.1'
     implementation 'io.github.junkfood02.youtubedl-android:aria2c:0.18.1'
 
-    // Mozilla GeckoView & Android Components (Release channel 159.0.1)
-    implementation 'org.mozilla.geckoview:geckoview:159.0.20261102144711'
-    implementation('org.mozilla.components:browser-engine-gecko:159.0.1') {
+    // Mozilla GeckoView & Android Components (161.0b3 / GeckoView Beta 161)
+    implementation 'org.mozilla.geckoview:geckoview-beta:161.0.20261113104103'
+    implementation('org.mozilla.components:browser-engine-gecko:161.0b3') {
         exclude group: 'org.mozilla.geckoview', module: 'geckoview-omni'
+        exclude group: 'org.mozilla.geckoview', module: 'geckoview-beta-omni'
     }
-    implementation 'org.mozilla.components:concept-engine:159.0.1'
-    implementation 'org.mozilla.components:browser-errorpages:159.0.1'
-    implementation 'org.mozilla.components:browser-state:159.0.1'
-    implementation 'org.mozilla.components:browser-session-storage:159.0.1'
-    implementation 'org.mozilla.components:lib-state:159.0.1'
-    implementation 'org.mozilla.components:support-base:159.0.1'
-    implementation 'org.mozilla.components:support-utils:159.0.1'
+    implementation 'org.mozilla.components:concept-engine:161.0b3'
+    implementation 'org.mozilla.components:browser-errorpages:161.0b3'
+    implementation 'org.mozilla.components:browser-state:161.0b3'
+    implementation 'org.mozilla.components:browser-session-storage:161.0b3'
+    implementation 'org.mozilla.components:lib-state:161.0b3'
+    implementation 'org.mozilla.components:support-base:161.0b3'
+    implementation 'org.mozilla.components:support-utils:161.0b3'
 
-    // Android Components Features (159.0.1)
-    implementation 'org.mozilla.components:feature-session:159.0.1'
+    // Android Components Features (161.0b3)
+    implementation 'org.mozilla.components:feature-session:161.0b3'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.2.0'
-    implementation 'org.mozilla.components:feature-prompts:159.0.1'
-    implementation 'org.mozilla.components:feature-sitepermissions:159.0.1'
-    implementation 'org.mozilla.components:feature-tabs:159.0.1'
-    implementation 'org.mozilla.components:feature-downloads:159.0.1'
-    implementation 'org.mozilla.components:feature-recentlyclosed:159.0.1'
-    implementation 'org.mozilla.components:feature-webcompat:159.0.1'
-    implementation 'org.mozilla.components:feature-media:159.0.1'
-    implementation 'org.mozilla.components:feature-findinpage:159.0.1'
-    implementation 'org.mozilla.components:feature-webnotifications:159.0.1'
-    implementation 'org.mozilla.components:feature-push:159.0.1'
+    implementation 'org.mozilla.components:feature-prompts:161.0b3'
+    implementation 'org.mozilla.components:feature-sitepermissions:161.0b3'
+    implementation 'org.mozilla.components:feature-tabs:161.0b3'
+    implementation 'org.mozilla.components:feature-downloads:161.0b3'
+    implementation 'org.mozilla.components:feature-recentlyclosed:161.0b3'
+    implementation 'org.mozilla.components:feature-webcompat:161.0b3'
+    implementation 'org.mozilla.components:feature-media:161.0b3'
+    implementation 'org.mozilla.components:feature-findinpage:161.0b3'
+    implementation 'org.mozilla.components:feature-webnotifications:161.0b3'
+    implementation 'org.mozilla.components:feature-push:161.0b3'
 
-    // Android Components Phase 2: Web Platform Features (159.0.1)
-    implementation 'org.mozilla.components:feature-addons:159.0.1'
-    implementation 'org.mozilla.components:support-webextensions:159.0.1'
-    implementation 'org.mozilla.components:feature-customtabs:159.0.1'
-    implementation 'org.mozilla.components:feature-pwa:159.0.1'
-    implementation 'org.mozilla.components:feature-contextmenu:159.0.1'
-    implementation 'org.mozilla.components:feature-readerview:159.0.1'
+    // Android Components Phase 2: Web Platform Features (161.0b3)
+    implementation 'org.mozilla.components:feature-addons:161.0b3'
+    implementation 'org.mozilla.components:support-webextensions:161.0b3'
+    implementation 'org.mozilla.components:feature-customtabs:161.0b3'
+    implementation 'org.mozilla.components:feature-pwa:161.0b3'
+    implementation 'org.mozilla.components:feature-contextmenu:161.0b3'
+    implementation 'org.mozilla.components:feature-readerview:161.0b3'
 
-    // Android Components Phase 3: Omnibox & Assets (159.0.1)
-    implementation 'org.mozilla.components:feature-search:159.0.1'
-    implementation 'org.mozilla.components:feature-top-sites:159.0.1'
-    implementation 'org.mozilla.components:browser-icons:159.0.1'
-    implementation 'org.mozilla.components:browser-thumbnails:159.0.1'
-    implementation 'org.mozilla.components:lib-publicsuffixlist:159.0.1'
-    implementation 'org.mozilla.components:feature-intent:159.0.1'
-    implementation 'org.mozilla.components:feature-app-links:159.0.1'
+    // Android Components Phase 3: Omnibox & Assets (161.0b3)
+    implementation 'org.mozilla.components:feature-search:161.0b3'
+    implementation 'org.mozilla.components:feature-top-sites:161.0b3'
+    implementation 'org.mozilla.components:browser-icons:161.0b3'
+    implementation 'org.mozilla.components:browser-thumbnails:161.0b3'
+    implementation 'org.mozilla.components:lib-publicsuffixlist:161.0b3'
+    implementation 'org.mozilla.components:feature-intent:161.0b3'
+    implementation 'org.mozilla.components:feature-app-links:161.0b3'
 
-    // Firefox Account + Firefox Sync (official Mozilla Android Components)
-    implementation 'org.mozilla.components:service-firefox-accounts:159.0.1'
-    implementation 'org.mozilla.components:concept-sync:159.0.1'
-    implementation 'org.mozilla.components:concept-storage:159.0.1'
-    implementation 'org.mozilla.components:browser-storage-sync:159.0.1'
-    implementation 'org.mozilla.components:feature-syncedtabs:159.0.1'
-    implementation 'org.mozilla.components:service-sync-logins:159.0.1'
-    implementation 'org.mozilla.components:lib-dataprotect:159.0.1'
+    // Firefox Account + Firefox Sync (official Mozilla Android Components 161.0b3)
+    implementation 'org.mozilla.components:service-firefox-accounts:161.0b3'
+    implementation 'org.mozilla.components:concept-sync:161.0b3'
+    implementation 'org.mozilla.components:concept-storage:161.0b3'
+    implementation 'org.mozilla.components:browser-storage-sync:161.0b3'
+    implementation 'org.mozilla.components:feature-syncedtabs:161.0b3'
+    implementation 'org.mozilla.components:service-sync-logins:161.0b3'
+    implementation 'org.mozilla.components:lib-dataprotect:161.0b3'
 
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.60.1'
