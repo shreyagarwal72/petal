@@ -249,7 +249,7 @@ fun PetalBottomNavBar(
                 }
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(bottom = 18.dp, start = 12.dp, end = 12.dp),
+                .padding(bottom = 10.dp, start = 8.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -368,7 +368,7 @@ fun PetalBottomNavBar(
                     isLiquidGlass -> Color.Transparent
                     isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer
                     isMiuix -> com.petal.browser.ui.miuix.theme.MiuiXTheme.colors.surface
-                    else -> MaterialTheme.colorScheme.surfaceContainer
+                    else -> MaterialTheme.colorScheme.surfaceContainerHigh
                 },
                 // No tonal lift or drop shadow: the shadow was the dark blur smeared outside the
                 // rounded corners. The bar is a clean flat fill (or glass), rounded or rectangular.
@@ -459,6 +459,12 @@ fun PetalBottomNavBar(
                             )
                         },
                         onClick = {
+                            val bounds = newTabButtonBounds[0] ?: navBarBounds[0]
+                            val rad = if (bounds != null) bounds.height / 2f else 24f
+                            PetalNewTabOrigin.mark(bounds, rad)
+                            onNewTabClick()
+                        },
+                        onLongClick = {
                             val bounds = newTabButtonBounds[0] ?: navBarBounds[0]
                             val rad = if (bounds != null) bounds.height / 2f else 24f
                             PetalNewTabOrigin.mark(bounds, rad)
@@ -722,6 +728,7 @@ private fun ExpressiveNavTabItem(
     onClick: () -> Unit,
     badgeText: String? = null,
     isLiquidGlass: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -800,10 +807,11 @@ private fun ExpressiveNavTabItem(
                 translationY = activeLiftY.toPx()
             }
             .clip(RoundedCornerShape(16.dp))
-            .clickable(
+            .combinedClickable(
                 interactionSource = interactionSource,
                 indication = ripple(bounded = true, radius = 32.dp),
-                onClick = onClick
+                onClick = onClick,
+                onLongClick = onLongClick
             )
             .padding(horizontal = 2.dp, vertical = 1.dp)
             .semantics { contentDescription = label }
