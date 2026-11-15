@@ -196,17 +196,14 @@ configurations.all {
     exclude group: 'org.mozilla.geckoview', module: 'geckoview-beta-omni'
     resolutionStrategy {
         force 'org.mozilla.geckoview:geckoview-beta:161.0.20261113104103'
-        force 'org.jetbrains.kotlin:kotlin-stdlib:2.4.0'
-        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.0'
-        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.0'
-        force 'org.jetbrains.kotlin:kotlin-stdlib-common:2.4.0'
-        force 'org.jetbrains.kotlin:kotlin-reflect:2.4.0'
+        force 'org.jetbrains.kotlin:kotlin-stdlib:2.4.21'
+        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.21'
+        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.21'
+        force 'org.jetbrains.kotlin:kotlin-stdlib-common:2.4.21'
+        force 'org.jetbrains.kotlin:kotlin-reflect:2.4.21'
         // Dagger/Hilt (>= 2.57) no longer shades kotlin-metadata-jvm. Its bundled reader tops out at
-        // Kotlin metadata 2.3.0. This was forced to 2.4.0 to match Mozilla Components 155's metadata
-        // version. UNVERIFIED for Components 156 — if 156 ships newer Kotlin metadata than 2.4.0,
-        // this force may need bumping too, or this whole block may become unnecessary if Hilt's
-        // bundled reader has since been updated. Check the build error here first if compilation fails.
-        force 'org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.0'
+        // Kotlin metadata 2.3.0. Forced to match Mozilla Components and Kotlin compiler metadata.
+        force 'org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.21'
     }
 }
 
