@@ -535,6 +535,9 @@ fun PetalRootApp(
                     onRefresh = { viewModel.reload() },
                     topPadding = effectiveTopPadding,
                     bottomPadding = effectiveBottomPadding,
+                    // Minimized bars: page keeps only the status bar gap on top and runs edge to edge below.
+                    collapsedTopPadding = statusBarTopInset,
+                    collapsedBottomPadding = 0.dp,
                     onEngineViewReady = { activeWebEngineView = it },
                     modifier = Modifier
                         .fillMaxSize()

@@ -232,6 +232,10 @@ fun PetalBottomNavBar(
     val collapseScale = 0.92f + 0.08f * collapseAlpha
     val collapseOffsetY = 16.dp * (1f - collapseAlpha)
 
+    // Fully faded out means minimized: stop composing so the invisible bar cannot swallow taps
+    // meant for the page underneath it.
+    if (collapseAlpha <= 0.01f) return
+
     if (effectiveFloating) {
         // Stride's floating glass nav bar (see PetalStrideNavBar): the tab pill sits in the
         // middle, and search is its own glass button on the right.
