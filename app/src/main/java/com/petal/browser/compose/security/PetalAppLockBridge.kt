@@ -150,7 +150,10 @@ object PetalAppLockBridge {
         val decor = activity.window.decorView as? ViewGroup ?: return
         val browserActivity = activity as? MainActivity
         val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
-        PetalContentSnapshot.capture(rootView)
+        // Always snapshot what is on screen NOW (e.g. the Account page). A cached transition snapshot
+        // from an earlier screen (the Settings hub) made predictive back preview the wrong page.
+        PetalContentSnapshot.capturePreview(rootView)
+        PetalContentSnapshot.capture(rootView, forceFresh = true)
         var composeView: ComposeView? = null
         composeView = ComposeView(activity).apply {
             if (activity is ComponentActivity) {

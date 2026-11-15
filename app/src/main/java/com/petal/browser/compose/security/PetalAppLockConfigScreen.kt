@@ -47,6 +47,9 @@ import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.LocalPetalBadgeShapeKey
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalDialog
 import com.petal.browser.ui.containment.PetalSelectableOptionCard
@@ -79,6 +82,14 @@ fun PetalAppLockConfigScreen(
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Same filled icon family as the Settings categories, one icon per meaning.
+    val lockIcon = ImageVector.vectorResource(R.drawable.lock_filled)
+    val lockOpenIcon = ImageVector.vectorResource(R.drawable.lock_open_filled)
+    val shieldIcon = ImageVector.vectorResource(R.drawable.shield_lock_filled)
+    val fingerprintIcon = ImageVector.vectorResource(R.drawable.fingerprint_filled)
+    val keyIcon = ImageVector.vectorResource(R.drawable.key_filled)
+    val infoIcon = ImageVector.vectorResource(R.drawable.info_filled)
 
     var isLockEnabled by remember { mutableStateOf(sp.getBoolean("sp_app_lock_enabled", false)) }
     var selectedLockType by remember { mutableStateOf(sp.getString("sp_app_lock_type", "FINGERPRINT") ?: "FINGERPRINT") } // FINGERPRINT or PASSWORD
@@ -217,7 +228,7 @@ fun PetalAppLockConfigScreen(
                                 selectedLockType == "FINGERPRINT" -> "Biometric lock enabled"
                                 else -> "Passcode lock enabled"
                             },
-                            icon = if (isLockEnabled) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                            icon = if (isLockEnabled) lockIcon else lockOpenIcon,
                             statusActive = isLockEnabled,
                             actionLabel = if (isLockEnabled) null else "Turn on",
                             onActionClick = if (isLockEnabled) null else ({ handleLockToggle(true) })
@@ -226,12 +237,12 @@ fun PetalAppLockConfigScreen(
                         // ── Master switch ──
                         PetalSettingsSection(
                             title = "Startup protection",
-                            icon = Icons.Rounded.Security
+                            icon = shieldIcon
                         ) {
                             PetalSettingsToggleRow(
                                 title = stringResource(R.string.ui_require_lock_on_startup),
                                 subtitle = if (isLockEnabled) "App lock active • Startup protected" else "Authenticate each time Petal Browser opens",
-                                icon = Icons.Rounded.Lock,
+                                icon = lockIcon,
                                 checked = isLockEnabled,
                                 onCheckedChange = { handleLockToggle(it) }
                             )
@@ -240,7 +251,7 @@ fun PetalAppLockConfigScreen(
                         // ── Method selection ──
                         PetalSettingsSection(
                             title = stringResource(R.string.ui_choose_authentication_method),
-                            icon = Icons.Rounded.Fingerprint
+                            icon = fingerprintIcon
                         ) {
                             PetalGroup(rowCount = 2) { index, position ->
                                 val isBiometric = index == 0
@@ -251,7 +262,7 @@ fun PetalAppLockConfigScreen(
                                     onClick = { if (isBiometric) selectBiometricMethod() else selectPasscodeMethod() },
                                     leading = {
                                         PetalGroupIconBadge(
-                                            if (isBiometric) Icons.Rounded.Fingerprint else Icons.Rounded.Key,
+                                            if (isBiometric) fingerprintIcon else keyIcon,
                                             container = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
                                             tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer
                                         )
@@ -290,14 +301,14 @@ fun PetalAppLockConfigScreen(
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 PetalSettingsSection(
                                     title = "Passcode",
-                                    icon = Icons.Rounded.Key
+                                    icon = keyIcon
                                 ) {
                                     PetalGroupNavigationRow(
                                         title = if (savedPasscode.isNotBlank()) "Change passcode" else "Set passcode",
                                         subtitle = if (savedPasscode.isNotBlank()) "Passcode configured • Tap to change" else "Choose the passcode that unlocks Petal",
                                         position = PetalGroupPosition.SINGLE,
                                         onClick = { showPasscodeConfigDialog = true },
-                                        leadingIcon = { Icon(Icons.Rounded.Key, contentDescription = null) }
+                                        leadingIcon = { Icon(keyIcon, contentDescription = null) }
                                     )
                                 }
 
@@ -310,7 +321,7 @@ fun PetalAppLockConfigScreen(
                                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         Icon(
-                                            Icons.Rounded.Info,
+                                            infoIcon,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.primary
                                         )
@@ -339,7 +350,7 @@ fun PetalAppLockConfigScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             PetalGroupIconBadge(
-                                Icons.Rounded.Key,
+                                keyIcon,
                                 size = 48.dp,
                                 iconSize = 24.dp
                             )
@@ -401,16 +412,19 @@ fun PetalAppLockConfigScreen(
         }
     }
 
+    val uniformContent = @Composable {
+        CompositionLocalProvider(LocalPetalBadgeShapeKey provides "app_lock") { content() }
+    }
     if (wrapPredictive) {
         com.petal.browser.predictive.PetalPredictiveBackSurface(
             enabled = !showPasscodeConfigDialog,
             onBack = onBack,
         ) {
             com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-                content()
+                uniformContent()
             }
         }
     } else {
-        content()
+        uniformContent()
     }
 }

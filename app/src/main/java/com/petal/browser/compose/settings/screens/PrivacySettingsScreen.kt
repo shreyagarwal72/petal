@@ -5,6 +5,7 @@ import android.content.Intent
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,6 +18,7 @@ import androidx.compose.material3.*
 import com.petal.browser.ui.kit.TextField
 import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -338,23 +340,11 @@ fun PrivacySettingsScreenContent(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            if (adBlockEnabled) MaterialTheme.colorScheme.primaryContainer
-                                            else MaterialTheme.colorScheme.surfaceVariant
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = if (adBlockEnabled) Icons.Rounded.VerifiedUser else Icons.Rounded.Shield,
-                                        contentDescription = null,
-                                        tint = if (adBlockEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
+                                PetalGroupIconBadge(
+                                    icon = if (adBlockEnabled) Icons.Rounded.VerifiedUser else Icons.Rounded.Shield,
+                                    variant = if (adBlockEnabled) PetalBadgeVariant.PRIMARY else PetalBadgeVariant.SURFACE_TONAL,
+                                    size = 48.dp
+                                )
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = if (adBlockEnabled) "Shields Actively Blocking" else "Shields Paused",
@@ -371,10 +361,11 @@ fun PrivacySettingsScreenContent(
                         }
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[0],
                             position = PetalGroupPosition.TOP,
                             title = "Ad & Tracker Shield",
                             subtitle = "Intercepts ads, analytics, and third-party trackers via WebExtension blocker and Gecko ETP",
-                            icon = Icons.Rounded.Shield,
+                            icon = Icons.Rounded.Block,
                             checked = adBlockEnabled,
                             onCheckedChange = { newValue ->
                                 onAdBlockEnabledChange(newValue)
@@ -383,6 +374,7 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalGroupNavigationRow(
+                            variant = privacyRowVariants[1],
                             title = "Filter Lists & Rules",
                             subtitle = "EasyList, uAssets, Hagezi, and custom subscriptions",
                             position = PetalGroupPosition.MIDDLE,
@@ -391,6 +383,7 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalGroupNavigationRow(
+                            variant = privacyRowVariants[2],
                             title = "Site Exceptions (Whitelist)",
                             subtitle = "${whitelistedDomainsState.size} domains allowed",
                             position = PetalGroupPosition.BOTTOM,
@@ -451,6 +444,7 @@ fun PrivacySettingsScreenContent(
                         }
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[0],
                             position = PetalGroupPosition.MIDDLE,
                             title = "Total Cookie Protection",
                             subtitle = "Dynamic first-party cookie jar isolation and state partitioning",
@@ -463,6 +457,7 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[1],
                             position = PetalGroupPosition.MIDDLE,
                             title = "Unlinkable Session Partitioning",
                             subtitle = "Isolates client network state per tab session to defeat bounce tracking",
@@ -472,6 +467,7 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[2],
                             position = PetalGroupPosition.BOTTOM,
                             title = "Bounce Tracking Protection",
                             subtitle = "Purges redirect tracker state when traversing bounce redirect intermediaries",
@@ -489,6 +485,7 @@ fun PrivacySettingsScreenContent(
                         targetHighlightId = targetHighlightItemId
                     ) {
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[0],
                             position = PetalGroupPosition.TOP,
                             title = "Resist Fingerprinting (Gecko RFP)",
                             subtitle = "Uniform canvas, audio context, hardware metrics, and reduced timer precision",
@@ -498,6 +495,7 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[1],
                             position = PetalGroupPosition.BOTTOM,
                             title = "Canvas Letterboxing",
                             subtitle = "Appends margins to canvas viewport to prevent display dimension fingerprinting",
@@ -515,6 +513,7 @@ fun PrivacySettingsScreenContent(
                         targetHighlightId = targetHighlightItemId
                     ) {
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[2],
                             position = PetalGroupPosition.TOP,
                             title = "HTTPS-Only Mode",
                             subtitle = "Automatically upgrade connections to HTTPS and warn on insecure HTTP",
@@ -523,52 +522,165 @@ fun PrivacySettingsScreenContent(
                             onCheckedChange = onHttpsOnlyChange
                         )
 
-                        val dnsOptions = remember {
-                            buildList {
-                                add(Triple("OFF", "System Default (Off)", "Use default network DNS"))
-                                com.petal.browser.unit.PetalDnsCatalog.presets.forEach {
-                                    add(Triple(it.mode, it.title, it.description))
-                                }
-                                add(Triple("CUSTOM", "Custom DNS-over-HTTPS (DoH)", "Enter your preferred DoH resolver endpoint URL"))
-                            }
-                        }
-
-                        PetalGroup(rowCount = dnsOptions.size) { index, position ->
-                            val (mode, name, desc) = dnsOptions[index]
-                            val isSelected = privateDnsMode == mode
-                            PetalGroupListRow(
-                                position = position,
-                                selected = isSelected,
-                                onClick = { onPrivateDnsModeChange(mode) },
-                                leading = {
-                                    PetalGroupIconBadge(
-                                        icon = if (mode == "CUSTOM") Icons.Rounded.Dns else Icons.Rounded.Security,
-                                        variant = if (isSelected) PetalBadgeVariant.PRIMARY else PetalBadgeVariant.SURFACE_TONAL
-                                    )
-                                },
-                                content = {
-                                    Text(
-                                        text = name,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = desc,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                trailing = {
-                                    if (isSelected) {
-                                        Icon(
-                                            Icons.Rounded.CheckCircle,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(22.dp)
-                                        )
+                        // One row per provider; providers with several options expand on tap to pick one.
+                        val dnsEntries = remember {
+                            buildList<DnsEntry> {
+                                add(DnsEntry.Single("OFF", "System Default (Off)", "Use default network DNS", false))
+                                com.petal.browser.unit.PetalDnsCatalog.presets.groupBy { it.provider }.forEach { (provider, list) ->
+                                    if (list.size == 1) {
+                                        add(DnsEntry.Single(list[0].mode, list[0].title, list[0].description, false))
+                                    } else {
+                                        add(DnsEntry.Group(provider, list.map { DnsChoice(it.mode, it.variant ?: it.provider, it.description) }))
                                     }
                                 }
-                            )
+                                add(DnsEntry.Single("CUSTOM", "Custom DNS-over-HTTPS (DoH)", "Enter your preferred DoH resolver endpoint URL", true))
+                            }
+                        }
+                        var expandedDns by rememberSaveable { mutableStateOf<String?>(null) }
+
+                        PetalGroup(rowCount = dnsEntries.size) { index, position ->
+                            when (val entry = dnsEntries[index]) {
+                                is DnsEntry.Single -> {
+                                    val isSelected = privateDnsMode == entry.mode
+                                    PetalGroupListRow(
+                                        position = position,
+                                        selected = isSelected,
+                                        onClick = {
+                                            expandedDns = null
+                                            onPrivateDnsModeChange(entry.mode)
+                                        },
+                                        leading = {
+                                            PetalGroupIconBadge(
+                                                icon = if (entry.custom) Icons.Rounded.Dns else Icons.Rounded.Security,
+                                                variant = if (isSelected) PetalBadgeVariant.PRIMARY else PetalBadgeVariant.SURFACE_TONAL
+                                            )
+                                        },
+                                        content = {
+                                            Text(
+                                                text = entry.title,
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = entry.desc,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        },
+                                        trailing = {
+                                            if (isSelected) {
+                                                Icon(
+                                                    Icons.Rounded.CheckCircle,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(22.dp)
+                                                )
+                                            }
+                                        }
+                                    )
+                                }
+                                is DnsEntry.Group -> {
+                                    val activeChoice = entry.choices.firstOrNull { it.mode == privateDnsMode }
+                                    val isExpanded = expandedDns == entry.provider
+                                    val chevronAngle by androidx.compose.animation.core.animateFloatAsState(
+                                        targetValue = if (isExpanded) 180f else 0f,
+                                        label = "dnsChevron"
+                                    )
+                                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                        PetalGroupListRow(
+                                            position = position,
+                                            selected = activeChoice != null,
+                                            onClick = { expandedDns = if (isExpanded) null else entry.provider },
+                                            leading = {
+                                                PetalGroupIconBadge(
+                                                    icon = Icons.Rounded.Security,
+                                                    variant = if (activeChoice != null) PetalBadgeVariant.PRIMARY else PetalBadgeVariant.SURFACE_TONAL
+                                                )
+                                            },
+                                            content = {
+                                                Text(
+                                                    text = entry.provider,
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    text = activeChoice?.let { "Using ${it.label}" } ?: "${entry.choices.size} options",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            },
+                                            trailing = {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    if (activeChoice != null) {
+                                                        Icon(
+                                                            Icons.Rounded.CheckCircle,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.size(22.dp)
+                                                        )
+                                                        Spacer(Modifier.width(6.dp))
+                                                    }
+                                                    Icon(
+                                                        Icons.Rounded.ExpandMore,
+                                                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.rotate(chevronAngle)
+                                                    )
+                                                }
+                                            }
+                                        )
+                                        AnimatedVisibility(visible = isExpanded) {
+                                            Column(
+                                                modifier = Modifier.padding(start = 20.dp),
+                                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                                            ) {
+                                                entry.choices.forEachIndexed { i, choice ->
+                                                    val chosen = privateDnsMode == choice.mode
+                                                    PetalGroupListRow(
+                                                        position = petalGroupPositionFor(i, entry.choices.size),
+                                                        selected = chosen,
+                                                        onClick = {
+                                                            onPrivateDnsModeChange(choice.mode)
+                                                            expandedDns = null
+                                                        },
+                                                        minHeight = 56.dp,
+                                                        leading = {
+                                                            PetalGroupIconBadge(
+                                                                icon = Icons.Rounded.Dns,
+                                                                variant = if (chosen) PetalBadgeVariant.PRIMARY else PetalBadgeVariant.SURFACE_TONAL,
+                                                                size = 36.dp,
+                                                                iconSize = 18.dp
+                                                            )
+                                                        },
+                                                        content = {
+                                                            Text(
+                                                                text = choice.label,
+                                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                                color = MaterialTheme.colorScheme.onSurface
+                                                            )
+                                                            Text(
+                                                                text = choice.desc,
+                                                                style = MaterialTheme.typography.bodySmall,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            )
+                                                        },
+                                                        trailing = {
+                                                            if (chosen) {
+                                                                Icon(
+                                                                    Icons.Rounded.CheckCircle,
+                                                                    contentDescription = null,
+                                                                    tint = MaterialTheme.colorScheme.primary,
+                                                                    modifier = Modifier.size(22.dp)
+                                                                )
+                                                            }
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         if (privateDnsMode == "NEXTDNS") {
@@ -628,6 +740,7 @@ fun PrivacySettingsScreenContent(
                         }
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[0],
                             position = PetalGroupPosition.MIDDLE,
                             title = "WebRTC IP Leak Protection",
                             subtitle = "Prevents leaking local private IP address via WebRTC peer connections",
@@ -637,6 +750,7 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[1],
                             position = PetalGroupPosition.MIDDLE,
                             title = "Privacy Signals (GPC + DNT)",
                             subtitle = "Broadcasts Global Privacy Control and Do Not Track signals with every HTTP request",
@@ -646,6 +760,7 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[2],
                             position = PetalGroupPosition.BOTTOM,
                             title = "Strict Referrer Trimming",
                             subtitle = "Strips cross-origin URL paths and query parameters from HTTP Referer headers (default on)",
@@ -663,6 +778,7 @@ fun PrivacySettingsScreenContent(
                         targetHighlightId = targetHighlightItemId
                     ) {
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[0],
                             position = PetalGroupPosition.TOP,
                             title = "Block Pop-up Windows",
                             subtitle = "Prevents unwanted new windows and intrusive redirects",
@@ -672,6 +788,7 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[1],
                             position = PetalGroupPosition.MIDDLE,
                             title = "Auto-Reject Cookie Banners (GDPR)",
                             subtitle = "Automatically declines cookie consent popups and modals",
@@ -681,6 +798,7 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[2],
                             position = PetalGroupPosition.MIDDLE,
                             title = "JavaScript",
                             subtitle = "Enable JavaScript execution for web pages",
@@ -690,6 +808,7 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[0],
                             position = PetalGroupPosition.BOTTOM,
                             title = "DRM Content Playback",
                             subtitle = "Allow playing DRM-protected digital media (Widevine)",
@@ -707,6 +826,7 @@ fun PrivacySettingsScreenContent(
                         targetHighlightId = targetHighlightItemId
                     ) {
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[1],
                             position = PetalGroupPosition.TOP,
                             title = "Biometric Tab Lock",
                             subtitle = "Require biometric authentication (fingerprint/face) to view incognito tabs",
@@ -724,6 +844,7 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[2],
                             position = PetalGroupPosition.BOTTOM,
                             title = "Clear Data on Exit",
                             subtitle = "Automatically purge cache, cookies, and browsing sessions when closing Petal",
@@ -747,6 +868,7 @@ fun PrivacySettingsScreenContent(
                         targetHighlightId = targetHighlightItemId
                     ) {
                         PetalGroupNavigationRow(
+                            variant = privacyRowVariants[0],
                             title = "Password Manager & Autofill Vault",
                             subtitle = "Encrypted local credentials, passkeys, and breach alert monitoring",
                             position = PetalGroupPosition.TOP,
@@ -755,6 +877,7 @@ fun PrivacySettingsScreenContent(
                         )
 
                         PetalSettingsToggleRow(
+                            variant = privacyRowVariants[1],
                             position = PetalGroupPosition.BOTTOM,
                             title = "Autofill Logins & Passwords",
                             subtitle = "Automatically suggest and fill saved credentials on web forms",
@@ -790,4 +913,14 @@ fun PrivacySettingsScreenContent(
             }
         }
     }
+}
+
+/** Same badge colour cycle the Settings hub and Account rows use. */
+private val privacyRowVariants = listOf(PetalBadgeVariant.PRIMARY, PetalBadgeVariant.SECONDARY, PetalBadgeVariant.TERTIARY)
+
+private data class DnsChoice(val mode: String, val label: String, val desc: String)
+
+private sealed interface DnsEntry {
+    data class Single(val mode: String, val title: String, val desc: String, val custom: Boolean) : DnsEntry
+    data class Group(val provider: String, val choices: List<DnsChoice>) : DnsEntry
 }

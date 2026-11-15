@@ -446,13 +446,19 @@ fun petalChipShape(): Shape = petalContainmentShape(14.dp)
  * clover...) when the user chose one in Appearance > Containment shapes, otherwise the classic 14dp tile in
  * the containment shape style.
  */
+/**
+ * When set, every icon badge below it uses this key to pick its shape, so a whole screen shows one
+ * consistent badge shape instead of a different random shape per icon.
+ */
+val LocalPetalBadgeShapeKey = androidx.compose.runtime.compositionLocalOf<Any?> { null }
+
 @androidx.compose.runtime.Composable
 fun petalBadgeShape(key: Any? = null): Shape {
     val state = com.petal.browser.ui.theme.layout.PetalLayoutState
     // Stable per icon: seeded by the icon's name when known (same icon, same shape on every launch);
     // otherwise a random seed remembered for as long as this badge stays composed, so it never flickers.
     val fallback = androidx.compose.runtime.remember { kotlin.random.Random.nextInt() }
-    val seed = key?.hashCode() ?: fallback
+    val seed = (LocalPetalBadgeShapeKey.current ?: key)?.hashCode() ?: fallback
     return state.settings.badgeShape.shape(state.settings.containmentShapeType, state.containmentCorners, seed)
 }
 
@@ -823,6 +829,8 @@ fun PetalSettingsToggleRow(
     enabled: Boolean = true,
     position: PetalGroupPosition = PetalGroupPosition.SINGLE,
     modifier: Modifier = Modifier,
+    /** When set, the badge uses this variant's colours (like the Settings hub / Account rows) instead of the on/off colours. */
+    variant: PetalBadgeVariant? = null,
 ) {
     val source = remember { MutableInteractionSource() }
     val scale = rememberPetalGroupPressScale(source)
@@ -831,8 +839,9 @@ fun PetalSettingsToggleRow(
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val shape = rememberPetalGroupShape(position)
-    val badgeContainer = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-    val badgeTint = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    val variantColors = variant?.colors()
+    val badgeContainer = variantColors?.first ?: if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+    val badgeTint = variantColors?.second ?: if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
     val activeSurfaceColor = petalGroupSurfaceColor()
     val disabledContainerColor = if (isGlass) {
         activeSurfaceColor.copy(alpha = (activeSurfaceColor.alpha * 0.7f).coerceAtLeast(0.12f))
