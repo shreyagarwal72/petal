@@ -101,8 +101,8 @@ internal fun PetalPixelNavPill(
 
     Surface(
         shape = RoundedCornerShape(32.dp),
-        color = scheme.primaryContainer,
-        contentColor = scheme.onPrimaryContainer,
+        color = scheme.surfaceContainerHigh,
+        contentColor = scheme.onSurface,
         shadowElevation = 6.dp,
         modifier = modifier
             .height(64.dp)
@@ -191,7 +191,7 @@ internal fun PetalPixelNavPill(
                         else -> onMenuClick
                     }
                     // Colour follows the capsule: it is on-primary as the capsule arrives.
-                    val tint = lerp(scheme.onPrimaryContainer, scheme.onPrimary, weight())
+                    val tint = lerp(scheme.onSurfaceVariant, scheme.onPrimary, weight())
                     val padH = if (isCompact) {
                         if (selected) 12.dp else 8.dp
                     } else {
