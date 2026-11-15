@@ -668,21 +668,47 @@ object PetalBrowserUtils {
     }
 
     @JvmStatic
-    fun getEffectiveHomepageUrl(context: Context?): String {
-        if (context == null) return "about:blank"
-        try {
+    fun isCustomHomepageEnabled(context: Context?): Boolean {
+        if (context == null) return false
+        return try {
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
-            val homeType = sp.getString("sp_home_type", "0")
-            if ("1" == homeType) {
-                val customUrl = sp.getString("sp_custom_homepage_url", "https://google.com")
-                if (!customUrl.isNullOrBlank()) {
-                    return customUrl.trim()
+            val homeType = try {
+                sp.getString("sp_home_type", "0") ?: "0"
+            } catch (_: Exception) {
+                try { sp.getInt("sp_home_type", 0).toString() } catch (_: Exception) { "0" }
+            }
+            "1" == homeType
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    @JvmStatic
+    @JvmOverloads
+    fun getEffectiveHomepageUrl(context: Context?, sp: SharedPreferences? = null): String {
+        try {
+            val prefs = sp ?: (if (context != null) PreferenceManager.getDefaultSharedPreferences(context) else null)
+            if (prefs != null) {
+                val homeType = try {
+                    prefs.getString("sp_home_type", "0") ?: "0"
+                } catch (_: Exception) {
+                    try { prefs.getInt("sp_home_type", 0).toString() } catch (_: Exception) { "0" }
+                }
+                if ("1" == homeType) {
+                    val customUrl = prefs.getString("sp_custom_homepage_url", "https://google.com")
+                    if (!customUrl.isNullOrBlank()) {
+                        val trimmed = customUrl.trim()
+                        val formatted = if (context != null) queryWrapper(context, trimmed) else (if (trimmed.contains("://") || trimmed.startsWith("about:")) trimmed else "https://$trimmed")
+                        if (formatted.isNotBlank()) {
+                            return formatted
+                        }
+                    }
                 }
             }
         } catch (e: Exception) {
             PetalAppLogger.w("PetalBrowserUtils", "Error resolving effective homepage URL", e)
         }
-        return "about:blank"
+        return "about:home"
     }
 
     @JvmStatic
