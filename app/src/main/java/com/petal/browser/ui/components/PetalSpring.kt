@@ -94,6 +94,18 @@ object PetalSpring {
         stiffness = scaledStiffness(400f),
     )
 
+    /** Material 3 Expressive Bouncy Spring for spatial gestures and interactive settling. */
+    fun <T> expressiveBouncySpatial(): FiniteAnimationSpec<T> = spring(
+        dampingRatio = Spring.DampingRatioLowBouncy,
+        stiffness = scaledStiffness(Spring.StiffnessMediumLow),
+    )
+
+    /** Material 3 Expressive Tactile Press Spring for interactive scaling. */
+    fun <T> expressivePress(): FiniteAnimationSpec<T> = spring(
+        dampingRatio = Spring.DampingRatioLowBouncy,
+        stiffness = scaledStiffness(400f),
+    )
+
     /** Use sparingly: toggles, FAB, celebratory moments. */
     fun <T> playful(): FiniteAnimationSpec<T> = spring(
         dampingRatio = Spring.DampingRatioMediumBouncy,
