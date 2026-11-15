@@ -94,7 +94,7 @@ object PetalEngineStore {
     private var manifestStorage: mozilla.components.feature.pwa.ManifestStorage? = null
 
     @Volatile
-    private var webAppShortcutManager: mozilla.components.feature.pwa.WebAppShortcutManager? = null
+    var pendingTabSelectionOnResume: String? = null
 
     @Volatile
     private var addonManager: mozilla.components.feature.addons.AddonManager? = null
@@ -157,7 +157,7 @@ object PetalEngineStore {
         try {
             newEngine.registerServiceWorkerDelegate(object : mozilla.components.concept.engine.serviceworker.ServiceWorkerDelegate {
                 override fun addNewTab(engineSession: EngineSession): Boolean {
-                    val act = PetalGeckoRuntime.getForegroundActivity()
+                    val act = PetalGeckoRuntime.getForegroundActivity() as? com.petal.browser.activity.MainActivity
                     val tabId = java.util.UUID.randomUUID().toString()
                     PetalEngineStore.adoptPreparedSession(
                         context = appContext,
@@ -168,8 +168,13 @@ object PetalEngineStore {
                         session = engineSession,
                         select = true
                     )
-                    (act as? com.petal.browser.activity.MainActivity)?.runOnUiThread {
-                        (act as? com.petal.browser.activity.MainActivity)?.viewModel?.selectTab(tabId)
+                    if (act != null) {
+                        act.runOnUiThread {
+                            act.viewModel.selectTab(tabId)
+                        }
+                    } else {
+                        // Cold start / notification tap when activity is not foreground: queue tab selection for MainActivity.onResume
+                        pendingTabSelectionOnResume = tabId
                     }
                     return true
                 }
@@ -523,22 +528,6 @@ object PetalEngineStore {
         val storage = mozilla.components.feature.pwa.ManifestStorage(appContext)
         manifestStorage = storage
         return storage
-    }
-
-    @JvmStatic
-    @Synchronized
-    fun getWebAppShortcutManager(context: Context): mozilla.components.feature.pwa.WebAppShortcutManager {
-        webAppShortcutManager?.let { return it }
-        val appContext = context.applicationContext
-        val storage = getManifestStorage(appContext)
-        val client = com.petal.browser.download.PetalOkHttpFetchClient()
-        val manager = mozilla.components.feature.pwa.WebAppShortcutManager(
-            context = appContext,
-            httpClient = client,
-            storage = storage
-        )
-        webAppShortcutManager = manager
-        return manager
     }
 
     @JvmStatic

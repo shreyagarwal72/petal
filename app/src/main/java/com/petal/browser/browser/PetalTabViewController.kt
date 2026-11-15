@@ -1006,8 +1006,14 @@ class PetalTabViewController private constructor(
                         if (!com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
                             recordHistoryVisit(url, pageTitle)
                         } else {
-                            com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(url)
+                            if (!isIncognito()) {
+                                com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(url)
+                            }
                         }
+                    }
+                    if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled() && !isIncognito()) {
+                        return engineHistoryDelegate?.onVisited(session, url, lastVisitedURL, flags)
+                            ?: org.mozilla.geckoview.GeckoResult.fromValue(true)
                     }
                     return org.mozilla.geckoview.GeckoResult.fromValue(true)
                 }
@@ -1016,8 +1022,9 @@ class PetalTabViewController private constructor(
                     session: org.mozilla.geckoview.GeckoSession,
                     urls: Array<out String>
                 ): org.mozilla.geckoview.GeckoResult<BooleanArray>? {
-                    val result = org.mozilla.geckoview.GeckoResult<BooleanArray>()
                     if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
+                        engineHistoryDelegate?.getVisited(session, urls)?.let { return it }
+                        val result = org.mozilla.geckoview.GeckoResult<BooleanArray>()
                         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                             try {
                                 val hs = com.petal.browser.database.PetalPlacesProvider.getHistoryStorage(context)
@@ -2386,7 +2393,9 @@ class PetalTabViewController private constructor(
         }
 
         if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
-            com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(targetUrl)
+            if (!isIncognito()) {
+                com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(targetUrl)
+            }
             lastRecordedHistoryUrl = targetUrl
             lastRecordedHistoryTitle = effectiveTitle
             return

@@ -269,44 +269,17 @@ object PetalGeckoRuntime {
             Log.w(TAG, "Could not register autocomplete delegate: ${t.message}")
         }
 
-        try {
-            newRuntime.webNotificationDelegate =
-                PetalWebNotificationDelegate(appContext)
-            Log.i(TAG, "Registered PetalWebNotificationDelegate as web notification delegate")
-        } catch (t: Throwable) {
-            Log.w(TAG, "Could not register web notification delegate: ${t.message}")
-        }
-
-        try {
-            newRuntime.serviceWorkerDelegate = object : GeckoRuntime.ServiceWorkerDelegate {
-                override fun onOpenWindow(url: String): GeckoResult<org.mozilla.geckoview.GeckoSession> {
-                    val result = GeckoResult<org.mozilla.geckoview.GeckoSession>()
-                    val activity = foregroundActivity?.get()
-                    if (activity == null) {
-                        result.complete(null)
-                        return result
-                    }
-                    activity.runOnUiThread {
-                        try {
-                            val pair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
-                                context = activity,
-                                tabId = java.util.UUID.randomUUID().toString(),
-                                url = url,
-                                isIncognito = false,
-                                select = true
-                            )
-                            val gs = com.petal.browser.engine.gecko.PetalEngineBridge.getEngineGeckoSession(pair.second)
-                            result.complete(gs)
-                        } catch (t: Throwable) {
-                            result.completeExceptionally(t)
-                        }
-                    }
-                    return result
-                }
+        // Register legacy PetalWebNotificationDelegate only when Mozilla AC Phase 1 is disabled.
+        // When Phase 1 is enabled, WebNotificationFeature in PetalEngineStore handles web notifications.
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
+        if (!sp.getBoolean("sp_ac_phase1", false)) {
+            try {
+                newRuntime.webNotificationDelegate =
+                    PetalWebNotificationDelegate(appContext)
+                Log.i(TAG, "Registered PetalWebNotificationDelegate as web notification delegate")
+            } catch (t: Throwable) {
+                Log.w(TAG, "Could not register web notification delegate: ${t.message}")
             }
-            Log.i(TAG, "Registered GeckoRuntime.ServiceWorkerDelegate for openWindow")
-        } catch (t: Throwable) {
-            Log.w(TAG, "Could not register serviceWorkerDelegate: ${t.message}")
         }
 
         runtime = newRuntime

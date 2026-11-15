@@ -223,13 +223,13 @@ class PetalBrowserPromptBridge(
             }
 
             is PromptRequest.TimeSelection -> {
-                val mode = when (request.type) {
-                    PromptRequest.TimeSelection.Type.TIME -> "time"
-                    PromptRequest.TimeSelection.Type.DATE_AND_TIME -> "datetime-local"
-                    PromptRequest.TimeSelection.Type.MONTH -> "month"
-                    else -> "date"
+                val (mode, pattern) = when (request.type) {
+                    PromptRequest.TimeSelection.Type.TIME -> "time" to "HH:mm"
+                    PromptRequest.TimeSelection.Type.DATE_AND_TIME -> "datetime-local" to "yyyy-MM-dd'T'HH:mm"
+                    PromptRequest.TimeSelection.Type.MONTH -> "month" to "yyyy-MM"
+                    else -> "date" to "yyyy-MM-dd"
                 }
-                val format = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                val format = SimpleDateFormat(pattern, Locale.US)
                 val initialStr = request.initialDate?.let { format.format(it) }
                 val minStr = request.minimumDate?.let { format.format(it) }
                 val maxStr = request.maximumDate?.let { format.format(it) }
@@ -290,13 +290,14 @@ class PetalBrowserPromptBridge(
                     return
                 }
 
+                val isIncognito = store.state.selectedTab?.content?.private ?: false
                 if (blockPopups) {
                     val mainAct = activity as? com.petal.browser.activity.MainActivity
                     if (mainAct != null && !target.isNullOrBlank()) {
                         com.petal.browser.compose.menu.PetalPopupBlockedBridge.show(
                             activity = mainAct,
                             targetUrl = target,
-                            isIncognito = false,
+                            isIncognito = isIncognito,
                             onAllowOnce = {
                                 request.onAllow()
                                 consume(tabId, request)
@@ -402,16 +403,18 @@ class PetalBrowserPromptBridge(
                     initialUsername = username,
                     initialPassword = password,
                     onSave = { finalUser, finalPass ->
-                        val guid = UUID.randomUUID().toString()
-                        PetalCredentialVault.save(
-                            PetalCredential(
-                                id = guid,
-                                domain = domain,
-                                originUrl = domain,
-                                username = finalUser,
-                                password = finalPass
+                        if (!com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
+                            val guid = UUID.randomUUID().toString()
+                            PetalCredentialVault.save(
+                                PetalCredential(
+                                    id = guid,
+                                    domain = domain,
+                                    originUrl = domain,
+                                    username = finalUser,
+                                    password = finalPass
+                                )
                             )
-                        )
+                        }
                         request.onConfirm(loginEntry.copy(username = finalUser, password = finalPass))
                         consume(tabId, request)
                     },
@@ -428,13 +431,51 @@ class PetalBrowserPromptBridge(
             }
 
             is PromptRequest.SelectLoginPrompt -> {
-                val login = request.logins.firstOrNull()
-                if (login != null) {
-                    request.onConfirm(login)
-                } else {
+                if (request.logins.isEmpty()) {
                     request.onDismiss()
+                    consume(tabId, request)
+                    return
                 }
-                consume(tabId, request)
+                if (request.logins.size == 1) {
+                    val onlyLogin = request.logins.first()
+                    PetalExpressivePromptBridge.showConfirm(
+                        activity = activity,
+                        title = "Autofill Account",
+                        message = "Sign in as ${onlyLogin.username.orEmpty().ifBlank { "saved account" }} on ${onlyLogin.origin}?",
+                        onConfirm = {
+                            request.onConfirm(onlyLogin)
+                            consume(tabId, request)
+                        },
+                        onCancel = {
+                            request.onDismiss()
+                            consume(tabId, request)
+                        }
+                    )
+                } else {
+                    val options = request.logins.mapIndexed { index, login ->
+                        PetalChoiceOption(
+                            id = index.toString(),
+                            label = login.username.orEmpty().ifBlank { "Account ${index + 1}" },
+                            selected = index == 0
+                        )
+                    }
+                    PetalExpressivePromptBridge.showChoice(
+                        activity = activity,
+                        title = "Select Account",
+                        choices = options,
+                        multiple = false,
+                        onConfirm = { selectedIds ->
+                            val selectedIndex = selectedIds.firstOrNull()?.toIntOrNull() ?: 0
+                            val chosen = request.logins.getOrNull(selectedIndex) ?: request.logins.first()
+                            request.onConfirm(chosen)
+                            consume(tabId, request)
+                        },
+                        onCancel = {
+                            request.onDismiss()
+                            consume(tabId, request)
+                        }
+                    )
+                }
             }
 
             else -> {

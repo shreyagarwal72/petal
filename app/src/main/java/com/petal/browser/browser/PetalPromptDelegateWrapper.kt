@@ -176,7 +176,7 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.FilePrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine!!.onFilePrompt(session, prompt)
+        if (isPhase2) return engine?.onFilePrompt(session, prompt) ?: inner().onFilePrompt(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onFilePrompt(session, prompt)
                else engine?.onFilePrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -186,35 +186,35 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSaveOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        if (isPhase2) engine!!.onCreditCardSave(session, request)
+        if (isPhase2) engine?.onCreditCardSave(session, request) ?: inner().onCreditCardSave(session, request)
         else engine?.onCreditCardSave(session, request) ?: inner().onCreditCardSave(session, request)
 
     override fun onCreditCardSelect(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSelectOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        if (isPhase2) engine!!.onCreditCardSelect(session, request)
+        if (isPhase2) engine?.onCreditCardSelect(session, request) ?: inner().onCreditCardSelect(session, request)
         else engine?.onCreditCardSelect(session, request) ?: inner().onCreditCardSelect(session, request)
 
     override fun onAddressSave(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.AddressSaveOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        if (isPhase2) engine!!.onAddressSave(session, request)
+        if (isPhase2) engine?.onAddressSave(session, request) ?: inner().onAddressSave(session, request)
         else engine?.onAddressSave(session, request) ?: inner().onAddressSave(session, request)
 
     override fun onAddressSelect(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.AddressSelectOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        if (isPhase2) engine!!.onAddressSelect(session, request)
+        if (isPhase2) engine?.onAddressSelect(session, request) ?: inner().onAddressSelect(session, request)
         else engine?.onAddressSelect(session, request) ?: inner().onAddressSelect(session, request)
 
     override fun onSelectIdentityCredentialProvider(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.IdentityCredential.ProviderSelectorPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine!!.onSelectIdentityCredentialProvider(session, prompt)
+        if (isPhase2) return engine?.onSelectIdentityCredentialProvider(session, prompt) ?: inner().onSelectIdentityCredentialProvider(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onSelectIdentityCredentialProvider(session, prompt)
                else engine?.onSelectIdentityCredentialProvider(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -224,7 +224,7 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.IdentityCredential.AccountSelectorPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine!!.onSelectIdentityCredentialAccount(session, prompt)
+        if (isPhase2) return engine?.onSelectIdentityCredentialAccount(session, prompt) ?: inner().onSelectIdentityCredentialAccount(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onSelectIdentityCredentialAccount(session, prompt)
                else engine?.onSelectIdentityCredentialAccount(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -234,7 +234,7 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.IdentityCredential.PrivacyPolicyPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine!!.onShowPrivacyPolicyIdentityCredential(session, prompt)
+        if (isPhase2) return engine?.onShowPrivacyPolicyIdentityCredential(session, prompt) ?: inner().onShowPrivacyPolicyIdentityCredential(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onShowPrivacyPolicyIdentityCredential(session, prompt)
                else engine?.onShowPrivacyPolicyIdentityCredential(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())

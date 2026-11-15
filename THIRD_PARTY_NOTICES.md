@@ -27,10 +27,10 @@ SOFTWARE.
 
 ---
 
-## Mozilla Android Components
+## Mozilla Android Components & GeckoView
 
-Portions of this software incorporate components from Mozilla Android Components (version 159.0.1),
+Portions of this software incorporate components from Mozilla Android Components (version 161.0b3) and Mozilla GeckoView (Beta 161),
 licensed under the Mozilla Public License, v. 2.0. You may obtain a copy of the
 MPL 2.0 at https://mozilla.org/MPL/2.0/.
-Source code for Mozilla Android Components is available at https://github.com/mozilla-mobile/firefox-android.
+Source code for Mozilla Android Components and GeckoView is available at https://github.com/mozilla-mobile/firefox-android and https://hg.mozilla.org/releases/mozilla-beta.
 

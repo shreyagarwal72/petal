@@ -970,6 +970,8 @@
     <string name="ui_isolate_cross_site_trackers_and">Isolate cross-site trackers and block known tracking scripts inside Custom Tabs</string>
     <string name="ui_auto_open_external_apps">Auto Open External Apps</string>
     <string name="ui_allow_youtube_maps_play_store">Allow YouTube, Maps &amp; Play Store links to open in external native apps instead of Petal</string>
+    <string name="open_external_app_title">Open External Application</string>
+    <string name="open_external_app_message">Opening this link will launch %s outside of Private Browsing. Your activity in this app will not be protected by Private Browsing.\n\nDo you want to continue?</string>
     <string name="ui_appearance_theme">Appearance &amp; Theme</string>
     <string name="ui_fonts_theme_modes_color_palettes">Fonts, theme modes, color palettes, AMOLED &amp; Material You</string>
     <string name="ui_theme_color_palette">Theme &amp; Color Palette</string>

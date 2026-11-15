@@ -13,15 +13,22 @@
 - **Native Predictive Back:** Integrated `enableOnBackInvokedCallback="true"` with system-level back handlers for fluid back-gesture animations that finish the standalone viewer directly without double animations or lingering process state.
 - **Clean Intent Separation:** Retained browser handling for web links, HTML/XHTML, password vault, and extensions while delegating media and file viewing directly to the isolated viewers.
 
-#### 🏗️ Full Mozilla Android Components Migration (Phases 1–4)
-- **Phase 1 (External Schemes, Notifications, Find in Page & Assets):** Handled external schemes via `feature-app-links` and `feature-intent`, Web Notifications via `feature-webnotifications` and `feature-webpush`, Find-in-page via `feature-findinpage`, and tabs/icons via `browser-thumbnails` and `browser-icons`.
-- **Phase 2 (Permissions, Prompts, Search, Top Sites):** Wired `feature-sitepermissions` with DRM gating, integrated `feature-prompts` across all 14 engine prompt types with Petal M3E + Liquid Glass sheets, and synchronized search engines and top sites.
-- **Phase 3 (Places, Syncable Logins & Session Restore):** Migrated bookmarks and history to `PlacesHistoryStorage` and `PlacesBookmarksStorage` with automated engine tracking (`HistoryDelegate`), upgraded credential vault to `SyncableLoginsStorage` with `GeckoAutocompleteStorageDelegate`, and connected `SessionStorage` / `AutoSave`.
-- **Phase 4 (Add-on Manager, PWA, Custom Tabs & Memory Management):** Integrated `feature-addons` with `AddonManager` and `AMOAddonsProvider`, persisted PWA manifests via `ManifestStorage`, refined Custom Tabs with `CustomTabConfigHelper`, and added `TabsRemovedMiddleware` alongside `SessionPrioritizationMiddleware`.
+#### 🏗️ Full Mozilla Android Components Migration & Wiring Hardening
+- **Phase 1 (External Schemes, Web Notifications & Media):** Handled external scheme resolution via `feature-app-links` with strict user-gesture gating against automated script launches; wired Web Notifications via `feature-webnotifications` complying with Android 12+ notification trampoline guidelines; streamlined `ServiceWorkerDelegate` tab creation with background cold-start resume queueing; unified tab thumbnails and icons via `browser-thumbnails` and `browser-icons`.
+- **Phase 2 (Permissions, Prompts, Search, Top Sites):** Wired `feature-sitepermissions` with origin and private session isolation; eliminated prompt feature redundancy by cleanly isolating `PromptFeature` and `PetalBrowserPromptBridge`; added support for `TimeSelection` format parsing, login credential selection sheet, FedCM identity credentials, and Liquid Glass dialog presentation.
+- **Phase 3 (Places, Syncable Logins & Session Restore):** Re-established bidirectional visit forwarding to Mozilla's `HistoryDelegate` while protecting private tabs; upgraded credential vault autocomplete to `SyncableLoginsStorage`; harmonized history title recording across page navigation events.
+- **Phase 4 (Add-on Manager, PWA, Custom Tabs):** Maintained web extensions management via `AddonManager`, persisted PWA manifests via `ManifestStorage`, and refined Custom Tabs configuration with `CustomTabConfigHelper`.
+- **Engine Variant Guard:** Introduced the `checkGeckoViewVariants` Gradle verification task to ensure strict single-engine variant resolution during APK and AAB bundle builds.
+
+#### 👤 Unified Account & Profile Center
+- **Account Redesign Integration:** Merged comprehensive `PetalAccountScreen` and `PetalAccountRepository` with Material 3 Expressive and Liquid Glass theming.
+- **Seamless Firefox Sync & Local Profiles:** Harmonized Firefox Account cloud sync (`FirefoxAccountSyncScreen`) and local user profile switches (`PetalUserProfileManager`) under a unified account management hub.
+- **App Lock & Quick Tools Integration:** Embedded biometric/PIN app lock controls into Quick Tools and settings categories.
 
 #### ⚡ Build System & CI/CD Speed Optimization
 - **WASM & Rust Engine Caching:** Added `taiki-e/install-action@v2` for `wasm-pack`, `Swatinem/rust-cache@v2` for `native/adblock_rs`, and cached `petal_network_blocker/wasm` assets to bypass redundant compiles.
 - **Fast Build ABI Filtering:** Added `-PfastBuild` property to build only `arm64-v8a` during normal PR and branch pushes, preserving full 4-ABI + Universal APK bundles for tags and releases.
+- **Play Store Bundle Isolation:** Separated Github release APK builds from Play Store AAB bundle generation with `-PnoSplits` to prevent AGP 9.x Proto split resource conflicts.
 
 
 ### v4.8.0 — 🛡️ Full-Spectrum Master Engine, Privacy & Download Consolidation

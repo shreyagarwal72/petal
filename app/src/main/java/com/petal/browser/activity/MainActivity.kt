@@ -222,6 +222,10 @@ class MainActivity : FragmentActivity(), BrowserController {
         super.onResume()
         com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this)
         applyImmersiveFullscreen()
+        com.petal.browser.engine.gecko.PetalEngineStore.pendingTabSelectionOnResume?.let { pendingId ->
+            com.petal.browser.engine.gecko.PetalEngineStore.pendingTabSelectionOnResume = null
+            viewModel.selectTab(pendingId)
+        }
         try {
             window.decorView.isFocusableInTouchMode = true
             window.decorView.requestFocus()

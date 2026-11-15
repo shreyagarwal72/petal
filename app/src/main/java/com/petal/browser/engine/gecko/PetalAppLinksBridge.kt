@@ -83,9 +83,9 @@ object PetalAppLinksBridge {
         }
 
         // Firefox security semantics: never launch an external app without a direct user gesture.
-        // Scripted background redirects without user input are blocked from opening apps.
-        if (!hasUserGesture && !isDirectNavigation && isRedirect) {
-            Log.w(TAG, "Blocked unsolicited external link redirect without user gesture: $uri")
+        // Scripted background redirects, iframe navigations, and automated calls without user input are blocked from opening apps.
+        if (!hasUserGesture && !isDirectNavigation) {
+            Log.w(TAG, "Blocked unsolicited external launch without user gesture: $uri")
             return true
         }
 
@@ -192,16 +192,14 @@ object PetalAppLinksBridge {
     ) {
         if (activity.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && activity.isDestroyed)) return
         val targetName = appName.ifBlank { "an external application" }
-        PetalAlertDialogBuilder(activity)
-            .setTitle("Open External Application")
-            .setMessage("Opening this link will launch $targetName outside of Private Browsing. Your activity in $targetName will not be protected by Private Browsing.\n\nDo you want to continue?")
-            .setPositiveButton("Open") { dialog, _ ->
-                dialog.dismiss()
-                onConfirmed()
-            }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
+        val title = activity.getString(com.petal.browser.R.string.open_external_app_title)
+        val message = activity.getString(com.petal.browser.R.string.open_external_app_message, targetName)
+        com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
+            activity,
+            title,
+            message,
+            onConfirm = { onConfirmed() },
+            onCancel = { }
+        )
     }
 }

@@ -56,6 +56,9 @@ object PetalFxa {
      * OAuth client registered with Mozilla. This is the public Mozilla Reference Browser client. For a
      * released product, request your own client_id and redirect URL from the Firefox Accounts team and
      * change these two constants (https://mozilla.github.io/application-services/docs/accounts/welcome.html).
+     *
+     * TODO(release): Petal still signs in as the Reference Browser. Request a Petal-owned client_id and
+     * redirect URL from Mozilla before shipping, then update both constants below.
      */
     const val CLIENT_ID = "3c49430b43dfba77"
     const val REDIRECT_URL = "https://accounts.firefox.com/oauth/success/$CLIENT_ID"
@@ -146,14 +149,21 @@ object PetalFxa {
 
     private val accountObserver = object : AccountObserver {
         override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
-            _state.value = FxaUi.SignedIn(m()?.accountProfile()?.email.orEmpty(), m()?.accountProfile()?.displayName, m()?.accountProfile()?.avatar?.url)
+            val p = m()?.accountProfile()
+            _state.value = FxaUi.SignedIn(p?.email.orEmpty(), p?.displayName, p?.avatar?.url)
+            publishIdentity(p?.email, p?.displayName, p?.avatar?.url)
             refreshDevices()
             syncNow()
         }
         override fun onProfileUpdated(profile: Profile) {
             _state.value = FxaUi.SignedIn(profile.email.orEmpty(), profile.displayName, profile.avatar?.url)
+            publishIdentity(profile.email, profile.displayName, profile.avatar?.url)
         }
-        override fun onLoggedOut() { _state.value = FxaUi.SignedOut; _devices.value = emptyList() }
+        override fun onLoggedOut() {
+            _state.value = FxaUi.SignedOut
+            _devices.value = emptyList()
+            publishIdentity(null, null, null)
+        }
         override fun onAuthenticationProblems() { _state.value = FxaUi.NeedsReauth }
         override fun onFlowError(error: AuthFlowError) {
             _state.value = FxaUi.SignedOut
@@ -187,6 +197,12 @@ object PetalFxa {
     }
 
     private fun m() = manager
+
+    /** Mirrors the Mozilla account into Petal's shared profile so home, progress and account all agree. */
+    private fun publishIdentity(email: String?, name: String?, avatarUrl: String?) {
+        if (!::appContext.isInitialized) return
+        try { com.petal.browser.account.PetalUserProfileManager.onFirefoxState(appContext, email, name, avatarUrl) } catch (_: Throwable) {}
+    }
 
     // ── sign in / out ──
     suspend fun beginSignIn(): String? {

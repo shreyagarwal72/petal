@@ -327,9 +327,7 @@ dependencies {
     implementation 'org.mozilla.components:feature-recentlyclosed:161.0b3'
     implementation 'org.mozilla.components:feature-webcompat:161.0b3'
     implementation 'org.mozilla.components:feature-media:161.0b3'
-    implementation 'org.mozilla.components:feature-findinpage:161.0b3'
     implementation 'org.mozilla.components:feature-webnotifications:161.0b3'
-    implementation 'org.mozilla.components:feature-push:161.0b3'
 
     // Android Components Phase 2: Web Platform Features (161.0b3)
     implementation 'org.mozilla.components:feature-addons:161.0b3'
@@ -345,7 +343,6 @@ dependencies {
     implementation 'org.mozilla.components:browser-icons:161.0b3'
     implementation 'org.mozilla.components:browser-thumbnails:161.0b3'
     implementation 'org.mozilla.components:lib-publicsuffixlist:161.0b3'
-    implementation 'org.mozilla.components:feature-intent:161.0b3'
     implementation 'org.mozilla.components:feature-app-links:161.0b3'
 
     // Firefox Account + Firefox Sync (official Mozilla Android Components 161.0b3)
@@ -365,4 +362,25 @@ dependencies {
     // Shizuku API & Provider for direct APK installation without root
     implementation 'dev.rikka.shizuku:api:13.1.5'
     implementation 'dev.rikka.shizuku:provider:13.1.5'
+}
+
+tasks.register('checkGeckoViewVariants') {
+    description = 'Verifies that only a single GeckoView engine variant resolves to prevent APK conflicts.'
+    doLast {
+        ['githubReleaseRuntimeClasspath', 'playReleaseRuntimeClasspath'].each { configName ->
+            def config = configurations.findByName(configName)
+            if (config != null && config.canBeResolved) {
+                def gvVariants = config.resolvedConfiguration.resolvedArtifacts.findAll {
+                    it.moduleVersion.id.group == 'org.mozilla.geckoview' &&
+                    (it.moduleVersion.id.name == 'geckoview' || it.moduleVersion.id.name == 'geckoview-beta' || it.moduleVersion.id.name == 'geckoview-nightly')
+                }.collect { it.moduleVersion.id.name }.unique()
+                if (gvVariants.size() > 1) {
+                    throw new GradleException("Multiple GeckoView variants resolved in ${configName}: ${gvVariants}. Only one engine variant is allowed!")
+                }
+            }
+        }
+    }
+}
+tasks.matching { it.name.startsWith("assemble") || it.name.startsWith("bundle") }.configureEach {
+    dependsOn "checkGeckoViewVariants"
 }

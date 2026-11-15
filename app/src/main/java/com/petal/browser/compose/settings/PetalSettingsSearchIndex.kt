@@ -510,6 +510,13 @@ object PetalSettingsSearchIndex {
             keywords = listOf("sync", "firefox", "fxa", "account", "mozilla", "bookmarks sync", "history sync", "tabs sync", "send to device")
         ),
         SettingsSearchItem(
+            id = "app_lock_config",
+            title = "App Lock",
+            subtitle = "Require fingerprint or a passcode every time Petal opens",
+            category = SettingsCategory.APP_LOCK,
+            keywords = listOf("lock", "app lock", "passcode", "password", "pin", "fingerprint", "biometric", "protect", "profile lock")
+        ),
+        SettingsSearchItem(
             id = "extensions_manager",
             title = "Extensions & Add-ons",
             subtitle = "Install and manage Firefox WebExtensions, uBlock Origin, Dark Reader, and custom scripts",
@@ -522,6 +529,7 @@ object PetalSettingsSearchIndex {
         SettingsCategory.API_INTEGRATIONS,
         SettingsCategory.APPEARANCE,
         SettingsCategory.PRIVACY,
+        SettingsCategory.APP_LOCK,
         SettingsCategory.SEARCH_HOMEPAGE,
         SettingsCategory.DISPLAY_ZOOM,
         SettingsCategory.ADDRESS_BAR,

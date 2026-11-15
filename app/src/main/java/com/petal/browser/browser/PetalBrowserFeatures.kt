@@ -31,35 +31,11 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
         androidPhotoPicker = null
     )
     fun start() {
-        // Suppress stock Mozilla DialogFragments (Prompts, Choices)
-        // so only Petal's Live Liquid Glass & Material 3 Expressive overlays / bottom sheets render
-        activity.supportFragmentManager.registerFragmentLifecycleCallbacks(
-            object : androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
-                override fun onFragmentAttached(
-                    fm: androidx.fragment.app.FragmentManager,
-                    f: androidx.fragment.app.Fragment,
-                    context: android.content.Context
-                ) {
-                    val name = f.javaClass.name
-                    val simpleName = f.javaClass.simpleName
-                    if (name.contains("mozilla.components.feature.prompts") ||
-                        simpleName.contains("PromptDialog", ignoreCase = true) ||
-                        simpleName.contains("ChoiceDialog", ignoreCase = true)
-                    ) {
-                        try {
-                            if (f is androidx.fragment.app.DialogFragment) {
-                                f.dismissAllowingStateLoss()
-                            }
-                        } catch (_: Throwable) {}
-                    }
-                }
-            },
-            true
-        )
         mediaFullscreen.start()
-        prompts.start()
         if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled()) {
             promptBridge.start()
+        } else {
+            prompts.start()
         }
     }
 

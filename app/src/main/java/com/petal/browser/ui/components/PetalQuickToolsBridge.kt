@@ -384,6 +384,11 @@ object PetalQuickToolsBridge {
                 }
             }
 
+            QuickToolId.APP_LOCK -> {
+                // Opens the App Lock page directly as its own overlay with its own back handling.
+                com.petal.browser.compose.security.PetalAppLockBridge.showConfig(activity, Runnable { })
+            }
+
             QuickToolId.TORRENT_MAGNET -> {
                 evaluateJavascript(controller, """
                     (function() {

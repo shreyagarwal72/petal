@@ -38,8 +38,22 @@ object PetalSitePermissionsBridge {
     @Volatile
     private var storageInstance: OnDiskSitePermissionsStorage? = null
 
-    // Session grants for temporary non-remembered decisions or incognito tabs
+    // Session grants for temporary non-remembered decisions or incognito tabs:
+    // Key format: "$isPrivate#$origin#$permKey" to prevent private-tab grants from leaking into normal tabs.
     private val sessionGrants = ConcurrentHashMap<String, SitePermissions.Status>()
+
+    fun clearSessionGrants(isPrivate: Boolean? = null, origin: String? = null) {
+        if (isPrivate == null && origin == null) {
+            sessionGrants.clear()
+            return
+        }
+        sessionGrants.keys.removeIf { key ->
+            val parts = key.split("#")
+            val keyPrivate = parts.getOrNull(0)?.toBooleanStrictOrNull()
+            val keyOrigin = parts.getOrNull(1)
+            (isPrivate == null || keyPrivate == isPrivate) && (origin == null || keyOrigin == origin)
+        }
+    }
 
     fun getStorage(context: Context): OnDiskSitePermissionsStorage {
         return storageInstance ?: synchronized(this) {
@@ -91,10 +105,11 @@ object PetalSitePermissionsBridge {
                             else -> SitePermissions.Status.NO_DECISION
                         }
                         if (status != SitePermissions.Status.NO_DECISION) {
-                            val parts = key.removePrefix("perm_").split("_", limit = 2)
-                            if (parts.size == 2) {
-                                val typeStr = parts[0]
-                                val origin = parts[1]
+                            val rem = key.removePrefix("perm_")
+                            val firstUnder = rem.indexOf('_')
+                            if (firstUnder > 0) {
+                                val typeStr = rem.substring(0, firstUnder)
+                                val origin = rem.substring(firstUnder + 1)
                                 val permission = when (typeStr) {
                                     "camera" -> Permission.CAMERA
                                     "microphone", "mic" -> Permission.MICROPHONE
@@ -107,7 +122,7 @@ object PetalSitePermissionsBridge {
                                 }
                                 if (permission != null && origin.isNotBlank()) {
                                     try {
-                                        val existing = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
+                                        val existing = storage.findSitePermissionsBy(origin, false, false) ?: SitePermissions(origin)
                                         val updated = when (permission) {
                                             Permission.CAMERA -> existing.copy(camera = status)
                                             Permission.MICROPHONE -> existing.copy(microphone = status)
@@ -170,8 +185,8 @@ object PetalSitePermissionsBridge {
 
         scope.launch {
             val sitePerms = storage.findSitePermissionsBy(origin, isPrivate, false)
-            val sessionCam = sessionGrants["camera#$origin"]
-            val sessionMic = sessionGrants["microphone#$origin"]
+            val sessionCam = sessionGrants["$isPrivate#$origin#camera"]
+            val sessionMic = sessionGrants["$isPrivate#$origin#microphone"]
 
             val camStatus = sessionCam ?: sitePerms?.camera ?: SitePermissions.Status.NO_DECISION
             val micStatus = sessionMic ?: sitePerms?.microphone ?: SitePermissions.Status.NO_DECISION
@@ -180,12 +195,12 @@ object PetalSitePermissionsBridge {
                 if (camStatus == SitePermissions.Status.ALLOWED && micStatus == SitePermissions.Status.ALLOWED) {
                     PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.CAMERA, true)
                     PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.MICROPHONE, true)
-                    callback.grant(video?.firstOrNull(), audio?.firstOrNull())
+                    act.runOnUiThread { callback.grant(video?.firstOrNull(), audio?.firstOrNull()) }
                     return@launch
                 } else if (camStatus == SitePermissions.Status.BLOCKED || micStatus == SitePermissions.Status.BLOCKED) {
                     PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.CAMERA, false)
                     PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.MICROPHONE, false)
-                    callback.reject()
+                    act.runOnUiThread { callback.reject() }
                     return@launch
                 }
 
@@ -197,30 +212,30 @@ object PetalSitePermissionsBridge {
                         onAllow = { remember ->
                             if (remember && !isPrivate) {
                                 scope.launch {
-                                    val current = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
+                                    val current = storage.findSitePermissionsBy(origin, false, false) ?: SitePermissions(origin)
                                     storage.update(current.copy(camera = SitePermissions.Status.ALLOWED, microphone = SitePermissions.Status.ALLOWED), false)
                                 }
                             } else {
-                                sessionGrants["camera#$origin"] = SitePermissions.Status.ALLOWED
-                                sessionGrants["microphone#$origin"] = SitePermissions.Status.ALLOWED
+                                sessionGrants["$isPrivate#$origin#camera"] = SitePermissions.Status.ALLOWED
+                                sessionGrants["$isPrivate#$origin#microphone"] = SitePermissions.Status.ALLOWED
                             }
                             PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.CAMERA, true)
                             PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.MICROPHONE, true)
-                            callback.grant(video?.firstOrNull(), audio?.firstOrNull())
+                            act.runOnUiThread { callback.grant(video?.firstOrNull(), audio?.firstOrNull()) }
                         },
                         onDeny = { remember ->
                             if (remember && !isPrivate) {
                                 scope.launch {
-                                    val current = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
+                                    val current = storage.findSitePermissionsBy(origin, false, false) ?: SitePermissions(origin)
                                     storage.update(current.copy(camera = SitePermissions.Status.BLOCKED, microphone = SitePermissions.Status.BLOCKED), false)
                                 }
                             } else {
-                                sessionGrants["camera#$origin"] = SitePermissions.Status.BLOCKED
-                                sessionGrants["microphone#$origin"] = SitePermissions.Status.BLOCKED
+                                sessionGrants["$isPrivate#$origin#camera"] = SitePermissions.Status.BLOCKED
+                                sessionGrants["$isPrivate#$origin#microphone"] = SitePermissions.Status.BLOCKED
                             }
                             PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.CAMERA, false)
                             PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.MICROPHONE, false)
-                            callback.reject()
+                            act.runOnUiThread { callback.reject() }
                         }
                     )
                 }
@@ -233,11 +248,11 @@ object PetalSitePermissionsBridge {
 
             if (status == SitePermissions.Status.ALLOWED) {
                 PetalActiveMediaSensors.setRecording(origin, permType, true)
-                callback.grant(video?.firstOrNull(), audio?.firstOrNull())
+                act.runOnUiThread { callback.grant(video?.firstOrNull(), audio?.firstOrNull()) }
                 return@launch
             } else if (status == SitePermissions.Status.BLOCKED) {
                 PetalActiveMediaSensors.setRecording(origin, permType, false)
-                callback.reject()
+                act.runOnUiThread { callback.reject() }
                 return@launch
             }
 
@@ -249,28 +264,28 @@ object PetalSitePermissionsBridge {
                     onAllow = { remember ->
                         if (remember && !isPrivate) {
                             scope.launch {
-                                val current = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
+                                val current = storage.findSitePermissionsBy(origin, false, false) ?: SitePermissions(origin)
                                 val updated = if (hasVideo) current.copy(camera = SitePermissions.Status.ALLOWED) else current.copy(microphone = SitePermissions.Status.ALLOWED)
                                 storage.update(updated, false)
                             }
                         } else {
-                            sessionGrants["$permKey#$origin"] = SitePermissions.Status.ALLOWED
+                            sessionGrants["$isPrivate#$origin#$permKey"] = SitePermissions.Status.ALLOWED
                         }
                         PetalActiveMediaSensors.setRecording(origin, permType, true)
-                        callback.grant(video?.firstOrNull(), audio?.firstOrNull())
+                        act.runOnUiThread { callback.grant(video?.firstOrNull(), audio?.firstOrNull()) }
                     },
                     onDeny = { remember ->
                         if (remember && !isPrivate) {
                             scope.launch {
-                                val current = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
+                                val current = storage.findSitePermissionsBy(origin, false, false) ?: SitePermissions(origin)
                                 val updated = if (hasVideo) current.copy(camera = SitePermissions.Status.BLOCKED) else current.copy(microphone = SitePermissions.Status.BLOCKED)
                                 storage.update(updated, false)
                             }
                         } else {
-                            sessionGrants["$permKey#$origin"] = SitePermissions.Status.BLOCKED
+                            sessionGrants["$isPrivate#$origin#$permKey"] = SitePermissions.Status.BLOCKED
                         }
                         PetalActiveMediaSensors.setRecording(origin, permType, false)
-                        callback.reject()
+                        act.runOnUiThread { callback.reject() }
                     }
                 )
             }
@@ -332,7 +347,7 @@ object PetalSitePermissionsBridge {
         }
 
         val storage = getStorage(context)
-        val sessionStatus = sessionGrants["$permKey#$origin"]
+        val sessionStatus = sessionGrants["$isPrivate#$origin#$permKey"]
 
         scope.launch {
             val sitePerms = storage.findSitePermissionsBy(origin, isPrivate, false)
@@ -340,10 +355,10 @@ object PetalSitePermissionsBridge {
             val effectiveStatus = sessionStatus ?: storedStatus
 
             if (effectiveStatus == SitePermissions.Status.ALLOWED) {
-                result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                act.runOnUiThread { result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW) }
                 return@launch
             } else if (effectiveStatus == SitePermissions.Status.BLOCKED) {
-                result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
+                act.runOnUiThread { result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY) }
                 return@launch
             }
 
@@ -355,7 +370,7 @@ object PetalSitePermissionsBridge {
                     onAllow = { remember ->
                         if (remember && !isPrivate && acPermission != null) {
                             scope.launch {
-                                val current = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
+                                val current = storage.findSitePermissionsBy(origin, false, false) ?: SitePermissions(origin)
                                 val updated = when (acPermission) {
                                     Permission.LOCATION -> current.copy(location = SitePermissions.Status.ALLOWED)
                                     Permission.NOTIFICATION -> current.copy(notification = SitePermissions.Status.ALLOWED)
@@ -368,14 +383,14 @@ object PetalSitePermissionsBridge {
                                 storage.update(updated, false)
                             }
                         } else {
-                            sessionGrants["$permKey#$origin"] = SitePermissions.Status.ALLOWED
+                            sessionGrants["$isPrivate#$origin#$permKey"] = SitePermissions.Status.ALLOWED
                         }
-                        result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                        act.runOnUiThread { result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW) }
                     },
                     onDeny = { remember ->
                         if (remember && !isPrivate && acPermission != null) {
                             scope.launch {
-                                val current = storage.findSitePermissionsBy(origin, false, true) ?: SitePermissions(origin)
+                                val current = storage.findSitePermissionsBy(origin, false, false) ?: SitePermissions(origin)
                                 val updated = when (acPermission) {
                                     Permission.LOCATION -> current.copy(location = SitePermissions.Status.BLOCKED)
                                     Permission.NOTIFICATION -> current.copy(notification = SitePermissions.Status.BLOCKED)
@@ -388,9 +403,9 @@ object PetalSitePermissionsBridge {
                                 storage.update(updated, false)
                             }
                         } else {
-                            sessionGrants["$permKey#$origin"] = SitePermissions.Status.BLOCKED
+                            sessionGrants["$isPrivate#$origin#$permKey"] = SitePermissions.Status.BLOCKED
                         }
-                        result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
+                        act.runOnUiThread { result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY) }
                     }
                 )
             }

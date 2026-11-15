@@ -97,7 +97,8 @@ enum class QuickToolId(
     SPOOF_IDENTITY("spoof_identity", "Spoof Identity", Icons.Rounded.Devices, "Change User-Agent", 12),
     FORCE_ZOOM("force_zoom", "Force Zoom", Icons.Rounded.ZoomIn, "Bypass zoom locks", 13),
     SCREENSHOT("screenshot", "Screenshot", Icons.Rounded.Screenshot, "Capture page screenshot", 14),
-    TORRENT_MAGNET("torrent_magnet", "Torrents", Icons.Rounded.Download, "Magnet & torrent links", 15);
+    TORRENT_MAGNET("torrent_magnet", "Torrents", Icons.Rounded.Download, "Magnet & torrent links", 15),
+    APP_LOCK("app_lock", "App Lock", Icons.Rounded.Lock, "Fingerprint or passcode", 16);
 
     val shape: androidx.compose.ui.graphics.Shape
         get() = RoundedCornerShape(12.dp)
