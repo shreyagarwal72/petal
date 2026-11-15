@@ -73,8 +73,9 @@ object PetalMediaSnifferOverlayBridge {
                     val tabController = act?.currentAlbumController as? com.petal.browser.browser.PetalTabViewController ?: act?.getOrCreateTabViewController()
                     tabController?.captureVideoHandoffState { handoff ->
                         val intent = Intent(activity, MediaPlayerActivity::class.java).apply {
-                            data = android.net.Uri.parse(request.url)
-                            type = request.mimeType
+                            action = Intent.ACTION_VIEW
+                            setDataAndType(android.net.Uri.parse(request.url), request.mimeType)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
                             if (handoff != null) {
                                 putExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_POSITION_MS, handoff.positionMs)
                                 putExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_SPEED, handoff.playbackSpeed)
@@ -85,8 +86,9 @@ object PetalMediaSnifferOverlayBridge {
                     } ?: run {
                         activity.startActivity(
                             Intent(activity, MediaPlayerActivity::class.java).apply {
-                                data = android.net.Uri.parse(request.url)
-                                type = request.mimeType
+                                action = Intent.ACTION_VIEW
+                                setDataAndType(android.net.Uri.parse(request.url), request.mimeType)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
                             }
                         )
                     }

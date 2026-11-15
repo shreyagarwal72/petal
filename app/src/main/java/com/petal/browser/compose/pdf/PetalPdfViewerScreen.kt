@@ -684,30 +684,39 @@ private fun PetalPdfViewerScreenImpl(
         }
     }
 
-    val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+    val hasInternalState = selectedTextLine != null ||
+        isTextEditMode ||
+        isEditMode ||
+        showFindBar ||
+        showJumpDialog ||
+        showReadingToneDialog ||
+        showAddNoteDialog ||
+        showThumbnailSheet ||
+        showInfoSheet ||
+        isAutoScrolling
 
-    val shouldTriggerPredictiveBack = !isTextEditMode && !isEditMode && !showFindBar
-
-    androidx.activity.compose.BackHandler(enabled = !shouldTriggerPredictiveBack) {
-        if (isTextEditMode) {
-            isTextEditMode = false
-            textEditUndoStack.clear()
-        } else if (isEditMode) {
-            isEditMode = false
-        } else if (showFindBar) {
-            showFindBar = false
+    androidx.activity.compose.BackHandler(enabled = hasInternalState) {
+        when {
+            selectedTextLine != null -> selectedTextLine = null
+            isTextEditMode -> {
+                isTextEditMode = false
+                textEditUndoStack.clear()
+            }
+            isEditMode -> isEditMode = false
+            showFindBar -> showFindBar = false
+            showJumpDialog -> showJumpDialog = false
+            showReadingToneDialog -> showReadingToneDialog = false
+            showAddNoteDialog -> showAddNoteDialog = false
+            showThumbnailSheet -> showThumbnailSheet = false
+            showInfoSheet -> showInfoSheet = false
+            isAutoScrolling -> isAutoScrolling = false
         }
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = shouldTriggerPredictiveBack,
-        onBack = onBackPress
+    CompositionLocalProvider(
+        com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides (if (glassOn) pdfWallpaper else null)
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-            CompositionLocalProvider(
-                com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides (if (glassOn) pdfWallpaper else null)
-            ) {
-            Scaffold(
+        Scaffold(
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = {
@@ -1128,8 +1137,6 @@ private fun PetalPdfViewerScreenImpl(
         }
     }
             }
-        }
-    }
 
     // ── Jump to Page Dialog ──
     if (showJumpDialog && pageCount > 0) {

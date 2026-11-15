@@ -147,13 +147,12 @@ fun PetalVideoPlayerOverlay(
     var isLongPressBoostActive by remember { mutableStateOf(false) }
     var speedBeforeBoost by remember { mutableFloatStateOf(playbackSpeed) }
 
-    val hasSubSheet = showSpeedSelector || showAspectSheet || showSubtitleSheet
-    if (hasSubSheet) {
-        androidx.activity.compose.BackHandler(enabled = true) {
-            showSpeedSelector = false
-            showAspectSheet = false
-            showSubtitleSheet = false
-        }
+    val hasSubSheet = showSpeedSelector || showAspectSheet || showSubtitleSheet || isControlsLocked
+    androidx.activity.compose.BackHandler(enabled = hasSubSheet) {
+        if (showSpeedSelector) showSpeedSelector = false
+        else if (showAspectSheet) showAspectSheet = false
+        else if (showSubtitleSheet) showSubtitleSheet = false
+        else if (isControlsLocked) isControlsLocked = false
     }
 
     // Auto-hide controls after 4 seconds of inactivity when playing and not locked

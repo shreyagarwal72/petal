@@ -391,26 +391,17 @@ fun PetalImageViewerScreen(
         LocalPetalGlassSource provides hostView,
         LocalPetalGlassWallpaper provides (if (isGlass) imageWallpaper else null)
     ) {
-        val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
-
         val hasSubOverlay = showInfoSheet || showCropDialog
-        if (hasSubOverlay) {
-            androidx.activity.compose.BackHandler(enabled = true) {
-                if (showCropDialog) showCropDialog = false
-                else if (showInfoSheet) showInfoSheet = false
-            }
+        androidx.activity.compose.BackHandler(enabled = hasSubOverlay) {
+            if (showCropDialog) showCropDialog = false
+            else if (showInfoSheet) showInfoSheet = false
         }
 
-        com.petal.browser.predictive.PetalPredictiveBackSurface(
-            enabled = !hasSubOverlay,
-            onBack = onBackPress
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
         ) {
-            com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black)
-                ) {
                     // ── Sibling 1: Image Gallery Viewport (Wallpaper Producer) ──
                     // IMPORTANT: captureGlassWallpaperLive is placed ONLY on this viewport sibling,
                     // completely avoiding recursive GraphicsLayer recording cycles with the overlay bars!
@@ -572,8 +563,6 @@ fun PetalImageViewerScreen(
                             .navigationBarsPadding()
                             .padding(bottom = 90.dp)
                     )
-                }
-            }
         }
 
         // ── Image Crop Dialog ──
@@ -627,6 +616,15 @@ private fun ZoomableImagePage(
         scaleAnim.snapTo(1f)
         offsetXAnim.snapTo(0f)
         offsetYAnim.snapTo(0f)
+    }
+
+    val isZoomed = scaleAnim.value > 1.05f
+    androidx.activity.compose.BackHandler(enabled = isZoomed) {
+        scope.launch {
+            scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
+            offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
+            offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
+        }
     }
 
     val gestureModifier = Modifier

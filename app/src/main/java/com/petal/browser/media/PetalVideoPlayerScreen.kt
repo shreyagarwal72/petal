@@ -208,16 +208,11 @@ fun PetalVideoPlayerScreen(
         LocalPetalGlassSource provides hostView,
         LocalPetalGlassWallpaper provides (if (isGlass) videoWallpaper else null)
     ) {
-        com.petal.browser.predictive.PetalPredictiveBackSurface(
-            enabled = true,
-            onBack = onClose
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color.Black),
         ) {
-            com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-                Box(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .background(Color.Black),
-                ) {
         // ExoPlayer PlayerView
         AndroidView(
             modifier = Modifier.fillMaxSize(),
@@ -313,7 +308,5 @@ fun PetalVideoPlayerScreen(
             )
         }
     }
-            }
-        }
-    }
+}
 }

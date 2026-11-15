@@ -366,7 +366,8 @@ class PetalMediaSessionService : Service() {
 
     private fun buildNotification(): Notification {
         val openIntent = Intent(this, targetActivityClass).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+            action = Intent.ACTION_VIEW
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_NEW_DOCUMENT
         }
         val openPendingIntent = PendingIntent.getActivity(
             this, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE

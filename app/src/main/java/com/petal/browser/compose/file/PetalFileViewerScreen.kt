@@ -296,16 +296,13 @@ fun PetalFileViewerScreen(
         LocalPetalGlassSource provides hostView,
         LocalPetalGlassWallpaper provides (if (isGlass) fileWallpaper else null)
     ) {
-        val backgroundSnapshot = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+        androidx.activity.compose.BackHandler(enabled = isEditing) {
+            isEditing = false
+        }
 
-        com.petal.browser.predictive.PetalPredictiveBackSurface(
-            enabled = true,
-            onBack = onBackPress
-        ) {
-            com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-                // Glass backdrop: records the page background so cards and the top bar
-                // frost and refract it live with authentic liquid glass.
-                Box(Modifier.fillMaxSize()) {
+        // Glass backdrop: records the page background so cards and the top bar
+        // frost and refract it live with authentic liquid glass.
+        Box(Modifier.fillMaxSize()) {
                     Box(
                         Modifier
                             .fillMaxSize()
@@ -371,8 +368,6 @@ fun PetalFileViewerScreen(
                 }
             }
         }
-    }
-}
 
 @Composable
 private fun PetalFileViewerTopBar(
@@ -604,6 +599,15 @@ private fun ArchiveViewerContent(
             return
         }
         selectedEntry = entry
+    }
+
+    val hasArchiveSubState = selectedEntry != null || currentPath.isNotEmpty()
+    androidx.activity.compose.BackHandler(enabled = hasArchiveSubState) {
+        if (selectedEntry != null) {
+            selectedEntry = null
+        } else if (currentPath.isNotEmpty()) {
+            navigateUp()
+        }
     }
 
     when {

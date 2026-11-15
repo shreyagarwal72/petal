@@ -11,19 +11,30 @@
 package com.petal.browser.activity
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import com.petal.browser.compose.file.PetalFileViewerBridge
+import com.petal.browser.compose.file.PetalFileViewerScreen
+import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.PetalAndroidUtils
 
 class FileViewerActivity : ComponentActivity() {
+
+    private var currentUri by mutableStateOf<Uri?>(null)
+    private var currentDisplayName by mutableStateOf("Document")
 
     override fun attachBaseContext(newBase: android.content.Context) {
         super.attachBaseContext(PetalAndroidUtils.applyLanguage(newBase))
@@ -35,24 +46,45 @@ class FileViewerActivity : ComponentActivity() {
         PetalAndroidUtils.initTheme(this)
         enableEdgeToEdge()
 
-        val controller = WindowCompat.getInsetsController(window, window.decorView)
-        controller.hide(WindowInsetsCompat.Type.systemBars())
-        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-
         val targetUri = extractTargetUri(intent)
         if (targetUri == null) {
             finish()
             return
         }
 
-        val displayName = extractDisplayName(targetUri)
-        val composeView = PetalFileViewerBridge.createFileViewerView(
-            activity = this,
-            fileUri = targetUri,
-            displayName = displayName,
-            onBackPress = { finish() },
-        )
-        setContentView(composeView)
+        currentUri = targetUri
+        currentDisplayName = extractDisplayName(targetUri)
+
+        setContent {
+            val uri = currentUri ?: return@setContent
+            PetalExpressiveTheme {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    PetalFileViewerScreen(
+                        fileUri = uri,
+                        displayName = currentDisplayName,
+                        onBackPress = { finish() },
+                    )
+                }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val targetUri = extractTargetUri(intent) ?: return
+        currentUri = targetUri
+        currentDisplayName = extractDisplayName(targetUri)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.show(WindowInsetsCompat.Type.systemBars())
     }
 
     private fun extractTargetUri(intent: Intent?): Uri? {

@@ -11,19 +11,32 @@
 package com.petal.browser.activity
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.petal.browser.compose.downloads.PetalImageViewerBridge
+import com.petal.browser.compose.downloads.PetalImageViewerScreen
+import com.petal.browser.compose.downloads.PetalViewerImageEntry
+import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.PetalAndroidUtils
 
 class ImageViewerActivity : ComponentActivity() {
+
+    private var currentUri by mutableStateOf<Uri?>(null)
+    private var currentDisplayName by mutableStateOf("Image")
 
     override fun attachBaseContext(newBase: android.content.Context) {
         super.attachBaseContext(PetalAndroidUtils.applyLanguage(newBase))
@@ -46,14 +59,43 @@ class ImageViewerActivity : ComponentActivity() {
             return
         }
 
-        val displayName = extractDisplayName(targetUri)
-        val composeView = PetalImageViewerBridge.createExternalViewerView(
-            activity = this,
-            contentUri = targetUri,
-            displayName = displayName,
-            onBackPress = { finish() },
-        )
-        setContentView(composeView)
+        currentUri = targetUri
+        currentDisplayName = extractDisplayName(targetUri)
+
+        setContent {
+            val uri = currentUri ?: return@setContent
+            val entry = PetalViewerImageEntry(
+                label = currentDisplayName,
+                sourceUrl = uri.toString(),
+            )
+            PetalExpressiveTheme {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    PetalImageViewerScreen(
+                        initialIndex = 0,
+                        entries = listOf(entry),
+                        onBackPress = { finish() },
+                    )
+                }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val targetUri = extractTargetUri(intent) ?: return
+        currentUri = targetUri
+        currentDisplayName = extractDisplayName(targetUri)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.show(WindowInsetsCompat.Type.systemBars())
     }
 
     private fun extractTargetUri(intent: Intent?): Uri? {

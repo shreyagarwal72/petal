@@ -38,15 +38,23 @@ object PetalFileOpener {
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
             }
-            // 2. PDF Documents -> Petal PDF Viewer
+            // 2. HTML & XHTML local files -> Petal Browser (MainActivity)
+            mime in setOf("text/html", "application/xhtml+xml") || ext in setOf("html", "htm", "xhtml") -> {
+                Intent(context, com.petal.browser.activity.MainActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    setDataAndType(uri, if (mime != "*/*") mime else "text/html")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            }
+            // 3. PDF Documents -> Petal PDF Viewer
             ext == "pdf" || mime == "application/pdf" -> {
                 Intent(context, PdfViewerActivity::class.java).apply {
                     action = Intent.ACTION_VIEW
                     setDataAndType(uri, "application/pdf")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
                 }
             }
-            // 3. Media (Audio & Video) -> Petal Media Player
+            // 4. Media (Audio & Video) -> Petal Media Player
             mime.startsWith("video/") || mime.startsWith("audio/") ||
             ext in setOf("mp4", "mkv", "webm", "avi", "mov", "3gp", "flv", "ts", "m4v", "wmv",
                          "mp3", "wav", "ogg", "flac", "m4a", "aac", "opus", "mid", "midi") -> {
@@ -54,19 +62,19 @@ object PetalFileOpener {
                     action = Intent.ACTION_VIEW
                     val targetMime = if (mime != "*/*") mime else if (ext in setOf("mp4", "mkv", "webm", "avi", "mov", "3gp", "flv", "ts", "m4v", "wmv")) "video/*" else "audio/*"
                     setDataAndType(uri, targetMime)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
                 }
             }
-            // 4. Images -> Petal Image Viewer
+            // 5. Images -> Petal Image Viewer
             mime.startsWith("image/") || ext in setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "svg", "ico", "heic", "heif", "avif") -> {
                 Intent(context, ImageViewerActivity::class.java).apply {
                     action = Intent.ACTION_VIEW
                     val targetMime = if (mime != "*/*") mime else "image/*"
                     setDataAndType(uri, targetMime)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
                 }
             }
-            // 5. Text, Code, Documents, Archives -> Petal File Viewer
+            // 6. Text, Code, Documents, Archives -> Petal File Viewer
             mime.startsWith("text/") || mime in setOf(
                 "application/json", "application/xml", "application/javascript", "application/x-javascript",
                 "application/zip", "application/x-zip-compressed", "application/x-tar", "application/x-7z-compressed",
@@ -74,17 +82,17 @@ object PetalFileOpener {
                 "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"
             ) || ext in setOf(
-                "txt", "json", "xml", "html", "htm", "css", "js", "ts", "md", "markdown",
+                "txt", "json", "xml", "css", "js", "ts", "md", "markdown",
                 "log", "csv", "tsv", "py", "java", "kt", "c", "cpp", "h", "hpp", "sh", "properties",
                 "yaml", "yml", "toml", "ini", "conf", "zip", "tar", "gz", "7z", "doc", "docx", "xls", "xlsx", "ppt", "pptx"
             ) -> {
                 Intent(context, FileViewerActivity::class.java).apply {
                     action = Intent.ACTION_VIEW
                     setDataAndType(uri, mime)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
                 }
             }
-            // 6. Generic Fallback
+            // 7. Generic Fallback
             else -> {
                 Intent(Intent.ACTION_VIEW).apply {
                     setDataAndType(uri, mime)

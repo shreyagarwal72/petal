@@ -98,17 +98,15 @@ class PetalVideoPlayerOverlayBridge(
                 else -> "video/mp4"
             }
             val intent = Intent(context, com.petal.browser.activity.MediaPlayerActivity::class.java).apply {
-                data = android.net.Uri.parse(mediaUrl)
-                type = cleanMime
+                action = Intent.ACTION_VIEW
+                setDataAndType(android.net.Uri.parse(mediaUrl), cleanMime)
                 if (!title.isNullOrBlank()) {
                     putExtra(Intent.EXTRA_TITLE, title)
                 }
                 if (startInPip) {
                     putExtra(com.petal.browser.activity.MediaPlayerActivity.EXTRA_START_IN_PIP, true)
                 }
-                if (context !is Activity) {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
+                addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
             }
             context.startActivity(intent)
         }

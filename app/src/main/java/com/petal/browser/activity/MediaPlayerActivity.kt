@@ -55,6 +55,16 @@ class MediaPlayerActivity : ComponentActivity() {
     private var isInPip by mutableStateOf(false)
     private var isAudioPlayback = false
 
+    private data class PlaybackInfo(
+        val uri: Uri,
+        val displayName: String,
+        val isAudio: Boolean,
+        val initialPositionMs: Long = 0L,
+        val initialSpeed: Float = 1.0f
+    )
+
+    private var currentPlayback by mutableStateOf<PlaybackInfo?>(null)
+
     override fun attachBaseContext(newBase: android.content.Context) {
         super.attachBaseContext(PetalAndroidUtils.applyLanguage(newBase))
     }
@@ -81,6 +91,8 @@ class MediaPlayerActivity : ComponentActivity() {
         val initialPositionMs = intent.getLongExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_POSITION_MS, 0L)
         val initialSpeed = intent.getFloatExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_SPEED, 1.0f)
 
+        currentPlayback = PlaybackInfo(targetUri, displayName, isAudio, initialPositionMs, initialSpeed)
+
         val startInPip = intent.getBooleanExtra(EXTRA_START_IN_PIP, false)
         if (startInPip && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             window.decorView.post {
@@ -90,30 +102,33 @@ class MediaPlayerActivity : ComponentActivity() {
         }
 
         setContent {
+            val playback = currentPlayback ?: return@setContent
             PetalExpressiveTheme {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.Black)
                 ) {
-                    if (isAudio) {
-                        PetalAudioPlayerScreen(
-                            mediaUri = targetUri,
-                            displayName = displayName,
-                            isInPip = isInPip,
-                            onPipClick = {
-                                PetalPipController.enterPip(this@MediaPlayerActivity, isPlaying = true, Rational(1, 1))
-                            },
-                            onClose = { finish() }
-                        )
-                    } else {
-                        PetalVideoPlayerScreen(
-                            videoUri = targetUri,
-                            displayName = displayName,
-                            initialPositionMs = initialPositionMs,
-                            initialSpeed = initialSpeed,
-                            onClose = { finish() }
-                        )
+                    androidx.compose.runtime.key(playback.uri) {
+                        if (playback.isAudio) {
+                            PetalAudioPlayerScreen(
+                                mediaUri = playback.uri,
+                                displayName = playback.displayName,
+                                isInPip = isInPip,
+                                onPipClick = {
+                                    PetalPipController.enterPip(this@MediaPlayerActivity, isPlaying = true, Rational(1, 1))
+                                },
+                                onClose = { finish() }
+                            )
+                        } else {
+                            PetalVideoPlayerScreen(
+                                videoUri = playback.uri,
+                                displayName = playback.displayName,
+                                initialPositionMs = playback.initialPositionMs,
+                                initialSpeed = playback.initialSpeed,
+                                onClose = { finish() }
+                            )
+                        }
                     }
                 }
             }
@@ -143,6 +158,30 @@ class MediaPlayerActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        val targetUri = extractTargetUri(intent) ?: return
+        val displayName = intent.getStringExtra(Intent.EXTRA_TITLE)?.takeIf { it.isNotBlank() } ?: extractDisplayName(targetUri)
+        val isAudio = isAudioMedia(targetUri, intent.type)
+        isAudioPlayback = isAudio
+        val initialPositionMs = intent.getLongExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_POSITION_MS, 0L)
+        val initialSpeed = intent.getFloatExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_SPEED, 1.0f)
+        currentPlayback = PlaybackInfo(targetUri, displayName, isAudio, initialPositionMs, initialSpeed)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode) {
+            finishAndRemoveTask()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.show(WindowInsetsCompat.Type.systemBars())
     }
 
     private fun extractTargetUri(intent: Intent?): Uri? {
