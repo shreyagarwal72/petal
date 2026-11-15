@@ -685,10 +685,10 @@ private fun VaultSettingsPage(
     val canSave = !(needsNewPassword && newPasswordInput.isBlank())
 
     val retentionOptions = listOf(
-        Triple("1", "1 day", Icons.Rounded.Today),
-        Triple("7", "7 days", Icons.Rounded.DateRange),
-        Triple("14", "14 days", Icons.Rounded.EventRepeat),
-        Triple("30", "30 days", Icons.Rounded.CalendarMonth),
+        Triple("1", "1 day", Icons.Rounded.Schedule),
+        Triple("7", "7 days", Icons.Rounded.Schedule),
+        Triple("14", "14 days", Icons.Rounded.Schedule),
+        Triple("30", "30 days", Icons.Rounded.Schedule),
         Triple("never", "Never", Icons.Rounded.AllInclusive),
     )
     data class LockOption(val key: String, val title: String, val subtitle: String, val icon: ImageVector)
@@ -847,8 +847,8 @@ private fun VaultChoiceRow(
         leading = {
             PetalGroupIconBadge(
                 icon = icon,
-                container = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
-                tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
+                variant = if (selected) com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY
+                else com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL,
             )
         },
         content = {
@@ -870,16 +870,13 @@ private fun VaultChoiceRow(
             }
         },
         trailing = {
+            // Same selection mark as the Privacy page rows: a check only on the chosen row, no empty placeholder.
             if (selected) {
-                Box(
-                    Modifier.size(28.dp).clip(ExpressiveButtonShape).background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
-                }
-            } else {
-                Box(
-                    Modifier.size(28.dp).clip(ExpressiveButtonShape).background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                Icon(
+                    Icons.Rounded.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }

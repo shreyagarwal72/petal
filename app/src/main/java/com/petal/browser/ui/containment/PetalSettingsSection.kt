@@ -43,10 +43,8 @@ fun PetalSettingsSection(
     }
     Column(modifier.fillMaxWidth().bringIntoViewRequester(requester)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            when {
-                iconRes != null -> PetalGroupIconBadge(painter = painterResource(iconRes))
-                icon != null -> PetalGroupIconBadge(icon)
-            }
+            // Section titles are plain labels (same as the Account page); `icon` / `iconRes` are kept
+            // only so existing callers still compile.
             PetalSectionLabel(title, modifier = Modifier.weight(1f))
             if (onInfoClick != null) {
                 com.petal.browser.compose.settings.screens.PetalFeatureInfoButton(onClick = onInfoClick)
