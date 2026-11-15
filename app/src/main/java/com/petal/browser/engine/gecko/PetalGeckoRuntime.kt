@@ -271,7 +271,6 @@ object PetalGeckoRuntime {
 
         // Register legacy PetalWebNotificationDelegate only when Mozilla AC Phase 1 is disabled.
         // When Phase 1 is enabled, WebNotificationFeature in PetalEngineStore handles web notifications.
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
         if (!sp.getBoolean("sp_ac_phase1", false)) {
             try {
                 newRuntime.webNotificationDelegate =

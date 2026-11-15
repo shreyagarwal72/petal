@@ -439,9 +439,9 @@ class PetalBrowserPromptBridge(
                 if (request.logins.size == 1) {
                     val onlyLogin = request.logins.first()
                     PetalExpressivePromptBridge.showConfirm(
-                        activity = activity,
-                        title = "Autofill Account",
-                        message = "Sign in as ${onlyLogin.username.orEmpty().ifBlank { "saved account" }} on ${onlyLogin.origin}?",
+                        activity,
+                        "Autofill Account",
+                        "Sign in as ${onlyLogin.username.orEmpty().ifBlank { "saved account" }} on ${onlyLogin.origin}?",
                         onConfirm = {
                             request.onConfirm(onlyLogin)
                             consume(tabId, request)
@@ -460,9 +460,9 @@ class PetalBrowserPromptBridge(
                         )
                     }
                     PetalExpressivePromptBridge.showChoice(
-                        activity = activity,
-                        title = "Select Account",
-                        choices = options,
+                        activity,
+                        "Select Account",
+                        options,
                         multiple = false,
                         onConfirm = { selectedIds ->
                             val selectedIndex = selectedIds.firstOrNull()?.toIntOrNull() ?: 0

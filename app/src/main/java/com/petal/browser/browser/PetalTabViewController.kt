@@ -1037,6 +1037,7 @@ class PetalTabViewController private constructor(
                         }
                         return result
                     }
+                    val result = org.mozilla.geckoview.GeckoResult<BooleanArray>()
                     kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                         try {
                             val action = com.petal.browser.database.HistoryBookmarkRepository(context)
