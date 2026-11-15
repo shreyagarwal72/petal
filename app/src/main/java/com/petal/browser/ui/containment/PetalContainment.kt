@@ -477,11 +477,17 @@ fun PetalGroup(rowCount: Int, modifier: Modifier = Modifier, content: @Composabl
 }
 
 @Composable
-fun rememberPetalGroupPressScale(interactionSource: MutableInteractionSource): Float {
+fun rememberPetalGroupPressScale(
+    interactionSource: MutableInteractionSource,
+    pressedScale: Float = 0.94f,
+): Float {
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        if (pressed) 0.97f else 1f,
-        com.petal.browser.ui.components.PetalSpring.segment(),
+        targetValue = if (pressed) pressedScale else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
         label = "petalGroupPressScale",
     )
     return scale

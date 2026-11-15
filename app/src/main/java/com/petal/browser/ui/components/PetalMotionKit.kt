@@ -7,9 +7,11 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
@@ -90,6 +92,18 @@ object PetalInstantMotionScheme : MotionScheme {
     override fun <T> fastEffectsSpec(): FiniteAnimationSpec<T> = snap()
     override fun <T> slowEffectsSpec(): FiniteAnimationSpec<T> = snap()
 }
+
+/** Material 3 Expressive bouncy spring spec for interactive scaling and spatial settling. */
+val ExpressiveBouncySpring: FiniteAnimationSpec<Float> = spring(
+    dampingRatio = Spring.DampingRatioLowBouncy,
+    stiffness = Spring.StiffnessMediumLow,
+)
+
+/** Returns an expressive bouncy spring spec for arbitrary types. */
+fun <T> expressiveBouncySpring(): FiniteAnimationSpec<T> = spring(
+    dampingRatio = Spring.DampingRatioLowBouncy,
+    stiffness = Spring.StiffnessMediumLow,
+)
 
 private fun hapticTick(context: android.content.Context, amplitude: Float = 0.45f) {
     PetalHapticEngine.getInstance(context)
