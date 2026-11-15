@@ -33,4 +33,39 @@ object PetalPlacesStorage {
     fun clearHistory(context: Context) {
         PetalPlacesProvider.clearHistory(context)
     }
+
+    /**
+     * Returns all saved bookmarks.
+     */
+    fun getAllBookmarks(context: Context): List<Record> {
+        return PetalPlacesProvider.getAllBookmarks(context)
+    }
+
+    /**
+     * Deletes a bookmark by URL.
+     */
+    fun deleteBookmark(context: Context, url: String) {
+        PetalPlacesProvider.deleteBookmark(context, url)
+    }
+
+    /**
+     * Checks if a bookmark exists for the given URL.
+     */
+    fun checkBookmark(context: Context, url: String): Boolean {
+        return PetalPlacesProvider.checkBookmark(context, url)
+    }
+
+    /**
+     * Returns the underlying PlacesHistoryStorage.
+     */
+    fun getHistoryStorage(context: Context): mozilla.components.browser.storage.sync.PlacesHistoryStorage {
+        return PetalPlacesProvider.getHistoryStorage(context)
+    }
+
+    /**
+     * Returns the underlying PlacesBookmarksStorage.
+     */
+    fun getBookmarksStorage(context: Context): mozilla.components.browser.storage.sync.PlacesBookmarksStorage {
+        return PetalPlacesProvider.getBookmarksStorage(context)
+    }
 }

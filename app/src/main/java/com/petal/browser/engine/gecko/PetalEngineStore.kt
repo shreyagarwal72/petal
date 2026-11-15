@@ -202,6 +202,17 @@ object PetalEngineStore {
             }
         }
 
+        if (sp.getBoolean("sp_ac_phase3", false)) {
+            try {
+                val historyStorage = com.petal.browser.database.PetalPlacesProvider.getHistoryStorage(appContext)
+                val historyDelegate = mozilla.components.feature.session.HistoryDelegate(lazy { historyStorage })
+                newEngine.settings.historyTrackingDelegate = historyDelegate
+                Log.i(TAG, "Registered Mozilla HistoryDelegate on GeckoEngine.settings")
+            } catch (t: Throwable) {
+                Log.w(TAG, "Could not register HistoryDelegate: ${t.message}")
+            }
+        }
+
         try {
             com.petal.browser.extensions.PetalBuiltInExtensions.installAll(newEngine)
         } catch (t: Throwable) {

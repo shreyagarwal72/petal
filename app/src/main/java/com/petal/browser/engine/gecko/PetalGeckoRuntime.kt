@@ -241,9 +241,24 @@ object PetalGeckoRuntime {
         //   • save new credentials after form submission (onLoginSave)
         //   • track last-used timestamps (onLoginUsed)
         try {
-            newRuntime.autocompleteStorageDelegate =
-                com.petal.browser.passwords.PetalAutofillGeckoDelegate(appContext)
-            Log.i(TAG, "Registered PetalAutofillGeckoDelegate as autocomplete storage delegate")
+            if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
+                val loginsStorage = com.petal.browser.passwords.PetalLoginsProvider.getLoginsStorage(appContext)
+                val loginDelegate = mozilla.components.service.sync.logins.GeckoLoginStorageDelegate(
+                    lazy { loginsStorage },
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
+                )
+                newRuntime.autocompleteStorageDelegate =
+                    mozilla.components.browser.engine.gecko.autofill.GeckoAutocompleteStorageDelegate(
+                        null,
+                        loginDelegate,
+                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
+                    )
+                Log.i(TAG, "Registered Mozilla GeckoAutocompleteStorageDelegate with SyncableLoginsStorage")
+            } else {
+                newRuntime.autocompleteStorageDelegate =
+                    com.petal.browser.passwords.PetalAutofillGeckoDelegate(appContext)
+                Log.i(TAG, "Registered PetalAutofillGeckoDelegate as autocomplete storage delegate")
+            }
         } catch (t: Throwable) {
             Log.w(TAG, "Could not register autocomplete delegate: ${t.message}")
         }

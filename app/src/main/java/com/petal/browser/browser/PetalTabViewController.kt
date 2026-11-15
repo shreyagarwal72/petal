@@ -1002,7 +1002,11 @@ class PetalTabViewController private constructor(
                                      (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE_PERMANENT) != 0
 
                     if (isTopLevel && !isError && !isRedirect) {
-                        recordHistoryVisit(url, pageTitle)
+                        if (!com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
+                            recordHistoryVisit(url, pageTitle)
+                        } else {
+                            com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(url)
+                        }
                     }
                     return org.mozilla.geckoview.GeckoResult.fromValue(true)
                 }
@@ -1012,6 +1016,19 @@ class PetalTabViewController private constructor(
                     urls: Array<out String>
                 ): org.mozilla.geckoview.GeckoResult<BooleanArray>? {
                     val result = org.mozilla.geckoview.GeckoResult<BooleanArray>()
+                    if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
+                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                            try {
+                                val hs = com.petal.browser.database.PetalPlacesProvider.getHistoryStorage(context)
+                                val visitedList = hs.getVisited(urls.toList())
+                                val arr = BooleanArray(urls.size) { i -> visitedList.getOrNull(i) == true }
+                                result.complete(arr)
+                            } catch (_: Throwable) {
+                                result.complete(BooleanArray(urls.size) { false })
+                            }
+                        }
+                        return result
+                    }
                     kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                         try {
                             val action = com.petal.browser.database.HistoryBookmarkRepository(context)
@@ -2355,6 +2372,11 @@ class PetalTabViewController private constructor(
     }
 
     private fun recordHistoryVisit(targetUrl: String, titleToRecord: String? = null, force: Boolean = false) {
+        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
+            com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(targetUrl)
+            lastRecordedHistoryUrl = targetUrl
+            return
+        }
         if (isIncognito() || targetUrl.isBlank() || targetUrl.equals("about:blank", ignoreCase = true) ||
             targetUrl.startsWith("about:", ignoreCase = true) || com.petal.browser.unit.PetalBrowserUtils.isHomePage(targetUrl)) {
             return
