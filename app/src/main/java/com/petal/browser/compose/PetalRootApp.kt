@@ -570,11 +570,11 @@ fun PetalRootApp(
                         onAddressClick = { viewModel.openOmnibox() },
                         onHomeClick = {
                             haptic.playClick(context)
-                            viewModel.loadUrl("about:home")
+                            viewModel.goHome(isIncognito = isIncognito)
                         },
                         onNewTabClick = {
                             haptic.playClick(context)
-                            viewModel.openNewTab("about:home", selectTab = true, private = isIncognito)
+                            viewModel.openNewTab(selectTab = true, private = isIncognito)
                         },
                         onTabsClick = {
                             haptic.playClick(context)
@@ -672,11 +672,11 @@ fun PetalRootApp(
                 glassSource = if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content)),
                 onHomeClick = {
                     haptic.playClick(context)
-                    viewModel.loadUrl("about:home")
+                    viewModel.goHome(isIncognito = isIncognito)
                 },
                 onNewTabClick = {
                     haptic.playClick(context)
-                    viewModel.openNewTab("about:home", selectTab = true, private = isIncognito)
+                    viewModel.openNewTab(selectTab = true, private = isIncognito)
                 },
                 onTabsClick = {
                     haptic.playClick(context)
@@ -1028,7 +1028,16 @@ fun PetalRootApp(
             ) {
                 PetalSettingsScreen(
                     initialCategory = settingsCategory,
-                    onBackPress = { viewModel.setSettingsOpen(false) }
+                    onBackPress = {
+                        viewModel.setSettingsOpen(false)
+                        val active = viewModel.activeTab.value
+                        if (active != null && !active.content.private && (active.content.url.isBlank() || active.content.url == "about:home")) {
+                            val effectiveHome = PetalBrowserUtils.getEffectiveHomepageUrl(context)
+                            if (effectiveHome != "about:home" && effectiveHome != "about:blank") {
+                                viewModel.loadUrl(effectiveHome)
+                            }
+                        }
+                    }
                 )
             }
 

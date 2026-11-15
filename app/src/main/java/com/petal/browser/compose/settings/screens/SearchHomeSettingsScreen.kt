@@ -250,7 +250,12 @@ fun SearchHomeSettingsScreenContent(
                             onValueChange = onCustomHomepageUrlChange,
                             modifier = Modifier.fillMaxWidth(),
                             label = { Text(stringResource(R.string.ui_enter_homepage_url)) },
+                            placeholder = { Text("https://google.com") },
                             singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri,
+                                imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                            ),
                             shape = RoundedCornerShape(14.dp),
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,

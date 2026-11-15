@@ -315,8 +315,13 @@ class PetalBrowserViewModel @Inject constructor(
         }
     }
 
+    fun goHome(isIncognito: Boolean = activeTab.value?.content?.private ?: false) {
+        val homeUrl = if (isIncognito) "about:home" else PetalBrowserUtils.getEffectiveHomepageUrl(context)
+        loadUrl(homeUrl)
+    }
+
     fun openNewTab(
-        url: String = "about:home",
+        url: String? = null,
         selectTab: Boolean = true,
         private: Boolean = false,
         groupId: String? = null,
@@ -333,7 +338,12 @@ class PetalBrowserViewModel @Inject constructor(
                 )
             )
         }
-        val formattedUrl = if (url.isBlank()) "about:home" else PetalBrowserUtils.queryWrapper(context, url.trim())
+        val targetUrl = if (url.isNullOrBlank() || url == "about:home") {
+            if (private) "about:home" else PetalBrowserUtils.getEffectiveHomepageUrl(context)
+        } else {
+            url
+        }
+        val formattedUrl = if (targetUrl.isBlank()) "about:home" else PetalBrowserUtils.queryWrapper(context, targetUrl.trim())
         PetalEngineStore.createTabSession(
             context = context,
             tabId = tabId,
@@ -585,8 +595,11 @@ class PetalBrowserViewModel @Inject constructor(
 
         // Priority 3: If not on home page, return to home
         val currentUrl = tab.content.url
-        if (currentUrl.isNotBlank() && currentUrl != "about:home" && currentUrl != "about:blank") {
-            loadUrl("about:home")
+        val effectiveHome = if (tab.content.private) "about:home" else PetalBrowserUtils.getEffectiveHomepageUrl(context)
+        val isAlreadyHome = PetalBrowserUtils.isHomePage(currentUrl) ||
+                currentUrl.trim().trimEnd('/').equals(effectiveHome.trim().trimEnd('/'), ignoreCase = true)
+        if (currentUrl.isNotBlank() && !isAlreadyHome) {
+            loadUrl(effectiveHome)
             return true
         }
 
