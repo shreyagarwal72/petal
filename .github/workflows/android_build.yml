@@ -1,12 +1,28 @@
 name: Android CI/CD Build
 
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [ "master", "main" ]
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'site/**'
+      - '.planning/**'
+      - 'scripts/**'
+      - 'vercel.json'
   pull_request:
     branches: [ "master", "main" ]
+    paths-ignore:
+      - '**.md'
+      - 'site/**'
+      - '.planning/**'
+      - 'scripts/**'
+      - 'vercel.json'
   workflow_dispatch:
     inputs:
       build_play_bundle:
@@ -22,7 +38,7 @@ jobs:
     permissions:
       contents: write
     env:
-      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC -XX:+ParallelRefProcEnabled -Dorg.gradle.workers.max=2"
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=1536m -XX:+UseG1GC -XX:+ParallelRefProcEnabled -Dfile.encoding=UTF-8 -Dorg.gradle.workers.max=4"
 
     steps:
       - name: Checkout repository
@@ -98,18 +114,43 @@ jobs:
           echo "KEYSTORE_KEY_PASS=$KEY_PASS" >> $GITHUB_ENV
           echo "KEYSTORE_ALIAS=$ALIAS_NAME" >> $GITHUB_ENV
 
+      - name: Cache adblock-rust WASM output
+        id: wasm
+        uses: actions/cache@v4
+        with:
+          path: app/src/main/assets/web_extensions/petal_network_blocker/wasm
+          key: wasm-${{ hashFiles('native/adblock_rs/**') }}
+
+      - name: Install wasm-pack
+        if: steps.wasm.outputs.cache-hit != 'true'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack
+
+      - name: Cache Rust dependencies
+        if: steps.wasm.outputs.cache-hit != 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/adblock_rs
+
       - name: Build adblock-rust WASM Engine for WebExtension
+        if: steps.wasm.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
           echo "🦀 Setting up Rust & wasm32-unknown-unknown target..."
           rustup target add wasm32-unknown-unknown
-          if ! command -v wasm-pack &>/dev/null; then
-            echo "Installing wasm-pack..."
-            cargo install wasm-pack --version 0.13.1 || true
-          fi
           cd native/adblock_rs
           wasm-pack build --target web --release --out-dir ../../app/src/main/assets/web_extensions/petal_network_blocker/wasm
           echo "✅ adblock-rust WASM compiled successfully"
+
+      - name: Verify adblock-rust WASM output
+        run: |
+          set -euo pipefail
+          if [ ! -d app/src/main/assets/web_extensions/petal_network_blocker/wasm ] || [ -z "$(find app/src/main/assets/web_extensions/petal_network_blocker/wasm -name '*.wasm' 2>/dev/null)" ]; then
+            echo "❌ ERROR: Missing required adblock-rust WASM binary output in app/src/main/assets/web_extensions/petal_network_blocker/wasm!"
+            exit 1
+          fi
+          echo "✅ Verified adblock-rust WASM output present."
 
       - name: Build Release APKs & AAB Bundle
         run: |
@@ -127,19 +168,21 @@ jobs:
             -alias "$KEYSTORE_ALIAS" >/dev/null
 
           BUILD_TASKS=":app:assembleGithubRelease"
+          EXTRA_GRADLE_ARGS=""
           if [[ "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" || "${{ github.event.inputs.build_play_bundle }}" == "true" ]]; then
-            echo "📦 Official release tag or Play bundle requested: building Play Store AAB bundle as well..."
+            echo "📦 Official release tag or Play bundle requested: building full ABI suite and Play Store AAB bundle..."
             BUILD_TASKS="$BUILD_TASKS :app:bundlePlayRelease"
+          else
+            echo "⚡ Fast build active: passing -PfastBuild (building arm64-v8a only)..."
+            EXTRA_GRADLE_ARGS="-PfastBuild"
           fi
 
-          ./gradlew $BUILD_TASKS \
+          ./gradlew $BUILD_TASKS $EXTRA_GRADLE_ARGS \
             -PRELEASE_STORE_FILE="$KEYSTORE_PATH" \
             -PRELEASE_STORE_PASSWORD="$KEYSTORE_STORE_PASS" \
             -PRELEASE_KEY_ALIAS="$KEYSTORE_ALIAS" \
             -PRELEASE_KEY_PASSWORD="$KEYSTORE_KEY_PASS" \
             --build-cache --parallel \
-            -Dorg.gradle.parallel=true \
-            -Dorg.gradle.caching=true \
             --stacktrace
           find app/build/outputs/apk/ -name "*.apk" -exec cp {} raw_apks/ \;
           if [ -d app/build/outputs/bundle ]; then
@@ -148,6 +191,7 @@ jobs:
 
       - name: Sign & ZipAlign Release APKs & AAB
         run: |
+          shopt -s nullglob
           STORE_PASS="$KEYSTORE_STORE_PASS"
           KEY_PASS="$KEYSTORE_KEY_PASS"
           ALIAS_NAME="$KEYSTORE_ALIAS"
@@ -223,9 +267,10 @@ jobs:
       - name: Prepare Release APK & AAB Files
         if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') && github.event_name != 'pull_request'
         run: |
+          shopt -s nullglob
           mkdir -p dist
-          find signed_apks -type f
-          find signed_aabs -type f
+          find signed_apks -type f 2>/dev/null || true
+          find signed_aabs -type f 2>/dev/null || true
 
           for f in signed_apks/*.apk; do
             if [ -f "$f" ]; then
@@ -244,6 +289,16 @@ jobs:
               fi
             fi
           done
+
+          # If fastBuild produced a single APK without ABI suffix, also map it to arm64-v8a release
+          if [ ! -f dist/petal-browser-arm64-v8a-release.apk ]; then
+            for f in signed_apks/*.apk; do
+              if [ -f "$f" ]; then
+                cp "$f" dist/petal-browser-arm64-v8a-release.apk
+                break
+              fi
+            done
+          fi
 
           for f in signed_aabs/*.aab; do
             if [ -f "$f" ]; then
