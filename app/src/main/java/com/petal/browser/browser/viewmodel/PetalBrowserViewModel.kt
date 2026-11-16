@@ -6,8 +6,11 @@ import androidx.preference.PreferenceManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.petal.browser.R
+import com.petal.browser.browser.BrowserContainer
+import com.petal.browser.browser.PetalSessionRestoreManager
 import com.petal.browser.browser.PetalTabMetadata
 import com.petal.browser.browser.PetalTabMetadataStore
+import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.compose.incognito.PetalIncognitoSessionManager
 import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.compose.tabs.PetalTabItem
@@ -418,7 +421,12 @@ class PetalBrowserViewModel @Inject constructor(
     private fun snapshotBeforeClose(tab: TabSessionState) {
         if (tab.content.private) return
         try {
-            val liveState = try { tab.engineState.engineSession?.saveState() } catch (_: Throwable) { null }
+            val liveState = try {
+                val controller = BrowserContainer.list()
+                    .filterIsInstance<PetalTabViewController>()
+                    .firstOrNull { it.tabId == tab.id }
+                controller?.getSessionState()?.let { PetalSessionRestoreManager.wrapGeckoState(it) }
+            } catch (_: Throwable) { null }
             val saved = liveState ?: tab.engineState.engineSessionState
             val thumb = TabThumbnailCache.getMemoryOnly(tab.id, false)?.let { b ->
                 if (b.isRecycled) null else try { b.copy(b.config ?: android.graphics.Bitmap.Config.ARGB_8888, false) } catch (_: Throwable) { null }
