@@ -36,7 +36,6 @@ import java.io.File
 import java.util.Locale
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * NOTE: This is intentionally a *plain* composable (Surface/Column), not a

@@ -2,7 +2,7 @@
  * MIT License
  * Copyright (c) 2026 Petal Browser
  *
- * Predictive-back style engine. The AOSP / MIUIX / Scale / Classic geometry is ported from
+ * Predictive-back style engine. The AOSP / Slide / Scale / Classic geometry is ported from
  * InstallerX Revived's predictiveback engine (GPL-3.0-only, (C) InstallerX Revived
  * contributors). "Petal" is the animation Petal shipped with before styles existed.
  */
@@ -30,7 +30,7 @@ enum class PetalBackStyle(
 ) {
     Petal("petal", 0, 0, FastOutSlowInEasing),
     Aosp("aosp", 1, 450, FastOutExtraSlowIn),
-    Miuix("miuix", 2, 300, CubicBezierEasing(0.2f, 0f, 0f, 1f)),
+    Slide("slide", 2, 300, CubicBezierEasing(0.2f, 0f, 0f, 1f)),
     Scale("scale", 3, 200, FastOutSlowInEasing),
     Classic("classic", 4, 200, CubicBezierEasing(0.2f, 0f, 0f, 1f)),
     ;
@@ -38,7 +38,9 @@ enum class PetalBackStyle(
     val usesSpringCommit: Boolean get() = this == Petal
 
     companion object {
-        fun fromKey(key: String?): PetalBackStyle = entries.firstOrNull { it.key == key } ?: Petal
+        fun fromKey(key: String?): PetalBackStyle = entries.firstOrNull {
+            it.key.equals(key, ignoreCase = true) || (it == Slide && "miuix".equals(key, ignoreCase = true))
+        } ?: Petal
         fun fromIndex(index: Int): PetalBackStyle = entries.firstOrNull { it.index == index } ?: Petal
     }
 }
@@ -126,7 +128,7 @@ object PetalBackMotion {
     fun frame(style: PetalBackStyle, i: PetalBackInput): PetalBackFrame = when (style) {
         PetalBackStyle.Petal -> petal(i)
         PetalBackStyle.Aosp -> aosp(i)
-        PetalBackStyle.Miuix -> miuix(i)
+        PetalBackStyle.Slide -> slide(i)
         PetalBackStyle.Scale -> scale(i)
         PetalBackStyle.Classic -> classic(i)
     }
@@ -267,12 +269,10 @@ object PetalBackMotion {
     }
 
     // ---------------------------------------------------------------------------------------
-    // MIUIX default: the page slides out with the finger while the page below parallaxes in
-    // from 25% to the side. (InstallerX delegates to miuix's own NavTransitions.MiuixDefault,
-    // whose source is not part of the project, so this follows the same structure that
-    // InstallerX's NoPredictiveBack lower/upper entry maths uses.)
+    // Slide default: the page slides out with the finger while the page below parallaxes in
+    // from 25% to the side.
     // ---------------------------------------------------------------------------------------
-    private fun miuix(i: PetalBackInput): PetalBackFrame {
+    private fun slide(i: PetalBackInput): PetalBackFrame {
         val p = i.progress.coerceIn(0f, 1f)
         val sign = edgeSign(i)
         return PetalBackFrame(

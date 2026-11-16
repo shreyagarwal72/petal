@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 data class ConsoleMessage(
     val id: Long = System.nanoTime(),

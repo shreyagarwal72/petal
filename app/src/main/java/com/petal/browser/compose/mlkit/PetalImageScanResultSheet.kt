@@ -58,8 +58,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
-import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 object PetalImageScannerManager {
 

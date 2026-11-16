@@ -58,7 +58,7 @@ import com.petal.browser.ui.containment.PetalSheet
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.unit.PetalAndroidUtils
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Zen Browser-style Tab Glance (Peek Sheet).

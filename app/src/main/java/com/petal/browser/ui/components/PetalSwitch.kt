@@ -40,7 +40,7 @@ import com.petal.browser.ui.components.expressive.switches.OneUISwitch
 import com.petal.browser.ui.components.expressive.switches.PixelSwitch
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.theme.layout.PetalSwitchType
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 
 /**
@@ -68,8 +68,7 @@ fun PetalSwitch(
 ) {
     val settings = LocalSettingsState.current
     val isGlass = glassOverride ?: isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val isMiuix = com.petal.browser.ui.containment.isMiuixEnabled()
-    val type = typeOverride ?: if (isMiuix) PetalSwitchType.HYPEROS else settings.switchType
+    val type = typeOverride ?: settings.switchType
     val scheme = MaterialTheme.colorScheme
     val haptics = LocalHapticFeedback.current
     val focus = LocalFocusManager.current
@@ -181,15 +180,7 @@ fun PetalSwitch(
                     colors = CupertinoSwitchDefaults.colors()
                 )
 
-                PetalSwitchType.HYPEROS -> if (isMiuix) {
-                    // Real Miuix switch (springs, press feedback, colors from MiuixTheme).
-                    top.yukonga.miuix.kmp.basic.Switch(
-                        checked = checked,
-                        onCheckedChange = onChange,
-                        modifier = modifier,
-                        enabled = enabled,
-                    )
-                } else HyperOSSwitch(
+                PetalSwitchType.HYPEROS -> HyperOSSwitch(
                     modifier = switchModifier,
                     colors = switchColors.copy(uncheckedTrackColor = scheme.surfaceContainerHigh),
                     checked = checked,

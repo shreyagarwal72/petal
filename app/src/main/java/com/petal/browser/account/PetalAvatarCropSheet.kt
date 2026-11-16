@@ -39,7 +39,6 @@ import kotlinx.coroutines.withContext
 import java.io.InputStream
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

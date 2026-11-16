@@ -62,7 +62,7 @@ import com.petal.browser.ui.glass.TabWeights
 import com.petal.browser.ui.glass.bouncyClickable
 import com.petal.browser.ui.glass.navIconMotion
 import kotlin.math.roundToInt
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 private val PixelNavOrder = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
 

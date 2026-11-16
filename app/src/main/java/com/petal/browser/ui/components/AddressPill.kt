@@ -64,7 +64,6 @@ import com.petal.browser.media.sniffer.PetalMediaSniffer
 import com.petal.browser.media.sniffer.PetalNativeSnifferEngine
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.view.PetalToast
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Reusable URL Pill for Petal Browser address bars.

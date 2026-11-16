@@ -39,7 +39,7 @@ import com.petal.browser.haptics.PetalHapticEngine
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 data class VideoScaleOption(
     val id: String,

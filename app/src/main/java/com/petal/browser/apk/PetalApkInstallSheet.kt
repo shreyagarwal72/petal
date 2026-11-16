@@ -47,7 +47,6 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalConnectedShape
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Material 3 Expressive & Liquid Glass APK Installer Sheet.

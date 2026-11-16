@@ -55,7 +55,7 @@ import com.petal.browser.ui.glass.glassPressScale
 import com.petal.browser.ui.glass.navIconMotion
 import com.petal.browser.ui.glass.rememberGlassBar
 import kotlin.math.roundToInt
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 private val NavOrder4 = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
 /** With search in the centre. */

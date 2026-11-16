@@ -70,7 +70,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /*
  * Orion Store inspired motion kit for Petal.

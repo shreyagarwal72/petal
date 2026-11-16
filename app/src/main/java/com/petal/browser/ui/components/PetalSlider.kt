@@ -59,20 +59,6 @@ fun PetalSlider(
 ) {
     val settings = LocalSettingsState.current
     val isGlass = glassOverride ?: isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val isMiuix = com.petal.browser.ui.containment.isMiuixEnabled()
-    if (isMiuix) {
-        // Miuix mode: the real Miuix slider is the only option (style selectors are hidden).
-        top.yukonga.miuix.kmp.basic.Slider(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = modifier,
-            enabled = enabled,
-            valueRange = valueRange,
-            steps = steps,
-            onValueChangeFinished = onValueChangeFinished,
-        )
-        return
-    }
     val sliderType = typeOverride ?: settings.sliderType
     val sheen = rememberGlassSheen(isGlass)
     val scheme = MaterialTheme.colorScheme

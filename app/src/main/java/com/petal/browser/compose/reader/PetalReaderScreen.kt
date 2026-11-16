@@ -50,7 +50,6 @@ import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.containment.PetalSheet
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 enum class ReaderTheme(val title: String, val bg: Color, val text: Color, val surface: Color) {
     SYSTEM("System", Color.Unspecified, Color.Unspecified, Color.Unspecified),

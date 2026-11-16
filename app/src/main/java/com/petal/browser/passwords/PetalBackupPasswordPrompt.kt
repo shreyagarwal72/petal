@@ -77,7 +77,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import kotlinx.coroutines.delay
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Popup that asks for the password of a V2 .petal backup.

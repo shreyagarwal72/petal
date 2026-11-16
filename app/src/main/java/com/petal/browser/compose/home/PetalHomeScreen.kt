@@ -108,7 +108,6 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 // ── 1. Data model & Persistence ───────────────────────────────────────────
 

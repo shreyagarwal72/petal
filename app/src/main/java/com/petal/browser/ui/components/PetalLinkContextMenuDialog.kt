@@ -34,7 +34,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Customizable link context menu dialog component styled with RvSystemMonitor containment principles.

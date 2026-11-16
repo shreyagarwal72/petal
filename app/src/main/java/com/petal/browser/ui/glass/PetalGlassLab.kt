@@ -64,7 +64,7 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /** The values the Appearance sliders are driving, passed in live (unsaved) from the sliders. */
 @Immutable

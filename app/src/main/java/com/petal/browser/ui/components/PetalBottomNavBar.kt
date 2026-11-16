@@ -99,7 +99,7 @@ import com.petal.browser.ui.glass.liquidGlass
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 enum class PetalNavTab {
     HOME, NEW_TAB, TABS, MENU, SEARCH
@@ -212,15 +212,14 @@ fun PetalBottomNavBar(
     val navPrefs = remember(navCtx) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(navCtx) }
     com.petal.browser.ui.glass.LocalPetalGlassRevision.current
     val themeGlassNav = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
-    val isMiuix = com.petal.browser.ui.containment.isMiuixEnabled()
     val glassNavOn = themeGlassNav
     // Liquid glass + floating: search is its own glass button on the right.
     // Everything else (Material 3 Expressive floating/docked, glass docked): search sits in the centre.
-    val separateSearch = !isMiuix && showSearch && effectiveFloating && glassNavOn
+    val separateSearch = showSearch && effectiveFloating && glassNavOn
     // Material 3 Expressive floating (glass off): PixelMusic-style pill + separate ghost-shaped search.
-    val pixelStyle = effectiveFloating && !glassNavOn && !isMiuix
-    val pixelSearch = !isMiuix && showSearch && pixelStyle
-    val centerSearch = showSearch && !separateSearch && !pixelSearch && !isMiuix
+    val pixelStyle = effectiveFloating && !glassNavOn
+    val pixelSearch = showSearch && pixelStyle
+    val centerSearch = showSearch && !separateSearch && !pixelSearch
     // The docked bar (glass or solid) runs through the gesture-bar area like Brave's, so no
     // gap shows between the bar and the screen edge and no page shows unblurred under it.
     val flatNavInset = if (!effectiveFloating) {
@@ -267,21 +266,7 @@ fun PetalBottomNavBar(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                if (isMiuix) {
-                    PetalMiuixNavBar(
-                        selectedTab = selectedTab,
-                        tabCount = tabCount,
-                        badgeScale = badgeScale.value,
-                        onHomeClick = onHomeClick,
-                        onNewTabClick = onNewTabClick,
-                        onTabsClick = onTabsClick,
-                        onMenuClick = onMenuClick,
-                        onSearchClick = launchSearch,
-                        onSwipeTabLeft = onSwipeTabLeft,
-                        onSwipeTabRight = onSwipeTabRight,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                } else if (pixelStyle) {
+                if (pixelStyle) {
                     PetalPixelNavPill(
                         selectedTab = selectedTab,
                         tabCount = tabCount,
@@ -367,14 +352,13 @@ fun PetalBottomNavBar(
                 color = when {
                     isLiquidGlass -> Color.Transparent
                     isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer
-                    isMiuix -> com.petal.browser.ui.miuix.theme.MiuiXTheme.colors.surface
                     else -> MaterialTheme.colorScheme.surfaceContainerHigh
                 },
                 // No tonal lift or drop shadow: the shadow was the dark blur smeared outside the
                 // rounded corners. The bar is a clean flat fill (or glass), rounded or rectangular.
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
-                border = if (isMiuix) BorderStroke(0.5.dp, com.petal.browser.ui.miuix.theme.MiuiXTheme.colors.divider) else null,
+                border = null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp + flatNavInset)

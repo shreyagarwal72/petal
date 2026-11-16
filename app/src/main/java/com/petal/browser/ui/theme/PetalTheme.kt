@@ -360,26 +360,15 @@ fun PetalExpressiveTheme(
     }
 
     val reduceMotion = com.petal.browser.ui.components.rememberReduceMotion()
-    val isMiuix = layoutSettingsState.uiExperience == com.petal.browser.ui.theme.layout.UiExperience.MIUIX
 
     val corners = layoutSettingsState.cornersSize
-    val expressiveShapes = remember(isMiuix, expressiveShapesState, layoutSettingsState.shapeType, corners) {
-        if (isMiuix) {
-            Shapes(
-                extraSmall = com.petal.browser.ui.miuix.theme.MiuiXShapes.ExtraSmall,
-                small = com.petal.browser.ui.miuix.theme.MiuiXShapes.Small,
-                medium = com.petal.browser.ui.miuix.theme.MiuiXShapes.Medium,
-                large = com.petal.browser.ui.miuix.theme.MiuiXShapes.Large,
-                extraLarge = com.petal.browser.ui.miuix.theme.MiuiXShapes.ExtraLarge,
-            )
+    val expressiveShapes = remember(expressiveShapesState, layoutSettingsState.shapeType, corners) {
+        val type = layoutSettingsState.shapeType
+        fun c(dp: Int) = type.cornerShape(dp.dp, multiplier = corners)
+        if (expressiveShapesState) {
+            Shapes(extraSmall = c(8), small = c(12), medium = c(16), large = c(24), extraLarge = c(32))
         } else {
-            val type = layoutSettingsState.shapeType
-            fun c(dp: Int) = type.cornerShape(dp.dp, multiplier = corners)
-            if (expressiveShapesState) {
-                Shapes(extraSmall = c(8), small = c(12), medium = c(16), large = c(24), extraLarge = c(32))
-            } else {
-                Shapes(extraSmall = c(4), small = c(8), medium = c(12), large = c(16), extraLarge = c(28))
-            }
+            Shapes(extraSmall = c(4), small = c(8), medium = c(12), large = c(16), extraLarge = c(28))
         }
     }
 
@@ -402,23 +391,13 @@ fun PetalExpressiveTheme(
         com.petal.browser.haptics.LocalVibrationIntensity provides com.petal.browser.haptics.VibrationIntensity.LIGHT,
         androidx.compose.ui.platform.LocalHapticFeedback provides hapticFeedback
     ) {
-        if (isMiuix) {
-            com.petal.browser.ui.miuix.theme.PetalMiuixTheme(
-                darkTheme = darkTheme,
-                useAmoled = useAmoled,
-                useMiuixOs4 = layoutSettingsState.useMiuixOs4,
-                typography = effectiveTypography,
-                content = { com.petal.browser.ui.selection.PetalTextToolbarProvider(content) }
-            )
-        } else {
-            androidx.compose.material3.MaterialExpressiveTheme(
-                colorScheme = colorScheme,
-                shapes = expressiveShapes,
-                motionScheme = motion,
-                typography = effectiveTypography,
-                content = { com.petal.browser.ui.selection.PetalTextToolbarProvider(content) }
-            )
-        }
+        androidx.compose.material3.MaterialExpressiveTheme(
+            colorScheme = colorScheme,
+            shapes = expressiveShapes,
+            motionScheme = motion,
+            typography = effectiveTypography,
+            content = { com.petal.browser.ui.selection.PetalTextToolbarProvider(content) }
+        )
     }
 }
 

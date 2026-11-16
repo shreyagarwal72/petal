@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.compose.tabs.PetalTabItem
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.PetalContainmentShapes
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * SplitOrientation

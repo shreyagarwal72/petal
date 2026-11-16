@@ -86,7 +86,7 @@ import com.petal.browser.ui.glass.PetalGlassContainer
 import com.petal.browser.ui.glass.petalGlassPanel
 import kotlin.math.max
 import kotlin.math.roundToInt
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Petal's own text-selection toolbar, used by every Compose text field in the app (through

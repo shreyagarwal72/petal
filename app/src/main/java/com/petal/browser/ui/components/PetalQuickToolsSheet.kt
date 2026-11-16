@@ -72,7 +72,6 @@ import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 private const val PREF_QUICK_TOOLS_ORDER = "sp_quick_tools_order_v1"
 

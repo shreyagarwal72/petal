@@ -36,8 +36,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
-import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
 
 data class SearchEngineItem(
     val index: Int,

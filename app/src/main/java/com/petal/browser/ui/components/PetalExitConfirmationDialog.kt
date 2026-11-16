@@ -58,7 +58,7 @@ import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 @Composable
 fun PetalExitConfirmationDialog(

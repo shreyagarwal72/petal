@@ -52,7 +52,6 @@ import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroupIconBadge
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

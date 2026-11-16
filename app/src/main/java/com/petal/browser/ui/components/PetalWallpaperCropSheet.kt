@@ -45,7 +45,6 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * PetalWallpaperCropSheet:

@@ -124,7 +124,7 @@ import com.petal.browser.media.PetalAudioColorEngine
 import com.petal.browser.media.PetalCookieShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /** How long an expanded card stays open with no touch before it folds back into the pill. */
 private const val AUTO_COLLAPSE_MS = 8_000L

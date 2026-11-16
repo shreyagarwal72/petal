@@ -462,9 +462,11 @@ fun PetalRootApp(
                 .background(MaterialTheme.colorScheme.background)
         ) {
             if (isHome) {
-                val isMiuix = com.petal.browser.ui.containment.isMiuixEnabled()
-                val useOs4 = isMiuix && com.petal.browser.ui.theme.layout.LocalPetalLayoutSettings.current.useMiuixOs4 && !isIncognito
-                val homeContent = @Composable {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .appleDuoFoldEffect(isWebsite = false)
+                ) {
                     if (isIncognito) {
                         PetalIncognitoHomeScreen(
                             tabCount = tabItems.count { it.isIncognito },
@@ -490,23 +492,6 @@ fun PetalRootApp(
                             onNewTabAction = { viewModel.openNewTab("about:home", selectTab = true) },
                             onOpenTabSwitcher = { viewModel.toggleTabSwitcher() }
                         )
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .appleDuoFoldEffect(isWebsite = false)
-                ) {
-                    if (useOs4) {
-                        com.petal.browser.ui.miuix.effect.BgEffectBackground(
-                            dynamicBackground = true,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            homeContent()
-                        }
-                    } else {
-                        homeContent()
                     }
                 }
             } else {

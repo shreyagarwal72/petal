@@ -87,7 +87,7 @@ import kotlin.math.roundToInt
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.containment.liquidGlassChrome
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Data specification for configuring a [PetalFloatingStatusCard].

@@ -58,7 +58,6 @@ import com.yausername.youtubedl_android.YoutubeDL
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Material 3 Expressive standalone popup interface for Petal Media Grabber Extension.

@@ -20,7 +20,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.engine.gecko.PetalEngineStore
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import mozilla.components.concept.engine.EngineSession
-import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheet
 
 /**
  * PetalExtensionPopupSheet

@@ -123,7 +123,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Layout mode for the tab grid. Toggled from the top bar's layout-toggle icon button.

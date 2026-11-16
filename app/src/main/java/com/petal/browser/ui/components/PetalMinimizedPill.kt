@@ -37,7 +37,7 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.glass.GlassBar
 import com.petal.browser.ui.glass.liquidGlass
 import com.petal.browser.ui.glass.rememberGlassBar
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Chrome Android-style compact minimized toolbar pill shown on downward scroll.

@@ -77,7 +77,7 @@ import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.delay
 import kotlin.math.abs
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Petal Video Player Overlay (Completely Rebuilt)

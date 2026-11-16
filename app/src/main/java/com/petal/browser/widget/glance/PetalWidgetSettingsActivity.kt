@@ -78,7 +78,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * The widget customization screen: the widget's configure activity (opens when a Petal widget is added on launchers

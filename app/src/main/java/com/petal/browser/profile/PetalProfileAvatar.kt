@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.petal.browser.account.PetalUserProfileManager
 import com.petal.browser.account.ProfileAvatarDisplay
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /** Shows the account-page avatar for the default profile and the saved gallery avatar for others. */
 @Composable

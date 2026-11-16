@@ -55,7 +55,7 @@ import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.engine.gecko.PetalEngineStore
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Shows a page preview in a constrained card without navigating the user's

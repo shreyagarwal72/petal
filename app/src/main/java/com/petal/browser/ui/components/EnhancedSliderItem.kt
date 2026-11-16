@@ -43,7 +43,7 @@ import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.glass.rememberGlassSheen
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * ImageToolbox-style EnhancedSliderItem.

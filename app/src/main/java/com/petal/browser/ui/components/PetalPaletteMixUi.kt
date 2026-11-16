@@ -43,7 +43,7 @@ import com.petal.browser.ui.theme.PetalPaletteMix
 import com.petal.browser.ui.theme.PetalPaletteMix.Source
 import com.petal.browser.ui.theme.PetalPalettes
 import com.petal.browser.ui.containment.liquidGlassChrome
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /** Human-readable name of a mix source, for settings rows. */
 fun mixSourceLabel(source: Source, customArgb: Int): String = when (source) {

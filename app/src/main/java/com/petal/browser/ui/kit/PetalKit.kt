@@ -65,7 +65,7 @@ import androidx.compose.material3.FilterChip as M3FilterChip
 import androidx.compose.material3.TextField as M3TextField
 import androidx.compose.material3.OutlinedButton as M3OutlinedButton
 import androidx.compose.material3.TextButton as M3TextButton
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /*
  * Petal Material 3 Expressive kit.
@@ -104,10 +104,6 @@ private fun morphingShape(
     pressedFactor: Float = 0.56f,
 ): Shape {
     if (explicit != null) return explicit
-    if (com.petal.browser.ui.containment.isMiuixEnabled()) {
-        val pressed by source.collectIsPressedAsState()
-        return com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(if (pressed) 12.dp else 16.dp, smoothing = 0.68f)
-    }
     val type = PetalLayoutState.settings.shapeType
     val scale = PetalLayoutState.displayCorners
     val pressed by source.collectIsPressedAsState()

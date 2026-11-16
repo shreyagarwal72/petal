@@ -55,7 +55,7 @@ private fun PetalBackStyle.label(): String = stringResource(
     when (this) {
         PetalBackStyle.Petal -> R.string.ui_back_style_petal
         PetalBackStyle.Aosp -> R.string.ui_back_style_aosp
-        PetalBackStyle.Miuix -> R.string.ui_back_style_miuix
+        PetalBackStyle.Slide -> R.string.ui_back_style_slide
         PetalBackStyle.Scale -> R.string.ui_back_style_scale
         PetalBackStyle.Classic -> R.string.ui_back_style_classic
     }

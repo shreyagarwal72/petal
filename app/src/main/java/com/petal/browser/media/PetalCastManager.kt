@@ -61,8 +61,6 @@ import java.net.HttpURLConnection
 import java.net.InetAddress
 import java.net.URL
 import java.util.regex.Pattern
-import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * PetalCastDevice represents a discovered DLNA / UPnP / Smart TV / Cast receiver.

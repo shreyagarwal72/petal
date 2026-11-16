@@ -62,7 +62,7 @@ import java.net.URI
 import java.util.Locale
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 enum class BannerState {
     IDLE,

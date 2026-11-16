@@ -6,5 +6,5 @@ Petal Browser v4.5 Release:
 - Codebase & Architecture Normalization: Renamed misnamed files (ChromeAccountSyncScreen -> PetalUserProfileScreen, GoogleAccountManager -> PetalUserProfileManager, List_standard -> StandardDomainWhitelist, PetalOptionsDialog -> PetalOptionsSheet, PetalWelcomeDialog -> PetalWelcomeScreen, PetalFilePicker -> PetalFilePickerScreen), and eliminated dead Chromium native core stubs.
 - Torrays Torrent Search & Extensions: Integrated Torrays as an open-source, ad-free torrent search engine with Omnibox quick search, built-in WebExtension injection, and an Extensions toggle with official site credits.
 - Pure & Live Liquid Glass UI: Granular refraction sliders (strength & width), 7dp calibrated frost, and per-frame live backdrops across sheets and menus.
-- Predictive Back Gestures: 5 customizable animation styles (Petal, AOSP, MIUIX, Scale, Classic) with real-time depth blur.
+- Predictive Back Gestures: 5 customizable animation styles (Petal, AOSP, Slide, Scale, Classic) with real-time depth blur.
 - Performance: Asynchronous cold start for filter lists, yt-dlp, and ffmpeg with low-overhead domain lookups.

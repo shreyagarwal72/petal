@@ -66,8 +66,6 @@ import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.glass.PetalGlassContainer
-import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 object PetalBrowserPermissionDialog {
     private const val PREF_LAST_PERMISSION_DIALOG_TIME = "sp_last_permission_dialog_time"

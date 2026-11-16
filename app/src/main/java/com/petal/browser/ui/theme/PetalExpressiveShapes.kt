@@ -45,7 +45,7 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.toPath
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.min
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 // ============================================================================
 // Petal expressive shape engine.

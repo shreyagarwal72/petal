@@ -31,7 +31,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.unit.PetalBrowserUtils
-import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheet
 
 object PetalLensBridge {
 

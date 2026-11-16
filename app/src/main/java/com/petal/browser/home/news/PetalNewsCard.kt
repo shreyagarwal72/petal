@@ -35,7 +35,6 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.launch
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Drop-in composable for the home screen with Liquid Glass + M3 Expressive styling.

@@ -92,7 +92,7 @@ import com.petal.browser.ui.containment.PetalHeroCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Data model for an item displayed in the Petal feature carousel.

@@ -10,7 +10,6 @@ def releaseKeyPassword = providers.gradleProperty("RELEASE_KEY_PASSWORD").orNull
 
 android {
 
-    // 37 (not 36): miuix 0.9.4 AARs are built against API 37, and InstallerX compiles with 37 too.
     compileSdk 37
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -266,19 +265,6 @@ dependencies {
     // Real liquid glass (backdrop blur + lens refraction + specular rim); same library SimpMusic uses
     implementation 'io.github.kyant0:backdrop:2.0.1'
 
-    // Real Miuix library (compose-miuix-ui/miuix, Apache-2.0), same coordinates and version as
-    // InstallerX Revived (gradle/libs.versions.toml lines 133-142). Resolved from the
-    // GitHubPackagesMiuix repository declared in the root build.gradle.
-    def miuixVersion = '0.9.4-9d4b9c85-SNAPSHOT'
-    implementation "top.yukonga.miuix.kmp:miuix-core-android:$miuixVersion"
-    implementation "top.yukonga.miuix.kmp:miuix-ui-android:$miuixVersion"
-    implementation "top.yukonga.miuix.kmp:miuix-material-android:$miuixVersion"
-    implementation "top.yukonga.miuix.kmp:miuix-blur-android:$miuixVersion"
-    implementation "top.yukonga.miuix.kmp:miuix-glass-android:$miuixVersion"
-    implementation "top.yukonga.miuix.kmp:miuix-glass-icons-android:$miuixVersion"
-    implementation "top.yukonga.miuix.kmp:miuix-preference-android:$miuixVersion"
-    implementation "top.yukonga.miuix.kmp:miuix-icons-android:$miuixVersion"
-    implementation "top.yukonga.miuix.kmp:miuix-nav-android:$miuixVersion"
     // Pure-Java barcode/QR decoding for the FOSS Snap Photo scanner.
     implementation 'com.google.zxing:core:3.5.4'
 

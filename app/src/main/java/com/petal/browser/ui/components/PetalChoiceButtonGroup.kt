@@ -41,7 +41,7 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Option item model for [PetalChoiceButtonGroup].

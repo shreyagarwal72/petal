@@ -21,7 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.toShape
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Material 3 Expressive Shaped Hero Art Component for Petal Setup.

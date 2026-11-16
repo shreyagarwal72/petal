@@ -78,7 +78,6 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.compose.home.getFaviconUrl
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 fun interface BookmarkUrlHandler {
     fun open(url: String)

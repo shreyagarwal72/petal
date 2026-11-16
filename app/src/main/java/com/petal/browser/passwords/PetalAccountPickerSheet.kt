@@ -33,7 +33,6 @@ import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.glass.*
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * PetalAccountPickerSheet

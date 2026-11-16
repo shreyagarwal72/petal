@@ -136,13 +136,6 @@
         </intent>
     </queries>
 
-    <!-- miuix-blur declares minSdk 33; the app supports 26+, and the blur/glass paths are gated at
-         runtime (Android 13+ with render effect support). Same override InstallerX uses. -->
-    <uses-sdk tools:overrideLibrary="
-        top.yukonga.miuix.kmp.blur,
-        top.yukonga.miuix.kmp.glass
-    " />
-
     <application
         android:name=".PetalApplication"
         android:allowBackup="true"

@@ -62,7 +62,6 @@ import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 object PetalExtensionsMenuSheet {
 

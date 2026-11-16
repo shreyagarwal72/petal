@@ -114,7 +114,7 @@ import com.petal.browser.ui.glass.LocalPetalGlassRevision
 import com.petal.browser.ui.glass.petalGlassPanel
 import com.petal.browser.ui.glass.glassPressOverlay
 import com.petal.browser.ui.glass.glassPressScale
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 enum class PetalGroupPosition { SINGLE, TOP, MIDDLE, BOTTOM }
 
@@ -125,24 +125,13 @@ val LocalPetalSectionHighlighted = compositionLocalOf { false }
  * Safe to use from Android Dialog windows, callbacks, and non-Compose contexts.
  */
 fun isLiquidGlassMaster(sp: android.content.SharedPreferences): Boolean {
-    val exp = sp.getString("sp_ui_experience", null)
-    if (exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key) return false
     return sp.getBoolean("sp_liquid_glass_enabled", false) ||
-        exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key
+        sp.getString("sp_ui_experience", null) == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key
 }
 
 fun isLiquidGlassDirect(context: android.content.Context, componentKey: String = "sp_liquid_glass_containments"): Boolean {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     return isLiquidGlassMaster(sp) && sp.getBoolean(componentKey, true)
-}
-
-/**
- * Checks whether the Xiaomi HyperOS / MiuiX UI Experience is active.
- */
-@Composable
-fun isMiuixEnabled(): Boolean {
-    val layout = com.petal.browser.ui.theme.layout.rememberPetalLayoutSettings()
-    return layout.uiExperience == com.petal.browser.ui.theme.layout.UiExperience.MIUIX
 }
 
 /**
@@ -316,16 +305,8 @@ fun petalGroupSurfaceColor(): Color {
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val isMiuix = isMiuixEnabled()
     LocalPetalGlassRevision.current
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-
-    if (isMiuix) {
-        val target = if (LocalPetalSectionHighlighted.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-        else top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme.surfaceContainer
-        val color by animateColorAsState(target, label = "petalGroupSurface")
-        return color
-    }
 
     if (isGlass && LocalPetalGlassWallpaper.current?.ready == true) {
         return if (LocalPetalSectionHighlighted.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha = .45f) else Color.Transparent
@@ -385,24 +366,6 @@ fun rememberPetalGroupShape(position: PetalGroupPosition): androidx.compose.foun
  * the live corner size. Reads snapshot state, so every caller recomposes when the style/size changes.
  */
 fun petalGroupShape(position: PetalGroupPosition): androidx.compose.foundation.shape.CornerBasedShape {
-    val isMiuix = com.petal.browser.ui.theme.layout.PetalLayoutState.settings.uiExperience == com.petal.browser.ui.theme.layout.UiExperience.MIUIX
-    if (isMiuix) {
-        // Real Miuix Card: one seamless 16dp surface (CardDefaults.CornerRadius). Rows inside a
-        // group have square inner corners, only the outer corners of the group are rounded.
-        val r = 16.dp
-        val flat = androidx.compose.foundation.shape.CornerSize(0.dp)
-        val round = androidx.compose.foundation.shape.CornerSize(r)
-        return when (position) {
-            PetalGroupPosition.SINGLE -> com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(r, smoothing = 0.68f)
-            PetalGroupPosition.TOP -> com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(
-                smoothing = 0.68f, topStart = round, topEnd = round, bottomEnd = flat, bottomStart = flat
-            )
-            PetalGroupPosition.MIDDLE -> com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(0.dp, smoothing = 0.68f)
-            PetalGroupPosition.BOTTOM -> com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(
-                smoothing = 0.68f, topStart = flat, topEnd = flat, bottomEnd = round, bottomStart = round
-            )
-        }
-    }
     val type = com.petal.browser.ui.theme.layout.PetalLayoutState.settings.containmentShapeType
     val m = com.petal.browser.ui.theme.layout.PetalLayoutState.containmentCorners
     return when (position) {
@@ -418,10 +381,6 @@ fun petalGroupShape(position: PetalGroupPosition): androidx.compose.foundation.s
  * Shapes Type) scaled by the containment corner size. Reads snapshot state, so callers recompose on change.
  */
 fun petalContainmentShape(radius: Dp): androidx.compose.foundation.shape.CornerBasedShape {
-    val isMiuix = com.petal.browser.ui.theme.layout.PetalLayoutState.settings.uiExperience == com.petal.browser.ui.theme.layout.UiExperience.MIUIX
-    if (isMiuix) {
-        return com.petal.browser.ui.miuix.theme.MiuiXSquircleShape(radius, smoothing = 0.68f)
-    }
     return com.petal.browser.ui.theme.layout.PetalLayoutState.settings.containmentShapeType.cornerShape(
         radius, multiplier = com.petal.browser.ui.theme.layout.PetalLayoutState.containmentCorners,
     )

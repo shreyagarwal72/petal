@@ -71,7 +71,6 @@ import com.petal.browser.unit.PetalHighRefreshRateManager
 import com.petal.browser.widget.PetalSearchWidgetProvider
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 @Composable
 fun AppearanceSettingsScreen(
@@ -395,15 +394,6 @@ fun AppearanceSettingsScreenContent(
                 sp.edit().putBoolean("sp_liquid_glass_enabled", isGlass).apply()
                 PetalLayoutState.update(context) { current ->
                     when (exp) {
-                        UiExperience.MIUIX -> current.copy(
-                            uiExperience = exp,
-                            useMiuixOs4 = true,
-                            switchType = PetalSwitchType.HYPEROS,
-                            sliderType = PetalSliderType.HYPEROS,
-                            shapeType = PetalShapeType.SQUIRCLE,
-                            containmentShape = PetalContainmentShapeChoice.SQUIRCLE,
-                            badgeShape = PetalBadgeShape.FOLLOW
-                        )
                         UiExperience.LIQUID_GLASS -> current.copy(
                             uiExperience = exp,
                         )
@@ -1704,10 +1694,6 @@ fun AppearanceSettingsScreenContent(
                                 UiExperience.LIQUID_GLASS,
                                 "Liquid Glass"
                             ),
-                            com.petal.browser.ui.components.PetalButtonGroupItem(
-                                UiExperience.MIUIX,
-                                "HyperOS / MiuiX"
-                            ),
                         ),
                         selected = activeUiExperience,
                         minHeight = 44.dp,
@@ -2169,116 +2155,6 @@ fun AppearanceSettingsScreenContent(
                                             }
                                         }
                                     }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Section 6: Xiaomi HyperOS / MiuiX Flagship Experience
-                run {
-                    val isMiuix = com.petal.browser.ui.containment.isMiuixEnabled()
-                    PetalSettingsSection(
-                        title = "Xiaomi HyperOS / MiuiX Experience",
-                        icon = ImageToolboxIcons.Outlined.HyperOS,
-                        cardId = "appearance_miuix",
-                        targetHighlightId = targetHighlightItemId
-                    ) {
-                        Text(
-                            text = "Flagship Xiaomi HyperOS design language with continuous curvature squircles, high-contrast spring physics, and acrylic blur.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                            title = "MiuiX UI Experience",
-                            subtitle = if (isMiuix) "Active system-wide across controls, cards, sheets & back gestures" else "Switch to Xiaomi HyperOS / MIUI flagship UI",
-                            icon = ImageToolboxIcons.Outlined.HyperOS,
-                            checked = isMiuix,
-                            position = if (isMiuix) com.petal.browser.ui.containment.PetalGroupPosition.TOP else com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
-                            onCheckedChange = { active ->
-                                if (active) {
-                                    onSelectExperience(UiExperience.MIUIX)
-                                } else {
-                                    onSelectExperience(UiExperience.MATERIAL_EXPRESSIVE)
-                                }
-                            }
-                        )
-
-                        if (isMiuix) {
-                            val layoutSettings = com.petal.browser.ui.theme.layout.LocalPetalLayoutSettings.current
-                            com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                title = "HyperOS UI4 Mode",
-                                subtitle = "Dynamic AGSL fluid mesh background, floating glass navigation bar & progressive blur",
-                                icon = ImageToolboxIcons.Rounded.AutoAwesome,
-                                checked = layoutSettings.useMiuixOs4,
-                                position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
-                                onCheckedChange = { active ->
-                                    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-                                    sp.edit().putBoolean(com.petal.browser.ui.theme.layout.PetalLayoutSettings.KEY_MIUIX_OS4, active).apply()
-                                    com.petal.browser.ui.theme.layout.PetalLayoutState.update(context) { current ->
-                                        current.copy(useMiuixOs4 = active)
-                                    }
-                                }
-                            )
-                        }
-
-                        if (isMiuix) {
-                            var testToggle by remember { mutableStateOf(true) }
-                            var testSlider by remember { mutableFloatStateOf(0.65f) }
-
-                            // Live Demo Card
-                            com.petal.browser.ui.miuix.containment.MiuiXGroup(
-                                title = "MiuiX Live Preview",
-                                footer = "Continuous squircle cards with tactile spring toggles & capsule sliders.",
-                                modifier = Modifier.padding(top = 8.dp)
-                            ) {
-                                com.petal.browser.ui.miuix.containment.MiuiXPreferenceRow(
-                                    title = "Continuous Squircle Curvature",
-                                    subtitle = "Superellipse G2 curvature with 0.68f smoothing factor",
-                                    icon = ImageToolboxIcons.Rounded.AutoAwesome,
-                                    showChevron = true,
-                                    showDivider = true,
-                                )
-
-                                com.petal.browser.ui.miuix.containment.MiuiXSwitchRow(
-                                    title = "HyperOS Spring Switch",
-                                    subtitle = "Bouncy low-damping spring toggle with tactile haptics",
-                                    icon = ImageToolboxIcons.Outlined.ToggleOn,
-                                    checked = testToggle,
-                                    onCheckedChange = { testToggle = it },
-                                    showDivider = true,
-                                )
-
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 10.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(
-                                            text = "HyperOS Capsule Slider",
-                                            style = MaterialTheme.typography.bodyLarge.copy(
-                                                fontWeight = FontWeight.Medium,
-                                                fontSize = 15.sp
-                                            ),
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Text(
-                                            text = "${(testSlider * 100).toInt()}%",
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    com.petal.browser.ui.miuix.components.MiuiXSlider(
-                                        value = testSlider,
-                                        onValueChange = { testSlider = it },
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
                                 }
                             }
                         }

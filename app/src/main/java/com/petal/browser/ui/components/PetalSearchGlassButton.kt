@@ -28,7 +28,7 @@ import com.petal.browser.ui.glass.bouncyClickable
 import com.petal.browser.ui.glass.liquidGlass
 import com.petal.browser.ui.glass.rememberGlassBar
 import kotlinx.coroutines.delay
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * The separate search button that sits at the right of the floating nav bar.

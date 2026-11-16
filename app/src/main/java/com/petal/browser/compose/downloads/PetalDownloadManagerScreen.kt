@@ -118,7 +118,6 @@ import kotlin.math.sin
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.download.PetalBatteryOptimization
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 @Immutable
 data class DownloadItem(

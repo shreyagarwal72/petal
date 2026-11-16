@@ -61,7 +61,6 @@ import com.petal.browser.ui.glass.liveGlassWallpaper
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 interface PetalOverflowMenuActionHandler {
     fun onGoBack()
@@ -118,8 +117,6 @@ object PetalOverflowBridge {
             val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
             com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-            val exp = sp.getString("sp_ui_experience", null)
-            val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
             val defGlass = false
             val isLiquidGlass = sp.getBoolean("sp_liquid_glass_containments", defGlass)
             val useBlurBg = sp.getBoolean("sp_overflow_menu_blur_bg", true) && isLiquidGlass

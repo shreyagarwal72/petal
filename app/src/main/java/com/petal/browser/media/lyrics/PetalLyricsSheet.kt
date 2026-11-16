@@ -101,8 +101,8 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.media.PetalAudioPalette
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

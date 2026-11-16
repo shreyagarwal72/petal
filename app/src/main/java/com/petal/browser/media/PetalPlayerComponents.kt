@@ -119,7 +119,7 @@ import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Petal Player Component Suite

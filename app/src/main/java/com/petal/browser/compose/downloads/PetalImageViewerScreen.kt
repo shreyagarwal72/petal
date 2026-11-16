@@ -158,8 +158,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.petal.browser.ui.miuix.wrappers.Icon
-import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 
 // ─── Unified image entry — covers local files AND remote/network URLs ─────────
 

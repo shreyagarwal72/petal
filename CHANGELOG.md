@@ -596,7 +596,7 @@ The **v4.6.0** milestone consolidates extensive architectural and UX advancement
 - **Live Backdrops**: Modal bottom sheets, popup menus, and the QR scanner record dynamic backdrops every frame to refract underlying page content, animations, or live camera feeds.
 
 #### 🎞️ Predictive Back Gestures & Animation Styles
-- **Predictive Back Styles**: Added 5 customizable gesture animation styles under Display settings: **Petal**, **AOSP**, **MIUIX**, **Scale**, and **Classic**, complete with a looping mini-phone live preview.
+- **Predictive Back Styles**: Added 5 customizable gesture animation styles under Display settings: **Petal**, **AOSP**, **Slide**, **Scale**, and **Classic**, complete with a looping mini-phone live preview.
 - **Real-Time Depth Blur**: Background screens smoothly blur and dim as back gestures progress and clear cleanly on gesture completion.
 
 #### ⚡ Performance & Resource Optimizations

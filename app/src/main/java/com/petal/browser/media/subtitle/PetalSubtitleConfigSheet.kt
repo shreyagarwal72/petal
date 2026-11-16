@@ -33,7 +33,6 @@ import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.containment.PetalSheet
 import com.petal.browser.ui.containment.liquidGlassChrome
 import kotlinx.coroutines.launch
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -33,7 +33,6 @@ import com.petal.browser.ui.components.ScrollFadeRow
 import com.petal.browser.ui.components.allSearchEngines
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

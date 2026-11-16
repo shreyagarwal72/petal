@@ -34,7 +34,6 @@ import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalSheet
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.glass.LocalPetalGlassSource
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 object PetalPlayUpdatePopupBridge {
 

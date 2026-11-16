@@ -115,7 +115,7 @@ import com.petal.browser.ui.theme.ColorStyle
 import androidx.compose.runtime.CompositionLocalProvider
 import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 object PetalPrivacyShieldSheet {
 

@@ -89,7 +89,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.view.PetalToast
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Pure Kotlin & Compose Material 3 Expressive implementation of CustomRedirectsDialog.

@@ -100,8 +100,8 @@ import com.petal.browser.media.PetalAudioPalette
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.util.Locale
-import com.petal.browser.ui.miuix.wrappers.ModalBottomSheet
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Icon
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Sleep Timer Sheet

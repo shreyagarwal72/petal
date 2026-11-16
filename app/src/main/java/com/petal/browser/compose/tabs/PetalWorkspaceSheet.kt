@@ -53,8 +53,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.containment.PetalSheet
-import com.petal.browser.ui.miuix.wrappers.AlertDialog
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 
 /**
  * Zen Browser-style Workspace Sheet.

@@ -58,7 +58,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 object PetalVoiceSearchBridge {
     private var activeComposeView: ComposeView? = null

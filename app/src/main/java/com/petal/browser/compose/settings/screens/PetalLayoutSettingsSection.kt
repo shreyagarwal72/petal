@@ -112,7 +112,7 @@ import com.petal.browser.ui.theme.layout.petalFlingBehavior
 import com.petal.browser.ui.theme.layout.rememberPetalLayoutSettings
 import kotlinx.coroutines.delay
 import java.util.Locale
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * Expressive Layout & Controls (ImageToolbox-style).
@@ -130,7 +130,6 @@ fun PetalLayoutSettingsSection(
     val context = LocalContext.current
     val settings = rememberPetalLayoutSettings()
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val isMiuix = com.petal.browser.ui.containment.isMiuixEnabled()
 
     var sheet by rememberSaveable { mutableStateOf<String?>(null) }
     val total = 9
@@ -160,11 +159,10 @@ fun PetalLayoutSettingsSection(
             trailing = { EditGlyph() },
             onClick = { sheet = SHEET_UI_EXPERIENCE }
         )
-        if (!isMiuix) { // Miuix mode uses the real Miuix switch and slider only
         PetalGroupRow(
             icon = ImageToolboxIcons.Outlined.ToggleOn,
             title = "Switch Type",
-            subtitle = if (isGlass) "Liquid Glass toggle (automatic while glass is on)" else if (isMiuix) "HyperOS Switch (active with MiuiX)" else settings.switchType.title,
+            subtitle = if (isGlass) "Liquid Glass toggle (automatic while glass is on)" else settings.switchType.title,
             position = pos(1),
             iconContainer = MaterialTheme.colorScheme.primaryContainer,
             iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -174,18 +172,17 @@ fun PetalLayoutSettingsSection(
         PetalGroupRow(
             icon = ImageToolboxIcons.Rounded.Slider,
             title = "Slider Type",
-            subtitle = if (isMiuix) "HyperOS Slider (active with MiuiX)" else settings.sliderType.title,
+            subtitle = settings.sliderType.title,
             position = pos(2),
             iconContainer = MaterialTheme.colorScheme.secondaryContainer,
             iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
             trailing = { EditGlyph() },
             onClick = { sheet = SHEET_SLIDER }
         )
-        }
         PetalGroupRow(
             icon = ImageToolboxIcons.Rounded.RoundedCorner,
             title = "Shapes Type",
-            subtitle = if (isMiuix) "Continuous Squircle (active with MiuiX)" else settings.shapeType.title,
+            subtitle = settings.shapeType.title,
             position = pos(3),
             iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
             iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -326,15 +323,6 @@ fun PetalLayoutSettingsSection(
                 }
                 PetalLayoutState.update(context) { current ->
                     when (exp) {
-                        com.petal.browser.ui.theme.layout.UiExperience.MIUIX -> current.copy(
-                            uiExperience = exp,
-                            useMiuixOs4 = true,
-                            switchType = PetalSwitchType.HYPEROS,
-                            sliderType = PetalSliderType.HYPEROS,
-                            shapeType = PetalShapeType.SQUIRCLE,
-                            containmentShape = PetalContainmentShapeChoice.SQUIRCLE,
-                            badgeShape = PetalBadgeShape.FOLLOW
-                        )
                         com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS -> current.copy(
                             uiExperience = exp,
                         )
@@ -356,7 +344,6 @@ fun PetalLayoutSettingsSection(
                 title = item.title,
                 subtitle = item.subtitle,
                 icon = when (item) {
-                    com.petal.browser.ui.theme.layout.UiExperience.MIUIX -> ImageToolboxIcons.Outlined.HyperOS
                     com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS -> ImageToolboxIcons.Rounded.AutoAwesome
                     com.petal.browser.ui.theme.layout.UiExperience.MATERIAL_EXPRESSIVE -> ImageToolboxIcons.Outlined.MaterialDesign
                 },

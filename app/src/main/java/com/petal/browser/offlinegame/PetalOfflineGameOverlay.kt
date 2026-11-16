@@ -87,7 +87,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.toShape
 import org.mozilla.geckoview.WebRequestError
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /** Mutable details of the failed load, shared between the tab view and the Compose overlay. */
 @Stable

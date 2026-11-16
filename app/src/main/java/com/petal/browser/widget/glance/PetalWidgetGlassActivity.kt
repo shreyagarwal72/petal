@@ -64,7 +64,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlin.math.max
 import kotlin.math.roundToInt
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
  * Fullscreen calibration activity for Petal's liquid glass home screen widgets.

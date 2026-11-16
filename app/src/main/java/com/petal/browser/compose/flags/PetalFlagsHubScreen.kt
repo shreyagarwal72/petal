@@ -99,7 +99,7 @@ import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
 import com.petal.browser.ui.glass.captureGlassWallpaper
 import com.petal.browser.ui.glass.rememberGlassSheen
 import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
-import com.petal.browser.ui.miuix.wrappers.Icon
+import androidx.compose.material3.Icon
 
 /**
  * PetalFlagsHubScreen

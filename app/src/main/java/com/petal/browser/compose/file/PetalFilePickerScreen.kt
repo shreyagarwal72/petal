@@ -108,7 +108,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 enum class FileSortMode {
     NAME_ASC, NAME_DESC, SIZE_DESC, SIZE_ASC, DATE_DESC, DATE_ASC

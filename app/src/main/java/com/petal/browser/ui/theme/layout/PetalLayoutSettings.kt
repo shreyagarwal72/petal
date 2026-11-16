@@ -13,12 +13,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.preference.PreferenceManager
 
 /**
- * Top-level system UI Experience choice: Material 3 Expressive, Liquid Glass, or MiuiX (HyperOS).
+ * Top-level system UI Experience choice: Material 3 Expressive or Liquid Glass.
  */
 enum class UiExperience(val key: String, val title: String, val subtitle: String) {
     MATERIAL_EXPRESSIVE("M3_EXPRESSIVE", "Material 3 Expressive", "Google Expressive M3 with bouncy shapes & kinetic pills"),
-    LIQUID_GLASS("LIQUID_GLASS", "Liquid Glass", "Translucent glass with backdrop refraction & specular lighting"),
-    MIUIX("MIUIX", "MiuiX (HyperOS)", "Xiaomi HyperOS flagship experience with continuous squircles & acrylic blur");
+    LIQUID_GLASS("LIQUID_GLASS", "Liquid Glass", "Translucent glass with backdrop refraction & specular lighting");
 
     companion object {
         fun fromKey(key: String?): UiExperience =
@@ -50,8 +49,6 @@ data class PetalLayoutSettings(
     val containmentCornersSize: Float = 1.0f,
     /** Shape of the icon containers (badges) used across containment rows and cards. */
     val badgeShape: PetalBadgeShape = PetalBadgeShape.MIXED,
-    /** Whether Xiaomi HyperOS 2.0/3.0 UI4 features (AGSL fluid mesh background, glass pill nav, progressive blur) are enabled. */
-    val useMiuixOs4: Boolean = true,
 ) {
     /** Shape style actually used by containment surfaces. */
     val containmentShapeType: PetalShapeType
@@ -72,7 +69,6 @@ data class PetalLayoutSettings(
         const val KEY_CONTAINMENT_OWN_CORNERS = "sp_containment_own_corners"
         const val KEY_CONTAINMENT_CORNERS_SIZE = "sp_containment_corners_size"
         const val KEY_BADGE_SHAPE = "sp_containment_badge_shape"
-        const val KEY_MIUIX_OS4 = "sp_miuix_os4"
 
         fun fromPreferences(sp: SharedPreferences): PetalLayoutSettings {
             val expRaw = sp.getString(KEY_UI_EXPERIENCE, null)
@@ -98,7 +94,6 @@ data class PetalLayoutSettings(
                 containmentOwnCorners = sp.getBoolean(KEY_CONTAINMENT_OWN_CORNERS, false),
                 containmentCornersSize = sp.safeFloat(KEY_CONTAINMENT_CORNERS_SIZE, 1.0f).coerceIn(0f, 2f),
                 badgeShape = PetalBadgeShape.fromKey(sp.getString(KEY_BADGE_SHAPE, null)),
-                useMiuixOs4 = sp.getBoolean(KEY_MIUIX_OS4, true),
             )
         }
 
