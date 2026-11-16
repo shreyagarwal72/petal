@@ -371,10 +371,11 @@ fun Modifier.petalGlassPanel(
                     addRect(androidx.compose.ui.geometry.Rect(Offset.Zero, size))
                 }
             }
-            val lensHeight = 14.dp.toPx() * tuning.width
-            val lensAmount = 16.dp.toPx() * tuning.strength
-            // The pad must hold everything the lens can pull in, or the rim clamps.
-            val pad = lensAmount + 4.dp.toPx()
+            // Stride's panel lens (24 dp deep, 56 dp pull). The frost is already in the
+            // wallpaper and the lens only samples inward, so a sliver of margin is enough.
+            val lensHeight = 24.dp.toPx() * tuning.width
+            val lensAmount = 56.dp.toPx() * tuning.strength
+            val pad = 2.dp.toPx()
             val effect = try {
                 val radii = cornerRadii(shape, size, layoutDirection, this)
                 radii?.let { lensEffect(size, pad, it, lensHeight, lensAmount) }

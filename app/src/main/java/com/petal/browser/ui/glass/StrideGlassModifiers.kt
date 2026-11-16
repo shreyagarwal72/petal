@@ -90,10 +90,15 @@ private fun Modifier.liquidGlassBase(shape: Shape, tint: Color, bar: GlassBar?, 
     // frosted glass even where the live page cannot be sampled.
     // The page is padded away from the bars at rest (see BarInsets), so the glass no longer has to
     // hide page text. It only shows the page while the bars move, so keep the tint light.
-    val baseTintAlpha = ((if (dark) 0.38f else 0.42f) * opacity.coerceAtMost(1.1f)).coerceIn(0.35f, 0.45f)
+    // Stride keeps only "a breath of tint" (0.14 dark / 0.20 light) so the look comes from the bent,
+    // softened page rather than a frosted overlay. Slightly higher here for text over arbitrary sites;
+    // the Translucency slider still scales it.
+    val baseTintAlpha = ((if (dark) 0.16f else 0.22f) * opacity.coerceAtMost(1.1f)).coerceIn(0.10f, 0.40f)
     if (bar == null) {
         if (wallpaper != null && wallpaper.ready) {
-            return this.petalGlassPanel(shape, tint.copy(alpha = baseTintAlpha), baseEdge)
+            // Cards use Stride's panel tint (22% dark / 32% light), scaled by the Translucency slider.
+            val panelAlpha = ((if (dark) 0.22f else 0.32f) * opacity.coerceAtMost(1.1f)).coerceIn(0.15f, 0.45f)
+            return this.petalGlassPanel(shape, tint.copy(alpha = panelAlpha), baseEdge)
         }
         if (themeGlass) {
             val fallbackAlpha = if (dark) 0.38f else 0.45f
@@ -130,16 +135,18 @@ private fun Modifier.liquidGlassBase(shape: Shape, tint: Color, bar: GlassBar?, 
     // Liquid glass tint: authentic physical glass with pure light bending refraction,
     // beveled specular sheen, and clear optical depth.
     val look = with(density) {
-        val blur = (readGlassBlurDp(prefs) ?: (10f + alphaPref * 14f).coerceAtMost(16f)).dp.toPx()
-        val lensHeight = 16.dp.toPx() * tuning.width
-        val lensAmount = 10.dp.toPx() * tuning.strength
-        // Ensure pad completely accommodates both blur and refraction displacement
-        val pad = blur * 1.5f + lensAmount + 6.dp.toPx()
+        // Stride: a light 6 dp blur (a heavy one flattens the image to frost and hides the
+        // refraction) and a deep lens, 22 dp in from the rim, pulling the image 36 dp.
+        val blur = (readGlassBlurDp(prefs) ?: 6f).dp.toPx()
+        val lensHeight = 22.dp.toPx() * tuning.width
+        val lensAmount = 36.dp.toPx() * tuning.strength
+        // The lens samples inward only, so the margin is for the blur alone.
+        val pad = blur * 1.5f + 2.dp.toPx()
         GlassLook(
             fill = tint.copy(alpha = baseTintAlpha).argb(),
-            specular = Color.White.copy(alpha = ((if (dark) 0.35f else 0.65f) * baseEdge).coerceIn(0f, 1f)).argb(),
-            rimTop = Color.White.copy(alpha = ((if (dark) 0.55f else 0.85f) * baseEdge).coerceIn(0f, 1f)).argb(),
-            rimBottom = Color.White.copy(alpha = ((if (dark) 0.12f else 0.30f) * baseEdge).coerceIn(0f, 1f)).argb(),
+            specular = Color.White.copy(alpha = ((if (dark) 0.22f else 0.55f) * baseEdge).coerceIn(0f, 1f)).argb(),
+            rimTop = Color.White.copy(alpha = ((if (dark) 0.35f else 0.80f) * baseEdge).coerceIn(0f, 1f)).argb(),
+            rimBottom = Color.White.copy(alpha = ((if (dark) 0.06f else 0.25f) * baseEdge).coerceIn(0f, 1f)).argb(),
             blur = blur,
             lensHeight = lensHeight,
             lensAmount = lensAmount,
@@ -194,16 +201,17 @@ fun Modifier.glassTile(
     val density = LocalDensity.current
     val tuning = rememberRefractionTuning()
     val look = with(density) {
-        val lensHeight = 12.dp.toPx() * tuning.width
-        val lensAmount = 14.dp.toPx() * tuning.strength
+        // Stride's slab lens: 14 dp deep, 22 dp pull, clear (8% tint). Samples inward, so a small pad.
+        val lensHeight = 14.dp.toPx() * tuning.width
+        val lensAmount = 22.dp.toPx() * tuning.strength
         SlabLook(
-            fill = tint.copy(alpha = 0.12f).argb(),
-            rimTop = Color.White.copy(alpha = 0.95f).argb(),
-            rimBottom = Color.White.copy(alpha = 0.35f).argb(),
+            fill = tint.copy(alpha = 0.08f).argb(),
+            rimTop = Color.White.copy(alpha = 0.90f).argb(),
+            rimBottom = Color.White.copy(alpha = 0.30f).argb(),
             lensHeight = lensHeight,
             lensAmount = lensAmount,
             rimWidth = 1.dp.toPx(),
-            pad = lensAmount + 4.dp.toPx()
+            pad = 4.dp.toPx()
         )
     }
     if (bar == null) {
