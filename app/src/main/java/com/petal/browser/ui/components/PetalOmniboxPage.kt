@@ -374,27 +374,7 @@ fun PetalOmniboxPage(
         }
     }
 
-    val siteShortcuts = remember(context) {
-        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled()) {
-            try {
-                val pinned = com.petal.browser.engine.gecko.PetalEngineStore.getPinnedSiteStorage(context)
-                val list = kotlinx.coroutines.runBlocking { pinned.getPinnedSites() }
-                if (list.isNotEmpty()) {
-                    list.take(6).map { site ->
-                        val icon = when {
-                            site.url.contains("youtube") -> Icons.Rounded.PlayCircle
-                            site.url.contains("wikipedia") -> Icons.Rounded.MenuBook
-                            site.url.contains("github") -> Icons.Rounded.Code
-                            site.url.contains("reddit") -> Icons.Rounded.Forum
-                            site.url.contains("news") -> Icons.Rounded.RssFeed
-                            else -> Icons.Rounded.Public
-                        }
-                        TopSiteShortcut(site.title ?: site.url, site.url, icon)
-                    }
-                } else null
-            } catch (_: Throwable) { null }
-        } else null
-    } ?: remember {
+    val siteShortcuts = remember {
         listOf(
             TopSiteShortcut("Google", "https://www.google.com", Icons.Rounded.Search),
             TopSiteShortcut("YouTube", "https://www.youtube.com", Icons.Rounded.PlayCircle),

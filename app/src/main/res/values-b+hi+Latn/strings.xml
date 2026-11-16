@@ -498,7 +498,6 @@
     <string name="ui_write_notes_css_rules_or">Is site ke liye notes, CSS rules ya tokens likhein...</string>
     <string name="ui_save_notes">Notes Save Karein</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">GeckoView Engine Flags aur Internal Preferences</string>
-    <string name="ui_search_flags">Flags search karein...</string>
     <string name="ui_site_favicon">Site Favicon</string>
     <string name="ui_page_summary">Page Summary</string>
     <string name="ui_ai_settings">AI Settings</string>
@@ -859,8 +858,6 @@
     <string name="ui_local_website_data_and_offline">Local website data aur offline storage</string>
     <string name="ui_automatically_clear_history_cache_and">Exit par history, cache aur open tabs apne aap saaf karein</string>
     <string name="ui_clear_selected_data">Chuna Hua Data Saaf Karein</string>
-    <string name="ui_experimental">Experimental</string>
-    <string name="ui_app_language_experimental_features_and">App language, experimental features aur advanced settings</string>
     <string name="ui_app_language">App Language</string>
     <string name="ui_choose_your_preferred_display_language">Apni pasandida display language chunein:</string>
     <string name="ui_updates_diagnostics">Updates aur Diagnostics</string>

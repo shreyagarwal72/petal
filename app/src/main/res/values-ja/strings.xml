@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">このサイトのメモ、CSS ルール、またはトークンを作成します...</string>
     <string name="ui_save_notes">メモの保存</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">GeckoView エンジンのフラグと内部設定</string>
-    <string name="ui_search_flags">検索フラグ...</string>
     <string name="ui_site_favicon">サイトのファビコン</string>
     <string name="ui_page_summary">ページ概要</string>
     <string name="ui_ai_settings">AI設定</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">ローカル Web サイトのデータとオフライン ストレージ</string>
     <string name="ui_automatically_clear_history_cache_and">終了時に履歴、キャッシュを自動的にクリアし、タブを開く</string>
     <string name="ui_clear_selected_data">選択したデータをクリア</string>
-    <string name="ui_experimental">実験的</string>
-    <string name="ui_app_language_experimental_features_and">アプリの言語、実験的な機能、詳細設定</string>
     <string name="ui_app_language">アプリの言語</string>
     <string name="ui_choose_your_preferred_display_language">希望の表示言語を選択してください:</string>
     <string name="ui_updates_diagnostics">アップデートと診断</string>

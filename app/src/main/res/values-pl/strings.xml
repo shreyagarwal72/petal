@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Napisz notatki, reguły CSS lub tokeny dla tej witryny...</string>
     <string name="ui_save_notes">Zapisz notatki</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">Flagi i preferencje wewnętrzne silnika GeckoView</string>
-    <string name="ui_search_flags">Szukaj flag...</string>
     <string name="ui_site_favicon">Favikona witryny</string>
     <string name="ui_page_summary">Podsumowanie strony</string>
     <string name="ui_ai_settings">Ustawienia AI</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Lokalne dane witryn internetowych i przechowywanie w trybie offline</string>
     <string name="ui_automatically_clear_history_cache_and">Automatycznie usuwaj historię, pamięć podręczną i otwieraj karty przy wyjściu</string>
     <string name="ui_clear_selected_data">Wyczyść wybrane dane</string>
-    <string name="ui_experimental">Eksperymentalny</string>
-    <string name="ui_app_language_experimental_features_and">Język aplikacji, funkcje eksperymentalne i ustawienia zaawansowane</string>
     <string name="ui_app_language">Język aplikacji</string>
     <string name="ui_choose_your_preferred_display_language">Wybierz preferowany język wyświetlania:</string>
     <string name="ui_updates_diagnostics">Aktualizacje i diagnostyka</string>

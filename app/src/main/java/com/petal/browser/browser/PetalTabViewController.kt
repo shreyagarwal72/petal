@@ -1005,17 +1005,7 @@ class PetalTabViewController private constructor(
                                      (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE_PERMANENT) != 0
 
                     if (isTopLevel && !isError && !isRedirect) {
-                        if (!com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
-                            recordHistoryVisit(url, pageTitle)
-                        } else {
-                            if (!isIncognito()) {
-                                com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(url)
-                            }
-                        }
-                    }
-                    if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled() && !isIncognito()) {
-                        return engineHistoryDelegate?.onVisited(session, url, lastVisitedURL, flags)
-                            ?: org.mozilla.geckoview.GeckoResult.fromValue(true)
+                        recordHistoryVisit(url, pageTitle)
                     }
                     return org.mozilla.geckoview.GeckoResult.fromValue(true)
                 }
@@ -1024,21 +1014,6 @@ class PetalTabViewController private constructor(
                     session: org.mozilla.geckoview.GeckoSession,
                     urls: Array<out String>
                 ): org.mozilla.geckoview.GeckoResult<BooleanArray>? {
-                    if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
-                        engineHistoryDelegate?.getVisited(session, urls)?.let { return it }
-                        val result = org.mozilla.geckoview.GeckoResult<BooleanArray>()
-                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-                            try {
-                                val hs = com.petal.browser.database.PetalPlacesProvider.getHistoryStorage(context)
-                                val visitedList = hs.getVisited(urls.toList())
-                                val arr = BooleanArray(urls.size) { i -> visitedList.getOrNull(i) == true }
-                                result.complete(arr)
-                            } catch (_: Throwable) {
-                                result.complete(BooleanArray(urls.size) { false })
-                            }
-                        }
-                        return result
-                    }
                     val result = org.mozilla.geckoview.GeckoResult<BooleanArray>()
                     kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                         try {
@@ -2395,14 +2370,6 @@ class PetalTabViewController private constructor(
             rawTitle
         }
 
-        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
-            if (!isIncognito()) {
-                com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(targetUrl)
-            }
-            lastRecordedHistoryUrl = targetUrl
-            lastRecordedHistoryTitle = effectiveTitle
-            return
-        }
         if (isIncognito() || targetUrl.isBlank() || targetUrl.equals("about:blank", ignoreCase = true) ||
             targetUrl.startsWith("about:", ignoreCase = true) || com.petal.browser.unit.PetalBrowserUtils.isHomePage(targetUrl)) {
             return
@@ -2695,27 +2662,8 @@ private class ExternalSchemeNavigationDelegate(
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLoadRequest uri=$uri target=${request.target}")
 
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-        val isAcPhase1 = sp.getBoolean("sp_ac_phase1", false)
-
-        if (isAcPhase1) {
-            val act = resolveActivity()
-            if (act != null && com.petal.browser.engine.gecko.PetalAppLinksBridge.handleExternalLoadRequest(
-                activity = act,
-                uri = uri,
-                hasUserGesture = request.hasUserGesture,
-                isIncognito = isIncognitoSupplier(),
-                isRedirect = request.isRedirect,
-                isDirectNavigation = request.isDirectNavigation,
-                onLoadFallbackUrl = { fallbackUrl ->
-                    (act as? com.petal.browser.activity.MainActivity)?.viewModel?.loadUrl(fallbackUrl)
-                }
-            )) {
-                return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
-            }
-        } else {
-            if (handleExternal(uri)) {
-                return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
-            }
+        if (handleExternal(uri)) {
+            return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
         }
 
         // Interactive Element Zapper (petal://zap-element?domain=...&selector=...)

@@ -32,11 +32,7 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
     )
     fun start() {
         mediaFullscreen.start()
-        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled()) {
-            promptBridge.start()
-        } else {
-            prompts.start()
-        }
+        prompts.start()
     }
 
     fun stop() {

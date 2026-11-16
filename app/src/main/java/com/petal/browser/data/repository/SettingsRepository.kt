@@ -116,7 +116,7 @@ interface SettingsRepository {
     val mergeLayout: Flow<String>
     val barCollapseStyle: Flow<String>
 
-    // Experimental & Miscellaneous
+    // Miscellaneous
     val appLanguage: Flow<String>
     val matchWebsiteLanguage: Flow<Boolean>
     val addressBarPosition: Flow<String>

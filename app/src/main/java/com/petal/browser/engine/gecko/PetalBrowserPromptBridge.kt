@@ -403,18 +403,16 @@ class PetalBrowserPromptBridge(
                     initialUsername = username,
                     initialPassword = password,
                     onSave = { finalUser, finalPass ->
-                        if (!com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
-                            val guid = UUID.randomUUID().toString()
-                            PetalCredentialVault.save(
-                                PetalCredential(
-                                    id = guid,
-                                    domain = domain,
-                                    originUrl = domain,
-                                    username = finalUser,
-                                    password = finalPass
-                                )
+                        val guid = UUID.randomUUID().toString()
+                        PetalCredentialVault.save(
+                            PetalCredential(
+                                id = guid,
+                                domain = domain,
+                                originUrl = domain,
+                                username = finalUser,
+                                password = finalPass
                             )
-                        }
+                        )
                         request.onConfirm(loginEntry.copy(username = finalUser, password = finalPass))
                         consume(tabId, request)
                     },

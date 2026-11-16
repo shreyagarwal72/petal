@@ -270,4 +270,34 @@ object PetalPrivacyHardening {
             onComplete?.invoke()
         }
     }
+
+    /**
+     * Writes the hardening rules above to the Gecko profile's user.js so they are re-applied on
+     * the next cold start. Anything the user changes by hand in the official about:config page
+     * for a pref that is not listed here persists normally in the profile's prefs.js.
+     */
+    @JvmStatic
+    fun syncUserJs(context: Context) {
+        val appContext = context.applicationContext
+        try {
+            val content = buildArkenfoxUserJs(appContext)
+            val roots = listOf(
+                java.io.File(appContext.filesDir, "mozilla"),
+                appContext.getDir("mozilla", Context.MODE_PRIVATE),
+                java.io.File(appContext.filesDir, "geckoview")
+            )
+            for (dir in roots) {
+                if (!dir.exists() || !dir.isDirectory) continue
+                val subdirs = dir.listFiles { f -> f.isDirectory } ?: emptyArray()
+                val targets = if (subdirs.isNotEmpty()) subdirs.toList() + dir else listOf(dir)
+                for (target in targets) {
+                    try {
+                        java.io.File(target, "user.js").writeText(content)
+                    } catch (_: Throwable) {}
+                }
+            }
+        } catch (t: Throwable) {
+            Log.e("PetalPrivacyHardening", "Failed to write user.js: ${t.message}", t)
+        }
+    }
 }

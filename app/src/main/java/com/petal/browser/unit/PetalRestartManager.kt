@@ -1,4 +1,4 @@
-package com.petal.browser.flags
+package com.petal.browser.unit
 
 import android.app.Activity
 import android.content.Context
@@ -11,8 +11,8 @@ import android.util.Log
 /**
  * PetalRestartManager
  * ─────────────────────────────────────────────────────────────────────────
- * Performs a seamless application restart to apply low-level GeckoView
- * engine preferences and user.js flags while preserving active tab sessions.
+ * Performs an application restart (used after a backup restore) while
+ * preserving active tab sessions.
  */
 object PetalRestartManager {
 
@@ -21,7 +21,6 @@ object PetalRestartManager {
     @JvmStatic
     fun restartApp(context: Context) {
         val appContext = context.applicationContext
-        PetalFlagsStore.acknowledgeRelaunch()
 
         try {
             Log.i(TAG, "Initiating Petal process restart...")
@@ -30,7 +29,7 @@ object PetalRestartManager {
             val pm = appContext.packageManager
             val launchIntent = pm.getLaunchIntentForPackage(appContext.packageName)?.apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                putExtra("extra_flags_restarted", true)
+                putExtra("extra_restarted", true)
             }
 
             if (launchIntent != null) {

@@ -39,9 +39,6 @@ internal class PetalPromptDelegateWrapper(
         this.activityProvider = newActivityProvider
     }
 
-    private val isPhase2: Boolean
-        get() = com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled() && engine != null
-
     private fun inner(): GeckoSession.PromptDelegate =
         com.petal.browser.engine.gecko.PetalEngineBridge.createPromptDelegate(
             session,
@@ -55,7 +52,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.AlertPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
-        if (isPhase2) return engine?.onAlertPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
         val act = activityProvider()
         val res = if (act != null) inner().onAlertPrompt(session, prompt) else null
         return res ?: engine?.onAlertPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -65,7 +61,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.ButtonPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
-        if (isPhase2) return engine?.onButtonPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
         val act = activityProvider()
         val res = if (act != null) inner().onButtonPrompt(session, prompt) else null
         return res ?: engine?.onButtonPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -75,7 +70,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.AuthPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine!!.onAuthPrompt(session, prompt)
         val act = activityProvider()
         val res = if (act != null) inner().onAuthPrompt(session, prompt) else null
         return res ?: engine?.onAuthPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -85,7 +79,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.TextPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine!!.onTextPrompt(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onTextPrompt(session, prompt)
                else engine?.onTextPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -95,7 +88,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.ChoicePrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine!!.onChoicePrompt(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onChoicePrompt(session, prompt)
                else engine?.onChoicePrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -105,7 +97,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.ColorPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine!!.onColorPrompt(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onColorPrompt(session, prompt)
                else engine?.onColorPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -115,7 +106,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.DateTimePrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine!!.onDateTimePrompt(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onDateTimePrompt(session, prompt)
                else engine?.onDateTimePrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -125,7 +115,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.SharePrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine!!.onSharePrompt(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onSharePrompt(session, prompt)
                else engine?.onSharePrompt(session, prompt) ?: GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.SharePrompt.Result.ABORT))
@@ -142,7 +131,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.BeforeUnloadPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine!!.onBeforeUnloadPrompt(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onBeforeUnloadPrompt(session, prompt)
                else engine?.onBeforeUnloadPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
@@ -152,7 +140,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.RepostConfirmPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine!!.onRepostConfirmPrompt(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onRepostConfirmPrompt(session, prompt)
                else engine?.onRepostConfirmPrompt(session, prompt) ?: GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
@@ -176,7 +163,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.FilePrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine?.onFilePrompt(session, prompt) ?: inner().onFilePrompt(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onFilePrompt(session, prompt)
                else engine?.onFilePrompt(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -214,7 +200,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.IdentityCredential.ProviderSelectorPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine?.onSelectIdentityCredentialProvider(session, prompt) ?: inner().onSelectIdentityCredentialProvider(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onSelectIdentityCredentialProvider(session, prompt)
                else engine?.onSelectIdentityCredentialProvider(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -224,7 +209,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.IdentityCredential.AccountSelectorPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine?.onSelectIdentityCredentialAccount(session, prompt) ?: inner().onSelectIdentityCredentialAccount(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onSelectIdentityCredentialAccount(session, prompt)
                else engine?.onSelectIdentityCredentialAccount(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())
@@ -234,7 +218,6 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.IdentityCredential.PrivacyPolicyPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
-        if (isPhase2) return engine?.onShowPrivacyPolicyIdentityCredential(session, prompt) ?: inner().onShowPrivacyPolicyIdentityCredential(session, prompt)
         val act = activityProvider()
         return if (act != null) inner().onShowPrivacyPolicyIdentityCredential(session, prompt)
                else engine?.onShowPrivacyPolicyIdentityCredential(session, prompt) ?: GeckoResult.fromValue(prompt.dismiss())

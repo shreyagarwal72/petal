@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Γράψτε σημειώσεις, κανόνες CSS ή διακριτικά για αυτόν τον ιστότοπο...</string>
     <string name="ui_save_notes">Αποθήκευση σημειώσεων</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">Σημαίες &amp; εσωτερικές προτιμήσεις μηχανών GeckoView</string>
-    <string name="ui_search_flags">Αναζήτηση σημαιών...</string>
     <string name="ui_site_favicon">Favicon ιστότοπου</string>
     <string name="ui_page_summary">Περίληψη σελίδας</string>
     <string name="ui_ai_settings">Ρυθμίσεις AI</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Δεδομένα τοπικού ιστότοπου και αποθήκευση εκτός σύνδεσης</string>
     <string name="ui_automatically_clear_history_cache_and">Αυτόματη διαγραφή ιστορικού, προσωρινής μνήμης και ανοιχτών καρτελών κατά την έξοδο</string>
     <string name="ui_clear_selected_data">Διαγραφή επιλεγμένων δεδομένων</string>
-    <string name="ui_experimental">Πειραματικός</string>
-    <string name="ui_app_language_experimental_features_and">Γλώσσα εφαρμογής, πειραματικές λειτουργίες και σύνθετες ρυθμίσεις</string>
     <string name="ui_app_language">Γλώσσα εφαρμογής</string>
     <string name="ui_choose_your_preferred_display_language">Επιλέξτε τη γλώσσα προβολής που προτιμάτε:</string>
     <string name="ui_updates_diagnostics">Ενημερώσεις &amp; Διαγνωστικά</string>

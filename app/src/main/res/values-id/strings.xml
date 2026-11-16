@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Tulis catatan, aturan CSS, atau token untuk situs ini...</string>
     <string name="ui_save_notes">Simpan Catatan</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">Bendera Mesin GeckoView &amp; Preferensi Internal</string>
-    <string name="ui_search_flags">Bendera pencarian...</string>
     <string name="ui_site_favicon">Situs Favicon</string>
     <string name="ui_page_summary">Ringkasan Halaman</string>
     <string name="ui_ai_settings">Pengaturan AI</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Data situs web lokal dan penyimpanan offline</string>
     <string name="ui_automatically_clear_history_cache_and">Secara otomatis menghapus riwayat, cache, dan tab yang terbuka saat keluar</string>
     <string name="ui_clear_selected_data">Hapus Data yang Dipilih</string>
-    <string name="ui_experimental">Eksperimental</string>
-    <string name="ui_app_language_experimental_features_and">Bahasa aplikasi, fitur eksperimental, dan pengaturan lanjutan</string>
     <string name="ui_app_language">Bahasa Aplikasi</string>
     <string name="ui_choose_your_preferred_display_language">Pilih bahasa tampilan pilihan Anda:</string>
     <string name="ui_updates_diagnostics">Pembaruan &amp; Diagnostik</string>

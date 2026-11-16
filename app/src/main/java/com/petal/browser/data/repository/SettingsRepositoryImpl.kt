@@ -452,7 +452,7 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getString(com.petal.browser.ui.components.BarPrefs.KEY_BAR_COLLAPSE_STYLE, com.petal.browser.ui.components.BarPrefs.COLLAPSE_PILL) ?: com.petal.browser.ui.components.BarPrefs.COLLAPSE_PILL
     }
 
-    // ── Experimental & Miscellaneous ──────────────────────────────────────────
+    // ── Miscellaneous ──────────────────────────────────────────
     override val appLanguage: Flow<String> = preferenceFlow("sp_app_language") {
         sp.getString("sp_app_language", "system") ?: "system"
     }

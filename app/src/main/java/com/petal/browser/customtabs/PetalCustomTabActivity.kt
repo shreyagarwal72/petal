@@ -291,20 +291,6 @@ class PetalCustomTabActivity : ComponentActivity() {
                 || intent.getBooleanExtra("org.mozilla.fenix.EXTRA_IS_PRIVATE", false)
                 || intent.getBooleanExtra("com.google.android.apps.chrome.EXTRA_OPEN_NEW_INCOGNITO_TAB", false)
 
-            if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase4Enabled()) {
-                try {
-                    val config = createCustomTabConfigFromIntent(intent, resources)
-                    config.closeButtonIcon?.let { customCloseButtonBitmap = it }
-                    val params = config.getConfiguredColorSchemeParams(
-                        resources.configuration.uiMode,
-                        null
-                    )
-                    params?.getToolbarBackgroundColor(false)?.let {
-                        customToolbarColor = Color(it)
-                    }
-                } catch (_: Throwable) {}
-            }
-
             if (customToolbarColor == null && intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR)) {
                 val colorInt = intent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0)
                 if (colorInt != 0) {

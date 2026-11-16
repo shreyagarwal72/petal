@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Напишіть примітки, правила CSS або маркери для цього сайту...</string>
     <string name="ui_save_notes">Зберегти нотатки</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">Прапори та внутрішні параметри механізму GeckoView</string>
-    <string name="ui_search_flags">Прапори пошуку...</string>
     <string name="ui_site_favicon">Фавікон сайту</string>
     <string name="ui_page_summary">Підсумок сторінки</string>
     <string name="ui_ai_settings">Налаштування AI</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Дані локального веб-сайту та офлайн-сховище</string>
     <string name="ui_automatically_clear_history_cache_and">Автоматично очищати історію, кеш і відкриті вкладки при виході</string>
     <string name="ui_clear_selected_data">Очистити вибрані дані</string>
-    <string name="ui_experimental">Експериментальний</string>
-    <string name="ui_app_language_experimental_features_and">Мова програми, експериментальні функції та розширені налаштування</string>
     <string name="ui_app_language">Мова програми</string>
     <string name="ui_choose_your_preferred_display_language">Виберіть бажану мову відображення:</string>
     <string name="ui_updates_diagnostics">Оновлення та діагностика</string>

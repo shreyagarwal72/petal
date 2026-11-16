@@ -414,8 +414,6 @@ fun DeveloperProfileGroup(
                             text = "@shreyagarwal72 • Lead Architect & Developer",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
                         )
                     },
                     trailing = {
@@ -448,8 +446,6 @@ fun DeveloperProfileGroup(
                             text = "Explore open source repositories, projects & activity",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
                         )
                     },
                     trailing = {
@@ -482,8 +478,6 @@ fun DeveloperProfileGroup(
                             text = "Kotlin • Jetpack Compose • Material 3 Expressive • Android",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 )
@@ -501,7 +495,7 @@ fun AppInfoGroup(
     versionCode: Int = 390,
     onCopyVersion: () -> Unit
 ) {
-    PetalGroup(rowCount = 4, modifier = Modifier.fillMaxWidth()) { index, position ->
+    PetalGroup(rowCount = 3, modifier = Modifier.fillMaxWidth()) { index, position ->
         when (index) {
             0 -> {
                 PetalGroupListRow(
@@ -584,45 +578,6 @@ fun AppInfoGroup(
                             text = "Zero Telemetry • Isolated Profiles • AdBlock & Tracking Protection",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                )
-            }
-            3 -> {
-                val ctx = androidx.compose.ui.platform.LocalContext.current
-                PetalGroupListRow(
-                    position = position,
-                    onClick = {
-                        val act = ctx as? com.petal.browser.activity.MainActivity
-                        if (act != null) {
-                            act.openFlagsHubScreen()
-                        } else {
-                            com.petal.browser.unit.PetalBrowserUtils.intentURL(ctx, android.net.Uri.parse("petal://flags"))
-                        }
-                    },
-                    leading = {
-                        PetalGroupIconBadge(
-                            icon = Icons.Rounded.AutoAwesome,
-                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY
-                        )
-                    },
-                    content = {
-                        Text(
-                            text = "Experiments & Flags",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "about:config • Chrome-style flags & engine experiments",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    trailing = {
-                        Icon(
-                            imageVector = Icons.Rounded.ChevronRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 )
@@ -866,8 +821,6 @@ private fun WebLinkGroup(
                     text = item.subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
                 )
             },
             trailing = {
@@ -1124,15 +1077,11 @@ fun MissionMetricsGroup() {
                         text = value,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = stringResource(labelRes),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
                     )
                 }
             )

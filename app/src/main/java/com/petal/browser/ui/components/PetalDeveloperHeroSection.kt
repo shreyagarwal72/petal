@@ -205,7 +205,7 @@ fun PetalDeveloperHeroSection(
                             }
                         },
                         shape = shape,
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 14.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 12.dp),
                         modifier = Modifier
                             .weight(1f)
                             .then(if (isGlass) Modifier.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = 0.4f, tintColor = colors.first) else Modifier),
@@ -214,9 +214,22 @@ fun PetalDeveloperHeroSection(
                             contentColor = colors.second
                         ), glass = false
                     ) {
-                        Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                        // Icon stacked above the label so the full word always fits,
+                        // whatever the font scale or button width.
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                                softWrap = false,
+                                overflow = TextOverflow.Visible
+                            )
+                        }
                     }
                 }
             }
@@ -380,16 +393,12 @@ private fun HeroListRow(
                     text = link.title,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = link.subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Icon(

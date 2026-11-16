@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Пишите белешке, ЦСС правила или токене за ову веб локацију...</string>
     <string name="ui_save_notes">Сачувај белешке</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">ГецкоВиев Енгине Заставице и интерне поставке</string>
-    <string name="ui_search_flags">Претражи заставице...</string>
     <string name="ui_site_favicon">Фавицон сајта</string>
     <string name="ui_page_summary">Паге Суммари</string>
     <string name="ui_ai_settings">АИ подешавања</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Локални подаци веб сајта и складиштење ван мреже</string>
     <string name="ui_automatically_clear_history_cache_and">Аутоматски обришите историју, кеш меморију и отворите картице по изласку</string>
     <string name="ui_clear_selected_data">Обришите изабране податке</string>
-    <string name="ui_experimental">Експериментално</string>
-    <string name="ui_app_language_experimental_features_and">Језик апликације, експерименталне функције и напредна подешавања</string>
     <string name="ui_app_language">Језик апликације</string>
     <string name="ui_choose_your_preferred_display_language">Одаберите жељени језик приказа:</string>
     <string name="ui_updates_diagnostics">Ажурирања и дијагностика</string>

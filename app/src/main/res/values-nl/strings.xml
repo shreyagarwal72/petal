@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Schrijf notities, CSS-regels of tokens voor deze site...</string>
     <string name="ui_save_notes">Bewaar notities</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">GeckoView Engine-vlaggen en interne voorkeuren</string>
-    <string name="ui_search_flags">Vlaggen zoeken...</string>
     <string name="ui_site_favicon">Website Favicon</string>
     <string name="ui_page_summary">Paginaoverzicht</string>
     <string name="ui_ai_settings">AI-instellingen</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Lokale websitegegevens en offline opslag</string>
     <string name="ui_automatically_clear_history_cache_and">Wis automatisch de geschiedenis, het cachegeheugen en open tabbladen bij het afsluiten</string>
     <string name="ui_clear_selected_data">Wis geselecteerde gegevens</string>
-    <string name="ui_experimental">Experimenteel</string>
-    <string name="ui_app_language_experimental_features_and">App-taal, experimentele functies en geavanceerde instellingen</string>
     <string name="ui_app_language">App-taal</string>
     <string name="ui_choose_your_preferred_display_language">Kies de weergavetaal van uw voorkeur:</string>
     <string name="ui_updates_diagnostics">Updates en diagnostiek</string>

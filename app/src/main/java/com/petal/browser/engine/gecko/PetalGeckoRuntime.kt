@@ -133,7 +133,6 @@ object PetalGeckoRuntime {
             }
         }
 
-        val allowAboutConfig = sp.getBoolean("sp_enable_about_config", isDebug)
         val userChangedFontSize = sp.contains("sp_font_size_scale")
         val fontScale = sp.getFloat("sp_font_size_scale", 1.0f)
 
@@ -141,7 +140,7 @@ object PetalGeckoRuntime {
         val insecureMode = if (httpsOnly) GeckoRuntimeSettings.HTTPS_ONLY else GeckoRuntimeSettings.ALLOW_ALL
 
         val settingsBuilder = GeckoRuntimeSettings.Builder()
-            .aboutConfigEnabled(allowAboutConfig)
+            .aboutConfigEnabled(true)
             .allowInsecureConnections(insecureMode)
             .trustedRecursiveResolverMode(trrMode)
             .preferredColorScheme(targetColorScheme)
@@ -241,44 +240,19 @@ object PetalGeckoRuntime {
         //   • save new credentials after form submission (onLoginSave)
         //   • track last-used timestamps (onLoginUsed)
         try {
-            if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()) {
-                val loginsStorage = com.petal.browser.passwords.PetalLoginsProvider.getLoginsStorage(appContext)
-                val loginDelegate = mozilla.components.service.sync.logins.GeckoLoginStorageDelegate(
-                    lazy { loginsStorage },
-                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
-                )
-                val noopCreditCardDelegate = object : mozilla.components.concept.storage.CreditCardsAddressesStorageDelegate {
-                    override suspend fun onAddressesFetch(): List<mozilla.components.concept.storage.Address> = emptyList()
-                    override suspend fun onAddressSave(address: mozilla.components.concept.storage.Address) {}
-                    override suspend fun onCreditCardsFetch(): List<mozilla.components.concept.storage.CreditCard> = emptyList()
-                    override suspend fun onCreditCardSave(card: mozilla.components.concept.storage.CreditCardEntry) {}
-                }
-                newRuntime.autocompleteStorageDelegate =
-                    mozilla.components.browser.engine.gecko.autofill.GeckoAutocompleteStorageDelegate(
-                        noopCreditCardDelegate,
-                        loginDelegate,
-                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
-                    )
-                Log.i(TAG, "Registered Mozilla GeckoAutocompleteStorageDelegate with SyncableLoginsStorage")
-            } else {
-                newRuntime.autocompleteStorageDelegate =
-                    com.petal.browser.passwords.PetalAutofillGeckoDelegate(appContext)
-                Log.i(TAG, "Registered PetalAutofillGeckoDelegate as autocomplete storage delegate")
-            }
+            newRuntime.autocompleteStorageDelegate =
+                com.petal.browser.passwords.PetalAutofillGeckoDelegate(appContext)
+            Log.i(TAG, "Registered PetalAutofillGeckoDelegate as autocomplete storage delegate")
         } catch (t: Throwable) {
             Log.w(TAG, "Could not register autocomplete delegate: ${t.message}")
         }
 
-        // Register legacy PetalWebNotificationDelegate only when Mozilla AC Phase 1 is disabled.
-        // When Phase 1 is enabled, WebNotificationFeature in PetalEngineStore handles web notifications.
-        if (!sp.getBoolean("sp_ac_phase1", false)) {
-            try {
-                newRuntime.webNotificationDelegate =
-                    PetalWebNotificationDelegate(appContext)
-                Log.i(TAG, "Registered PetalWebNotificationDelegate as web notification delegate")
-            } catch (t: Throwable) {
-                Log.w(TAG, "Could not register web notification delegate: ${t.message}")
-            }
+        try {
+            newRuntime.webNotificationDelegate =
+                PetalWebNotificationDelegate(appContext)
+            Log.i(TAG, "Registered PetalWebNotificationDelegate as web notification delegate")
+        } catch (t: Throwable) {
+            Log.w(TAG, "Could not register web notification delegate: ${t.message}")
         }
 
         runtime = newRuntime
@@ -498,7 +472,7 @@ object PetalGeckoRuntime {
 
         // Keep the on-disk user.js in step so the same values survive the next cold start.
         try {
-            com.petal.browser.flags.PetalFlagsStore.syncToUserJs(appContextRef?.get() ?: return)
+            com.petal.browser.privacy.PetalPrivacyHardening.syncUserJs(appContextRef?.get() ?: return)
         } catch (_: Throwable) {}
     }
 

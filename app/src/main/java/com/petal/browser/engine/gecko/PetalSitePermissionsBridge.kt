@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.net.Uri
 import androidx.preference.PreferenceManager
-import com.petal.browser.flags.PetalFlagsRegistry
 import com.petal.browser.ui.components.PetalActiveMediaSensors
 import com.petal.browser.ui.components.PetalPermissionDialogBridge
 import com.petal.browser.ui.components.PetalPermissionType

@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Viết ghi chú, quy tắc CSS hoặc mã thông báo cho trang web này...</string>
     <string name="ui_save_notes">Lưu ghi chú</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">Cờ công cụ GeckoView &amp; Tùy chọn nội bộ</string>
-    <string name="ui_search_flags">Tìm kiếm cờ...</string>
     <string name="ui_site_favicon">Biểu tượng trang web</string>
     <string name="ui_page_summary">Tóm tắt trang</string>
     <string name="ui_ai_settings">Cài đặt AI</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Dữ liệu trang web cục bộ và lưu trữ ngoại tuyến</string>
     <string name="ui_automatically_clear_history_cache_and">Tự động xóa lịch sử, bộ nhớ đệm và mở tab khi thoát</string>
     <string name="ui_clear_selected_data">Xóa dữ liệu đã chọn</string>
-    <string name="ui_experimental">thực nghiệm</string>
-    <string name="ui_app_language_experimental_features_and">Ngôn ngữ ứng dụng, tính năng thử nghiệm và cài đặt nâng cao</string>
     <string name="ui_app_language">Ngôn ngữ ứng dụng</string>
     <string name="ui_choose_your_preferred_display_language">Chọn ngôn ngữ hiển thị ưa thích của bạn:</string>
     <string name="ui_updates_diagnostics">Cập nhật &amp; Chẩn đoán</string>

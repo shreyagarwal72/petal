@@ -359,8 +359,7 @@ object PetalSessionRestoreManager {
 
             if (restoredState != null && restoredState.tabs.isNotEmpty()) {
                 Log.i(TAG, "Restoring ${restoredState.tabs.size} tabs into empty BrowserStore")
-                val mozillaRestore = sp.getBoolean("sp_mozilla_session_restore", false) ||
-                    com.petal.browser.flags.PetalFlagsRegistry.isAcPhase3Enabled()
+                val mozillaRestore = sp.getBoolean("sp_mozilla_session_restore", false)
                 if (mozillaRestore) {
                     try {
                         val tabsUseCases = mozilla.components.feature.tabs.TabsUseCases(store)

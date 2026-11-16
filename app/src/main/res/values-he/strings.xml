@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">כתוב הערות, כללי CSS או אסימונים עבור אתר זה...</string>
     <string name="ui_save_notes">שמור הערות</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">דגלים של מנוע GeckoView והעדפות פנימיות</string>
-    <string name="ui_search_flags">חפש דגלים...</string>
     <string name="ui_site_favicon">אתר Favicon</string>
     <string name="ui_page_summary">סיכום עמוד</string>
     <string name="ui_ai_settings">הגדרות AI</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">נתוני אתר מקומי ואחסון לא מקוון</string>
     <string name="ui_automatically_clear_history_cache_and">נקה אוטומטית היסטוריה, מטמון ופתיחת כרטיסיות ביציאה</string>
     <string name="ui_clear_selected_data">נקה נתונים שנבחרו</string>
-    <string name="ui_experimental">נִסיוֹנִי</string>
-    <string name="ui_app_language_experimental_features_and">שפת אפליקציה, תכונות ניסיוניות והגדרות מתקדמות</string>
     <string name="ui_app_language">שפת האפליקציה</string>
     <string name="ui_choose_your_preferred_display_language">בחר את שפת התצוגה המועדפת עליך:</string>
     <string name="ui_updates_diagnostics">עדכונים ואבחונים</string>

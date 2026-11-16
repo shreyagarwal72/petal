@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">اكتب ملاحظات أو قواعد CSS أو رموز مميزة لهذا الموقع...</string>
     <string name="ui_save_notes">حفظ الملاحظات</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">أعلام محرك GeckoView والتفضيلات الداخلية</string>
-    <string name="ui_search_flags">بحث في العلامات...</string>
     <string name="ui_site_favicon">أيقونة الموقع المفضلة</string>
     <string name="ui_page_summary">ملخص الصفحة</string>
     <string name="ui_ai_settings">إعدادات الذكاء الاصطناعي</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">بيانات موقع الويب المحلي والتخزين دون اتصال بالإنترنت</string>
     <string name="ui_automatically_clear_history_cache_and">مسح السجل وذاكرة التخزين المؤقت وفتح علامات التبويب تلقائيًا عند الخروج</string>
     <string name="ui_clear_selected_data">مسح البيانات المحددة</string>
-    <string name="ui_experimental">تجريبي</string>
-    <string name="ui_app_language_experimental_features_and">لغة التطبيق والميزات التجريبية والإعدادات المتقدمة</string>
     <string name="ui_app_language">لغة التطبيق</string>
     <string name="ui_choose_your_preferred_display_language">اختر لغة العرض المفضلة لديك:</string>
     <string name="ui_updates_diagnostics">التحديثات والتشخيصات</string>

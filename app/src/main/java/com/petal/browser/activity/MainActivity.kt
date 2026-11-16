@@ -344,10 +344,6 @@ class MainActivity : FragmentActivity(), BrowserController {
         viewModel.openSettings(category ?: SettingsCategory.OVERVIEW)
     }
 
-    fun openFlagsHubScreen() {
-        viewModel.openSettings(SettingsCategory.MISCELLANEOUS)
-    }
-
     fun openApiIntegrationsHub() {
         viewModel.openSettings(SettingsCategory.API_INTEGRATIONS)
     }

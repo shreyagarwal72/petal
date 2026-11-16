@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">یادداشت ها، قوانین CSS یا نشانه هایی برای این سایت بنویسید...</string>
     <string name="ui_save_notes">ذخیره یادداشت ها</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">پرچم‌ها و تنظیمات داخلی GeckoView Engine</string>
-    <string name="ui_search_flags">جستجوی پرچم‌ها...</string>
     <string name="ui_site_favicon">فاویکون سایت</string>
     <string name="ui_page_summary">خلاصه صفحه</string>
     <string name="ui_ai_settings">تنظیمات هوش مصنوعی</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">داده های وب سایت محلی و ذخیره سازی آفلاین</string>
     <string name="ui_automatically_clear_history_cache_and">در هنگام خروج، تاریخچه، حافظه پنهان و برگه‌ها را باز کنید</string>
     <string name="ui_clear_selected_data">پاک کردن داده های انتخاب شده</string>
-    <string name="ui_experimental">تجربی</string>
-    <string name="ui_app_language_experimental_features_and">زبان برنامه، ویژگی‌های آزمایشی و تنظیمات پیشرفته</string>
     <string name="ui_app_language">زبان برنامه</string>
     <string name="ui_choose_your_preferred_display_language">زبان نمایش دلخواه خود را انتخاب کنید:</string>
     <string name="ui_updates_diagnostics">به روز رسانی و تشخیص</string>

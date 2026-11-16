@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Scrieți note, reguli CSS sau jetoane pentru acest site...</string>
     <string name="ui_save_notes">Salvați notele</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">Steaguri de motor GeckoView și preferințe interne</string>
-    <string name="ui_search_flags">Căutați steaguri...</string>
     <string name="ui_site_favicon">Site Favicon</string>
     <string name="ui_page_summary">Rezumatul paginii</string>
     <string name="ui_ai_settings">Setări AI</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Datele site-ului local și stocarea offline</string>
     <string name="ui_automatically_clear_history_cache_and">Ștergeți automat istoricul, memoria cache și deschideți filele la ieșire</string>
     <string name="ui_clear_selected_data">Ștergeți datele selectate</string>
-    <string name="ui_experimental">Experimental</string>
-    <string name="ui_app_language_experimental_features_and">Limba aplicației, funcții experimentale și setări avansate</string>
     <string name="ui_app_language">Limba aplicației</string>
     <string name="ui_choose_your_preferred_display_language">Alegeți limba de afișare preferată:</string>
     <string name="ui_updates_diagnostics">Actualizări și diagnosticare</string>

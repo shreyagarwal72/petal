@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Pište poznámky, pravidla CSS nebo tokeny pro tento web...</string>
     <string name="ui_save_notes">Uložit poznámky</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">Vlajky a interní předvolby motoru GeckoView</string>
-    <string name="ui_search_flags">Hledat příznaky...</string>
     <string name="ui_site_favicon">Favicon webu</string>
     <string name="ui_page_summary">Souhrn stránky</string>
     <string name="ui_ai_settings">Nastavení AI</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Data místních webových stránek a offline úložiště</string>
     <string name="ui_automatically_clear_history_cache_and">Automaticky vymazat historii, mezipaměť a otevřené karty při ukončení</string>
     <string name="ui_clear_selected_data">Vymazat vybraná data</string>
-    <string name="ui_experimental">Experimentální</string>
-    <string name="ui_app_language_experimental_features_and">Jazyk aplikace, experimentální funkce a pokročilá nastavení</string>
     <string name="ui_app_language">Jazyk aplikace</string>
     <string name="ui_choose_your_preferred_display_language">Vyberte preferovaný jazyk zobrazení:</string>
     <string name="ui_updates_diagnostics">Aktualizace a diagnostika</string>

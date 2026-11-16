@@ -184,42 +184,6 @@ object PetalEngineStore {
             Log.w(TAG, "Could not register ServiceWorkerDelegate on GeckoEngine: ${t.message}")
         }
 
-        // Web Notification + Web Push feature wiring when Phase 1 is active
-        val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
-        if (sp.getBoolean("sp_ac_phase1", false)) {
-            try {
-                val icons = getBrowserIcons(appContext)
-                val delegate = getNotificationsDelegate(appContext)
-                val permissionsStorage = mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage(
-                    appContext,
-                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
-                )
-                webNotificationFeature = WebNotificationFeature(
-                    context = appContext,
-                    engine = newEngine,
-                    browserIcons = icons,
-                    smallIcon = com.petal.browser.R.drawable.icon_live_notification,
-                    sitePermissionsStorage = permissionsStorage,
-                    activityClass = com.petal.browser.activity.MainActivity::class.java,
-                    notificationsDelegate = delegate
-                )
-                Log.i(TAG, "Registered Mozilla WebNotificationFeature on GeckoEngine")
-            } catch (t: Throwable) {
-                Log.w(TAG, "Could not register WebNotificationFeature: ${t.message}")
-            }
-        }
-
-        if (sp.getBoolean("sp_ac_phase3", false)) {
-            try {
-                val historyStorage = com.petal.browser.database.PetalPlacesProvider.getHistoryStorage(appContext)
-                val historyDelegate = mozilla.components.feature.session.HistoryDelegate(lazy { historyStorage })
-                newEngine.settings.historyTrackingDelegate = historyDelegate
-                Log.i(TAG, "Registered Mozilla HistoryDelegate on GeckoEngine.settings")
-            } catch (t: Throwable) {
-                Log.w(TAG, "Could not register HistoryDelegate: ${t.message}")
-            }
-        }
-
         try {
             com.petal.browser.extensions.PetalBuiltInExtensions.installAll(newEngine)
         } catch (t: Throwable) {
@@ -255,29 +219,7 @@ object PetalEngineStore {
             scope = mainScope
         )
 
-        val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
-        // Same source of truth as everything else (pref OR the flags screen). Reading only the raw
-        // pref here made the store pick Petal's thumbnail middleware while TabThumbnailCache,
-        // which asks the registry, read/wrote Mozilla's ThumbnailStorage: thumbnails were saved in
-        // one place and deleted from/read in another.
-        val isAcPhase1 = sp.getBoolean("sp_ac_phase1", false) ||
-            com.petal.browser.flags.PetalFlagsRegistry.isAcPhase1Enabled()
-        val isAcPhase2 = sp.getBoolean("sp_ac_phase2", false) ||
-            com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled()
-
-        val thumbnailsMiddleware = if (isAcPhase1) {
-            ThumbnailsMiddleware(getThumbnailStorage(appContext))
-        } else {
-            PetalThumbnailsMiddleware()
-        }
-
-        val searchMiddlewares = if (isAcPhase2) {
-            listOf(mozilla.components.feature.search.middleware.SearchMiddleware(appContext))
-        } else {
-            emptyList()
-        }
-
-        val phase4Middlewares = emptyList<mozilla.components.lib.state.Middleware<BrowserState, BrowserAction>>()
+        val thumbnailsMiddleware = PetalThumbnailsMiddleware()
 
         val newStore = BrowserStore(
             initialState = BrowserState(),
@@ -291,7 +233,7 @@ object PetalEngineStore {
                 recentlyClosedMiddleware,
                 ReaderViewMiddleware(),
                 thumbnailsMiddleware
-            ) + searchMiddlewares + phase4Middlewares + engineMiddleware
+            ) + engineMiddleware
         )
         store = newStore
         try {

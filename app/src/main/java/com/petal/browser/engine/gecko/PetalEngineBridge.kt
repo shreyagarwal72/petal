@@ -263,18 +263,6 @@ object PetalEngineBridge {
     fun handleExternalScheme(activity: Activity, url: String?): Boolean {
         if (url.isNullOrBlank() || isInternalScheme(url)) return false
 
-        val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-        if (sp.getBoolean("sp_ac_phase1", false)) {
-            return PetalAppLinksBridge.handleExternalLoadRequest(
-                activity = activity,
-                uri = url,
-                hasUserGesture = true,
-                isIncognito = false,
-                isRedirect = false,
-                isDirectNavigation = true
-            )
-        }
-
         val trimmedUrl = url.trim()
         if (trimmedUrl.startsWith("intent:", ignoreCase = true)) {
             try {

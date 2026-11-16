@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Jegyzetek, CSS-szabályok vagy tokenek írása ehhez a webhelyhez...</string>
     <string name="ui_save_notes">Jegyzetek mentése</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">GeckoView motorjelzők és belső beállítások</string>
-    <string name="ui_search_flags">Jelzők keresése...</string>
     <string name="ui_site_favicon">Favicon webhely</string>
     <string name="ui_page_summary">Oldal összefoglalója</string>
     <string name="ui_ai_settings">AI beállítások</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Helyi webhelyadatok és offline tárolás</string>
     <string name="ui_automatically_clear_history_cache_and">A kilépéskor automatikusan törli az előzményeket, a gyorsítótárat, és megnyitja a lapokat</string>
     <string name="ui_clear_selected_data">Kijelölt adatok törlése</string>
-    <string name="ui_experimental">Kísérleti</string>
-    <string name="ui_app_language_experimental_features_and">Alkalmazás nyelve, kísérleti funkciók és speciális beállítások</string>
     <string name="ui_app_language">Alkalmazás nyelve</string>
     <string name="ui_choose_your_preferred_display_language">Válassza ki a kívánt megjelenítési nyelvet:</string>
     <string name="ui_updates_diagnostics">Frissítések és diagnosztika</string>

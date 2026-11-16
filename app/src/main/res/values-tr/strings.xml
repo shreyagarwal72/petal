@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Bu site için notlar, CSS kuralları veya belirteçler yazın...</string>
     <string name="ui_save_notes">Notları Kaydet</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">GeckoView Motor Bayrakları ve Dahili Tercihler</string>
-    <string name="ui_search_flags">Bayrakları ara...</string>
     <string name="ui_site_favicon">Site Simgesi</string>
     <string name="ui_page_summary">Sayfa Özeti</string>
     <string name="ui_ai_settings">Yapay Zeka Ayarları</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Yerel web sitesi verileri ve çevrimdışı depolama</string>
     <string name="ui_automatically_clear_history_cache_and">Çıkışta geçmişi, önbelleği ve açık sekmeleri otomatik olarak temizle</string>
     <string name="ui_clear_selected_data">Seçilen Verileri Temizle</string>
-    <string name="ui_experimental">Deneysel</string>
-    <string name="ui_app_language_experimental_features_and">Uygulama dili, deneysel özellikler ve gelişmiş ayarlar</string>
     <string name="ui_app_language">Uygulama Dili</string>
     <string name="ui_choose_your_preferred_display_language">Tercih ettiğiniz görüntüleme dilini seçin:</string>
     <string name="ui_updates_diagnostics">Güncellemeler ve Teşhis</string>

@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Kirjutage selle saidi jaoks märkmeid, CSS-i reegleid või märke...</string>
     <string name="ui_save_notes">Salvesta märkmed</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">GeckoView mootori lipud ja sisemised eelistused</string>
-    <string name="ui_search_flags">Otsi lippe...</string>
     <string name="ui_site_favicon">Sait Favicon</string>
     <string name="ui_page_summary">Lehekülje kokkuvõte</string>
     <string name="ui_ai_settings">AI seaded</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Kohalikud veebisaidi andmed ja võrguühenduseta salvestusruum</string>
     <string name="ui_automatically_clear_history_cache_and">Tühjendage väljumisel automaatselt ajalugu, vahemälu ja avage vahekaardid</string>
     <string name="ui_clear_selected_data">Kustutage valitud andmed</string>
-    <string name="ui_experimental">Eksperimentaalne</string>
-    <string name="ui_app_language_experimental_features_and">Rakenduse keel, eksperimentaalsed funktsioonid ja täpsemad seaded</string>
     <string name="ui_app_language">Rakenduse keel</string>
     <string name="ui_choose_your_preferred_display_language">Valige eelistatud kuvakeel:</string>
     <string name="ui_updates_diagnostics">Värskendused ja diagnostika</string>

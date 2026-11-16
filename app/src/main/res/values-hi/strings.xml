@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">इस साइट के लिए नोट्स, सीएसएस नियम या टोकन लिखें...</string>
     <string name="ui_save_notes">नोट्स सहेजें</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">गेकोव्यू इंजन फ़्लैग और आंतरिक प्राथमिकताएँ</string>
-    <string name="ui_search_flags">झंडे खोजें...</string>
     <string name="ui_site_favicon">साइट फ़ेविकॉन</string>
     <string name="ui_page_summary">पृष्ठ सारांश</string>
     <string name="ui_ai_settings">एआई सेटिंग्स</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">स्थानीय वेबसाइट डेटा और ऑफ़लाइन भंडारण</string>
     <string name="ui_automatically_clear_history_cache_and">इतिहास, कैश को स्वचालित रूप से साफ़ करें और बाहर निकलने पर टैब खोलें</string>
     <string name="ui_clear_selected_data">चयनित डेटा साफ़ करें</string>
-    <string name="ui_experimental">प्रयोगात्मक</string>
-    <string name="ui_app_language_experimental_features_and">ऐप की भाषा, प्रयोगात्मक सुविधाएं और उन्नत सेटिंग्स</string>
     <string name="ui_app_language">ऐप भाषा</string>
     <string name="ui_choose_your_preferred_display_language">अपनी पसंदीदा प्रदर्शन भाषा चुनें:</string>
     <string name="ui_updates_diagnostics">अद्यतन एवं निदान</string>

@@ -1000,7 +1000,7 @@ object PetalBackupManager {
                         }
                         act?.let { activity ->
                             com.petal.browser.ui.components.PetalConfirmSheetBridge.showRestartConfirmation(activity) {
-                                com.petal.browser.flags.PetalRestartManager.restartApp(activity)
+                                com.petal.browser.unit.PetalRestartManager.restartApp(activity)
                             }
                         }
                     }
@@ -1080,7 +1080,7 @@ object PetalBackupManager {
                         }
                         act?.let { activity ->
                             com.petal.browser.ui.components.PetalConfirmSheetBridge.showRestartConfirmation(activity) {
-                                com.petal.browser.flags.PetalRestartManager.restartApp(activity)
+                                com.petal.browser.unit.PetalRestartManager.restartApp(activity)
                             }
                         }
                     }

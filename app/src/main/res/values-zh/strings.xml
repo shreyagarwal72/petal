@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">为该站点编写注释、CSS 规则或标记...</string>
     <string name="ui_save_notes">保存笔记</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">GeckoView 引擎标志和内部首选项</string>
-    <string name="ui_search_flags">搜索标志...</string>
     <string name="ui_site_favicon">网站图标</string>
     <string name="ui_page_summary">页面摘要</string>
     <string name="ui_ai_settings">人工智能设置</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">本地网站数据和离线存储</string>
     <string name="ui_automatically_clear_history_cache_and">退出时自动清除历史记录、缓存和打开选项卡</string>
     <string name="ui_clear_selected_data">清除选定的数据</string>
-    <string name="ui_experimental">实验性的</string>
-    <string name="ui_app_language_experimental_features_and">应用程序语言、实验性功能和高级设置</string>
     <string name="ui_app_language">应用程序语言</string>
     <string name="ui_choose_your_preferred_display_language">选择您喜欢的显示语言：</string>
     <string name="ui_updates_diagnostics">更新和诊断</string>

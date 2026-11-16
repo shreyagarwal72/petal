@@ -478,7 +478,6 @@
     <string name="ui_write_notes_css_rules_or">Skriv anteckningar, CSS-regler eller tokens för den här webbplatsen...</string>
     <string name="ui_save_notes">Spara anteckningar</string>
     <string name="ui_geckoview_engine_flags_internal_prefer">GeckoView Engine Flaggor och interna inställningar</string>
-    <string name="ui_search_flags">Sök flaggor...</string>
     <string name="ui_site_favicon">Webbplatsfavicon</string>
     <string name="ui_page_summary">Sidsammanfattning</string>
     <string name="ui_ai_settings">AI-inställningar</string>
@@ -839,8 +838,6 @@
     <string name="ui_local_website_data_and_offline">Lokal webbplatsdata och offlinelagring</string>
     <string name="ui_automatically_clear_history_cache_and">Rensa automatiskt historik, cache och öppna flikar vid utgång</string>
     <string name="ui_clear_selected_data">Rensa valda data</string>
-    <string name="ui_experimental">Experimentell</string>
-    <string name="ui_app_language_experimental_features_and">Appspråk, experimentella funktioner och avancerade inställningar</string>
     <string name="ui_app_language">Appens språk</string>
     <string name="ui_choose_your_preferred_display_language">Välj önskat visningsspråk:</string>
     <string name="ui_updates_diagnostics">Uppdateringar och diagnostik</string>

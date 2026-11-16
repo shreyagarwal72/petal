@@ -44,12 +44,6 @@ internal class PetalPermissionDelegateWrapper(
         permissions: Array<out String>?,
         callback: GeckoSession.PermissionDelegate.Callback
     ) {
-        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled()) {
-            com.petal.browser.engine.gecko.PetalSitePermissionsBridge.handleAndroidPermissionsRequest(
-                activitySupplier, permissions, callback
-            )
-            return
-        }
         val act = activitySupplier()
         if (act != null) {
             inner().onAndroidPermissionsRequest(session, permissions, callback)
@@ -67,12 +61,6 @@ internal class PetalPermissionDelegateWrapper(
         audio: Array<out GeckoSession.PermissionDelegate.MediaSource>?,
         callback: GeckoSession.PermissionDelegate.MediaCallback
     ) {
-        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled()) {
-            com.petal.browser.engine.gecko.PetalSitePermissionsBridge.handleMediaPermissionRequest(
-                context, activitySupplier, isPrivateProvider(), uri, video, audio, callback
-            )
-            return
-        }
         val act = activitySupplier()
         if (act != null) {
             inner().onMediaPermissionRequest(session, uri, video, audio, callback)
@@ -87,11 +75,6 @@ internal class PetalPermissionDelegateWrapper(
         session: GeckoSession,
         perm: GeckoSession.PermissionDelegate.ContentPermission
     ): GeckoResult<Int>? {
-        if (com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled()) {
-            return com.petal.browser.engine.gecko.PetalSitePermissionsBridge.handleContentPermissionRequest(
-                context, activitySupplier, isPrivateProvider(), perm
-            )
-        }
         val act = activitySupplier()
         if (act != null) {
             return inner().onContentPermissionRequest(session, perm)

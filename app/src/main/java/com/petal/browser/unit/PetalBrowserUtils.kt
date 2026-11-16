@@ -581,14 +581,6 @@ object PetalBrowserUtils {
     fun intentURL(context: Context?, uri: Uri?) {
         if (context == null || uri == null) return
         val uriStr = uri.toString()
-        if (uriStr.startsWith("petal://flags") || uriStr.startsWith("about:flags") ||
-            uriStr.startsWith("about:config") || uriStr.startsWith("chrome://flags")
-        ) {
-            if (context is MainActivity) {
-                context.openFlagsHubScreen()
-                return
-            }
-        }
         if (uriStr.startsWith("petal://settings") || uriStr.startsWith("petal://credits") || uriStr.startsWith("petal://ai")) {
             if (context is Activity) {
                 val activity = context
