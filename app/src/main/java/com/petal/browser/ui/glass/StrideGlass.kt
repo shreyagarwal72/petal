@@ -184,7 +184,9 @@ internal data class GlassLook(
     val lensAmount: Float,
     val specHeight: Float,
     val rimWidth: Float,
-    val pad: Float
+    val pad: Float,
+    /** Progressive blur: 0 off, 1 = glass fades out toward the top edge, 2 = toward the bottom. */
+    val fadeEdge: Int = 0
 )
 
 internal data class SlabLook(
@@ -259,6 +261,9 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
         rimPaint.strokeWidth = look.rimWidth * 2
         rimPaint.shader = LinearGradient(
             0f, 0f, 0f, size.height, look.rimTop, look.rimBottom, Shader.TileMode.CLAMP
+        )
+        barNode.setRenderEffect(
+            if (look.fadeEdge != 0) fadeEffect(size.height, look.fadeEdge) else null
         )
     }
 
@@ -404,6 +409,35 @@ private fun glassEffect(size: Size, look: GlassLook, radii: FloatArray?): Render
     val lens = radii?.let { lensEffect(size, look.pad, it, look.lensHeight, look.lensAmount) } ?: return blurred
     return RenderEffect.createChainEffect(lens, blurred)
 }
+
+/**
+ * Progressive blur (Kyant's alpha-masked blur): the finished glass fades to nothing toward the
+ * page-facing edge, so the page goes from sharp to frosted with no visible seam. Null below
+ * Android 13, where the bar simply stays uniform.
+ */
+internal fun fadeEffect(height: Float, edge: Int): RenderEffect? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || height <= 0f) return null
+    return try {
+        val shader = RuntimeShader(FADE_MASK)
+        shader.setFloatUniform("height", height)
+        shader.setFloatUniform("edge", edge.toFloat())
+        RenderEffect.createRuntimeShaderEffect(shader, "content")
+    } catch (_: Throwable) {
+        null
+    }
+}
+
+private const val FADE_MASK = """
+uniform shader content;
+uniform float height;
+uniform float edge;
+
+half4 main(float2 coord) {
+    float t = clamp(coord.y / height, 0.0, 1.0);
+    float a = edge > 1.5 ? smoothstep(1.0, 0.35, t) : smoothstep(0.0, 0.65, t);
+    return content.eval(coord) * a;
+}
+"""
 
 /** Stride's rounded-rect lens alone. Null below Android 13 (no runtime shader). */
 internal fun lensEffect(size: Size, pad: Float, radii: FloatArray, height: Float, amount: Float): RenderEffect? {

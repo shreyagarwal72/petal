@@ -1,21 +1,31 @@
 package com.petal.browser.ui.containment
 
+import android.graphics.Bitmap
 import android.os.Build
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.colorControls
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.shadow.InnerShadow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 /**
  * Explicit sibling backdrops for headers. Repeated cards use the shared frosted wallpaper
@@ -48,6 +58,41 @@ val petalRealGlassSupported: Boolean
 val petalLensSupported: Boolean
     get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
+/**
+ * Average brightness (0 dark .. 1 bright) of what the backdrop is showing, from a 5x5
+ * thumbnail (Kyant's adaptive-luminance recipe). Sampled slowly and eased; any failure keeps
+ * [fallback], so a device that cannot read the layer just gets the theme-based look.
+ */
+@Composable
+private fun rememberBackdropLuminance(backdrop: PetalBackdrop, fallback: Float): Float {
+    var sampled by remember(backdrop) { mutableFloatStateOf(fallback) }
+    LaunchedEffect(backdrop) {
+        while (isActive) {
+            delay(1200)
+            try {
+                val full = backdrop.graphicsLayer.toImageBitmap().asAndroidBitmap()
+                val thumb = Bitmap.createScaledBitmap(full, 5, 5, false)
+                    .copy(Bitmap.Config.ARGB_8888, false)
+                val px = IntArray(25)
+                thumb.getPixels(px, 0, 5, 0, 0, 5, 5)
+                var sum = 0.0
+                for (argb in px) {
+                    val r = (argb shr 16 and 0xFF) / 255.0
+                    val g = (argb shr 8 and 0xFF) / 255.0
+                    val b = (argb and 0xFF) / 255.0
+                    sum += 0.2126 * r + 0.7152 * g + 0.0722 * b
+                }
+                sampled = (sum / px.size).toFloat()
+            } catch (_: Throwable) {
+                // Layer not recorded yet or not readable: keep the last value.
+            }
+        }
+    }
+    val eased by animateFloatAsState(sampled, label = "backdropLuminance")
+    return eased
+}
+
+@Composable
 internal fun Modifier.petalRealGlass(
     backdrop: PetalBackdrop?,
     shape: Shape,
@@ -57,27 +102,42 @@ internal fun Modifier.petalRealGlass(
     opacity: Float = 0.70f
 ): Modifier {
     if (backdrop == null || !petalRealGlassSupported) return this
+    val luminance = rememberBackdropLuminance(backdrop, if (isDark) 0f else 1f)
     return this.drawBackdrop(
         backdrop = backdrop,
         shape = { shape },
         highlight = { Highlight.Default },
-        effects = {
-            vibrancy()
-            colorControls(
-                brightness = 0f,
-                contrast = 1f,
-                saturation = 1.5f
+        innerShadow = {
+            InnerShadow(
+                radius = 8.dp,
+                offset = DpOffset(0.dp, 4.dp),
+                color = Color.Black.copy(alpha = 0.10f)
             )
+        },
+        effects = {
+            // vibrancy() already applies saturation 1.5. A second colorControls(saturation = 1.5)
+            // stacked to 2.25x and made the glass look neon, so only one is applied.
+            vibrancy()
             blur(7f.dp.toPx())
-            // Stride's panel lens, clamped to fit short headers.
+            // Stride's panel lens, clamped to fit short headers. Past 1.25x strength the rim
+            // also splits colours (chromatic aberration), as in Kyant's toggle.
             if (refraction.enabled && petalLensSupported) {
                 val lensHeight = (24.dp.toPx() * refraction.width).coerceAtMost(size.minDimension / 2f)
-                lens(lensHeight, 56.dp.toPx() * refraction.strength, false)
+                lens(
+                    lensHeight,
+                    56.dp.toPx() * refraction.strength,
+                    false,
+                    refraction.strength > 1.25f
+                )
             }
         },
         onDrawSurface = {
-            // Light veil so text stays readable on any background.
-            val veil = (if (isDark) 0.08f + opacity * 0.20f else 0.12f + opacity * 0.28f).coerceIn(0f, 0.9f)
+            // Light veil so text stays readable on any background. Text colour follows the
+            // theme, so the veil grows when the picture behind fights it: a bright picture
+            // under white (dark-theme) text, or a dark one under black (light-theme) text.
+            val clash = if (isDark) luminance else 1f - luminance
+            val base = if (isDark) 0.08f + opacity * 0.20f else 0.12f + opacity * 0.28f
+            val veil = (base + 0.22f * clash.coerceIn(0f, 1f)).coerceIn(0f, 0.9f)
             drawRect((if (isDark) Color.Black else Color.White).copy(alpha = veil))
         }
     )

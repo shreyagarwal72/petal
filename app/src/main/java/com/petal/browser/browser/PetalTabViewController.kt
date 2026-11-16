@@ -206,7 +206,9 @@ class PetalTabViewController private constructor(
             "sp_font_size_scale", "sp_zoom_level_scale", "sp_force_enable_zoom", "sp_caret_browsing" -> {
                 com.petal.browser.accessibility.PetalAccessibilityEngine.applyAccessibilitySettings(this@PetalTabViewController)
             }
-            "sp_liquid_glass_enabled", "sp_liquid_glass_omnibox", "sp_liquid_glass_bottom_nav" -> {
+            // GeckoGlassBackend.shouldSamplePage reads these keys, so each must re-apply the backend.
+            // "sp_liquid_glass_omnibox" is never written anywhere; the real key is _address_bar.
+            "sp_liquid_glass_enabled", "sp_liquid_glass_address_bar", "sp_liquid_glass_bottom_nav", "sp_ui_experience" -> {
                 if (isHostedByMainActivity() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                     post {
                         findGeckoView(engineView.asView())?.let { gv ->

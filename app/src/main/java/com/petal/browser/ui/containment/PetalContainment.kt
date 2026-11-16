@@ -124,13 +124,16 @@ val LocalPetalSectionHighlighted = compositionLocalOf { false }
  * Direct non-composable check for Liquid Glass UI enabled status.
  * Safe to use from Android Dialog windows, callbacks, and non-Compose contexts.
  */
+fun isLiquidGlassMaster(sp: android.content.SharedPreferences): Boolean {
+    val exp = sp.getString("sp_ui_experience", null)
+    if (exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key) return false
+    return sp.getBoolean("sp_liquid_glass_enabled", false) ||
+        exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key
+}
+
 fun isLiquidGlassDirect(context: android.content.Context, componentKey: String = "sp_liquid_glass_containments"): Boolean {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val exp = sp.getString("sp_ui_experience", null)
-    val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
-    if (isMiuix) return false
-    val master = sp.getBoolean("sp_liquid_glass_enabled", false) || (exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key)
-    return master && sp.getBoolean(componentKey, true)
+    return isLiquidGlassMaster(sp) && sp.getBoolean(componentKey, true)
 }
 
 /**
@@ -150,20 +153,12 @@ fun isLiquidGlassEnabled(componentKey: String = "sp_liquid_glass_containments"):
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     var enabled by remember(sp, componentKey) {
-        val exp = sp.getString("sp_ui_experience", null)
-        val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
-        val master = !isMiuix && (sp.getBoolean("sp_liquid_glass_enabled", false) || (exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key))
-        val comp = sp.getBoolean(componentKey, true)
-        mutableStateOf(master && comp)
+        mutableStateOf(isLiquidGlassMaster(sp) && sp.getBoolean(componentKey, true))
     }
     DisposableEffect(sp, componentKey) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "sp_ui_experience" || key == "sp_liquid_glass_unlocked" || key == "sp_liquid_glass_enabled" || key == componentKey) {
-                val exp = sp.getString("sp_ui_experience", null)
-                val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
-                val master = !isMiuix && (sp.getBoolean("sp_liquid_glass_enabled", false) || (exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key))
-                val comp = sp.getBoolean(componentKey, true)
-                enabled = master && comp
+                enabled = isLiquidGlassMaster(sp) && sp.getBoolean(componentKey, true)
             }
         }
         sp.registerOnSharedPreferenceChangeListener(listener)
@@ -195,11 +190,7 @@ fun Modifier.liquidGlassChrome(
     val fx = com.petal.browser.ui.glass.rememberGlassFx()
     val masterOn = PreferenceManager
         .getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
-        .let { sp ->
-            val exp = sp.getString("sp_ui_experience", null)
-            val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
-            !isMiuix && (sp.getBoolean("sp_liquid_glass_enabled", false) || (exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key))
-        }
+        .let { sp -> isLiquidGlassMaster(sp) }
     val press = if (pressFx && enabled && masterOn && fx.any) {
         com.petal.browser.ui.glass.rememberGlassPress(fx)
     } else null
@@ -230,9 +221,7 @@ private fun Modifier.liquidGlassChromeBase(
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val tuning = com.petal.browser.ui.glass.rememberRefractionTuning(refractionOverride, refractionWidthOverride)
-    val exp = sp.getString("sp_ui_experience", null)
-    val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
-    val masterGlass = !isMiuix && (sp.getBoolean("sp_liquid_glass_enabled", false) || (exp == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key))
+    val masterGlass = isLiquidGlassMaster(sp)
     if (!enabled || !masterGlass) return this
     // See liquidGlass(): never drop to a flat fill mid-transition, that causes the glass flash.
     if (com.petal.browser.motion.MotionGate.isLowEndDevice(context)) {

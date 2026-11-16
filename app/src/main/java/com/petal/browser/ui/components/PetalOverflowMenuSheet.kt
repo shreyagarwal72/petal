@@ -120,7 +120,7 @@ object PetalOverflowBridge {
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
             val exp = sp.getString("sp_ui_experience", null)
             val isMiuix = exp == com.petal.browser.ui.theme.layout.UiExperience.MIUIX.key
-            val defGlass = if (isMiuix) false else com.petal.browser.ui.glass.StrideGlassPrefs.isEnabled(activity)
+            val defGlass = false
             val isLiquidGlass = sp.getBoolean("sp_liquid_glass_containments", defGlass)
             val useBlurBg = sp.getBoolean("sp_overflow_menu_blur_bg", true) && isLiquidGlass
 

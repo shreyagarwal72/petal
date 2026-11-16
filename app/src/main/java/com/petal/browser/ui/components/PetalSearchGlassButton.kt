@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import com.petal.browser.R
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.glass.LocalPetalGlassRevision
-import com.petal.browser.ui.glass.StrideGlassPrefs
 import com.petal.browser.ui.glass.bouncyClickable
 import com.petal.browser.ui.glass.liquidGlass
 import com.petal.browser.ui.glass.rememberGlassBar
@@ -52,7 +51,7 @@ internal fun PetalSearchGlassButton(
     val prefs = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val themeGlass = isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
     // Same rule as PetalStrideNavBar, so the pill and the button never disagree.
-    val glassOn = themeGlass || (StrideGlassPrefs.isEnabled(context) && !prefs.contains("sp_liquid_glass_enabled"))
+    val glassOn = themeGlass
     val glassBar = rememberGlassBar(if (glassOn) glassSource else null)
     val glassActive = glassBar != null || themeGlass
 

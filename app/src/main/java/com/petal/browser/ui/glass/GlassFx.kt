@@ -48,6 +48,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.tanh
 
 /*
  * Interactive liquid-glass effects, ported from Kyant's AndroidLiquidGlass catalog
@@ -185,10 +186,20 @@ class InteractiveHighlight(
     private val pressProgressAnimation = Animatable(0f, 0.001f)
     private val positionAnimation = Animatable(Offset.Zero, Offset.VectorConverter, Offset.VisibilityThreshold)
     private var startPosition = Offset.Zero
+    // Reused across frames so a held press does not allocate a Path every draw.
+    private val cachedPath = Path()
+    private var cachedSize = Size.Zero
+    private var cachedShape: Shape? = null
 
     val pressProgress: Float get() = pressProgressAnimation.value
 
-    private val shader = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) highlightShader() else null
+    /** How far the finger has dragged from where it landed; zero at rest. Read from draw only. */
+    val dragOffset: Offset get() = positionAnimation.value - startPosition
+
+    // Built on first press only, so the many glass surfaces nobody touches never allocate one.
+    private val shader: android.graphics.RuntimeShader? by lazy(LazyThreadSafetyMode.NONE) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) highlightShader() else null
+    }
 
     /**
      * Draws the light over the glass and under the content, clipped to [shape] (the content
@@ -197,20 +208,26 @@ class InteractiveHighlight(
     fun overlay(shape: Shape): Modifier = Modifier.drawWithContent {
         val progress = pressProgressAnimation.value
         if (progress > 0f) {
-            val path = Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawWithContent)) }
-            clipPath(path) {
-                if (shader != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (cachedSize != size || cachedShape != shape) {
+                cachedPath.rewind()
+                cachedPath.addOutline(shape.createOutline(size, layoutDirection, this@drawWithContent))
+                cachedSize = size
+                cachedShape = shape
+            }
+            clipPath(cachedPath) {
+                val sh = shader
+                if (sh != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     drawRect(Color.White.copy(0.08f * progress), blendMode = BlendMode.Plus)
                     val p = position(size, positionAnimation.value)
-                    shader.setFloatUniform("size", size.width, size.height)
-                    shader.setColorUniform("color", Color.White.copy(0.15f * progress).toArgb())
-                    shader.setFloatUniform("radius", size.minDimension * 1.5f)
-                    shader.setFloatUniform(
+                    sh.setFloatUniform("size", size.width, size.height)
+                    sh.setColorUniform("color", Color.White.copy(0.15f * progress).toArgb())
+                    sh.setFloatUniform("radius", size.minDimension * 1.5f)
+                    sh.setFloatUniform(
                         "position",
                         p.x.coerceIn(0f, size.width),
                         p.y.coerceIn(0f, size.height)
                     )
-                    drawRect(ShaderBrush(shader), blendMode = BlendMode.Plus)
+                    drawRect(ShaderBrush(sh), blendMode = BlendMode.Plus)
                 } else {
                     drawRect(Color.White.copy(0.25f * progress), blendMode = BlendMode.Plus)
                 }
@@ -366,6 +383,7 @@ class GlassPress internal constructor(
 ) {
     /** 0 at rest, 1 while pressed (animated). Read it from draw / graphicsLayer blocks only. */
     val progress: Float get() = highlight.pressProgress
+    val dragOffset: Offset get() = highlight.dragOffset
 }
 
 @Composable
@@ -385,8 +403,15 @@ fun Modifier.glassPressScale(press: GlassPress, grow: Float = 12f): Modifier {
         val w = size.width.coerceAtLeast(1f)
         val h = size.height.coerceAtLeast(1f)
         val p = press.progress
-        scaleX = 1f + (grow.dp.toPx() / w).coerceAtMost(0.10f) * p
-        scaleY = 1f + (grow.dp.toPx() / h).coerceAtMost(0.10f) * p
+        // Kyant's LiquidButton: the glass leans toward the finger and stretches along the drag.
+        val d = if (p > 0f) press.dragOffset else Offset.Zero
+        val maxOffset = size.minDimension
+        translationX = maxOffset * tanh(0.05f * d.x / maxOffset)
+        translationY = maxOffset * tanh(0.05f * d.y / maxOffset)
+        val stretchX = (abs(d.x) / size.maxDimension).coerceAtMost(1f) * 0.06f * p
+        val stretchY = (abs(d.y) / size.maxDimension).coerceAtMost(1f) * 0.06f * p
+        scaleX = 1f + (grow.dp.toPx() / w).coerceAtMost(0.10f) * p + stretchX
+        scaleY = 1f + (grow.dp.toPx() / h).coerceAtMost(0.10f) * p + stretchY
     }
 }
 

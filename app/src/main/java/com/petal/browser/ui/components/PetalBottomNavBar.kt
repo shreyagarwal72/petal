@@ -213,7 +213,7 @@ fun PetalBottomNavBar(
     com.petal.browser.ui.glass.LocalPetalGlassRevision.current
     val themeGlassNav = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
     val isMiuix = com.petal.browser.ui.containment.isMiuixEnabled()
-    val glassNavOn = themeGlassNav || (com.petal.browser.ui.glass.StrideGlassPrefs.isEnabled(navCtx) && !navPrefs.contains("sp_liquid_glass_enabled"))
+    val glassNavOn = themeGlassNav
     // Liquid glass + floating: search is its own glass button on the right.
     // Everything else (Material 3 Expressive floating/docked, glass docked): search sits in the centre.
     val separateSearch = !isMiuix && showSearch && effectiveFloating && glassNavOn
@@ -380,7 +380,7 @@ fun PetalBottomNavBar(
                     .height(64.dp + flatNavInset)
                     .then(
                         if (isLiquidGlass) {
-                            Modifier.liquidGlass(navBarShape, baseContainer, glassBar)
+                            Modifier.liquidGlass(navBarShape, baseContainer, glassBar, progressiveEdge = 1)
                         } else Modifier
                     )
             ) {

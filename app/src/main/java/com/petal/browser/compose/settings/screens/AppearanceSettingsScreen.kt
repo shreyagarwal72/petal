@@ -1967,6 +1967,35 @@ fun AppearanceSettingsScreenContent(
                                             position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                                             onCheckedChange = onLiquidGlassAddressBarChange
                                         )
+                                        // Toolbars/top bars read sp_liquid_glass_toolbars (default on); it had no toggle.
+                                        var toolbarGlass by remember(sp) {
+                                            mutableStateOf(sp.getBoolean("sp_liquid_glass_toolbars", true))
+                                        }
+                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                            title = "Top Bars & Toolbars",
+                                            subtitle = "Glass on collapsing top bars and custom tab toolbars",
+                                            icon = Icons.Rounded.Layers,
+                                            checked = toolbarGlass,
+                                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                                            onCheckedChange = {
+                                                toolbarGlass = it
+                                                sp.edit().putBoolean("sp_liquid_glass_toolbars", it).apply()
+                                            }
+                                        )
+                                        var progressiveBlur by remember(sp) {
+                                            mutableStateOf(sp.getBoolean("sp_liquid_glass_progressive_blur", false))
+                                        }
+                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                            title = "Progressive Blur",
+                                            subtitle = "Docked bottom bar fades from sharp page to frosted glass (Android 13+)",
+                                            icon = Icons.Rounded.BlurOn,
+                                            checked = progressiveBlur,
+                                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                                            onCheckedChange = {
+                                                progressiveBlur = it
+                                                sp.edit().putBoolean("sp_liquid_glass_progressive_blur", it).apply()
+                                            }
+                                        )
                                         com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                             title = "Overflow Menu Background Blur",
                                             subtitle = "Blur outside wallpaper & window instead of dark dimming when menu opens",
