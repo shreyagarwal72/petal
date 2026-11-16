@@ -10,6 +10,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -67,6 +68,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
@@ -477,10 +480,18 @@ private fun ShapeTab(cfg: PetalWidgetConfig, appWidgetId: Int, onChange: (PetalW
             steps = PETAL_MAX_OUTLINE - 1
         ) { onChange(cfg.copy(outline = it.toInt().coerceIn(0, PETAL_MAX_OUTLINE))) }
     }
-    if (PetalGlassWidgets.isLiquidGlassEnabled(context) && appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+    if (PetalGlassWidgets.isLiquidGlassEnabled(context)) {
         SectionCard(stringResource(R.string.pw_glass_align), stringResource(R.string.pw_glass_hint)) {
-            FilledTonalButton(onClick = { context.startActivity(PetalWidgetGlassActivity.intent(context, appWidgetId)) }, glass = false) {
-                Text(stringResource(R.string.pw_glass_align))
+            if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                FilledTonalButton(onClick = { context.startActivity(PetalWidgetGlassActivity.intent(context, appWidgetId)) }, glass = false) {
+                    Text(stringResource(R.string.pw_glass_align))
+                }
+            } else {
+                Text(
+                    text = stringResource(R.string.widget_glass_align_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -490,7 +501,13 @@ private fun ShapeTab(cfg: PetalWidgetConfig, appWidgetId: Int, onChange: (PetalW
 
 @Composable
 private fun PreviewBackdrop(width: Float, height: Float, content: @Composable () -> Unit) {
-    // A wallpaper-like gradient behind the widget, so Transparency is visible in the preview.
+    val context = LocalContext.current
+    val isGlass = PetalGlassWidgets.isLiquidGlassEnabled(context)
+    val wallpaperBmp = remember(isGlass) {
+        if (isGlass) runCatching { PetalGlassWidgets.getWallpaper(context)?.asImageBitmap() }.getOrNull() else null
+    }
+
+    // Real wallpaper when glass is enabled, otherwise a gradient background so transparency is visible.
     Box(
         modifier = Modifier
             .size(width.dp, height.dp)
@@ -501,7 +518,17 @@ private fun PreviewBackdrop(width: Float, height: Float, content: @Composable ()
                 )
             ),
         contentAlignment = Alignment.Center
-    ) { content() }
+    ) {
+        if (wallpaperBmp != null) {
+            Image(
+                bitmap = wallpaperBmp,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+        content()
+    }
 }
 
 @Composable
@@ -552,12 +579,19 @@ private fun WidgetPreview(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, width
     val fieldRadius = if (plan.fieldRadius >= PETAL_RADIUS_FULL) 999f else plan.fieldRadius.toFloat()
     val fieldShape = RoundedCornerShape(fieldRadius.dp)
 
+    val isGlass = PetalGlassWidgets.isLiquidGlassEnabled(LocalContext.current)
+    val barColor = if (isGlass) {
+        Color(if (pal.isDark) 0xB3262A36.toInt() else 0xB3F4F6FC.toInt())
+    } else {
+        Color(pal.bar)
+    }
+
     Box(
         modifier = Modifier
             .size(widthDp.dp, heightDp.dp)
             .clip(barShape)
-            .background(Color(pal.bar))
-            .then(if (cfg.outline > 0) Modifier.border(cfg.outline.dp, Color(pal.ring), barShape) else Modifier)
+            .background(barColor)
+            .then(if (cfg.outline > 0 && !isGlass) Modifier.border(cfg.outline.dp, Color(pal.ring), barShape) else Modifier)
     ) {
         when (cfg.kind) {
             PetalWidgetKind.PETAL1 -> if (plan.expanded) {

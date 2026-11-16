@@ -5,6 +5,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -98,7 +100,11 @@ abstract class PetalBaseWidget(private val kind: PetalWidgetKind) : GlanceAppWid
         val palette = buildPalette(context, cfg)
 
         provideContent {
-            PetalWidgetRoot(appWidgetId, cfg, palette)
+            // Collect both change signals so the widget recomposes (and re-renders its glass) when
+            // the wallpaper position changes OR when glass tuning settings (blur/sheen/refraction) change.
+            val glassVersion by PetalGlassWidgets.changes.collectAsState()
+            val tuningVersion by PetalGlassWidgets.tuningChanges.collectAsState()
+            PetalWidgetRoot(appWidgetId, cfg, palette, glassVersion, tuningVersion)
         }
     }
 }
@@ -133,10 +139,18 @@ class PetalSearchPetal3WidgetReceiver : PetalBaseWidgetReceiver() {
 }
 
 @Composable
-private fun PetalWidgetRoot(appWidgetId: Int, cfg: PetalWidgetConfig, pal: PetalWidgetPalette) {
+private fun PetalWidgetRoot(
+    appWidgetId: Int,
+    cfg: PetalWidgetConfig,
+    pal: PetalWidgetPalette,
+    /** [PetalGlassWidgets.changes]: a wallpaper/alignment change is a new input that forces a redraw. */
+    glassVersion: Long = 0L,
+    /** [PetalGlassWidgets.tuningChanges]: a glass tuning change also forces a redraw. */
+    tuningVersion: Long = 0L,
+) {
     val size = LocalSize.current
     val plan = planLayout(cfg, size.width.value, size.height.value)
-    PetalWidgetCard(appWidgetId, cfg, pal, plan) {
+    PetalWidgetCard(appWidgetId, cfg, pal, plan, glassVersion, tuningVersion) {
         when (cfg.kind) {
             PetalWidgetKind.PETAL1 -> Petal1Content(cfg, pal, plan)
             PetalWidgetKind.PETAL2 -> Petal2Content(cfg, pal, plan)
@@ -169,7 +183,7 @@ private fun Surface(
 
 /**
  * The widget's outer card. Normally a tinted rounded fill plus an optional outline ring. With Liquid Glass on it
- * is the blurred wallpaper slice instead (a FileProvider URI, because raw bitmaps blow the RemoteViews limit),
+ * is the blurred wallpaper slice instead (rendered directly to bitmap for RemoteViews),
  * or an opaque fallback until the glass is aligned, because a transparent fallback looks broken.
  */
 @Composable
@@ -178,6 +192,8 @@ private fun PetalWidgetCard(
     cfg: PetalWidgetConfig,
     pal: PetalWidgetPalette,
     plan: PetalLayoutPlan,
+    @Suppress("UNUSED_PARAMETER") glassVersion: Long = 0L,
+    @Suppress("UNUSED_PARAMETER") tuningVersion: Long = 0L,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -199,9 +215,11 @@ private fun PetalWidgetCard(
     // wallpaper copy and the lined-up positions are portrait, so only that shape gets glass.
     val portrait = context.resources.configuration.orientation != android.content.res.Configuration.ORIENTATION_LANDSCAPE
     if (glassReady && validId && portrait && widthPx > 0 && heightPx > 0) {
-        // Resized by more than a few percent since it was lined up: ask to be lined up again.
+        // Resized by more than a few percent since it was lined up: drop alignment and show the align badge.
+        // The result is used below when looking up the rect — if the rect was just dropped, getRect returns null.
         PetalGlassWidgets.dropIfResized(context, appWidgetId, widthPx, heightPx)
     }
+    // getRect is called after dropIfResized so a freshly-resized widget immediately shows the align badge.
     val rect = if (glassReady && validId && portrait) PetalGlassWidgets.getRect(context, appWidgetId) else null
 
     val sp = PreferenceManager.getDefaultSharedPreferences(context)

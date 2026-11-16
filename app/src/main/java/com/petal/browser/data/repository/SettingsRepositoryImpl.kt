@@ -684,15 +684,17 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setLiquidGlassSheen(sheen: Float) {
         sp.edit().putFloat("sp_liquid_glass_sheen", sheen).apply()
-        com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
+        com.petal.browser.widget.glance.PetalGlassWidgets.onTuningChanged(application)
     }
 
     override suspend fun setLiquidGlassRefraction(strength: Float) {
         sp.edit().putFloat("sp_liquid_glass_refraction", strength.coerceIn(0f, 2f)).apply()
+        com.petal.browser.widget.glance.PetalGlassWidgets.onTuningChanged(application)
     }
 
     override suspend fun setLiquidGlassRefractionWidth(width: Float) {
         sp.edit().putFloat("sp_liquid_glass_refraction_width", width.coerceIn(0f, 2f)).apply()
+        com.petal.browser.widget.glance.PetalGlassWidgets.onTuningChanged(application)
     }
 
     override suspend fun setLiquidGlassContainments(enabled: Boolean) {

@@ -79,7 +79,8 @@ class PetalWidgetGlassActivity : ComponentActivity() {
         fun intent(context: Context, appWidgetId: Int): Intent {
             return Intent(context, PetalWidgetGlassActivity::class.java).apply {
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                data = Uri.parse("petal://widget-glass/$appWidgetId")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK
             }
         }
     }
@@ -333,22 +334,41 @@ class PetalWidgetGlassActivity : ComponentActivity() {
         val liveSize = remember(appWidgetId) { PetalGlassWidgets.getSize(context, appWidgetId) }
         val cfg = remember(appWidgetId) { PetalWidgetConfigStore.load(context, kindOf(context, appWidgetId)) }
         val dark = remember { isWidgetDark(context) }
+        val (displayW, displayH) = remember { PetalGlassWidgets.displaySize(context) }
+
+        val widgetOptions = remember(appWidgetId) {
+            runCatching {
+                if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                    AppWidgetManager.getInstance(context).getAppWidgetOptions(appWidgetId)
+                } else null
+            }.getOrNull()
+        }
+        val optionsWidthPx = remember(widgetOptions, density) {
+            val minW = widgetOptions?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) ?: 0
+            if (minW > 0) with(density) { minW.dp.toPx() } else null
+        }
+        val optionsHeightPx = remember(widgetOptions, density) {
+            val maxH = widgetOptions?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0) ?: 0
+            if (maxH > 0) with(density) { maxH.dp.toPx() } else null
+        }
 
         // The frame always has the widget's real pixel size, so the slice is never stretched.
-        val frameW = remember { (liveSize?.first ?: initialRect?.width() ?: with(density) { 320.dp.roundToPx() }).toFloat() }
-        val frameH = remember { (liveSize?.second ?: initialRect?.height() ?: with(density) { 64.dp.roundToPx() }).toFloat() }
+        val frameW = remember { (liveSize?.first?.toFloat() ?: optionsWidthPx ?: initialRect?.width()?.toFloat() ?: with(density) { 320.dp.toPx() }) }
+        val frameH = remember { (liveSize?.second?.toFloat() ?: optionsHeightPx ?: initialRect?.height()?.toFloat() ?: with(density) { 64.dp.toPx() }) }
         val cornerDp = remember(cfg, frameW, frameH) {
             val shortDp = with(density) { minOf(frameW, frameH).toDp().value }
             if (cfg.cornerRadius >= PETAL_RADIUS_FULL) shortDp / 2f else cfg.cornerRadius.toFloat()
         }
 
+        val defaultX = remember(displayW, frameW) { max(0f, (displayW - frameW) / 2f) }
+        val defaultY = remember(displayH, frameH) { max(0f, displayH * 0.22f) }
+
         // Frame position in display pixels (the window may not start at the top of the display).
         var windowOrigin by remember { mutableStateOf(0 to 0) }
-        var placed by remember { mutableStateOf(initialRect != null) }
-        var offsetX by remember { mutableStateOf(initialRect?.left?.toFloat() ?: 0f) }
-        var offsetY by remember { mutableStateOf(initialRect?.top?.toFloat() ?: 0f) }
+        var placed by remember { mutableStateOf(true) }
+        var offsetX by remember { mutableStateOf(initialRect?.left?.toFloat() ?: defaultX) }
+        var offsetY by remember { mutableStateOf(initialRect?.top?.toFloat() ?: defaultY) }
         var preview by remember { mutableStateOf<Bitmap?>(null) }
-        val (displayW, displayH) = remember { PetalGlassWidgets.displaySize(context) }
 
         fun clampX(v: Float) = v.coerceIn(0f, max(0f, displayW - frameW))
         fun clampY(v: Float) = v.coerceIn(0f, max(0f, displayH - frameH))
@@ -484,12 +504,13 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                     )
                 }
                 if (placed) {
-                    // One-pixel nudges, for lining the frame up exactly once it is roughly there.
+                    // Fine-tuning nudges + one-tap horizontal center alignment.
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        NudgeButton("←") { offsetX = clampX(offsetX - 1f) }
-                        NudgeButton("↑") { offsetY = clampY(offsetY - 1f) }
-                        NudgeButton("↓") { offsetY = clampY(offsetY + 1f) }
-                        NudgeButton("→") { offsetX = clampX(offsetX + 1f) }
+                        NudgeButton("←") { offsetX = clampX(offsetX - 2f) }
+                        NudgeButton("↑") { offsetY = clampY(offsetY - 2f) }
+                        NudgeButton("✛") { offsetX = clampX(defaultX) }
+                        NudgeButton("↓") { offsetY = clampY(offsetY + 2f) }
+                        NudgeButton("→") { offsetX = clampX(offsetX + 2f) }
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {

@@ -84,8 +84,17 @@ object PetalGlassWidgetRenderer {
     private const val AUTHORITY_SUFFIX = ".fileprovider"
     private const val TILE_DIR = "glass_widget_tiles"
 
-    /** Upper bound on rendered pixels; the tile is stretched to the widget, and glass is soft anyway. */
-    private const val MAX_WORK_PIXELS = 520_000f
+    /**
+     * Upper bound on rendered pixels; the tile is stretched to the widget, and glass is soft anyway.
+     * Adapted to the JVM heap ceiling: low-RAM devices get a smaller budget to avoid OOM; high-RAM
+     * devices get more pixels for sharper glass without meaningful extra cost.
+     */
+    private val MAX_WORK_PIXELS: Float
+        get() = when {
+            Runtime.getRuntime().maxMemory() < 256L * 1024 * 1024 -> 320_000f
+            Runtime.getRuntime().maxMemory() > 512L * 1024 * 1024 -> 800_000f
+            else -> 520_000f
+        }
 
     @Synchronized
     fun forget(appWidgetId: Int? = null) {
@@ -178,9 +187,8 @@ object PetalGlassWidgetRenderer {
         val frosted = if (blurPx >= 0.5f)
             RenderEffect.createBlurEffect(blurPx, blurPx, vibrancy, Shader.TileMode.CLAMP) else vibrancy
         val effect = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU && lensOn) {
-            val shader = RuntimeShader(
-                if (spec.dark) PetalWidgetLensShaders.REFRACTION_WITH_DISPERSION else PetalWidgetLensShaders.REFRACTION
-            )
+            // Re-use the compiled singleton shaders; RuntimeShader compilation costs ~5–15 ms per call.
+            val shader = if (spec.dark) PetalWidgetLensShaderInstances.dispersive else PetalWidgetLensShaderInstances.plain
             shader.setFloatUniform("size", outW.toFloat(), outH.toFloat())
             shader.setFloatUniform("offset", -pad.toFloat(), -pad.toFloat())
             shader.setFloatUniform("cornerRadii", floatArrayOf(corner, corner, corner, corner))

@@ -3,7 +3,16 @@ package com.petal.browser.widget.glance
 /**
  * The lens shaders used to bend the wallpaper at a widget's rim. Same AGSL as the in-app glass (and Stride's widget
  * glass), so a widget's rim refracts exactly like Petal's in-app liquid glass surfaces.
+ *
+ * Both shaders are compiled lazily and held as singletons. RuntimeShader compilation is expensive (~5–15 ms);
+ * creating a new instance on every render call was the main source of frame drops during widget updates.
  */
+@androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.TIRAMISU)
+internal object PetalWidgetLensShaderInstances {
+    val plain: android.graphics.RuntimeShader by lazy { android.graphics.RuntimeShader(PetalWidgetLensShaders.REFRACTION) }
+    val dispersive: android.graphics.RuntimeShader by lazy { android.graphics.RuntimeShader(PetalWidgetLensShaders.REFRACTION_WITH_DISPERSION) }
+}
+
 internal object PetalWidgetLensShaders {
 
     private const val SDF = """

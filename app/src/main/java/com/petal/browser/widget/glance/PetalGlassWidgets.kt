@@ -38,6 +38,19 @@ object PetalGlassWidgets {
 
     val changes = MutableStateFlow(0L)
 
+    /**
+     * Incremented whenever a glass tuning preference (blur, sheen, refraction) is saved. Widgets collect this
+     * alongside [changes] so they recompose and re-render whenever the user adjusts glass settings.
+     */
+    val tuningChanges = MutableStateFlow(0L)
+
+    /** Call this after saving any glass tuning preference so all placed widgets re-render with the new settings. */
+    fun onTuningChanged(context: Context) {
+        PetalGlassWidgetRenderer.forget()
+        tuningChanges.value = System.currentTimeMillis()
+        PetalSearchGlanceWidgetUpdater.refresh(context)
+    }
+
     fun store(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
