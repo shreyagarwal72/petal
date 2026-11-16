@@ -452,6 +452,12 @@ fun PetalScreenWrapper(
      */
     behindFraction: (() -> Float)? = null,
     /**
+     * Gesture state to pose this wrapper with. Defaults to [LocalPredictiveBackState]; a sub-page host
+     * passes its own gesture here so the parent page behind it is posed by the sub-page's gesture
+     * while the parent's content still sees the outer page's state.
+     */
+    gestureState: PredictiveBackState? = null,
+    /**
      * Give this page its own liquid-glass wallpaper. The app theme provides ONE shared wallpaper;
      * while two pages exist at once (open, close, predictive back) both recorded into it and fought
      * over its position, so the glass showed the wrong patch. Pass false only for a screen that
@@ -482,7 +488,7 @@ fun PetalScreenWrapper(
 
     val predictiveEnabled = junctionPredictiveEnabled
     val blurEnabled = junctionBlurEnabled
-    val predictiveBackState = LocalPredictiveBackState.current
+    val predictiveBackState = gestureState ?: LocalPredictiveBackState.current
 
     val outerGlassWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
     val ownGlassWallpaper =
@@ -764,5 +770,63 @@ fun PetalPredictiveShell(
         }
     } else {
         content()
+    }
+}
+
+/**
+ * A page with an in-page sub-page (a vault's settings page, a details/edit/import overlay...). The
+ * sub-page is a real foreground layer: it is posed by the selected [PetalBackStyle] through the same
+ * engine as full-screen pages, while [parent] stays composed (state preserved) and LIVE behind it,
+ * receiving the behind pose, dim and depth blur from the sub-page's own gesture. The sub-page has its
+ * own header, so there is no shared-header title crossfade to overlap or ghost.
+ *
+ * The sub-page layer leaves with [ExitTransition.None]: a committed back has already parked it in its
+ * final pose, so a host exit animation would only replay it (ghosting / double animation). With
+ * predictive back off or reduce-motion enabled this degrades to an instant swap. This surface never
+ * asks the root for a live underlay (the parent fully covers what is behind) and holds no dismissed
+ * pose (the layer is removed immediately).
+ */
+@Composable
+fun PetalSubPageHost(
+    visible: Boolean,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    parent: @Composable () -> Unit,
+    subPage: @Composable () -> Unit,
+) {
+    val reduceMotion = com.petal.browser.ui.components.rememberReduceMotion()
+    val outerState = LocalPredictiveBackState.current
+    val fraction by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(if (reduceMotion) 0 else 300, easing = FastOutSlowInEasing),
+        label = "subPageBehindFraction",
+    )
+    PetalPredictiveBackSurface(
+        enabled = visible,
+        onBack = onBack,
+        holdDismissedPose = false,
+        useLiveUnderlay = false,
+    ) {
+        val innerState = LocalPredictiveBackState.current
+        Box(modifier.fillMaxSize()) {
+            // One stable call site for the parent so its state survives the sub-page opening.
+            CompositionLocalProvider(LocalPredictiveBackState provides outerState) {
+                PetalScreenWrapper(
+                    isBehind = visible,
+                    behindFraction = { fraction },
+                    gestureState = innerState,
+                ) { parent() }
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = visible,
+                enter = if (reduceMotion) androidx.compose.animation.EnterTransition.None
+                else androidx.compose.animation.fadeIn(tween(200)) +
+                    androidx.compose.animation.slideInHorizontally(tween(300, easing = FastOutSlowInEasing)) { it / 5 },
+                exit = androidx.compose.animation.ExitTransition.None,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                PetalScreenWrapper(gestureState = innerState) { subPage() }
+            }
+        }
     }
 }

@@ -64,7 +64,10 @@ object PetalContentSnapshot {
     val current: Bitmap?
         get() {
             val bmp = _current
-            return if (bmp != null && !bmp.isRecycled()) bmp else null
+            // A capture older than SNAPSHOT_MAX_AGE_MS belongs to an earlier screen (it showed up as a
+            // stale Settings ghost behind the Vault / Password Manager), so it is never handed out.
+            val fresh = SystemClock.uptimeMillis() - currentAt <= SNAPSHOT_MAX_AGE_MS
+            return if (bmp != null && !bmp.isRecycled() && fresh) bmp else null
         }
 
     /** A pre-hide screenshot taken by the host just before it hides the page behind an overlay. */
@@ -78,6 +81,9 @@ object PetalContentSnapshot {
     private var currentAt = 0L
 
     private const val PREVIEW_MAX_AGE_MS = 1500L
+
+    /** Oldest capture [current] will still return; a live surface should be used instead of anything older. */
+    private const val SNAPSHOT_MAX_AGE_MS = 2500L
 
     /** Max time the main thread waits for the pre-hide PixelCopy (typically a few ms). */
     private const val PREVIEW_WAIT_MS = 60L
@@ -114,6 +120,7 @@ object PetalContentSnapshot {
                             preview = bitmap
                             previewAt = SystemClock.uptimeMillis()
                             _current = bitmap
+                            currentAt = previewAt
                         } else {
                             bitmap.recycle()
                         }
@@ -144,6 +151,7 @@ object PetalContentSnapshot {
         val existing = if (forceFresh) null else com.petal.browser.motion.MotionGate.getTransitionSnapshot()
         if (existing != null && !existing.isRecycled) {
             _current = existing
+            currentAt = SystemClock.uptimeMillis()
             return existing
         }
 

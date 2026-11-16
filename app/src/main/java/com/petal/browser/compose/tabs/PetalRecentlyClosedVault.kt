@@ -100,12 +100,10 @@ fun PetalRecentlyClosedVault(
 
     // Back navigation: dialog / settings sub-page -> vault page (vault dismissal handled by PetalPredictiveBackSurface)
     val hasSubOverlay = showForgotLockDialog || showSettingsPage
-    androidx.activity.compose.BackHandler(enabled = hasSubOverlay) {
-        if (showForgotLockDialog) {
-            showForgotLockDialog = false
-        } else if (showSettingsPage) {
-            showSettingsPage = false
-        }
+    // The settings sub-page is a real layer with its own predictive back (PetalSubPageHost); only the
+    // dialog still needs a plain handler.
+    androidx.activity.compose.BackHandler(enabled = showForgotLockDialog) {
+        showForgotLockDialog = false
     }
 
     // Trigger biometric if lockType is biometric
@@ -140,27 +138,29 @@ fun PetalRecentlyClosedVault(
                 modifier = modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
             ) {
+        com.petal.browser.predictive.PetalSubPageHost(
+            visible = showSettingsPage,
+            onBack = { showSettingsPage = false },
+            parent = {
         Box(Modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(
                 modifier = Modifier.fillMaxSize(),
-                pageSeed = if (showSettingsPage) "vault_settings" else "vault_page"
+                pageSeed = "vault_page"
             )
 
             Column(modifier = Modifier.fillMaxSize()) {
                 ExpressiveHeader(
                     title = when {
-                        showSettingsPage -> "Vault Settings"
                         isUnlocked -> "Closed Tabs Vault"
                         else -> "Locked Vault"
                     },
                     subtitle = when {
-                        showSettingsPage -> "Retention & protection"
                         isUnlocked -> if (records.size == 1) "1 tab saved" else "${records.size} tabs saved"
                         else -> "Unlock to view closed tabs"
                     },
-                    onBack = { if (showForgotLockDialog) showForgotLockDialog = false else if (showSettingsPage) showSettingsPage = false else onDismiss() },
+                    onBack = { if (showForgotLockDialog) showForgotLockDialog = false else onDismiss() },
                     actions = {
-                        if (isUnlocked && !showSettingsPage) {
+                        if (isUnlocked) {
                             HeaderActionIcon(
                                 icon = Icons.Rounded.Settings,
                                 contentDescription = stringResource(R.string.ui_vault_settings),
@@ -184,7 +184,6 @@ fun PetalRecentlyClosedVault(
 
                 AnimatedContent(
                     targetState = when {
-                        showSettingsPage -> VaultPage.SETTINGS
                         isUnlocked -> VaultPage.TABS
                         else -> VaultPage.LOCKED
                     },
@@ -257,33 +256,51 @@ fun PetalRecentlyClosedVault(
                             }
                         )
 
-                        VaultPage.SETTINGS -> VaultSettingsPage(
-                            currentRetention = PreferenceManager.getDefaultSharedPreferences(context)
-                                .getString(PetalRecentlyClosedManager.PREF_RETENTION_DAYS, "7") ?: "7",
-                            currentLockType = lockType,
-                            hasPassword = hasPassword,
-                            canBiometric = canBiometric,
-                            onCancel = { showSettingsPage = false },
-                            onSave = { newRetention, newLockType, newPassword ->
-                                PreferenceManager.getDefaultSharedPreferences(context).edit()
-                                    .putString(PetalRecentlyClosedManager.PREF_RETENTION_DAYS, newRetention)
-                                    .apply()
-                                PetalRecentlyClosedManager.pruneExpiredTabs(context)
-
-                                if (newPassword.isNotBlank()) {
-                                    PetalRecentlyClosedManager.setPassword(context, newPassword)
-                                }
-                                PetalRecentlyClosedManager.setLockType(context, newLockType)
-                                lockType = newLockType
-                                hasPassword = PetalRecentlyClosedManager.hasPasswordConfigured(context)
-                                refreshRecords()
-                                showSettingsPage = false
-                            }
-                        )
+                        VaultPage.SETTINGS -> Unit // rendered as its own layer by PetalSubPageHost
                     }
                 }
             }
         }
+            },
+            subPage = {
+        Box(Modifier.fillMaxSize()) {
+            M3ExpressiveVariableBackground(
+                modifier = Modifier.fillMaxSize(),
+                pageSeed = "vault_settings"
+            )
+            Column(modifier = Modifier.fillMaxSize()) {
+                ExpressiveHeader(
+                    title = "Vault Settings",
+                    subtitle = "Retention & protection",
+                    onBack = { showSettingsPage = false },
+                )
+                VaultSettingsPage(
+                    currentRetention = PreferenceManager.getDefaultSharedPreferences(context)
+                        .getString(PetalRecentlyClosedManager.PREF_RETENTION_DAYS, "7") ?: "7",
+                    currentLockType = lockType,
+                    hasPassword = hasPassword,
+                    canBiometric = canBiometric,
+                    onCancel = { showSettingsPage = false },
+                    onSave = { newRetention, newLockType, newPassword ->
+                        PreferenceManager.getDefaultSharedPreferences(context).edit()
+                            .putString(PetalRecentlyClosedManager.PREF_RETENTION_DAYS, newRetention)
+                            .apply()
+                        PetalRecentlyClosedManager.pruneExpiredTabs(context)
+
+                        if (newPassword.isNotBlank()) {
+                            PetalRecentlyClosedManager.setPassword(context, newPassword)
+                        }
+                        PetalRecentlyClosedManager.setLockType(context, newLockType)
+                        lockType = newLockType
+                        hasPassword = PetalRecentlyClosedManager.hasPasswordConfigured(context)
+                        refreshRecords()
+                        showSettingsPage = false
+                    }
+                        )
+            }
+        }
+            }
+        )
     }
         }
     }
