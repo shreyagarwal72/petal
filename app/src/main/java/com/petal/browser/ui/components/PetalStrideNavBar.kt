@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.glass.SLAB_MAGNIFY
-import com.petal.browser.ui.glass.StrideGlassPrefs
 import com.petal.browser.ui.glass.TabWeights
 import com.petal.browser.ui.glass.bouncyClickable
 import com.petal.browser.ui.glass.glassTile
@@ -108,7 +107,7 @@ internal fun PetalStrideNavBar(
     com.petal.browser.ui.glass.LocalPetalGlassRevision.current
     val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
     val themeGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
-    val glassOn = themeGlass || (StrideGlassPrefs.isEnabled(context) && !prefs.contains("sp_liquid_glass_enabled"))
+    val glassOn = themeGlass
     val glassBar = rememberGlassBar(if (glassOn) glassSource else null)
 
     // Swiping along the bar switches tabs; the bar follows the finger with resistance.

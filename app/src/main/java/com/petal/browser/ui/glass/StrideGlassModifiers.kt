@@ -26,16 +26,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 
-/** Stride-style glass on Petal's nav bar. On by default; needs Android 12 for the blur. */
-object StrideGlassPrefs {
-    const val KEY = "sp_stride_glass_nav"
-
-    @JvmStatic
-    fun isEnabled(context: Context): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean(KEY, true)
-}
-
 /**
  * The glass for a bar floating over [source], or null when glass is off or unsupported —
  * the bar is then a solid fill, as Stride's bar is outside its shell.
@@ -61,7 +51,7 @@ fun rememberGlassBar(source: View?): GlassBar? {
  * rather than leaving its labels over sharp, busy content.
  */
 @Composable
-fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?, pressFx: Boolean = true): Modifier {
+fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?, pressFx: Boolean = true, progressiveEdge: Int = 0): Modifier {
     val context = androidx.compose.ui.platform.LocalContext.current
     // Glass stays on during transitions: swapping to a flat fill while anything animates and back
     // afterwards is what produced the visible "glass not ready" frame. Only low-end devices skip it.
@@ -76,14 +66,14 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?, pressFx: Boo
             com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav") ||
             com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val glassActive = bar != null || sp.getBoolean("sp_liquid_glass_enabled", false) || themeGlass
-    if (!pressFx || !glassActive || !fx.any) return liquidGlassBase(shape, tint, bar)
+    if (!pressFx || !glassActive || !fx.any) return liquidGlassBase(shape, tint, bar, progressiveEdge)
     // Kyant-style interaction: the glass swells under the finger and a light follows it.
     val press = rememberGlassPress(fx)
-    return this.glassPressScale(press).liquidGlassBase(shape, tint, bar).glassPressOverlay(press, shape)
+    return this.glassPressScale(press).liquidGlassBase(shape, tint, bar, progressiveEdge).glassPressOverlay(press, shape)
 }
 
 @Composable
-private fun Modifier.liquidGlassBase(shape: Shape, tint: Color, bar: GlassBar?): Modifier {
+private fun Modifier.liquidGlassBase(shape: Shape, tint: Color, bar: GlassBar?, progressiveEdge: Int = 0): Modifier {
     LocalPetalGlassRevision.current
     val tuning = rememberRefractionTuning()
     val wallpaper = LocalPetalGlassWallpaper.current
@@ -155,7 +145,8 @@ private fun Modifier.liquidGlassBase(shape: Shape, tint: Color, bar: GlassBar?):
             lensAmount = lensAmount,
             specHeight = 3.dp.toPx(),
             rimWidth = 1.dp.toPx(),
-            pad = pad
+            pad = pad,
+            fadeEdge = if (progressiveEdge != 0 && prefs.getBoolean("sp_liquid_glass_progressive_blur", false)) progressiveEdge else 0
         )
     }
     return this
