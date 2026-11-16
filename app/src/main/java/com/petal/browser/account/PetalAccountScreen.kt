@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -28,17 +29,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.preference.PreferenceManager
-import com.petal.browser.account.mozilla.FxaUi
-import com.petal.browser.account.mozilla.PetalFxa
-import com.petal.browser.account.mozilla.PetalFxaSettings
 import com.petal.browser.account.progress.PetalProgressStore
 import com.petal.browser.account.progress.PetalXp
-import com.petal.browser.compose.home.PetalShortcut
+import com.petal.browser.account.sync.PetalFolderSync
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
@@ -57,20 +57,17 @@ import com.petal.browser.ui.theme.ExpressiveButtonShape
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import mozilla.components.concept.sync.SyncEngine
-import com.petal.browser.ui.miuix.wrappers.Icon
 
 /**
- * The one account page: identity and personalisation, Mozilla sign-in and sync, security, and data.
- * Everything is built from the shared expressive containment components, so Material 3 Expressive
- * shapes apply always and Liquid Glass applies automatically whenever the user has it toggled on.
+ * The one account page: local profile and personalisation, sync through a folder the user owns,
+ * security, and data. It is built from the shared expressive containment components, so Material 3
+ * Expressive shapes always apply and Liquid Glass applies whenever the user has it toggled on.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalAccountScreen(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onBack: () -> Unit = {},
-    onOpenOAuth: (PetalShortcut) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -79,39 +76,31 @@ fun PetalAccountScreen(
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     fun say(msg: String) { scope.launch { snackbar.showSnackbar(msg) } }
 
-    // ── identity: local profile + Mozilla state, resolved once ──
+    // ── identity and sync state ──
     val profile = PetalUserProfileManager.currentProfile
-    val fxa by PetalFxa.state.collectAsStateWithLifecycle()
-    val syncing by PetalFxa.syncing.collectAsStateWithLifecycle()
-    val lastSync by PetalFxa.lastSync.collectAsStateWithLifecycle()
-    val devices by PetalFxa.devices.collectAsStateWithLifecycle()
-    val received by PetalFxa.receivedTabs.collectAsStateWithLifecycle()
-    val remoteTabs by PetalFxa.remoteTabs.collectAsStateWithLifecycle()
-    val error by PetalFxa.error.collectAsStateWithLifecycle()
-    val account = remember(profile, fxa) { PetalAccountRepository.resolve(profile, fxa) }
+    val configured by PetalFolderSync.configured.collectAsStateWithLifecycle()
+    val folderName by PetalFolderSync.folderName.collectAsStateWithLifecycle()
+    val syncing by PetalFolderSync.syncing.collectAsStateWithLifecycle()
+    val lastSync by PetalFolderSync.lastSync.collectAsStateWithLifecycle()
+    val syncError by PetalFolderSync.error.collectAsStateWithLifecycle()
+    val syncMessage by PetalFolderSync.message.collectAsStateWithLifecycle()
+    val account = remember(profile, configured, folderName) {
+        PetalAccountRepository.resolve(profile, configured, folderName)
+    }
 
     LaunchedEffect(Unit) {
         PetalUserProfileManager.init(context)
         PetalProgressStore.init(context)
+        PetalFolderSync.init(context)
     }
-    LaunchedEffect(error) { error?.let { snackbar.showSnackbar(it); PetalFxa.clearError() } }
-    LaunchedEffect(fxa) {
-        when (val s = fxa) {
-            is FxaUi.SignedIn -> {
-                PetalUserProfileManager.onFirefoxState(context, s.email, s.displayName, s.avatarUrl)
-                PetalFxa.refreshDevices()
-            }
-            FxaUi.SignedOut -> PetalUserProfileManager.onFirefoxState(context, null, null, null)
-            else -> {}
-        }
-    }
+    LaunchedEffect(syncError) { syncError?.let { snackbar.showSnackbar(it); PetalFolderSync.clearError() } }
 
     // ── sync preferences ──
-    var bookmarksOn by remember { mutableStateOf(PetalFxaSettings.bookmarks(context)) }
-    var historyOn by remember { mutableStateOf(PetalFxaSettings.history(context)) }
-    var tabsOn by remember { mutableStateOf(PetalFxaSettings.tabs(context)) }
-    var passwordsOn by remember { mutableStateOf(PetalFxaSettings.passwords(context)) }
-    var deviceName by remember { mutableStateOf(PetalFxaSettings.deviceName(context)) }
+    var bookmarksOn by remember { mutableStateOf(PetalFolderSync.isOn(context, PetalFolderSync.KEY_BOOKMARKS)) }
+    var historyOn by remember { mutableStateOf(PetalFolderSync.isOn(context, PetalFolderSync.KEY_HISTORY)) }
+    var shortcutsOn by remember { mutableStateOf(PetalFolderSync.isOn(context, PetalFolderSync.KEY_SHORTCUTS)) }
+    var rulesOn by remember { mutableStateOf(PetalFolderSync.isOn(context, PetalFolderSync.KEY_RULES)) }
+    var autoOn by remember { mutableStateOf(PetalFolderSync.isOn(context, PetalFolderSync.KEY_AUTO)) }
     var syncExpanded by remember { mutableStateOf(false) }
 
     // ── security prefs (live) ──
@@ -135,11 +124,14 @@ fun PetalAccountScreen(
     var showBioDialog by remember { mutableStateOf(false) }
     var showAccentDialog by remember { mutableStateOf(false) }
     var showAvatarSheet by remember { mutableStateOf(false) }
-    var showSignOut by remember { mutableStateOf(false) }
+    var showSetup by remember { mutableStateOf(false) }
+    var showPassphrase by remember { mutableStateOf(false) }
+    var showDisconnect by remember { mutableStateOf(false) }
     var showReset by remember { mutableStateOf(false) }
     var showClearData by remember { mutableStateOf(false) }
     var showXpBackup by remember { mutableStateOf(false) }
     var showRewards by remember { mutableStateOf(false) }
+    var pickedFolder by remember { mutableStateOf<Uri?>(null) }
     var cropUri by remember { mutableStateOf<Uri?>(null) }
     var cacheRefresh by remember { mutableIntStateOf(0) }
     var cacheSize by remember { mutableStateOf("…") }
@@ -155,12 +147,9 @@ fun PetalAccountScreen(
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) cropUri = cacheForCrop(context, uri)
     }
-
-    fun startSignIn() {
-        scope.launch {
-            PetalFxa.beginSignIn()?.let { url ->
-                onOpenOAuth(PetalShortcut("Mozilla sign in", url, "firefox-account", Color(0xFFFF9400)))
-            }
+    val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            if (showSetup) pickedFolder = uri else PetalFolderSync.setFolder(context, uri)
         }
     }
 
@@ -270,57 +259,31 @@ fun PetalAccountScreen(
                                         )
                                     }
                                     Spacer(Modifier.height(16.dp))
-                                    when (fxa) {
-                                        is FxaUi.SignedIn -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Button(onClick = { PetalFxa.syncNow() }, enabled = !syncing, modifier = Modifier.weight(1f)) {
+                                    if (configured) {
+                                        Button(
+                                            onClick = { PetalFolderSync.syncNow(context) },
+                                            enabled = !syncing,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            if (syncing) {
+                                                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                                            } else {
                                                 Icon(Icons.Rounded.Sync, null, Modifier.size(18.dp))
-                                                Spacer(Modifier.width(6.dp))
-                                                Text(if (syncing) "Syncing…" else "Sync now")
                                             }
-                                            OutlinedButton(onClick = { showSignOut = true }, modifier = Modifier.weight(1f)) { Text("Sign out") }
-                                        }
-                                        FxaUi.Connecting -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                            CircularProgressIndicator(Modifier.size(26.dp), strokeWidth = 3.dp)
-                                            Spacer(Modifier.width(12.dp))
-                                            Text("Finish signing in on the page that opened.", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                                            TextButton(onClick = { PetalFxa.cancelSignIn() }) { Text("Cancel") }
-                                        }
-                                        else -> Button(onClick = { startSignIn() }, modifier = Modifier.fillMaxWidth()) {
-                                            Icon(Icons.Rounded.AccountCircle, null, Modifier.size(18.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text(if (account.needsReauth) "Reconnect Mozilla account" else "Sign in with Mozilla")
+                                            Text(if (syncing) "Syncing…" else "Sync now")
                                         }
-                                    }
-                                    if (fxa is FxaUi.SignedIn) {
                                         Spacer(Modifier.height(6.dp))
                                         Text(
-                                            if (syncing) "Syncing…" else if (lastSync > 0) "Last synced ${DateUtils.getRelativeTimeSpanString(lastSync)}" else "Not synced yet",
+                                            if (lastSync > 0) "Last synced ${DateUtils.getRelativeTimeSpanString(lastSync)}" else "Not synced yet",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
-                                    }
-                                }
-                            }
-                        }
-
-                        // ── tabs sent to this device (only when there are any) ──
-                        if (received.isNotEmpty()) {
-                            item {
-                                Column {
-                                    PetalSectionLabel("Sent to this device")
-                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        received.forEachIndexed { i, t ->
-                                            PetalGroupNavigationRow(
-                                                title = t.title.ifBlank { t.url },
-                                                subtitle = "From ${t.from}",
-                                                position = petalGroupPositionFor(i, received.size),
-                                                variant = PetalBadgeVariant.TERTIARY,
-                                                leadingIcon = { Icon(Icons.Rounded.Devices, null) },
-                                                onClick = {
-                                                    PetalFxa.dismissReceived(t)
-                                                    onOpenOAuth(PetalShortcut(t.title, t.url, "received-tab", Color(0xFFFF9400)))
-                                                }
-                                            )
+                                    } else {
+                                        Button(onClick = { pickedFolder = null; showSetup = true }, modifier = Modifier.fillMaxWidth()) {
+                                            Icon(Icons.Rounded.Sync, null, Modifier.size(18.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Set up sync")
                                         }
                                     }
                                 }
@@ -349,11 +312,7 @@ fun PetalAccountScreen(
                                     )
                                     PetalGroupNavigationRow(
                                         title = "Profile picture",
-                                        subtitle = when (profile.avatarType) {
-                                            AvatarType.FIREFOX -> "Mozilla account photo"
-                                            AvatarType.GALLERY_URI -> "Your photo"
-                                            AvatarType.PRESET -> "Built-in avatar"
-                                        },
+                                        subtitle = if (profile.avatarType == AvatarType.GALLERY_URI) "Your photo" else "Built-in avatar",
                                         position = petalGroupPositionFor(2, 4),
                                         variant = PetalBadgeVariant.TERTIARY,
                                         leadingIcon = { Icon(Icons.Rounded.AddPhotoAlternate, null) },
@@ -370,23 +329,23 @@ fun PetalAccountScreen(
                             }
                         }
 
-                        // ── sync & devices (collapsed by default) ──
+                        // ── sync through your own storage (collapsed by default) ──
                         item {
                             Column {
-                                PetalSectionLabel("Sync & devices")
-                                if (fxa !is FxaUi.SignedIn) {
+                                PetalSectionLabel("Sync")
+                                if (!configured) {
                                     PetalGroupNavigationRow(
-                                        title = "Sync with your Mozilla account",
-                                        subtitle = "Bookmarks, history, tabs and passwords, end-to-end encrypted",
+                                        title = "Sync through your own storage",
+                                        subtitle = "Pick a folder you own. Petal keeps one encrypted file in it.",
                                         position = petalGroupPositionFor(0, 1),
                                         leadingIcon = { Icon(Icons.Rounded.Sync, null) },
-                                        onClick = { startSignIn() }
+                                        onClick = { pickedFolder = null; showSetup = true }
                                     )
                                 } else {
-                                    val onCount = listOf(bookmarksOn, historyOn, tabsOn, passwordsOn).count { it }
+                                    val onCount = listOf(bookmarksOn, historyOn, shortcutsOn, rulesOn).count { it }
                                     PetalGroupNavigationRow(
                                         title = "Sync settings",
-                                        subtitle = "$onCount of 4 on · ${devices.size} other device${if (devices.size == 1) "" else "s"}",
+                                        subtitle = "${folderName ?: "Folder selected"} · $onCount of 4 on",
                                         position = petalGroupPositionFor(0, 1),
                                         leadingIcon = { Icon(Icons.Rounded.Sync, null) },
                                         trailingIcon = { Icon(if (syncExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null) },
@@ -400,77 +359,78 @@ fun PetalAccountScreen(
                                         Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                                 PetalGroupControlRow(
-                                                    title = "Bookmarks", subtitle = "Shared across your devices",
+                                                    title = "Bookmarks", subtitle = "Including your reading list",
                                                     checked = bookmarksOn,
-                                                    onCheckedChange = { bookmarksOn = it; PetalFxa.setEngine(SyncEngine.Bookmarks, it) },
-                                                    position = petalGroupPositionFor(0, 4),
+                                                    onCheckedChange = { bookmarksOn = it; PetalFolderSync.setOn(context, PetalFolderSync.KEY_BOOKMARKS, it) },
+                                                    position = petalGroupPositionFor(0, 5),
                                                     leadingIcon = { Icon(Icons.Rounded.Bookmark, null) }
                                                 )
                                                 PetalGroupControlRow(
                                                     title = "History", subtitle = "Pages you have visited",
                                                     checked = historyOn,
-                                                    onCheckedChange = { historyOn = it; PetalFxa.setEngine(SyncEngine.History, it) },
-                                                    position = petalGroupPositionFor(1, 4),
+                                                    onCheckedChange = { historyOn = it; PetalFolderSync.setOn(context, PetalFolderSync.KEY_HISTORY, it) },
+                                                    position = petalGroupPositionFor(1, 5),
                                                     variant = PetalBadgeVariant.SECONDARY,
                                                     leadingIcon = { Icon(Icons.Rounded.History, null) }
                                                 )
                                                 PetalGroupControlRow(
-                                                    title = "Open tabs", subtitle = "See tabs from your other devices",
-                                                    checked = tabsOn,
-                                                    onCheckedChange = { tabsOn = it; PetalFxa.setEngine(SyncEngine.Tabs, it) },
-                                                    position = petalGroupPositionFor(2, 4),
+                                                    title = "Home shortcuts", subtitle = "Your start page sites",
+                                                    checked = shortcutsOn,
+                                                    onCheckedChange = { shortcutsOn = it; PetalFolderSync.setOn(context, PetalFolderSync.KEY_SHORTCUTS, it) },
+                                                    position = petalGroupPositionFor(2, 5),
                                                     variant = PetalBadgeVariant.TERTIARY,
-                                                    leadingIcon = { Icon(Icons.Rounded.Devices, null) }
+                                                    leadingIcon = { Icon(Icons.Rounded.Description, null) }
                                                 )
                                                 PetalGroupControlRow(
-                                                    title = "Passwords", subtitle = "Off until you turn it on",
-                                                    checked = passwordsOn,
-                                                    onCheckedChange = { passwordsOn = it; PetalFxa.setEngine(SyncEngine.Passwords, it) },
-                                                    position = petalGroupPositionFor(3, 4),
-                                                    leadingIcon = { Icon(Icons.Rounded.Key, null) }
+                                                    title = "Site rules", subtitle = "Saved, trusted and protected sites",
+                                                    checked = rulesOn,
+                                                    onCheckedChange = { rulesOn = it; PetalFolderSync.setOn(context, PetalFolderSync.KEY_RULES, it) },
+                                                    position = petalGroupPositionFor(3, 5),
+                                                    leadingIcon = { Icon(Icons.Rounded.Https, null) }
+                                                )
+                                                PetalGroupControlRow(
+                                                    title = "Sync automatically", subtitle = "When Petal opens, at most every few hours",
+                                                    checked = autoOn,
+                                                    onCheckedChange = { autoOn = it; PetalFolderSync.setOn(context, PetalFolderSync.KEY_AUTO, it) },
+                                                    position = petalGroupPositionFor(4, 5),
+                                                    variant = PetalBadgeVariant.SECONDARY,
+                                                    leadingIcon = { Icon(Icons.Rounded.Refresh, null) }
                                                 )
                                             }
-                                            OutlinedTextField(
-                                                value = deviceName, onValueChange = { deviceName = it }, singleLine = true,
-                                                label = { Text("This device's name") }, modifier = Modifier.fillMaxWidth(),
-                                                trailingIcon = {
-                                                    TextButton(onClick = { PetalFxa.renameDevice(deviceName); say("Device renamed") }) { Text("Save") }
-                                                }
-                                            )
-                                            PetalHeroCard(Modifier.fillMaxWidth(), containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
-                                                Column(Modifier.padding(16.dp)) {
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Text("Your other devices", Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                                        IconButton(onClick = { PetalFxa.refreshDevices() }) { Icon(Icons.Rounded.Refresh, "Refresh") }
-                                                    }
-                                                    if (devices.isEmpty()) {
-                                                        Text("None yet. Sign in to Firefox on another device to see it here.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                    }
-                                                    devices.forEach { d ->
-                                                        Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                            Icon(Icons.Rounded.Devices, null, Modifier.size(20.dp))
-                                                            Spacer(Modifier.width(10.dp))
-                                                            Text(d.name, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                                            if (d.canReceiveTabs) Text("Send tab", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                                                        }
-                                                    }
-                                                }
+                                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                PetalGroupNavigationRow(
+                                                    title = "Change folder", subtitle = folderName ?: "Pick a different folder",
+                                                    position = petalGroupPositionFor(0, 3),
+                                                    leadingIcon = { Icon(Icons.Rounded.Storage, null) },
+                                                    onClick = { folderLauncher.launch(null) }
+                                                )
+                                                PetalGroupNavigationRow(
+                                                    title = "Change passphrase", subtitle = "Every device must use the same one",
+                                                    position = petalGroupPositionFor(1, 3),
+                                                    variant = PetalBadgeVariant.SECONDARY,
+                                                    leadingIcon = { Icon(Icons.Rounded.Key, null) },
+                                                    onClick = { showPassphrase = true }
+                                                )
+                                                PetalGroupNavigationRow(
+                                                    title = "Turn off sync", subtitle = "Forget the folder and passphrase on this device",
+                                                    position = petalGroupPositionFor(2, 3),
+                                                    variant = PetalBadgeVariant.ERROR,
+                                                    leadingIcon = { Icon(Icons.Rounded.Delete, null) },
+                                                    onClick = { showDisconnect = true }
+                                                )
                                             }
-                                            val shownTabs = remoteTabs.take(10)
-                                            if (tabsOn && shownTabs.isNotEmpty()) {
-                                                Column {
-                                                    PetalSectionLabel("Tabs on your other devices")
-                                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                        shownTabs.forEachIndexed { i, t ->
-                                                            PetalGroupNavigationRow(
-                                                                title = t.title.ifBlank { t.url },
-                                                                subtitle = t.device,
-                                                                position = petalGroupPositionFor(i, shownTabs.size),
-                                                                leadingIcon = { Icon(Icons.Rounded.Devices, null) },
-                                                                onClick = { onOpenOAuth(PetalShortcut(t.title.ifBlank { t.url }, t.url, "synced-tab", Color(0xFFFF9400))) }
-                                                            )
-                                                        }
+                                            PetalHeroCard(Modifier.fillMaxWidth(), containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
+                                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                    syncMessage?.let {
+                                                        Text(it, style = MaterialTheme.typography.bodySmall)
                                                     }
+                                                    Text(
+                                                        "Data is encrypted on this device before it reaches your folder, so only your passphrase can read it. " +
+                                                            "Items are merged, so deleting something here won't delete it on your other devices. " +
+                                                            "Passwords aren't synced: use Encrypted backup for those.",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
                                                 }
                                             }
                                         }
@@ -561,20 +521,13 @@ fun PetalAccountScreen(
             onDismissRequest = { showNameDialog = false },
             title = { Text("Display name", fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = input,
-                        onValueChange = { if (it.length <= PetalUserProfileManager.MAX_NAME) input = it },
-                        singleLine = true,
-                        label = { Text("Name (max ${PetalUserProfileManager.MAX_NAME})") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    if (profile.hasCustomName && profile.firefoxDisplayName != null) {
-                        TextButton(onClick = { PetalUserProfileManager.useAccountName(context); showNameDialog = false }) {
-                            Text("Use my Mozilla account name")
-                        }
-                    }
-                }
+                OutlinedTextField(
+                    value = input,
+                    onValueChange = { if (it.length <= PetalUserProfileManager.MAX_NAME) input = it },
+                    singleLine = true,
+                    label = { Text("Name (max ${PetalUserProfileManager.MAX_NAME})") },
+                    modifier = Modifier.fillMaxWidth()
+                )
             },
             confirmButton = {
                 Button(onClick = { PetalUserProfileManager.updateDisplayName(context, input); showNameDialog = false }, shape = petalConnectedShape(1, 2)) { Text("Save") }
@@ -635,16 +588,128 @@ fun PetalAccountScreen(
         )
     }
 
-    if (showSignOut) {
+    // First-time sync setup: choose a folder, then a passphrase.
+    if (showSetup) {
+        var pass by remember { mutableStateOf("") }
+        var confirm by remember { mutableStateOf("") }
+        val valid = pickedFolder != null && pass.length >= 8 && pass == confirm
         PetalMaterialAlertDialog(
-            onDismissRequest = { showSignOut = false },
-            title = { Text("Sign out of Mozilla?", fontWeight = FontWeight.Bold) },
-            text = { Text("Syncing stops on this device. Your local bookmarks and history stay here, and you can sign in again any time.") },
+            onDismissRequest = { showSetup = false },
+            title = { Text("Set up sync", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Pick a folder you own, such as one on Google Drive, Nextcloud, Syncthing or your SD card. " +
+                            "Use the same folder and passphrase on each device.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedButton(onClick = { folderLauncher.launch(null) }, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Rounded.Storage, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            pickedFolder?.let { Uri.decode(it.lastPathSegment ?: "Folder selected") } ?: "Choose folder",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    OutlinedTextField(
+                        value = pass, onValueChange = { pass = it }, singleLine = true,
+                        label = { Text("Passphrase (8+ characters)") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = confirm, onValueChange = { confirm = it }, singleLine = true,
+                        label = { Text("Repeat passphrase") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        isError = confirm.isNotEmpty() && confirm != pass,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        "If you forget the passphrase, the synced data can't be recovered.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
             confirmButton = {
-                Button(onClick = { showSignOut = false; PetalFxa.signOut() }, shape = petalConnectedShape(1, 2)) { Text("Sign out") }
+                Button(
+                    enabled = valid,
+                    onClick = {
+                        pickedFolder?.let { PetalFolderSync.setFolder(context, it) }
+                        PetalFolderSync.setPassphrase(context, pass)
+                        showSetup = false
+                        PetalFolderSync.syncNow(context)
+                    },
+                    shape = petalConnectedShape(1, 2)
+                ) { Text("Start syncing") }
             },
             dismissButton = {
-                FilledTonalButton(onClick = { showSignOut = false }, shape = petalConnectedShape(0, 2)) { Text("Cancel") }
+                FilledTonalButton(onClick = { showSetup = false }, shape = petalConnectedShape(0, 2)) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showPassphrase) {
+        var pass by remember { mutableStateOf("") }
+        var confirm by remember { mutableStateOf("") }
+        val valid = pass.length >= 8 && pass == confirm
+        PetalMaterialAlertDialog(
+            onDismissRequest = { showPassphrase = false },
+            title = { Text("Change passphrase", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Enter the passphrase your other devices use. If you're choosing a new one, the existing synced file " +
+                            "can't be read with it, so sync will stop with an error until it matches.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = pass, onValueChange = { pass = it }, singleLine = true,
+                        label = { Text("Passphrase (8+ characters)") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = confirm, onValueChange = { confirm = it }, singleLine = true,
+                        label = { Text("Repeat passphrase") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        isError = confirm.isNotEmpty() && confirm != pass,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    enabled = valid,
+                    onClick = {
+                        PetalFolderSync.setPassphrase(context, pass)
+                        showPassphrase = false
+                        PetalFolderSync.syncNow(context)
+                    },
+                    shape = petalConnectedShape(1, 2)
+                ) { Text("Save") }
+            },
+            dismissButton = {
+                FilledTonalButton(onClick = { showPassphrase = false }, shape = petalConnectedShape(0, 2)) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showDisconnect) {
+        PetalMaterialAlertDialog(
+            onDismissRequest = { showDisconnect = false },
+            title = { Text("Turn off sync?", fontWeight = FontWeight.Bold) },
+            text = { Text("Petal forgets the folder and passphrase on this device. Your bookmarks and history here stay, and the file in your folder is left as it is.") },
+            confirmButton = {
+                Button(onClick = { showDisconnect = false; PetalFolderSync.disconnect(context); syncExpanded = false }, shape = petalConnectedShape(1, 2)) { Text("Turn off") }
+            },
+            dismissButton = {
+                FilledTonalButton(onClick = { showDisconnect = false }, shape = petalConnectedShape(0, 2)) { Text("Cancel") }
             }
         )
     }
@@ -653,7 +718,7 @@ fun PetalAccountScreen(
         PetalMaterialAlertDialog(
             onDismissRequest = { showReset = false },
             title = { Text("Reset local profile?", fontWeight = FontWeight.Bold) },
-            text = { Text("This removes your name, bio, accent colour and photo from this device. Your Mozilla sign-in isn't affected.") },
+            text = { Text("This removes your name, bio, accent colour and photo from this device. Sync settings aren't affected.") },
             confirmButton = {
                 Button(onClick = { PetalUserProfileManager.resetLocalProfile(context); showReset = false; say("Local profile reset") }, shape = petalConnectedShape(1, 2)) { Text("Reset") }
             },
@@ -703,25 +768,12 @@ fun PetalAccountScreen(
                         }
                     }
                 }
-                val canUseFirefox = profile.avatarUrl != null
-                val rows = if (canUseFirefox) 2 else 1
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    PetalGroupNavigationRow(
-                        title = "Choose a photo", subtitle = "Pick an image and crop it",
-                        position = petalGroupPositionFor(0, rows),
-                        leadingIcon = { Icon(Icons.Rounded.AddPhotoAlternate, null) },
-                        onClick = { showAvatarSheet = false; galleryLauncher.launch("image/*") }
-                    )
-                    if (canUseFirefox) {
-                        PetalGroupNavigationRow(
-                            title = "Use Mozilla account photo", subtitle = "Matches your Firefox profile",
-                            position = petalGroupPositionFor(1, rows),
-                            variant = PetalBadgeVariant.TERTIARY,
-                            leadingIcon = { Icon(Icons.Rounded.AccountCircle, null) },
-                            onClick = { PetalUserProfileManager.updateAvatarFirefox(context); showAvatarSheet = false }
-                        )
-                    }
-                }
+                PetalGroupNavigationRow(
+                    title = "Choose a photo", subtitle = "Pick an image and crop it",
+                    position = petalGroupPositionFor(0, 1),
+                    leadingIcon = { Icon(Icons.Rounded.AddPhotoAlternate, null) },
+                    onClick = { showAvatarSheet = false; galleryLauncher.launch("image/*") }
+                )
                 Spacer(Modifier.height(8.dp))
             }
         }

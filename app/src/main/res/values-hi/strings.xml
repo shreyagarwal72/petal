@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">पृष्ठभूमि ऑडियो और वीडियो प्लेबैक</string>
     <string name="ui_keep_youtube_web_media_playing">टैब या बैकग्राउंडिंग ऐप स्विच करते समय यूट्यूब और वेब मीडिया चालू रखें</string>
     <string name="ui_media_sync">मीडिया और सिंक</string>
-    <string name="ui_video_player_stream_sniffer_offline">वीडियो प्लेयर, स्ट्रीम स्निफ़र, ऑफ़लाइन AI और फ़ायरफ़ॉक्स सिंक इकोसिस्टम</string>
     <string name="ui_media_engine">मीडिया इंजन</string>
     <string name="ui_native_video_player">देशी वीडियो प्लेयर</string>
     <string name="ui_bypass_web_player_and_launch">वेब प्लेयर को बायपास करें और इशारों और पृष्ठभूमि ऑडियो के साथ सीधे हार्डवेयर-त्वरित एक्सोप्लेयर में स्ट्रीम लॉन्च करें</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">अव्यवस्थित जेनरेटिव एआई अवलोकनों और प्रचारित सारांशों को हटाकर खोज परिणामों को स्वचालित रूप से साफ़ करें</string>
     <string name="ui_sync_ecosystem">सिंक और पारिस्थितिकी तंत्र</string>
     <string name="ui_petal_sync">पेटल सिंक</string>
-    <string name="ui_zero_cloud_end_to_end">सभी डिवाइसों में जीरो-क्लाउड एंड-टू-एंड एन्क्रिप्टेड (E2EE) सिंक, फ़ायरफ़ॉक्स अकाउंट्स और मोज़िला सिंक प्रोटोकॉल द्वारा संचालित</string>
     <string name="ui_about_developer_2">डेवलपर के बारे में</string>
     <string name="ui_app_version_licenses_github_developer">ऐप संस्करण, लाइसेंस, GitHub और डेवलपर</string>
     <string name="ui_open_in_new_tab">वेब टेब में खोलें</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">फसल रीसेट करें</string>
     <string name="ui_apply_crop">फसल लगाएं</string>
     <string name="ui_save_profile_picture">प्रोफ़ाइल चित्र सहेजें</string>
-    <string name="ui_account_mozilla_sync">खाता और मोज़िला सिंक</string>
-    <string name="ui_firefox_accounts_profile">फ़ायरफ़ॉक्स खाते और प्रोफ़ाइल</string>
     <string name="ui_petal_browser_profile">पेटल ब्राउज़र प्रोफ़ाइल</string>
-    <string name="ui_firefox_account_sync">फ़ायरफ़ॉक्स खाता और सिंक</string>
     <string name="ui_firefox_avatar">फ़ायरफ़ॉक्स अवतार</string>
-    <string name="ui_firefox_account_connected">फ़ायरफ़ॉक्स खाता कनेक्ट किया गया</string>
     <string name="ui_last_synced">अंतिम बार समन्वयित किया गया</string>
     <string name="ui_sign_out_of_firefox">फ़ायरफ़ॉक्स से साइन आउट करें</string>
     <string name="ui_sync_with_firefox">फ़ायरफ़ॉक्स के साथ सिंक करें</string>
-    <string name="ui_take_your_bookmarks_history_and">अपने बुकमार्क, इतिहास और खुले टैब कहीं भी ले जाएं। आपके मोज़िला फ़ायरफ़ॉक्स खाते के साथ अंत-से-अंत तक निजी तौर पर समन्वयित।</string>
     <string name="ui_sign_in_with_firefox">फ़ायरफ़ॉक्स के साथ साइन इन करें</string>
     <string name="ui_pair_with_firefox_desktop">फ़ायरफ़ॉक्स डेस्कटॉप के साथ युग्मित करें</string>
     <string name="ui_import_firefox_bookmarks_or_history">फ़ायरफ़ॉक्स बुकमार्क या इतिहास आयात करें</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">जोड़ना</string>
     <string name="ui_sign_in_with_firefox_email">फ़ायरफ़ॉक्स ईमेल से साइन इन करें</string>
-    <string name="ui_enter_your_firefox_account_email">अपने बुकमार्क, इतिहास और टैब के लिए त्वरित सिंक सक्षम करने के लिए अपना फ़ायरफ़ॉक्स खाता ईमेल दर्ज करें।</string>
-    <string name="ui_firefox_account_email">फ़ायरफ़ॉक्स खाता ईमेल</string>
     <string name="ui_you_example_com">you@example.com</string>
     <string name="ui_sign_in_sync">साइन इन करें और सिंक करें</string>
     <string name="ui_video_scale_aspect_ratio">वीडियो स्केल और पहलू अनुपात</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">अपनी गैलरी से एक चित्र चुनें</string>
     <string name="petal_setup_mozilla">मोज़िला के साथ साइन इन करें</string>
     <string name="petal_setup_mozilla_reason">फ़ायरफ़ॉक्स के साथ बुकमार्क, इतिहास और टैब सिंक करें।</string>
-    <string name="petal_setup_mozilla_tab">मोज़िला खाता साइन इन करें</string>
     <string name="petal_setup_sign_in">दाखिल करना</string>
     <string name="petal_setup_connected">जुड़े हुए</string>
     <string name="petal_setup_ai_optional">पेटल एआई सेट करें (वैकल्पिक)</string>

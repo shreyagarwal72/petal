@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Phát lại âm thanh và video trong nền</string>
     <string name="ui_keep_youtube_web_media_playing">Tiếp tục phát nội dung đa phương tiện trên YouTube và web khi chuyển đổi tab hoặc ứng dụng chạy nền</string>
     <string name="ui_media_sync">Phương tiện &amp; Đồng bộ hóa</string>
-    <string name="ui_video_player_stream_sniffer_offline">Trình phát video, trình nghe lén luồng, hệ sinh thái AI &amp; Firefox Sync ngoại tuyến</string>
     <string name="ui_media_engine">Công cụ truyền thông</string>
     <string name="ui_native_video_player">Trình phát video gốc</string>
     <string name="ui_bypass_web_player_and_launch">Bỏ qua trình phát web và khởi chạy luồng trực tiếp vào ExoPlayer được tăng tốc phần cứng bằng cử chỉ và âm thanh nền</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Tự động làm sạch kết quả tìm kiếm bằng cách loại bỏ các phần tổng quan về AI tổng hợp lộn xộn và các bản tóm tắt được quảng cáo</string>
     <string name="ui_sync_ecosystem">Đồng bộ hóa &amp; hệ sinh thái</string>
     <string name="ui_petal_sync">Đồng bộ cánh hoa</string>
-    <string name="ui_zero_cloud_end_to_end">Đồng bộ hóa mã hóa từ đầu đến cuối (E2EE) trên nền tảng đám mây trên các thiết bị, được hỗ trợ bởi giao thức Firefox Accounts &amp; Mozilla Sync</string>
     <string name="ui_about_developer_2">Giới thiệu &amp; Nhà phát triển</string>
     <string name="ui_app_version_licenses_github_developer">Phiên bản ứng dụng, giấy phép, GitHub &amp; nhà phát triển</string>
     <string name="ui_open_in_new_tab">Mở trong tab mới</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Đặt lại cắt</string>
     <string name="ui_apply_crop">Áp dụng cắt xén</string>
     <string name="ui_save_profile_picture">Lưu ảnh hồ sơ</string>
-    <string name="ui_account_mozilla_sync">Đồng bộ hóa tài khoản &amp; Mozilla</string>
-    <string name="ui_firefox_accounts_profile">Tài khoản và hồ sơ Firefox</string>
     <string name="ui_petal_browser_profile">Hồ sơ trình duyệt cánh hoa</string>
-    <string name="ui_firefox_account_sync">TÀI KHOẢN &amp; ĐỒNG BỘ FIREFOX</string>
     <string name="ui_firefox_avatar">Hình đại diện Firefox</string>
-    <string name="ui_firefox_account_connected">Đã kết nối tài khoản Firefox</string>
     <string name="ui_last_synced">Đồng bộ hóa lần cuối</string>
     <string name="ui_sign_out_of_firefox">Đăng xuất khỏi Firefox</string>
     <string name="ui_sync_with_firefox">Đồng bộ hóa với Firefox</string>
-    <string name="ui_take_your_bookmarks_history_and">Mang dấu trang, lịch sử và các tab đang mở của bạn đi bất cứ đâu. Được đồng bộ hóa riêng tư từ đầu đến cuối với Tài khoản Mozilla Firefox của bạn.</string>
     <string name="ui_sign_in_with_firefox">Đăng nhập bằng Firefox</string>
     <string name="ui_pair_with_firefox_desktop">Ghép nối với máy tính để bàn Firefox</string>
     <string name="ui_import_firefox_bookmarks_or_history">Nhập dấu trang hoặc lịch sử Firefox</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Kết nối</string>
     <string name="ui_sign_in_with_firefox_email">Đăng nhập bằng email Firefox</string>
-    <string name="ui_enter_your_firefox_account_email">Nhập email Tài khoản Firefox của bạn để bật đồng bộ hóa tức thì cho dấu trang, lịch sử và tab của bạn.</string>
-    <string name="ui_firefox_account_email">Email tài khoản Firefox</string>
     <string name="ui_you_example_com">bạn@example.com</string>
     <string name="ui_sign_in_sync">Đăng nhập và đồng bộ hóa</string>
     <string name="ui_video_scale_aspect_ratio">Tỷ lệ khung hình và tỷ lệ khung hình video</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Chọn một hình ảnh từ thư viện của bạn</string>
     <string name="petal_setup_mozilla">Đăng nhập bằng Mozilla</string>
     <string name="petal_setup_mozilla_reason">Đồng bộ hóa dấu trang, lịch sử và tab với Firefox.</string>
-    <string name="petal_setup_mozilla_tab">Đăng nhập tài khoản Mozilla</string>
     <string name="petal_setup_sign_in">Đăng nhập</string>
     <string name="petal_setup_connected">Đã kết nối</string>
     <string name="petal_setup_ai_optional">Thiết lập Petal AI (tùy chọn)</string>

@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">背景音影片播放</string>
     <string name="ui_keep_youtube_web_media_playing">切換標籤或後台應用程式時保持 YouTube 和網路媒體播放</string>
     <string name="ui_media_sync">媒體與同步</string>
-    <string name="ui_video_player_stream_sniffer_offline">視訊播放器、串流嗅探器、離線 AI 和 Firefox Sync 生態系統</string>
     <string name="ui_media_engine">媒體引擎</string>
     <string name="ui_native_video_player">本機視訊播放器</string>
     <string name="ui_bypass_web_player_and_launch">繞過網路播放器並透過手勢和背景音訊直接將串流啟動到硬體加速的 ExoPlayer</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">透過剝離雜亂的生成式人工智慧概述和升級摘要來自動清理搜尋結果</string>
     <string name="ui_sync_ecosystem">同步與生態系統</string>
     <string name="ui_petal_sync">花瓣同步</string>
-    <string name="ui_zero_cloud_end_to_end">跨裝置的零雲端對端加密 (E2EE) 同步，由 Firefox 帳戶和 Mozilla 同步協定提供支持</string>
     <string name="ui_about_developer_2">關於和開發商</string>
     <string name="ui_app_version_licenses_github_developer">應用程式版本、授權、GitHub 和開發人員</string>
     <string name="ui_open_in_new_tab">在新分頁中開啟</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">重置裁切</string>
     <string name="ui_apply_crop">應用作物</string>
     <string name="ui_save_profile_picture">儲存個人資料圖片</string>
-    <string name="ui_account_mozilla_sync">帳號和 Mozilla 同步</string>
-    <string name="ui_firefox_accounts_profile">Firefox 帳號與個人資料</string>
     <string name="ui_petal_browser_profile">花瓣瀏覽器設定檔</string>
-    <string name="ui_firefox_account_sync">Firefox 帳號和同步</string>
     <string name="ui_firefox_avatar">火狐頭像</string>
-    <string name="ui_firefox_account_connected">Firefox 帳戶已連接</string>
     <string name="ui_last_synced">上次同步</string>
     <string name="ui_sign_out_of_firefox">退出 Firefox</string>
     <string name="ui_sync_with_firefox">與火狐同步</string>
-    <string name="ui_take_your_bookmarks_history_and">將您的書籤、歷史記錄和打開的選項卡帶到任何地方。與您的 Mozilla Firefox 帳戶進行端對端私密同步。</string>
     <string name="ui_sign_in_with_firefox">使用 Firefox 登入</string>
     <string name="ui_pair_with_firefox_desktop">與 Firefox 桌面版配對</string>
     <string name="ui_import_firefox_bookmarks_or_history">匯入 Firefox 書籤或歷史記錄</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">連接</string>
     <string name="ui_sign_in_with_firefox_email">使用 Firefox 電子郵件登入</string>
-    <string name="ui_enter_your_firefox_account_email">輸入您的 Firefox 帳戶電子郵件以啟用書籤、記錄和標籤的即時同步。</string>
-    <string name="ui_firefox_account_email">火狐帳號電子郵件</string>
     <string name="ui_you_example_com">你@example.com</string>
     <string name="ui_sign_in_sync">登入並同步</string>
     <string name="ui_video_scale_aspect_ratio">影片比例和寬高比</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">從您的圖庫中選擇一張圖片</string>
     <string name="petal_setup_mozilla">使用 Mozilla 登入</string>
     <string name="petal_setup_mozilla_reason">與 Firefox 同步書籤、歷史記錄和選項卡。</string>
-    <string name="petal_setup_mozilla_tab">Mozilla 帳號登入</string>
     <string name="petal_setup_sign_in">登入</string>
     <string name="petal_setup_connected">已連接</string>
     <string name="petal_setup_ai_optional">設定 Petal AI（可選）</string>

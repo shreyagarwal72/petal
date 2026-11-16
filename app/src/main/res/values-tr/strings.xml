@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Arka Planda Ses ve Video Oynatma</string>
     <string name="ui_keep_youtube_web_media_playing">Sekmeleri veya arka plan uygulamasını değiştirirken YouTube ve web medyasını oynatmaya devam edin</string>
     <string name="ui_media_sync">Medya ve Senkronizasyon</string>
-    <string name="ui_video_player_stream_sniffer_offline">Video oynatıcı, akış algılayıcı, çevrimdışı AI ve Firefox Sync ekosistemi</string>
     <string name="ui_media_engine">Medya Motoru</string>
     <string name="ui_native_video_player">Yerel Video Oynatıcı</string>
     <string name="ui_bypass_web_player_and_launch">Web oynatıcısını atlayın ve hareketler ve arka plan sesiyle akışları doğrudan donanım hızlandırmalı ExoPlayer\'a başlatın</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Dağınık üretken yapay zeka genel bakışlarını ve tanıtılan özetleri ortadan kaldırarak arama sonuçlarını otomatik olarak temizleyin</string>
     <string name="ui_sync_ecosystem">Senkronizasyon ve Ekosistem</string>
     <string name="ui_petal_sync">Yaprak Senkronizasyonu</string>
-    <string name="ui_zero_cloud_end_to_end">Firefox Hesapları ve Mozilla Sync protokolü tarafından desteklenen cihazlar arasında sıfır bulut uçtan uca şifreli (E2EE) senkronizasyon</string>
     <string name="ui_about_developer_2">Hakkında ve Geliştirici</string>
     <string name="ui_app_version_licenses_github_developer">Uygulama sürümü, lisanslar, GitHub ve geliştirici</string>
     <string name="ui_open_in_new_tab">Yeni sekmede aç</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Kırpmayı Sıfırla</string>
     <string name="ui_apply_crop">Kırpma Uygula</string>
     <string name="ui_save_profile_picture">Profil Resmini Kaydet</string>
-    <string name="ui_account_mozilla_sync">Hesap ve Mozilla Senkronizasyonu</string>
-    <string name="ui_firefox_accounts_profile">Firefox Hesapları ve Profili</string>
     <string name="ui_petal_browser_profile">Petal Tarayıcı Profili</string>
-    <string name="ui_firefox_account_sync">FIREFOX HESABI VE SENKRONİZASYONU</string>
     <string name="ui_firefox_avatar">Firefox Avatarı</string>
-    <string name="ui_firefox_account_connected">Firefox Hesabı Bağlandı</string>
     <string name="ui_last_synced">Son Senkronize Edildi</string>
     <string name="ui_sign_out_of_firefox">Firefox\'tan Çıkış Yapın</string>
     <string name="ui_sync_with_firefox">Firefox\'la senkronize et</string>
-    <string name="ui_take_your_bookmarks_history_and">Yer işaretlerinizi, geçmişinizi ve açık sekmelerinizi istediğiniz yere götürün. Mozilla Firefox Hesabınızla uçtan uca özel olarak senkronize edilir.</string>
     <string name="ui_sign_in_with_firefox">Firefox\'la Oturum Açın</string>
     <string name="ui_pair_with_firefox_desktop">Firefox Masaüstüyle Eşleştirin</string>
     <string name="ui_import_firefox_bookmarks_or_history">Firefox yer işaretlerini veya geçmişini içe aktarın</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Bağlamak</string>
     <string name="ui_sign_in_with_firefox_email">Firefox E-postası ile Giriş Yapın</string>
-    <string name="ui_enter_your_firefox_account_email">Yer işaretleriniz, geçmişiniz ve sekmeleriniz için anında senkronizasyonu etkinleştirmek üzere Firefox Hesabınızın e-postasını girin.</string>
-    <string name="ui_firefox_account_email">Firefox Hesabı E-postası</string>
     <string name="ui_you_example_com">sen@example.com</string>
     <string name="ui_sign_in_sync">Oturum Aç ve Senkronizasyon</string>
     <string name="ui_video_scale_aspect_ratio">Video Ölçeği ve En Boy Oranı</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Galerinizden bir resim seçin</string>
     <string name="petal_setup_mozilla">Mozilla\'da oturum açın</string>
     <string name="petal_setup_mozilla_reason">Yer işaretlerini, geçmişi ve sekmeleri Firefox ile senkronize edin.</string>
-    <string name="petal_setup_mozilla_tab">Mozilla hesabına giriş yapın</string>
     <string name="petal_setup_sign_in">Oturum aç</string>
     <string name="petal_setup_connected">Bağlı</string>
     <string name="petal_setup_ai_optional">Petal AI\'yi kurun (isteğe bağlı)</string>

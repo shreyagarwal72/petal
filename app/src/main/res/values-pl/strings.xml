@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Odtwarzanie dźwięku i wideo w tle</string>
     <string name="ui_keep_youtube_web_media_playing">Kontynuuj odtwarzanie YouTube i multimediów internetowych podczas przełączania kart lub aplikacji działającej w tle</string>
     <string name="ui_media_sync">Multimedia i synchronizacja</string>
-    <string name="ui_video_player_stream_sniffer_offline">Odtwarzacz wideo, sniffer strumieniowy, ekosystem AI offline i Firefox Sync</string>
     <string name="ui_media_engine">Silnik multimediów</string>
     <string name="ui_native_video_player">Natywny odtwarzacz wideo</string>
     <string name="ui_bypass_web_player_and_launch">Pomiń odtwarzacz internetowy i uruchamiaj strumienie bezpośrednio w przyspieszanym sprzętowo ExoPlayerze za pomocą gestów i dźwięku w tle</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Automatycznie czyść wyniki wyszukiwania, usuwając zaśmiecone generatywne przeglądy AI i promowane podsumowania</string>
     <string name="ui_sync_ecosystem">Synchronizacja i ekosystem</string>
     <string name="ui_petal_sync">Synchronizacja płatków</string>
-    <string name="ui_zero_cloud_end_to_end">Synchronizacja typu end-to-end (E2EE) w chmurze zerowej na wszystkich urządzeniach, obsługiwana przez konta Firefoksa i protokół Mozilla Sync</string>
     <string name="ui_about_developer_2">Informacje i programista</string>
     <string name="ui_app_version_licenses_github_developer">Wersja aplikacji, licencje, GitHub i programista</string>
     <string name="ui_open_in_new_tab">Otwórz w nowej karcie</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Zresetuj przycięcie</string>
     <string name="ui_apply_crop">Zastosuj Przytnij</string>
     <string name="ui_save_profile_picture">Zapisz zdjęcie profilowe</string>
-    <string name="ui_account_mozilla_sync">Synchronizacja konta i Mozilli</string>
-    <string name="ui_firefox_accounts_profile">Konta i profil Firefoksa</string>
     <string name="ui_petal_browser_profile">Profil przeglądarki Petal</string>
-    <string name="ui_firefox_account_sync">KONTO FIREFOX I SYNCHRONIZACJA</string>
     <string name="ui_firefox_avatar">Awatar Firefoksa</string>
-    <string name="ui_firefox_account_connected">Konto Firefoksa połączone</string>
     <string name="ui_last_synced">Ostatnia synchronizacja</string>
     <string name="ui_sign_out_of_firefox">Wyloguj się z Firefoksa</string>
     <string name="ui_sync_with_firefox">Synchronizuj z Firefoksem</string>
-    <string name="ui_take_your_bookmarks_history_and">Zabierz swoje zakładki, historię i otwarte karty w dowolne miejsce. Prywatnie synchronizowane kompleksowo z Twoim kontem Mozilla Firefox.</string>
     <string name="ui_sign_in_with_firefox">Zaloguj się w Firefoksie</string>
     <string name="ui_pair_with_firefox_desktop">Sparuj z Firefoksem Desktop</string>
     <string name="ui_import_firefox_bookmarks_or_history">Importuj zakładki lub historię Firefoksa</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Łączyć</string>
     <string name="ui_sign_in_with_firefox_email">Zaloguj się za pomocą poczty e-mail w przeglądarce Firefox</string>
-    <string name="ui_enter_your_firefox_account_email">Wpisz adres e-mail swojego konta Firefoksa, aby włączyć natychmiastową synchronizację zakładek, historii i kart.</string>
-    <string name="ui_firefox_account_email">Adres e-mail konta Firefoksa</string>
     <string name="ui_you_example_com">ty@example.com</string>
     <string name="ui_sign_in_sync">Zaloguj się i zsynchronizuj</string>
     <string name="ui_video_scale_aspect_ratio">Skala wideo i współczynnik proporcji</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Wybierz zdjęcie ze swojej galerii</string>
     <string name="petal_setup_mozilla">Zaloguj się w Mozilli</string>
     <string name="petal_setup_mozilla_reason">Synchronizuj zakładki, historię i karty z przeglądarką Firefox.</string>
-    <string name="petal_setup_mozilla_tab">Zaloguj się na konto Mozilli</string>
     <string name="petal_setup_sign_in">Zalogować się</string>
     <string name="petal_setup_connected">Połączony</string>
     <string name="petal_setup_ai_optional">Skonfiguruj Petal AI (opcjonalnie)</string>

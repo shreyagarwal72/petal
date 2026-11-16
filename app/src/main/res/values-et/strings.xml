@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Taustaheli ja video taasesitus</string>
     <string name="ui_keep_youtube_web_media_playing">Jätkake YouTube\'i ja veebimeedia esitamist, kui vahetate vahelehti või taustarakendust</string>
     <string name="ui_media_sync">Meedia ja sünkroonimine</string>
-    <string name="ui_video_player_stream_sniffer_offline">Videopleier, voogesituse nuusutaja, võrguühenduseta AI ja Firefoxi sünkroonimise ökosüsteem</string>
     <string name="ui_media_engine">Meediumimootor</string>
     <string name="ui_native_video_player">Natiivne videopleier</string>
     <string name="ui_bypass_web_player_and_launch">Minge veebipleierist mööda ja käivitage vooged otse riistvarakiirendusega ExoPlayeri žestide ja taustaheliga</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Puhastage automaatselt otsingutulemused, eemaldades segased generatiivsed AI ülevaated ja reklaamitud kokkuvõtted</string>
     <string name="ui_sync_ecosystem">Sünkroonimine ja ökosüsteem</string>
     <string name="ui_petal_sync">Kroonlehtede sünkroonimine</string>
-    <string name="ui_zero_cloud_end_to_end">Nullpilvega otsast lõpuni krüpteeritud (E2EE) sünkroonimine seadmete vahel, toiteks Firefoxi kontod ja Mozilla Synci protokoll</string>
     <string name="ui_about_developer_2">Teave ja arendaja kohta</string>
     <string name="ui_app_version_licenses_github_developer">Rakenduse versioon, litsentsid, GitHub ja arendaja</string>
     <string name="ui_open_in_new_tab">Ava uuel vahelehel</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Lähtestage kärpimine</string>
     <string name="ui_apply_crop">Rakenda Crop</string>
     <string name="ui_save_profile_picture">Salvesta profiilipilt</string>
-    <string name="ui_account_mozilla_sync">Konto ja Mozilla Sync</string>
-    <string name="ui_firefox_accounts_profile">Firefoxi kontod ja profiil</string>
     <string name="ui_petal_browser_profile">Kroonlehtede brauseri profiil</string>
-    <string name="ui_firefox_account_sync">FIREFOX KONTO JA SYNC</string>
     <string name="ui_firefox_avatar">Firefoxi avatar</string>
-    <string name="ui_firefox_account_connected">Firefoxi konto on ühendatud</string>
     <string name="ui_last_synced">Viimati sünkroonitud</string>
     <string name="ui_sign_out_of_firefox">Logige Firefoxist välja</string>
     <string name="ui_sync_with_firefox">Sünkrooni Firefoxiga</string>
-    <string name="ui_take_your_bookmarks_history_and">Võtke oma järjehoidjad, ajalugu ja avatud vahelehed kõikjale kaasa. Privaatselt sünkroonitud täielikult teie Mozilla Firefoxi kontoga.</string>
     <string name="ui_sign_in_with_firefox">Logige sisse Firefoxiga</string>
     <string name="ui_pair_with_firefox_desktop">Siduge Firefoxi töölauaga</string>
     <string name="ui_import_firefox_bookmarks_or_history">Importige Firefoxi järjehoidjaid või ajalugu</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Ühendage</string>
     <string name="ui_sign_in_with_firefox_email">Logige sisse Firefoxi e-postiga</string>
-    <string name="ui_enter_your_firefox_account_email">Järjehoidjate, ajaloo ja vahekaartide vahetu sünkroonimise lubamiseks sisestage oma Firefoxi konto meiliaadress.</string>
-    <string name="ui_firefox_account_email">Firefoxi konto e-post</string>
     <string name="ui_you_example_com">you@example.com</string>
     <string name="ui_sign_in_sync">Sisselogimine ja sünkroonimine</string>
     <string name="ui_video_scale_aspect_ratio">Video skaala ja kuvasuhe</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Valige oma galeriist pilt</string>
     <string name="petal_setup_mozilla">Logige sisse Mozillaga</string>
     <string name="petal_setup_mozilla_reason">Sünkroonige järjehoidjad, ajalugu ja vahekaardid Firefoxiga.</string>
-    <string name="petal_setup_mozilla_tab">Mozilla kontole sisselogimine</string>
     <string name="petal_setup_sign_in">Logi sisse</string>
     <string name="petal_setup_connected">Ühendatud</string>
     <string name="petal_setup_ai_optional">Petal AI seadistamine (valikuline)</string>

@@ -66,7 +66,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     MEDIA("Media", "Video player, media sniffer & background detection", com.petal.browser.R.drawable.video_filled),
     DOWNLOADS("Downloads", "Download engine, external downloaders & storage management", com.petal.browser.R.drawable.icon_download),
     TABS("Tabs", "Tab groups, startup restore and tab cleanup", com.petal.browser.R.drawable.icon_tab),
-    ACCOUNT_SYNC("Sync & Account", "Sync bookmarks, history & tabs with Firefox Account", com.petal.browser.R.drawable.layers_filled),
+    ACCOUNT_SYNC("Account & Sync", "Your profile and sync through storage you own", com.petal.browser.R.drawable.layers_filled),
     EXTENSIONS("Extensions & Add-ons", "Manage web extensions, ad blockers & custom scripts", com.petal.browser.R.drawable.app_registration),
     MISCELLANEOUS("Miscellaneous", "Custom tabs, external apps and camera tools", com.petal.browser.R.drawable.app_registration),
     DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", com.petal.browser.R.drawable.backup_filled),
@@ -411,7 +411,7 @@ private fun RenderCategoryContent(
             )
         }
         SettingsCategory.ACCOUNT_SYNC -> {
-            com.petal.browser.account.mozilla.FirefoxAccountSyncScreen(
+            com.petal.browser.account.PetalAccountScreen(
                 onBack = onNavigateBack
             )
         }

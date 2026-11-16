@@ -740,10 +740,6 @@ object BrowserContextMenuManager {
                     activity.shareLink(title, pageUrl)
                 }
 
-                override fun onSendToDevice() {
-                    activity.showSendToDevice()
-                }
-
                 override fun onPrintPagePdf() {
                     try {
                         activity.createWebPrintJob(null)

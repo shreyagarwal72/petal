@@ -4,38 +4,30 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.compose.ui.graphics.Color
-import com.petal.browser.account.mozilla.FxaUi
 
-/** What the account page actually shows: one resolved identity from local profile + Mozilla state. */
+/** What the account page shows: the local profile plus whether folder sync is set up on this device. */
 data class PetalAccount(
     val profile: PetalUserProfile,
-    val fxa: FxaUi,
     val title: String,
     val subtitle: String,
-    val isSignedIn: Boolean,
-    val needsReauth: Boolean,
+    val syncConfigured: Boolean,
     val accent: Color?
 )
 
 object PetalAccountRepository {
 
-    /** Pure merge of the local profile and the Mozilla account state; no side effects. */
-    fun resolve(profile: PetalUserProfile, fxa: FxaUi): PetalAccount {
-        val signedIn = fxa is FxaUi.SignedIn
-        val email = (fxa as? FxaUi.SignedIn)?.email?.takeIf { it.isNotBlank() } ?: profile.email
-        val subtitle = when (fxa) {
-            is FxaUi.SignedIn -> email.ifBlank { "Mozilla account" }
-            FxaUi.NeedsReauth -> "Mozilla account needs you to sign in again"
-            FxaUi.Connecting -> "Signing in…"
-            FxaUi.SignedOut -> "Local profile · not signed in"
+    /** Pure merge of the local profile and the sync state; no side effects. */
+    fun resolve(profile: PetalUserProfile, syncConfigured: Boolean, folderName: String?): PetalAccount {
+        val subtitle = when {
+            syncConfigured && !folderName.isNullOrBlank() -> "Syncing with $folderName"
+            syncConfigured -> "Sync is set up"
+            else -> "Local profile · sync is off"
         }
         return PetalAccount(
             profile = profile,
-            fxa = fxa,
             title = profile.displayName,
             subtitle = subtitle,
-            isSignedIn = signedIn,
-            needsReauth = fxa == FxaUi.NeedsReauth,
+            syncConfigured = syncConfigured,
             accent = parseAccent(profile.accentColorHex)
         )
     }

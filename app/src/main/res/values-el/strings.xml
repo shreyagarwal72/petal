@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Αναπαραγωγή ήχου &amp; βίντεο στο παρασκήνιο</string>
     <string name="ui_keep_youtube_web_media_playing">Διατηρήστε την αναπαραγωγή μέσων YouTube και ιστού κατά την εναλλαγή καρτελών ή εφαρμογής φόντου</string>
     <string name="ui_media_sync">Πολυμέσα &amp; Συγχρονισμός</string>
-    <string name="ui_video_player_stream_sniffer_offline">Πρόγραμμα αναπαραγωγής βίντεο, sniffer ροής, AI εκτός σύνδεσης και οικοσύστημα Firefox Sync</string>
     <string name="ui_media_engine">Μηχανή πολυμέσων</string>
     <string name="ui_native_video_player">Εγγενές πρόγραμμα αναπαραγωγής βίντεο</string>
     <string name="ui_bypass_web_player_and_launch">Παρακάμψτε το web player και εκκινήστε ροές απευθείας στο ExoPlayer με επιτάχυνση υλικού με χειρονομίες και ήχο φόντου</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Καθαρίστε αυτόματα τα αποτελέσματα αναζήτησης απογυμνώνοντας τις ακατάστατες επισκοπήσεις τεχνητής νοημοσύνης και τις προωθούμενες περιλήψεις</string>
     <string name="ui_sync_ecosystem">Συγχρονισμός &amp; Οικοσύστημα</string>
     <string name="ui_petal_sync">Petal Sync</string>
-    <string name="ui_zero_cloud_end_to_end">Συγχρονισμός κρυπτογραφημένος από άκρο σε άκρο (E2EE) μηδενικού νέφους σε όλες τις συσκευές, που υποστηρίζεται από Λογαριασμούς Firefox και πρωτόκολλο συγχρονισμού Mozilla</string>
     <string name="ui_about_developer_2">Πληροφορίες &amp; Προγραμματιστής</string>
     <string name="ui_app_version_licenses_github_developer">Έκδοση εφαρμογής, άδειες, GitHub και προγραμματιστής</string>
     <string name="ui_open_in_new_tab">Άνοιγμα σε νέα καρτέλα</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Επαναφορά περικοπής</string>
     <string name="ui_apply_crop">Εφαρμογή Περικοπής</string>
     <string name="ui_save_profile_picture">Αποθήκευση εικόνας προφίλ</string>
-    <string name="ui_account_mozilla_sync">Λογαριασμός και συγχρονισμός Mozilla</string>
-    <string name="ui_firefox_accounts_profile">Λογαριασμοί και προφίλ Firefox</string>
     <string name="ui_petal_browser_profile">Προφίλ προγράμματος περιήγησης Petal</string>
-    <string name="ui_firefox_account_sync">FIREFOX ACCOUNT &amp; SYNC</string>
     <string name="ui_firefox_avatar">Το Avatar του Firefox</string>
-    <string name="ui_firefox_account_connected">Συνδέθηκε ο λογαριασμός Firefox</string>
     <string name="ui_last_synced">Τελευταίος συγχρονισμός</string>
     <string name="ui_sign_out_of_firefox">Αποσύνδεση από τον Firefox</string>
     <string name="ui_sync_with_firefox">Συγχρονισμός με τον Firefox</string>
-    <string name="ui_take_your_bookmarks_history_and">Μεταφέρετε τους σελιδοδείκτες, το ιστορικό και ανοίξτε τις καρτέλες οπουδήποτε. Ιδιωτικά συγχρονισμένος από άκρο σε άκρο με τον λογαριασμό σας στο Mozilla Firefox.</string>
     <string name="ui_sign_in_with_firefox">Συνδεθείτε με τον Firefox</string>
     <string name="ui_pair_with_firefox_desktop">Σύζευξη με Firefox Desktop</string>
     <string name="ui_import_firefox_bookmarks_or_history">Εισαγωγή σελιδοδεικτών ή ιστορικού Firefox</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Συνδέω</string>
     <string name="ui_sign_in_with_firefox_email">Συνδεθείτε με το Firefox Email</string>
-    <string name="ui_enter_your_firefox_account_email">Εισαγάγετε το email του λογαριασμού σας Firefox για να ενεργοποιήσετε τον άμεσο συγχρονισμό για τους σελιδοδείκτες, το ιστορικό και τις καρτέλες σας.</string>
-    <string name="ui_firefox_account_email">Email λογαριασμού Firefox</string>
     <string name="ui_you_example_com">you@example.com</string>
     <string name="ui_sign_in_sync">Είσοδος &amp; Συγχρονισμός</string>
     <string name="ui_video_scale_aspect_ratio">Κλίμακα βίντεο &amp; αναλογία διαστάσεων</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Επιλέξτε μια εικόνα από τη συλλογή σας</string>
     <string name="petal_setup_mozilla">Συνδεθείτε με το Mozilla</string>
     <string name="petal_setup_mozilla_reason">Συγχρονίστε σελιδοδείκτες, ιστορικό και καρτέλες με τον Firefox.</string>
-    <string name="petal_setup_mozilla_tab">Είσοδος λογαριασμού Mozilla</string>
     <string name="petal_setup_sign_in">Συνδεθείτε</string>
     <string name="petal_setup_connected">Συνδεδεμένος</string>
     <string name="petal_setup_ai_optional">Ρύθμιση Petal AI (προαιρετικό)</string>

@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">پخش صدا و تصویر پس زمینه</string>
     <string name="ui_keep_youtube_web_media_playing">هنگام تعویض برگه یا برنامه پس‌زمینه، YouTube و رسانه‌های وب را پخش کنید</string>
     <string name="ui_media_sync">رسانه و همگام سازی</string>
-    <string name="ui_video_player_stream_sniffer_offline">پخش کننده ویدیو، ردیابی جریان، هوش مصنوعی آفلاین و اکوسیستم همگام سازی فایرفاکس</string>
     <string name="ui_media_engine">موتور رسانه</string>
     <string name="ui_native_video_player">پخش کننده ویدیو بومی</string>
     <string name="ui_bypass_web_player_and_launch">پخش‌کننده وب را دور بزنید و جریان‌ها را مستقیماً به ExoPlayer با شتاب سخت‌افزاری با حرکات و صدای پس‌زمینه راه‌اندازی کنید.</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">تمیز کردن خودکار نتایج جستجو با حذف مرورهای کلی هوش مصنوعی مولد و خلاصه‌های تبلیغاتی</string>
     <string name="ui_sync_ecosystem">همگام سازی و اکوسیستم</string>
     <string name="ui_petal_sync">همگام سازی گلبرگ</string>
-    <string name="ui_zero_cloud_end_to_end">همگام‌سازی رمزگذاری‌شده (E2EE) صفر-ابر در بین دستگاه‌ها، با استفاده از حساب‌های فایرفاکس و پروتکل همگام‌سازی موزیلا</string>
     <string name="ui_about_developer_2">درباره و توسعه دهنده</string>
     <string name="ui_app_version_licenses_github_developer">نسخه برنامه، مجوزها، GitHub و توسعه دهنده</string>
     <string name="ui_open_in_new_tab">در تب جدید باز کنید</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">بازنشانی برش</string>
     <string name="ui_apply_crop">برش را اعمال کنید</string>
     <string name="ui_save_profile_picture">ذخیره تصویر نمایه</string>
-    <string name="ui_account_mozilla_sync">حساب و همگام سازی موزیلا</string>
-    <string name="ui_firefox_accounts_profile">حساب ها و نمایه فایرفاکس</string>
     <string name="ui_petal_browser_profile">نمایه مرورگر گلبرگ</string>
-    <string name="ui_firefox_account_sync">حساب فایرفاکس و همگام سازی</string>
     <string name="ui_firefox_avatar">آواتار فایرفاکس</string>
-    <string name="ui_firefox_account_connected">حساب فایرفاکس متصل شد</string>
     <string name="ui_last_synced">آخرین همگام سازی</string>
     <string name="ui_sign_out_of_firefox">از فایرفاکس خارج شوید</string>
     <string name="ui_sync_with_firefox">با فایرفاکس همگام سازی کنید</string>
-    <string name="ui_take_your_bookmarks_history_and">نشانک‌ها، تاریخچه و برگه‌های خود را در هر جایی باز کنید. به صورت خصوصی با حساب Mozilla Firefox شما همگام سازی شده است.</string>
     <string name="ui_sign_in_with_firefox">با فایرفاکس وارد شوید</string>
     <string name="ui_pair_with_firefox_desktop">جفت شدن با فایرفاکس دسکتاپ</string>
     <string name="ui_import_firefox_bookmarks_or_history">نشانک ها یا تاریخچه فایرفاکس را وارد کنید</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">اتصال</string>
     <string name="ui_sign_in_with_firefox_email">با ایمیل فایرفاکس وارد شوید</string>
-    <string name="ui_enter_your_firefox_account_email">ایمیل حساب فایرفاکس خود را وارد کنید تا همگام سازی فوری برای نشانک ها، تاریخچه و برگه های خود فعال شود.</string>
-    <string name="ui_firefox_account_email">ایمیل اکانت فایرفاکس</string>
     <string name="ui_you_example_com">you@example.com</string>
     <string name="ui_sign_in_sync">ورود به سیستم و همگام سازی</string>
     <string name="ui_video_scale_aspect_ratio">مقیاس ویدئو و نسبت ابعاد</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">یک عکس از گالری خود انتخاب کنید</string>
     <string name="petal_setup_mozilla">با موزیلا وارد شوید</string>
     <string name="petal_setup_mozilla_reason">بوک مارک ها، تاریخچه و برگه ها را با فایرفاکس همگام سازی کنید.</string>
-    <string name="petal_setup_mozilla_tab">ورود به حساب کاربری موزیلا</string>
     <string name="petal_setup_sign_in">وارد شوید</string>
     <string name="petal_setup_connected">متصل شد</string>
     <string name="petal_setup_ai_optional">راه اندازی Petal AI (اختیاری)</string>

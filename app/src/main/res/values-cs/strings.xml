@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Přehrávání zvuku a videa na pozadí</string>
     <string name="ui_keep_youtube_web_media_playing">Ponechte přehrávání YouTube a webových médií při přepínání karet nebo aplikace na pozadí</string>
     <string name="ui_media_sync">Média a synchronizace</string>
-    <string name="ui_video_player_stream_sniffer_offline">Video přehrávač, streamovací sniffer, offline AI a Firefox Sync ekosystém</string>
     <string name="ui_media_engine">Media Engine</string>
     <string name="ui_native_video_player">Nativní přehrávač videa</string>
     <string name="ui_bypass_web_player_and_launch">Obejít webový přehrávač a spouštět streamy přímo do hardwarově akcelerovaného ExoPlayeru pomocí gest a zvuku na pozadí</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Automaticky čistit výsledky vyhledávání odstraněním nepřehledných generativních přehledů AI a propagovaných souhrnů</string>
     <string name="ui_sync_ecosystem">Synchronizace a ekosystém</string>
     <string name="ui_petal_sync">Petal Sync</string>
-    <string name="ui_zero_cloud_end_to_end">Zero-cloud end-to-end šifrovaná (E2EE) synchronizace mezi zařízeními, poháněná účty Firefox a protokolem Mozilla Sync</string>
     <string name="ui_about_developer_2">O a Vývojáři</string>
     <string name="ui_app_version_licenses_github_developer">Verze aplikace, licence, GitHub a vývojář</string>
     <string name="ui_open_in_new_tab">Otevřít na nové kartě</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Obnovit oříznutí</string>
     <string name="ui_apply_crop">Použít oříznutí</string>
     <string name="ui_save_profile_picture">Uložit profilový obrázek</string>
-    <string name="ui_account_mozilla_sync">Účet a Mozilla Sync</string>
-    <string name="ui_firefox_accounts_profile">Účty a profil Firefoxu</string>
     <string name="ui_petal_browser_profile">Profil prohlížeče Petal</string>
-    <string name="ui_firefox_account_sync">ÚČET A SYNCHRONIZACE FIREFOX</string>
     <string name="ui_firefox_avatar">Firefox Avatar</string>
-    <string name="ui_firefox_account_connected">Účet Firefoxu připojen</string>
     <string name="ui_last_synced">Poslední synchronizace</string>
     <string name="ui_sign_out_of_firefox">Odhlaste se z Firefoxu</string>
     <string name="ui_sync_with_firefox">Synchronizujte s Firefoxem</string>
-    <string name="ui_take_your_bookmarks_history_and">Vezměte si své záložky, historii a otevřené karty kamkoli. Soukromě synchronizované end-to-end s vaším účtem Mozilla Firefox.</string>
     <string name="ui_sign_in_with_firefox">Přihlaste se pomocí Firefoxu</string>
     <string name="ui_pair_with_firefox_desktop">Spárujte s Firefox Desktop</string>
     <string name="ui_import_firefox_bookmarks_or_history">Importujte záložky nebo historii Firefoxu</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Připojit</string>
     <string name="ui_sign_in_with_firefox_email">Přihlaste se pomocí e-mailu Firefoxu</string>
-    <string name="ui_enter_your_firefox_account_email">Zadejte e-mail svého účtu Firefox, abyste povolili okamžitou synchronizaci pro své záložky, historii a karty.</string>
-    <string name="ui_firefox_account_email">E-mail účtu Firefox</string>
     <string name="ui_you_example_com">you@example.com</string>
     <string name="ui_sign_in_sync">Přihlásit se a synchronizovat</string>
     <string name="ui_video_scale_aspect_ratio">Měřítko videa a poměr stran</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Vyberte si obrázek ze své galerie</string>
     <string name="petal_setup_mozilla">Přihlaste se pomocí Mozilly</string>
     <string name="petal_setup_mozilla_reason">Synchronizujte záložky, historii a karty s Firefoxem.</string>
-    <string name="petal_setup_mozilla_tab">Přihlaste se k účtu Mozilla</string>
     <string name="petal_setup_sign_in">Přihlaste se</string>
     <string name="petal_setup_connected">Připojeno</string>
     <string name="petal_setup_ai_optional">Nastavit Petal AI (volitelné)</string>

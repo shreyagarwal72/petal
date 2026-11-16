@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Audio- und Videowiedergabe im Hintergrund</string>
     <string name="ui_keep_youtube_web_media_playing">Lassen Sie YouTube und Webmedien weiter abspielen, wenn Sie zwischen Tabs wechseln oder die App im Hintergrund ausführen</string>
     <string name="ui_media_sync">Medien &amp; Synchronisierung</string>
-    <string name="ui_video_player_stream_sniffer_offline">Videoplayer, Stream-Sniffer, Offline-KI und Firefox-Sync-Ökosystem</string>
     <string name="ui_media_engine">Medien-Engine</string>
     <string name="ui_native_video_player">Nativer Videoplayer</string>
     <string name="ui_bypass_web_player_and_launch">Umgehen Sie den Webplayer und starten Sie Streams mit Gesten und Hintergrundaudio direkt in den hardwarebeschleunigten ExoPlayer</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Bereinigen Sie Suchergebnisse automatisch, indem Sie überfüllte generative KI-Übersichten und beworbene Zusammenfassungen entfernen</string>
     <string name="ui_sync_ecosystem">Synchronisierung und Ökosystem</string>
     <string name="ui_petal_sync">Blütenblatt-Synchronisierung</string>
-    <string name="ui_zero_cloud_end_to_end">Zero-Cloud-End-to-End-Verschlüsselung (E2EE)-Synchronisierung zwischen Geräten, unterstützt durch Firefox-Konten und das Mozilla-Synchronisierungsprotokoll</string>
     <string name="ui_about_developer_2">Über &amp; Entwickler</string>
     <string name="ui_app_version_licenses_github_developer">App-Version, Lizenzen, GitHub &amp; Entwickler</string>
     <string name="ui_open_in_new_tab">In neuem Tab öffnen</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Zuschneiden zurücksetzen</string>
     <string name="ui_apply_crop">Wenden Sie „Zuschneiden“ an</string>
     <string name="ui_save_profile_picture">Profilbild speichern</string>
-    <string name="ui_account_mozilla_sync">Konto- und Mozilla-Synchronisierung</string>
-    <string name="ui_firefox_accounts_profile">Firefox-Konten und -Profil</string>
     <string name="ui_petal_browser_profile">Blütenblatt-Browserprofil</string>
-    <string name="ui_firefox_account_sync">FIREFOX-KONTO &amp; SYNCHRONISIERUNG</string>
     <string name="ui_firefox_avatar">Firefox-Avatar</string>
-    <string name="ui_firefox_account_connected">Firefox-Konto verbunden</string>
     <string name="ui_last_synced">Zuletzt synchronisiert</string>
     <string name="ui_sign_out_of_firefox">Melden Sie sich von Firefox ab</string>
     <string name="ui_sync_with_firefox">Mit Firefox synchronisieren</string>
-    <string name="ui_take_your_bookmarks_history_and">Nehmen Sie Ihre Lesezeichen, Ihren Verlauf und Ihre geöffneten Tabs überallhin mit. Private End-to-End-Synchronisierung mit Ihrem Mozilla Firefox-Konto.</string>
     <string name="ui_sign_in_with_firefox">Melden Sie sich mit Firefox an</string>
     <string name="ui_pair_with_firefox_desktop">Koppeln Sie es mit Firefox Desktop</string>
     <string name="ui_import_firefox_bookmarks_or_history">Importieren Sie Firefox-Lesezeichen oder -Verlauf</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Verbinden</string>
     <string name="ui_sign_in_with_firefox_email">Melden Sie sich mit Firefox-E-Mail an</string>
-    <string name="ui_enter_your_firefox_account_email">Geben Sie die E-Mail-Adresse Ihres Firefox-Kontos ein, um die sofortige Synchronisierung Ihrer Lesezeichen, Ihres Verlaufs und Ihrer Tabs zu aktivieren.</string>
-    <string name="ui_firefox_account_email">E-Mail-Adresse des Firefox-Kontos</string>
     <string name="ui_you_example_com">you@example.com</string>
     <string name="ui_sign_in_sync">Anmelden und synchronisieren</string>
     <string name="ui_video_scale_aspect_ratio">Videogröße und Seitenverhältnis</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Wählen Sie ein Bild aus Ihrer Galerie</string>
     <string name="petal_setup_mozilla">Melden Sie sich bei Mozilla an</string>
     <string name="petal_setup_mozilla_reason">Synchronisieren Sie Lesezeichen, Verlauf und Tabs mit Firefox.</string>
-    <string name="petal_setup_mozilla_tab">Melden Sie sich mit dem Mozilla-Konto an</string>
     <string name="petal_setup_sign_in">anmelden</string>
     <string name="petal_setup_connected">Verbunden</string>
     <string name="petal_setup_ai_optional">Petal AI einrichten (optional)</string>

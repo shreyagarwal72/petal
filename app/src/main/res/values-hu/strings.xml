@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Hang és videó lejátszás háttérben</string>
     <string name="ui_keep_youtube_web_media_playing">Folytassa a YouTube és a webes média lejátszását lapváltáskor vagy alkalmazás háttérben</string>
     <string name="ui_media_sync">Média és szinkronizálás</string>
-    <string name="ui_video_player_stream_sniffer_offline">Videolejátszó, stream-szippantó, offline AI és Firefox Sync ökoszisztéma</string>
     <string name="ui_media_engine">Médiamotor</string>
     <string name="ui_native_video_player">Natív videólejátszó</string>
     <string name="ui_bypass_web_player_and_launch">Kerülje el a weblejátszót, és indítsa el a streameket közvetlenül a hardveres gyorsítású ExoPlayerbe gesztusokkal és háttérhanggal</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Automatikusan megtisztítja a keresési eredményeket a zsúfolt generatív AI-áttekintések és a kiemelt összefoglalók eltávolításával</string>
     <string name="ui_sync_ecosystem">Szinkronizálás és ökoszisztéma</string>
     <string name="ui_petal_sync">Petal Sync</string>
-    <string name="ui_zero_cloud_end_to_end">Nulla-felhőtől végpontig titkosított (E2EE) szinkronizálás az eszközök között, a Firefox-fiókok és a Mozilla Sync protokoll segítségével</string>
     <string name="ui_about_developer_2">Névjegy és fejlesztő</string>
     <string name="ui_app_version_licenses_github_developer">Alkalmazásverzió, licencek, GitHub és fejlesztő</string>
     <string name="ui_open_in_new_tab">Megnyitás új lapon</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Vágás visszaállítása</string>
     <string name="ui_apply_crop">Alkalmazza a Vágást</string>
     <string name="ui_save_profile_picture">Profilkép mentése</string>
-    <string name="ui_account_mozilla_sync">Fiók és Mozilla Sync</string>
-    <string name="ui_firefox_accounts_profile">Firefox fiókok és profilok</string>
     <string name="ui_petal_browser_profile">Petal böngésző profil</string>
-    <string name="ui_firefox_account_sync">FIREFOX FIÓK ÉS SZinkronizálás</string>
     <string name="ui_firefox_avatar">Firefox Avatar</string>
-    <string name="ui_firefox_account_connected">Firefox fiók csatlakoztatva</string>
     <string name="ui_last_synced">Utolsó szinkronizálás</string>
     <string name="ui_sign_out_of_firefox">Jelentkezzen ki a Firefoxból</string>
     <string name="ui_sync_with_firefox">Szinkronizálás Firefox-szal</string>
-    <string name="ui_take_your_bookmarks_history_and">Vigye bárhová könyvjelzőit, előzményeit és megnyitott lapjait. Magánszinkronizált végpontok között Mozilla Firefox-fiókjával.</string>
     <string name="ui_sign_in_with_firefox">Jelentkezzen be a Firefox segítségével</string>
     <string name="ui_pair_with_firefox_desktop">Párosítsa a Firefox Desktop alkalmazással</string>
     <string name="ui_import_firefox_bookmarks_or_history">Importálja a Firefox könyvjelzőit vagy előzményeit</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Csatlakozás</string>
     <string name="ui_sign_in_with_firefox_email">Jelentkezzen be a Firefox e-mail címével</string>
-    <string name="ui_enter_your_firefox_account_email">Adja meg Firefox-fiókjának e-mail-címét, hogy engedélyezze könyvjelzőinek, előzményeinek és lapjainak azonnali szinkronizálását.</string>
-    <string name="ui_firefox_account_email">Firefox fiók e-mail</string>
     <string name="ui_you_example_com">you@example.com</string>
     <string name="ui_sign_in_sync">Bejelentkezés és szinkronizálás</string>
     <string name="ui_video_scale_aspect_ratio">Videó méretaránya és képaránya</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Válassz egy képet a galériádból</string>
     <string name="petal_setup_mozilla">Jelentkezzen be a Mozillával</string>
     <string name="petal_setup_mozilla_reason">Szinkronizálja a könyvjelzőket, az előzményeket és a lapokat a Firefoxszal.</string>
-    <string name="petal_setup_mozilla_tab">Jelentkezzen be a Mozilla fiókba</string>
     <string name="petal_setup_sign_in">Jelentkezzen be</string>
     <string name="petal_setup_connected">Csatlakozva</string>
     <string name="petal_setup_ai_optional">A Petal AI beállítása (opcionális)</string>

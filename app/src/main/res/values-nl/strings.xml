@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Achtergrondaudio en video afspelen</string>
     <string name="ui_keep_youtube_web_media_playing">Laat YouTube en webmedia spelen wanneer u van tabblad of achtergrondapp wisselt</string>
     <string name="ui_media_sync">Media en synchronisatie</string>
-    <string name="ui_video_player_stream_sniffer_offline">Videospeler, streamsniffer, offline AI en Firefox Sync-ecosysteem</string>
     <string name="ui_media_engine">Media-engine</string>
     <string name="ui_native_video_player">Native videospeler</string>
     <string name="ui_bypass_web_player_and_launch">Omzeil de webplayer en start streams rechtstreeks in de hardwareversnelde ExoPlayer met gebaren en achtergrondaudio</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Schoon zoekresultaten automatisch op door rommelige generatieve AI-overzichten en gepromote samenvattingen te verwijderen</string>
     <string name="ui_sync_ecosystem">Synchronisatie en ecosysteem</string>
     <string name="ui_petal_sync">Bloemblaadje synchronisatie</string>
-    <string name="ui_zero_cloud_end_to_end">Zero-cloud end-to-end gecodeerde (E2EE) synchronisatie tussen apparaten, mogelijk gemaakt door Firefox Accounts &amp; Mozilla Sync-protocol</string>
     <string name="ui_about_developer_2">Over &amp; Ontwikkelaar</string>
     <string name="ui_app_version_licenses_github_developer">App-versie, licenties, GitHub en ontwikkelaar</string>
     <string name="ui_open_in_new_tab">Openen in nieuw tabblad</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Bijsnijden opnieuw instellen</string>
     <string name="ui_apply_crop">Bijsnijden toepassen</string>
     <string name="ui_save_profile_picture">Profielfoto opslaan</string>
-    <string name="ui_account_mozilla_sync">Account- en Mozilla-synchronisatie</string>
-    <string name="ui_firefox_accounts_profile">Firefox-accounts en profiel</string>
     <string name="ui_petal_browser_profile">Bloemblaadje browserprofiel</string>
-    <string name="ui_firefox_account_sync">FIREFOX-ACCOUNT &amp; SYNC</string>
     <string name="ui_firefox_avatar">Firefox-avatar</string>
-    <string name="ui_firefox_account_connected">Firefox-account verbonden</string>
     <string name="ui_last_synced">Laatst gesynchroniseerd</string>
     <string name="ui_sign_out_of_firefox">Meld u af bij Firefox</string>
     <string name="ui_sync_with_firefox">Synchroniseren met Firefox</string>
-    <string name="ui_take_your_bookmarks_history_and">Neem uw bladwijzers, geschiedenis en geopende tabbladen overal mee naartoe. Privé end-to-end gesynchroniseerd met uw Mozilla Firefox-account.</string>
     <string name="ui_sign_in_with_firefox">Meld u aan met Firefox</string>
     <string name="ui_pair_with_firefox_desktop">Koppelen met Firefox Desktop</string>
     <string name="ui_import_firefox_bookmarks_or_history">Importeer Firefox-bladwijzers of -geschiedenis</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Verbinden</string>
     <string name="ui_sign_in_with_firefox_email">Meld u aan met Firefox-e-mail</string>
-    <string name="ui_enter_your_firefox_account_email">Voer het e-mailadres van uw Firefox-account in om directe synchronisatie voor uw bladwijzers, geschiedenis en tabbladen in te schakelen.</string>
-    <string name="ui_firefox_account_email">E-mailadres van Firefox-account</string>
     <string name="ui_you_example_com">jij@example.com</string>
     <string name="ui_sign_in_sync">Aanmelden en synchroniseren</string>
     <string name="ui_video_scale_aspect_ratio">Videoschaal en beeldverhouding</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Kies een foto uit je galerij</string>
     <string name="petal_setup_mozilla">Meld u aan met Mozilla</string>
     <string name="petal_setup_mozilla_reason">Synchroniseer bladwijzers, geschiedenis en tabbladen met Firefox.</string>
-    <string name="petal_setup_mozilla_tab">Inloggen bij Mozilla-account</string>
     <string name="petal_setup_sign_in">Log in</string>
     <string name="petal_setup_connected">Aangesloten</string>
     <string name="petal_setup_ai_optional">Petal AI instellen (optioneel)</string>

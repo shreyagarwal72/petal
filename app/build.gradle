@@ -357,12 +357,11 @@ dependencies {
     implementation 'org.mozilla.components:lib-publicsuffixlist:161.0b3'
     implementation 'org.mozilla.components:feature-app-links:161.0b3'
 
-    // Firefox Account + Firefox Sync (official Mozilla Android Components 161.0b3)
-    implementation 'org.mozilla.components:service-firefox-accounts:161.0b3'
+    // Local storage components (bookmarks/history Places database and the password store).
+    // Account sign-in libraries are not used: sync goes through a folder the user owns.
     implementation 'org.mozilla.components:concept-sync:161.0b3'
     implementation 'org.mozilla.components:concept-storage:161.0b3'
     implementation 'org.mozilla.components:browser-storage-sync:161.0b3'
-    implementation 'org.mozilla.components:feature-syncedtabs:161.0b3'
     implementation 'org.mozilla.components:service-sync-logins:161.0b3'
     implementation 'org.mozilla.components:lib-dataprotect:161.0b3'
 

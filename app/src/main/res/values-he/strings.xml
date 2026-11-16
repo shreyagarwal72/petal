@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">השמעת אודיו ווידאו ברקע</string>
     <string name="ui_keep_youtube_web_media_playing">המשך לשחק ב-YouTube ובמדיה באינטרנט בעת החלפת כרטיסיות או אפליקציית רקע</string>
     <string name="ui_media_sync">מדיה וסנכרון</string>
-    <string name="ui_video_player_stream_sniffer_offline">נגן וידאו, רחרח זרמים, AI לא מקוון ומערכת אקולוגית של Firefox Sync</string>
     <string name="ui_media_engine">מנוע מדיה</string>
     <string name="ui_native_video_player">נגן וידאו מקורי</string>
     <string name="ui_bypass_web_player_and_launch">עוקף את נגן האינטרנט והפעל זרמים ישירות אל ExoPlayer המואץ בחומרה עם מחוות ואודיו ברקע</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">נקה אוטומטית את תוצאות החיפוש על ידי הסרתם של סקירות AI מגוונות וסיכומים מקודמים</string>
     <string name="ui_sync_ecosystem">סנכרון ומערכת אקולוגית</string>
     <string name="ui_petal_sync">סנכרון כותרת</string>
-    <string name="ui_zero_cloud_end_to_end">סנכרון אפס ענן מקצה לקצה (E2EE) בין מכשירים, מופעל על ידי חשבונות Firefox ופרוטוקול Mozilla Sync</string>
     <string name="ui_about_developer_2">אודות ומפתח</string>
     <string name="ui_app_version_licenses_github_developer">גרסת אפליקציה, רישיונות, GitHub ומפתחים</string>
     <string name="ui_open_in_new_tab">פתח בכרטיסייה חדשה</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">אפס חיתוך</string>
     <string name="ui_apply_crop">החל חיתוך</string>
     <string name="ui_save_profile_picture">שמור תמונת פרופיל</string>
-    <string name="ui_account_mozilla_sync">חשבון &amp; Mozilla Sync</string>
-    <string name="ui_firefox_accounts_profile">חשבונות ופרופיל Firefox</string>
     <string name="ui_petal_browser_profile">פרופיל דפדפן Petal</string>
-    <string name="ui_firefox_account_sync">חשבון FIREFOX וסנכרון</string>
     <string name="ui_firefox_avatar">אוואטר של פיירפוקס</string>
-    <string name="ui_firefox_account_connected">חשבון Firefox מחובר</string>
     <string name="ui_last_synced">סנכרון אחרון</string>
     <string name="ui_sign_out_of_firefox">צא מפיירפוקס</string>
     <string name="ui_sync_with_firefox">סנכרון עם Firefox</string>
-    <string name="ui_take_your_bookmarks_history_and">קח את הסימניות, ההיסטוריה והכרטיסיות הפתוחות שלך לכל מקום. סנכרון פרטי מקצה לקצה עם חשבון Mozilla Firefox שלך.</string>
     <string name="ui_sign_in_with_firefox">היכנס עם Firefox</string>
     <string name="ui_pair_with_firefox_desktop">התאם עם Firefox Desktop</string>
     <string name="ui_import_firefox_bookmarks_or_history">ייבא סימניות או היסטוריה של Firefox</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">לְחַבֵּר</string>
     <string name="ui_sign_in_with_firefox_email">היכנס עם דוא\"ל של Firefox</string>
-    <string name="ui_enter_your_firefox_account_email">הזן את הדוא\"ל של חשבון Firefox שלך כדי לאפשר סנכרון מיידי עבור הסימניות, ההיסטוריה והכרטיסיות שלך.</string>
-    <string name="ui_firefox_account_email">דוא\"ל חשבון Firefox</string>
     <string name="ui_you_example_com">you@example.com</string>
     <string name="ui_sign_in_sync">היכנס וסנכרון</string>
     <string name="ui_video_scale_aspect_ratio">קנה מידה ויחס גובה-רוחב</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">בחר תמונה מהגלריה שלך</string>
     <string name="petal_setup_mozilla">היכנס באמצעות Mozilla</string>
     <string name="petal_setup_mozilla_reason">סנכרן סימניות, היסטוריה וכרטיסיות עם Firefox.</string>
-    <string name="petal_setup_mozilla_tab">כניסה לחשבון Mozilla</string>
     <string name="petal_setup_sign_in">היכנס</string>
     <string name="petal_setup_connected">מְחוּבָּר</string>
     <string name="petal_setup_ai_optional">הגדר Petal AI (אופציונלי)</string>
