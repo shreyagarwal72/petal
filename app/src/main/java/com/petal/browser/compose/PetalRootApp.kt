@@ -270,6 +270,10 @@ fun PetalRootApp(
 
     val lastExitBackAt = remember { longArrayOf(0L) }
     val progressAnim = remember { Animatable(0f) }
+    // Back gesture progress for overlays that have no predictive surface of their own (menu, AI
+    // sheet, omnibox, dev console, extension popup). The page itself must not shrink for these.
+    val overlayBackProgress = remember { Animatable(0f) }
+    var overlayBackEdge by remember { mutableIntStateOf(BackEventCompat.EDGE_LEFT) }
     var backSwipeEdge by remember { mutableIntStateOf(BackEventCompat.EDGE_LEFT) }
     var backTouchY by remember { mutableFloatStateOf(0f) }
     var initialTouchY by remember { mutableFloatStateOf(0f) }
@@ -295,6 +299,32 @@ fun PetalRootApp(
 
     val isBottomBarVisible = !isOverlayShowing && (!isMerge || isHome)
 
+    // Live underlay: while a full-screen overlay (Settings, History, Account...) is dragged away, the
+    // real page below animates with it (parallax, dim, depth blur) instead of relying on a snapshot,
+    // which was null or stale for most of these screens so they showed no blur at all.
+    var liveBehind by remember { mutableStateOf<FloatArray?>(null) }
+    val liveEligible by androidx.compose.runtime.rememberUpdatedState(
+        isOverlayShowing && !isOmniboxOpen && !isTabSwitcherOpen && !isAiSheetOpen &&
+            !isSafeLockerOpen && pendingExtensionPopup == null
+    )
+    DisposableEffect(Unit) {
+        val host = object : com.petal.browser.predictive.PetalLiveUnderlay.Host {
+            override fun hasLiveUnderlay() = liveEligible
+            override fun onGestureStart(swipeEdge: Int) {
+                liveBehind = com.petal.browser.predictive.PetalLiveUnderlay.behindValues().copyOf()
+            }
+            override fun onGestureProgress(progress: Float, swipeEdge: Int) {
+                liveBehind = com.petal.browser.predictive.PetalLiveUnderlay.behindValues().copyOf()
+            }
+            override fun onGestureEnd(committed: Boolean) { liveBehind = null }
+        }
+        com.petal.browser.predictive.PetalLiveUnderlay.attach(host)
+        onDispose {
+            com.petal.browser.predictive.PetalLiveUnderlay.detach(host)
+            liveBehind = null
+        }
+    }
+
     val selectedTab = when {
         isMenuOpen -> PetalNavTab.MENU
         isHome -> PetalNavTab.HOME
@@ -302,18 +332,23 @@ fun PetalRootApp(
     }
 
     // ── Single Authoritative Predictive Back Handler ────────────────────────
-    PredictiveBackHandler(enabled = !isOmniboxOpen) { progressFlow ->
+    PredictiveBackHandler(enabled = true) { progressFlow ->
         val currentStyle = PetalPredictiveJunction.backStyle.value
         var gestureStarted = false
         var lastProgress = 0f
         var lastNanos = 0L
         var velocity = 0f
+        var exiting = false
+        var overlayMode = false
 
         try {
             progressFlow.collect { backEvent ->
                 val now = System.nanoTime()
                 if (!gestureStarted) {
                     gestureStarted = true
+                    overlayMode = (activity as? MainActivity)?.hasPresentedScreens == true ||
+                        pendingExtensionPopup != null || isOmniboxOpen || isAiSheetOpen ||
+                        viewModel.hasOpenOverlay
                     initialTouchY = backEvent.touchY
                     lastProgress = backEvent.progress
                     lastNanos = now
@@ -325,6 +360,11 @@ fun PetalRootApp(
                         lastProgress = backEvent.progress
                         lastNanos = now
                     }
+                }
+                if (overlayMode) {
+                    overlayBackEdge = backEvent.swipeEdge
+                    overlayBackProgress.snapTo(backEvent.progress)
+                    return@collect
                 }
                 backSwipeEdge = backEvent.swipeEdge
                 backTouchY = backEvent.touchY
@@ -344,6 +384,10 @@ fun PetalRootApp(
                     viewModel.hasOpenOverlay
 
             if (hasOpenOverlay) {
+                if (overlayMode) {
+                    // Finish the sheet's own dismiss pose before the state flips so there is no jump.
+                    overlayBackProgress.animateTo(1f, tween(120, easing = androidx.compose.animation.core.LinearEasing))
+                }
                 when {
                     (activity as? MainActivity)?.hasPresentedScreens == true -> (activity as? MainActivity)?.dismissTopPresentedScreen()
                     pendingExtensionPopup != null -> PetalExtensionManager.dismissPopup()
@@ -351,7 +395,13 @@ fun PetalRootApp(
                     isAiSheetOpen -> viewModel.setAiSheetOpen(false)
                     viewModel.hasOpenOverlay -> viewModel.dismissTopOverlay()
                 }
-                progressAnim.animateTo(0f, PetalSpring.containerMorph())
+                if (overlayMode) {
+                    // Park the pose until the sheet's own exit animation has finished.
+                    kotlinx.coroutines.delay(400)
+                    overlayBackProgress.snapTo(0f)
+                } else {
+                    progressAnim.animateTo(0f, PetalSpring.containerMorph())
+                }
             } else if (viewModel.goBack()) {
                 progressAnim.animateTo(0f, PetalSpring.containerMorph())
             } else {
@@ -385,16 +435,25 @@ fun PetalRootApp(
                             settleTime = ((value - release) / (1f - release).coerceAtLeast(0.01f)).coerceIn(0f, 1f)
                         }
                     }
+                    // Stay parked in the final pose: resetting here made the page flash back to full
+                    // size for a frame before the system's close animation took over.
+                    exiting = true
                     activity?.finish()
                 }
             }
         } catch (_: CancellationException) {
             isCommitting = false
-            progressAnim.animateTo(0f, PetalSpring.containerMorph())
+            if (overlayMode) {
+                overlayBackProgress.animateTo(0f, PetalSpring.containerMorph())
+            } else {
+                progressAnim.animateTo(0f, PetalSpring.containerMorph())
+            }
         } finally {
-            isBackActive = false
-            isCommitting = false
-            progressAnim.snapTo(0f)
+            if (!exiting) {
+                isBackActive = false
+                isCommitting = false
+                progressAnim.snapTo(0f)
+            }
         }
     }
 
@@ -450,10 +509,30 @@ fun PetalRootApp(
                             shadowElevation = 0f
                         }
                     } else {
-                        scaleX = 1f
-                        scaleY = 1f
-                        translationX = 0f
-                        translationY = 0f
+                        val lb = liveBehind
+                        if (lb != null) {
+                            scaleX = lb[0]
+                            scaleY = lb[0]
+                            translationX = lb[1]
+                            translationY = lb[2]
+                            // A GeckoView surface cannot be blurred by a render effect, so depth blur only
+                            // applies to the Compose home page; web pages still get parallax and dim.
+                            if (isHome && lb[4] > 0.5f) {
+                                val px = lb[4].dp.toPx()
+                                compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
+                                renderEffect = androidx.compose.ui.graphics.BlurEffect(
+                                    px, px, androidx.compose.ui.graphics.TileMode.Clamp
+                                )
+                            } else {
+                                renderEffect = null
+                            }
+                        } else {
+                            scaleX = 1f
+                            scaleY = 1f
+                            translationX = 0f
+                            translationY = 0f
+                            renderEffect = null
+                        }
                         alpha = 1f
                         clip = false
                         shadowElevation = 0f
@@ -688,6 +767,17 @@ fun PetalRootApp(
             )
         }
 
+            // Dim over the live page while an overlay is being dragged away (below every overlay).
+            if (liveBehind != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .zIndex(7f)
+                        .graphicsLayer { alpha = (liveBehind?.getOrNull(3) ?: 0f).coerceIn(0f, 1f) }
+                        .background(androidx.compose.ui.graphics.Color.Black)
+                )
+            }
+
             // ── Fullscreen Overlay Screens ──────────────────────────────────
 
             // Omnibox Query Page with Seamless Enter/Exit Transition
@@ -705,8 +795,10 @@ fun PetalRootApp(
                                animationSpec = PetalSpring.exit()
                            ),
                     modifier = Modifier.fillMaxSize().zIndex(10f)
+                        .overlayBackPose({ overlayBackProgress.value }, { overlayBackEdge })
                 ) {
                     PetalOmniboxPage(
+                        handleBackInternally = false,
                         activity = activity!!,
                         initialQuery = if (isHome) "" else activeUrl,
                         pageTitle = activeTitle,
@@ -799,6 +891,10 @@ fun PetalRootApp(
                 val menuSource = if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content))
                 androidx.compose.runtime.CompositionLocalProvider(
                     com.petal.browser.ui.glass.LocalPetalGlassSource provides menuSource
+                ) {
+                Box(
+                    Modifier.fillMaxSize()
+                        .overlayBackPose({ overlayBackProgress.value }, { overlayBackEdge }, 0.9f, 0.12f)
                 ) {
                 PetalOverflowMenuSheet(
                     pageTitle = activeTitle,
@@ -945,6 +1041,7 @@ fun PetalRootApp(
                     }
                 )
                 }
+                }
             }
 
             // Bookmarks Screen
@@ -1087,7 +1184,10 @@ fun PetalRootApp(
 
             // WebExtension Interactive Popup Overlay
             if (pendingExtensionPopup != null) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(12f)) {
+                Box(
+                    modifier = Modifier.fillMaxSize().zIndex(12f)
+                        .overlayBackPose({ overlayBackProgress.value }, { overlayBackEdge })
+                ) {
                     PetalExtensionPopupScreen(
                         popup = pendingExtensionPopup!!,
                         onDismiss = { PetalExtensionManager.dismissPopup() }
@@ -1128,6 +1228,7 @@ fun PetalRootApp(
                 exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
                         androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 2 },
                 modifier = Modifier.fillMaxSize().zIndex(9f)
+                    .overlayBackPose({ overlayBackProgress.value }, { overlayBackEdge }, 0.5f, 1f)
             ) {
                 PetalAiSearchResultSheet(
                     query = aiSheetQuery,
@@ -1137,7 +1238,10 @@ fun PetalRootApp(
 
             // In-App Developer Console Sheet Overlay
             if (isDevConsoleOpen) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(11f)) {
+                Box(
+                    modifier = Modifier.fillMaxSize().zIndex(11f)
+                        .overlayBackPose({ overlayBackProgress.value }, { overlayBackEdge }, 0.5f, 1f)
+                ) {
                     PetalDevConsoleSheet(
                         onExecuteScript = { script, callback ->
                             (activity as? MainActivity)?.evaluateJavascriptInActiveTab(script, callback)
@@ -1154,4 +1258,27 @@ private class TabSwitcherHold {
     var wasOpen: Boolean = false
     var snapshot: androidx.compose.ui.graphics.ImageBitmap? = null
     var generation: Int = 0
+}
+
+
+/**
+ * Predictive-back pose for a sheet/popup that has no surface of its own: it shrinks toward
+ * [originX]/[originY], fades slightly and slides a little toward the swipe edge's opposite side.
+ * Progress is read in the draw phase so the gesture never recomposes the sheet.
+ */
+private fun Modifier.overlayBackPose(
+    progress: () -> Float,
+    edge: () -> Int,
+    originX: Float = 0.5f,
+    originY: Float = 0.5f,
+): Modifier = graphicsLayer {
+    val p = progress().coerceIn(0f, 1f)
+    if (p > 0.001f) {
+        val sc = 1f - 0.10f * p
+        scaleX = sc
+        scaleY = sc
+        transformOrigin = TransformOrigin(originX, originY)
+        alpha = 1f - 0.5f * p
+        translationX = (if (edge() == BackEventCompat.EDGE_LEFT) 1f else -1f) * p * size.width * 0.04f
+    }
 }

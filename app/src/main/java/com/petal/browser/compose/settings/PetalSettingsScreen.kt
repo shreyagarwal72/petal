@@ -276,6 +276,10 @@ fun PetalSettingsScreen(
 
     PetalPredictiveBackSurface(
         enabled = !hasSearchOverlay,
+        // Popping a category keeps Settings on screen, so only park the pose when leaving Settings,
+        // and only let the root animate its live page behind when Settings itself is dismissed.
+        holdDismissedPose = pageCategory == null,
+        useLiveUnderlay = pageCategory == null,
         onBack = {
             if (pageCategory != null) {
                 // The gesture already slid the page away; remove it without a second animation.
@@ -412,12 +416,14 @@ private fun RenderCategoryContent(
         }
         SettingsCategory.ACCOUNT_SYNC -> {
             com.petal.browser.account.PetalAccountScreen(
-                onBack = onNavigateBack
+                onBack = onNavigateBack,
+                wrapPredictive = false
             )
         }
         SettingsCategory.EXTENSIONS -> {
             com.petal.browser.compose.extensions.PetalExtensionsScreen(
-                onDismiss = onNavigateBack
+                onDismiss = onNavigateBack,
+                wrapPredictive = false
             )
         }
         SettingsCategory.MISCELLANEOUS -> {

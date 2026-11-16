@@ -182,6 +182,8 @@ object PetalExtensionsBridge {
 @Composable
 fun PetalExtensionsScreen(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
+    /** False when hosted inside Settings, whose container owns the single predictive-back surface. */
+    wrapPredictive: Boolean = true,
     onDismiss: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -245,16 +247,14 @@ fun PetalExtensionsScreen(
         }
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
+    com.petal.browser.predictive.PetalPredictiveShell(
+        wrap = wrapPredictive,
         enabled = !hasSubOverlay,
-        onBack = onDismiss
+        onBack = onDismiss,
+        backgroundSnapshot = backgroundSnapshot
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            com.petal.browser.predictive.PetalScreenWrapper(
-                isBehind = false,
-                backgroundSnapshot = backgroundSnapshot,
-                modifier = Modifier.fillMaxSize()
-            ) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
                     contentWindowInsets = WindowInsets(0, 0, 0, 0),

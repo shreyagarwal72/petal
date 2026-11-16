@@ -214,6 +214,13 @@ data class PredictiveBackState(
     val releaseVelocity: Float = 0f,
     /** Linear 0..1 position inside the commit settle. */
     val settleTime: Float = 0f,
+    /**
+     * True for a short window after a committed back: the dismissed screen stays parked in its
+     * final (invisible) pose instead of snapping back to full size while the host's own exit
+     * animation (AnimatedVisibility fade/slide, NavHost pop) catches up. Without this the screen
+     * popped back to 1.0 scale and then animated out a second time.
+     */
+    val dismissed: Boolean = false,
 ) {
     companion object {
         val Idle = PredictiveBackState()
@@ -221,6 +228,8 @@ data class PredictiveBackState(
 }
 
 val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
+
+private const val HOLD_DISMISSED_MS = 500L
 
 /**
  * Wraps [content] with a [PredictiveBackHandler] and republishes gesture progress
@@ -232,6 +241,10 @@ val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
 @Composable
 fun PetalPredictiveBackSurface(
     enabled: Boolean = true,
+    /** Park the dismissed screen in its final pose after commit. False when [onBack] only pops an inner page. */
+    holdDismissedPose: Boolean = true,
+    /** Let the host activity animate the real surface behind (parallax/dim/blur) during this gesture. */
+    useLiveUnderlay: Boolean = true,
     onBack: () -> Unit,
     content: @Composable () -> Unit,
 ) {
@@ -251,6 +264,9 @@ fun PetalPredictiveBackSurface(
                 // The style is latched per gesture so changing it mid-swipe can't glitch the frame.
                 val style = PetalPredictiveJunction.backStyle.value
                 val exitDirection = PetalPredictiveJunction.backExitDirection.value
+                val holdPose = holdDismissedPose
+                val wantsLive = useLiveUnderlay
+                var committedDone = false
                 var gestureStarted = false
                 var liveUnderlay = false
                 var initialTouchY = 0f
@@ -276,7 +292,7 @@ fun PetalPredictiveBackSurface(
                             initialTouchY = backEvent.touchY
                             lastProgress = backEvent.progress
                             lastNanos = now
-                            liveUnderlay = PetalLiveUnderlay.begin(backEvent.swipeEdge)
+                            liveUnderlay = wantsLive && PetalLiveUnderlay.begin(backEvent.swipeEdge)
                         } else {
                             val dt = (now - lastNanos) / 1_000_000_000f
                             if (dt > 0.001f) {
@@ -333,10 +349,11 @@ fun PetalPredictiveBackSurface(
                     publishUnderlay(backState)
                     try {
                         onBack()
+                        committedDone = true
                     } finally {
                         if (liveUnderlay) PetalLiveUnderlay.end(true)
                         progressAnim.snapTo(0f)
-                        backState = PredictiveBackState.Idle
+                        backState = if (holdPose) PredictiveBackState.Idle.copy(dismissed = true) else PredictiveBackState.Idle
                     }
                 } catch (e: CancellationException) {
                     val from = backState.progress
@@ -358,6 +375,14 @@ fun PetalPredictiveBackSurface(
                     }
                     if (liveUnderlay) PetalLiveUnderlay.end(false)
                     backState = PredictiveBackState.Idle
+                }
+                if (committedDone && holdPose) {
+                    // Outlast the host's exit animation, then release. Leaving composition cancels this.
+                    try {
+                        kotlinx.coroutines.delay(HOLD_DISMISSED_MS)
+                    } finally {
+                        backState = PredictiveBackState.Idle
+                    }
                 }
             }
         } else {
@@ -545,7 +570,7 @@ fun PetalScreenWrapper(
             modifier = modifier.fillMaxSize()
         ) {
             // Layer 0: Background snapshot underlay (rendered when gesture is active or behind top screen)
-            if (backgroundSnapshot != null && (isActive || isBehindTopScreen) && !(isActive && predictiveBackState.liveUnderlay)) {
+            if (backgroundSnapshot != null && (isActive || isBehindTopScreen) && !(isActive && predictiveBackState.liveUnderlay) && !predictiveBackState.dismissed) {
                 // At rest (not mid-gesture) the snapshot keeps the original Petal pose.
                 val snapshotFrame = frame ?: PetalBackMotion.frame(
                     PetalBackStyle.Petal,
@@ -614,6 +639,8 @@ fun PetalScreenWrapper(
                                 translationY = layer.translationY
                                 alpha = layer.alpha
                             }
+                            // Dismissed by a committed gesture: stay parked (invisible) until the host removes us.
+                            if (predictiveEnabled && predictiveBackState.dismissed) alpha = 0f
                             val cornerRadius = maxOf(layer?.cornerDp ?: 0f, transitionCornerRadius)
                             compositingStrategy = if (layer != null || transitionCornerRadius > 0.5f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
 
@@ -714,5 +741,28 @@ fun PetalScreenWrapper(
                 }
             }
         }
+    }
+}
+
+
+/**
+ * Predictive-back chrome for a page that may be hosted inside another page's surface. When
+ * [wrap] is false the host (e.g. the Settings container) already owns the single back handler and
+ * wrapper, so wrapping again would register a second handler and apply the dismiss transform twice.
+ */
+@Composable
+fun PetalPredictiveShell(
+    wrap: Boolean,
+    enabled: Boolean,
+    onBack: () -> Unit,
+    backgroundSnapshot: ImageBitmap? = null,
+    content: @Composable () -> Unit,
+) {
+    if (wrap) {
+        PetalPredictiveBackSurface(enabled = enabled, onBack = onBack) {
+            PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) { content() }
+        }
+    } else {
+        content()
     }
 }

@@ -68,7 +68,9 @@ import kotlinx.coroutines.withContext
 fun PetalAccountScreen(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onBack: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** False when hosted inside Settings, whose container owns the single predictive-back surface. */
+    wrapPredictive: Boolean = true
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -166,8 +168,12 @@ fun PetalAccountScreen(
         onMessage = { say(it) }
     )
 
-    PetalPredictiveBackSurface(enabled = !hasSubOverlay, onBack = onBack) {
-        PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+    com.petal.browser.predictive.PetalPredictiveShell(
+        wrap = wrapPredictive,
+        enabled = !hasSubOverlay,
+        onBack = onBack,
+        backgroundSnapshot = backgroundSnapshot
+    ) {
             Scaffold(
                 modifier = modifier.fillMaxSize(),
                 containerColor = MaterialTheme.colorScheme.background,
@@ -510,7 +516,6 @@ fun PetalAccountScreen(
                     }
                 }
             }
-        }
     }
 
     // ═══ dialogs & sheets ═══

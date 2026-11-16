@@ -220,6 +220,7 @@ object PetalOmniboxBridge {
 @Composable
 fun PetalOmniboxPage(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
+    handleBackInternally: Boolean = true,
     activity: ComponentActivity,
     initialQuery: String = "",
     pageTitle: String = "",
@@ -571,8 +572,12 @@ fun PetalOmniboxPage(
         }
     }
 
-    BackHandler(enabled = true) {
-        onBackPress()
+    // The root's predictive back handler poses and dismisses this page when it hosts it; standalone
+    // hosts (the bridge) keep the plain handler.
+    if (handleBackInternally) {
+        BackHandler(enabled = true) {
+            onBackPress()
+        }
     }
 
     Scaffold(
