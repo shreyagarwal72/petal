@@ -64,7 +64,7 @@ Petal is an open-source Android browser built on Mozilla's GeckoView engine and 
 <tr><td><b>UI</b></td><td>Jetpack Compose (BOM 2026.09) and Material 3 Expressive (<code>material3 1.5.0-alpha22</code>)</td></tr>
 <tr><td><b>Ad &amp; tracker blocking</b></td><td>Built-in <code>petal_network_blocker</code> WebExtension with EasyList, uBlock uAssets and Hagezi lists, plus Gecko Enhanced Tracking Protection (Strict by default)</td></tr>
 <tr><td><b>Extensions</b></td><td>Firefox WebExtensions: add-on manager, AMO, .xpi import, 10 built-in add-ons</td></tr>
-<tr><td><b>Sync</b></td><td>Optional Firefox Account (bookmarks, history, passwords, tabs, Send Tab)</td></tr>
+<tr><td><b>Sync</b></td><td>Optional encrypted sync through a folder you own (bookmarks, history, passwords, tabs, Send to device)</td></tr>
 <tr><td><b>Builds</b></td><td>GitHub (in-app updater), Google Play, F-Droid (no ads, no Google code)</td></tr>
 <tr><td><b>Languages</b></td><td>28 translations</td></tr>
 <tr><td><b>License</b></td><td>GNU GPL v3.0</td></tr>
@@ -125,7 +125,7 @@ Downloads use Mozilla's download service, so cookies and private mode carry over
 </td>
 <td width="50%" valign="top">
 <h4><img src="docs/readme/shape-9.svg" height="18" align="top"> Sync &amp; optional AI</h4>
-Sign in with a Firefox Account to sync and send tabs. An optional assistant uses your own key for Gemini, OpenAI, Anthropic, Groq or a local Ollama.
+Sync and send tabs through a folder you own, with no account needed. An optional assistant uses your own key for Gemini, OpenAI, Anthropic, Groq or a local Ollama.
 </td>
 </tr>
 </table>
@@ -169,7 +169,7 @@ Petal asks only when a feature is actively invoked:
 <tr><td><b>Build</b></td><td>Android Gradle Plugin 9.4.0 · Gradle wrapper</td><td>Flavors for GitHub, Play and F-Droid, with ABI splits for arm64-v8a, armeabi-v7a, x86 and x86_64.</td></tr>
 <tr><td><b>UI</b></td><td>Jetpack Compose BOM 2026.09 · Material 3 1.5.0-alpha22</td><td>Expressive components, springs and shape morphing (<code>graphics-shapes</code>), Liquid Glass via <code>backdrop</code>.</td></tr>
 <tr><td><b>Engine</b></td><td>GeckoView 159.0.20261102144711</td><td>Rendering and the WebExtension runtime.</td></tr>
-<tr><td><b>Browser components</b></td><td>Mozilla Android Components 159.0.1</td><td>Engine bridge, <code>BrowserStore</code>, downloads, prompts, site permissions, Firefox Accounts and sync.</td></tr>
+<tr><td><b>Browser components</b></td><td>Mozilla Android Components 159.0.1</td><td>Engine bridge, <code>BrowserStore</code>, downloads, prompts, site permissions, local bookmark, history and password storage.</td></tr>
 <tr><td><b>DI &amp; navigation</b></td><td>Hilt 2.60.1 · Navigation Compose 2.10</td><td>Dependency injection and screen routing.</td></tr>
 <tr><td><b>Media</b></td><td>Media3 1.11 (ExoPlayer, HLS, session) · yt-dlp library</td><td>Playback, background audio and the media grabber.</td></tr>
 <tr><td><b>Storage</b></td><td>SQLite (<code>SQLiteOpenHelper</code>) · Android Keystore · Biometrics</td><td>History, bookmarks and the local password vault.</td></tr>
@@ -212,7 +212,7 @@ graph TD
 
     Privacy --> P1["petal_network_blocker WebExtension"]:::sec
     Privacy --> P2["Biometric password vault"]:::sec
-    Privacy --> P3["Firefox Account sync"]:::sec
+    Privacy --> P3["Folder sync"]:::sec
 
     Media --> M1["Media3 ExoPlayer, PiP"]:::ui
     Media --> M2["Mozilla AbstractFetchDownloadService"]:::ui
@@ -233,7 +233,7 @@ Paths are inside `app/src/main/java/com/petal/browser/` unless noted:
 | **Media** | `media/` | Player, picture-in-picture, playback service. |
 | **Downloads** | `download/` | Download state and UI on top of Mozilla's download service. |
 | **Privacy and vault** | `privacy/` `passwords/` `security/` | Blocking settings, biometric vault and app lock. |
-| **Account** | `account/` | Firefox Account sign-in and sync. |
+| **Account** | `account/` | Profile and sync through a folder you own. |
 | **Built-in add-ons** | `app/src/main/assets/web_extensions/` | Ten bundled WebExtensions, including `petal_network_blocker`. |
 | **Startup profile** | `baselineprofile/` (repo root) | Baseline Profile for faster cold starts. |
 | **Website** | `site/` (repo root) | Static project site, changelog and docs. |

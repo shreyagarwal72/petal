@@ -92,6 +92,15 @@ object PetalCredentialVault {
         Log.i(TAG, "Vault initialized with ${credentials.size} credentials from SyncableLoginsStorage.")
     }
 
+    /** Re-reads the stored logins after something outside the vault (folder sync) changed them. */
+    @Synchronized
+    fun reloadFromStorage(context: Context) {
+        if (!isInitialized) return
+        val loaded = PetalLoginsProvider.getAll(context.applicationContext)
+        credentials.clear()
+        credentials.addAll(loaded)
+    }
+
     private fun ensureKeyExists() {
         try {
             val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }

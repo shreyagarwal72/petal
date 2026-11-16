@@ -1232,16 +1232,4 @@ object PetalBackupManager {
     fun restoreData(context: Activity, i: Int) {
         restoreFromJson(context, true, true, true, true)
     }
-
-    @JvmStatic
-    fun exportList(context: Context?) {}
-
-    @JvmStatic
-    fun importList(context: Context?) {}
-
-    @JvmStatic
-    fun exportHistory(context: Context?) {}
-
-    @JvmStatic
-    fun importHistory(context: Context?) {}
 }

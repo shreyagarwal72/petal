@@ -203,6 +203,7 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     override fun onStop() {
         super.onStop()
+        com.petal.browser.account.sync.PetalFolderSync.onAppBackground(this)
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
         val clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
         if (isFinishing && clearQuit) {
@@ -375,6 +376,26 @@ class MainActivity : FragmentActivity(), BrowserController {
     }
     fun showSafeLocker() {
         viewModel.openSafeLocker()
+    }
+    /** Sends a link to another device that syncs to the same folder. */
+    fun showSendToDevice(title: String, url: String) {
+        if (!com.petal.browser.account.sync.PetalFolderSync.configured.value) {
+            android.widget.Toast.makeText(this, "Set up sync in Account & Sync first", android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
+        val devices = com.petal.browser.account.sync.PetalFolderSync.devices.value
+        if (devices.isEmpty()) {
+            android.widget.Toast.makeText(this, "No other devices yet. Sync on your other device first.", android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Send to device")
+            .setItems(devices.map { it.name }.toTypedArray()) { _, i ->
+                com.petal.browser.account.sync.PetalFolderSync.sendTab(this, devices[i].id, title, url)
+                android.widget.Toast.makeText(this, "Sending to ${devices[i].name}…", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
     /** Refreshes the thumbnail of the tab on screen so the tab manager never shows a stale frame. */
     fun captureVisibleTabThumbnail() {

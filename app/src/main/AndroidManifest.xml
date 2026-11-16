@@ -169,6 +169,11 @@
         </service>
 
         <service
+            android:name="com.petal.browser.account.sync.PetalSyncJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false" />
+
+        <service
             android:name="com.petal.browser.media.PetalMediaSessionService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="false">
