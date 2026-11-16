@@ -42,7 +42,6 @@ interface SettingsRepository {
     val liquidGlassRefraction: Flow<Float>
     /** Refraction width multiplier: how far in from the rim the glass bends. */
     val liquidGlassRefractionWidth: Flow<Float>
-    val liquidGlassTint: Flow<String>
     val liquidGlassContainments: Flow<Boolean>
     val liquidGlassBottomNav: Flow<Boolean>
     val liquidGlassAddressBar: Flow<Boolean>
@@ -181,7 +180,6 @@ interface SettingsRepository {
     suspend fun setLiquidGlassSheen(sheen: Float)
     suspend fun setLiquidGlassRefraction(strength: Float)
     suspend fun setLiquidGlassRefractionWidth(width: Float)
-    suspend fun setLiquidGlassTint(tint: String)
     suspend fun setLiquidGlassContainments(enabled: Boolean)
     suspend fun setLiquidGlassBottomNav(enabled: Boolean)
     suspend fun setLiquidGlassAddressBar(enabled: Boolean)

@@ -179,10 +179,6 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getFloat("sp_liquid_glass_refraction_width", 1.0f)
     }
 
-    override val liquidGlassTint: Flow<String> = preferenceFlow("sp_liquid_glass_tint") {
-        sp.getString("sp_liquid_glass_tint", "FROSTED") ?: "FROSTED"
-    }
-
     override val liquidGlassContainments: Flow<Boolean> = preferenceFlow("sp_liquid_glass_containments") {
         sp.getBoolean("sp_liquid_glass_containments", true)
     }
@@ -697,10 +693,6 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setLiquidGlassRefractionWidth(width: Float) {
         sp.edit().putFloat("sp_liquid_glass_refraction_width", width.coerceIn(0f, 2f)).apply()
-    }
-
-    override suspend fun setLiquidGlassTint(tint: String) {
-        sp.edit().putString("sp_liquid_glass_tint", tint).apply()
     }
 
     override suspend fun setLiquidGlassContainments(enabled: Boolean) {

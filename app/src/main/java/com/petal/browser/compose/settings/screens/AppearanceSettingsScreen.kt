@@ -82,9 +82,6 @@ fun AppearanceSettingsScreen(
     val appFont by viewModel.appFont.collectAsStateWithLifecycle()
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val matchWebsiteLanguage by viewModel.matchWebsiteLanguage.collectAsStateWithLifecycle()
-    val fontWidth by viewModel.fontWidth.collectAsStateWithLifecycle()
-    val fontWeight by viewModel.fontWeight.collectAsStateWithLifecycle()
-    val fontRoundness by viewModel.fontRoundness.collectAsStateWithLifecycle()
     val gsFlexPreset by viewModel.gsFlexPreset.collectAsStateWithLifecycle()
     val gsFlexSettings by viewModel.gsFlexSettings.collectAsStateWithLifecycle()
     val colorStyle by viewModel.colorStyle.collectAsStateWithLifecycle()
@@ -101,13 +98,11 @@ fun AppearanceSettingsScreen(
     val launchRippleEnabled by viewModel.launchRippleEnabled.collectAsStateWithLifecycle()
     val motionBlurEnabled by viewModel.motionBlurEnabled.collectAsStateWithLifecycle()
     val motionBlurScale by viewModel.motionBlurScale.collectAsStateWithLifecycle()
-    val liquidGlassUnlocked by viewModel.liquidGlassUnlocked.collectAsStateWithLifecycle()
     val liquidGlassEnabled by viewModel.liquidGlassEnabled.collectAsStateWithLifecycle()
     val liquidGlassAlpha by viewModel.liquidGlassAlpha.collectAsStateWithLifecycle()
     val liquidGlassSheen by viewModel.liquidGlassSheen.collectAsStateWithLifecycle()
     val liquidGlassRefraction by viewModel.liquidGlassRefraction.collectAsStateWithLifecycle()
     val liquidGlassRefractionWidth by viewModel.liquidGlassRefractionWidth.collectAsStateWithLifecycle()
-    val liquidGlassTint by viewModel.liquidGlassTint.collectAsStateWithLifecycle()
     val liquidGlassContainments by viewModel.liquidGlassContainments.collectAsStateWithLifecycle()
     val liquidGlassBottomNav by viewModel.liquidGlassBottomNav.collectAsStateWithLifecycle()
     val liquidGlassAddressBar by viewModel.liquidGlassAddressBar.collectAsStateWithLifecycle()
@@ -117,17 +112,11 @@ fun AppearanceSettingsScreen(
     val liquidGlassBgImageUri by viewModel.liquidGlassBgImageUri.collectAsStateWithLifecycle()
     val liquidGlassBgDim by viewModel.liquidGlassBgDim.collectAsStateWithLifecycle()
     val liquidGlassBgBlur by viewModel.liquidGlassBgBlur.collectAsStateWithLifecycle()
-    val forceDarkMode by viewModel.forceDarkMode.collectAsStateWithLifecycle()
 
     AppearanceSettingsScreenContent(
-        forceDarkMode = forceDarkMode,
-        onForceDarkModeChange = viewModel::setForceDarkMode,
         appFont = appFont,
         appLanguage = appLanguage,
         matchWebsiteLanguage = matchWebsiteLanguage,
-        fontWidth = fontWidth,
-        fontWeight = fontWeight,
-        fontRoundness = fontRoundness,
         gsFlexPreset = gsFlexPreset,
         gsFlexSettings = gsFlexSettings,
         colorStyle = colorStyle,
@@ -144,13 +133,11 @@ fun AppearanceSettingsScreen(
         launchRippleEnabled = launchRippleEnabled,
         motionBlurEnabled = motionBlurEnabled,
         motionBlurScale = motionBlurScale,
-        liquidGlassUnlocked = liquidGlassUnlocked,
         liquidGlassEnabled = liquidGlassEnabled,
         liquidGlassAlpha = liquidGlassAlpha,
         liquidGlassSheen = liquidGlassSheen,
         liquidGlassRefraction = liquidGlassRefraction,
         liquidGlassRefractionWidth = liquidGlassRefractionWidth,
-        liquidGlassTint = liquidGlassTint,
         liquidGlassContainments = liquidGlassContainments,
         liquidGlassBottomNav = liquidGlassBottomNav,
         liquidGlassAddressBar = liquidGlassAddressBar,
@@ -163,9 +150,6 @@ fun AppearanceSettingsScreen(
         onAppFontChange = viewModel::setAppFont,
         onAppLanguageChange = viewModel::setAppLanguage,
         onMatchWebsiteLanguageChange = viewModel::setMatchWebsiteLanguage,
-        onFontWidthChange = viewModel::setFontWidth,
-        onFontWeightChange = viewModel::setFontWeight,
-        onFontRoundnessChange = viewModel::setFontRoundness,
         onGsFlexPresetChange = viewModel::setGsFlexPreset,
         onGsFlexSettingsChange = viewModel::setGsFlexSettings,
         onColorStyleChange = viewModel::setColorStyle,
@@ -178,7 +162,6 @@ fun AppearanceSettingsScreen(
         onBgShapeChangeModeChange = viewModel::setBgShapeChangeMode,
         onBgShapeRotationMinChange = viewModel::setBgShapeRotationMin,
         onHighRefreshRateChange = viewModel::setHighRefreshRate,
-        onCustomFontNameChange = viewModel::setCustomFontName,
         onLaunchRippleEnabledChange = viewModel::setLaunchRippleEnabled,
         onMotionBlurEnabledChange = viewModel::setMotionBlurEnabled,
         onMotionBlurScaleChange = viewModel::setMotionBlurScale,
@@ -187,7 +170,6 @@ fun AppearanceSettingsScreen(
         onLiquidGlassSheenChange = viewModel::setLiquidGlassSheen,
         onLiquidGlassRefractionChange = viewModel::setLiquidGlassRefraction,
         onLiquidGlassRefractionWidthChange = viewModel::setLiquidGlassRefractionWidth,
-        onLiquidGlassTintChange = viewModel::setLiquidGlassTint,
         onLiquidGlassContainmentsChange = viewModel::setLiquidGlassContainments,
         onLiquidGlassBottomNavChange = viewModel::setLiquidGlassBottomNav,
         onLiquidGlassAddressBarChange = viewModel::setLiquidGlassAddressBar,
@@ -206,16 +188,12 @@ fun AppearanceSettingsScreen(
 @Composable
 fun AppearanceSettingsScreenContent(
     appFont: AppFont,
-    fontWidth: Float,
-    fontWeight: Float,
-    fontRoundness: Float,
     gsFlexPreset: GSFlexPreset,
     gsFlexSettings: com.petal.browser.ui.theme.GSFlexSettings = com.petal.browser.ui.theme.GSFlexSettings(),
     colorStyle: ColorStyle,
     paletteId: String,
     dynamicColor: Boolean,
     amoledMode: Boolean,
-    forceDarkMode: Boolean = false,
     themeConfig: ThemeConfig,
     floatingTabBar: Boolean,
     expressiveBgShapes: Boolean,
@@ -226,13 +204,11 @@ fun AppearanceSettingsScreenContent(
     launchRippleEnabled: Boolean = true,
     motionBlurEnabled: Boolean = false,
     motionBlurScale: Float = 1.0f,
-    liquidGlassUnlocked: Boolean = false,
     liquidGlassEnabled: Boolean = false,
     liquidGlassAlpha: Float = 0.70f,
     liquidGlassSheen: Float = 0.60f,
     liquidGlassRefraction: Float = 1.0f,
     liquidGlassRefractionWidth: Float = 1.0f,
-    liquidGlassTint: String = "FROSTED",
     liquidGlassContainments: Boolean = true,
     liquidGlassBottomNav: Boolean = true,
     liquidGlassAddressBar: Boolean = true,
@@ -247,23 +223,18 @@ fun AppearanceSettingsScreenContent(
     onAppFontChange: (AppFont) -> Unit,
     onAppLanguageChange: (String) -> Unit = {},
     onMatchWebsiteLanguageChange: (Boolean) -> Unit = {},
-    onFontWidthChange: (Float) -> Unit,
-    onFontWeightChange: (Float) -> Unit,
-    onFontRoundnessChange: (Float) -> Unit,
     onGsFlexPresetChange: (GSFlexPreset) -> Unit,
     onGsFlexSettingsChange: (com.petal.browser.ui.theme.GSFlexSettings) -> Unit = {},
     onColorStyleChange: (ColorStyle) -> Unit,
     onPaletteIdChange: (String) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
     onAmoledModeChange: (Boolean) -> Unit,
-    onForceDarkModeChange: (Boolean) -> Unit = {},
     onThemeConfigChange: (ThemeConfig) -> Unit,
     onFloatingTabBarChange: (Boolean) -> Unit,
     onExpressiveBgShapesChange: (Boolean) -> Unit,
     onBgShapeChangeModeChange: (String) -> Unit,
     onBgShapeRotationMinChange: (Int) -> Unit,
     onHighRefreshRateChange: (Boolean) -> Unit,
-    onCustomFontNameChange: (String) -> Unit,
     onLaunchRippleEnabledChange: (Boolean) -> Unit = {},
     onMotionBlurEnabledChange: (Boolean) -> Unit = {},
     onMotionBlurScaleChange: (Float) -> Unit = {},
@@ -272,7 +243,6 @@ fun AppearanceSettingsScreenContent(
     onLiquidGlassSheenChange: (Float) -> Unit = {},
     onLiquidGlassRefractionChange: (Float) -> Unit = {},
     onLiquidGlassRefractionWidthChange: (Float) -> Unit = {},
-    onLiquidGlassTintChange: (String) -> Unit = {},
     onLiquidGlassContainmentsChange: (Boolean) -> Unit = {},
     onLiquidGlassBottomNavChange: (Boolean) -> Unit = {},
     onLiquidGlassAddressBarChange: (Boolean) -> Unit = {},
@@ -385,28 +355,14 @@ fun AppearanceSettingsScreenContent(
             )
 
             val petalLayoutSettings = rememberPetalLayoutSettings()
-            val activeUiExperience = petalLayoutSettings.uiExperience
 
             val onSelectExperience: (UiExperience) -> Unit = { exp ->
                 val isGlass = (exp == UiExperience.LIQUID_GLASS)
                 onLiquidGlassEnabledChange(isGlass)
                 val sp = PreferenceManager.getDefaultSharedPreferences(context)
                 sp.edit().putBoolean("sp_liquid_glass_enabled", isGlass).apply()
-                PetalLayoutState.update(context) { current ->
-                    when (exp) {
-                        UiExperience.LIQUID_GLASS -> current.copy(
-                            uiExperience = exp,
-                        )
-                        UiExperience.MATERIAL_EXPRESSIVE -> current.copy(
-                            uiExperience = exp,
-                            switchType = PetalSwitchType.MATERIAL_YOU,
-                            sliderType = PetalSliderType.FANCY,
-                            shapeType = PetalShapeType.ROUNDED,
-                            containmentShape = PetalContainmentShapeChoice.FOLLOW_APP,
-                            badgeShape = PetalBadgeShape.MIXED
-                        )
-                    }
-                }
+                // Only the experience changes: the user's own switch / slider / shape picks are kept.
+                PetalLayoutState.update(context) { current -> current.copy(uiExperience = exp) }
             }
 
             val scrollState = rememberScrollState()
@@ -419,149 +375,6 @@ fun AppearanceSettingsScreenContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Section 0: App Language
-                val currentLanguage = remember(appLanguage) { PetalLanguages.findLanguage(appLanguage) }
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_app_language),
-                    iconRes = com.petal.browser.R.drawable.translate,
-                    cardId = "appearance_language",
-                    targetHighlightId = targetHighlightItemId
-                ) {
-                    Text(
-                        stringResource(R.string.ui_choose_your_preferred_display_language),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    // Containment Group: Quick Languages & Website Language Setting
-                    val isGlass = liquidGlassEnabled && liquidGlassContainments
-                    val glassSheen = if (isGlass) liquidGlassSheen.coerceIn(0f, 1f) else 0.60f
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        // Top item: Quick languages horizontal row
-                        val quickLangShape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.TOP)
-                        Card(
-                            shape = quickLangShape,
-                            colors = CardDefaults.cardColors(containerColor = com.petal.browser.ui.containment.petalGroupSurfaceColor()),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .liquidGlassChrome(
-                                    shape = quickLangShape,
-                                    enabled = isGlass,
-                                    sheenIntensity = glassSheen
-                                ), glass = false
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                        icon = Icons.Rounded.Language,
-                                        container = MaterialTheme.colorScheme.secondaryContainer,
-                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        size = 38.dp,
-                                        iconSize = 20.dp
-                                    )
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            stringResource(R.string.ui_quick_languages),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Text(
-                                            stringResource(R.string.ui_switch_common_languages_instantly),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-
-                                val quickLanguages = remember {
-                                    listOf(
-                                        PetalLanguages.findLanguage("system"),
-                                        PetalLanguages.findLanguage("en"),
-                                        PetalLanguages.findLanguage("hi-Latn"),
-                                        PetalLanguages.findLanguage("hi"),
-                                        PetalLanguages.findLanguage("es")
-                                    )
-                                }
-
-                                val quickLangScrollState = rememberScrollState()
-                                ScrollFadeRow(
-                                    scrollState = quickLangScrollState,
-                                    edgeColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .horizontalScroll(quickLangScrollState),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        quickLanguages.forEach { lang ->
-                                            val isSelected = appLanguage == lang.tag
-                                            com.petal.browser.ui.containment.PetalFilterChip(
-                                                selected = isSelected,
-                                                onClick = {
-                                                    if (appLanguage != lang.tag) {
-                                                        onAppLanguageChange(lang.tag)
-                                                        PetalAndroidUtils.setAppLanguage(context, lang.tag)
-                                                    }
-                                                },
-                                                label = { Text(lang.nativeName) },
-                                                leadingIcon = if (isSelected) {
-                                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                                } else null
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Middle item: Action row to open All Languages modal sheet
-                        com.petal.browser.ui.containment.PetalGroupRow(
-                            icon = Icons.Rounded.TravelExplore,
-                            title = stringResource(R.string.ui_all_languages),
-                            subtitle = "${PetalLanguages.ALL_LANGUAGES.size} languages supported",
-                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                            iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
-                            iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                            onClick = {
-                                languageSearchQuery = ""
-                                showLanguageSheet = true
-                            }
-                        )
-
-                        // Bottom item: Match Website Language toggle
-                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                            title = stringResource(R.string.ui_website_language_title),
-                            subtitle = stringResource(R.string.ui_website_language_subtitle),
-                            icon = Icons.Rounded.Http,
-                            checked = matchWebsiteLanguage,
-                            onCheckedChange = { checked ->
-                                onMatchWebsiteLanguageChange(checked)
-                                PreferenceManager.getDefaultSharedPreferences(context)
-                                    .edit()
-                                    .putBoolean("sp_match_website_language", checked)
-                                    .apply()
-                            },
-                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM
-                        )
-                    }
-                }
-
                 // Section 1: App Theme & Dynamic Color Palette
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_theme_color_palette),
@@ -992,42 +805,6 @@ fun AppearanceSettingsScreenContent(
                     )
                 }
 
-                // Home screen widgets: one row per Petal widget, each opens its own customization screen
-                PetalSettingsSection(
-                    title = "Home Screen Widgets",
-                    icon = Icons.Rounded.Widgets,
-                    cardId = "appearance_search_widget",
-                    targetHighlightId = targetHighlightItemId
-                ) {
-                    Text(
-                        "Customize colors, cookie shapes, shortcuts, corners and outline for each Petal widget.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    val widgetRows = listOf(
-                        Triple(com.petal.browser.widget.glance.PetalWidgetKind.PETAL1, "Petal #1", "Search pill with cookie badge, buttons and shortcut tiles"),
-                        Triple(com.petal.browser.widget.glance.PetalWidgetKind.PETAL2, "Petal #2", "Search field with a cookie action island"),
-                        Triple(com.petal.browser.widget.glance.PetalWidgetKind.PETAL3, "Petal #3", "Large cookie badge with an open search prompt")
-                    )
-                    widgetRows.forEachIndexed { index, (kind, title, subtitle) ->
-                        com.petal.browser.ui.containment.PetalGroupNavigationRow(
-                            title = title,
-                            subtitle = subtitle,
-                            position = when (index) {
-                                0 -> com.petal.browser.ui.containment.PetalGroupPosition.TOP
-                                widgetRows.lastIndex -> com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM
-                                else -> com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE
-                            },
-                            leadingIcon = { Icon(Icons.Rounded.Widgets, contentDescription = null) },
-                            onClick = {
-                                context.startActivity(
-                                    com.petal.browser.widget.glance.PetalWidgetSettingsActivity.intent(context, kind)
-                                )
-                            }
-                        )
-                    }
-                }
-
                 // Section 2: Custom Fonts & Typography
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_typography_fonts),
@@ -1416,290 +1193,6 @@ fun AppearanceSettingsScreenContent(
                             }
                         }
                     }
-                }
-
-                // Section 3: Layout & Ambient Morphing Shapes
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_layout_expressive_motion),
-                    iconRes = com.petal.browser.R.drawable.layers_filled,
-                    cardId = "appearance_layout",
-                    targetHighlightId = targetHighlightItemId,
-                    onInfoClick = { showMorphingShapesExplainer = true }
-                ) {
-                    // Floating Tab Bar Toggle
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_floating_tab_bar),
-                        subtitle = stringResource(R.string.ui_show_the_bottom_bar_as),
-                        icon = Icons.Rounded.SpaceBar,
-                        checked = floatingTabBar,
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
-                        onCheckedChange = onFloatingTabBarChange
-                    )
-                    PetalDesktopTabBarModeRow()
-                    // Material 3 Expressive Background Morphing Shapes Toggle
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_m3_expressive_morphing_shapes),
-                        subtitle = stringResource(R.string.ui_display_ambient_morphing_background_sh),
-                        icon = Icons.Rounded.BubbleChart,
-                        checked = expressiveBgShapes,
-                        position = if (expressiveBgShapes) com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE else com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
-                        onCheckedChange = onExpressiveBgShapesChange
-                    )
-
-                    AnimatedVisibility(
-                        visible = expressiveBgShapes,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
-                    ) {
-                        com.petal.browser.ui.containment.PetalHeroCard {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.ui_shape_change_mode),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-
-                                ExpressiveButtonGroup(
-                                    items = listOf(
-                                        ExpressiveSegmentItem(id = "ALWAYS", label = "Always", icon = Icons.Rounded.Autorenew),
-                                        ExpressiveSegmentItem(id = "PERIODIC", label = "Periodically", icon = Icons.Rounded.Schedule)
-                                    ),
-                                    selectedId = bgShapeChangeMode,
-                                    onItemSelected = onBgShapeChangeModeChange,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-
-                                if (bgShapeChangeMode == "PERIODIC") {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 4.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = stringResource(R.string.ui_auto_change_interval),
-                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Text(
-                                                text = stringResource(R.string.ui_min, bgShapeRotationMin),
-                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                        PetalSlider(
-                                            value = bgShapeRotationMin.coerceIn(1, 60).toFloat(),
-                                            onValueChange = { newValue ->
-                                                val rounded = Math.round(newValue).coerceIn(1, 60)
-                                                if (rounded != bgShapeRotationMin) {
-                                                    onBgShapeRotationMinChange(rounded)
-                                                }
-                                            },
-                                            valueRange = 1f..60f,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Section 3b: Expressive Layout & Controls (Ported from ImageToolbox)
-                PetalLayoutSettingsSection(
-                    targetHighlightItemId = targetHighlightItemId
-                )
-
-                // Button Shapes & Expressive Keyboard Geometry
-                PetalSettingsSection(
-                    title = "Button Shapes",
-                    iconRes = com.petal.browser.R.drawable.icon_cookie,
-                    cardId = "appearance_button_shapes",
-                    targetHighlightId = targetHighlightItemId
-                ) {
-                    PetalButtonShapePicker()
-                }
-
-                // Section 4: Display Refresh Rate & Performance
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_display_performance),
-                    icon = Icons.Rounded.Speed,
-                    cardId = "appearance_refresh",
-                    targetHighlightId = targetHighlightItemId,
-                    onInfoClick = { showMotionBlurExplainer = true }
-                ) {
-                    var appLaunchAnim by remember {
-                        mutableStateOf(PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_app_launch_animation", true))
-                    }
-                    var showSplashPreview by remember { mutableStateOf(false) }
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_high_refresh_rate_120hz),
-                        subtitle = stringResource(R.string.ui_force_120hz_144hz_peak_display, maxDetectedRefreshRate.toInt()),
-                        icon = Icons.Rounded.Speed,
-                        checked = highRefreshRate,
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
-                        onCheckedChange = { newValue ->
-                            onHighRefreshRateChange(newValue)
-                            (context as? Activity)?.let { act ->
-                                if (newValue) {
-                                    PetalHighRefreshRateManager.applyHighRefreshRate(act)
-                                } else {
-                                    PetalHighRefreshRateManager.resetRefreshRate(act)
-                                }
-                            }
-                        }
-                    )
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        title = "Quantum Web Launch Animation",
-                        subtitle = "Procedural particle stream of web icons during app startup",
-                        icon = Icons.Rounded.AutoAwesome,
-                        checked = appLaunchAnim,
-                        onCheckedChange = { checked ->
-                            appLaunchAnim = checked
-                            PreferenceManager.getDefaultSharedPreferences(context).edit()
-                                .putBoolean("sp_app_launch_animation", checked)
-                                .apply()
-                        }
-                    )
-
-                    if (appLaunchAnim) {
-                        Spacer(Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            FilledTonalButton(
-                                onClick = { showSplashPreview = true },
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.PlayArrow,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text("Preview Animation")
-                            }
-                        }
-                    }
-
-                    if (showSplashPreview) {
-                        androidx.compose.ui.window.Dialog(
-                            onDismissRequest = { showSplashPreview = false },
-                            properties = androidx.compose.ui.window.DialogProperties(
-                                usePlatformDefaultWidth = false,
-                                decorFitsSystemWindows = false
-                            )
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                com.petal.browser.compose.splash.PetalSplashScreen(
-                                    onSplashComplete = { showSplashPreview = false },
-                                    durationMs = 2200L
-                                )
-                            }
-                        }
-                    }
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_app_launch_ripple_effect),
-                        subtitle = stringResource(R.string.ui_display_fluid_liquid_displacement_ripp),
-                        icon = Icons.Rounded.WaterDrop,
-                        checked = launchRippleEnabled,
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                        onCheckedChange = onLaunchRippleEnabledChange
-                    )
-
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = stringResource(R.string.ui_motion_blur),
-                        subtitle = stringResource(R.string.ui_motion_blur_subtitle),
-                        iconRes = com.petal.browser.R.drawable.rounded_settings_motion_mode_24,
-                        checked = motionBlurEnabled,
-                        position = if (motionBlurEnabled) com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE else com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
-                        onCheckedChange = onMotionBlurEnabledChange
-                    )
-
-                    AnimatedVisibility(
-                        visible = motionBlurEnabled,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
-                    ) {
-                        com.petal.browser.ui.containment.PetalHeroCard {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        stringResource(R.string.ui_motion_blur_amount),
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        String.format(java.util.Locale.getDefault(), "%.1fx", motionBlurScale),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                                PetalSlider(
-                                    value = motionBlurScale,
-                                    onValueChange = onMotionBlurScaleChange,
-                                    valueRange = 0.5f..2.5f,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Section: UI Experience & Design Language
-                PetalSettingsSection(
-                    title = "UI Experience & Design Language",
-                    icon = ImageToolboxIcons.Outlined.HyperOS,
-                    cardId = "appearance_ui_experience",
-                    targetHighlightId = targetHighlightItemId
-                ) {
-                    Text(
-                        text = "Select your system design language. Controls, surfaces, motion, squircles, and materials adapt across the entire browser.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
-                        options = listOf(
-                            com.petal.browser.ui.components.PetalButtonGroupItem(
-                                UiExperience.MATERIAL_EXPRESSIVE,
-                                "Material 3"
-                            ),
-                            com.petal.browser.ui.components.PetalButtonGroupItem(
-                                UiExperience.LIQUID_GLASS,
-                                "Liquid Glass"
-                            ),
-                        ),
-                        selected = activeUiExperience,
-                        minHeight = 44.dp,
-                        scrollableIfCrowded = true,
-                        onSelect = { onSelectExperience(it) }
-                    )
                 }
 
                 // Section 5: Liquid Glass UI & Surfaces.
@@ -2163,6 +1656,438 @@ fun AppearanceSettingsScreenContent(
 
                 // Text selection toolbar (Material 3 Expressive / liquid glass), app-wide.
                 com.petal.browser.ui.selection.PetalSelectionToolbarSettingsSection(targetHighlightId = targetHighlightItemId)
+
+                // Section 3: Layout & Ambient Morphing Shapes
+                PetalSettingsSection(
+                    title = stringResource(R.string.ui_layout_expressive_motion),
+                    iconRes = com.petal.browser.R.drawable.layers_filled,
+                    cardId = "appearance_layout",
+                    targetHighlightId = targetHighlightItemId,
+                    onInfoClick = { showMorphingShapesExplainer = true }
+                ) {
+                    // Floating Tab Bar Toggle
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_floating_tab_bar),
+                        subtitle = stringResource(R.string.ui_show_the_bottom_bar_as),
+                        icon = Icons.Rounded.SpaceBar,
+                        checked = floatingTabBar,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
+                        onCheckedChange = onFloatingTabBarChange
+                    )
+                    PetalDesktopTabBarModeRow()
+                    // Material 3 Expressive Background Morphing Shapes Toggle
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_m3_expressive_morphing_shapes),
+                        subtitle = stringResource(R.string.ui_display_ambient_morphing_background_sh),
+                        icon = Icons.Rounded.BubbleChart,
+                        checked = expressiveBgShapes,
+                        position = if (expressiveBgShapes) com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE else com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                        onCheckedChange = onExpressiveBgShapesChange
+                    )
+
+                    AnimatedVisibility(
+                        visible = expressiveBgShapes,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        com.petal.browser.ui.containment.PetalHeroCard {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.ui_shape_change_mode),
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                ExpressiveButtonGroup(
+                                    items = listOf(
+                                        ExpressiveSegmentItem(id = "ALWAYS", label = "Always", icon = Icons.Rounded.Autorenew),
+                                        ExpressiveSegmentItem(id = "PERIODIC", label = "Periodically", icon = Icons.Rounded.Schedule)
+                                    ),
+                                    selectedId = bgShapeChangeMode,
+                                    onItemSelected = onBgShapeChangeModeChange,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                if (bgShapeChangeMode == "PERIODIC") {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 4.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = stringResource(R.string.ui_auto_change_interval),
+                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = stringResource(R.string.ui_min, bgShapeRotationMin),
+                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        PetalSlider(
+                                            value = bgShapeRotationMin.coerceIn(1, 60).toFloat(),
+                                            onValueChange = { newValue ->
+                                                val rounded = Math.round(newValue).coerceIn(1, 60)
+                                                if (rounded != bgShapeRotationMin) {
+                                                    onBgShapeRotationMinChange(rounded)
+                                                }
+                                            },
+                                            valueRange = 1f..60f,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Section 3b: Expressive Layout & Controls (Ported from ImageToolbox)
+                PetalLayoutSettingsSection(
+                    targetHighlightItemId = targetHighlightItemId
+                )
+
+                // Button Shapes & Expressive Keyboard Geometry
+                PetalSettingsSection(
+                    title = "Button Shapes",
+                    iconRes = com.petal.browser.R.drawable.icon_cookie,
+                    cardId = "appearance_button_shapes",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    PetalButtonShapePicker()
+                }
+
+                // Section 4: Display Refresh Rate & Performance
+                PetalSettingsSection(
+                    title = stringResource(R.string.ui_display_performance),
+                    icon = Icons.Rounded.Speed,
+                    cardId = "appearance_refresh",
+                    targetHighlightId = targetHighlightItemId,
+                    onInfoClick = { showMotionBlurExplainer = true }
+                ) {
+                    var appLaunchAnim by remember {
+                        mutableStateOf(PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_app_launch_animation", true))
+                    }
+                    var showSplashPreview by remember { mutableStateOf(false) }
+
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_high_refresh_rate_120hz),
+                        subtitle = stringResource(R.string.ui_force_120hz_144hz_peak_display, maxDetectedRefreshRate.toInt()),
+                        icon = Icons.Rounded.Speed,
+                        checked = highRefreshRate,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
+                        onCheckedChange = { newValue ->
+                            onHighRefreshRateChange(newValue)
+                            (context as? Activity)?.let { act ->
+                                if (newValue) {
+                                    PetalHighRefreshRateManager.applyHighRefreshRate(act)
+                                } else {
+                                    PetalHighRefreshRateManager.resetRefreshRate(act)
+                                }
+                            }
+                        }
+                    )
+
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                        title = "Quantum Web Launch Animation",
+                        subtitle = "Procedural particle stream of web icons during app startup",
+                        icon = Icons.Rounded.AutoAwesome,
+                        checked = appLaunchAnim,
+                        onCheckedChange = { checked ->
+                            appLaunchAnim = checked
+                            PreferenceManager.getDefaultSharedPreferences(context).edit()
+                                .putBoolean("sp_app_launch_animation", checked)
+                                .apply()
+                        }
+                    )
+
+                    if (appLaunchAnim) {
+                        Spacer(Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            FilledTonalButton(
+                                onClick = { showSplashPreview = true },
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.PlayArrow,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text("Preview Animation")
+                            }
+                        }
+                    }
+
+                    if (showSplashPreview) {
+                        androidx.compose.ui.window.Dialog(
+                            onDismissRequest = { showSplashPreview = false },
+                            properties = androidx.compose.ui.window.DialogProperties(
+                                usePlatformDefaultWidth = false,
+                                decorFitsSystemWindows = false
+                            )
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                com.petal.browser.compose.splash.PetalSplashScreen(
+                                    onSplashComplete = { showSplashPreview = false },
+                                    durationMs = 2200L
+                                )
+                            }
+                        }
+                    }
+
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_app_launch_ripple_effect),
+                        subtitle = stringResource(R.string.ui_display_fluid_liquid_displacement_ripp),
+                        icon = Icons.Rounded.WaterDrop,
+                        checked = launchRippleEnabled,
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                        onCheckedChange = onLaunchRippleEnabledChange
+                    )
+
+                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_motion_blur),
+                        subtitle = stringResource(R.string.ui_motion_blur_subtitle),
+                        iconRes = com.petal.browser.R.drawable.rounded_settings_motion_mode_24,
+                        checked = motionBlurEnabled,
+                        position = if (motionBlurEnabled) com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE else com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                        onCheckedChange = onMotionBlurEnabledChange
+                    )
+
+                    AnimatedVisibility(
+                        visible = motionBlurEnabled,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        com.petal.browser.ui.containment.PetalHeroCard {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        stringResource(R.string.ui_motion_blur_amount),
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        String.format(java.util.Locale.getDefault(), "%.1fx", motionBlurScale),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                PetalSlider(
+                                    value = motionBlurScale,
+                                    onValueChange = onMotionBlurScaleChange,
+                                    valueRange = 0.5f..2.5f,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Home screen widgets: one row per Petal widget, each opens its own customization screen
+                PetalSettingsSection(
+                    title = "Home Screen Widgets",
+                    icon = Icons.Rounded.Widgets,
+                    cardId = "appearance_search_widget",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    Text(
+                        "Customize colors, cookie shapes, shortcuts, corners and outline for each Petal widget.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    val widgetRows = listOf(
+                        Triple(com.petal.browser.widget.glance.PetalWidgetKind.PETAL1, "Petal #1", "Search pill with cookie badge, buttons and shortcut tiles"),
+                        Triple(com.petal.browser.widget.glance.PetalWidgetKind.PETAL2, "Petal #2", "Search field with a cookie action island"),
+                        Triple(com.petal.browser.widget.glance.PetalWidgetKind.PETAL3, "Petal #3", "Large cookie badge with an open search prompt")
+                    )
+                    widgetRows.forEachIndexed { index, (kind, title, subtitle) ->
+                        com.petal.browser.ui.containment.PetalGroupNavigationRow(
+                            title = title,
+                            subtitle = subtitle,
+                            position = when (index) {
+                                0 -> com.petal.browser.ui.containment.PetalGroupPosition.TOP
+                                widgetRows.lastIndex -> com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM
+                                else -> com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE
+                            },
+                            leadingIcon = { Icon(Icons.Rounded.Widgets, contentDescription = null) },
+                            onClick = {
+                                context.startActivity(
+                                    com.petal.browser.widget.glance.PetalWidgetSettingsActivity.intent(context, kind)
+                                )
+                            }
+                        )
+                    }
+                }
+
+                // Section 0: App Language
+                val currentLanguage = remember(appLanguage) { PetalLanguages.findLanguage(appLanguage) }
+                PetalSettingsSection(
+                    title = stringResource(R.string.ui_app_language),
+                    iconRes = com.petal.browser.R.drawable.translate,
+                    cardId = "appearance_language",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    Text(
+                        stringResource(R.string.ui_choose_your_preferred_display_language),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Containment Group: Quick Languages & Website Language Setting
+                    val isGlass = liquidGlassEnabled && liquidGlassContainments
+                    val glassSheen = if (isGlass) liquidGlassSheen.coerceIn(0f, 1f) else 0.60f
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        // Top item: Quick languages horizontal row
+                        val quickLangShape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.TOP)
+                        Card(
+                            shape = quickLangShape,
+                            colors = CardDefaults.cardColors(containerColor = com.petal.browser.ui.containment.petalGroupSurfaceColor()),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .liquidGlassChrome(
+                                    shape = quickLangShape,
+                                    enabled = isGlass,
+                                    sheenIntensity = glassSheen
+                                ), glass = false
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                        icon = Icons.Rounded.Language,
+                                        container = MaterialTheme.colorScheme.secondaryContainer,
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        size = 38.dp,
+                                        iconSize = 20.dp
+                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            stringResource(R.string.ui_quick_languages),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            stringResource(R.string.ui_switch_common_languages_instantly),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                val quickLanguages = remember {
+                                    listOf(
+                                        PetalLanguages.findLanguage("system"),
+                                        PetalLanguages.findLanguage("en"),
+                                        PetalLanguages.findLanguage("hi-Latn"),
+                                        PetalLanguages.findLanguage("hi"),
+                                        PetalLanguages.findLanguage("es")
+                                    )
+                                }
+
+                                val quickLangScrollState = rememberScrollState()
+                                ScrollFadeRow(
+                                    scrollState = quickLangScrollState,
+                                    edgeColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(quickLangScrollState),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        quickLanguages.forEach { lang ->
+                                            val isSelected = appLanguage == lang.tag
+                                            com.petal.browser.ui.containment.PetalFilterChip(
+                                                selected = isSelected,
+                                                onClick = {
+                                                    if (appLanguage != lang.tag) {
+                                                        onAppLanguageChange(lang.tag)
+                                                        PetalAndroidUtils.setAppLanguage(context, lang.tag)
+                                                    }
+                                                },
+                                                label = { Text(lang.nativeName) },
+                                                leadingIcon = if (isSelected) {
+                                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Middle item: Action row to open All Languages modal sheet
+                        com.petal.browser.ui.containment.PetalGroupRow(
+                            icon = Icons.Rounded.TravelExplore,
+                            title = stringResource(R.string.ui_all_languages),
+                            subtitle = "${PetalLanguages.ALL_LANGUAGES.size} languages supported",
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
+                            iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                            onClick = {
+                                languageSearchQuery = ""
+                                showLanguageSheet = true
+                            }
+                        )
+
+                        // Bottom item: Match Website Language toggle
+                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                            title = stringResource(R.string.ui_website_language_title),
+                            subtitle = stringResource(R.string.ui_website_language_subtitle),
+                            icon = Icons.Rounded.Http,
+                            checked = matchWebsiteLanguage,
+                            onCheckedChange = { checked ->
+                                onMatchWebsiteLanguageChange(checked)
+                                PreferenceManager.getDefaultSharedPreferences(context)
+                                    .edit()
+                                    .putBoolean("sp_match_website_language", checked)
+                                    .apply()
+                            },
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM
+                        )
+                    }
+                }
 
                 Spacer(Modifier.height(32.dp))
             }
