@@ -37,6 +37,15 @@ fun rememberRefractionTuning(
     )
 }
 
+const val PREF_GLASS_BLUR = "sp_liquid_glass_blur"
+
+/**
+ * User blur strength in dp (0..32), a Gaussian radius. Null means Auto: each surface keeps
+ * its own tuned blur. Same live-update contract as [rememberGlassSheen].
+ */
+fun readGlassBlurDp(sp: android.content.SharedPreferences): Float? =
+    sp.getFloat(PREF_GLASS_BLUR, -1f).takeIf { it >= 0f }?.coerceAtMost(32f)
+
 const val PREF_GLASS_SHEEN = "sp_liquid_glass_sheen"
 const val PREF_GLASS_ALPHA = "sp_liquid_glass_alpha"
 

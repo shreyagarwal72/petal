@@ -99,7 +99,9 @@ internal fun Modifier.petalRealGlass(
     isDark: Boolean,
     refraction: com.petal.browser.ui.glass.RefractionTuning = com.petal.browser.ui.glass.RefractionTuning(),
     /** Translucency slider (0.10..0.95): higher = denser veil. */
-    opacity: Float = 0.70f
+    opacity: Float = 0.70f,
+    /** Gaussian blur radius in dp; null = the default 7dp. */
+    blurDp: Float? = null
 ): Modifier {
     if (backdrop == null || !petalRealGlassSupported) return this
     val luminance = rememberBackdropLuminance(backdrop, if (isDark) 0f else 1f)
@@ -118,7 +120,7 @@ internal fun Modifier.petalRealGlass(
             // vibrancy() already applies saturation 1.5. A second colorControls(saturation = 1.5)
             // stacked to 2.25x and made the glass look neon, so only one is applied.
             vibrancy()
-            blur(7f.dp.toPx())
+            blur((blurDp ?: 7f).dp.toPx())
             // Stride's panel lens, clamped to fit short headers. Past 1.25x strength the rim
             // also splits colours (chromatic aberration), as in Kyant's toggle.
             if (refraction.enabled && petalLensSupported) {
