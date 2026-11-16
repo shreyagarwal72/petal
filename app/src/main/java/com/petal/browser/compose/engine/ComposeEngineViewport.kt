@@ -9,6 +9,8 @@ import android.widget.FrameLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -16,6 +18,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
@@ -320,6 +330,30 @@ fun ComposeEngineViewport(
             .nestedScroll(nestedScrollConnection)
             .background(MaterialTheme.colorScheme.background)
     ) {
+        // The bars reserve a strip above/below the page. It used to show the bare theme
+        // background (pure black on AMOLED), which read as a black bar around the glass. It now
+        // takes the page's own edge colour, sampled from Gecko, so bars and page look continuous.
+        val fallback = MaterialTheme.colorScheme.background
+        val topStrip by animateColorAsState(
+            if (PageEdgeColors.top == Color.Unspecified) fallback else PageEdgeColors.top, label = "pageEdgeTop")
+        val bottomStrip by animateColorAsState(
+            if (PageEdgeColors.bottom == Color.Unspecified) fallback else PageEdgeColors.bottom, label = "pageEdgeBottom")
+        val collapsedF = BarCollapseState.collapsedFraction
+        val topStripH = lerp(topPadding.value, collapsedTopPadding.value, collapsedF).dp
+        val bottomStripH = lerp(bottomPadding.value, collapsedBottomPadding.value, collapsedF).dp
+        Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(topStripH).background(topStrip))
+        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(bottomStripH).background(bottomStrip))
+
+        LaunchedEffect(engineView, tab?.id, tab?.content?.url, isLoading) {
+            if (!isLoading) { PageEdgeColors.requestResample() }
+        }
+        LaunchedEffect(engineView) {
+            PageEdgeColors.ticks.collectLatest {
+                delay(280L)
+                findGeckoView(engineView.asView())?.let { PageEdgeColors.sample(it) }
+            }
+        }
+
         AndroidView(
             factory = {
                 // Like Fenix, the EngineView is a direct child of the swipe-refresh layout:
@@ -531,6 +565,16 @@ private fun attachSessionDelegates(
             val deltaY = scrollY - lastScrollY
             lastScrollY = scrollY
 
+            // Resizing the viewport (bars collapsing/expanding) shifts Gecko's scroll offset by
+            // the freed height. That is not a user scroll: ignore it, and restart the run, or the
+            // shift immediately re-triggers the opposite bar state (flicker / page jump).
+            if (com.petal.browser.ui.components.BarCollapseState.isViewportSettling()) {
+                scrollRun = 0
+                PageEdgeColors.requestResample()
+                return
+            }
+            PageEdgeColors.requestResample()
+
             act.runOnUiThread {
                 if (scrollY <= (4f * density).toInt()) {
                     scrollRun = 0
@@ -612,4 +656,58 @@ private fun captureGeckoThumbnail(context: android.content.Context, gv: GeckoVie
             GeckoResult.fromValue<Void?>(null)
         })
     } catch (_: Throwable) {}
+}
+
+
+/**
+ * Colour of the page right under the top and bottom bars, sampled from a Gecko frame. Used to
+ * fill the strips the bars reserve, so no black band shows between the page and the glass.
+ */
+object PageEdgeColors {
+    var top by mutableStateOf(Color.Unspecified)
+    var bottom by mutableStateOf(Color.Unspecified)
+    internal val ticks = MutableStateFlow(0L)
+
+    fun requestResample() { ticks.value = ticks.value + 1 }
+
+    @Volatile private var lastSampleUptimeMs = 0L
+
+    internal fun sample(gv: GeckoView) {
+        if (gv.width <= 0 || gv.height <= 0) return
+        // capturePixels is not free: never more than once per 1.2 s.
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastSampleUptimeMs < 1200L) return
+        lastSampleUptimeMs = now
+        try {
+            val padTop = gv.paddingTop
+            val padBottom = gv.paddingBottom
+            gv.capturePixels().then({ bmp: Bitmap? ->
+                if (bmp != null && bmp.width > 4 && bmp.height > 4) {
+                    // The frame may or may not include the padding; pick rows just inside the
+                    // page either way by clamping to the bitmap.
+                    val scale = bmp.height.toFloat() / gv.height.coerceAtLeast(1)
+                    val yTop = ((padTop * scale).toInt() + 3).coerceIn(0, bmp.height - 1)
+                    val yBottom = (bmp.height - 1 - (padBottom * scale).toInt() - 3).coerceIn(0, bmp.height - 1)
+                    val xs = intArrayOf(bmp.width / 8, bmp.width / 2, bmp.width * 7 / 8)
+                    fun avg(y: Int): Color {
+                        var r = 0; var g = 0; var b = 0
+                        for (x in xs) {
+                            val c = bmp.getPixel(x, y)
+                            r += (c shr 16) and 0xFF; g += (c shr 8) and 0xFF; b += c and 0xFF
+                        }
+                        return Color(0xFF shl 24 or ((r / 3) shl 16) or ((g / 3) shl 8) or (b / 3))
+                    }
+                    val t = avg(yTop)
+                    val b = avg(yBottom)
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        top = t
+                        bottom = b
+                    }
+                }
+                GeckoResult.fromValue<Void?>(null)
+            }, {
+                GeckoResult.fromValue<Void?>(null)
+            })
+        } catch (_: Throwable) {}
+    }
 }

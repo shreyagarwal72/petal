@@ -171,7 +171,8 @@ object TabThumbnailCache {
 
     private fun isAcPhase1(): Boolean {
         val app = PetalApplication.getInstance() ?: return false
-        return PreferenceManager.getDefaultSharedPreferences(app).getBoolean("sp_ac_phase1", false)
+        return PreferenceManager.getDefaultSharedPreferences(app).getBoolean("sp_ac_phase1", false) ||
+            com.petal.browser.flags.PetalFlagsRegistry.isAcPhase1Enabled()
     }
 
     private fun getDiskCacheDir(): File? {

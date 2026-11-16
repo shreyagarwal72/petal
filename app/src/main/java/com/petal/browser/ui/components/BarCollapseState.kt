@@ -30,6 +30,27 @@ object BarCollapseState {
     var viewportCollapsed by mutableStateOf(false)
         private set
 
+    /**
+     * Uptime (ms) of the last time the page viewport was resized by a bar collapse/expand.
+     * Gecko reports a scroll offset change when its viewport is resized; that is a layout
+     * shift, not the user scrolling, so the scroll handlers ignore events for a short window
+     * after this (see [isViewportSettling]). Without it a collapse re-triggered an expand
+     * and the bars flickered / the page jumped.
+     */
+    @Volatile
+    var lastViewportFlipUptimeMs: Long = 0L
+        private set
+
+    private fun markViewportFlip(newValue: Boolean) {
+        if (newValue != viewportCollapsed) {
+            lastViewportFlipUptimeMs = android.os.SystemClock.uptimeMillis()
+        }
+    }
+
+    @JvmStatic
+    fun isViewportSettling(windowMs: Long = 500L): Boolean =
+        android.os.SystemClock.uptimeMillis() - lastViewportFlipUptimeMs < windowMs
+
     /** Extracted domain of the active web page (e.g. "google.com", "wikipedia.org"). */
     var currentDomain by mutableStateOf("")
 
@@ -63,6 +84,7 @@ object BarCollapseState {
     @JvmStatic
     fun updateCollapsed(collapsed: Boolean) {
         isCollapsed = collapsed
+        markViewportFlip(collapsed)
         viewportCollapsed = collapsed
         if (!collapsed) {
             collapsedFraction = 0f
@@ -76,6 +98,7 @@ object BarCollapseState {
         val clamped = fraction.coerceIn(0f, 1f)
         collapsedFraction = clamped
         isCollapsed = clamped >= 0.5f
+        markViewportFlip(clamped > 0.001f)
         viewportCollapsed = clamped > 0.001f
     }
 
@@ -85,6 +108,7 @@ object BarCollapseState {
      */
     @JvmStatic
     fun beginViewportCollapse() {
+        markViewportFlip(true)
         viewportCollapsed = true
     }
 

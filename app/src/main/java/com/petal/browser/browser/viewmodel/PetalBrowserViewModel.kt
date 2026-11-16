@@ -36,12 +36,16 @@ import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.EngineState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
 import javax.inject.Inject
+
+private const val UNDO_SNAPSHOT_TTL_MS = 10 * 60 * 1000L
+private const val UNDO_SNAPSHOT_MAX = 25
 
 /**
  * PetalBrowserViewModel
@@ -344,14 +348,26 @@ class PetalBrowserViewModel @Inject constructor(
             url
         }
         val formattedUrl = if (targetUrl.isBlank()) "about:home" else PetalBrowserUtils.queryWrapper(context, targetUrl.trim())
-        PetalEngineStore.createTabSession(
-            context = context,
-            tabId = tabId,
-            url = formattedUrl,
-            title = if (PetalBrowserUtils.isHomePage(formattedUrl)) "Petal Home" else "",
-            isIncognito = private,
-            select = selectTab
-        )
+        val tabTitle = if (PetalBrowserUtils.isHomePage(formattedUrl)) "Petal Home" else ""
+        if (selectTab) {
+            PetalEngineStore.createTabSession(
+                context = context,
+                tabId = tabId,
+                url = formattedUrl,
+                title = tabTitle,
+                isIncognito = private,
+                select = true
+            )
+        } else {
+            // Background tab: no Gecko session until the user opens it (Fenix lazy tab).
+            PetalEngineStore.createLazyTab(
+                context = context,
+                tabId = tabId,
+                url = formattedUrl,
+                title = tabTitle,
+                isIncognito = private
+            )
+        }
         if (private) {
             PetalIncognitoSessionManager.syncIncognitoState(context)
         }
@@ -385,9 +401,66 @@ class PetalBrowserViewModel @Inject constructor(
         }
     }
 
+    // ── Closed-tab undo ────────────────────────────────────────────────────────────────────
+    // Same idea as Mozilla's UndoMiddleware: keep the tab's full state (engine session state with
+    // back/forward history and scroll, container, timestamps) plus its thumbnail and sidecar
+    // metadata for a short while, so Undo brings back the SAME tab instead of a fresh one that only
+    // knows the URL. Private tabs are never kept.
+    private class ClosedTabSnapshot(
+        val tab: TabSessionState,
+        val thumbnail: android.graphics.Bitmap?,
+        val metadata: PetalTabMetadata?,
+        val closedAtMs: Long
+    )
+
+    private val closedSnapshots = LinkedHashMap<String, ClosedTabSnapshot>()
+
+    private fun snapshotBeforeClose(tab: TabSessionState) {
+        if (tab.content.private) return
+        try {
+            val liveState = try { tab.engineState.engineSession?.saveState() } catch (_: Throwable) { null }
+            val saved = liveState ?: tab.engineState.engineSessionState
+            val thumb = TabThumbnailCache.getMemoryOnly(tab.id, false)?.let { b ->
+                if (b.isRecycled) null else try { b.copy(b.config ?: android.graphics.Bitmap.Config.ARGB_8888, false) } catch (_: Throwable) { null }
+            }
+            val snap = ClosedTabSnapshot(
+                tab = tab.copy(engineState = EngineState(engineSessionState = saved)),
+                thumbnail = thumb,
+                metadata = PetalTabMetadataStore.get(context, tab.id),
+                closedAtMs = android.os.SystemClock.elapsedRealtime()
+            )
+            synchronized(closedSnapshots) {
+                closedSnapshots.remove(tab.id)
+                closedSnapshots[tab.id] = snap
+                val cutoff = snap.closedAtMs - UNDO_SNAPSHOT_TTL_MS
+                val it = closedSnapshots.entries.iterator()
+                while (it.hasNext()) { if (it.next().value.closedAtMs < cutoff) it.remove() }
+                while (closedSnapshots.size > UNDO_SNAPSHOT_MAX) {
+                    val oldest = closedSnapshots.entries.iterator()
+                    oldest.next(); oldest.remove()
+                }
+            }
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalBrowserViewModel", "snapshotBeforeClose failed: ${t.message}")
+        }
+    }
+
+    /** Re-adds a just-closed tab exactly as it was. Returns false if no snapshot is available. */
+    private fun restoreFromSnapshot(tabId: String): Boolean {
+        val snap = synchronized(closedSnapshots) { closedSnapshots.remove(tabId) } ?: return false
+        if (browserStore.state.tabs.any { it.id == tabId }) return true
+        browserStore.dispatch(TabListAction.AddTabAction(snap.tab, select = false))
+        snap.metadata?.let { PetalTabMetadataStore.put(context, it) }
+        snap.thumbnail?.let { TabThumbnailCache.put(tabId, it, false, true) }
+        // The Mozilla-style restore replaces the vault entry; drop it so the tab is not listed twice.
+        PetalRecentlyClosedManager.removeClosedTab(tabId)
+        return true
+    }
+
     fun closeTab(tabId: String) {
         val state = browserStore.state
         val tabToClose = state.tabs.firstOrNull { it.id == tabId }
+        tabToClose?.let { snapshotBeforeClose(it) }
         val isPrivate = tabToClose?.content?.private == true
         if (tabToClose != null && !isPrivate) {
             val meta = PetalTabMetadataStore.get(context, tabId)
@@ -417,6 +490,7 @@ class PetalBrowserViewModel @Inject constructor(
         for (id in tabIds) {
             val tabToClose = state.tabs.firstOrNull { it.id == id }
             if (tabToClose != null) {
+                snapshotBeforeClose(tabToClose)
                 if (!tabToClose.content.private) {
                     val meta = PetalTabMetadataStore.get(context, id)
                     PetalRecentlyClosedManager.pushClosedTab(
@@ -465,6 +539,7 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun restoreTab(tab: PetalTabItem) {
+        if (!tab.isIncognito && restoreFromSnapshot(tab.id)) return
         val url = if (tab.url.isBlank() || tab.url == "Petal Home" || tab.url.equals("about:blank", ignoreCase = true)) {
             "about:home"
         } else {

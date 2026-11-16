@@ -63,6 +63,12 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
         url: String,
         isPrivate: Boolean
     ) {
+        // Same gate as the Gecko tab delegate: an extension may not open its own pages in front of
+        // an ordinary website without a user gesture or a fresh install.
+        if (url.startsWith("moz-extension://") && !PetalExtensionManager.isUserInitiatedOpen(extension.id)) {
+            Log.i(TAG, "Suppressed non-user onNewTab(${url.take(60)}) from ${extension.id}")
+            return
+        }
         mainHandler.post {
             try {
                 val act = findMainActivity() ?: return@post

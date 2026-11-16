@@ -667,6 +667,54 @@ object PetalExtensionManager {
     @Volatile private var attached = false
     @Volatile private var appContext: Context? = null
 
+    // ── User-intent gate ───────────────────────────────────────────────────────────────────
+    // Firefox only lets an extension open its popup / options page / own pages in response to a
+    // user gesture (toolbar tap, extensions menu, a click inside the extension's own UI) or right
+    // after install. Background scripts and content scripts that fire on ordinary websites must
+    // not be able to pop the extension's settings in front of the page. Petal forwarded every
+    // Gecko request unconditionally, so any site that woke an extension (AdGuard, etc.) made its
+    // settings/options tab or popup appear. Every UI entry point calls [noteUserIntent]; Gecko
+    // driven opens are honoured only inside this window.
+    @Volatile private var lastUserIntentUptimeMs: Long = 0L
+    private val installIntentUptimeMs = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    private const val USER_INTENT_WINDOW_MS = 3_000L
+    private const val INSTALL_INTENT_WINDOW_MS = 30_000L
+
+    @JvmStatic
+    fun noteUserIntent() { lastUserIntentUptimeMs = android.os.SystemClock.uptimeMillis() }
+
+    @JvmStatic
+    fun noteInstallIntent(extensionId: String) {
+        installIntentUptimeMs[extensionId] = android.os.SystemClock.uptimeMillis()
+    }
+
+    private fun hasRecentUserIntent(): Boolean =
+        android.os.SystemClock.uptimeMillis() - lastUserIntentUptimeMs < USER_INTENT_WINDOW_MS
+
+    private fun hasRecentInstall(extensionId: String): Boolean {
+        val t = installIntentUptimeMs[extensionId] ?: return false
+        return android.os.SystemClock.uptimeMillis() - t < INSTALL_INTENT_WINDOW_MS
+    }
+
+    /** True while the user is looking at a page/popup that belongs to this extension. */
+    private fun userIsInsideExtensionUi(extensionId: String): Boolean {
+        if (_pendingPopup.value?.extensionId == extensionId) return true
+        val ctx = appContext ?: return false
+        val base = findInstalledExtension(extensionId)?.raw?.metaData?.baseUrl ?: return false
+        val url = try {
+            val st = com.petal.browser.engine.gecko.PetalEngineStore.getStore(ctx)
+            st.state.selectedTabId?.let { id -> st.state.tabs.firstOrNull { it.id == id } }?.content?.url
+        } catch (_: Throwable) { null }
+        return url != null && url.startsWith(base)
+    }
+
+    /** An extension-initiated open is allowed only for a user gesture, the extension's own UI, or a fresh install. */
+    @JvmStatic
+    fun isUserInitiatedOpen(extensionId: String): Boolean = allowExtensionInitiatedOpen(extensionId)
+
+    private fun allowExtensionInitiatedOpen(extensionId: String): Boolean =
+        hasRecentUserIntent() || hasRecentInstall(extensionId) || userIsInsideExtensionUi(extensionId)
+
     /** Idempotent - safe to call from every Activity#onCreate. */
     @JvmStatic
     @Synchronized
@@ -838,6 +886,10 @@ object PetalExtensionManager {
         return object : WebExtension.TabDelegate {
             // runtime.openOptionsPage(): Firefox for Android opens the options page in a new tab.
             override fun onOpenOptionsPage(source: WebExtension) {
+                if (!allowExtensionInitiatedOpen(source.id)) {
+                    Log.i(TAG, "Suppressed non-user runtime.openOptionsPage() from ${source.id}")
+                    return
+                }
                 Handler(Looper.getMainLooper()).post {
                     try { openOptionsPage(source.id, context) }
                     catch (t: Throwable) { Log.w(TAG, "openOptionsPage failed for ${source.id}", t) }
@@ -849,6 +901,12 @@ object PetalExtensionManager {
                 createDetails: WebExtension.CreateTabDetails
             ): GeckoResult<GeckoSession>? {
                 val targetUrl = createDetails.url?.takeIf { it.isNotBlank() } ?: "about:blank"
+                // An extension opening one of its OWN pages (options, welcome, settings) with no user
+                // gesture is the "settings pop up on every website" bug: refuse it.
+                if (targetUrl.startsWith("moz-extension://") && !allowExtensionInitiatedOpen(source.id)) {
+                    Log.i(TAG, "Suppressed non-user tabs.create(${targetUrl.take(60)}) from ${source.id}")
+                    return GeckoResult.fromValue(null)
+                }
                 val currentSession = currentBrowserSession(context)
                 val isPrivate = (currentSession?.settings?.usePrivateMode ?: false) && source.metaData.allowedInPrivateBrowsing
                 val shouldActivate = createDetails.active ?: true
@@ -932,12 +990,14 @@ object PetalExtensionManager {
                 override fun onOpenPopup(
                     ext: WebExtension,
                     action: WebExtension.Action
-                ): GeckoResult<GeckoSession>? = createPopupSession(ext)
+                ): GeckoResult<GeckoSession>? =
+                    if (allowExtensionInitiatedOpen(ext.id)) createPopupSession(ext) else null
 
                 override fun onTogglePopup(
                     ext: WebExtension,
                     action: WebExtension.Action
-                ): GeckoResult<GeckoSession>? = createPopupSession(ext)
+                ): GeckoResult<GeckoSession>? =
+                    if (hasRecentUserIntent()) createPopupSession(ext) else null
             })
         } catch (e: Exception) {
             Log.d(TAG, "Failed to attach action delegate to ${extension.id}", e)
@@ -971,8 +1031,10 @@ object PetalExtensionManager {
                             override fun onPageAction(ext: WebExtension, eventSession: GeckoSession?, action: WebExtension.Action) {
                                 rememberAction(ext, eventSession ?: session, action)
                             }
-                            override fun onOpenPopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = createPopupSession(ext, session)
-                            override fun onTogglePopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = createPopupSession(ext, session)
+                            override fun onOpenPopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? =
+                                if (allowExtensionInitiatedOpen(ext.id)) createPopupSession(ext, session) else null
+                            override fun onTogglePopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? =
+                                if (hasRecentUserIntent()) createPopupSession(ext, session) else null
                         })
                         session.webExtensionController.setTabDelegate(extension, createSessionTabDelegate(ctx))
                     } catch (t: Throwable) {
@@ -1076,8 +1138,10 @@ object PetalExtensionManager {
                     override fun onPageAction(ext: WebExtension, geckoSession: GeckoSession?, action: WebExtension.Action) {
                         rememberAction(ext, geckoSession ?: session, action)
                     }
-                    override fun onOpenPopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = createPopupSession(ext, session)
-                    override fun onTogglePopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = createPopupSession(ext, session)
+                    override fun onOpenPopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? =
+                                if (allowExtensionInitiatedOpen(ext.id)) createPopupSession(ext, session) else null
+                    override fun onTogglePopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? =
+                                if (hasRecentUserIntent()) createPopupSession(ext, session) else null
                 })
                 session.webExtensionController.setTabDelegate(ext, createSessionTabDelegate(ctx))
             } catch (e: Exception) {
@@ -1279,6 +1343,7 @@ object PetalExtensionManager {
      */
     @JvmOverloads
     fun triggerBrowserAction(extensionId: String, context: Context? = null) {
+        noteUserIntent()
         val extItem = findInstalledExtension(extensionId) ?: run {
             _lastError.value = "Extension not found."
             return
@@ -1395,6 +1460,7 @@ object PetalExtensionManager {
      * If no separate settings page exists, gracefully falls back to opening its popup.
      */
     fun openOptionsPage(extensionId: String, context: Context) {
+        noteUserIntent()
         val extItem = findInstalledExtension(extensionId) ?: run {
             _lastError.value = "Extension not found."
             return
@@ -1670,6 +1736,7 @@ object PetalExtensionManager {
                 autoConfirmInstallUris.remove(installUri)
                 _busy.value = false
                 if (extension != null) {
+                    noteInstallIntent(extension.id)
                     if (isAdGuard || autoConfirm || extension.id.contains("adguard", ignoreCase = true)) {
                         try {
                             controller.setAllowedInPrivateBrowsing(extension, true)

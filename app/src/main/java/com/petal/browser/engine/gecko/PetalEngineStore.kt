@@ -256,8 +256,14 @@ object PetalEngineStore {
         )
 
         val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
-        val isAcPhase1 = sp.getBoolean("sp_ac_phase1", false)
-        val isAcPhase2 = sp.getBoolean("sp_ac_phase2", false)
+        // Same source of truth as everything else (pref OR the flags screen). Reading only the raw
+        // pref here made the store pick Petal's thumbnail middleware while TabThumbnailCache,
+        // which asks the registry, read/wrote Mozilla's ThumbnailStorage: thumbnails were saved in
+        // one place and deleted from/read in another.
+        val isAcPhase1 = sp.getBoolean("sp_ac_phase1", false) ||
+            com.petal.browser.flags.PetalFlagsRegistry.isAcPhase1Enabled()
+        val isAcPhase2 = sp.getBoolean("sp_ac_phase2", false) ||
+            com.petal.browser.flags.PetalFlagsRegistry.isAcPhase2Enabled()
 
         val thumbnailsMiddleware = if (isAcPhase1) {
             ThumbnailsMiddleware(getThumbnailStorage(appContext))
@@ -626,6 +632,34 @@ object PetalEngineStore {
         )
         return Pair(tabState, session)
     }
+
+    /**
+     * Adds a tab WITHOUT an engine session (lazy, like Fenix's background and restored tabs). The
+     * session is created by [materializeTabSession] the first time the tab is selected, so a tab
+     * opened in the background costs no Gecko process memory and does not start loading until
+     * the user opens it.
+     */
+    @JvmStatic
+    fun createLazyTab(
+        context: Context,
+        tabId: String,
+        url: String,
+        title: String = "",
+        isIncognito: Boolean = false
+    ) {
+        val tabState = mozilla.components.browser.state.state.TabSessionState(
+            id = tabId,
+            content = mozilla.components.browser.state.state.ContentState(
+                url = url,
+                private = isIncognito,
+                title = title
+            )
+        )
+        getStore(context).dispatch(
+            mozilla.components.browser.state.action.TabListAction.AddTabAction(tabState, select = false)
+        )
+    }
+
 
     /**
      * Prepares or retrieves an [EngineSession] for the specified tab, linking it to [BrowserStore].
