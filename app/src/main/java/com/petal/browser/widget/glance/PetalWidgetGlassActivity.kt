@@ -21,6 +21,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -394,11 +395,13 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                 }
                 .pointerInput(frameW, frameH) {
                     // Tap the middle of the widget you can see behind this screen to put the frame on it.
-                    androidx.compose.foundation.gestures.detectTapGestures { tap ->
-                        offsetX = clampX(tap.x + windowOrigin.first - frameW / 2f)
-                        offsetY = clampY(tap.y + windowOrigin.second - frameH / 2f)
-                        placed = true
-                    }
+                    detectTapGestures(
+                        onTap = { tap ->
+                            offsetX = clampX(tap.x + windowOrigin.first - frameW / 2f)
+                            offsetY = clampY(tap.y + windowOrigin.second - frameH / 2f)
+                            placed = true
+                        }
+                    )
                 }
         ) {
             if (placed) {
