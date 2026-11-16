@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">تشغيل الصوت والفيديو في الخلفية</string>
     <string name="ui_keep_youtube_web_media_playing">استمر في تشغيل YouTube ووسائط الويب عند تبديل علامات التبويب أو تطبيق الخلفية</string>
     <string name="ui_media_sync">الوسائط والمزامنة</string>
-    <string name="ui_video_player_stream_sniffer_offline">مشغل فيديو، وأداة شم الدفق، ونظام الذكاء الاصطناعي غير المتصل بالإنترنت، ونظام Firefox Sync البيئي</string>
     <string name="ui_media_engine">محرك الوسائط</string>
     <string name="ui_native_video_player">مشغل الفيديو الأصلي</string>
     <string name="ui_bypass_web_player_and_launch">تجاوز مشغل الويب وابدأ التدفقات مباشرةً في ExoPlayer المُسرَّع بالأجهزة باستخدام الإيماءات وصوت الخلفية</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">تنظيف نتائج البحث تلقائيًا عن طريق تجريد النظرات العامة المولدة للذكاء الاصطناعي والملخصات المروجة</string>
     <string name="ui_sync_ecosystem">المزامنة والنظام البيئي</string>
     <string name="ui_petal_sync">مزامنة البتلة</string>
-    <string name="ui_zero_cloud_end_to_end">مزامنة مشفرة من طرف إلى طرف (E2EE) عبر الأجهزة، مدعومة بحسابات Firefox وبروتوكول Mozilla Sync</string>
     <string name="ui_about_developer_2">حول والمطور</string>
     <string name="ui_app_version_licenses_github_developer">إصدار التطبيق والتراخيص وGitHub والمطور</string>
     <string name="ui_open_in_new_tab">افتح في علامة تبويب جديدة</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">إعادة تعيين المحاصيل</string>
     <string name="ui_apply_crop">تطبيق المحاصيل</string>
     <string name="ui_save_profile_picture">حفظ صورة الملف الشخصي</string>
-    <string name="ui_account_mozilla_sync">الحساب ومزامنة موزيلا</string>
-    <string name="ui_firefox_accounts_profile">الحسابات والملف الشخصي في Firefox</string>
     <string name="ui_petal_browser_profile">ملف تعريف متصفح البتلة</string>
-    <string name="ui_firefox_account_sync">حساب فايرفوكس والمزامنة</string>
     <string name="ui_firefox_avatar">الصورة الرمزية لفايرفوكس</string>
-    <string name="ui_firefox_account_connected">حساب فايرفوكس متصل</string>
     <string name="ui_last_synced">آخر مزامنة</string>
     <string name="ui_sign_out_of_firefox">تسجيل الخروج من فايرفوكس</string>
     <string name="ui_sync_with_firefox">المزامنة مع فايرفوكس</string>
-    <string name="ui_take_your_bookmarks_history_and">خذ إشاراتك المرجعية وسجلك وعلامات التبويب المفتوحة في أي مكان. تمت مزامنتها بشكل خاص من البداية إلى النهاية مع حساب Mozilla Firefox الخاص بك.</string>
     <string name="ui_sign_in_with_firefox">قم بتسجيل الدخول باستخدام فايرفوكس</string>
     <string name="ui_pair_with_firefox_desktop">قم بالاقتران مع Firefox Desktop</string>
     <string name="ui_import_firefox_bookmarks_or_history">استيراد الإشارات المرجعية أو التاريخ في فايرفوكس</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">يتصل</string>
     <string name="ui_sign_in_with_firefox_email">تسجيل الدخول باستخدام البريد الإلكتروني فايرفوكس</string>
-    <string name="ui_enter_your_firefox_account_email">أدخل البريد الإلكتروني الخاص بحساب Firefox لتمكين المزامنة الفورية للإشارات المرجعية والسجل وعلامات التبويب.</string>
-    <string name="ui_firefox_account_email">البريد الإلكتروني لحساب فايرفوكس</string>
     <string name="ui_you_example_com">you@example.com</string>
     <string name="ui_sign_in_sync">تسجيل الدخول والمزامنة</string>
     <string name="ui_video_scale_aspect_ratio">مقياس الفيديو ونسبة العرض إلى الارتفاع</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">اختر صورة من معرض الصور الخاص بك</string>
     <string name="petal_setup_mozilla">تسجيل الدخول مع موزيلا</string>
     <string name="petal_setup_mozilla_reason">مزامنة الإشارات المرجعية والسجل وعلامات التبويب مع Firefox.</string>
-    <string name="petal_setup_mozilla_tab">تسجيل الدخول إلى حساب موزيلا</string>
     <string name="petal_setup_sign_in">تسجيل الدخول</string>
     <string name="petal_setup_connected">متصل</string>
     <string name="petal_setup_ai_optional">إعداد Petal AI (اختياري)</string>

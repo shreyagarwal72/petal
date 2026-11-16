@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Позадинска репродукција аудио и видео записа</string>
     <string name="ui_keep_youtube_web_media_playing">Наставите да репродукујете ИоуТубе и веб медије када мењате картице или апликацију у позадини</string>
     <string name="ui_media_sync">Медији и синхронизација</string>
-    <string name="ui_video_player_stream_sniffer_offline">Видео плејер, њушкање стримова, ванмрежна вештачка интелигенција и екосистем Фирефок Синц</string>
     <string name="ui_media_engine">Медиа Енгине</string>
     <string name="ui_native_video_player">Изворни видео плејер</string>
     <string name="ui_bypass_web_player_and_launch">Заобиђите веб плејер и покрените стримове директно у хардверски убрзани ЕкоПлаиер помоћу покрета и позадинског звука</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Аутоматски очистите резултате претраге уклањањем претрпаних генеративних прегледа вештачке интелигенције и промовисаних резимеа</string>
     <string name="ui_sync_ecosystem">Синхронизација и екосистем</string>
     <string name="ui_petal_sync">Петал Синц</string>
-    <string name="ui_zero_cloud_end_to_end">Енд-то-енд шифрована (Е2ЕЕ) синхронизација са нултим облаком на свим уређајима, покретана помоћу Фирефок налога и Мозилла Синц протокола</string>
     <string name="ui_about_developer_2">Абоут &amp; Девелопер</string>
     <string name="ui_app_version_licenses_github_developer">Верзија апликације, лиценце, ГитХуб и програмер</string>
     <string name="ui_open_in_new_tab">Отвори у новој картици</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Ресетујте Цроп</string>
     <string name="ui_apply_crop">Примени Цроп</string>
     <string name="ui_save_profile_picture">Сачувај слику профила</string>
-    <string name="ui_account_mozilla_sync">Аццоунт &amp; Мозилла Синц</string>
-    <string name="ui_firefox_accounts_profile">Фирефок налози и профил</string>
     <string name="ui_petal_browser_profile">Профил претраживача Петал</string>
-    <string name="ui_firefox_account_sync">ФИРЕФОКС НАЛОГ И СИНХРОНИЗАЦИЈА</string>
     <string name="ui_firefox_avatar">Фирефок Аватар</string>
-    <string name="ui_firefox_account_connected">Фирефок налог је повезан</string>
     <string name="ui_last_synced">Ласт Синцед</string>
     <string name="ui_sign_out_of_firefox">Одјавите се из Фирефок-а</string>
     <string name="ui_sync_with_firefox">Синхронизујте са Фирефок-ом</string>
-    <string name="ui_take_your_bookmarks_history_and">Понесите своје обележиваче, историју и отворене картице било где. Приватно синхронизовано с краја на крај са вашим Мозилла Фирефок налогом.</string>
     <string name="ui_sign_in_with_firefox">Пријавите се са Фирефок-ом</string>
     <string name="ui_pair_with_firefox_desktop">Упарите са Фирефок радном површином</string>
     <string name="ui_import_firefox_bookmarks_or_history">Увезите Фирефок обележиваче или историју</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">хттпс://фирефок.цом/паир?цханнел=...</string>
     <string name="ui_connect">Повежите се</string>
     <string name="ui_sign_in_with_firefox_email">Пријавите се са Фирефок имејлом</string>
-    <string name="ui_enter_your_firefox_account_email">Унесите адресу е-поште свог Фирефок налога да бисте омогућили тренутну синхронизацију за своје обележиваче, историју и картице.</string>
-    <string name="ui_firefox_account_email">Е-пошта Фирефок налога</string>
     <string name="ui_you_example_com">иоу__Т0__.цом</string>
     <string name="ui_sign_in_sync">Пријавите се и синхронизујте</string>
     <string name="ui_video_scale_aspect_ratio">Видео Сцале &amp; Аспецт Ратио</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Изаберите слику из своје галерије</string>
     <string name="petal_setup_mozilla">Пријавите се са Мозилла-ом</string>
     <string name="petal_setup_mozilla_reason">Синхронизујте обележиваче, историју и картице са Фирефок-ом.</string>
-    <string name="petal_setup_mozilla_tab">Пријављивање на Мозилла налог</string>
     <string name="petal_setup_sign_in">Пријавите се</string>
     <string name="petal_setup_connected">Повезано</string>
     <string name="petal_setup_ai_optional">Подесите Петал АИ (опционо)</string>

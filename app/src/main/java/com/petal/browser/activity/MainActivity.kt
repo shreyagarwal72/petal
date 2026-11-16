@@ -27,7 +27,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
 import com.petal.browser.R
-import com.petal.browser.account.mozilla.PetalFxa
+import com.petal.browser.account.sync.PetalFolderSync
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserController
 import com.petal.browser.browser.PetalBrowserFeatures
@@ -194,7 +194,7 @@ class MainActivity : FragmentActivity(), BrowserController {
             if (isFinishing || isDestroyed) return@postDelayed
             PetalExtensionManager.attach(applicationContext)
             PetalBuiltInExtensionManager.installAll(applicationContext)
-            PetalFxa.init(this)
+            PetalFolderSync.onAppStart(this)
             browserFeatures = PetalBrowserFeatures(this).also { it.start() }
             handleIncomingIntent(intent)
             com.petal.browser.unit.PetalUpdateUtils.checkForUpdates(this, isLaunchCheck = true)
@@ -379,11 +379,6 @@ class MainActivity : FragmentActivity(), BrowserController {
     }
     fun showSafeLocker() {
         viewModel.openSafeLocker()
-    }
-    fun showSendToDevice() {
-        val url = currentAlbumController?.url.orEmpty()
-        val title = currentAlbumController?.title.orEmpty()
-        com.petal.browser.account.mozilla.PetalSendToDeviceBridge.showSendToDevice(this, url, title)
     }
     /** Refreshes the thumbnail of the tab on screen so the tab manager never shows a stale frame. */
     fun captureVisibleTabThumbnail() {

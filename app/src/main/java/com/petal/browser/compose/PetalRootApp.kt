@@ -57,7 +57,7 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.coroutines.cancellation.CancellationException
-import com.petal.browser.account.mozilla.FirefoxAccountSyncScreen
+import com.petal.browser.account.PetalAccountScreen
 import com.petal.browser.browser.viewmodel.PetalBrowserViewModel
 import com.petal.browser.compose.bookmarks.PetalBookmarksScreen
 import com.petal.browser.compose.downloads.PetalDownloadManagerScreen
@@ -1056,7 +1056,7 @@ fun PetalRootApp(
                 )
             }
 
-            // Firefox Account & Sync Screen
+            // Account & Sync Screen
             androidx.compose.animation.AnimatedVisibility(
                 visible = isAccountSyncOpen,
                 enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
@@ -1065,13 +1065,9 @@ fun PetalRootApp(
                        androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
-                FirefoxAccountSyncScreen(
+                PetalAccountScreen(
                     backgroundSnapshot = tabSwitcherSnapshot,
-                    onBack = { viewModel.setAccountSyncOpen(false) },
-                    onOpenOAuth = { shortcut ->
-                        viewModel.setAccountSyncOpen(false)
-                        viewModel.loadUrl(shortcut.url)
-                    }
+                    onBack = { viewModel.setAccountSyncOpen(false) }
                 )
             }
 

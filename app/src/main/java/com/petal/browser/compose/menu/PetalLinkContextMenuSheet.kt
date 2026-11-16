@@ -119,7 +119,6 @@ interface PetalLinkContextMenuHandler {
     // Page actions (Blank area long-press)
     fun onBookmarkPage() {}
     fun onSharePage() {}
-    fun onSendToDevice() {}
     fun onPrintPagePdf() {}
     fun onToggleReaderMode() {}
     fun onFindInPage() {}
@@ -404,7 +403,6 @@ private fun buildSections(
                 MenuAction("share_page", "Share page", Icons.Rounded.Share, MenuTone.SAVE) { handler.onSharePage() },
                 MenuAction("save_page", "Save page offline", Icons.Rounded.Download, MenuTone.SAVE) { handler.onSavePageAs() },
                 MenuAction("add_to_home", "Add to Home screen", Icons.Rounded.Home, MenuTone.OPEN) { handler.onAddToHomeScreen() },
-                MenuAction("send_to_device", "Send to Device", Icons.Rounded.SendToMobile, MenuTone.SAVE) { handler.onSendToDevice() },
                 MenuAction("print_page", "Save as PDF / Print", Icons.Rounded.Print, MenuTone.SAVE) { handler.onPrintPagePdf() },
                 MenuAction("reader_mode", "Toggle Reader Mode", Icons.Rounded.MenuBook, MenuTone.OPEN) { handler.onToggleReaderMode() },
                 MenuAction("find_in_page", "Find in page", Icons.Rounded.FindInPage, MenuTone.SEARCH) { handler.onFindInPage() },

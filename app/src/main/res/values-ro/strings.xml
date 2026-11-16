@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Redare audio și video de fundal</string>
     <string name="ui_keep_youtube_web_media_playing">Continuați redarea conținutului media pe YouTube și pe web atunci când schimbați filele sau aplicația de fundal</string>
     <string name="ui_media_sync">Media și sincronizare</string>
-    <string name="ui_video_player_stream_sniffer_offline">Player video, stream sniffer, ecosistem offline AI și Firefox Sync</string>
     <string name="ui_media_engine">Motor media</string>
     <string name="ui_native_video_player">Player video nativ</string>
     <string name="ui_bypass_web_player_and_launch">Ocoliți playerul web și lansați fluxuri direct în ExoPlayer accelerat de hardware cu gesturi și sunet de fundal</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Curățați automat rezultatele căutării, eliminând prezentările de ansamblu AI generative aglomerate și rezumatele promovate</string>
     <string name="ui_sync_ecosystem">Sincronizare și ecosistem</string>
     <string name="ui_petal_sync">Petal Sync</string>
-    <string name="ui_zero_cloud_end_to_end">Sincronizare zero-cloud criptată end-to-end (E2EE) între dispozitive, alimentată de Conturile Firefox și protocolul Mozilla Sync</string>
     <string name="ui_about_developer_2">Despre &amp; Dezvoltator</string>
     <string name="ui_app_version_licenses_github_developer">Versiunea aplicației, licențe, GitHub și dezvoltator</string>
     <string name="ui_open_in_new_tab">Deschide într-o filă nouă</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Resetați decuparea</string>
     <string name="ui_apply_crop">Aplicați Crop</string>
     <string name="ui_save_profile_picture">Salvați poza de profil</string>
-    <string name="ui_account_mozilla_sync">Sincronizare cont și Mozilla</string>
-    <string name="ui_firefox_accounts_profile">Conturi și profil Firefox</string>
     <string name="ui_petal_browser_profile">Petal Browser Profil</string>
-    <string name="ui_firefox_account_sync">CONT &amp; SINCRONIZARE FIREFOX</string>
     <string name="ui_firefox_avatar">Avatar Firefox</string>
-    <string name="ui_firefox_account_connected">Cont Firefox conectat</string>
     <string name="ui_last_synced">Ultima sincronizare</string>
     <string name="ui_sign_out_of_firefox">Deconectați-vă de la Firefox</string>
     <string name="ui_sync_with_firefox">Sincronizare cu Firefox</string>
-    <string name="ui_take_your_bookmarks_history_and">Luați-vă marcajele, istoricul și filele deschise oriunde. Sincronizat privat de la capăt la capăt cu contul tău Mozilla Firefox.</string>
     <string name="ui_sign_in_with_firefox">Conectați-vă cu Firefox</string>
     <string name="ui_pair_with_firefox_desktop">Asociați cu Firefox Desktop</string>
     <string name="ui_import_firefox_bookmarks_or_history">Importați marcajele sau istoricul Firefox</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Conectați-vă</string>
     <string name="ui_sign_in_with_firefox_email">Conectați-vă cu Firefox Email</string>
-    <string name="ui_enter_your_firefox_account_email">Introduceți e-mailul contului dvs. Firefox pentru a activa sincronizarea instantanee pentru marcajele, istoricul și filele dvs.</string>
-    <string name="ui_firefox_account_email">E-mail contului Firefox</string>
     <string name="ui_you_example_com">tu@example.com</string>
     <string name="ui_sign_in_sync">Conectați-vă și sincronizați</string>
     <string name="ui_video_scale_aspect_ratio">Scala video și raportul de aspect</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Alege o poză din galeria ta</string>
     <string name="petal_setup_mozilla">Conectați-vă cu Mozilla</string>
     <string name="petal_setup_mozilla_reason">Sincronizați marcajele, istoricul și filele cu Firefox.</string>
-    <string name="petal_setup_mozilla_tab">Conectați-vă la contul Mozilla</string>
     <string name="petal_setup_sign_in">Conectare</string>
     <string name="petal_setup_connected">Conectat</string>
     <string name="petal_setup_ai_optional">Configurați Petal AI (opțional)</string>

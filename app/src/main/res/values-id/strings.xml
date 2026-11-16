@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Pemutaran Audio &amp; Video Latar Belakang</string>
     <string name="ui_keep_youtube_web_media_playing">Terus putar YouTube &amp; media web saat berpindah tab atau aplikasi latar belakang</string>
     <string name="ui_media_sync">Media &amp; Sinkronisasi</string>
-    <string name="ui_video_player_stream_sniffer_offline">Pemutar video, stream sniffer, ekosistem AI offline &amp; Sinkronisasi Firefox</string>
     <string name="ui_media_engine">Mesin Media</string>
     <string name="ui_native_video_player">Pemutar Video Asli</string>
     <string name="ui_bypass_web_player_and_launch">Lewati pemutar web dan luncurkan streaming langsung ke ExoPlayer yang dipercepat perangkat keras dengan gerakan &amp; audio latar belakang</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Bersihkan hasil penelusuran secara otomatis dengan menghapus ikhtisar AI generatif yang berantakan dan ringkasan yang dipromosikan</string>
     <string name="ui_sync_ecosystem">Sinkronisasi &amp; Ekosistem</string>
     <string name="ui_petal_sync">Sinkronisasi Kelopak</string>
-    <string name="ui_zero_cloud_end_to_end">Sinkronisasi terenkripsi end-to-end (E2EE) zero-cloud di seluruh perangkat, didukung oleh Akun Firefox &amp; protokol Sinkronisasi Mozilla</string>
     <string name="ui_about_developer_2">Tentang &amp; Pengembang</string>
     <string name="ui_app_version_licenses_github_developer">Versi aplikasi, lisensi, GitHub &amp; pengembang</string>
     <string name="ui_open_in_new_tab">Buka di tab baru</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Setel Ulang Pangkas</string>
     <string name="ui_apply_crop">Terapkan Pangkas</string>
     <string name="ui_save_profile_picture">Simpan Gambar Profil</string>
-    <string name="ui_account_mozilla_sync">Akun &amp; Sinkronisasi Mozilla</string>
-    <string name="ui_firefox_accounts_profile">Akun &amp; Profil Firefox</string>
     <string name="ui_petal_browser_profile">Profil Peramban Kelopak</string>
-    <string name="ui_firefox_account_sync">AKUN &amp; SINKRONISASI FIREFOX</string>
     <string name="ui_firefox_avatar">Avatar Firefox</string>
-    <string name="ui_firefox_account_connected">Akun Firefox Terhubung</string>
     <string name="ui_last_synced">Terakhir Disinkronkan</string>
     <string name="ui_sign_out_of_firefox">Keluar dari Firefox</string>
     <string name="ui_sync_with_firefox">Sinkronkan dengan Firefox</string>
-    <string name="ui_take_your_bookmarks_history_and">Bawa bookmark, riwayat, dan tab terbuka Anda ke mana saja. Disinkronkan secara pribadi secara end-to-end dengan Akun Mozilla Firefox Anda.</string>
     <string name="ui_sign_in_with_firefox">Masuk dengan Firefox</string>
     <string name="ui_pair_with_firefox_desktop">Sandingkan dengan Firefox Desktop</string>
     <string name="ui_import_firefox_bookmarks_or_history">Impor bookmark atau riwayat Firefox</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Menghubungkan</string>
     <string name="ui_sign_in_with_firefox_email">Masuk dengan Email Firefox</string>
-    <string name="ui_enter_your_firefox_account_email">Masukkan email Akun Firefox Anda untuk mengaktifkan sinkronisasi instan untuk bookmark, riwayat, dan tab Anda.</string>
-    <string name="ui_firefox_account_email">Email Akun Firefox</string>
     <string name="ui_you_example_com">kamu@example.com</string>
     <string name="ui_sign_in_sync">Masuk &amp; Sinkronkan</string>
     <string name="ui_video_scale_aspect_ratio">Skala Video &amp; Rasio Aspek</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Pilih gambar dari galeri Anda</string>
     <string name="petal_setup_mozilla">Masuk dengan Mozilla</string>
     <string name="petal_setup_mozilla_reason">Sinkronkan bookmark, riwayat, dan tab dengan Firefox.</string>
-    <string name="petal_setup_mozilla_tab">Masuk akun Mozilla</string>
     <string name="petal_setup_sign_in">Masuk</string>
     <string name="petal_setup_connected">Terhubung</string>
     <string name="petal_setup_ai_optional">Siapkan Petal AI (opsional)</string>

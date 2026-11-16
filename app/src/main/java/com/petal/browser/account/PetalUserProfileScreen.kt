@@ -53,7 +53,6 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil.compose.AsyncImage
 import com.petal.browser.ui.theme.isDynamicColorSupported
-import com.petal.browser.compose.home.PetalShortcut
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.containment.petalGroupShape
@@ -97,14 +96,6 @@ fun ProfileAvatarDisplay(
         contentAlignment = Alignment.Center
     ) {
         when {
-            profile.avatarType == AvatarType.FIREFOX && !profile.avatarUrl.isNullOrEmpty() -> {
-                AsyncImage(
-                    model = profile.avatarUrl,
-                    contentDescription = stringResource(R.string.ui_profile_photo),
-                    modifier = Modifier.size(size).clip(ExpressiveButtonShape),
-                    contentScale = ContentScale.Crop
-                )
-            }
             profile.avatarType == AvatarType.GALLERY_URI -> {
                 val avatarFile = remember(profile.customAvatarUri, profile.avatarTimestamp) {
                     val file = java.io.File(context.filesDir, "petal_user_avatar.png")
@@ -178,8 +169,7 @@ object PetalAccountSyncBridge {
     @JvmStatic
     fun createAccountSyncView(
         activity: ComponentActivity,
-        onBack: () -> Unit,
-        onOpenOAuth: (PetalShortcut) -> Unit
+        onBack: () -> Unit
     ): ComposeView {
         val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
         com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
@@ -244,8 +234,7 @@ object PetalAccountSyncBridge {
                 ) {
                     com.petal.browser.account.PetalAccountScreen(
                         backgroundSnapshot = snapshotBitmap,
-                        onBack = onBack,
-                        onOpenOAuth = onOpenOAuth
+                        onBack = onBack
                     )
                 }
             }

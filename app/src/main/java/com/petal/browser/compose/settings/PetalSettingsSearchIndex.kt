@@ -518,11 +518,11 @@ object PetalSettingsSearchIndex {
             keywords = listOf("nowbar", "petal nowbar", "island", "cutout", "camera cutout", "punch hole", "notch", "live updates", "amoled", "burn protection", "dynamic island", "password")
         ),
         SettingsSearchItem(
-            id = "account_sync_fxa",
-            title = "Firefox Account & Mozilla Sync",
-            subtitle = "Sign in to synchronize bookmarks, history, open tabs, and send tabs between devices",
+            id = "account_sync_folder",
+            title = "Account & Sync",
+            subtitle = "Profile, and sync bookmarks and history through a folder you own",
             category = SettingsCategory.ACCOUNT_SYNC,
-            keywords = listOf("sync", "firefox", "fxa", "account", "mozilla", "bookmarks sync", "history sync", "tabs sync", "send to device")
+            keywords = listOf("sync", "account", "profile", "folder sync", "bookmarks sync", "history sync", "encrypted", "passphrase", "drive", "nextcloud", "syncthing", "name", "avatar", "picture")
         ),
         SettingsSearchItem(
             id = "app_lock_config",

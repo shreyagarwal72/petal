@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">バックグラウンドでのオーディオとビデオの再生</string>
     <string name="ui_keep_youtube_web_media_playing">タブを切り替えたり、アプリをバックグラウンドで実行したりしても、YouTube と Web メディアの再生を継続します</string>
     <string name="ui_media_sync">メディアと同期</string>
-    <string name="ui_video_player_stream_sniffer_offline">ビデオプレーヤー、ストリームスニファー、オフライン AI および Firefox Sync エコシステム</string>
     <string name="ui_media_engine">メディアエンジン</string>
     <string name="ui_native_video_player">ネイティブビデオプレーヤー</string>
     <string name="ui_bypass_web_player_and_launch">Web プレーヤーをバイパスし、ジェスチャーとバックグラウンド オーディオを使用してハードウェア アクセラレーションされた ExoPlayer にストリームを直接起動します。</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">雑然とした生成型 AI の概要やプロモートされた概要を削除して、検索結果を自動的に整理します</string>
     <string name="ui_sync_ecosystem">同期とエコシステム</string>
     <string name="ui_petal_sync">ペタルシンク</string>
-    <string name="ui_zero_cloud_end_to_end">Firefox アカウントと Mozilla 同期プロトコルを利用した、デバイス間のゼロクラウド エンドツーエンド暗号化 (E2EE) 同期</string>
     <string name="ui_about_developer_2">概要と開発者</string>
     <string name="ui_app_version_licenses_github_developer">アプリのバージョン、ライセンス、GitHub、開発者</string>
     <string name="ui_open_in_new_tab">新しいタブで開く</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">トリミングをリセット</string>
     <string name="ui_apply_crop">クロップを適用する</string>
     <string name="ui_save_profile_picture">プロフィール写真を保存する</string>
-    <string name="ui_account_mozilla_sync">アカウントと Mozilla 同期</string>
-    <string name="ui_firefox_accounts_profile">Firefox アカウントとプロフィール</string>
     <string name="ui_petal_browser_profile">Petal ブラウザ プロファイル</string>
-    <string name="ui_firefox_account_sync">Firefox アカウントと同期</string>
     <string name="ui_firefox_avatar">Firefox アバター</string>
-    <string name="ui_firefox_account_connected">Firefox アカウントが接続されました</string>
     <string name="ui_last_synced">最終同期</string>
     <string name="ui_sign_out_of_firefox">Firefox からサインアウトする</string>
     <string name="ui_sync_with_firefox">Firefoxと同期する</string>
-    <string name="ui_take_your_bookmarks_history_and">ブックマーク、履歴を持ち歩き、どこにでもタブを開きます。 Mozilla Firefox アカウントとエンドツーエンドでプライベートに同期されます。</string>
     <string name="ui_sign_in_with_firefox">Firefox でサインインする</string>
     <string name="ui_pair_with_firefox_desktop">Firefox デスクトップとペアリングする</string>
     <string name="ui_import_firefox_bookmarks_or_history">Firefox のブックマークまたは履歴をインポートする</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">接続する</string>
     <string name="ui_sign_in_with_firefox_email">Firefox のメールでサインインする</string>
-    <string name="ui_enter_your_firefox_account_email">Firefox アカウントの電子メールを入力して、ブックマーク、履歴、タブの即時同期を有効にします。</string>
-    <string name="ui_firefox_account_email">Firefox アカウントのメールアドレス</string>
     <string name="ui_you_example_com">you@example.com</string>
     <string name="ui_sign_in_sync">サインインと同期</string>
     <string name="ui_video_scale_aspect_ratio">ビデオのスケールとアスペクト比</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">ギャラリーから写真を選択してください</string>
     <string name="petal_setup_mozilla">Mozilla でサインインする</string>
     <string name="petal_setup_mozilla_reason">ブックマーク、履歴、タブを Firefox と同期します。</string>
-    <string name="petal_setup_mozilla_tab">Mozilla アカウントのサインイン</string>
     <string name="petal_setup_sign_in">サインイン</string>
     <string name="petal_setup_connected">接続済み</string>
     <string name="petal_setup_ai_optional">Petal AI のセットアップ (オプション)</string>

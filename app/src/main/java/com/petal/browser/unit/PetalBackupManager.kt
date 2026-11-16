@@ -199,7 +199,8 @@ object PetalBackupManager {
     @JvmStatic
     fun isSecretPrefName(name: String): Boolean {
         val n = name.lowercase()
-        return n.startsWith("petal_fx") || n.startsWith("fxa") || n.contains("fxa.") ||
+        return n.startsWith("petal_folder_sync") || n.startsWith("petal_sync_vault") ||
+                n.startsWith("petal_fx") || n.startsWith("fxa") || n.contains("fxa.") ||
                 n.startsWith("mozac") || n.startsWith("__androidx_security") ||
                 n.startsWith("androidx.security") || n.startsWith("glean") ||
                 n.startsWith("petal_crash") || n.contains("token") || n.contains("secret") ||
@@ -779,6 +780,20 @@ object PetalBackupManager {
      * ONE restore implementation used by both the file-picker and the Documents-folder paths.
      * Merges into existing data (never wipes), skips secret preference files, returns a summary.
      */
+    /**
+     * Additive merge used by folder sync: adds what this device is missing from [json] and returns a
+     * short summary. Never touches tabs or settings, and shows no toast or restart prompt.
+     */
+    @JvmStatic
+    fun mergeSyncSnapshot(
+        context: Context,
+        json: JSONObject,
+        bookmarks: Boolean,
+        history: Boolean,
+        startSites: Boolean,
+        savedSites: Boolean
+    ): String = applyBackupJson(context, json, bookmarks, history, startSites, false, savedSites, false)
+
     private fun applyBackupJson(
         context: Context,
         backupJson: JSONObject,
@@ -920,10 +935,7 @@ object PetalBackupManager {
         if (restoreSettings) parts.add("settings" + if (filesRestored > 0) " + $filesRestored files" else "")
         val head = "Restored: " + parts.joinToString(", ")
         val tail = if (problems.isEmpty()) "" else " (could not restore: ${problems.joinToString()})"
-        if (restoreSettings) {
-            try { com.petal.browser.account.mozilla.PetalFxa.onSettingsRestored(context) } catch (_: Throwable) {}
-        }
-        val hint = if (restoreSettings && prefsFiles > 0) ". Restart Petal to apply all settings. Sign in to Firefox again to resume sync." else "."
+        val hint = if (restoreSettings && prefsFiles > 0) ". Restart Petal to apply all settings." else "."
         return head + tail + hint
     }
 

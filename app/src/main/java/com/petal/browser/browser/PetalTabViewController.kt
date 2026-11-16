@@ -2732,11 +2732,6 @@ private class ExternalSchemeNavigationDelegate(
             return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
         }
 
-        // Firefox Account sign-in redirect: hand the code/state to the official FxaAccountManager.
-        if (com.petal.browser.account.mozilla.PetalFxa.finishFromRedirect(uri)) {
-            return org.mozilla.geckoview.GeckoResult.fromValue(org.mozilla.geckoview.AllowOrDeny.DENY)
-        }
-
         // Open Redirect Links in Background
         val openRedirectsInBackground = sp.getBoolean("sp_open_redirects_in_background", false)
         if (openRedirectsInBackground && request.target != org.mozilla.geckoview.GeckoSession.NavigationDelegate.TARGET_WINDOW_CURRENT) {

@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Фоновое воспроизведение аудио и видео</string>
     <string name="ui_keep_youtube_web_media_playing">Продолжайте воспроизведение YouTube и веб-медиа при переключении вкладок или фоновом приложении.</string>
     <string name="ui_media_sync">Медиа и синхронизация</string>
-    <string name="ui_video_player_stream_sniffer_offline">Видеоплеер, анализатор потоков, автономный искусственный интеллект и экосистема Firefox Sync</string>
     <string name="ui_media_engine">Медиа-движок</string>
     <string name="ui_native_video_player">Родной видеоплеер</string>
     <string name="ui_bypass_web_player_and_launch">Обходите веб-плеер и запускайте потоки непосредственно в ExoPlayer с аппаратным ускорением с помощью жестов и фонового звука.</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Автоматически очищайте результаты поиска, удаляя беспорядочные обзоры генеративного ИИ и продвигаемые резюме.</string>
     <string name="ui_sync_ecosystem">Синхронизация и экосистема</string>
     <string name="ui_petal_sync">Лепестковая синхронизация</string>
-    <string name="ui_zero_cloud_end_to_end">Синхронизация со сквозным шифрованием (E2EE) между устройствами в нулевом облаке на основе учетных записей Firefox и протокола синхронизации Mozilla.</string>
     <string name="ui_about_developer_2">О компании и разработчике</string>
     <string name="ui_app_version_licenses_github_developer">Версия приложения, лицензии, GitHub и разработчик</string>
     <string name="ui_open_in_new_tab">Открыть в новой вкладке</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Сбросить обрезку</string>
     <string name="ui_apply_crop">Применить обрезку</string>
     <string name="ui_save_profile_picture">Сохранить изображение профиля</string>
-    <string name="ui_account_mozilla_sync">Синхронизация учетной записи и Mozilla</string>
-    <string name="ui_firefox_accounts_profile">Аккаунты и профиль Firefox</string>
     <string name="ui_petal_browser_profile">Профиль браузера Petal</string>
-    <string name="ui_firefox_account_sync">АККАУНТ И СИНХРОНИЗАЦИЯ FIREFOX</string>
     <string name="ui_firefox_avatar">Аватар Firefox</string>
-    <string name="ui_firefox_account_connected">Аккаунт Firefox подключен</string>
     <string name="ui_last_synced">Последняя синхронизация</string>
     <string name="ui_sign_out_of_firefox">Выйти из Firefox</string>
     <string name="ui_sync_with_firefox">Синхронизировать с Firefox</string>
-    <string name="ui_take_your_bookmarks_history_and">Возьмите с собой свои закладки, историю и открытые вкладки куда угодно. Сквозная конфиденциальная синхронизация с вашей учетной записью Mozilla Firefox.</string>
     <string name="ui_sign_in_with_firefox">Войти с помощью Firefox</string>
     <string name="ui_pair_with_firefox_desktop">Сопряжение с Firefox Desktop</string>
     <string name="ui_import_firefox_bookmarks_or_history">Импортировать закладки или историю Firefox</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Соединять</string>
     <string name="ui_sign_in_with_firefox_email">Войдите в систему с помощью электронной почты Firefox</string>
-    <string name="ui_enter_your_firefox_account_email">Введите адрес электронной почты своей учетной записи Firefox, чтобы включить мгновенную синхронизацию ваших закладок, истории и вкладок.</string>
-    <string name="ui_firefox_account_email">Электронная почта аккаунта Firefox</string>
     <string name="ui_you_example_com">you@example.com</string>
     <string name="ui_sign_in_sync">Войти и синхронизировать</string>
     <string name="ui_video_scale_aspect_ratio">Масштаб видео и соотношение сторон</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Выберите изображение из своей галереи</string>
     <string name="petal_setup_mozilla">Войти через Мозиллу</string>
     <string name="petal_setup_mozilla_reason">Синхронизируйте закладки, историю и вкладки с Firefox.</string>
-    <string name="petal_setup_mozilla_tab">Вход в аккаунт Mozilla</string>
     <string name="petal_setup_sign_in">Войти</string>
     <string name="petal_setup_connected">Подключено</string>
     <string name="petal_setup_ai_optional">Настройте Petal AI (необязательно)</string>

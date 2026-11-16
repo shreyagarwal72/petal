@@ -1079,7 +1079,6 @@
     <string name="ui_background_audio_video_playback">Reprodução de áudio e vídeo em segundo plano</string>
     <string name="ui_keep_youtube_web_media_playing">Mantenha a reprodução de mídia do YouTube e da web ao alternar entre guias ou aplicativos em segundo plano</string>
     <string name="ui_media_sync">Mídia e sincronização</string>
-    <string name="ui_video_player_stream_sniffer_offline">Reprodutor de vídeo, sniffer de stream, IA offline e ecossistema Firefox Sync</string>
     <string name="ui_media_engine">Mecanismo de mídia</string>
     <string name="ui_native_video_player">Player de vídeo nativo</string>
     <string name="ui_bypass_web_player_and_launch">Ignore o web player e inicie streams diretamente no ExoPlayer acelerado por hardware com gestos e áudio de fundo</string>
@@ -1095,7 +1094,6 @@
     <string name="ui_automatically_clean_search_results_by">Limpe automaticamente os resultados da pesquisa eliminando visões gerais desordenadas de IA generativa e resumos promovidos</string>
     <string name="ui_sync_ecosystem">Sincronização e ecossistema</string>
     <string name="ui_petal_sync">Sincronização de pétalas</string>
-    <string name="ui_zero_cloud_end_to_end">Sincronização criptografada de ponta a ponta (E2EE) em nuvem zero entre dispositivos, com tecnologia Firefox Accounts e protocolo Mozilla Sync</string>
     <string name="ui_about_developer_2">Sobre e desenvolvedor</string>
     <string name="ui_app_version_licenses_github_developer">Versão do aplicativo, licenças, GitHub e desenvolvedor</string>
     <string name="ui_open_in_new_tab">Abrir em nova aba</string>
@@ -1233,16 +1231,11 @@
     <string name="ui_reset_crop">Redefinir corte</string>
     <string name="ui_apply_crop">Aplicar corte</string>
     <string name="ui_save_profile_picture">Salvar foto do perfil</string>
-    <string name="ui_account_mozilla_sync">Conta e sincronização Mozilla</string>
-    <string name="ui_firefox_accounts_profile">Contas e perfil do Firefox</string>
     <string name="ui_petal_browser_profile">Perfil do navegador Petal</string>
-    <string name="ui_firefox_account_sync">CONTA E SINCRONIZAÇÃO DO FIREFOX</string>
     <string name="ui_firefox_avatar">Avatar do Firefox</string>
-    <string name="ui_firefox_account_connected">Conta Firefox conectada</string>
     <string name="ui_last_synced">Última sincronização</string>
     <string name="ui_sign_out_of_firefox">Sair do Firefox</string>
     <string name="ui_sync_with_firefox">Sincronizar com Firefox</string>
-    <string name="ui_take_your_bookmarks_history_and">Leve seus favoritos, histórico e abas abertas para qualquer lugar. Sincronizado de forma privada de ponta a ponta com sua conta Mozilla Firefox.</string>
     <string name="ui_sign_in_with_firefox">Faça login com Firefox</string>
     <string name="ui_pair_with_firefox_desktop">Emparelhar com Firefox Desktop</string>
     <string name="ui_import_firefox_bookmarks_or_history">Importe favoritos ou histórico do Firefox</string>
@@ -1258,8 +1251,6 @@
     <string name="ui_https_firefox_com_pair_channel">https://firefox.com/pair?channel=...</string>
     <string name="ui_connect">Conectar</string>
     <string name="ui_sign_in_with_firefox_email">Faça login com o e-mail do Firefox</string>
-    <string name="ui_enter_your_firefox_account_email">Digite o e-mail da sua conta Firefox para ativar a sincronização instantânea de seus favoritos, histórico e guias.</string>
-    <string name="ui_firefox_account_email">E-mail da conta Firefox</string>
     <string name="ui_you_example_com">você@example.com</string>
     <string name="ui_sign_in_sync">Entrar e sincronizar</string>
     <string name="ui_video_scale_aspect_ratio">Escala de vídeo e proporção de aspecto</string>
@@ -1465,7 +1456,6 @@
     <string name="petal_setup_choose_gallery">Escolha uma foto da sua galeria</string>
     <string name="petal_setup_mozilla">Faça login com Mozilla</string>
     <string name="petal_setup_mozilla_reason">Sincronize favoritos, histórico e guias com o Firefox.</string>
-    <string name="petal_setup_mozilla_tab">Login na conta Mozilla</string>
     <string name="petal_setup_sign_in">Entrar</string>
     <string name="petal_setup_connected">Conectado</string>
     <string name="petal_setup_ai_optional">Configure Petal AI (opcional)</string>
