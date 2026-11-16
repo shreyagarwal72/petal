@@ -39,6 +39,7 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.account.progress.PetalProgressStore
 import com.petal.browser.account.progress.PetalXp
 import com.petal.browser.account.sync.PetalFolderSync
+import com.petal.browser.account.sync.SyncDevice
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
@@ -86,6 +87,8 @@ fun PetalAccountScreen(
     val lastSync by PetalFolderSync.lastSync.collectAsStateWithLifecycle()
     val syncError by PetalFolderSync.error.collectAsStateWithLifecycle()
     val syncMessage by PetalFolderSync.message.collectAsStateWithLifecycle()
+    val otherDevices by PetalFolderSync.devices.collectAsStateWithLifecycle()
+    val receivedTabs by PetalFolderSync.receivedTabs.collectAsStateWithLifecycle()
     val account = remember(profile, configured, folderName) {
         PetalAccountRepository.resolve(profile, configured, folderName)
     }
@@ -102,6 +105,9 @@ fun PetalAccountScreen(
     var historyOn by remember { mutableStateOf(PetalFolderSync.isOn(context, PetalFolderSync.KEY_HISTORY)) }
     var shortcutsOn by remember { mutableStateOf(PetalFolderSync.isOn(context, PetalFolderSync.KEY_SHORTCUTS)) }
     var rulesOn by remember { mutableStateOf(PetalFolderSync.isOn(context, PetalFolderSync.KEY_RULES)) }
+    var tabsOn by remember { mutableStateOf(PetalFolderSync.isOn(context, PetalFolderSync.KEY_TABS)) }
+    var passwordsOn by remember { mutableStateOf(PetalFolderSync.isOn(context, PetalFolderSync.KEY_PASSWORDS)) }
+    var deviceName by remember { mutableStateOf(PetalFolderSync.deviceName(context)) }
     var autoOn by remember { mutableStateOf(PetalFolderSync.isOn(context, PetalFolderSync.KEY_AUTO)) }
     var syncExpanded by remember { mutableStateOf(false) }
 
@@ -153,6 +159,17 @@ fun PetalAccountScreen(
         if (uri != null) {
             if (showSetup) pickedFolder = uri else PetalFolderSync.setFolder(context, uri)
         }
+    }
+
+    fun openUrl(url: String) {
+        onBack()
+        try {
+            context.startActivity(
+                android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(url))
+                    .setClass(context, com.petal.browser.activity.MainActivity::class.java)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            )
+        } catch (_: Exception) {}
     }
 
     // Sub-overlays that own the back press; everything else is a dialog/sheet that handles its own.
@@ -296,6 +313,32 @@ fun PetalAccountScreen(
                             }
                         }
 
+                        // ── tabs other devices sent here (only when there are any) ──
+                        if (receivedTabs.isNotEmpty()) {
+                            item {
+                                Column {
+                                    PetalSectionLabel("Sent to this device")
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        receivedTabs.forEachIndexed { i, t ->
+                                            PetalGroupNavigationRow(
+                                                title = t.title.ifBlank { t.url },
+                                                subtitle = "From ${t.from}",
+                                                position = petalGroupPositionFor(i, receivedTabs.size),
+                                                variant = PetalBadgeVariant.TERTIARY,
+                                                leadingIcon = { Icon(Icons.Rounded.Devices, null) },
+                                                trailingIcon = {
+                                                    IconButton(onClick = { PetalFolderSync.dismissReceived(context, t.id) }) {
+                                                        Icon(Icons.Rounded.Close, "Dismiss")
+                                                    }
+                                                },
+                                                onClick = { PetalFolderSync.dismissReceived(context, t.id); openUrl(t.url) }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         // ── personalise ──
                         item {
                             Column {
@@ -348,10 +391,10 @@ fun PetalAccountScreen(
                                         onClick = { pickedFolder = null; showSetup = true }
                                     )
                                 } else {
-                                    val onCount = listOf(bookmarksOn, historyOn, shortcutsOn, rulesOn).count { it }
+                                    val onCount = listOf(bookmarksOn, historyOn, passwordsOn, tabsOn, shortcutsOn, rulesOn).count { it }
                                     PetalGroupNavigationRow(
                                         title = "Sync settings",
-                                        subtitle = "${folderName ?: "Folder selected"} · $onCount of 4 on",
+                                        subtitle = "${folderName ?: "Folder selected"} · $onCount of 6 on · ${otherDevices.size} other device${if (otherDevices.size == 1) "" else "s"}",
                                         position = petalGroupPositionFor(0, 1),
                                         leadingIcon = { Icon(Icons.Rounded.Sync, null) },
                                         trailingIcon = { Icon(if (syncExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null) },
@@ -368,40 +411,113 @@ fun PetalAccountScreen(
                                                     title = "Bookmarks", subtitle = "Including your reading list",
                                                     checked = bookmarksOn,
                                                     onCheckedChange = { bookmarksOn = it; PetalFolderSync.setOn(context, PetalFolderSync.KEY_BOOKMARKS, it) },
-                                                    position = petalGroupPositionFor(0, 5),
+                                                    position = petalGroupPositionFor(0, 7),
                                                     leadingIcon = { Icon(Icons.Rounded.Bookmark, null) }
                                                 )
                                                 PetalGroupControlRow(
                                                     title = "History", subtitle = "Pages you have visited",
                                                     checked = historyOn,
                                                     onCheckedChange = { historyOn = it; PetalFolderSync.setOn(context, PetalFolderSync.KEY_HISTORY, it) },
-                                                    position = petalGroupPositionFor(1, 5),
+                                                    position = petalGroupPositionFor(1, 7),
                                                     variant = PetalBadgeVariant.SECONDARY,
                                                     leadingIcon = { Icon(Icons.Rounded.History, null) }
+                                                )
+                                                PetalGroupControlRow(
+                                                    title = "Passwords", subtitle = "Saved logins, encrypted with your passphrase",
+                                                    checked = passwordsOn,
+                                                    onCheckedChange = { passwordsOn = it; PetalFolderSync.setOn(context, PetalFolderSync.KEY_PASSWORDS, it) },
+                                                    position = petalGroupPositionFor(2, 7),
+                                                    variant = PetalBadgeVariant.TERTIARY,
+                                                    leadingIcon = { Icon(Icons.Rounded.Key, null) }
+                                                )
+                                                PetalGroupControlRow(
+                                                    title = "Open tabs", subtitle = "See and send tabs between your devices",
+                                                    checked = tabsOn,
+                                                    onCheckedChange = { tabsOn = it; PetalFolderSync.setOn(context, PetalFolderSync.KEY_TABS, it) },
+                                                    position = petalGroupPositionFor(3, 7),
+                                                    leadingIcon = { Icon(Icons.Rounded.Devices, null) }
                                                 )
                                                 PetalGroupControlRow(
                                                     title = "Home shortcuts", subtitle = "Your start page sites",
                                                     checked = shortcutsOn,
                                                     onCheckedChange = { shortcutsOn = it; PetalFolderSync.setOn(context, PetalFolderSync.KEY_SHORTCUTS, it) },
-                                                    position = petalGroupPositionFor(2, 5),
-                                                    variant = PetalBadgeVariant.TERTIARY,
+                                                    position = petalGroupPositionFor(4, 7),
+                                                    variant = PetalBadgeVariant.SECONDARY,
                                                     leadingIcon = { Icon(Icons.Rounded.Description, null) }
                                                 )
                                                 PetalGroupControlRow(
                                                     title = "Site rules", subtitle = "Saved, trusted and protected sites",
                                                     checked = rulesOn,
                                                     onCheckedChange = { rulesOn = it; PetalFolderSync.setOn(context, PetalFolderSync.KEY_RULES, it) },
-                                                    position = petalGroupPositionFor(3, 5),
+                                                    position = petalGroupPositionFor(5, 7),
+                                                    variant = PetalBadgeVariant.TERTIARY,
                                                     leadingIcon = { Icon(Icons.Rounded.Https, null) }
                                                 )
                                                 PetalGroupControlRow(
-                                                    title = "Sync automatically", subtitle = "When Petal opens, at most every few hours",
+                                                    title = "Sync automatically", subtitle = "In the background and when you leave Petal",
                                                     checked = autoOn,
-                                                    onCheckedChange = { autoOn = it; PetalFolderSync.setOn(context, PetalFolderSync.KEY_AUTO, it) },
-                                                    position = petalGroupPositionFor(4, 5),
-                                                    variant = PetalBadgeVariant.SECONDARY,
+                                                    onCheckedChange = {
+                                                        autoOn = it
+                                                        PetalFolderSync.setOn(context, PetalFolderSync.KEY_AUTO, it)
+                                                        PetalFolderSync.onAutoChanged(context)
+                                                    },
+                                                    position = petalGroupPositionFor(6, 7),
                                                     leadingIcon = { Icon(Icons.Rounded.Refresh, null) }
                                                 )
+                                            }
+                                            OutlinedTextField(
+                                                value = deviceName, onValueChange = { deviceName = it.take(40) }, singleLine = true,
+                                                label = { Text("This device's name") }, modifier = Modifier.fillMaxWidth(),
+                                                trailingIcon = {
+                                                    TextButton(onClick = {
+                                                        PetalFolderSync.setDeviceName(context, deviceName)
+                                                        PetalFolderSync.syncNow(context)
+                                                        say("Device renamed")
+                                                    }) { Text("Save") }
+                                                }
+                                            )
+                                            PetalHeroCard(Modifier.fillMaxWidth(), containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
+                                                Column(Modifier.padding(16.dp)) {
+                                                    Text("Your other devices", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                                    if (otherDevices.isEmpty()) {
+                                                        Text(
+                                                            "None yet. Set up sync with the same folder and passphrase on another device, then sync.",
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
+                                                    otherDevices.forEach { d: SyncDevice ->
+                                                        Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                            Icon(Icons.Rounded.Devices, null, Modifier.size(20.dp))
+                                                            Spacer(Modifier.width(10.dp))
+                                                            Column(Modifier.weight(1f)) {
+                                                                Text(d.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                                Text(
+                                                                    "Seen ${DateUtils.getRelativeTimeSpanString(d.lastSeen)} · ${d.tabs.size} tab${if (d.tabs.size == 1) "" else "s"}",
+                                                                    style = MaterialTheme.typography.bodySmall,
+                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            val remoteTabs = otherDevices.flatMap { d -> d.tabs.map { t -> d.name to t } }.take(12)
+                                            if (tabsOn && remoteTabs.isNotEmpty()) {
+                                                Column {
+                                                    PetalSectionLabel("Tabs on your other devices")
+                                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                        remoteTabs.forEachIndexed { i, (device, tab) ->
+                                                            PetalGroupNavigationRow(
+                                                                title = tab.title.ifBlank { tab.url },
+                                                                subtitle = device,
+                                                                position = petalGroupPositionFor(i, remoteTabs.size),
+                                                                leadingIcon = { Icon(Icons.Rounded.Devices, null) },
+                                                                onClick = { openUrl(tab.url) }
+                                                            )
+                                                        }
+                                                    }
+                                                }
                                             }
                                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                                 PetalGroupNavigationRow(
@@ -431,9 +547,9 @@ fun PetalAccountScreen(
                                                         Text(it, style = MaterialTheme.typography.bodySmall)
                                                     }
                                                     Text(
-                                                        "Data is encrypted on this device before it reaches your folder, so only your passphrase can read it. " +
-                                                            "Items are merged, so deleting something here won't delete it on your other devices. " +
-                                                            "Passwords aren't synced: use Encrypted backup for those.",
+                                                        "Everything is encrypted on this device before it reaches your folder, so only your passphrase can read it. " +
+                                                            "Changes and deletions are merged, and the most recent change to an item wins, so keep your devices' clocks correct. " +
+                                                            "To send the page you're on to another device, use Send to device in the page menu.",
                                                         style = MaterialTheme.typography.bodySmall,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
