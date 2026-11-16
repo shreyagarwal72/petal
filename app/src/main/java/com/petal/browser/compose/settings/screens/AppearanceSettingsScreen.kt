@@ -1807,6 +1807,36 @@ fun AppearanceSettingsScreenContent(
                                     )
                                 }
 
+                                // Blur Strength Slider (Gaussian radius). -1 = Auto, each surface's own tuned blur.
+                                var liveBlur by remember(sp) { mutableFloatStateOf(sp.getFloat("sp_liquid_glass_blur", -1f)) }
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Blur Strength",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = if (liveBlur < 0f) "Auto" else "${Math.round(liveBlur)} dp",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    PetalSlider(
+                                        value = if (liveBlur < 0f) 12f else liveBlur,
+                                        onValueChange = {
+                                            liveBlur = it
+                                            sp.edit().putFloat("sp_liquid_glass_blur", it).apply()
+                                        },
+                                        valueRange = 0f..32f,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
                                 // Specular Sheen Intensity Slider
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Row(
@@ -1911,7 +1941,9 @@ fun AppearanceSettingsScreenContent(
                                         liveSheen = 0.60f
                                         liveRefraction = 1f
                                         liveRefractionWidth = 1f
+                                        liveBlur = -1f
                                         sp.edit()
+                                            .remove("sp_liquid_glass_blur")
                                             .putFloat("sp_liquid_glass_alpha", 0.70f)
                                             .putFloat("sp_liquid_glass_sheen", 0.60f)
                                             .putFloat("sp_liquid_glass_refraction", 1f)
