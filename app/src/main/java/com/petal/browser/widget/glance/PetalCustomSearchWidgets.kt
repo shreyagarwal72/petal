@@ -2,6 +2,7 @@ package com.petal.browser.widget.glance
 
 import android.appwidget.AppWidgetManager
 import android.content.Context
+import android.graphics.Bitmap
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -41,6 +42,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import androidx.preference.PreferenceManager
+import com.petal.browser.ui.glass.readGlassBlurDp
 import com.petal.browser.R
 import com.petal.browser.activity.MainActivity
 
@@ -189,29 +191,34 @@ private fun PetalWidgetCard(
         PetalGlassWidgets.noteSize(context, appWidgetId, widthPx, heightPx)
     }
 
+    // Glass is on and the home wallpaper is still the one the glass is cut from.
     val isLiquidGlass = PetalGlassWidgets.isLiquidGlassEnabled(context)
-    val storedRect = if (isLiquidGlass && validId) PetalGlassWidgets.getRect(context, appWidgetId) else null
-    // If the widget was resized after it was aligned, keep the aligned top-left and take the live size so the
-    // glass slice is never stretched or squashed.
-    val rect = storedRect?.let { r ->
-        if (widthPx > 0 && heightPx > 0 &&
-            (kotlin.math.abs(r.width() - widthPx) > 2 || kotlin.math.abs(r.height() - heightPx) > 2)
-        ) android.graphics.Rect(r.left, r.top, r.left + widthPx, r.top + heightPx) else r
+    val glassReady = isLiquidGlass && PetalGlassWidgets.isWallpaperCurrent(context)
+
+    // Glance composes the widget once per size the launcher may show (portrait and landscape shapes); the
+    // wallpaper copy and the lined-up positions are portrait, so only that shape gets glass.
+    val portrait = context.resources.configuration.orientation != android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    if (glassReady && validId && portrait && widthPx > 0 && heightPx > 0) {
+        // Resized by more than a few percent since it was lined up: ask to be lined up again.
+        PetalGlassWidgets.dropIfResized(context, appWidgetId, widthPx, heightPx)
     }
+    val rect = if (glassReady && validId && portrait) PetalGlassWidgets.getRect(context, appWidgetId) else null
+
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val sheen = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
     val refraction = sp.getFloat("sp_liquid_glass_refraction", 1.0f).coerceIn(0f, 2f)
     val refractionWidth = sp.getFloat("sp_liquid_glass_refraction_width", 1.0f).coerceIn(0f, 2f)
+    val blurDp = readGlassBlurDp(sp) ?: 20f
 
     // The glass renderer needs a number; "full" is half the widget's shorter side.
     val cornerDp = if (cfg.cornerRadius >= PETAL_RADIUS_FULL) minOf(size.width.value, size.height.value) / 2f else cfg.cornerRadius.toFloat()
 
-    val glassUri = if (isLiquidGlass && rect != null) {
-        PetalGlassWidgetRenderer.renderUri(
+    val glassBitmap = if (rect != null) {
+        PetalGlassWidgetRenderer.renderBitmap(
             context,
             PetalGlassWidgetRenderer.Spec(
                 rect = rect,
-                blurDp = 24f,
+                blurDp = blurDp,
                 cornerDp = cornerDp,
                 dark = pal.isDark,
                 edge = sheen,
@@ -224,8 +231,8 @@ private fun PetalWidgetCard(
 
     Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         when {
-            glassUri != null -> Image(
-                provider = GlanceUriImageProvider(glassUri),
+            glassBitmap != null -> Image(
+                provider = ImageProvider(glassBitmap),
                 contentDescription = null,
                 modifier = GlanceModifier.fillMaxSize(),
                 contentScale = ContentScale.FillBounds
@@ -257,7 +264,7 @@ private fun PetalWidgetCard(
             )
         }
 
-        if (isLiquidGlass && glassUri == null && cfg.cornerRadius >= 16) {
+        if (isLiquidGlass && glassBitmap == null && cfg.cornerRadius >= 16) {
             Image(
                 provider = ImageProvider(
                     if (cfg.cornerRadius >= 24) R.drawable.widget_glass_sheen_pill else R.drawable.widget_glass_sheen_card
@@ -271,7 +278,7 @@ private fun PetalWidgetCard(
         content()
 
         // Also offered when the glass could not be drawn (no wallpaper access yet), so the user can fix it from here.
-        if (isLiquidGlass && glassUri == null && validId) {
+        if (isLiquidGlass && glassBitmap == null && validId && portrait) {
             Box(
                 modifier = GlanceModifier.fillMaxSize().padding(top = 4.dp, end = 8.dp),
                 contentAlignment = Alignment.TopEnd

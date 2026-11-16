@@ -42,7 +42,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -102,7 +103,9 @@ class PetalWidgetGlassActivity : ComponentActivity() {
             com.petal.browser.ui.theme.PetalExpressiveTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = Color.Black
+                    // Transparent: the aligner is laid over the real home screen, so the person lines the frame up
+                    // with the widget they can actually see.
+                    color = Color.Transparent
                 ) {
                     WidgetGlassCalibrationScreen(
                         appWidgetId = appWidgetId,
@@ -322,6 +325,7 @@ class PetalWidgetGlassActivity : ComponentActivity() {
     ) {
         val context = LocalContext.current
         val density = LocalDensity.current
+        val view = androidx.compose.ui.platform.LocalView.current
         var screenSize by remember { mutableStateOf(IntSize.Zero) }
 
         val initialRect = remember(appWidgetId) { PetalGlassWidgets.getRect(context, appWidgetId) }
@@ -337,40 +341,40 @@ class PetalWidgetGlassActivity : ComponentActivity() {
             if (cfg.cornerRadius >= PETAL_RADIUS_FULL) shortDp / 2f else cfg.cornerRadius.toFloat()
         }
 
+        // Frame position in display pixels (the window may not start at the top of the display).
+        var windowOrigin by remember { mutableStateOf(0 to 0) }
+        var placed by remember { mutableStateOf(initialRect != null) }
         var offsetX by remember { mutableStateOf(initialRect?.left?.toFloat() ?: 0f) }
         var offsetY by remember { mutableStateOf(initialRect?.top?.toFloat() ?: 0f) }
-        var ready by remember { mutableStateOf(initialRect != null) }
         var preview by remember { mutableStateOf<Bitmap?>(null) }
+        val (displayW, displayH) = remember { PetalGlassWidgets.displaySize(context) }
 
-        fun clampX(v: Float) = v.coerceIn(0f, max(0f, screenSize.width - frameW))
-        fun clampY(v: Float) = v.coerceIn(0f, max(0f, screenSize.height - frameH))
-        fun center() {
-            offsetX = clampX((screenSize.width - frameW) / 2f)
-            offsetY = clampY(screenSize.height * 0.28f)
-        }
+        fun clampX(v: Float) = v.coerceIn(0f, max(0f, displayW - frameW))
+        fun clampY(v: Float) = v.coerceIn(0f, max(0f, displayH - frameH))
 
-        // Live glass: re-slice whenever the frame moves, keeping only the newest request so dragging stays smooth.
-        LaunchedEffect(ready, screenSize, wallpaper) {
-            if (!ready) return@LaunchedEffect
+        // Live glass: re-slice whenever the frame moves; only the newest request is kept so dragging stays smooth.
+        // Reads the same prefs as the widgets, so the preview is what the widget will get.
+        LaunchedEffect(placed, wallpaper) {
+            if (!placed) return@LaunchedEffect
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
             snapshotFlow { Pair(offsetX.roundToInt(), offsetY.roundToInt()) }
                 .debounce(16)
                 .collectLatest { (x, y) ->
-                    val left = x.coerceIn(0, max(0, screenSize.width - frameW.roundToInt()))
-                    val top = y.coerceIn(0, max(0, screenSize.height - frameH.roundToInt()))
-                    val r = Rect(left, top, left + frameW.roundToInt(), top + frameH.roundToInt())
+                    val r = Rect(x, y, x + frameW.roundToInt(), y + frameH.roundToInt())
                     val bmp = withContext(Dispatchers.Default) {
-                        PetalGlassWidgetRenderer.render(
+                        PetalGlassWidgetRenderer.renderBitmap(
                             context,
                             PetalGlassWidgetRenderer.Spec(
                                 rect = r,
-                                blurDp = 24f,
+                                blurDp = com.petal.browser.ui.glass.readGlassBlurDp(sp) ?: 20f,
                                 cornerDp = cornerDp,
                                 dark = dark,
                                 edge = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f),
                                 refraction = sp.getFloat("sp_liquid_glass_refraction", 1.0f).coerceIn(0f, 2f),
                                 refractionWidth = sp.getFloat("sp_liquid_glass_refraction_width", 1.0f).coerceIn(0f, 2f)
-                            )
+                            ),
+                            // A scratch id so previews never replace the real widget's cached glass.
+                            -appWidgetId
                         )
                     }
                     if (bmp != null) preview = bmp
@@ -380,31 +384,30 @@ class PetalWidgetGlassActivity : ComponentActivity() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .onSizeChanged { size ->
-                    screenSize = size
-                    if (size.width > 0 && size.height > 0) {
-                        if (!ready) { center(); ready = true } else { offsetX = clampX(offsetX); offsetY = clampY(offsetY) }
+                // Just enough to say "something is waiting for a tap" without hiding the widget behind it.
+                .background(Color.Black.copy(alpha = 0.12f))
+                .onGloballyPositioned { c ->
+                    screenSize = c.size
+                    val pos = c.positionInWindow()
+                    val loc = IntArray(2).also { view.getLocationOnScreen(it) }
+                    windowOrigin = (loc[0] + pos.x.roundToInt()) to (loc[1] + pos.y.roundToInt())
+                }
+                .pointerInput(frameW, frameH) {
+                    // Tap the middle of the widget you can see behind this screen to put the frame on it.
+                    androidx.compose.foundation.gestures.detectTapGestures { tap ->
+                        offsetX = clampX(tap.x + windowOrigin.first - frameW / 2f)
+                        offsetY = clampY(tap.y + windowOrigin.second - frameH / 2f)
+                        placed = true
                     }
                 }
         ) {
-            // Wallpaper is already display-sized, so FillBounds maps 1:1 to the real home screen.
-            Image(
-                bitmap = wallpaper.asImageBitmap(),
-                contentDescription = null,
-                contentScale = ContentScale.FillBounds,
-                modifier = Modifier.fillMaxSize()
-            )
-            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.18f)))
-
-            if (ready) {
-                val left = offsetX.roundToInt()
-                val top = offsetY.roundToInt()
+            if (placed) {
                 val shape = RoundedCornerShape(cornerDp.dp)
                 Box(
                     modifier = Modifier
-                        .offset { IntOffset(left, top) }
+                        .offset { IntOffset((offsetX - windowOrigin.first).roundToInt(), (offsetY - windowOrigin.second).roundToInt()) }
                         .size(with(density) { frameW.toDp() }, with(density) { frameH.toDp() })
-                        .pointerInput(screenSize) {
+                        .pointerInput(frameW, frameH) {
                             detectDragGestures { change, drag ->
                                 change.consume()
                                 offsetX = clampX(offsetX + drag.x)
@@ -412,7 +415,7 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                             }
                         }
                         .clip(shape)
-                        .border(1.5.dp, Color.White.copy(alpha = 0.85f), shape),
+                        .border(2.dp, MaterialTheme.colorScheme.primary, shape),
                     contentAlignment = Alignment.Center
                 ) {
                     preview?.let {
@@ -423,20 +426,15 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize()
                         )
                     }
-                    Text(
-                        text = "${with(density) { frameW.toDp().value.roundToInt() }} × ${with(density) { frameH.toDp().value.roundToInt() }} dp",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
                 }
             }
 
-            // Header: close | title | wallpaper picker, never overlapping.
+            // Header: close | title | wallpaper picker. Pinned inside the status bar, never overlapping.
             Row(
                 modifier = Modifier
+                    .align(Alignment.TopCenter)
                     .fillMaxWidth()
-                    .systemBarsPadding()
+                    .statusBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -444,9 +442,7 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                 IconButton(
                     onClick = onClose,
                     modifier = Modifier.size(44.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.6f))
-                ) {
-                    Icon(Icons.Rounded.Close, stringResource(android.R.string.cancel), tint = Color.White)
-                }
+                ) { Icon(Icons.Rounded.Close, stringResource(android.R.string.cancel), tint = Color.White) }
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     Surface(shape = RoundedCornerShape(22.dp), color = Color.Black.copy(alpha = 0.6f)) {
                         Text(
@@ -455,6 +451,7 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
                         )
                     }
@@ -462,51 +459,53 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                 IconButton(
                     onClick = onPickNewWallpaper,
                     modifier = Modifier.size(44.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.6f))
-                ) {
-                    Icon(Icons.Rounded.Image, stringResource(R.string.widget_glass_pick_wallpaper), tint = Color.White)
-                }
+                ) { Icon(Icons.Rounded.Image, stringResource(R.string.widget_glass_pick_wallpaper), tint = Color.White) }
             }
 
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
                     .navigationBarsPadding()
                     .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = Color.Black.copy(alpha = 0.65f),
-                    modifier = Modifier.padding(bottom = 12.dp)
-                ) {
+                Surface(shape = RoundedCornerShape(20.dp), color = Color.Black.copy(alpha = 0.65f)) {
                     Text(
                         text = stringResource(R.string.widget_glass_align_hint),
-                        color = Color.White.copy(alpha = 0.9f),
+                        color = Color.White.copy(alpha = 0.92f),
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
                     )
                 }
+                if (placed) {
+                    // One-pixel nudges, for lining the frame up exactly once it is roughly there.
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        NudgeButton("←") { offsetX = clampX(offsetX - 1f) }
+                        NudgeButton("↑") { offsetY = clampY(offsetY - 1f) }
+                        NudgeButton("↓") { offsetY = clampY(offsetY + 1f) }
+                        NudgeButton("→") { offsetX = clampX(offsetX + 1f) }
+                    }
+                }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Button(
-                        onClick = { center() },
+                        onClick = onClose,
                         modifier = Modifier.weight(1f).height(52.dp),
                         shape = RoundedCornerShape(26.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Black.copy(alpha = 0.6f), contentColor = Color.White
-                        )
-                    ) {
-                        Icon(Icons.Rounded.Refresh, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.widget_glass_reset), fontSize = 14.sp, maxLines = 1)
-                    }
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black.copy(alpha = 0.6f), contentColor = Color.White)
+                    ) { Text(stringResource(android.R.string.cancel), fontSize = 14.sp, maxLines = 1) }
                     Button(
-                        onClick = {
-                            val l = offsetX.roundToInt(); val t = offsetY.roundToInt()
-                            onSave(Rect(l, t, l + frameW.roundToInt(), t + frameH.roundToInt()))
-                        },
+                        onClick = { onSave(Rect(offsetX.roundToInt(), offsetY.roundToInt(), offsetX.roundToInt() + frameW.roundToInt(), offsetY.roundToInt() + frameH.roundToInt())) },
+                        enabled = placed,
                         modifier = Modifier.weight(1.3f).height(52.dp),
-                        shape = RoundedCornerShape(26.dp)
+                        shape = RoundedCornerShape(26.dp),
+                        // Solid while waiting for the first tap: the default disabled button vanishes on a wallpaper.
+                        colors = ButtonDefaults.buttonColors(
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     ) {
                         Icon(Icons.Rounded.Check, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
@@ -514,6 +513,18 @@ class PetalWidgetGlassActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    @Composable
+    private fun NudgeButton(label: String, onClick: () -> Unit) {
+        Surface(
+            onClick = onClick,
+            shape = CircleShape,
+            color = Color.Black.copy(alpha = 0.6f),
+            modifier = Modifier.size(40.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) { Text(label, color = Color.White, fontSize = 18.sp) }
         }
     }
 }

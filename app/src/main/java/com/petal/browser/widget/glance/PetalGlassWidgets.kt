@@ -17,7 +17,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
@@ -44,14 +46,31 @@ object PetalGlassWidgets {
         return File(context.filesDir, FILE_NAME)
     }
 
+    /** The full display in pixels, portrait: what the wallpaper copy covers one-to-one. Same from any context. */
     fun displaySize(context: Context): Pair<Int, Int> {
         val wm = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && wm != null) {
-            val bounds = wm.currentWindowMetrics.bounds
-            return Pair(bounds.width(), bounds.height())
+        val (w, h) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && wm != null) {
+            wm.maximumWindowMetrics.bounds.let { it.width() to it.height() }
+        } else {
+            val dm = android.util.DisplayMetrics()
+            @Suppress("DEPRECATION")
+            wm?.defaultDisplay?.getRealMetrics(dm)
+            if (dm.widthPixels > 0) dm.widthPixels to dm.heightPixels
+            else context.resources.displayMetrics.let { it.widthPixels to it.heightPixels }
         }
-        val dm = context.resources.displayMetrics
-        return Pair(dm.widthPixels, dm.heightPixels)
+        return min(w, h) to max(w, h)
+    }
+
+    /** True while the home wallpaper is still the image Petal's glass copy was taken from. */
+    fun isWallpaperCurrent(context: Context): Boolean {
+        if (!copyFile(context).exists()) return false
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return true
+        return try {
+            val stored = store(context).getInt(KEY_WALLPAPER_ID, Int.MIN_VALUE)
+            val current = WallpaperManager.getInstance(context).getWallpaperId(WallpaperManager.FLAG_SYSTEM)
+            // No id on record (copy taken from the system wallpaper) or the system gave none: trust the copy.
+            stored == Int.MIN_VALUE || current <= 0 || stored == current
+        } catch (_: Throwable) { true }
     }
 
     /**
@@ -217,7 +236,17 @@ object PetalGlassWidgets {
                 scaledBitmap.recycle()
             }
 
+            // The copy the glass is cut from must be what the home screen really shows, so set it as the home
+            // wallpaper (lock screen left alone), cropped to exactly the display. Without this the aligner and the
+            // widgets used an image the launcher never drew, and the glass never matched what was behind it.
+            val wallpaperId = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+                    WallpaperManager.getInstance(context).setBitmap(croppedBitmap, null, true, WallpaperManager.FLAG_SYSTEM)
+                else { @Suppress("DEPRECATION") WallpaperManager.getInstance(context).setBitmap(croppedBitmap); 0 }
+            } catch (_: Throwable) { -1 }
             saveWallpaperBitmap(context, croppedBitmap)
+            if (wallpaperId > 0) store(context).edit().putInt(KEY_WALLPAPER_ID, wallpaperId).apply()
+            forgetAllRects(context)
             PetalGlassWidgetRenderer.forget()
             PetalGlassWidgetRenderer.deleteTiles(context)
             changes.value = System.currentTimeMillis()
@@ -274,7 +303,24 @@ object PetalGlassWidgets {
     }
 
     fun noteSize(context: Context, appWidgetId: Int, widthPx: Int, heightPx: Int) {
-        store(context).edit().putString("$KEY_SIZE_PREFIX$appWidgetId", "$widthPx,$heightPx").apply()
+        val value = "$widthPx,$heightPx"
+        if (store(context).getString("$KEY_SIZE_PREFIX$appWidgetId", null) != value)
+            store(context).edit().putString("$KEY_SIZE_PREFIX$appWidgetId", value).apply()
+    }
+
+    /**
+     * A widget that was resized by more than a few percent since it was lined up no longer sits where its
+     * alignment says, so the alignment is dropped and the widget asks to be lined up again. Silent (no redraw
+     * broadcast): the caller is already composing the widget.
+     */
+    fun dropIfResized(context: Context, appWidgetId: Int, widthPx: Int, heightPx: Int): Boolean {
+        val r = getRect(context, appWidgetId) ?: return false
+        val moved = abs(r.width() - widthPx) > r.width() * 0.08f || abs(r.height() - heightPx) > r.height() * 0.08f
+        if (moved) {
+            store(context).edit().remove("$KEY_RECT_PREFIX$appWidgetId").apply()
+            PetalGlassWidgetRenderer.forget(appWidgetId)
+        }
+        return moved
     }
 
     fun getSize(context: Context, appWidgetId: Int): Pair<Int, Int>? {
@@ -291,6 +337,6 @@ object PetalGlassWidgets {
     }
 
     fun active(context: Context): Boolean {
-        return isLiquidGlassEnabled(context) && copyFile(context).exists()
+        return isLiquidGlassEnabled(context) && isWallpaperCurrent(context)
     }
 }

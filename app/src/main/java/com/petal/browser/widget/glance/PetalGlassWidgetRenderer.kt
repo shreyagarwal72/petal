@@ -4,6 +4,17 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.ColorSpace
+import android.graphics.HardwareRenderer
+import android.graphics.PixelFormat
+import android.graphics.RenderEffect
+import android.graphics.RenderNode
+import android.graphics.RuntimeShader
+import android.hardware.HardwareBuffer
+import android.media.ImageReader
+import androidx.annotation.RequiresApi
 import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Color
@@ -48,7 +59,7 @@ object PetalGlassWidgetRenderer {
 
     data class Spec(
         val rect: Rect,
-        val blurDp: Float = 24f,
+        val blurDp: Float = 20f,
         val cornerDp: Float = 24f,
         val dark: Boolean = false,
         /** Sheen: strength of the specular rim and glints, 0..1.5. */
@@ -77,7 +88,8 @@ object PetalGlassWidgetRenderer {
     private const val MAX_WORK_PIXELS = 520_000f
 
     @Synchronized
-    fun forget(@Suppress("UNUSED_PARAMETER") appWidgetId: Int? = null) {
+    fun forget(appWidgetId: Int? = null) {
+        if (appWidgetId == null) bitmapCache.clear() else bitmapCache.remove(appWidgetId)
         cache.clear()
         cachedWallpaper = null
         cachedWallpaperStamp = -1L
@@ -98,6 +110,152 @@ object PetalGlassWidgetRenderer {
                 if (it.name.startsWith("widget_${widgetId}_")) it.delete()
             }
         } catch (_: Throwable) {}
+    }
+
+    /** Longest side the baked glass is rendered at. The launcher scales it up; RemoteViews caps bitmap memory. */
+    private const val MAX_EDGE = 640f
+
+    /**
+     * The glass for one widget as a bitmap Glance can hand straight to RemoteViews (no FileProvider round trip,
+     * which launchers lose permission to after a restart). GPU path on Android 12+, with the CPU renderer as the
+     * fallback. Cached per widget until the spec or the wallpaper changes.
+     */
+    @Synchronized
+    fun renderBitmap(context: Context, spec: Spec, widgetId: Int): Bitmap? {
+        val rect = spec.rect
+        if (rect.width() <= 0 || rect.height() <= 0) return null
+        val stamp = PetalGlassWidgets.copyFile(context).lastModified()
+        val key = Key(spec.copy(rect = Rect(rect)), stamp, context.resources.displayMetrics.density)
+        bitmapCache[widgetId]?.let { (k, bmp) -> if (k == key && !bmp.isRecycled) return bmp }
+        val wallpaper = loadWallpaper(context, stamp) ?: return null
+        val bmp = (if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S)
+            runCatching { drawGpu(context, wallpaper, spec) }.getOrNull() else null)
+            ?: drawCapped(context, wallpaper, spec)
+            ?: return null
+        bitmapCache[widgetId] = key to bmp
+        return bmp
+    }
+
+    private val bitmapCache = HashMap<Int, Pair<Key, Bitmap>>()
+
+    /** The CPU renderer, with its work size capped to the same budget as the GPU one. */
+    private fun drawCapped(context: Context, wallpaper: Bitmap, spec: Spec): Bitmap? = draw(context, wallpaper, spec)
+
+    @RequiresApi(android.os.Build.VERSION_CODES.S)
+    private fun drawGpu(context: Context, wall: Bitmap, spec: Spec): Bitmap? {
+        val density = context.resources.displayMetrics.density
+        val rect = spec.rect
+        val s = min(1f, MAX_EDGE / max(rect.width(), rect.height()))
+        val outW = (rect.width() * s).roundToInt().coerceAtLeast(2)
+        val outH = (rect.height() * s).roundToInt().coerceAtLeast(2)
+        val pxPerDp = density * s
+        val blurPx = (spec.blurDp * pxPerDp).coerceAtLeast(0f)
+        val strength = spec.refraction.coerceIn(0f, 2f)
+        val widthMul = spec.refractionWidth.coerceIn(0f, 2f)
+        val lensOn = strength > 0.001f && widthMul > 0.001f
+        val lensH = min(min(outW, outH) / 2f, 24f * pxPerDp * widthMul)
+        val lensAmount = -56f * pxPerDp * strength
+        val pad = ceil(max(blurPx * 2f, abs(lensAmount)) + 2f).toInt()
+
+        // The patch of wallpaper under the widget, plus a margin for the blur and the lens to pull from.
+        val (dispW, dispH) = PetalGlassWidgets.displaySize(context)
+        val sx = wall.width.toFloat() / max(1, dispW)
+        val sy = wall.height.toFloat() / max(1, dispH)
+        val source = Bitmap.createBitmap(outW + 2 * pad, outH + 2 * pad, Bitmap.Config.ARGB_8888)
+        Canvas(source).drawPaint(Paint(Paint.FILTER_BITMAP_FLAG).apply {
+            shader = BitmapShader(wall, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
+                setLocalMatrix(Matrix().apply {
+                    setScale(s / sx, s / sy)
+                    postTranslate(-rect.left * s + pad, -rect.top * s + pad)
+                })
+            }
+        })
+
+        val corner = (spec.cornerDp * pxPerDp).coerceAtMost(min(outW, outH) / 2f)
+        val vibrancy = RenderEffect.createColorFilterEffect(
+            ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1.5f) })
+        )
+        val frosted = if (blurPx >= 0.5f)
+            RenderEffect.createBlurEffect(blurPx, blurPx, vibrancy, Shader.TileMode.CLAMP) else vibrancy
+        val effect = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU && lensOn) {
+            val shader = RuntimeShader(
+                if (spec.dark) PetalWidgetLensShaders.REFRACTION_WITH_DISPERSION else PetalWidgetLensShaders.REFRACTION
+            )
+            shader.setFloatUniform("size", outW.toFloat(), outH.toFloat())
+            shader.setFloatUniform("offset", -pad.toFloat(), -pad.toFloat())
+            shader.setFloatUniform("cornerRadii", floatArrayOf(corner, corner, corner, corner))
+            shader.setFloatUniform("refractionHeight", lensH)
+            shader.setFloatUniform("refractionAmount", lensAmount)
+            shader.setFloatUniform("depthEffect", 0f)
+            if (spec.dark) shader.setFloatUniform("chromaticAberration", 1f)
+            RenderEffect.createChainEffect(RenderEffect.createRuntimeShaderEffect(shader, "content"), frosted)
+        } else frosted
+
+        val w = source.width
+        val h = source.height
+        val frostedBmp = ImageReader.newInstance(
+            w, h, PixelFormat.RGBA_8888, 1,
+            HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or HardwareBuffer.USAGE_GPU_COLOR_OUTPUT
+        ).use { reader ->
+            val renderer = HardwareRenderer()
+            try {
+                renderer.setSurface(reader.surface)
+                val node = RenderNode("petal-widget-glass").apply {
+                    setPosition(0, 0, w, h)
+                    setRenderEffect(effect)
+                }
+                node.beginRecording().drawBitmap(source, 0f, 0f, null)
+                node.endRecording()
+                renderer.setContentRoot(node)
+                renderer.createRenderRequest().setWaitForPresent(true).syncAndDraw()
+                reader.acquireNextImage().use { image ->
+                    val buffer = image.hardwareBuffer ?: return null
+                    buffer.use {
+                        Bitmap.wrapHardwareBuffer(it, ColorSpace.get(ColorSpace.Named.SRGB))
+                            ?.copy(Bitmap.Config.ARGB_8888, false)
+                    }
+                }
+            } finally {
+                renderer.destroy()
+            }
+        } ?: return null
+        source.recycle()
+
+        // Cut the rounded card out, then the glass wash and the lit rim.
+        val out = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(out)
+        val shape = Path().apply {
+            addRoundRect(RectF(0f, 0f, outW.toFloat(), outH.toFloat()), corner, corner, Path.Direction.CW)
+        }
+        canvas.clipPath(shape)
+        canvas.drawBitmap(frostedBmp, -pad.toFloat(), -pad.toFloat(), Paint(Paint.FILTER_BITMAP_FLAG))
+        frostedBmp.recycle()
+
+        val tintColor = if (spec.tintAlpha > 0f && spec.tint != 0) spec.tint
+            else if (spec.dark) Color.argb(255, 12, 14, 20) else Color.WHITE
+        val tintA = if (spec.tintAlpha > 0f && spec.tint != 0) spec.tintAlpha
+            else if (spec.dark) 0.22f else 0.30f
+        canvas.drawColor((tintColor and 0x00FFFFFF) or ((tintA.coerceIn(0f, 1f) * 255).roundToInt() shl 24))
+
+        val edge = spec.edge.coerceIn(0f, 1.5f)
+        val white = Color.WHITE
+        fun wa(a: Float) = (white and 0x00FFFFFF) or ((a.coerceIn(0f, 1f) * 255).roundToInt() shl 24)
+        val sheen = 3f * pxPerDp
+        canvas.drawRect(0f, 0f, outW.toFloat(), sheen, Paint().apply {
+            this.shader = LinearGradient(0f, 0f, 0f, sheen, wa((if (spec.dark) 0.22f else 0.55f) * edge), 0, Shader.TileMode.CLAMP)
+        })
+        val strokeW = 2f * pxPerDp
+        val inset = strokeW / 2f
+        val rimPath = Path().apply {
+            addRoundRect(RectF(inset, inset, outW - inset, outH - inset), max(0f, corner - inset), max(0f, corner - inset), Path.Direction.CW)
+        }
+        canvas.drawPath(rimPath, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = strokeW
+            this.shader = LinearGradient(0f, 0f, 0f, outH.toFloat(),
+                wa((if (spec.dark) 0.30f else 0.75f) * edge), wa((if (spec.dark) 0.05f else 0.20f) * edge), Shader.TileMode.CLAMP)
+        })
+        return out
     }
 
     /**
