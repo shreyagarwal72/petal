@@ -111,9 +111,6 @@ class AppearanceSettingsViewModel @Inject constructor(
     val liquidGlassRefractionWidth: StateFlow<Float> = settingsRepository.liquidGlassRefractionWidth
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
 
-    val liquidGlassTint: StateFlow<String> = settingsRepository.liquidGlassTint
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "FROSTED")
-
     val liquidGlassContainments: StateFlow<Boolean> = settingsRepository.liquidGlassContainments
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -259,10 +256,6 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setLiquidGlassRefractionWidth(width: Float) = viewModelScope.launch {
         settingsRepository.setLiquidGlassRefractionWidth(width)
-    }
-
-    fun setLiquidGlassTint(tint: String) = viewModelScope.launch {
-        settingsRepository.setLiquidGlassTint(tint)
     }
 
     fun setLiquidGlassContainments(enabled: Boolean) = viewModelScope.launch {

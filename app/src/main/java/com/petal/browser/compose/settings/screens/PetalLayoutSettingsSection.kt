@@ -132,7 +132,7 @@ fun PetalLayoutSettingsSection(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
 
     var sheet by rememberSaveable { mutableStateOf<String?>(null) }
-    val total = 9
+    val total = 6
     fun pos(i: Int) = petalGroupPositionFor(i, total)
 
     PetalSettingsSection(
@@ -150,20 +150,10 @@ fun PetalLayoutSettingsSection(
         )
 
         PetalGroupRow(
-            icon = ImageToolboxIcons.Outlined.HyperOS,
-            title = "UI Experience",
-            subtitle = "${settings.uiExperience.title} · ${settings.uiExperience.subtitle}",
-            position = pos(0),
-            iconContainer = MaterialTheme.colorScheme.primaryContainer,
-            iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-            trailing = { EditGlyph() },
-            onClick = { sheet = SHEET_UI_EXPERIENCE }
-        )
-        PetalGroupRow(
             icon = ImageToolboxIcons.Outlined.ToggleOn,
             title = "Switch Type",
             subtitle = if (isGlass) "Liquid Glass toggle (automatic while glass is on)" else settings.switchType.title,
-            position = pos(1),
+            position = pos(0),
             iconContainer = MaterialTheme.colorScheme.primaryContainer,
             iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
             trailing = { EditGlyph() },
@@ -173,7 +163,7 @@ fun PetalLayoutSettingsSection(
             icon = ImageToolboxIcons.Rounded.Slider,
             title = "Slider Type",
             subtitle = settings.sliderType.title,
-            position = pos(2),
+            position = pos(1),
             iconContainer = MaterialTheme.colorScheme.secondaryContainer,
             iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
             trailing = { EditGlyph() },
@@ -183,7 +173,7 @@ fun PetalLayoutSettingsSection(
             icon = ImageToolboxIcons.Rounded.RoundedCorner,
             title = "Shapes Type",
             subtitle = settings.shapeType.title,
-            position = pos(3),
+            position = pos(2),
             iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
             iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
             trailing = { EditGlyph() },
@@ -197,7 +187,7 @@ fun PetalLayoutSettingsSection(
             valueText = String.format(Locale.US, "%.2f", settings.cornersSize),
             defaultValue = 1f,
             valueRange = 0f..2f,
-            position = pos(4),
+            position = pos(3),
             onValueChange = { v -> PetalLayoutState.update(context) { it.copy(cornersSize = v) } }
         )
 
@@ -205,7 +195,7 @@ fun PetalLayoutSettingsSection(
             icon = ImageToolboxIcons.Rounded.Animation,
             title = "Fling Type",
             subtitle = "${settings.flingType.title} · Applies to lists & app surfaces",
-            position = pos(5),
+            position = pos(4),
             iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
             iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
             trailing = { EditGlyph() },
@@ -220,25 +210,8 @@ fun PetalLayoutSettingsSection(
             defaultValue = 1f,
             valueRange = 0.25f..3f,
             steps = 10,
-            position = pos(6),
+            position = pos(5),
             onValueChange = { v -> PetalLayoutState.update(context) { it.copy(motionDurationScale = v) } }
-        )
-
-        PetalSettingsToggleRow(
-            title = "Switch Shadows",
-            subtitle = "Soft shadow under switch thumbs",
-            icon = Icons.Rounded.Layers,
-            checked = settings.drawSwitchShadows,
-            position = pos(7),
-            onCheckedChange = { v -> PetalLayoutState.update(context) { it.copy(drawSwitchShadows = v) } }
-        )
-        PetalSettingsToggleRow(
-            title = "Slider Shadows",
-            subtitle = "Soft shadow under slider thumbs",
-            icon = Icons.Rounded.LinearScale,
-            checked = settings.drawSliderShadows,
-            position = pos(8),
-            onCheckedChange = { v -> PetalLayoutState.update(context) { it.copy(drawSliderShadows = v) } }
         )
     }
 
@@ -303,55 +276,6 @@ fun PetalLayoutSettingsSection(
     }
 
     // ── Pickers ── selection applies immediately; the sheet stays open to compare styles.
-
-    if (sheet == SHEET_UI_EXPERIENCE) {
-        ChoiceSheet(
-            title = "UI Experience",
-            headerIcon = ImageToolboxIcons.Outlined.HyperOS,
-            items = com.petal.browser.ui.theme.layout.UiExperience.entries,
-            selected = settings.uiExperience,
-            banner = "Select your system UI design experience. Each style changes controls, containment, motion, shapes and surface materials across Petal.",
-            onSelect = { exp ->
-                val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-                when (exp) {
-                    com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS -> {
-                        sp.edit().putBoolean("sp_liquid_glass_enabled", true).apply()
-                    }
-                    else -> {
-                        sp.edit().putBoolean("sp_liquid_glass_enabled", false).apply()
-                    }
-                }
-                PetalLayoutState.update(context) { current ->
-                    when (exp) {
-                        com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS -> current.copy(
-                            uiExperience = exp,
-                        )
-                        com.petal.browser.ui.theme.layout.UiExperience.MATERIAL_EXPRESSIVE -> current.copy(
-                            uiExperience = exp,
-                            switchType = PetalSwitchType.MATERIAL_YOU,
-                            sliderType = PetalSliderType.FANCY,
-                            shapeType = PetalShapeType.ROUNDED,
-                            containmentShape = PetalContainmentShapeChoice.FOLLOW_APP,
-                            badgeShape = PetalBadgeShape.MIXED
-                        )
-                    }
-                }
-            },
-            onDismiss = { sheet = null }
-        ) { item, selected, position, onClick ->
-            ChoiceCard(
-                selected = selected,
-                title = item.title,
-                subtitle = item.subtitle,
-                icon = when (item) {
-                    com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS -> ImageToolboxIcons.Rounded.AutoAwesome
-                    com.petal.browser.ui.theme.layout.UiExperience.MATERIAL_EXPRESSIVE -> ImageToolboxIcons.Outlined.MaterialDesign
-                },
-                position = position,
-                onClick = onClick
-            )
-        }
-    }
 
     if (sheet == SHEET_SWITCH) {
         ChoiceSheet(
@@ -535,7 +459,6 @@ fun PetalLayoutSettingsSection(
     }
 }
 
-private const val SHEET_UI_EXPERIENCE = "ui_experience"
 private const val SHEET_SWITCH = "switch"
 private const val SHEET_SLIDER = "slider"
 private const val SHEET_SHAPE = "shape"

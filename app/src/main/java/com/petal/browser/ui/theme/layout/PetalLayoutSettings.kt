@@ -40,8 +40,6 @@ data class PetalLayoutSettings(
     val cornersThrottleMs: Long = 153L,
     val flingType: PetalFlingType = PetalFlingType.DEFAULT,
     val motionDurationScale: Float = 1.0f,
-    val drawSwitchShadows: Boolean = true,
-    val drawSliderShadows: Boolean = true,
     /** Containment (cards, rows, chips, hero surfaces) shape style. [PetalContainmentShapeChoice.FOLLOW_APP] = use [shapeType]. */
     val containmentShape: PetalContainmentShapeChoice = PetalContainmentShapeChoice.FOLLOW_APP,
     /** When false containment uses the app-wide [cornersSize]; when true it uses [containmentCornersSize]. */
@@ -50,6 +48,10 @@ data class PetalLayoutSettings(
     /** Shape of the icon containers (badges) used across containment rows and cards. */
     val badgeShape: PetalBadgeShape = PetalBadgeShape.MIXED,
 ) {
+    /** Switch and slider thumbs always carry their soft shadow (the on/off options were removed). */
+    val drawSwitchShadows: Boolean get() = true
+    val drawSliderShadows: Boolean get() = true
+
     /** Shape style actually used by containment surfaces. */
     val containmentShapeType: PetalShapeType
         get() = containmentShape.type ?: shapeType
@@ -63,8 +65,6 @@ data class PetalLayoutSettings(
         const val KEY_CORNERS_THROTTLE = "sp_corners_animation_throttle"
         const val KEY_FLING_TYPE = "sp_fling_type"
         const val KEY_MOTION_DURATION_SCALE = "sp_motion_duration_scale"
-        const val KEY_DRAW_SWITCH_SHADOWS = "sp_draw_switch_shadows"
-        const val KEY_DRAW_SLIDER_SHADOWS = "sp_draw_slider_shadows"
         const val KEY_CONTAINMENT_SHAPE = "sp_containment_shape_type"
         const val KEY_CONTAINMENT_OWN_CORNERS = "sp_containment_own_corners"
         const val KEY_CONTAINMENT_CORNERS_SIZE = "sp_containment_corners_size"
@@ -88,8 +88,6 @@ data class PetalLayoutSettings(
                 cornersThrottleMs = sp.safeLong(KEY_CORNERS_THROTTLE, 153L).coerceIn(0L, 500L),
                 flingType = PetalFlingType.fromKey(sp.getString(KEY_FLING_TYPE, PetalFlingType.DEFAULT.key)),
                 motionDurationScale = sp.safeFloat(KEY_MOTION_DURATION_SCALE, 1.0f).coerceIn(0.25f, 3f),
-                drawSwitchShadows = sp.getBoolean(KEY_DRAW_SWITCH_SHADOWS, true),
-                drawSliderShadows = sp.getBoolean(KEY_DRAW_SLIDER_SHADOWS, true),
                 containmentShape = PetalContainmentShapeChoice.fromKey(sp.getString(KEY_CONTAINMENT_SHAPE, null)),
                 containmentOwnCorners = sp.getBoolean(KEY_CONTAINMENT_OWN_CORNERS, false),
                 containmentCornersSize = sp.safeFloat(KEY_CONTAINMENT_CORNERS_SIZE, 1.0f).coerceIn(0f, 2f),
@@ -161,8 +159,6 @@ object PetalLayoutState {
             .putLong(PetalLayoutSettings.KEY_CORNERS_THROTTLE, next.cornersThrottleMs)
             .putString(PetalLayoutSettings.KEY_FLING_TYPE, next.flingType.key)
             .putFloat(PetalLayoutSettings.KEY_MOTION_DURATION_SCALE, next.motionDurationScale)
-            .putBoolean(PetalLayoutSettings.KEY_DRAW_SWITCH_SHADOWS, next.drawSwitchShadows)
-            .putBoolean(PetalLayoutSettings.KEY_DRAW_SLIDER_SHADOWS, next.drawSliderShadows)
             .putString(PetalLayoutSettings.KEY_CONTAINMENT_SHAPE, next.containmentShape.key)
             .putBoolean(PetalLayoutSettings.KEY_CONTAINMENT_OWN_CORNERS, next.containmentOwnCorners)
             .putFloat(PetalLayoutSettings.KEY_CONTAINMENT_CORNERS_SIZE, next.containmentCornersSize)
@@ -179,8 +175,6 @@ object PetalLayoutState {
         PetalLayoutSettings.KEY_CORNERS_THROTTLE,
         PetalLayoutSettings.KEY_FLING_TYPE,
         PetalLayoutSettings.KEY_MOTION_DURATION_SCALE,
-        PetalLayoutSettings.KEY_DRAW_SWITCH_SHADOWS,
-        PetalLayoutSettings.KEY_DRAW_SLIDER_SHADOWS,
         PetalLayoutSettings.KEY_CONTAINMENT_SHAPE,
         PetalLayoutSettings.KEY_CONTAINMENT_OWN_CORNERS,
         PetalLayoutSettings.KEY_CONTAINMENT_CORNERS_SIZE,
