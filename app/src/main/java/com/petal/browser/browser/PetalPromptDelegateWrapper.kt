@@ -124,8 +124,7 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         prompt: GeckoSession.PromptDelegate.PopupPrompt
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        if (isPhase2) engine!!.onPopupPrompt(session, prompt)
-        else inner().onPopupPrompt(session, prompt) ?: engine?.onPopupPrompt(session, prompt)
+        inner().onPopupPrompt(session, prompt) ?: engine?.onPopupPrompt(session, prompt)
 
     override fun onBeforeUnloadPrompt(
         session: GeckoSession,
@@ -149,15 +148,13 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSaveOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        if (isPhase2) engine!!.onLoginSave(session, request)
-        else inner().onLoginSave(session, request) ?: engine?.onLoginSave(session, request)
+        inner().onLoginSave(session, request) ?: engine?.onLoginSave(session, request)
 
     override fun onLoginSelect(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSelectOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        if (isPhase2) engine!!.onLoginSelect(session, request)
-        else inner().onLoginSelect(session, request) ?: engine?.onLoginSelect(session, request)
+        inner().onLoginSelect(session, request) ?: engine?.onLoginSelect(session, request)
 
     override fun onFilePrompt(
         session: GeckoSession,
@@ -172,29 +169,25 @@ internal class PetalPromptDelegateWrapper(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSaveOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        if (isPhase2) engine?.onCreditCardSave(session, request) ?: inner().onCreditCardSave(session, request)
-        else engine?.onCreditCardSave(session, request) ?: inner().onCreditCardSave(session, request)
+        inner().onCreditCardSave(session, request) ?: engine?.onCreditCardSave(session, request)
 
     override fun onCreditCardSelect(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSelectOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        if (isPhase2) engine?.onCreditCardSelect(session, request) ?: inner().onCreditCardSelect(session, request)
-        else engine?.onCreditCardSelect(session, request) ?: inner().onCreditCardSelect(session, request)
+        inner().onCreditCardSelect(session, request) ?: engine?.onCreditCardSelect(session, request)
 
     override fun onAddressSave(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.AddressSaveOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        if (isPhase2) engine?.onAddressSave(session, request) ?: inner().onAddressSave(session, request)
-        else engine?.onAddressSave(session, request) ?: inner().onAddressSave(session, request)
+        inner().onAddressSave(session, request) ?: engine?.onAddressSave(session, request)
 
     override fun onAddressSelect(
         session: GeckoSession,
         request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.AddressSelectOption>
     ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-        if (isPhase2) engine?.onAddressSelect(session, request) ?: inner().onAddressSelect(session, request)
-        else engine?.onAddressSelect(session, request) ?: inner().onAddressSelect(session, request)
+        inner().onAddressSelect(session, request) ?: engine?.onAddressSelect(session, request)
 
     override fun onSelectIdentityCredentialProvider(
         session: GeckoSession,
