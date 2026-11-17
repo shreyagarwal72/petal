@@ -93,6 +93,7 @@ fun PetalSummaryBoxDialog(
     }
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val dialogShape = MaterialTheme.shapes.extraLarge
 

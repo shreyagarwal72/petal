@@ -290,7 +290,6 @@ fun PetalQrGeneratorDialog(
             }
         }
     }
-}
 
 /**
  * Saves generated QR bitmap to app cache and launches Android system share sheet with image URI.
