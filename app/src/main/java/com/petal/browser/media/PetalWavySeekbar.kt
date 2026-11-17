@@ -290,7 +290,7 @@ fun WavySliderExpressive(
                 trackColor = inactiveTrackColor,
                 stroke = stroke,
                 trackStroke = stroke,
-                gapSize = 2f * dynamicGapSize.value * (1.0f + 0.1573f * animatedAmplitude * animatedAmplitude),
+                gapSize = if (isInteracting) dynamicGapSize.value else 0.dp,
                 stopSize = 3.dp,
                 amplitude = { progress -> if (progress > 0f) animatedAmplitude else 0f },
                 wavelength = wavelength,

@@ -706,7 +706,7 @@ fun PetalAnimatedPlaybackControls(
                 label = "playWeight",
             )
             val playCorner by animateDpAsState(
-                targetValue = if (!playPauseVisualState) playPauseCornerPlaying else playPauseCornerPaused,
+                targetValue = if (playPauseVisualState) playPauseCornerPlaying else playPauseCornerPaused,
                 animationSpec = defaultSpatialDpSpec,
                 label = "playCorner",
             )
@@ -1153,51 +1153,99 @@ fun PetalPlayerHeaderTopBar(
     val context = LocalContext.current
     val pillBg = if (isLiquidGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.75f)
 
-    Row(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .padding(horizontal = 14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .height(56.dp),
+        contentAlignment = Alignment.Center
     ) {
-        // Collapse Pill Button
-        Box(
+        // Left Actions: Collapse + Optional PiP
+        Row(
             modifier = Modifier
-                .size(42.dp)
-                .clip(ExpressiveButtonShape)
-                .background(pillBg)
-                .then(
-                    if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
-                    else Modifier
-                )
-                .clickable {
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    PetalHapticEngine.getInstance(context).playClick(context)
-                    onCollapse()
-                },
-            contentAlignment = Alignment.Center
+                .align(Alignment.CenterStart)
+                .padding(start = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Rounded.KeyboardArrowDown,
-                contentDescription = "Collapse",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(26.dp)
-            )
+            val hasPip = (onPipClick != null)
+            val collapseShape = if (hasPip) {
+                RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 8.dp, bottomEnd = 8.dp)
+            } else {
+                ExpressiveButtonShape
+            }
+
+            // Collapse Button
+            Box(
+                modifier = Modifier
+                    .size(if (hasPip) 44.dp else 42.dp, 42.dp)
+                    .clip(collapseShape)
+                    .background(pillBg)
+                    .then(
+                        if (isLiquidGlass) Modifier.liquidGlassChrome(collapseShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
+                        else Modifier
+                    )
+                    .clickable {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        PetalHapticEngine.getInstance(context).playClick(context)
+                        onCollapse()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = "Collapse",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+
+            // PiP Button beside collapse if provided
+            if (hasPip) {
+                val pipShape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 50.dp, bottomEnd = 50.dp)
+                Box(
+                    modifier = Modifier
+                        .size(44.dp, 42.dp)
+                        .clip(pipShape)
+                        .background(pillBg)
+                        .then(
+                            if (isLiquidGlass) Modifier.liquidGlassChrome(pipShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
+                            else Modifier
+                        )
+                        .clickable {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            PetalHapticEngine.getInstance(context).playClick(context)
+                            onPipClick?.invoke()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.PictureInPictureAlt,
+                        contentDescription = "Picture in Picture",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
 
-        // Center Title
+        // Center Title (strictly centered)
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .padding(horizontal = 96.dp)
+                .basicMarquee()
         )
 
-        // Right Actions: Route Pill + Queue Button
+        // Right Actions: Route Pill + Queue Button (connected 2-part pill)
         Row(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1277,33 +1325,6 @@ fun PetalPlayerHeaderTopBar(
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(22.dp)
                 )
-            }
-
-            // PiP Button (if callback provided)
-            if (onPipClick != null) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(ExpressiveButtonShape)
-                        .background(pillBg)
-                        .then(
-                            if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true, sheenIntensity = 0.8f, pressFx = true)
-                            else Modifier
-                        )
-                        .clickable {
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            PetalHapticEngine.getInstance(context).playClick(context)
-                            onPipClick()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.PictureInPictureAlt,
-                        contentDescription = "Picture in Picture",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
             }
         }
     }
