@@ -109,6 +109,7 @@ fun PetalRootApp(
 ) {
     val context = LocalContext.current
     val activity = context as? ComponentActivity
+    val density = LocalDensity.current
 
     // Observe Browser ViewModel State
     val activeTab by viewModel.activeTab.collectAsStateWithLifecycle()
@@ -544,7 +545,6 @@ fun PetalRootApp(
         }
     }
 
-    val density = LocalDensity.current
     val navBarBottomInset = with(density) {
         WindowInsets.navigationBars.getBottom(this).toDp()
     }

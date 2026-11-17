@@ -20,6 +20,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.view.ViewGroup
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -28,8 +29,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
@@ -147,8 +150,25 @@ object PetalQuickToolsBridge {
                         try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                     }
 
-                    androidx.activity.compose.BackHandler {
-                        cleanup()
+                    val predictiveBackProgress = remember { androidx.compose.animation.core.Animatable(0f) }
+                    val coroutineScope = rememberCoroutineScope()
+
+                    PredictiveBackHandler(enabled = true) { progressFlow ->
+                        try {
+                            progressFlow.collect { backEvent ->
+                                predictiveBackProgress.snapTo(backEvent.progress)
+                            }
+                            cleanup()
+                        } catch (_: kotlinx.coroutines.CancellationException) {
+                            coroutineScope.launch {
+                                predictiveBackProgress.animateTo(
+                                    0f,
+                                    androidx.compose.animation.core.spring(
+                                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                                    )
+                                )
+                            }
+                        }
                     }
 
                     PetalExpressiveTheme(
@@ -168,10 +188,11 @@ object PetalQuickToolsBridge {
                             com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource,
                             com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper
                         ) {
+                            val backProgress = predictiveBackProgress.value
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.40f))
+                                    .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = (0.40f * (1f - backProgress)).coerceAtLeast(0f)))
                                     .clickable(
                                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                                         indication = null,
@@ -182,6 +203,13 @@ object PetalQuickToolsBridge {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .graphicsLayer {
+                                            val scale = (1f - (backProgress * 0.08f)).coerceIn(0.92f, 1f)
+                                            scaleX = scale
+                                            scaleY = scale
+                                            translationY = backProgress * 200.dp.toPx()
+                                            alpha = (1f - (backProgress * 0.35f)).coerceIn(0f, 1f)
+                                        }
                                         .clickable(
                                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                                             indication = null,

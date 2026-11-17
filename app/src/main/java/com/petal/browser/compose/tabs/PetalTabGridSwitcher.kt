@@ -615,7 +615,18 @@ fun PetalTabGridSwitcher(
     val accentColor = MaterialTheme.colorScheme.primary
     val textColor = MaterialTheme.colorScheme.onSurface
 
-    BackHandler(enabled = tabs.isEmpty()) {
+    val hasSubOverlay = selectionMode || searchQuery.isNotEmpty() || isOverflowMenuExpanded
+    if (hasSubOverlay) {
+        BackHandler(enabled = true) {
+            when {
+                isOverflowMenuExpanded -> isOverflowMenuExpanded = false
+                searchQuery.isNotEmpty() -> searchQuery = ""
+                selectionMode -> leaveSelectionMode()
+            }
+        }
+    }
+
+    BackHandler(enabled = tabs.isEmpty() && !hasSubOverlay) {
         effectiveOnBack()
     }
 
@@ -686,7 +697,7 @@ fun PetalTabGridSwitcher(
     // Predictive back: the tile grows with the gesture; commit expands fully, cancel docks it back.
     val predictiveBackOn by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
     androidx.activity.compose.PredictiveBackHandler(
-        enabled = tabs.isNotEmpty()
+        enabled = tabs.isNotEmpty() && !hasSubOverlay
     ) { progressFlow ->
         currentHeroJob?.cancel()
         val target = tabs.firstOrNull { it.isSelected } ?: tabs.first()
@@ -739,7 +750,7 @@ fun PetalTabGridSwitcher(
     val snackbarHostState = remember { SnackbarHostState() }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = tabs.isEmpty(), // the grid has its own hero-driven predictive back above when tabs are present
+        enabled = tabs.isEmpty() && !hasSubOverlay, // the grid has its own hero-driven predictive back above when tabs are present
         onBack = effectiveOnBack,
     ) {
     com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
