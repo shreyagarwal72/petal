@@ -324,6 +324,22 @@
                 <data android:scheme="file" android:mimeType="application/vnd.petal.password-vault" />
             </intent-filter>
 
+            <!-- Petal sync files (.psync): decrypted with their passphrase and merged into this device. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" android:mimeType="application/vnd.petal.sync" />
+                <data android:scheme="file" android:mimeType="application/vnd.petal.sync" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.psync" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.psync" />
+            </intent-filter>
+
             <!-- Allow opening highlighted text from other apps directly in Petal Browser -->
             <intent-filter>
                 <action android:name="android.intent.action.PROCESS_TEXT" />

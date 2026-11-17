@@ -781,6 +781,28 @@ object PetalBackupManager {
      * Merges into existing data (never wipes), skips secret preference files, returns a summary.
      */
     /**
+     * Empties the chosen local lists so a restore can replace them. Only call this once the replacement
+     * data has been decrypted and parsed, never before.
+     */
+    @JvmStatic
+    fun clearForRestore(context: Context, bookmarks: Boolean, history: Boolean, startSites: Boolean, savedSites: Boolean) {
+        val repo = HistoryBookmarkRepository(context)
+        try {
+            repo.open(true)
+            if (bookmarks) repo.clearTable(HistoryBookmarkContract.TABLE_BOOKMARK)
+            if (history) repo.clearTable(HistoryBookmarkContract.TABLE_HISTORY)
+            if (startSites) repo.clearTable(HistoryBookmarkContract.TABLE_START)
+            if (savedSites) {
+                repo.clearTable(HistoryBookmarkContract.TABLE_STANDARD)
+                repo.clearTable(HistoryBookmarkContract.TABLE_TRUSTED)
+                repo.clearTable(HistoryBookmarkContract.TABLE_PROTECTED)
+            }
+        } finally {
+            try { repo.close() } catch (_: Throwable) {}
+        }
+    }
+
+    /**
      * Additive merge used by folder sync: adds what this device is missing from [json] and returns a
      * short summary. Never touches tabs or settings, and shows no toast or restart prompt.
      */

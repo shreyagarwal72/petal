@@ -57,7 +57,7 @@ object PetalFolderSync {
     private const val INBOX_RETENTION_MS = 7L * 24 * 60 * 60 * 1000
     private const val MAX_TABS = 50
     private const val JOB_ID = 7301
-    private const val MIME = "application/octet-stream"
+    private const val MIME = PetalSyncImport.MIME
 
     const val KEY_BOOKMARKS = "sync_bookmarks"
     const val KEY_HISTORY = "sync_history"
@@ -68,6 +68,9 @@ object PetalFolderSync {
     const val KEY_AUTO = "sync_auto"
 
     class SyncException(message: String) : Exception(message)
+
+    /** Passphrase typed while opening a .psync file, offered once on the setup screen. Memory only. */
+    @Volatile internal var importedPassphrase: String? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val mutex = Mutex()
@@ -154,6 +157,7 @@ object PetalFolderSync {
     fun setPassphrase(context: Context, passphrase: String) {
         val app = context.applicationContext
         PetalSyncVault.save(app, passphrase)
+        importedPassphrase = null
         _configured.value = treeUri(app) != null
         if (_configured.value) schedulePeriodic(app)
     }
@@ -172,6 +176,7 @@ object PetalFolderSync {
             .remove(KEY_TREE).remove(KEY_LAST_SYNC).remove(KEY_OUTBOX).remove(KEY_RECEIVED)
             .remove(KEY_SEEN_IDS).remove(KEY_DEVICES_CACHE).apply()
         PetalSyncVault.clear(app)
+        importedPassphrase = null
         PetalSyncFiles.clearAll(app)
         cancelPeriodic(app)
         _configured.value = false

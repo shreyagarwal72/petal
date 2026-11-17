@@ -155,6 +155,9 @@ fun PetalAccountScreen(
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) cropUri = cacheForCrop(context, uri)
     }
+    val syncFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null && !PetalAccountRepository.openSyncFile(context, uri)) say("Couldn't open that file")
+    }
     val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
             if (showSetup) pickedFolder = uri else PetalFolderSync.setFolder(context, uri)
@@ -603,21 +606,28 @@ fun PetalAccountScreen(
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     PetalGroupNavigationRow(
                                         title = "Clear browsing data", subtitle = "Web cache · $cacheSize",
-                                        position = petalGroupPositionFor(0, 3),
+                                        position = petalGroupPositionFor(0, 4),
                                         variant = PetalBadgeVariant.ERROR,
                                         leadingIcon = { Icon(Icons.Rounded.DeleteSweep, null) },
                                         onClick = { showClearData = true }
                                     )
                                     PetalGroupNavigationRow(
                                         title = "Encrypted backup & recovery", subtitle = "Export and restore XP, levels and stats",
-                                        position = petalGroupPositionFor(1, 3),
+                                        position = petalGroupPositionFor(1, 4),
                                         variant = PetalBadgeVariant.SECONDARY,
                                         leadingIcon = { Icon(Icons.Rounded.EnhancedEncryption, null) },
                                         onClick = { showXpBackup = true }
                                     )
                                     PetalGroupNavigationRow(
+                                        title = "Restore from a sync file", subtitle = "Add or replace data from a .psync file",
+                                        position = petalGroupPositionFor(2, 4),
+                                        variant = PetalBadgeVariant.TERTIARY,
+                                        leadingIcon = { Icon(Icons.Rounded.Storage, null) },
+                                        onClick = { syncFileLauncher.launch(arrayOf("*/*")) }
+                                    )
+                                    PetalGroupNavigationRow(
                                         title = "Reset local profile", subtitle = "Remove your name, bio, accent and photo from this device",
-                                        position = petalGroupPositionFor(2, 3),
+                                        position = petalGroupPositionFor(3, 4),
                                         variant = PetalBadgeVariant.ERROR,
                                         leadingIcon = { Icon(Icons.Rounded.Delete, null) },
                                         onClick = { showReset = true }
@@ -711,8 +721,9 @@ fun PetalAccountScreen(
 
     // First-time sync setup: choose a folder, then a passphrase.
     if (showSetup) {
-        var pass by remember { mutableStateOf("") }
-        var confirm by remember { mutableStateOf("") }
+        val prefill = remember { PetalFolderSync.importedPassphrase.orEmpty() }
+        var pass by remember { mutableStateOf(prefill) }
+        var confirm by remember { mutableStateOf(prefill) }
         val valid = pickedFolder != null && pass.length >= 8 && pass == confirm
         PetalMaterialAlertDialog(
             onDismissRequest = { showSetup = false },

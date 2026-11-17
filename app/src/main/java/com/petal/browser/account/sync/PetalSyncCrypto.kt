@@ -39,6 +39,10 @@ object PetalSyncCrypto {
         return MAGIC + salt + iv + cipher.doFinal(plain)
     }
 
+    /** Cheap check that [blob] looks like a Petal sync file (right header and a plausible size). */
+    fun isPetalFile(blob: ByteArray): Boolean =
+        blob.size > MAGIC.size + SALT_LEN + IV_LEN + 16 && blob.copyOfRange(0, MAGIC.size).contentEquals(MAGIC)
+
     /**
      * @return the plaintext, or null when the passphrase is wrong or the data was tampered with.
      * @throws IllegalArgumentException when the bytes are not a Petal sync file at all.

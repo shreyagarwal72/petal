@@ -854,6 +854,15 @@ class MainActivity : FragmentActivity(), BrowserController {
             return
         }
 
+        // Handle Petal sync files (.psync): decrypt with the passphrase and add their contents here
+        if (dataUri != null && com.petal.browser.account.sync.PetalSyncImport.isSyncFile(this, dataUri, intent.type)) {
+            // One-shot: clear it so a rotation or recreate doesn't open the dialog again.
+            intent.data = null
+            intent.action = Intent.ACTION_MAIN
+            com.petal.browser.account.sync.PetalSyncImport.handle(this, dataUri)
+            return
+        }
+
         if (Intent.ACTION_PROCESS_TEXT == action) {
             val text = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString()
             if (!text.isNullOrBlank()) {

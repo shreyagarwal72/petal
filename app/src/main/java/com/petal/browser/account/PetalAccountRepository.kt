@@ -46,6 +46,13 @@ object PetalAccountRepository {
         return null
     }
 
+    /** Opens a picked .psync file in the import/restore dialog. */
+    fun openSyncFile(context: Context, uri: android.net.Uri): Boolean {
+        val activity = context.findActivity() as? com.petal.browser.activity.MainActivity ?: return false
+        com.petal.browser.account.sync.PetalSyncImport.handle(activity, uri)
+        return true
+    }
+
     /**
      * Opens the App Lock settings page as its own decor overlay with its own predictive-back surface
      * (the same path the Java side uses), so it never nests inside another screen's back handling.
