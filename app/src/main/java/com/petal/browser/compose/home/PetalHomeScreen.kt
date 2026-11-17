@@ -699,17 +699,7 @@ fun PetalHomeScreen(
                                 // ── Hero Search Bar (moved down into former quick-actions slot) ──
                                 PetalSearchBar(onSearch = onSearch)
 
-                                Spacer(Modifier.height(18.dp))
-
-                                // ── Quick Access Row (Bookmarks, History, Downloads, Tabs) ──
-                                PetalHomeQuickActionsRow(
-                                    onOpenBookmarks = onOpenBookmarksAction,
-                                    onOpenHistory = onOpenHistoryAction,
-                                    onOpenDownloads = onOpenDownloadsAction,
-                                    onOpenTabs = onOpenTabSwitcher
-                                )
-
-                                Spacer(Modifier.height(24.dp))
+                                Spacer(Modifier.height(26.dp))
 
                                 // ── Shortcuts Grid (4 columns, squircle tiles) ──────────
                                 PetalShortcutGrid(
@@ -1383,113 +1373,6 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.PetalUserPro
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-// ── 6b. Quick Access Actions Row ──────────────────────────────────────────
-
-@Composable
-private fun PetalHomeQuickActionsRow(
-    onOpenBookmarks: () -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenDownloads: () -> Unit,
-    onOpenTabs: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        PetalHomeQuickActionChip(
-            label = "Bookmarks",
-            icon = Icons.Rounded.BookmarkBorder,
-            onClick = onOpenBookmarks,
-            modifier = Modifier.weight(1f)
-        )
-        PetalHomeQuickActionChip(
-            label = "History",
-            icon = Icons.Rounded.History,
-            onClick = onOpenHistory,
-            modifier = Modifier.weight(1f)
-        )
-        PetalHomeQuickActionChip(
-            label = "Downloads",
-            icon = Icons.Rounded.Download,
-            onClick = onOpenDownloads,
-            modifier = Modifier.weight(1f)
-        )
-        PetalHomeQuickActionChip(
-            label = "Tabs",
-            icon = Icons.Rounded.FilterNone,
-            onClick = onOpenTabs,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-private fun PetalHomeQuickActionChip(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val chipShape = RoundedCornerShape(20.dp)
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val pressScale by animateFloatAsState(
-        targetValue = if (isPressed) 0.94f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "quick_chip_press"
-    )
-
-    Surface(
-        modifier = modifier
-            .height(38.dp)
-            .graphicsLayer {
-                scaleX = pressScale
-                scaleY = pressScale
-            }
-            .liquidGlassChrome(shape = chipShape, enabled = isGlass)
-            .clip(chipShape)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = ripple(bounded = true),
-                onClick = {
-                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.6f)
-                    onClick()
-                }
-            ),
-        shape = chipShape,
-        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = if (isGlass) 0.dp else 2.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(17.dp)
-            )
-            Spacer(Modifier.width(4.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
             )
         }
     }
