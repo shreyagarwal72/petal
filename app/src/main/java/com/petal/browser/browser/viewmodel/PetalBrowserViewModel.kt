@@ -332,8 +332,9 @@ class PetalBrowserViewModel @Inject constructor(
         selectTab: Boolean = true,
         private: Boolean = false,
         groupId: String? = null,
-        groupTitle: String? = null
-    ) {
+        groupTitle: String? = null,
+        keepSwitcherOpen: Boolean = false
+    ): String {
         val tabId = java.util.UUID.randomUUID().toString()
         if (!groupId.isNullOrBlank()) {
             PetalTabMetadataStore.put(
@@ -374,9 +375,32 @@ class PetalBrowserViewModel @Inject constructor(
         if (private) {
             PetalIncognitoSessionManager.syncIncognitoState(context)
         }
-        if (_isTabSwitcherOpen.value) {
+        // keepSwitcherOpen: a replacement tab created because the user closed the LAST tab from the
+        // tab manager must not dismiss the manager (that flashed the home page over it).
+        if (_isTabSwitcherOpen.value && !keepSwitcherOpen) {
             _isTabSwitcherOpen.value = false
         }
+        return tabId
+    }
+
+    /**
+     * Home tab that was auto-created when the user closed their last tab from the tab manager.
+     * Undo removes it again so restoring the closed tab doesn't leave a stray blank tab behind.
+     */
+    private var placeholderHomeTabId: String? = null
+
+    private fun openPlaceholderHomeTab() {
+        placeholderHomeTabId = openNewTab("about:home", selectTab = true, keepSwitcherOpen = _isTabSwitcherOpen.value)
+    }
+
+    private fun dropPlaceholderHomeTab() {
+        val id = placeholderHomeTabId ?: return
+        placeholderHomeTabId = null
+        val tabs = browserStore.state.tabs
+        val tab = tabs.firstOrNull { it.id == id } ?: return
+        if (tabs.size < 2 || !PetalBrowserUtils.isHomePage(tab.content.url)) return
+        browserStore.dispatch(TabListAction.RemoveTabAction(id))
+        PetalTabMetadataStore.remove(context, id)
     }
 
     fun selectTab(tabId: String) {
@@ -488,7 +512,7 @@ class PetalBrowserViewModel @Inject constructor(
             PetalIncognitoSessionManager.syncIncognitoState(context)
         }
         if (browserStore.state.tabs.isEmpty()) {
-            openNewTab("about:home", selectTab = true)
+            openPlaceholderHomeTab()
         }
     }
 
@@ -521,7 +545,7 @@ class PetalBrowserViewModel @Inject constructor(
             PetalIncognitoSessionManager.syncIncognitoState(context)
         }
         if (browserStore.state.tabs.isEmpty()) {
-            openNewTab("about:home", selectTab = true)
+            openPlaceholderHomeTab()
         }
     }
 
@@ -547,7 +571,11 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun restoreTab(tab: PetalTabItem) {
-        if (!tab.isIncognito && restoreFromSnapshot(tab.id)) return
+        if (!tab.isIncognito && restoreFromSnapshot(tab.id)) {
+            dropPlaceholderHomeTab()
+            return
+        }
+        dropPlaceholderHomeTab()
         val url = if (tab.url.isBlank() || tab.url == "Petal Home" || tab.url.equals("about:blank", ignoreCase = true)) {
             "about:home"
         } else {

@@ -18,6 +18,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -492,13 +493,16 @@ fun PetalTabGridSwitcher(
     var currentHeroJob by remember { mutableStateOf<Job?>(null) }
     var newTabButtonBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     val closingTabIds = remember { mutableStateListOf<String>() }
+    // Tabs that already existed when the manager opened never pop in; only cards that show up later do.
+    val initialTabIds = remember { tabs.map { it.id }.toHashSet() }
 
     fun initiateTabClose(tab: PetalTabItem) {
         if (closingTabIds.contains(tab.id)) return
         closingTabIds.add(tab.id)
         coroutineScope.launch {
             com.petal.browser.motion.MotionGate.withMotion("tab_close") {
-                kotlinx.coroutines.delay(180L)
+                // Same duration as the card's own exit, so the grid reflows exactly when it is gone.
+                kotlinx.coroutines.delay(tabCloseDurationMs().toLong())
             }
             requestOptimisticClose(tab)
             closingTabIds.remove(tab.id)
@@ -1252,15 +1256,12 @@ fun PetalTabGridSwitcher(
                                         val isTargetHovered = (hoverTargetTabId == tab.id)
 
                                         val isClosing = closingTabIds.contains(tab.id)
-                                        val cardCloseScale by animateFloatAsState(
-                                            targetValue = if (isClosing) 0.65f else 1f,
-                                            animationSpec = PetalSpring.exit(),
-                                            label = "tab_close_scale"
-                                        )
-                                        val cardCloseAlpha by animateFloatAsState(
-                                            targetValue = if (isClosing) 0f else 1f,
-                                            animationSpec = PetalSpring.fadeOut(),
-                                            label = "tab_close_alpha"
+                                        // Chrome/Brave-style card presence: the card shrinks a little and fades out
+                                        // on close, siblings then glide into the gap; cards that appear later
+                                        // (replacement home tab, Undo) pop in instead of snapping.
+                                        val cardPresence = rememberTabCardPresence(
+                                            isClosing = isClosing,
+                                            popIn = tab.id !in initialTabIds,
                                         )
 
                                         val dismissState = rememberSwipeToDismissBoxState(
@@ -1282,10 +1283,12 @@ fun PetalTabGridSwitcher(
                                                     placementSpec = PetalSpring.listReorder()
                                                 )
                                                 .graphicsLayer {
-                                                    scaleX = cardCloseScale
-                                                    scaleY = cardCloseScale
+                                                    val presence = cardPresence.value
+                                                    val cardScale = TAB_CARD_MIN_SCALE + (1f - TAB_CARD_MIN_SCALE) * presence
+                                                    scaleX = cardScale
+                                                    scaleY = cardScale
                                                     // Real tile fades in as the hero docks onto it.
-                                                    alpha = cardCloseAlpha * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
+                                                    alpha = cardPresence.value * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
                                                 }
                                                 .onGloballyPositioned { coordinates ->
                                                     tabCardBounds[tab.id] = coordinates.boundsInWindow()
@@ -1417,15 +1420,12 @@ fun PetalTabGridSwitcher(
                                         val isTargetHovered = (hoverTargetTabId == tab.id)
 
                                         val isClosing = closingTabIds.contains(tab.id)
-                                        val cardCloseScale by animateFloatAsState(
-                                            targetValue = if (isClosing) 0.65f else 1f,
-                                            animationSpec = PetalSpring.exit(),
-                                            label = "tab_close_scale"
-                                        )
-                                        val cardCloseAlpha by animateFloatAsState(
-                                            targetValue = if (isClosing) 0f else 1f,
-                                            animationSpec = PetalSpring.fadeOut(),
-                                            label = "tab_close_alpha"
+                                        // Chrome/Brave-style card presence: the card shrinks a little and fades out
+                                        // on close, siblings then glide into the gap; cards that appear later
+                                        // (replacement home tab, Undo) pop in instead of snapping.
+                                        val cardPresence = rememberTabCardPresence(
+                                            isClosing = isClosing,
+                                            popIn = tab.id !in initialTabIds,
                                         )
 
                                         val dismissState = rememberSwipeToDismissBoxState(
@@ -1447,10 +1447,12 @@ fun PetalTabGridSwitcher(
                                                     placementSpec = PetalSpring.listReorder()
                                                 )
                                                 .graphicsLayer {
-                                                    scaleX = cardCloseScale
-                                                    scaleY = cardCloseScale
+                                                    val presence = cardPresence.value
+                                                    val cardScale = TAB_CARD_MIN_SCALE + (1f - TAB_CARD_MIN_SCALE) * presence
+                                                    scaleX = cardScale
+                                                    scaleY = cardScale
                                                     // Real tile fades in as the hero docks onto it.
-                                                    alpha = cardCloseAlpha * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
+                                                    alpha = cardPresence.value * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
                                                 }
                                                 .onGloballyPositioned { coordinates ->
                                                     tabCardBounds[tab.id] = coordinates.boundsInWindow()
@@ -2127,6 +2129,76 @@ private fun TabManagerEmptyState(
     }
 }
 
+
+// ── Tab card motion + thumbnails ─────────────────────────────────────────────────────────────
+
+private const val TAB_CLOSE_BASE_MS = 190
+private const val TAB_CARD_MIN_SCALE = 0.84f
+
+private fun tabCloseDurationMs(): Int = (TAB_CLOSE_BASE_MS * PetalSpring.timeScale).toInt().coerceAtLeast(1)
+
+/**
+ * 1f = card fully present, 0f = gone. Closing runs a short accelerating tween (Chrome/Brave's
+ * "shrink + fade"); a card that shows up after the manager opened springs in from 0f after a
+ * short beat, so a replacement home tab appears just after the closed card has left.
+ */
+@Composable
+private fun rememberTabCardPresence(isClosing: Boolean, popIn: Boolean): State<Float> {
+    val reduceMotion = rememberReduceMotion()
+    val presence = remember { Animatable(if (popIn && !reduceMotion) 0f else 1f) }
+    LaunchedEffect(isClosing, reduceMotion) {
+        when {
+            isClosing -> {
+                if (reduceMotion) presence.snapTo(0f)
+                else presence.animateTo(
+                    0f,
+                    tween(durationMillis = tabCloseDurationMs(), easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                )
+            }
+            presence.value < 1f -> {
+                if (presence.value == 0f) kotlinx.coroutines.delay(80L)
+                presence.animateTo(1f, PetalSpring.enter())
+            }
+        }
+    }
+    return presence.asState()
+}
+
+/**
+ * Live thumbnail for a tab card, like Fenix's ThumbnailLoader: seeds from the host bitmap, falls back
+ * to the cache, and follows the cache afterwards, so a capture that lands while the manager is already
+ * on screen replaces the placeholder / stale frame instead of waiting for the next recomposition.
+ */
+@Composable
+private fun rememberTabThumbnail(tab: PetalTabItem): State<android.graphics.Bitmap?> {
+    val state = remember(tab.id, tab.thumbnailKey, tab.isIncognito) {
+        mutableStateOf(tab.previewBitmap?.takeUnless { it.isRecycled })
+    }
+    LaunchedEffect(tab.previewBitmap) {
+        tab.previewBitmap?.takeUnless { it.isRecycled }?.let { state.value = it }
+    }
+    LaunchedEffect(tab.id, tab.thumbnailKey, tab.isIncognito) {
+        if (state.value?.isRecycled != false) {
+            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.thumbnailKey, tab.id), tab.isIncognito) { bitmap ->
+                if (bitmap != null && !bitmap.isRecycled) state.value = bitmap
+            }
+        }
+    }
+    DisposableEffect(tab.id, tab.thumbnailKey, tab.isIncognito) {
+        val keys = setOf(tab.id, tab.thumbnailKey)
+        val listener = com.petal.browser.unit.TabThumbnailCache.ThumbnailListener { changed ->
+            if (changed in keys) {
+                state.value = keys.firstNotNullOfOrNull { key ->
+                    com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(key, tab.isIncognito)?.takeUnless { it.isRecycled }
+                }
+            }
+        }
+        com.petal.browser.unit.TabThumbnailCache.addListener(listener)
+        onDispose { com.petal.browser.unit.TabThumbnailCache.removeListener(listener) }
+    }
+    return state
+}
+
 @Composable
 private fun PetalTabCard(
     tab: PetalTabItem,
@@ -2151,17 +2223,7 @@ private fun PetalTabCard(
     onDuplicateTab: () -> Unit = {},
     onCloseOtherTabs: () -> Unit = {}
 ) {
-    var cachedPreview by remember(tab.id, tab.thumbnailKey, tab.url, tab.isIncognito, tab.previewBitmap) {
-        mutableStateOf(tab.previewBitmap?.takeUnless { it.isRecycled })
-    }
-    LaunchedEffect(tab.id, tab.thumbnailKey, tab.url, tab.isIncognito) {
-        cachedPreview = tab.previewBitmap?.takeUnless { it.isRecycled }
-        if (cachedPreview == null) {
-            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.thumbnailKey, tab.id), tab.isIncognito) { bitmap ->
-                if (bitmap != null && !bitmap.isRecycled) cachedPreview = bitmap
-            }
-        }
-    }
+    val cachedPreview by rememberTabThumbnail(tab)
     val cardBg = MaterialTheme.colorScheme.surfaceContainerLow
     val headerBg = MaterialTheme.colorScheme.surfaceContainerHigh
     val textColor = MaterialTheme.colorScheme.onSurface
@@ -2324,7 +2386,10 @@ private fun PetalTabCard(
                         Image(
                             bitmap = preview.asImageBitmap(),
                             contentDescription = stringResource(R.string.ui_live_preview_of, tab.title),
+                            // Firefox/Fenix: fill the width and keep the TOP of the page, crop the bottom.
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            alignment = Alignment.TopCenter,
+                            filterQuality = androidx.compose.ui.graphics.FilterQuality.Medium,
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
@@ -2518,17 +2583,7 @@ private fun PetalTabListItem(
     onCloseOtherTabs: () -> Unit = {}
 ) {
     val textColor = MaterialTheme.colorScheme.onSurface
-    var cachedPreview by remember(tab.id, tab.thumbnailKey, tab.url, tab.isIncognito, tab.previewBitmap) {
-        mutableStateOf(tab.previewBitmap?.takeUnless { it.isRecycled })
-    }
-    LaunchedEffect(tab.id, tab.thumbnailKey, tab.url, tab.isIncognito) {
-        cachedPreview = tab.previewBitmap?.takeUnless { it.isRecycled }
-        if (cachedPreview == null) {
-            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.thumbnailKey, tab.id), tab.isIncognito) { bitmap ->
-                if (bitmap != null && !bitmap.isRecycled) cachedPreview = bitmap
-            }
-        }
-    }
+    val cachedPreview by rememberTabThumbnail(tab)
     var isMuted by remember(tab.id) { mutableStateOf(tab.isMuted) }
 
     val groupColor = tab.groupColorHex?.let {
@@ -2554,6 +2609,7 @@ private fun PetalTabListItem(
                                 bitmap = preview.asImageBitmap(),
                                 contentDescription = stringResource(R.string.ui_thumbnail),
                                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                alignment = Alignment.TopCenter,
                                 modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
                             )
                         } else {
