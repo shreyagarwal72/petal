@@ -123,7 +123,8 @@ object PetalExtensionsBridge {
                 ) {
                     PetalExtensionPopupScreen(
                         popup = popup,
-                        onDismiss = onDismiss
+                        onDismiss = onDismiss,
+                        handleBackInternally = true
                     )
                 }
             }
@@ -1874,9 +1875,12 @@ private class PopupDialogRequest(
 @Composable
 fun PetalExtensionPopupScreen(
     popup: PetalExtensionManager.PendingPopup,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    handleBackInternally: Boolean = false
 ) {
-    androidx.activity.compose.BackHandler(onBack = onDismiss)
+    if (handleBackInternally) {
+        androidx.activity.compose.BackHandler(onBack = onDismiss)
+    }
     val context = LocalContext.current
     val hostActivity = context as? ComponentActivity
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")

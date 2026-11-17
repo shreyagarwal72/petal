@@ -565,6 +565,8 @@ fun PetalDownloadManagerScreen(
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = !hasSubOverlay,
+        holdDismissedPose = !isSettingsOpen,
+        useLiveUnderlay = !isSettingsOpen,
         onBack = {
             if (isSettingsOpen) {
                 isSettingsOpen = false

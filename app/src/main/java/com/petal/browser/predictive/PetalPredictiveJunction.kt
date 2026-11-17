@@ -185,8 +185,9 @@ object PetalPredictiveJunction {
         isPredictiveSettingEnabled: Boolean = _isPredictiveBackEnabled.value,
         pageKey: String? = null
     ): Boolean {
-        if (pageKey != null && !isPagePredictiveSupported(pageKey)) return false
-        return true
+        if (!isPredictiveSettingEnabled || !isDeviceSupported) return true
+        if (pageKey != null && !isPagePredictiveSupported(pageKey)) return true
+        return false
     }
 }
 
@@ -350,10 +351,14 @@ fun PetalPredictiveBackSurface(
                     try {
                         onBack()
                         committedDone = true
+                        if (holdPose) {
+                            backState = PredictiveBackState.Idle.copy(dismissed = true)
+                            kotlinx.coroutines.delay(HOLD_DISMISSED_MS)
+                        }
                     } finally {
                         if (liveUnderlay) PetalLiveUnderlay.end(true)
                         progressAnim.snapTo(0f)
-                        backState = if (holdPose) PredictiveBackState.Idle.copy(dismissed = true) else PredictiveBackState.Idle
+                        backState = PredictiveBackState.Idle
                     }
                 } catch (e: CancellationException) {
                     val from = backState.progress
@@ -375,14 +380,6 @@ fun PetalPredictiveBackSurface(
                     }
                     if (liveUnderlay) PetalLiveUnderlay.end(false)
                     backState = PredictiveBackState.Idle
-                }
-                if (committedDone && holdPose) {
-                    // Outlast the host's exit animation, then release. Leaving composition cancels this.
-                    try {
-                        kotlinx.coroutines.delay(HOLD_DISMISSED_MS)
-                    } finally {
-                        backState = PredictiveBackState.Idle
-                    }
                 }
             }
         } else {

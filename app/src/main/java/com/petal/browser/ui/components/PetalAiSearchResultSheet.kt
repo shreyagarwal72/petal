@@ -121,7 +121,8 @@ object PetalAiSearchBridge {
                         ) {
                             PetalAiSearchResultSheet(
                                 query = query,
-                                onDismiss = { cleanup() }
+                                onDismiss = { cleanup() },
+                                handleBackInternally = true
                             )
                         }
                     }
@@ -145,9 +146,12 @@ object PetalAiSearchBridge {
 @Composable
 fun PetalAiSearchResultSheet(
     query: String,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    handleBackInternally: Boolean = false
 ) {
-    androidx.activity.compose.BackHandler(enabled = true, onBack = onDismiss)
+    if (handleBackInternally) {
+        androidx.activity.compose.BackHandler(enabled = true, onBack = onDismiss)
+    }
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 

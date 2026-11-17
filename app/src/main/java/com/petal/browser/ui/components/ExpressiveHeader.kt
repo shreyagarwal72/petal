@@ -139,9 +139,9 @@ fun ExpressiveHeader(
                     .padding(top = 8.dp, bottom = 16.dp),
             ) {
                 val backState = com.petal.browser.predictive.LocalPredictiveBackState.current
-                val effectiveTargetTitle = targetTitle ?: if (onBack != null) "Settings" else null
-                val effectiveTargetSubtitle = targetSubtitle ?: if (onBack != null) "Browser Preferences & Customization" else null
-                val isGestureActive = backState.isActive && effectiveTargetTitle != null && onBack != null
+                val effectiveTargetTitle = targetTitle
+                val effectiveTargetSubtitle = targetSubtitle
+                val isGestureActive = backState.isActive && !effectiveTargetTitle.isNullOrBlank() && onBack != null
                 val progress = if (isGestureActive) backState.progress.coerceIn(0f, 1f) else 0f
                 val swipeDir = if (backState.swipeEdge == androidx.activity.BackEventCompat.EDGE_LEFT) 1f else -1f
 

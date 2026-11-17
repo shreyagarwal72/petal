@@ -404,6 +404,30 @@ fun PetalRootApp(
                     overlayTouchY = backEvent.touchY
                     overlayCommitting = false
                     overlayBackProgress.snapTo(backEvent.progress)
+                    val presented = (activity as? MainActivity)?.presentedScreens?.lastOrNull()
+                    if (presented != null && junctionPredictiveEnabled && poseEnabledState.value) {
+                        val p = backEvent.progress
+                        val style = PetalPredictiveJunction.backStyle.value
+                        val frame = PetalBackMotion.frame(
+                            style,
+                            PetalBackInput(
+                                progress = p,
+                                swipeEdge = backEvent.swipeEdge,
+                                touchY = backEvent.touchY,
+                                initialTouchY = initialTouchY,
+                                widthPx = presented.width.toFloat().takeIf { it > 0f } ?: (context.resources.displayMetrics.widthPixels.toFloat()),
+                                heightPx = presented.height.toFloat().takeIf { it > 0f } ?: (context.resources.displayMetrics.heightPixels.toFloat()),
+                                density = density.density,
+                                blurEnabled = false,
+                                exitDirection = predictiveBackExitDirection,
+                            )
+                        ).top
+                        presented.scaleX = frame.scale
+                        presented.scaleY = frame.scale
+                        presented.translationX = frame.translationX
+                        presented.translationY = frame.translationY
+                        presented.alpha = frame.alpha
+                    }
                     return@collect
                 }
                 if (!junctionPredictiveEnabled || !poseEnabledState.value) return@collect
@@ -504,15 +528,18 @@ fun PetalRootApp(
             isCommitting = false
             overlayCommitting = false
             if (overlayMode) {
+                val presented = (activity as? MainActivity)?.presentedScreens?.lastOrNull()
+                presented?.animate()?.scaleX(1f)?.scaleY(1f)?.translationX(0f)?.translationY(0f)?.alpha(1f)?.setDuration(200L)?.start()
                 overlayBackProgress.animateTo(0f, PetalSpring.containerMorph())
             } else {
                 progressAnim.animateTo(0f, PetalSpring.containerMorph())
             }
         } finally {
             if (!exiting) {
-                isBackActive = false
                 isCommitting = false
-                progressAnim.snapTo(0f)
+                if (progressAnim.value < 0.001f) {
+                    isBackActive = false
+                }
             }
         }
     }

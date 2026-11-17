@@ -393,7 +393,8 @@ fun PetalOverflowMenuSheet(
     onOpenExtensionSettings: (String) -> Unit = {},
     onOpenDevConsole: () -> Unit = {},
     onOpenSafeLocker: () -> Unit = {},
-    onOpenQuickTools: () -> Unit = {}
+    onOpenQuickTools: () -> Unit = {},
+    handleBackInternally: Boolean = false
 ) {
     val context = LocalContext.current
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
@@ -414,8 +415,10 @@ fun PetalOverflowMenuSheet(
         }
     }
 
-    BackHandler(enabled = !isDismissing) {
-        handleDismiss()
+    if (handleBackInternally) {
+        BackHandler(enabled = !isDismissing) {
+            handleDismiss()
+        }
     }
 
     LaunchedEffect(isDismissing) {
