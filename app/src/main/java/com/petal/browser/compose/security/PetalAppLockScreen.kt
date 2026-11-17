@@ -32,6 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -69,6 +71,9 @@ fun PetalAppLockScreen(
     val lockType = remember { sp.getString("sp_app_lock_type", "FINGERPRINT") ?: "FINGERPRINT" }
     val savedPasscode = remember { sp.getString("sp_app_lock_passcode", "") ?: "" }
     val isBiometricAllowed = remember { sp.getBoolean("sp_biometric_lock", false) }
+    val lockFilledIcon = ImageVector.vectorResource(R.drawable.lock_filled)
+    val fingerprintFilledIcon = ImageVector.vectorResource(R.drawable.fingerprint_filled)
+    val keyFilledIcon = ImageVector.vectorResource(R.drawable.key_filled)
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var enteredPasscode by remember { mutableStateOf("") }
@@ -204,8 +209,13 @@ fun PetalAppLockScreen(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
+                            val activeLockIcon = when {
+                                isUnlockedSuccess -> Icons.Rounded.CheckCircle
+                                lockType == "FINGERPRINT" -> fingerprintFilledIcon
+                                else -> keyFilledIcon
+                            }
                             Icon(
-                                imageVector = if (isUnlockedSuccess) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
+                                imageVector = activeLockIcon,
                                 contentDescription = stringResource(R.string.ui_app_lock),
                                 tint = if (isGlass) {
                                     if (isUnlockedSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface

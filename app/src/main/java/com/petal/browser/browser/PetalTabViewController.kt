@@ -411,6 +411,9 @@ class PetalTabViewController private constructor(
             pageTitle = title
             tab?.let { browserStore.dispatch(ContentAction.UpdateTitleAction(it.id, title)) }
             publishState()
+            if (title.isNotBlank() && !isIncognito() && !pageUrl.startsWith("about:") && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(pageUrl)) {
+                com.petal.browser.browser.PetalPlacesStorage.recordTitleObservation(context, pageUrl, title)
+            }
             if (!loading && title.isNotBlank() && pageUrl == lastRecordedHistoryUrl) {
                 recordHistoryVisit(pageUrl, title, force = true)
             }
@@ -1017,14 +1020,13 @@ class PetalTabViewController private constructor(
                     val result = org.mozilla.geckoview.GeckoResult<BooleanArray>()
                     kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                         try {
-                            val action = com.petal.browser.database.HistoryBookmarkRepository(context)
-                            action.open(false)
-                            val visited = BooleanArray(urls.size) { i ->
-                                val u = urls[i]
+                            val filterUrls = urls.map { it.trim() }
+                            val visitedList = com.petal.browser.database.PetalPlacesProvider.getVisited(context, filterUrls)
+                            val visited = BooleanArray(filterUrls.size) { i ->
+                                val u = filterUrls[i]
                                 if (u.isBlank() || u.startsWith("about:") || u.startsWith("moz-extension://")) false
-                                else action.checkUrl(u, com.petal.browser.database.HistoryBookmarkContract.TABLE_HISTORY)
+                                else visitedList.getOrElse(i) { false }
                             }
-                            action.close()
                             result.complete(visited)
                         } catch (_: Throwable) {
                             result.complete(BooleanArray(urls.size) { false })

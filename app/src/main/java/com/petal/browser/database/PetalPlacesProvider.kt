@@ -10,6 +10,7 @@ import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import mozilla.components.concept.storage.BookmarkInfo
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
+import mozilla.components.concept.storage.PageObservation
 import mozilla.components.concept.storage.PageVisit
 import mozilla.components.concept.storage.VisitType
 
@@ -285,7 +286,44 @@ object PetalPlacesProvider {
         runBlocking(Dispatchers.IO) {
             try {
                 hs.recordVisit(url.trim(), PageVisit(VisitType.LINK))
+                if (title.isNotBlank() && !title.equals("about:blank", ignoreCase = true)) {
+                    hs.recordObservation(url.trim(), PageObservation(title = title.trim()))
+                }
             } catch (_: Throwable) {}
+        }
+    }
+
+    fun recordTitleObservation(context: Context, url: String, title: String) {
+        if (url.isBlank() || title.isBlank() || url.startsWith("about:") || url.startsWith("moz-extension://") || title.equals("about:blank", ignoreCase = true)) return
+        val hs = getHistoryStorage(context)
+        runBlocking(Dispatchers.IO) {
+            try {
+                hs.recordObservation(url.trim(), PageObservation(title = title.trim()))
+            } catch (_: Throwable) {}
+        }
+    }
+
+    fun hasVisited(context: Context, url: String): Boolean {
+        if (url.isBlank() || url.startsWith("about:") || url.startsWith("moz-extension://")) return false
+        val hs = getHistoryStorage(context)
+        return runBlocking(Dispatchers.IO) {
+            try {
+                hs.getVisited(listOf(url.trim())).firstOrNull() ?: false
+            } catch (_: Throwable) {
+                false
+            }
+        }
+    }
+
+    fun getVisited(context: Context, urls: List<String>): List<Boolean> {
+        if (urls.isEmpty()) return emptyList()
+        val hs = getHistoryStorage(context)
+        return runBlocking(Dispatchers.IO) {
+            try {
+                hs.getVisited(urls.map { it.trim() })
+            } catch (_: Throwable) {
+                urls.map { false }
+            }
         }
     }
 

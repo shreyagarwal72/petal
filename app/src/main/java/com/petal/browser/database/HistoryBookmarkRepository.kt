@@ -237,6 +237,13 @@ open class HistoryBookmarkRepository(context: Context?) {
 
     fun checkUrl(url: String?, table: String): Boolean {
         if (url.isNullOrBlank()) return false
+        val ctx = context ?: com.petal.browser.PetalApplication.instance
+        if (table == HistoryBookmarkContract.TABLE_BOOKMARK && ctx != null) {
+            return PetalPlacesProvider.checkBookmark(ctx, url)
+        }
+        if (table == HistoryBookmarkContract.TABLE_HISTORY && ctx != null) {
+            return PetalPlacesProvider.hasVisited(ctx, url)
+        }
         val db = database ?: helper.readableDatabase
         val cursor = db.query(
             table,

@@ -59,7 +59,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     APPEARANCE("Appearance & Theme", "Fonts, theme modes, color palettes, AMOLED & Material You", com.petal.browser.R.drawable.brightness_medium_filled),
     APP_ICON("App Icon & Intro", "Pick your Petal icon and preview its launch animation", com.petal.browser.R.drawable.ic_petal_filled),
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", com.petal.browser.R.drawable.layers_filled),
-    APP_LOCK("App Lock", "Fingerprint or passcode protection for Petal", com.petal.browser.R.drawable.layers_filled),
+    APP_LOCK("App Lock", "Fingerprint or passcode protection for Petal", com.petal.browser.R.drawable.lock_filled),
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", com.petal.browser.R.drawable.home_filled),
     DISPLAY_ZOOM("Accessibility", "Touch haptics, text font scaling and page zoom preview", com.petal.browser.R.drawable.mobile_vibrate_filled),
     ADDRESS_BAR("Address Bar", "Position, size, gestures and toolbar actions", com.petal.browser.R.drawable.ic_search),

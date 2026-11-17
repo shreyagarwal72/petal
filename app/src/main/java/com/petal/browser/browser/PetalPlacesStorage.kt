@@ -21,6 +21,28 @@ object PetalPlacesStorage {
     }
 
     /**
+     * Records title observation for an existing URL in local history.
+     */
+    fun recordTitleObservation(context: Context, url: String, title: String) {
+        if (url.isBlank() || title.isBlank() || url.startsWith("about:") || url.startsWith("moz-extension://")) return
+        PetalPlacesProvider.recordTitleObservation(context, url, title)
+    }
+
+    /**
+     * Checks if a single URL has been visited.
+     */
+    fun hasVisited(context: Context, url: String): Boolean {
+        return PetalPlacesProvider.hasVisited(context, url)
+    }
+
+    /**
+     * Batch checks if the given URLs have been visited.
+     */
+    fun getVisited(context: Context, urls: List<String>): List<Boolean> {
+        return PetalPlacesProvider.getVisited(context, urls)
+    }
+
+    /**
      * Returns visited history records.
      */
     fun getVisited(context: Context): List<Record> {
