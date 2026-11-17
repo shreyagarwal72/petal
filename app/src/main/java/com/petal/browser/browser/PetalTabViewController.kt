@@ -2387,9 +2387,6 @@ class PetalTabViewController private constructor(
         try {
             val action = com.petal.browser.database.HistoryBookmarkRepository(appContext)
             action.open(true)
-            if (action.checkUrl(targetUrl, com.petal.browser.database.HistoryBookmarkContract.TABLE_HISTORY)) {
-                action.deleteURL(targetUrl, com.petal.browser.database.HistoryBookmarkContract.TABLE_HISTORY)
-            }
             action.addHistory(com.petal.browser.database.Record(effectiveTitle, targetUrl, System.currentTimeMillis(), 0))
             action.close()
             com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(targetUrl)
