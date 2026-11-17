@@ -47,6 +47,9 @@ import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material3.ButtonDefaults
 import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.containment.PetalSheetIconPill
+import com.petal.browser.ui.containment.PetalSheetTone
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.IconButtonDefaults
 import com.petal.browser.ui.kit.TextButton
@@ -312,25 +315,19 @@ private fun PetalMediaSheet(
                             )
                         }
                         if (directItems.size > 1) {
-                            FilledTonalButton(
+                            PetalSheetPill(
+                                text = stringResource(R.string.ui_all, directItems.size),
+                                icon = Icons.Rounded.Download,
+                                tone = PetalSheetTone.Primary,
+                                minHeight = 44.dp,
                                 onClick = {
                                     directItems.forEach { directItem ->
                                         PetalMediaSniffer.download(context, directItem)
                                     }
                                     PetalToast.show(context, "Queued ${directItems.size} downloads")
                                     onDismiss()
-                                },
-                                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Pill,
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-                            ) {
-                                Icon(Icons.Rounded.Download, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    stringResource(R.string.ui_all, directItems.size),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
-                                )
-                            }
+                                }
+                            )
                         }
                     }
                 }
@@ -416,49 +413,41 @@ private fun PetalMediaSheet(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Button(
-                                            onClick = { onPlay(item.toPlaybackRequest()); onDismiss() },
+                                        PetalSheetPill(
+                                            text = stringResource(R.string.ui_play),
+                                            icon = Icons.Rounded.PlayArrow,
+                                            tone = PetalSheetTone.Primary,
+                                            minHeight = 52.dp,
                                             modifier = Modifier.weight(1f),
-                                            shape = RoundedCornerShape(14.dp),
-                                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                                        ) {
-                                            Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                                            Spacer(Modifier.width(6.dp))
-                                            Text(stringResource(R.string.ui_play), maxLines = 1)
-                                        }
+                                            onClick = { onPlay(item.toPlaybackRequest()); onDismiss() }
+                                        )
 
                                         if (!isStream) {
-                                            FilledTonalButton(
+                                            PetalSheetPill(
+                                                text = stringResource(R.string.ui_download),
+                                                icon = Icons.Rounded.Download,
+                                                tone = PetalSheetTone.Tertiary,
+                                                minHeight = 52.dp,
+                                                modifier = Modifier.weight(1f),
                                                 onClick = {
                                                     PetalMediaSniffer.download(context, item, onEnqueued = { onDismiss() })
-                                                },
-                                                modifier = Modifier.weight(1f),
-                                                shape = RoundedCornerShape(14.dp),
-                                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                                            ) {
-                                                Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(18.dp))
-                                                Spacer(Modifier.width(6.dp))
-                                                Text(stringResource(R.string.ui_download), maxLines = 1)
-                                            }
+                                                }
+                                            )
                                         }
 
-                                        FilledTonalIconButton(
+                                        PetalSheetIconPill(
+                                            icon = Icons.Rounded.ContentCopy,
+                                            contentDescription = stringResource(R.string.ui_copy),
+                                            minHeight = 52.dp,
+                                            modifier = Modifier.size(52.dp),
                                             onClick = {
                                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                                                 val clip = ClipData.newPlainText("Media URL", item.url)
                                                 clipboard?.setPrimaryClip(clip)
                                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                                 PetalToast.show(context, "Media link copied")
-                                            },
-                                            shape = RoundedCornerShape(14.dp),
-                                            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                            ),
-                                            modifier = Modifier.size(40.dp)
-                                        ) {
-                                            Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.ui_copy), modifier = Modifier.size(18.dp))
-                                        }
+                                            }
+                                        )
                                     }
                                 }
                             }

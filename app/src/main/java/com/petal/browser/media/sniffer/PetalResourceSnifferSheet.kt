@@ -26,6 +26,10 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import com.petal.browser.ui.kit.TextButton
 import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.containment.petalSheetSurface
+import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.containment.PetalSheetTone
+import androidx.compose.foundation.shape.CircleShape
 import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -93,31 +97,33 @@ fun PetalResourceSnifferSheet(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val headerBadgeShape = ExpressiveButtonShape
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(headerBadgeShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
+                            .size(64.dp)
+                            .petalSheetSurface(
+                                com.petal.browser.ui.theme.SmoothRoundedShape(22.dp),
+                                MaterialTheme.colorScheme.primaryContainer
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.TravelExplore,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(30.dp)
                         )
                     }
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(14.dp))
                     Column {
                         Text(
                             text = "Resource Sniffer",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp),
+                            fontWeight = FontWeight.Light,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "${filteredResources.size} detected (${selectedIds.size} selected)",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -349,23 +355,24 @@ fun PetalResourceSnifferSheet(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            FilledTonalButton(
+                            PetalSheetPill(
+                                text = "Copy URLs",
+                                icon = Icons.Rounded.ContentCopy,
+                                tone = PetalSheetTone.Secondary,
+                                modifier = Modifier.weight(0.42f),
                                 onClick = {
                                     val urls = filteredResources.filter { selectedIds.contains(it.id) }.joinToString("\n") { it.url }
                                     val cb = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     cb.setPrimaryClip(ClipData.newPlainText("URLs", urls))
                                     PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                     PetalToast.show(context, "Copied ${selectedIds.size} links")
-                                },
-                                shape = RoundedCornerShape(14.dp),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                            ) {
-                                Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Copy URLs", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
-                            }
-
-                            Button(
+                                }
+                            )
+                            PetalSheetPill(
+                                text = "Download",
+                                icon = Icons.Rounded.Download,
+                                tone = PetalSheetTone.Primary,
+                                modifier = Modifier.weight(0.58f),
                                 onClick = {
                                     val toDownload = filteredResources.filter { selectedIds.contains(it.id) }
                                     PetalNativeSnifferEngine.downloadBatch(context, toDownload)
@@ -373,14 +380,8 @@ fun PetalResourceSnifferSheet(
                                     PetalToast.show(context, "Downloading ${toDownload.size} items")
                                     selectedIds.clear()
                                     onDismiss()
-                                },
-                                shape = RoundedCornerShape(14.dp),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-                            ) {
-                                Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Download all selected", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), maxLines = 1)
-                            }
+                                }
+                            )
                         }
                     }
                 }
@@ -411,7 +412,7 @@ private fun SniffedResourceRow(
     val categoryShape = ExpressiveButtonShape
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val itemShape = RoundedCornerShape(18.dp)
+    val itemShape = RoundedCornerShape(30.dp)
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 0.98f else 1.0f,
         animationSpec = PetalSpring.spatial(),
@@ -514,12 +515,12 @@ private fun SniffedResourceRow(
             if (resource.category == PetalResourceCategory.VIDEO || resource.category == PetalResourceCategory.AUDIO) {
                 FilledTonalIconButton(
                     onClick = onPlay,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = CircleShape,
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     ),
-                    modifier = Modifier.size(34.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.PlayArrow,
@@ -530,12 +531,12 @@ private fun SniffedResourceRow(
 
                 FilledTonalIconButton(
                     onClick = onPip,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = CircleShape,
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
                         containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = if (isGlass) 0.6f else 1f),
                         contentColor = MaterialTheme.colorScheme.onTertiaryContainer
                     ),
-                    modifier = Modifier.size(34.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.PictureInPictureAlt,
@@ -547,12 +548,12 @@ private fun SniffedResourceRow(
 
             FilledTonalIconButton(
                 onClick = onDownload,
-                shape = RoundedCornerShape(10.dp),
+                shape = CircleShape,
                 colors = IconButtonDefaults.filledTonalIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = if (isGlass) 0.6f else 1f),
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 ),
-                modifier = Modifier.size(34.dp)
+                modifier = Modifier.size(38.dp)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Download,
@@ -563,12 +564,12 @@ private fun SniffedResourceRow(
 
             FilledTonalIconButton(
                 onClick = onCopyUrl,
-                shape = RoundedCornerShape(10.dp),
+                shape = CircleShape,
                 colors = IconButtonDefaults.filledTonalIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = if (isGlass) 0.6f else 1f),
                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
-                modifier = Modifier.size(34.dp)
+                modifier = Modifier.size(38.dp)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.ContentCopy,

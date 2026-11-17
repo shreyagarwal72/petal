@@ -17,6 +17,11 @@
 
 package com.petal.browser.media
 
+import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.containment.PetalSheetActionRow
+import com.petal.browser.ui.containment.PetalSheetTone
+import com.petal.browser.ui.containment.petalSheetSurface
+import androidx.compose.foundation.shape.CircleShape
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.content.Intent
@@ -1010,20 +1015,19 @@ fun PetalAudioPlayerScreen(
                                 val speeds = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
                                 speeds.forEach { speed ->
                                     val isSelected = (playbackSpeed == speed)
-                                    val shape = RoundedCornerShape(16.dp)
                                     Box(
                                         modifier = Modifier
-                                            .clip(shape)
-                                            .background(
+                                            .petalSheetSurface(
+                                                CircleShape,
                                                 if (isSelected) MaterialTheme.colorScheme.primary
-                                                else MaterialTheme.colorScheme.surfaceContainerHighest
+                                                else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                {
+                                                    playbackSpeed = speed
+                                                    exoPlayer.playbackParameters = PlaybackParameters(speed)
+                                                    PetalHapticEngine.getInstance(context).playClick(context)
+                                                }
                                             )
-                                            .clickable {
-                                                playbackSpeed = speed
-                                                exoPlayer.playbackParameters = PlaybackParameters(speed)
-                                                PetalHapticEngine.getInstance(context).playClick(context)
-                                            }
-                                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                                            .padding(horizontal = 18.dp, vertical = 12.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
@@ -1036,68 +1040,40 @@ fun PetalAudioPlayerScreen(
                                 }
                             }
 
-                            // Details / Song Info Row
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .clickable {
+                            // Details + Sleep timer
+                            PetalSheetActionRow {
+                                PetalSheetPill(
+                                    text = "Details",
+                                    icon = Icons.Rounded.Info,
+                                    tone = PetalSheetTone.Primary,
+                                    modifier = Modifier.weight(0.5f),
+                                    onClick = {
                                         showMoreBottomSheet = false
                                         PetalHapticEngine.getInstance(context).playClick(context)
                                         showSongInfoSheet = true
                                     }
-                                    .padding(vertical = 10.dp, horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Info,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
                                 )
-                                Text(
-                                    text = "Track Details & Audio Specs",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-
-                            // Sleep Timer Row
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .clickable {
+                                PetalSheetPill(
+                                    text = if (sleepTimerSeconds != null) "${sleepTimerSeconds!! / 60}m left" else "Sleep timer",
+                                    icon = Icons.Rounded.Timer,
+                                    tone = PetalSheetTone.Tertiary,
+                                    modifier = Modifier.weight(0.5f),
+                                    onClick = {
                                         showMoreBottomSheet = false
                                         PetalHapticEngine.getInstance(context).playClick(context)
                                         showSleepTimerSheet = true
                                     }
-                                    .padding(vertical = 10.dp, horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Timer,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Text(
-                                    text = if (sleepTimerSeconds != null) "Sleep Timer (${sleepTimerSeconds!! / 60}m remaining)" else "Sleep Timer",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
 
-                            // System Equalizer Row
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .clickable {
+                            // Equalizer + Vinyl mode
+                            PetalSheetActionRow {
+                                PetalSheetPill(
+                                    text = "Equalizer",
+                                    icon = Icons.Rounded.Equalizer,
+                                    tone = PetalSheetTone.Secondary,
+                                    modifier = Modifier.weight(0.5f),
+                                    onClick = {
                                         showMoreBottomSheet = false
                                         PetalHapticEngine.getInstance(context).playClick(context)
                                         try {
@@ -1111,87 +1087,40 @@ fun PetalAudioPlayerScreen(
                                             Toast.makeText(context, "System equalizer not available on this device", Toast.LENGTH_SHORT).show()
                                         }
                                     }
-                                    .padding(vertical = 10.dp, horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Equalizer,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
                                 )
-                                Text(
-                                    text = "Equalizer & Audio Effects",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-
-                            // Vinyl / Squircle Mode Toggle
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .clickable {
+                                PetalSheetPill(
+                                    text = if (isVinylMode) "Squircle" else "Vinyl",
+                                    icon = if (isVinylMode) Icons.Rounded.GraphicEq else Icons.Rounded.Album,
+                                    tone = PetalSheetTone.TertiaryStrong,
+                                    modifier = Modifier.weight(0.5f),
+                                    onClick = {
                                         isVinylMode = !isVinylMode
                                         showMoreBottomSheet = false
                                         PetalHapticEngine.getInstance(context).playClick(context)
                                     }
-                                    .padding(vertical = 10.dp, horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = if (isVinylMode) Icons.Rounded.GraphicEq else Icons.Rounded.Album,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Text(
-                                    text = if (isVinylMode) "Switch to Squircle Artwork" else "Switch to Turntable Vinyl Mode",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
 
-                            // Share Option
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .clickable {
-                                        showMoreBottomSheet = false
-                                        try {
-                                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                                type = "audio/*"
-                                                putExtra(Intent.EXTRA_STREAM, mediaUri)
-                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                            }
-                                            context.startActivity(Intent.createChooser(shareIntent, "Share Audio"))
-                                        } catch (e: Exception) {
-                                            Toast.makeText(context, "Cannot share: ${e.message}", Toast.LENGTH_SHORT).show()
+                            // Share
+                            PetalSheetPill(
+                                text = "Share Track",
+                                icon = Icons.Rounded.Share,
+                                tone = PetalSheetTone.Primary,
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = {
+                                    showMoreBottomSheet = false
+                                    try {
+                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "audio/*"
+                                            putExtra(Intent.EXTRA_STREAM, mediaUri)
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         }
+                                        context.startActivity(Intent.createChooser(shareIntent, "Share Audio"))
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Cannot share: ${e.message}", Toast.LENGTH_SHORT).show()
                                     }
-                                    .padding(vertical = 10.dp, horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Share,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Text(
-                                    text = "Share Track",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
+                                }
+                            )
                         }
                     }
                 }

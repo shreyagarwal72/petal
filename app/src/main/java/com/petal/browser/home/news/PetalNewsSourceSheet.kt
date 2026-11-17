@@ -8,6 +8,10 @@
  */
 package com.petal.browser.home.news
 
+import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.containment.PetalSheetActionRow
+import com.petal.browser.ui.containment.PetalSheetTone
+import com.petal.browser.ui.containment.petalSheetSurface
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -217,13 +221,13 @@ fun PetalNewsSourceSheet(
 
             Spacer(Modifier.height(16.dp))
 
-            FilledTonalButton(
-                onClick = onDismissRequest,
+            PetalSheetPill(
+                text = "Done",
+                icon = Icons.Rounded.Check,
+                tone = PetalSheetTone.Primary,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("Done")
-            }
+                onClick = onDismissRequest
+            )
         }
     }
 }

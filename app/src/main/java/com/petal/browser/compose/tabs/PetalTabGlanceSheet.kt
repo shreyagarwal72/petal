@@ -59,6 +59,25 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.unit.PetalAndroidUtils
 import androidx.compose.material3.Icon
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.platform.LocalConfiguration
+import com.petal.browser.ui.theme.SmoothRoundedShape
+import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.containment.PetalSheetIconPill
+import com.petal.browser.ui.containment.PetalSheetHeader
+import com.petal.browser.ui.containment.PetalSheetActionRow
+import com.petal.browser.ui.containment.PetalSheetSegment
+import com.petal.browser.ui.containment.PetalSheetSegmentedBar
+import com.petal.browser.ui.containment.PetalSheetTone
+import com.petal.browser.ui.containment.PetalSheetCard
+import com.petal.browser.ui.containment.PetalSheetSectionLabel
+import com.petal.browser.ui.containment.petalSheetSurface
 
 /**
  * Zen Browser-style Tab Glance (Peek Sheet).
@@ -80,402 +99,274 @@ fun PetalTabGlanceSheet(
     onDuplicateTab: (PetalTabItem) -> Unit,
     onCloseTab: (PetalTabItem) -> Unit
 ) {
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
     var showWorkspacePicker by remember { mutableStateOf(false) }
     var showGroupPicker by remember { mutableStateOf(false) }
+
+    var page by remember { mutableIntStateOf(0) }
+    val maxBody = (LocalConfiguration.current.screenHeightDp * 0.62f).dp
 
     PetalSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 24.dp)
-                .navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Header: Favicon + Title + Host Domain
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (tab.faviconBitmap != null) {
-                    Image(
-                        bitmap = tab.faviconBitmap.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                    )
-                } else {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = tab.title.take(1).uppercase().ifBlank { "?" },
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = tab.title,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    val domain = remember(tab.url) {
-                        PetalAndroidUtils.domain(tab.url) ?: tab.url
-                    }
-
-                    Text(
-                        text = domain,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            // High-res preview thumbnail (if available)
-            if (tab.previewBitmap != null) {
-                val previewShape = RoundedCornerShape(16.dp)
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 10f)
-                        .clip(previewShape)
-                        .then(
-                            if (isGlass) {
-                                Modifier.liquidGlassChrome(shape = previewShape, enabled = true, sheenIntensity = 0.35f)
-                            } else {
-                                Modifier
-                            }
-                        ),
-                    shape = previewShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                ) {
-                    Image(
-                        bitmap = tab.previewBitmap.asImageBitmap(),
-                        contentDescription = "Tab Preview",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-
-            // Quick Actions Title
-            Text(
-                text = "Quick Actions",
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 13.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        Column(modifier = Modifier.fillMaxWidth()) {
+            PetalSheetHeader(
+                title = tab.title.ifBlank { domain(tab) },
+                subtitle = domain(tab),
+                modifier = Modifier.padding(horizontal = 16.dp),
+                leading = { GlanceLeading(tab) }
             )
 
-            // 2-Column Action Grid
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                maxItemsInEachRow = 2
+            Spacer(Modifier.height(16.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = maxBody)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .animateContentSize(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // 1. Switch to Tab
-                GlanceActionTile(
-                    title = "Open Tab",
-                    icon = Icons.Rounded.OpenInNew,
-                    accentColor = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        onDismiss()
-                        onSelectTab(tab)
-                    }
-                )
+                if (page == 0) {
+                    PetalSheetPill(
+                        text = "Open Tab",
+                        icon = Icons.Rounded.OpenInNew,
+                        tone = PetalSheetTone.Primary,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { onDismiss(); onSelectTab(tab) }
+                    )
 
-                // 2. Split Screen
-                GlanceActionTile(
-                    title = "Split View",
-                    icon = Icons.Rounded.VerticalSplit,
-                    accentColor = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        onDismiss()
-                        onSplitTab(tab)
-                    }
-                )
-
-                // 3. Pin / Unpin
-                GlanceActionTile(
-                    title = if (tab.isPinned) "Unpin Tab" else "Pin to Essentials",
-                    icon = Icons.Rounded.PushPin,
-                    accentColor = if (tab.isPinned) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        onTogglePin(tab)
-                    }
-                )
-
-                // 4. Move to Workspace
-                GlanceActionTile(
-                    title = "Workspace...",
-                    icon = Icons.Rounded.Workspaces,
-                    accentColor = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        showWorkspacePicker = !showWorkspacePicker
-                        showGroupPicker = false
-                    }
-                )
-
-                // 5. Move to Tab Group
-                GlanceActionTile(
-                    title = if (tab.groupId != null) "Group (${tab.groupTitle ?: "Active"})" else "Add to Group...",
-                    icon = Icons.Rounded.Folder,
-                    accentColor = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        showGroupPicker = !showGroupPicker
-                        showWorkspacePicker = false
-                    }
-                )
-
-                // 6. Mute / Unmute
-                GlanceActionTile(
-                    title = if (tab.isMuted) "Unmute Audio" else "Mute Audio",
-                    icon = if (tab.isMuted) Icons.Rounded.VolumeUp else Icons.Rounded.VolumeMute,
-                    accentColor = if (tab.isMuted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        onToggleMute(tab)
-                    }
-                )
-
-                // 7. Duplicate Tab
-                GlanceActionTile(
-                    title = "Duplicate",
-                    icon = Icons.Rounded.ContentCopy,
-                    accentColor = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        onDismiss()
-                        onDuplicateTab(tab)
-                    }
-                )
-
-                // 8. Close Tab
-                GlanceActionTile(
-                    title = "Close Tab",
-                    icon = Icons.Rounded.Close,
-                    accentColor = MaterialTheme.colorScheme.error,
-                    isDestructive = true,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        onDismiss()
-                        onCloseTab(tab)
-                    }
-                )
-            }
-
-            // Submenu: Workspace Picker
-            AnimatedVisibility(visible = showWorkspacePicker) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            text = "Select Destination Workspace",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
+                    PetalSheetActionRow {
+                        PetalSheetPill(
+                            text = "Split View",
+                            icon = Icons.Rounded.VerticalSplit,
+                            tone = PetalSheetTone.Primary,
+                            modifier = Modifier.weight(0.5f).heightIn(min = 80.dp),
+                            onClick = { onDismiss(); onSplitTab(tab) }
                         )
-                        availableWorkspaces.forEach { ws ->
-                            val isCurrent = (tab.workspaceId == ws.id) || (tab.workspaceId == null && ws.isDefault)
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable {
+                        PetalSheetIconPill(
+                            icon = Icons.Rounded.PushPin,
+                            contentDescription = if (tab.isPinned) "Unpin tab" else "Pin to Essentials",
+                            selected = tab.isPinned,
+                            modifier = Modifier.weight(0.25f).heightIn(min = 80.dp),
+                            onClick = { onTogglePin(tab) }
+                        )
+                        PetalSheetIconPill(
+                            icon = if (tab.isMuted) Icons.Rounded.VolumeUp else Icons.Rounded.VolumeMute,
+                            contentDescription = if (tab.isMuted) "Unmute audio" else "Mute audio",
+                            tone = PetalSheetTone.Secondary,
+                            modifier = Modifier.weight(0.25f).heightIn(min = 80.dp),
+                            onClick = { onToggleMute(tab) }
+                        )
+                    }
+
+                    PetalSheetActionRow {
+                        PetalSheetPill(
+                            text = "Workspace",
+                            icon = Icons.Rounded.Workspaces,
+                            tone = PetalSheetTone.Tertiary,
+                            modifier = Modifier.weight(0.55f),
+                            onClick = {
+                                showWorkspacePicker = !showWorkspacePicker
+                                showGroupPicker = false
+                            }
+                        )
+                        PetalSheetPill(
+                            text = if (tab.groupId != null) (tab.groupTitle ?: "Group") else "Group",
+                            icon = Icons.Rounded.Folder,
+                            tone = PetalSheetTone.TertiaryStrong,
+                            modifier = Modifier.weight(0.45f),
+                            onClick = {
+                                showGroupPicker = !showGroupPicker
+                                showWorkspacePicker = false
+                            }
+                        )
+                    }
+
+                    AnimatedVisibility(visible = showWorkspacePicker) {
+                        GlancePickerCard(title = "Move to workspace") {
+                            availableWorkspaces.forEach { ws ->
+                                val isCurrent = (tab.workspaceId == ws.id) || (tab.workspaceId == null && ws.isDefault)
+                                GlancePickerRow(
+                                    selected = isCurrent,
+                                    onClick = {
                                         onMoveToWorkspace(tab, ws.id)
                                         showWorkspacePicker = false
                                         onDismiss()
                                     }
-                                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = getWorkspaceIconVector(ws.iconName),
-                                    contentDescription = null,
-                                    tint = ws.parseColor(),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = ws.name,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
-                                    ),
-                                    color = if (isCurrent) ws.parseColor() else MaterialTheme.colorScheme.onSurface
-                                )
-                                if (isCurrent) {
-                                    Spacer(modifier = Modifier.weight(1f))
+                                ) {
+                                    Icon(
+                                        imageVector = getWorkspaceIconVector(ws.iconName),
+                                        contentDescription = null,
+                                        tint = ws.parseColor(),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(Modifier.width(12.dp))
                                     Text(
-                                        text = "Current",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        text = ws.name,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (isCurrent) Text("Current", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
+
+                    AnimatedVisibility(visible = showGroupPicker) {
+                        GlancePickerCard(title = "Assign tab group") {
+                            if (tab.groupId != null) {
+                                GlancePickerRow(selected = false, onClick = {
+                                    onMoveToGroup(tab, null)
+                                    showGroupPicker = false
+                                }) {
+                                    Text("Remove from group", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                            availableGroups.forEach { grp ->
+                                val isCurrent = tab.groupId == grp.id
+                                GlancePickerRow(selected = isCurrent, onClick = {
+                                    onMoveToGroup(tab, grp.id)
+                                    showGroupPicker = false
+                                    onDismiss()
+                                }) {
+                                    Box(Modifier.size(12.dp).clip(CircleShape).background(grp.parseColor()))
+                                    Spacer(Modifier.width(12.dp))
+                                    Text(
+                                        text = grp.title,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }
                         }
                     }
-                }
-            }
 
-            // Submenu: Group Picker
-            AnimatedVisibility(visible = showGroupPicker) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            text = "Assign Tab Group",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
+                    PetalSheetActionRow {
+                        PetalSheetPill(
+                            text = "Duplicate",
+                            icon = Icons.Rounded.ContentCopy,
+                            tone = PetalSheetTone.Secondary,
+                            modifier = Modifier.weight(0.5f),
+                            onClick = { onDismiss(); onDuplicateTab(tab) }
                         )
-
-                        if (tab.groupId != null) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable {
-                                        onMoveToGroup(tab, null)
-                                        showGroupPicker = false
-                                    }
-                                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Remove from Group",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        }
-
-                        availableGroups.forEach { grp ->
-                            val isCurrent = (tab.groupId == grp.id)
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable {
-                                        onMoveToGroup(tab, grp.id)
-                                        showGroupPicker = false
-                                        onDismiss()
-                                    }
-                                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = grp.parseColor(),
-                                    modifier = Modifier.size(10.dp)
-                                ) {}
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = grp.title,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
-                                    ),
-                                    color = if (isCurrent) grp.parseColor() else MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
+                        PetalSheetPill(
+                            text = "Close Tab",
+                            icon = Icons.Rounded.Close,
+                            tone = PetalSheetTone.Danger,
+                            modifier = Modifier.weight(0.5f),
+                            onClick = { onDismiss(); onCloseTab(tab) }
+                        )
                     }
+                } else {
+                    GlanceInfoCard(
+                        rows = buildList {
+                            add("Address" to tab.url)
+                            add("Site" to domain(tab))
+                            add("Pinned" to if (tab.isPinned) "Yes" else "No")
+                            add("Audio" to if (tab.isMuted) "Muted" else "On")
+                            add("Group" to (tab.groupTitle ?: "None"))
+                            val ws = availableWorkspaces.firstOrNull { (tab.workspaceId == it.id) || (tab.workspaceId == null && it.isDefault) }
+                            add("Workspace" to (ws?.name ?: "Default"))
+                            if (tab.isIncognito) add("Mode" to "Incognito")
+                        }
+                    )
                 }
+                Spacer(Modifier.height(2.dp))
+            }
+
+            PetalSheetSegmentedBar(
+                segments = listOf(
+                    PetalSheetSegment("Options", Icons.Rounded.Menu),
+                    PetalSheetSegment("Info", Icons.Rounded.Info),
+                ),
+                selectedIndex = page,
+                onSelect = { page = it },
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                    .padding(bottom = 6.dp)
+            )
+        }
+    }
+}
+
+private fun domain(tab: PetalTabItem): String = PetalAndroidUtils.domain(tab.url) ?: tab.url
+
+@Composable
+private fun GlanceLeading(tab: PetalTabItem) {
+    val shape = SmoothRoundedShape(24.dp)
+    val bmp = tab.previewBitmap ?: tab.faviconBitmap
+    Box(
+        modifier = Modifier.size(80.dp).clip(shape).background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        if (bmp != null) {
+            Image(
+                bitmap = bmp.asImageBitmap(),
+                contentDescription = null,
+                contentScale = if (tab.previewBitmap != null) ContentScale.Crop else ContentScale.Fit,
+                modifier = if (tab.previewBitmap != null) Modifier.size(80.dp) else Modifier.size(40.dp)
+            )
+        } else {
+            Text(
+                text = tab.title.take(1).uppercase().ifBlank { "?" },
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+    }
+}
+
+@Composable
+private fun GlancePickerCard(title: String, content: @Composable () -> Unit) {
+    PetalSheetCard {
+        PetalSheetSectionLabel(title)
+        content()
+    }
+}
+
+@Composable
+private fun GlancePickerRow(selected: Boolean, onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp)
+            .petalSheetSurface(
+                CircleShape,
+                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else Color.Transparent,
+                onClick
+            )
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        content = content
+    )
+}
+
+@Composable
+private fun GlanceInfoCard(rows: List<Pair<String, String>>) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        rows.forEachIndexed { i, (label, value) ->
+            val shape = when {
+                rows.size == 1 -> RoundedCornerShape(24.dp)
+                i == 0 -> RoundedCornerShape(24.dp, 24.dp, 8.dp, 8.dp)
+                i == rows.lastIndex -> RoundedCornerShape(8.dp, 8.dp, 24.dp, 24.dp)
+                else -> RoundedCornerShape(8.dp)
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .petalSheetSurface(shape, MaterialTheme.colorScheme.surfaceContainerHighest, sheen = 0.25f)
+                    .padding(horizontal = 18.dp, vertical = 12.dp)
+            ) {
+                Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(value, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, maxLines = 3, overflow = TextOverflow.Ellipsis)
             }
         }
     }
 }
 
-/**
- * Reusable action tile for the Zen Glance quick-dispatch dock.
- */
-@Composable
-private fun GlanceActionTile(
-    title: String,
-    icon: ImageVector,
-    accentColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    isDestructive: Boolean = false
-) {
-    val shape = RoundedCornerShape(14.dp)
-    val bgColor = if (isDestructive) {
-        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f)
-    }
-
-    Surface(
-        modifier = modifier
-            .height(52.dp) // Minimum 48dp touch target
-            .clip(shape)
-            .clickable(role = Role.Button, onClick = onClick),
-        shape = shape,
-        color = bgColor,
-        border = BorderStroke(
-            1.dp,
-            if (isDestructive) MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = accentColor,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 12.sp
-                ),
-                color = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}

@@ -44,6 +44,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import com.petal.browser.ui.containment.PetalSheetHeader
+import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.containment.PetalSheetActionRow
+import com.petal.browser.ui.containment.PetalSheetTone
+import com.petal.browser.ui.containment.petalSheetSurface
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -951,9 +956,8 @@ private fun DownloadedImagePreviewStrip(
                         if (bitmap != null) Image(bitmap!!.asImageBitmap(), contentDescription = item.fileName, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)))
                         else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Image, null) }
                     }
-                    com.petal.browser.ui.containment.PetalPopupMenu(expanded = menuItem?.id == item.id, onDismissRequest = { menuItem = null }) {
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_view_image)) }, leadingIcon = { Icon(Icons.Rounded.Image, null) }, onClick = {
-                            menuItem = null
+                    if (menuItem?.id == item.id) {
+                        val openViewer: () -> Unit = {
                             val activity = context as? com.petal.browser.activity.MainActivity
                             if (activity != null) {
                                 activity.pendingOverlayBackAction = Runnable {
@@ -964,17 +968,21 @@ private fun DownloadedImagePreviewStrip(
                                 }
                                 activity.runOnUiThread { activity.presentComposeScreen(view) }
                             } else openDownloadedFile(context, item)
-                        })
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_open_in_app)) }, leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) }, onClick = { menuItem = null; openDownloadedFile(context, item) })
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(text = { Text(stringResource(R.string.ui_share)) }, leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { menuItem = null; shareDownloadedFile(context, item) })
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.ui_delete), color = MaterialTheme.colorScheme.error) },
-                            leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                            onClick = {
-                                val targetItem = item
-                                menuItem = null
-                                onDeleteItem(targetItem)
-                            }
+                        }
+                        DownloadActionsSheet(
+                            title = item.fileName,
+                            subtitle = "",
+                            icon = Icons.Rounded.Image,
+                            actions = listOf(
+                                DlAction(stringResource(R.string.ui_view_image), Icons.Rounded.Image, PetalSheetTone.Primary, openViewer),
+                                DlAction(stringResource(R.string.ui_open_in_app), Icons.Rounded.OpenInNew, PetalSheetTone.Secondary) { openDownloadedFile(context, item) },
+                                DlAction(stringResource(R.string.ui_share), Icons.Rounded.Share, PetalSheetTone.TertiaryStrong) { shareDownloadedFile(context, item) },
+                                DlAction(stringResource(R.string.ui_delete), Icons.Rounded.Delete, PetalSheetTone.Danger) {
+                                    val targetItem = item
+                                    onDeleteItem(targetItem)
+                                },
+                            ),
+                            onDismiss = { menuItem = null }
                         )
                     }
                 }
@@ -1231,87 +1239,34 @@ private fun DownloadRowItem(
                         )
                     }
 
-                    com.petal.browser.ui.containment.PetalPopupMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
-                    ) {
-                        if (item.status == DownloadStatus.STATUS_RUNNING && item.source.isMozillaOwned) {
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = stringResource(R.string.ui_pause),
-                                leadingIcon = { Icon(Icons.Rounded.Pause, contentDescription = null) },
-                                onClick = {
-                                    menuExpanded = false
-                                    PetalLiveAlertManager.pauseDownload(context, item.id)
-                                }
-                            )
-                        }
-                        if (item.status == DownloadStatus.STATUS_PAUSED) {
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = stringResource(R.string.ui_resume),
-                                leadingIcon = { Icon(Icons.Rounded.PlayArrow, contentDescription = null) },
-                                onClick = {
-                                    menuExpanded = false
-                                    PetalLiveAlertManager.resumeDownload(context, item.id)
-                                }
-                            )
-                        }
-                        if (item.status == DownloadStatus.STATUS_FAILED && item.source != com.petal.browser.download.DownloadSource.BLOB) {
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = stringResource(R.string.ui_retry),
-                                leadingIcon = { Icon(Icons.Rounded.Refresh, contentDescription = null) },
-                                onClick = {
-                                    menuExpanded = false
-                                    PetalLiveAlertManager.retryDownload(context, item.id)
-                                }
-                            )
-                        }
-                        if (item.status == DownloadStatus.STATUS_SUCCESSFUL) {
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = stringResource(R.string.ui_open),
-                                leadingIcon = { Icon(Icons.Rounded.OpenInNew, contentDescription = null) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onOpenFile()
-                                }
-                            )
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = stringResource(R.string.ui_share),
-                                leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null) },
-                                onClick = {
-                                    menuExpanded = false
-                                    shareDownloadedFile(context, item)
-                                }
-                            )
-                            com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                text = stringResource(R.string.ui_rename),
-                                leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
-                                onClick = {
-                                    menuExpanded = false
-                                    showRenameDialog = true
-                                }
-                            )
-                        }
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = stringResource(R.string.ui_copy_link_2),
-                            leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
-                            onClick = {
-                                menuExpanded = false
-                                copyDownloadLink(context, item.fileUrl)
+                    if (menuExpanded) {
+                        val acts = buildList {
+                            if (item.status == DownloadStatus.STATUS_RUNNING && item.source.isMozillaOwned)
+                                add(DlAction(stringResource(R.string.ui_pause), Icons.Rounded.Pause, PetalSheetTone.Primary) { PetalLiveAlertManager.pauseDownload(context, item.id) })
+                            if (item.status == DownloadStatus.STATUS_PAUSED)
+                                add(DlAction(stringResource(R.string.ui_resume), Icons.Rounded.PlayArrow, PetalSheetTone.Primary) { PetalLiveAlertManager.resumeDownload(context, item.id) })
+                            if (item.status == DownloadStatus.STATUS_FAILED && item.source != com.petal.browser.download.DownloadSource.BLOB)
+                                add(DlAction(stringResource(R.string.ui_retry), Icons.Rounded.Refresh, PetalSheetTone.Primary) { PetalLiveAlertManager.retryDownload(context, item.id) })
+                            if (item.status == DownloadStatus.STATUS_SUCCESSFUL) {
+                                add(DlAction(stringResource(R.string.ui_open), Icons.Rounded.OpenInNew, PetalSheetTone.Primary) { onOpenFile() })
+                                add(DlAction(stringResource(R.string.ui_share), Icons.Rounded.Share, PetalSheetTone.TertiaryStrong) { shareDownloadedFile(context, item) })
+                                add(DlAction(stringResource(R.string.ui_rename), Icons.Rounded.Edit, PetalSheetTone.Secondary) { showRenameDialog = true })
                             }
-                        )
-                        com.petal.browser.ui.containment.PetalMenuDivider()
-                        com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = stringResource(R.string.ui_delete),
-                            leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                            destructive = true,
-                            onClick = {
-                                menuExpanded = false
+                            add(DlAction(stringResource(R.string.ui_copy_link_2), Icons.Rounded.ContentCopy, PetalSheetTone.Tertiary) { copyDownloadLink(context, item.fileUrl) })
+                            add(DlAction(stringResource(R.string.ui_delete), Icons.Rounded.Delete, PetalSheetTone.Danger) {
                                 if (androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_confirm_download_delete", true)) {
                                     showDeleteDialog = true
                                 } else {
                                     onDeleteItem(deleteFile)
                                 }
-                            }
+                            })
+                        }
+                        DownloadActionsSheet(
+                            title = item.fileName,
+                            subtitle = item.fileUrl,
+                            icon = Icons.Rounded.Download,
+                            actions = acts,
+                            onDismiss = { menuExpanded = false }
                         )
                     }
                 }
@@ -1774,4 +1729,64 @@ private fun DownloadsEmptyState() {
         title = stringResource(R.string.ui_no_downloads_yet),
         description = stringResource(R.string.ui_files_you_download_will_appear)
     )
+}
+
+private data class DlAction(
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val tone: PetalSheetTone,
+    val onClick: () -> Unit,
+)
+
+/** PixelMusic-style actions sheet (live-glass aware via PetalSheet + shared sheet parts). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DownloadActionsSheet(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    actions: List<DlAction>,
+    onDismiss: () -> Unit,
+) {
+    com.petal.browser.ui.containment.PetalSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            PetalSheetHeader(
+                title = title,
+                subtitle = subtitle.ifBlank { null },
+                leading = {
+                    Box(
+                        Modifier
+                            .size(80.dp)
+                            .petalSheetSurface(
+                                com.petal.browser.ui.theme.SmoothRoundedShape(24.dp),
+                                MaterialTheme.colorScheme.primaryContainer
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(icon, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(36.dp))
+                    }
+                }
+            )
+            Spacer(Modifier.height(6.dp))
+            actions.chunked(2).forEach { rowActions ->
+                PetalSheetActionRow {
+                    rowActions.forEach { act ->
+                        PetalSheetPill(
+                            text = act.label,
+                            icon = act.icon,
+                            tone = act.tone,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onDismiss(); act.onClick() }
+                        )
+                    }
+                }
+            }
+        }
+    }
 }

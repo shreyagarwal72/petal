@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import com.petal.browser.ui.containment.petalSheetSurface
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
@@ -899,28 +900,25 @@ private fun CircularIconButton(
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-    IconButton(
-        onClick = {
-            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
-            onClick()
-        },
-        enabled = enabled,
+    val iconTint = if (enabled) tint else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    // PixelMusic-style round action chip; becomes live glass when liquid glass is on.
+    Box(
         modifier = Modifier
-            .size(44.dp)
-            .clip(ExpressiveButtonShape)
-            .then(
-                if (isGlass) {
-                    Modifier.background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
-                } else Modifier
-            ), glass = false
+            .size(52.dp)
+            .petalSheetSurface(
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                onClick = if (enabled) {
+                    {
+                        com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                            .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                        onClick()
+                    }
+                } else null,
+                sheen = 0.35f
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        val iconTint = if (enabled) {
-            tint
-        } else {
-            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-        }
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,

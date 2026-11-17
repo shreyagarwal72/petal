@@ -1,5 +1,9 @@
 package com.petal.browser.media.subtitle
 
+import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.containment.PetalSheetActionRow
+import com.petal.browser.ui.containment.PetalSheetTone
+import com.petal.browser.ui.containment.petalSheetSurface
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.net.Uri
@@ -140,19 +144,15 @@ fun PetalSubtitleConfigSheet(
                         )
                     }
 
-                    Button(
+                    PetalSheetPill(
+                        text = "Import",
+                        icon = Icons.Rounded.FileUpload,
+                        tone = PetalSheetTone.Primary,
+                        minHeight = 48.dp,
                         onClick = {
                             filePickerLauncher.launch(arrayOf("text/*", "application/x-subrip", "*/*"))
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Rounded.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Import")
-                    }
+                        }
+                    )
                 }
             }
 

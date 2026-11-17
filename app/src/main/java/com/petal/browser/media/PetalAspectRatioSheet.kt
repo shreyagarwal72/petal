@@ -1,5 +1,10 @@
 package com.petal.browser.media
 
+import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.containment.PetalSheetActionRow
+import com.petal.browser.ui.containment.PetalSheetTone
+import com.petal.browser.ui.containment.petalSheetSurface
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -124,13 +129,15 @@ fun PetalAspectRatioSheet(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(cardBg)
-                            .clickable {
-                                PetalHapticEngine.getInstance(context).playClick(context)
-                                onSelectMode(option)
-                            }
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                            .petalSheetSurface(
+                                CircleShape,
+                                cardBg,
+                                {
+                                    PetalHapticEngine.getInstance(context).playClick(context)
+                                    onSelectMode(option)
+                                }
+                            )
+                            .padding(horizontal = 20.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {

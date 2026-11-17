@@ -114,7 +114,8 @@ fun PetalProfileSwitchSheet(
                 Column {
                     Text(
                         text = stringResource(R.string.ui_profiles),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp),
+                        fontWeight = FontWeight.Light,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
@@ -258,28 +259,19 @@ fun PetalProfileSwitchSheet(
                 Spacer(Modifier.height(16.dp))
 
                 // Add Profile Button
-                val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-                FilledTonalButton(
+                com.petal.browser.ui.containment.PetalSheetPill(
+                    text = stringResource(R.string.ui_add_new_profile),
+                    icon = Icons.Rounded.Add,
+                    tone = com.petal.browser.ui.containment.PetalSheetTone.Primary,
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = {
                         isCreatingNew = true
                         newProfileName = "Profile ${profiles.size + 1}"
                         pendingCropImageUri = null
                         pendingCustomAvatarUri = null
                         pendingAvatarTargetProfileId = null
-                    },
-                    modifier = Modifier.fillMaxWidth().then(
-                        if (isGlass) Modifier.liquidGlassChrome(RoundedCornerShape(14.dp), enabled = true) else Modifier
-                    ),
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    shape = RoundedCornerShape(14.dp), glass = false
-                ) {
-                    Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.ui_add_new_profile))
-                }
+                    }
+                )
             } else {
                 // Create New Profile Form
                 Column(

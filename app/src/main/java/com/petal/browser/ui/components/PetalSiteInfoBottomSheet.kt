@@ -35,6 +35,7 @@ import com.petal.browser.ui.containment.PetalFilterChip
 import com.petal.browser.ui.containment.PetalSuggestionChip
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.containment.petalSheetSurface
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,149 +119,76 @@ fun PetalSiteInfoBottomSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 4.dp)
         ) {
-            // --- Domain & Security Header ---
-            com.petal.browser.ui.containment.PetalHeroCard(
-                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    com.petal.browser.ui.containment.PetalGroupIconBadge(
-                        shape = RoundedCornerShape(12.dp),
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        size = 50.dp,
-                        iconSize = 26.dp
+            // --- Domain & Security Header (PixelMusic sheet style, live-glass aware) ---
+            com.petal.browser.ui.containment.PetalSheetHeader(
+                title = domain.ifEmpty { "Current Website" },
+                subtitle = when {
+                    isHttps -> "Connection is secure"
+                    isInternalPage -> "Internal browser page"
+                    isHttp -> "Connection not secure"
+                    else -> "Connection status unavailable"
+                },
+                leading = {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .petalSheetSurface(
+                                com.petal.browser.ui.theme.SmoothRoundedShape(24.dp),
+                                MaterialTheme.colorScheme.primaryContainer
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
                         if (favicon != null) {
                             Image(
                                 bitmap = favicon.asImageBitmap(),
                                 contentDescription = stringResource(R.string.ui_site_favicon),
-                                modifier = Modifier
-                                    .size(26.dp)
-                                    .clip(ExpressiveButtonShape)
+                                modifier = Modifier.size(40.dp).clip(ExpressiveButtonShape)
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Rounded.Public,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(36.dp)
                             )
                         }
                     }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = domain.ifEmpty { "Current Website" },
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            text = when {
-                                isHttps -> "Connection is secure"
-                                isInternalPage -> "Internal browser page"
-                                isHttp -> "Connection not secure"
-                                else -> "Connection status unavailable"
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = when {
-                                isHttps || isInternalPage -> Color(0xFF2E7D32)
-                                isHttp -> MaterialTheme.colorScheme.error
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
                 }
-            }
+            )
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // --- SSL & Connection Security Card ---
-            com.petal.browser.ui.containment.PetalHeroCard(
-                shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    com.petal.browser.ui.containment.PetalGroupIconBadge(
-                        shape = RoundedCornerShape(12.dp),
-                        containerColor = when {
-                            isHttps || isInternalPage -> MaterialTheme.colorScheme.primaryContainer
-                            isHttp -> MaterialTheme.colorScheme.errorContainer
-                            else -> MaterialTheme.colorScheme.secondaryContainer
-                        },
-                        contentColor = when {
-                            isHttps || isInternalPage -> MaterialTheme.colorScheme.onPrimaryContainer
-                            isHttp -> MaterialTheme.colorScheme.onErrorContainer
-                            else -> MaterialTheme.colorScheme.onSecondaryContainer
-                        },
-                        size = 50.dp,
-                        iconSize = 24.dp
-                    ) {
-                        Icon(
-                            imageVector = when {
-                                isHttps || isInternalPage -> Icons.Rounded.Lock
-                                isHttp -> Icons.Rounded.LockOpen
-                                else -> Icons.Rounded.HelpOutline
-                            },
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = when {
-                                isHttps && sslCertificate != null -> "Valid Security Certificate"
-                                isHttps -> "Encrypted Connection"
-                                isInternalPage -> "Secure Local Origin"
-                                isHttp -> "Unencrypted Connection"
-                                else -> "Connection status unavailable"
-                            },
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        val certDetails = remember(sslCertificate, isHttps, isHttp, isInternalPage, geckoSecurity) {
-                            when {
-                                sslCertificate != null && isHttps ->
-                                    "Issued to: ${sslCertificate.issuedTo.cName}\nIssued by: ${sslCertificate.issuedBy.oName}"
-                                geckoSecurity?.host != null && isHttps ->
-                                    "Host: ${geckoSecurity.host}\nYour connection is encrypted and verified."
-                                isHttps ->
-                                    "Your information is encrypted when sent to this site."
-                                isInternalPage ->
-                                    "This page is part of Petal Browser and does not send network data."
-                                isHttp ->
-                                    "You should not enter sensitive info on this site (unencrypted HTTP)."
-                                else ->
-                                    "Security information is unavailable for this page."
-                            }
-                        }
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            text = certDetails,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+            val certDetails = when {
+                sslCertificate != null && isHttps ->
+                    "Issued to: ${sslCertificate.issuedTo.cName}\nIssued by: ${sslCertificate.issuedBy.oName}"
+                geckoSecurity?.host != null && isHttps ->
+                    "Host: ${geckoSecurity.host}\nYour connection is encrypted and verified."
+                isHttps -> "Your information is encrypted when sent to this site."
+                isInternalPage -> "This page is part of Petal Browser and does not send network data."
+                isHttp -> "You should not enter sensitive info on this site (unencrypted HTTP)."
+                else -> "Security information is unavailable for this page."
             }
+            com.petal.browser.ui.containment.PetalSheetListRow(
+                title = when {
+                    isHttps && sslCertificate != null -> "Valid Security Certificate"
+                    isHttps -> "Encrypted Connection"
+                    isInternalPage -> "Secure Local Origin"
+                    isHttp -> "Unencrypted Connection"
+                    else -> "Connection status unavailable"
+                },
+                subtitle = certDetails,
+                icon = when {
+                    isHttps || isInternalPage -> Icons.Rounded.Lock
+                    isHttp -> Icons.Rounded.LockOpen
+                    else -> Icons.Rounded.HelpOutline
+                },
+                tone = when {
+                    isHttps || isInternalPage -> com.petal.browser.ui.containment.PetalSheetTone.Primary
+                    isHttp -> com.petal.browser.ui.containment.PetalSheetTone.Danger
+                    else -> com.petal.browser.ui.containment.PetalSheetTone.Secondary
+                },
+                onClick = {}
+            )
 
             Spacer(modifier = Modifier.height(14.dp))
 
@@ -413,35 +341,27 @@ fun PetalSiteInfoBottomSheet(
                         )
 
                         Spacer(Modifier.height(8.dp))
-                        FilledTonalButton(
+                        com.petal.browser.ui.containment.PetalSheetPill(
+                            text = "Zap Element",
+                            icon = Icons.Rounded.Bolt,
+                            tone = com.petal.browser.ui.containment.PetalSheetTone.Tertiary,
+                            modifier = Modifier.fillMaxWidth(),
                             onClick = {
                                 onDismissRequest()
                                 com.petal.browser.privacy.PetalElementZapper.launch(albumController)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Rounded.Bolt, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Zap Element (Interactive Visual Picker)", fontSize = 12.sp)
-                        }
+                            }
+                        )
 
                         Spacer(Modifier.height(6.dp))
                         var showBlockElementDialog by remember { mutableStateOf(false) }
                         var customCssSelector by remember { mutableStateOf("") }
-                        FilledTonalButton(
-                            onClick = { showBlockElementDialog = true },
+                        com.petal.browser.ui.containment.PetalSheetPill(
+                            text = "Block Page Element",
+                            icon = Icons.Rounded.Block,
+                            tone = com.petal.browser.ui.containment.PetalSheetTone.Secondary,
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            )
-                        ) {
-                            Icon(Icons.Rounded.Block, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Block Page Element (Cosmetic Filter)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        }
+                            onClick = { showBlockElementDialog = true }
+                        )
 
                         if (showBlockElementDialog) {
                             com.petal.browser.ui.containment.PetalAlertDialog(

@@ -1,5 +1,9 @@
 package com.petal.browser.compose.tabs
 
+import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.containment.PetalSheetActionRow
+import com.petal.browser.ui.containment.PetalSheetTone
+import com.petal.browser.ui.containment.petalSheetSurface
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -26,6 +30,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import com.petal.browser.ui.kit.Button
 import androidx.compose.material3.ButtonDefaults
@@ -291,56 +296,33 @@ fun PetalWorkspaceSheet(
             // Delete option for existing custom workspace
             if (isEditMode && targetWorkspace != null && !targetWorkspace.isDefault) {
                 Spacer(modifier = Modifier.height(4.dp))
-                OutlinedButton(
-                    onClick = { showDeleteConfirmDialog = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Delete,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Delete Workspace", fontWeight = FontWeight.SemiBold)
-                }
+                PetalSheetPill(
+                    text = "Delete Workspace",
+                    icon = Icons.Rounded.Delete,
+                    tone = PetalSheetTone.Danger,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { showDeleteConfirmDialog = true }
+                )
             }
 
             // Actions row: Cancel & Save
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(50.dp),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text("Cancel")
-                }
-
-                Button(
+            PetalSheetActionRow {
+                PetalSheetPill(
+                    text = "Cancel",
+                    icon = Icons.Rounded.Close,
+                    tone = PetalSheetTone.Secondary,
+                    modifier = Modifier.weight(0.4f),
+                    onClick = onDismiss
+                )
+                PetalSheetPill(
+                    text = if (isEditMode) "Save" else "Create",
+                    icon = Icons.Rounded.Check,
+                    tone = if (name.isNotBlank()) PetalSheetTone.Primary else PetalSheetTone.Neutral,
+                    modifier = Modifier.weight(0.6f),
                     onClick = {
-                        onSave(name.trim(), selectedIconName, selectedColorHex)
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(50.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    enabled = name.isNotBlank()
-                ) {
-                    Text(if (isEditMode) "Save Changes" else "Create Workspace")
-                }
+                        if (name.isNotBlank()) onSave(name.trim(), selectedIconName, selectedColorHex)
+                    }
+                )
             }
         }
     }

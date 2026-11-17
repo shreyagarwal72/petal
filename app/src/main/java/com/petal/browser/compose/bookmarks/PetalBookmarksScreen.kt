@@ -26,6 +26,11 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import com.petal.browser.ui.containment.PetalSheetHeader
+import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.containment.PetalSheetActionRow
+import com.petal.browser.ui.containment.PetalSheetTone
+import com.petal.browser.ui.containment.petalSheetSurface
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -574,129 +579,113 @@ fun PetalBookmarksScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
+                    PetalSheetHeader(
+                        title = rec.title?.ifBlank { rec.url } ?: "Bookmark",
+                        subtitle = rec.url ?: "",
+                        leading = {
+                            Box(
+                                Modifier
+                                    .size(80.dp)
+                                    .petalSheetSurface(
+                                        com.petal.browser.ui.theme.SmoothRoundedShape(24.dp),
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Icon(
                                     if (rec.isReadingList) Icons.Rounded.AutoStories else Icons.Rounded.Bookmark,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(36.dp)
                                 )
                             }
                         }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = rec.title?.ifBlank { rec.url } ?: "Bookmark",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                text = rec.url ?: "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                    )
+                    Spacer(Modifier.height(6.dp))
+
+                    PetalSheetPill(
+                        text = "Open in New Tab",
+                        icon = Icons.Rounded.OpenInNew,
+                        tone = PetalSheetTone.Primary,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            val url = rec.url ?: ""
+                            optionsRecord = null
+                            (context as? com.petal.browser.activity.MainActivity)?.let { act ->
+                                act.addAlbum(rec.title ?: url, url, true)
+                                onDismiss()
+                            } ?: onOpenUrl(url)
                         }
+                    )
+
+                    PetalSheetActionRow {
+                        PetalSheetPill(
+                            text = "Edit",
+                            icon = Icons.Rounded.Edit,
+                            tone = PetalSheetTone.Secondary,
+                            modifier = Modifier.weight(0.5f),
+                            onClick = {
+                                editingRecord = rec
+                                optionsRecord = null
+                            }
+                        )
+                        PetalSheetPill(
+                            text = if (rec.isReadingList) "Unread" else "Read later",
+                            icon = if (rec.isReadingList) Icons.Rounded.BookmarkRemove else Icons.Rounded.AutoStories,
+                            tone = PetalSheetTone.Tertiary,
+                            modifier = Modifier.weight(0.5f),
+                            onClick = {
+                                optionsRecord = null
+                                val newReadingState = !rec.isReadingList
+                                try {
+                                    val action = HistoryBookmarkRepository(context)
+                                    action.open(true)
+                                    action.setBookmarkReadingList(rec.url, newReadingState)
+                                    action.close()
+                                    PetalToast.show(context, if (newReadingState) "Added to Reading List" else "Removed from Reading List")
+                                } catch (_: Exception) {}
+                                reloadBookmarks()
+                            }
+                        )
                     }
 
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 5) { index, position ->
-                        when (index) {
-                            0 -> {
-                                com.petal.browser.ui.containment.PetalGroupRow(
-                                    icon = Icons.Rounded.OpenInNew,
-                                    title = "Open in New Tab",
-                                    position = position,
-                                    onClick = {
-                                        val url = rec.url ?: ""
-                                        optionsRecord = null
-                                        (context as? com.petal.browser.activity.MainActivity)?.let { act ->
-                                            act.addAlbum(rec.title ?: url, url, true)
-                                            onDismiss()
-                                        } ?: onOpenUrl(url)
-                                    }
-                                )
+                    PetalSheetActionRow {
+                        PetalSheetPill(
+                            text = "Copy link",
+                            icon = Icons.Rounded.ContentCopy,
+                            tone = PetalSheetTone.Secondary,
+                            modifier = Modifier.weight(0.55f),
+                            onClick = {
+                                optionsRecord = null
+                                try {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("URL", rec.url))
+                                    PetalToast.show(context, "Link copied to clipboard")
+                                } catch (_: Exception) {}
                             }
-                            1 -> {
-                                com.petal.browser.ui.containment.PetalGroupRow(
-                                    icon = Icons.Rounded.Edit,
-                                    title = "Edit Bookmark",
-                                    position = position,
-                                    onClick = {
-                                        editingRecord = rec
-                                        optionsRecord = null
+                        )
+                        PetalSheetPill(
+                            text = "Share",
+                            icon = Icons.Rounded.Share,
+                            tone = PetalSheetTone.TertiaryStrong,
+                            modifier = Modifier.weight(0.45f),
+                            onClick = {
+                                optionsRecord = null
+                                try {
+                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, rec.url)
+                                        putExtra(Intent.EXTRA_SUBJECT, rec.title)
                                     }
-                                )
+                                    context.startActivity(Intent.createChooser(intent, "Share Bookmark"))
+                                } catch (_: Exception) {}
                             }
-                            2 -> {
-                                com.petal.browser.ui.containment.PetalGroupRow(
-                                    icon = if (rec.isReadingList) Icons.Rounded.BookmarkRemove else Icons.Rounded.AutoStories,
-                                    title = if (rec.isReadingList) "Remove from Reading List" else "Add to Reading List",
-                                    position = position,
-                                    onClick = {
-                                        optionsRecord = null
-                                        val newReadingState = !rec.isReadingList
-                                        try {
-                                            val action = HistoryBookmarkRepository(context)
-                                            action.open(true)
-                                            action.setBookmarkReadingList(rec.url, newReadingState)
-                                            action.close()
-                                            PetalToast.show(context, if (newReadingState) "Added to Reading List" else "Removed from Reading List")
-                                        } catch (_: Exception) {}
-                                        reloadBookmarks()
-                                    }
-                                )
-                            }
-                            3 -> {
-                                com.petal.browser.ui.containment.PetalGroupRow(
-                                    icon = Icons.Rounded.ContentCopy,
-                                    title = "Copy Link",
-                                    position = position,
-                                    onClick = {
-                                        optionsRecord = null
-                                        try {
-                                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("URL", rec.url))
-                                            PetalToast.show(context, "Link copied to clipboard")
-                                        } catch (_: Exception) {}
-                                    }
-                                )
-                            }
-                            4 -> {
-                                com.petal.browser.ui.containment.PetalGroupRow(
-                                    icon = Icons.Rounded.Share,
-                                    title = "Share Link",
-                                    position = position,
-                                    onClick = {
-                                        optionsRecord = null
-                                        try {
-                                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                                type = "text/plain"
-                                                putExtra(Intent.EXTRA_TEXT, rec.url)
-                                                putExtra(Intent.EXTRA_SUBJECT, rec.title)
-                                            }
-                                            context.startActivity(Intent.createChooser(intent, "Share Bookmark"))
-                                        } catch (_: Exception) {}
-                                    }
-                                )
-                            }
-                        }
+                        )
                     }
-
                     Spacer(Modifier.height(8.dp))
                 }
             }
