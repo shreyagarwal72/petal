@@ -116,7 +116,26 @@ fun PetalRootApp(
     val activeTitle by viewModel.activeTitle.collectAsStateWithLifecycle()
     val loadProgress by viewModel.loadProgress.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    val canGoBack by viewModel.canGoBack.collectAsStateWithLifecycle()
+    val storeCanGoBack by viewModel.canGoBack.collectAsStateWithLifecycle()
+    // The live tab controller knows about Gecko history the store can lag behind on (restored
+    // sessions, SPA pushState, Petal-owned GeckoSession), so it is the source of truth for Back.
+    val liveTabController = (activity as? MainActivity)?.currentAlbumController
+        as? com.petal.browser.browser.PetalTabViewController
+    val canGoBack = storeCanGoBack || (liveTabController?.canGoBack() == true)
+    // Routes Back through the live controller first (real GeckoSession.goBack + URL-trail
+    // fallback); only falls back to the store use case when no controller is bound.
+    val webGoBack: () -> Boolean = {
+        val ctrl = (activity as? MainActivity)?.currentAlbumController
+            as? com.petal.browser.browser.PetalTabViewController
+        if (viewModel.hasOpenOverlay) {
+            viewModel.goBack()
+        } else if (ctrl != null && ctrl.canGoBack()) {
+            ctrl.goBack()
+            true
+        } else {
+            viewModel.goBack()
+        }
+    }
     val canGoForward by viewModel.canGoForward.collectAsStateWithLifecycle()
     val isIncognito by viewModel.isIncognito.collectAsStateWithLifecycle()
     val tabCount by viewModel.tabCount.collectAsStateWithLifecycle()
@@ -440,7 +459,7 @@ fun PetalRootApp(
                 } else {
                     progressAnim.animateTo(0f, PetalSpring.containerMorph())
                 }
-            } else if (viewModel.goBack()) {
+            } else if (webGoBack()) {
                 progressAnim.animateTo(0f, PetalSpring.containerMorph())
             } else {
                 // "Double Back to Exit" (sp_double_back_exit): first back shows a hint,
@@ -662,7 +681,7 @@ fun PetalRootApp(
                         canGoBack = canGoBack,
                         canGoForward = canGoForward,
                         tabCount = tabCount,
-                        onBackClick = { viewModel.goBack() },
+                        onBackClick = { webGoBack() },
                         onForwardClick = { viewModel.goForward() },
                         onReloadClick = { viewModel.reload() },
                         onShareClick = {
@@ -723,7 +742,7 @@ fun PetalRootApp(
                         isIncognito = isIncognito,
                         isLoading = isLoading,
                         canGoBack = canGoBack,
-                        onBackClick = { viewModel.goBack() },
+                        onBackClick = { webGoBack() },
                         onShareClick = {
                             val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                 type = "text/plain"
@@ -947,7 +966,7 @@ fun PetalRootApp(
                     isAdBlockEnabled = isAdBlockEnabled,
                     isMediaPlaying = isMediaPlaying,
                     onDismissRequest = { viewModel.setMenuOpen(false) },
-                    onGoBack = { viewModel.goBack() },
+                    onGoBack = { webGoBack() },
                     onGoForward = { viewModel.goForward() },
                     onToggleBookmark = { viewModel.toggleBookmark(activeTitle, activeUrl) },
                     onOpenDownloadsShortcut = {
