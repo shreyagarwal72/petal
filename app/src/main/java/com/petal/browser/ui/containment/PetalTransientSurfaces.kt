@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
@@ -398,11 +399,13 @@ fun PetalMaterialAlertDialog(
                 win.setDimAmount(if (isGlass) 0.16f else 0.35f)
             }
         }
+        val maxDialogHeight = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
         com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = modifier
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .fillMaxWidth(0.92f)
                 .widthIn(max = 520.dp)
+                .heightIn(max = maxDialogHeight)
                 .wrapContentHeight(),
             enabled = isGlass,
             live = true
@@ -410,6 +413,7 @@ fun PetalMaterialAlertDialog(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = maxDialogHeight)
                     .wrapContentHeight()
                     .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
                 shape = shape,
@@ -507,11 +511,13 @@ fun PetalDialog(
                 win.setDimAmount(if (isGlass) 0.16f else 0.35f)
             }
         }
+        val maxDialogHeight = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
         com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = modifier
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .fillMaxWidth(0.92f)
                 .widthIn(max = 520.dp)
+                .heightIn(max = maxDialogHeight)
                 .wrapContentHeight()
                 .graphicsLayer {
                     scaleX = dialogScale
@@ -524,6 +530,7 @@ fun PetalDialog(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = maxDialogHeight)
                     .wrapContentHeight()
                     .liquidGlassChrome(shape = effectiveShape, enabled = isGlass, sheenIntensity = sheen),
                 shape = effectiveShape,

@@ -457,6 +457,7 @@ private fun PetalSettingsAnimatedContent(
 ) {
     AnimatedContent(
         targetState = targetKey,
+        modifier = Modifier.fillMaxSize(),
         transitionSpec = {
             (fadeIn(animationSpec = tween(220)) togetherWith
                 fadeOut(animationSpec = tween(160)))

@@ -185,6 +185,13 @@ fun PetalAppLockConfigScreen(
 
     val content = @Composable {
         Scaffold(
+            topBar = {
+                ExpressiveHeader(
+                    title = "App & Profile Lock",
+                    subtitle = "Configure protection and authentication",
+                    onBack = handleBack
+                )
+            },
             snackbarHost = { PetalSnackbarHost(snackbarHostState) },
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -199,21 +206,13 @@ fun PetalAppLockConfigScreen(
                     pageSeed = "app_lock_config"
                 )
 
-                Column(modifier = Modifier.fillMaxSize()) {
-                    ExpressiveHeader(
-                        title = "App & Profile Lock",
-                        subtitle = "Configure protection and authentication",
-                        onBack = handleBack
-                    )
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                         // ── Status hero ──
                         PetalStatusHeroCard(
                             title = if (isLockEnabled) "Petal is protected" else "Lock is turned off",
@@ -346,7 +345,6 @@ fun PetalAppLockConfigScreen(
 
                         Spacer(Modifier.height(24.dp))
                     }
-                }
 
                 // Passcode configuration dialog
                 if (showPasscodeConfigDialog) {
