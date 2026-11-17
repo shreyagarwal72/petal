@@ -16,7 +16,8 @@ data class PetalTabMetadata(
     val customTitle: String? = null,
     val workspaceId: String? = null,
     val isPinned: Boolean = false,
-    val isPinnedGlobal: Boolean = true
+    val isPinnedGlobal: Boolean = true,
+    val parentId: String? = null
 )
 
 /**
@@ -141,6 +142,26 @@ object PetalTabMetadataStore {
             ?: PetalTabMetadata(tabId = tabId, isPinned = isPinned, isPinnedGlobal = isGlobal)
         cache[tabId] = updated
         persist(context)
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun setParentId(context: Context, tabId: String, parentId: String?) {
+        if (tabId.isBlank()) return
+        ensureLoaded(context)
+        val existing = cache[tabId]
+        val updated = existing?.copy(parentId = parentId)
+            ?: PetalTabMetadata(tabId = tabId, parentId = parentId)
+        cache[tabId] = updated
+        persist(context)
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getParentId(context: Context, tabId: String): String? {
+        if (tabId.isBlank()) return null
+        ensureLoaded(context)
+        return cache[tabId]?.parentId
     }
 
     @JvmStatic

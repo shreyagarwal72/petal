@@ -94,42 +94,17 @@ fun PetalSummaryBoxDialog(
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val dialogShape = MaterialTheme.shapes.extraLarge
 
-    BasicAlertDialog(onDismissRequest = onDismiss) {
-        val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
-        androidx.compose.runtime.SideEffect {
-            dialogWindow?.let { win ->
-                if (isGlass) {
-                    win.setDimAmount(0.12f)
-                }
-            }
-        }
-        com.petal.browser.ui.glass.PetalGlassContainer(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(),
-            enabled = isGlass,
-            live = true
+    com.petal.browser.ui.containment.PetalDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.widthIn(max = 480.dp),
+        shape = dialogShape
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Surface(
-                shape = dialogShape,
-                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = if (isGlass) 0.dp else 8.dp,
-                shadowElevation = if (isGlass) 0.dp else 12.dp,
-                border = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp)
-                    .liquidGlassChrome(shape = dialogShape, enabled = isGlass, sheenIntensity = sheen)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
                     // Expressive Header Row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -327,7 +302,5 @@ fun PetalSummaryBoxDialog(
                     }
                 }
             }
-        }
     }
-}
 }

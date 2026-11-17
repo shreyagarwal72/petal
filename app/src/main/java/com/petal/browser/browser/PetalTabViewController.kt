@@ -1100,6 +1100,10 @@ class PetalTabViewController private constructor(
         if (httpsOnly && !isLocalHost && !isBypassed && targetUrl.startsWith("http://", ignoreCase = true)) {
             targetUrl = "https://" + targetUrl.substring(7)
         }
+        val stripTracking = preferences.getBoolean("sp_strip_tracking_parameters", true)
+        if (stripTracking && (targetUrl.startsWith("http://", ignoreCase = true) || targetUrl.startsWith("https://", ignoreCase = true))) {
+            targetUrl = com.petal.browser.unit.PetalBrowserUtils.cleanTrackingParams(targetUrl) ?: targetUrl
+        }
         if (com.petal.browser.unit.PetalBrowserUtils.isHomePage(targetUrl) ||
             com.petal.browser.unit.PetalBrowserUtils.isHomePage(rawUrl) ||
             targetUrl.equals("about:blank", ignoreCase = true)

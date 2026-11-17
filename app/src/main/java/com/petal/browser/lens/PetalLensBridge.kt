@@ -116,23 +116,15 @@ object PetalLensBridge {
                             colorStyle = colorStyle,
                             paletteId = paletteId
                         ) {
-                            ModalBottomSheet(
+                            com.petal.browser.ui.containment.PetalSheet(
                                 onDismissRequest = dismissAction,
                                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                                shape = BottomSheetDefaults.ExpandedShape,
-                                containerColor = androidx.compose.ui.graphics.Color.Transparent,
                                 dragHandle = { BottomSheetDefaults.DragHandle() }
                             ) {
-                                PetalGlassContainer(
-                                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
-                                    enabled = isLiquidGlassEnabled("sp_liquid_glass_containments"),
-                                    live = true
-                                ) {
-                                    PetalLensBottomSheet(
-                                        autoSnapCamera = autoSnapCamera,
-                                        onDismissRequest = dismissAction
-                                    )
-                                }
+                                PetalLensBottomSheet(
+                                    autoSnapCamera = autoSnapCamera,
+                                    onDismissRequest = dismissAction
+                                )
                             }
                         }
                     }

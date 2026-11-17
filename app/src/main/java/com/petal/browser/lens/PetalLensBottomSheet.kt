@@ -262,7 +262,7 @@ fun PetalLensBottomSheet(
         val targetUri = remember(pendingImageUriForProviderChooser) { Uri.parse(pendingImageUriForProviderChooser) }
         var rememberChoice by remember { mutableStateOf(false) }
 
-        AlertDialog(
+        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
             onDismissRequest = { pendingImageUriForProviderChooser = null },
             shape = MaterialTheme.shapes.extraLarge,
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,

@@ -390,6 +390,10 @@ object PetalBrowserUtils {
         if (clearCache) {
             try {
                 PetalCacheManager.clearAllCache(context, null)
+                PetalGeckoRuntime.clearData(
+                    context,
+                    StorageController.ClearFlags.ALL_CACHES or StorageController.ClearFlags.IMAGE_CACHE
+                )
             } catch (exception: Exception) {
                 Log.w("browser", "Error clearing cache", exception)
             }
@@ -413,13 +417,14 @@ object PetalBrowserUtils {
         if (clearDB) {
             context.deleteDatabase("Ninja4.db")
             context.deleteDatabase("item_icon.db")
+            context.deleteDatabase("favicon.db")
             sp.edit().putInt("restart_changed", 1).apply()
         }
         if (clearIndexedDB) {
             try {
                 PetalGeckoRuntime.clearData(
                     context,
-                    StorageController.ClearFlags.DOM_STORAGES
+                    StorageController.ClearFlags.DOM_STORAGES or StorageController.ClearFlags.SITE_SETTINGS or StorageController.ClearFlags.SITE_DATA
                 )
             } catch (e: Exception) {
                 PetalAppLogger.w("PetalBrowserUtils", "Error clearing DOM storages in GeckoRuntime", e)
@@ -428,6 +433,22 @@ object PetalBrowserUtils {
                 WebStorage.getInstance().deleteAllData()
             } catch (e: Exception) {
                 PetalAppLogger.w("PetalBrowserUtils", "Error deleting WebStorage data", e)
+            }
+        }
+        val clearPermissions = sp.getBoolean("sp_clear_permissions", false)
+        if (clearPermissions) {
+            try {
+                PetalGeckoRuntime.clearData(context, StorageController.ClearFlags.PERMISSIONS)
+            } catch (e: Exception) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error clearing permissions in GeckoRuntime", e)
+            }
+        }
+        val clearAutofill = sp.getBoolean("sp_clear_autofill", false)
+        if (clearAutofill) {
+            try {
+                PetalGeckoRuntime.clearData(context, StorageController.ClearFlags.AUTH_SESSIONS)
+            } catch (e: Exception) {
+                PetalAppLogger.w("PetalBrowserUtils", "Error clearing auth sessions in GeckoRuntime", e)
             }
         }
     }

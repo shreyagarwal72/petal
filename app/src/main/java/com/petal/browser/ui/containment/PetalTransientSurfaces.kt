@@ -297,20 +297,11 @@ fun PetalAlertDialog(
             }
         },
         title = {
-            Box(
-                modifier = Modifier
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                        shape = ExpressiveButtonShape
-                    )
-                    .padding(horizontal = 14.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
         },
         text = if (message != null || content != null) {
             {
@@ -401,14 +392,15 @@ fun PetalMaterialAlertDialog(
         val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
         androidx.compose.runtime.SideEffect {
             dialogWindow?.let { win ->
-                if (isGlass) {
-                    win.setDimAmount(0.12f)
-                }
+                win.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+                win.setDimAmount(if (isGlass) 0.16f else 0.35f)
             }
         }
         com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = modifier
+                .windowInsetsPadding(WindowInsets.safeDrawing)
                 .fillMaxWidth(0.92f)
+                .widthIn(max = 520.dp)
                 .wrapContentHeight(),
             enabled = isGlass,
             live = true
@@ -428,6 +420,8 @@ fun PetalMaterialAlertDialog(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .verticalScroll(androidx.compose.foundation.rememberScrollState())
+                        .imePadding()
                         .padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -507,14 +501,15 @@ fun PetalDialog(
         val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
         androidx.compose.runtime.SideEffect {
             dialogWindow?.let { win ->
-                if (isGlass) {
-                    win.setDimAmount(0.12f)
-                }
+                win.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+                win.setDimAmount(if (isGlass) 0.16f else 0.35f)
             }
         }
         com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = modifier
+                .windowInsetsPadding(WindowInsets.safeDrawing)
                 .fillMaxWidth(0.92f)
+                .widthIn(max = 520.dp)
                 .wrapContentHeight()
                 .graphicsLayer {
                     scaleX = dialogScale
@@ -536,7 +531,15 @@ fun PetalDialog(
                 shadowElevation = if (isGlass) 0.dp else 12.dp,
                 border = null,
             ) {
-                Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(androidx.compose.foundation.rememberScrollState())
+                        .imePadding()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    content = content
+                )
             }
         }
     }
@@ -619,20 +622,12 @@ fun PetalSheetTitleBadge(
     title: String,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .background(
-                color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                shape = ExpressiveButtonShape
-            )
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary
-        )
-    }
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier.padding(vertical = 4.dp)
+    )
 }
 
 /**
@@ -769,7 +764,7 @@ fun PetalSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        modifier = modifier,
+        modifier = modifier.widthIn(max = 640.dp),
         sheetState = sheetState,
         shape = sheetShape,
         containerColor = resolvedContainerColor,
@@ -823,6 +818,7 @@ fun PetalSheet(
                         .fillMaxWidth()
                         .padding(top = with(density) { statusOverlapPx.toDp() })
                         .navigationBarsPadding()
+                        .imePadding()
                 ) {
                     if (dragHandle != null) {
                         Box(

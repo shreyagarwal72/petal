@@ -151,6 +151,11 @@ android {
         checkReleaseBuilds false
         disable 'MissingTranslation'
     }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
     namespace 'com.petal.browser'
 
     // youtubedl-android (Chaquopy/Python) unzips libpython.zip.so from disk at runtime via

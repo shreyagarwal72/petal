@@ -68,41 +68,21 @@ fun PetalNetworkInspectorDialog(
         }
     }
 
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sheen = petalSheenIntensity("sp_liquid_glass_sheen", default = 0.35f)
     val shape = MaterialTheme.shapes.extraLarge
 
-    BasicAlertDialog(onDismissRequest = onDismissRequest) {
-        val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
-        androidx.compose.runtime.SideEffect {
-            dialogWindow?.let { win ->
-                if (isGlass) {
-                    win.setDimAmount(0.12f)
-                }
-            }
-        }
-        PetalGlassContainer(
-            live = true,
-            modifier = Modifier.wrapContentSize()
+    com.petal.browser.ui.containment.PetalDialog(
+        onDismissRequest = onDismissRequest,
+        modifier = Modifier.widthIn(max = 420.dp),
+        shape = shape
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Surface(
-                shape = shape,
-                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = if (isGlass) 0.dp else 6.dp,
-                modifier = Modifier
-                    .widthIn(max = 380.dp)
-                    .liquidGlassChrome(shape, enabled = isGlass, sheenIntensity = sheen)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = if (isSecure) Icons.Rounded.Lock else Icons.Rounded.Public,
@@ -140,8 +120,6 @@ fun PetalNetworkInspectorDialog(
                         Text(stringResource(R.string.ui_done))
                     }
                 }
-            }
-        }
     }
 }
 

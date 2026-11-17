@@ -255,33 +255,25 @@ object PetalUploadChooser {
                     androidx.compose.runtime.CompositionLocalProvider(
                         com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource
                     ) {
-                        androidx.compose.material3.ModalBottomSheet(
+                        com.petal.browser.ui.containment.PetalSheet(
                             onDismissRequest = {
                                 dismissAction()
                             },
                             sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                            shape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape,
-                            containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
                             dragHandle = { androidx.compose.material3.BottomSheetDefaults.DragHandle() }
                         ) {
-                            com.petal.browser.ui.glass.PetalGlassContainer(
-                                modifier = Modifier.fillMaxWidth(),
-                                enabled = isGlass,
-                                live = true
-                            ) {
-                                ChoiceContent(
-                                    onPickFiles = {
-                                        chosen = true
-                                        dismissAction()
-                                        openFiles(activity, cb, params, onFatalFallback)
-                                    },
-                                    onPickMedia = {
-                                        chosen = true
-                                        dismissAction()
-                                        openMedia(activity, cb, params, onFatalFallback)
-                                    }
-                                )
-                            }
+                            ChoiceContent(
+                                onPickFiles = {
+                                    chosen = true
+                                    dismissAction()
+                                    openFiles(activity, cb, params, onFatalFallback)
+                                },
+                                onPickMedia = {
+                                    chosen = true
+                                    dismissAction()
+                                    openMedia(activity, cb, params, onFatalFallback)
+                                }
+                            )
                         }
                     }
                 }

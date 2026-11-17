@@ -504,15 +504,33 @@ object PetalAndroidUtils {
             }
 
             dialog.window?.let { window ->
-                val backgroundDrawable = GradientDrawable().apply {
-                    shape = GradientDrawable.RECTANGLE
-                    setColor(if (surfaceColor != 0) surfaceColor else Color.parseColor("#1C1B1F"))
-                    cornerRadius = convertDpToPixel(28f, context).toFloat()
+                val hasCompose = window.decorView.let { decor ->
+                    fun hasComposeView(v: View): Boolean {
+                        if (v is androidx.compose.ui.platform.ComposeView) return true
+                        if (v is ViewGroup) {
+                            for (i in 0 until v.childCount) {
+                                if (hasComposeView(v.getChildAt(i))) return true
+                            }
+                        }
+                        return false
+                    }
+                    hasComposeView(decor)
                 }
-                window.setBackgroundDrawable(backgroundDrawable)
-                window.setDimAmount(0.32f)
-                window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                window.decorView.elevation = convertDpToPixel(12f, context).toFloat()
+                if (hasCompose) {
+                    window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+                    window.setDimAmount(0.35f)
+                    window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                } else {
+                    val backgroundDrawable = GradientDrawable().apply {
+                        shape = GradientDrawable.RECTANGLE
+                        setColor(if (surfaceColor != 0) surfaceColor else Color.parseColor("#1C1B1F"))
+                        cornerRadius = convertDpToPixel(28f, context).toFloat()
+                    }
+                    window.setBackgroundDrawable(backgroundDrawable)
+                    window.setDimAmount(0.32f)
+                    window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                    window.decorView.elevation = convertDpToPixel(12f, context).toFloat()
+                }
             }
         } catch (ignored: Exception) {}
     }

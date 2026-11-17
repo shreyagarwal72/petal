@@ -496,6 +496,7 @@ fun PetalAdBlockSettingsScreen(
                             blockAnnoyances = on
                             sp.edit().putBoolean("sp_block_annoyances", on).apply()
                             PetalFilterSubscriptionManager.toggleSubscription(context, "brave_social", on)
+                            PetalFilterSubscriptionManager.reloadActiveRules(context)
                         }
                     )
 

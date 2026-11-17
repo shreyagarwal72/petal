@@ -122,30 +122,20 @@ fun PetalSearchEngineSheet(
     onConfirm: (Int) -> Unit
 ) {
     if (visible) {
-        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
+        com.petal.browser.ui.containment.PetalSheet(
             onDismissRequest = onDismissRequest,
             sheetState = sheetState,
-            dragHandle = { BottomSheetDefaults.DragHandle() },
-            shape = BottomSheetDefaults.ExpandedShape,
-            containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow,
-            contentWindowInsets = { WindowInsets.navigationBars }
+            dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
-            com.petal.browser.ui.glass.PetalGlassContainer(
-                modifier = Modifier.fillMaxWidth(),
-                enabled = isGlass,
-                live = true
-            ) {
-                PetalSearchEngineSheetContent(
-                    initialIndex = initialIndex,
-                    onConfirm = {
-                        onConfirm(it)
-                        onDismissRequest()
-                    },
-                    onCancel = onDismissRequest
-                )
-            }
+            PetalSearchEngineSheetContent(
+                initialIndex = initialIndex,
+                onConfirm = {
+                    onConfirm(it)
+                    onDismissRequest()
+                },
+                onCancel = onDismissRequest
+            )
         }
     }
 }

@@ -219,27 +219,18 @@ object PetalBrowserPermissionDialog {
                     ) {
                         PetalExpressiveTheme {
                             val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                            ModalBottomSheet(
+                            com.petal.browser.ui.containment.PetalSheet(
                                 onDismissRequest = { cleanup() },
                                 sheetState = sheetState,
-                                dragHandle = { BottomSheetDefaults.DragHandle() },
-                                shape = BottomSheetDefaults.ExpandedShape,
-                                containerColor = if (isLiquidGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow,
-                                contentWindowInsets = { WindowInsets.navigationBars }
+                                dragHandle = { BottomSheetDefaults.DragHandle() }
                             ) {
-                                PetalGlassContainer(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    enabled = isLiquidGlass,
-                                    live = true
-                                ) {
-                                    BrowserPermissionSheet(
-                                        onDone = { cleanup() },
-                                        onNotNow = {
-                                            markShown(activity)
-                                            cleanup()
-                                        }
-                                    )
-                                }
+                                BrowserPermissionSheet(
+                                    onDone = { cleanup() },
+                                    onNotNow = {
+                                        markShown(activity)
+                                        cleanup()
+                                    }
+                                )
                             }
                         }
                     }

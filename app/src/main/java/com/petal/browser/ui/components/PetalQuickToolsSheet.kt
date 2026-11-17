@@ -152,8 +152,9 @@ fun PetalQuickToolsSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
                 .padding(horizontal = 20.dp)
-                .padding(top = 12.dp, bottom = 32.dp)
+                .padding(top = 10.dp, bottom = 16.dp)
         ) {
             // Drag Handle
             Box(
@@ -347,11 +348,18 @@ private fun ExpressiveQuickToolItem(
         // Tool Title
         Text(
             text = tool.title,
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Medium),
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                lineHeight = 13.sp
+            ),
             color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
+            maxLines = 2,
+            minLines = 2,
+            softWrap = true,
             overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 2.dp)
         )
 
         // Reorder Arrows Row

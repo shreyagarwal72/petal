@@ -126,6 +126,10 @@ object PetalQuickToolsBridge {
 
             val sp = PreferenceManager.getDefaultSharedPreferences(activity)
             composeView = ComposeView(activity).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
@@ -139,6 +143,10 @@ object PetalQuickToolsBridge {
                     val appFont = remember(fontName) { AppFont.fromName(fontName) }
                     val colorStyle = remember(styleName) {
                         try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
+                    }
+
+                    androidx.activity.compose.BackHandler {
+                        cleanup()
                     }
 
                     PetalExpressiveTheme(
@@ -158,21 +166,41 @@ object PetalQuickToolsBridge {
                             com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource,
                             com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper
                         ) {
-                            Box(Modifier.fillMaxWidth()) {
-                                if (isGlass) {
-                                    com.petal.browser.ui.containment.PetalSheetGlassBackdrop(wallpaper, Modifier.matchParentSize())
-                                }
-                                PetalQuickToolsSheet(
-                                    currentPageUrl = currentUrl,
-                                    currentPageTitle = currentTitle,
-                                    onToolClicked = { tool ->
-                                        cleanup()
-                                        handleToolClick(activity, currentController, currentUrl, currentTitle, tool)
-                                    },
-                                    onDismissRequest = {
-                                        cleanup()
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.40f))
+                                    .clickable(
+                                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = { cleanup() }
+                                    ),
+                                contentAlignment = Alignment.BottomCenter
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable(
+                                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                            indication = null,
+                                            onClick = {}
+                                        )
+                                ) {
+                                    if (isGlass) {
+                                        com.petal.browser.ui.containment.PetalSheetGlassBackdrop(wallpaper, Modifier.matchParentSize())
                                     }
-                                )
+                                    PetalQuickToolsSheet(
+                                        currentPageUrl = currentUrl,
+                                        currentPageTitle = currentTitle,
+                                        onToolClicked = { tool ->
+                                            cleanup()
+                                            handleToolClick(activity, currentController, currentUrl, currentTitle, tool)
+                                        },
+                                        onDismissRequest = {
+                                            cleanup()
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

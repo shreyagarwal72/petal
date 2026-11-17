@@ -49,43 +49,23 @@ fun PetalConfirmBottomSheet(
     onCancel: () -> Unit = onDismissRequest
 ) {
     if (visible) {
-        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-        val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-        val sheetShape = BottomSheetDefaults.ExpandedShape
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
+        com.petal.browser.ui.containment.PetalSheet(
             onDismissRequest = onDismissRequest,
             sheetState = sheetState,
-            dragHandle = { BottomSheetDefaults.DragHandle() },
-            shape = sheetShape,
-            containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow,
-            contentWindowInsets = { WindowInsets.navigationBars }
+            dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
-            com.petal.browser.ui.glass.PetalGlassContainer(
-                modifier = Modifier.fillMaxWidth(),
-                enabled = isGlass,
-                live = true
-            ) {
-                Surface(
-                    shape = sheetShape,
-                    color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(if (isGlass) Modifier.liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = sheen) else Modifier)
-                ) {
-                    PetalConfirmSheetContent(
-                        icon = icon,
-                        title = title,
-                        message = message,
-                        confirmText = confirmText,
-                        cancelText = cancelText,
-                        isDestructive = isDestructive,
-                        showDragHandle = false,
-                        onConfirm = onConfirm,
-                        onCancel = onCancel
-                    )
-                }
-            }
+            PetalConfirmSheetContent(
+                icon = icon,
+                title = title,
+                message = message,
+                confirmText = confirmText,
+                cancelText = cancelText,
+                isDestructive = isDestructive,
+                showDragHandle = false,
+                onConfirm = onConfirm,
+                onCancel = onCancel
+            )
         }
     }
 }

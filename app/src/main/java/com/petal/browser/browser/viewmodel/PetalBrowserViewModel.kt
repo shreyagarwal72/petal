@@ -302,7 +302,14 @@ class PetalBrowserViewModel @Inject constructor(
     fun loadUrl(url: String) {
         val trimmed = url.trim()
         if (trimmed.isBlank()) return
-        val formattedUrl = PetalBrowserUtils.queryWrapper(context, trimmed)
+        val rawFormatted = PetalBrowserUtils.queryWrapper(context, trimmed)
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+        val stripTracking = sp.getBoolean("sp_strip_tracking_parameters", true)
+        val formattedUrl = if (stripTracking && (rawFormatted.startsWith("http://", ignoreCase = true) || rawFormatted.startsWith("https://", ignoreCase = true))) {
+            PetalBrowserUtils.cleanTrackingParams(rawFormatted) ?: rawFormatted
+        } else {
+            rawFormatted
+        }
         val targetTab = activeTab.value
         if (targetTab != null) {
             val session = targetTab.engineState.engineSession ?: run {
@@ -333,16 +340,18 @@ class PetalBrowserViewModel @Inject constructor(
         private: Boolean = false,
         groupId: String? = null,
         groupTitle: String? = null,
-        keepSwitcherOpen: Boolean = false
+        keepSwitcherOpen: Boolean = false,
+        parentId: String? = null
     ): String {
         val tabId = java.util.UUID.randomUUID().toString()
-        if (!groupId.isNullOrBlank()) {
+        if (!groupId.isNullOrBlank() || !parentId.isNullOrBlank()) {
             PetalTabMetadataStore.put(
                 context,
                 PetalTabMetadata(
                     tabId = tabId,
                     tabGroupId = groupId,
-                    tabGroupTitle = groupTitle ?: "Group"
+                    tabGroupTitle = groupTitle ?: if (groupId != null) "Group" else null,
+                    parentId = parentId
                 )
             )
         }
@@ -494,8 +503,8 @@ class PetalBrowserViewModel @Inject constructor(
         val tabToClose = state.tabs.firstOrNull { it.id == tabId }
         tabToClose?.let { snapshotBeforeClose(it) }
         val isPrivate = tabToClose?.content?.private == true
+        val meta = PetalTabMetadataStore.get(context, tabId)
         if (tabToClose != null && !isPrivate) {
-            val meta = PetalTabMetadataStore.get(context, tabId)
             PetalRecentlyClosedManager.pushClosedTab(
                 id = tabToClose.id,
                 title = meta?.customTitle ?: tabToClose.content.title,
@@ -505,6 +514,12 @@ class PetalBrowserViewModel @Inject constructor(
                 groupTitle = meta?.tabGroupTitle,
                 groupColorHex = meta?.tabGroupColorHex
             )
+        }
+        val isSelected = state.selectedTabId == tabId
+        val parentId = meta?.parentId
+        val parentStillOpen = parentId != null && state.tabs.any { it.id == parentId && it.id != tabId }
+        if (isSelected && parentStillOpen && parentId != null) {
+            tabsUseCases.selectTab(parentId)
         }
         tabsUseCases.removeTab(tabId)
         PetalTabMetadataStore.remove(context, tabId)
@@ -586,7 +601,18 @@ class PetalBrowserViewModel @Inject constructor(
 
     fun duplicateTab(tab: PetalTabItem) {
         val url = if (tab.url.isBlank() || tab.url == "Petal Home") "about:home" else tab.url
-        openNewTab(url = url, selectTab = true, private = tab.isIncognito)
+        val meta = PetalTabMetadataStore.get(context, tab.id)
+        val newTabId = openNewTab(
+            url = url,
+            selectTab = true,
+            private = tab.isIncognito,
+            groupId = meta?.tabGroupId,
+            groupTitle = meta?.tabGroupTitle,
+            parentId = tab.id
+        )
+        if (meta?.workspaceId != null) {
+            PetalTabMetadataStore.setWorkspace(context, newTabId, meta.workspaceId)
+        }
     }
 
     fun saveBookmark(title: String, url: String) {

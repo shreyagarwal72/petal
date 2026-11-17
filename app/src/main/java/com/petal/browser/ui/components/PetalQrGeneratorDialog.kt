@@ -87,37 +87,23 @@ fun PetalQrGeneratorDialog(
         )
     }
 
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val dialogShape = MaterialTheme.shapes.extraLarge
 
-    BasicAlertDialog(onDismissRequest = onDismissRequest) {
-        com.petal.browser.ui.glass.PetalGlassContainer(
-            modifier = Modifier.widthIn(max = 380.dp),
-            enabled = isGlass,
-            live = true
+    com.petal.browser.ui.containment.PetalDialog(
+        onDismissRequest = onDismissRequest,
+        modifier = Modifier.widthIn(max = 400.dp),
+        shape = dialogShape
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Surface(
-                shape = dialogShape,
-                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = if (isGlass) 0.dp else 8.dp,
-                shadowElevation = if (isGlass) 0.dp else 8.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (isGlass) Modifier.liquidGlassChrome(dialogShape, enabled = true, sheenIntensity = sheen) else Modifier)
+            // Header Row: Title & Close Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Header Row: Title & Close Button
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -302,7 +288,6 @@ fun PetalQrGeneratorDialog(
                     }
                 }
             }
-        }
         }
     }
 }

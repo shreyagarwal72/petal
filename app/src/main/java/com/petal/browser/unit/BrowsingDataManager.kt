@@ -87,9 +87,15 @@ object BrowsingDataManager {
             var flags = 0L
             if (cache) flags = flags or PetalCacheManager.Flags.ALL_CACHES
             if (cookies) flags = flags or PetalCacheManager.Flags.COOKIES
-            if (webStorage) flags = flags or PetalCacheManager.Flags.DOM_WEB_STORAGE
-            if (autofill) clearAutofillData(context)
-            if (permissions) clearPermissions(context)
+            if (webStorage) flags = flags or PetalCacheManager.Flags.DOM_WEB_STORAGE or PetalCacheManager.Flags.SITE_SETTINGS
+            if (autofill) {
+                flags = flags or PetalCacheManager.Flags.AUTH_SESSIONS
+                clearAutofillData(context)
+            }
+            if (permissions) {
+                flags = flags or PetalCacheManager.Flags.PERMISSIONS
+                clearPermissions(context)
+            }
 
             PetalCacheManager.clearCache(context, flags, onCompleted)
         }

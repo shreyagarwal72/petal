@@ -35,8 +35,11 @@ object PetalCacheManager {
         const val THUMBNAILS_CACHE = 1L shl 4
         const val CODE_CACHE = 1L shl 5
         const val COOKIES = 1L shl 6
+        const val PERMISSIONS = 1L shl 7
+        const val AUTH_SESSIONS = 1L shl 8
+        const val SITE_SETTINGS = 1L shl 9
         const val ALL_CACHES = NETWORK_CACHE or IMAGE_MEDIA_CACHE or APP_TEMP_CACHE or CODE_CACHE
-        const val ALL_WEBSITE_DATA = ALL_CACHES or DOM_WEB_STORAGE or COOKIES
+        const val ALL_WEBSITE_DATA = ALL_CACHES or DOM_WEB_STORAGE or COOKIES or PERMISSIONS or AUTH_SESSIONS or SITE_SETTINGS
     }
 
     data class CacheSizeInfo(
@@ -161,6 +164,15 @@ object PetalCacheManager {
             if ((flags and Flags.COOKIES) != 0L) {
                 geckoFlags = geckoFlags or StorageController.ClearFlags.COOKIES
                 geckoFlags = geckoFlags or StorageController.ClearFlags.AUTH_SESSIONS
+            }
+            if ((flags and Flags.PERMISSIONS) != 0L) {
+                geckoFlags = geckoFlags or StorageController.ClearFlags.PERMISSIONS
+            }
+            if ((flags and Flags.AUTH_SESSIONS) != 0L) {
+                geckoFlags = geckoFlags or StorageController.ClearFlags.AUTH_SESSIONS
+            }
+            if ((flags and Flags.SITE_SETTINGS) != 0L) {
+                geckoFlags = geckoFlags or StorageController.ClearFlags.SITE_SETTINGS
             }
             if (geckoFlags != 0L) {
                 PetalGeckoRuntime.clearData(appContext, geckoFlags)
