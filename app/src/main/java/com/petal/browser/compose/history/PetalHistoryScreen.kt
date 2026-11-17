@@ -823,7 +823,7 @@ fun PetalHistoryScreen(
                         onClick = {
                             val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                             clipboard.setPrimaryClip(android.content.ClipData.newPlainText("URL", recordUrl))
-                            com.petal.browser.utils.PetalToast.show(context, "Link copied to clipboard")
+                            com.petal.browser.view.PetalToast.show(context, "Link copied to clipboard")
                             optionsRecord = null
                         }
                     )
@@ -855,7 +855,7 @@ fun PetalHistoryScreen(
                                 action.open(true)
                                 action.addBookmark(Record(recordTitle, recordUrl, 0L, 0))
                                 action.close()
-                                com.petal.browser.utils.PetalToast.show(context, "Saved to bookmarks")
+                                com.petal.browser.view.PetalToast.show(context, "Saved to bookmarks")
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
@@ -865,7 +865,7 @@ fun PetalHistoryScreen(
                     PetalSheetPill(
                         text = "Delete",
                         icon = Icons.Rounded.DeleteOutline,
-                        tone = PetalSheetTone.Destructive,
+                        tone = PetalSheetTone.Danger,
                         modifier = Modifier.weight(0.5f),
                         onClick = {
                             val toDelete = rec

@@ -86,8 +86,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import com.petal.browser.haptics.PetalHapticEngine
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -140,6 +142,7 @@ fun PetalBottomNavBar(
     showSearch: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     // Whole-bar entrance: slides up and fades in with a soft spring when first shown
     val entrance = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
