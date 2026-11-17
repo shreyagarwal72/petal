@@ -70,6 +70,8 @@ fun PetalMergedBar(
     onDownloadsClick: () -> Unit = {},
     onFindInPageClick: () -> Unit = {},
     onBookmarkClick: () -> Unit = {},
+    onHistoryClick: () -> Unit = {},
+    onBookmarksManagerClick: () -> Unit = onBookmarkClick,
     onAiResearchClick: () -> Unit = {},
     onMediaClick: () -> Unit = {},
     onSwipeNextTab: () -> Unit = {},
@@ -313,8 +315,12 @@ fun PetalMergedBar(
                                     onDownloadsClick = onDownloadsClick,
                                     onFindInPageClick = onFindInPageClick,
                                     onBookmarkClick = onBookmarkClick,
+                                    onHistoryClick = onHistoryClick,
+                                    onBookmarksManagerClick = onBookmarksManagerClick,
                                     onAiResearchClick = onAiResearchClick,
-                                    onReaderClick = onReaderClick
+                                    onReaderClick = onReaderClick,
+                                    onHardRefresh = onHardRefresh,
+                                    onCustomizeClick = onCustomizeClick
                                 )
                             }
                         }
@@ -358,8 +364,12 @@ fun PetalMergedBar(
                                     onDownloadsClick = onDownloadsClick,
                                     onFindInPageClick = onFindInPageClick,
                                     onBookmarkClick = onBookmarkClick,
+                                    onHistoryClick = onHistoryClick,
+                                    onBookmarksManagerClick = onBookmarksManagerClick,
                                     onAiResearchClick = onAiResearchClick,
-                                    onReaderClick = onReaderClick
+                                    onReaderClick = onReaderClick,
+                                    onHardRefresh = onHardRefresh,
+                                    onCustomizeClick = onCustomizeClick
                                 )
                             }
                         }
@@ -417,8 +427,12 @@ fun PetalMergedBar(
                                     onDownloadsClick = onDownloadsClick,
                                     onFindInPageClick = onFindInPageClick,
                                     onBookmarkClick = onBookmarkClick,
+                                    onHistoryClick = onHistoryClick,
+                                    onBookmarksManagerClick = onBookmarksManagerClick,
                                     onAiResearchClick = onAiResearchClick,
-                                    onReaderClick = onReaderClick
+                                    onReaderClick = onReaderClick,
+                                    onHardRefresh = onHardRefresh,
+                                    onCustomizeClick = onCustomizeClick
                                 )
                             }
                         }
@@ -475,7 +489,11 @@ private fun BarActionButton(
     onFindInPageClick: () -> Unit,
     onBookmarkClick: () -> Unit,
     onAiResearchClick: () -> Unit,
-    onReaderClick: () -> Unit
+    onReaderClick: () -> Unit,
+    onHistoryClick: () -> Unit = {},
+    onBookmarksManagerClick: () -> Unit = onBookmarkClick,
+    onHardRefresh: () -> Unit = onReloadClick,
+    onCustomizeClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val isEnabled = when (action) {
@@ -509,9 +527,25 @@ private fun BarActionButton(
             BarAction.READER -> onReaderClick()
             BarAction.DOWNLOADS -> onDownloadsClick()
             BarAction.FIND_IN_PAGE -> onFindInPageClick()
+            BarAction.HISTORY -> onHistoryClick()
             BarAction.MENU -> onMenuClick()
         }
     }
+
+    val longClickHandler: (() -> Unit)? = if (action.supportsLongPress) {
+        {
+            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
+            when (action) {
+                BarAction.BACK -> onHistoryClick()
+                BarAction.BOOKMARK -> onBookmarksManagerClick()
+                BarAction.RELOAD -> onHardRefresh()
+                BarAction.TABS -> onNewTabClick()
+                BarAction.NEW_TAB -> onNewTabClick()
+                BarAction.MENU -> onCustomizeClick()
+                else -> {}
+            }
+        }
+    } else null
 
     val tint = if (isEnabled) {
         MaterialTheme.colorScheme.onSurface
@@ -544,7 +578,8 @@ private fun BarActionButton(
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = ripple(bounded = true),
-                onClick = clickHandler
+                onClick = clickHandler,
+                onLongClick = longClickHandler
             )
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {

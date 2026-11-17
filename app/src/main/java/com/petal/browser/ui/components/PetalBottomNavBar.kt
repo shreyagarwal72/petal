@@ -135,6 +135,8 @@ fun PetalBottomNavBar(
     onSwipeTabLeft: () -> Unit = {},
     onSwipeTabRight: () -> Unit = {},
     onSearchClick: () -> Unit = {},
+    onHistoryClick: () -> Unit = {},
+    onBookmarksClick: () -> Unit = {},
     showSearch: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
@@ -407,7 +409,11 @@ fun PetalBottomNavBar(
                                 )
                             }
                         },
-                        onClick = onHomeClick
+                        onClick = onHomeClick,
+                        onLongClick = {
+                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
+                            onHistoryClick()
+                        }
                     )
 
                     ExpressiveNavTabItem(
@@ -501,6 +507,13 @@ fun PetalBottomNavBar(
                             val rad = if (bounds != null) bounds.height / 2f else 24f
                             PetalNewTabOrigin.mark(bounds, rad)
                             onTabsClick()
+                        },
+                        onLongClick = {
+                            val bounds = tabsButtonBounds[0] ?: navBarBounds[0]
+                            val rad = if (bounds != null) bounds.height / 2f else 24f
+                            PetalNewTabOrigin.mark(bounds, rad)
+                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
+                            onNewTabClick()
                         }
                     )
 
@@ -534,7 +547,11 @@ fun PetalBottomNavBar(
                                     }
                             )
                         },
-                        onClick = onMenuClick
+                        onClick = onMenuClick,
+                        onLongClick = {
+                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
+                            onBookmarksClick()
+                        }
                     )
 
                 }

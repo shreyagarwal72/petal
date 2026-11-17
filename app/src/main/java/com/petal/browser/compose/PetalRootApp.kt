@@ -712,6 +712,8 @@ fun PetalRootApp(
                         onDownloadsClick = { viewModel.openDownloads() },
                         onFindInPageClick = { viewModel.openFindInPage() },
                         onBookmarkClick = { viewModel.toggleBookmark(activeTitle, activeUrl) },
+                        onHistoryClick = { viewModel.openHistory() },
+                        onBookmarksManagerClick = { viewModel.openBookmarks() },
                         onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
                         onMediaClick = {
                             com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
@@ -813,6 +815,14 @@ fun PetalRootApp(
                 onSearchClick = {
                     haptic.playClick(context)
                     viewModel.openOmnibox()
+                },
+                onHistoryClick = {
+                    haptic.playClick(context)
+                    viewModel.openHistory()
+                },
+                onBookmarksClick = {
+                    haptic.playClick(context)
+                    viewModel.openBookmarks()
                 },
                 onSwipeTabLeft = {
                     haptic.play(PetalHapticEngine.Pattern.CLICK, 0.6f)
@@ -1136,6 +1146,10 @@ fun PetalRootApp(
                     onOpenUrl = { url ->
                         viewModel.setHistoryOpen(false)
                         viewModel.loadUrl(url)
+                    },
+                    onOpenUrlInNewTab = { url ->
+                        viewModel.setHistoryOpen(false)
+                        viewModel.openNewTab(url, selectTab = true)
                     },
                     onClearBrowsingData = {
                         viewModel.setHistoryOpen(false)

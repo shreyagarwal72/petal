@@ -70,6 +70,12 @@ import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.PetalSheet
+import com.petal.browser.ui.containment.PetalSheetHeader
+import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.containment.PetalSheetActionRow
+import com.petal.browser.ui.containment.PetalSheetTone
+import com.petal.browser.ui.containment.petalSheetSurface
 import androidx.compose.ui.graphics.Color
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -262,12 +268,14 @@ object PetalHistoryBridge {
 fun PetalHistoryScreen(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onOpenUrl: (String) -> Unit = {},
+    onOpenUrlInNewTab: ((String) -> Unit)? = null,
     onClearBrowsingData: () -> Unit = {},
     onDismiss: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     var showClearConfirm by remember { mutableStateOf(false) }
+    var optionsRecord by remember { mutableStateOf<Record?>(null) }
 
     // Load history records from SQLite database asynchronously.
     // listHistory() returns records in DESC order (most recent first) — no reversal needed.
@@ -636,6 +644,7 @@ fun PetalHistoryScreen(
                                             PetalGroupListRow(
                                                 position = petalGroupPositionFor(listItem.indexInGroup, listItem.groupSize),
                                                 onClick = { record.url?.let(onOpenUrl) },
+                                                onLongClick = { optionsRecord = record },
                                                 modifier = Modifier.animateItem(
                                                     fadeInSpec = PetalSpring.fadeIn(),
                                                     fadeOutSpec = PetalSpring.fadeOut(),
@@ -744,6 +753,134 @@ fun PetalHistoryScreen(
                             }
                         )
                     }
+                }
+            }
+        }
+    }
+
+    // History Item Options Sheet (PixelMusic-style Material 3 Expressive Glass)
+    optionsRecord?.let { rec ->
+        val recordUrl = rec.url ?: ""
+        val recordTitle = rec.title?.ifBlank { recordUrl } ?: "History Item"
+        PetalSheet(
+            onDismissRequest = { optionsRecord = null }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                PetalSheetHeader(
+                    title = recordTitle,
+                    subtitle = recordUrl,
+                    leading = {
+                        Box(
+                            Modifier
+                                .size(64.dp)
+                                .petalSheetSurface(
+                                    com.petal.browser.ui.theme.SmoothRoundedShape(20.dp),
+                                    MaterialTheme.colorScheme.primaryContainer
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Rounded.History,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+                )
+                Spacer(Modifier.height(6.dp))
+
+                PetalSheetPill(
+                    text = "Open in New Tab",
+                    icon = Icons.Rounded.OpenInNew,
+                    tone = PetalSheetTone.Primary,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        optionsRecord = null
+                        if (onOpenUrlInNewTab != null) {
+                            onOpenUrlInNewTab(recordUrl)
+                        } else {
+                            (context as? com.petal.browser.activity.MainActivity)?.let { act ->
+                                act.addAlbum(recordTitle, recordUrl, true)
+                            } ?: onOpenUrl(recordUrl)
+                        }
+                        onDismiss()
+                    }
+                )
+
+                PetalSheetActionRow {
+                    PetalSheetPill(
+                        text = "Copy Link",
+                        icon = Icons.Rounded.ContentCopy,
+                        tone = PetalSheetTone.Secondary,
+                        modifier = Modifier.weight(0.5f),
+                        onClick = {
+                            val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("URL", recordUrl))
+                            com.petal.browser.utils.PetalToast.show(context, "Link copied to clipboard")
+                            optionsRecord = null
+                        }
+                    )
+                    PetalSheetPill(
+                        text = "Share",
+                        icon = Icons.Rounded.Share,
+                        tone = PetalSheetTone.Secondary,
+                        modifier = Modifier.weight(0.5f),
+                        onClick = {
+                            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(android.content.Intent.EXTRA_TEXT, recordUrl)
+                            }
+                            context.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
+                            optionsRecord = null
+                        }
+                    )
+                }
+
+                PetalSheetActionRow {
+                    PetalSheetPill(
+                        text = "Bookmark",
+                        icon = Icons.Rounded.BookmarkAdd,
+                        tone = PetalSheetTone.Secondary,
+                        modifier = Modifier.weight(0.5f),
+                        onClick = {
+                            try {
+                                val action = HistoryBookmarkRepository(context)
+                                action.open(true)
+                                action.addBookmark(Record(recordTitle, recordUrl, 0L, 0))
+                                action.close()
+                                com.petal.browser.utils.PetalToast.show(context, "Saved to bookmarks")
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                            optionsRecord = null
+                        }
+                    )
+                    PetalSheetPill(
+                        text = "Delete",
+                        icon = Icons.Rounded.DeleteOutline,
+                        tone = PetalSheetTone.Destructive,
+                        modifier = Modifier.weight(0.5f),
+                        onClick = {
+                            val toDelete = rec
+                            optionsRecord = null
+                            try {
+                                val action = HistoryBookmarkRepository(context)
+                                action.open(true)
+                                action.deleteURL(toDelete.url, HistoryBookmarkContract.TABLE_HISTORY)
+                                action.close()
+                                rawHistory = rawHistory?.filter { it.url != toDelete.url } ?: emptyList()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                    )
                 }
             }
         }

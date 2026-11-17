@@ -56,7 +56,7 @@ enum class BarAction(
         icon = Icons.Rounded.ArrowBack,
         isAvailable = true,
         supportsBadge = false,
-        supportsLongPress = false
+        supportsLongPress = true
     ),
     FORWARD(
         id = "FORWARD",
@@ -88,7 +88,7 @@ enum class BarAction(
         icon = Icons.Rounded.BookmarkBorder,
         isAvailable = true,
         supportsBadge = false,
-        supportsLongPress = false
+        supportsLongPress = true
     ),
     AI_RESEARCH(
         id = "AI_RESEARCH",
@@ -118,6 +118,14 @@ enum class BarAction(
         id = "FIND_IN_PAGE",
         label = "Find in page",
         icon = Icons.Rounded.FindInPage,
+        isAvailable = true,
+        supportsBadge = false,
+        supportsLongPress = false
+    ),
+    HISTORY(
+        id = "HISTORY",
+        label = "History",
+        icon = Icons.Rounded.History,
         isAvailable = true,
         supportsBadge = false,
         supportsLongPress = false

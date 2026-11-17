@@ -727,6 +727,7 @@ private fun getActionDescription(action: BarAction): String = when (action) {
     BarAction.READER -> "Distraction-free clean reader mode"
     BarAction.DOWNLOADS -> "Open downloaded files manager"
     BarAction.FIND_IN_PAGE -> "Find text and keywords on current page"
+    BarAction.HISTORY -> "Open browsing history"
     BarAction.MENU -> "Open browser main overflow menu"
 }
 

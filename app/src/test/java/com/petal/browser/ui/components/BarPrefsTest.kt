@@ -36,11 +36,12 @@ class BarPrefsTest {
 
     @Test
     fun testBarActionParserValid() {
-        val actions = BarAction.parseActionList("TABS,NEW_TAB,MENU")
-        assertEquals(3, actions.size)
+        val actions = BarAction.parseActionList("TABS,NEW_TAB,HISTORY,MENU")
+        assertEquals(4, actions.size)
         assertEquals(BarAction.TABS, actions[0])
         assertEquals(BarAction.NEW_TAB, actions[1])
-        assertEquals(BarAction.MENU, actions[2])
+        assertEquals(BarAction.HISTORY, actions[2])
+        assertEquals(BarAction.MENU, actions[3])
     }
 
     @Test
