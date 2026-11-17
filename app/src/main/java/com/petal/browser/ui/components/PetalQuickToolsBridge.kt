@@ -375,6 +375,7 @@ object PetalQuickToolsBridge {
                             }
                             android.media.MediaScannerConnection.scanFile(activity, arrayOf(file.absolutePath), arrayOf("image/png"), null)
                             PetalToast.show(activity, activity.getString(R.string.ui_screenshot_saved))
+                            com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.SCREENSHOT_SAVED, "screenshot", "Screenshot saved", "Pictures/Petal")
                         } catch (e: Exception) {
                             PetalToast.show(activity, activity.getString(R.string.ui_screenshot_captured))
                         }

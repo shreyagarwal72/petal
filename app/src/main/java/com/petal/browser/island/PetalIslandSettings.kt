@@ -43,6 +43,10 @@ data class IslandSettings(
     val isNotch: Boolean = false,
     /** Concave ear flare radius in dp for notch mode. */
     val notchFlareDp: Int = 20,
+    /** Where the bar is drawn: AUTO, ACCESSIBILITY, OVERLAY or IN_APP. See [PetalIslandPlacement]. */
+    val placementMode: String = PLACE_AUTO,
+    /** True = draw inside the status bar (y = 0). False = below it, like the old island. */
+    val anchorStatusBar: Boolean = true,
 ) {
     val motion: IslandMotion
         get() = IslandMotion(style = animStyle, speed = animSpeed, bounce = animBounce)
@@ -51,6 +55,11 @@ data class IslandSettings(
         const val MODE_AUTO = "AUTO"
         const val MODE_ALWAYS = "ALWAYS_ISLAND"
         const val MODE_NOTIFICATION_ONLY = "NOTIFICATION_ONLY"
+
+        const val PLACE_AUTO = "AUTO"
+        const val PLACE_ACCESSIBILITY = "ACCESSIBILITY"
+        const val PLACE_OVERLAY = "OVERLAY"
+        const val PLACE_IN_APP = "IN_APP"
 
         const val ALIGN_AUTO = "AUTO"
         const val ALIGN_CENTER = "CENTER"
@@ -69,10 +78,13 @@ data class IslandSettings(
         const val KEY_OFFSET_Y = "sp_island_offset_y"
         const val KEY_IS_NOTCH = "sp_island_is_notch"
         const val KEY_NOTCH_FLARE = "sp_island_notch_flare"
+        const val KEY_PLACEMENT = "sp_island_placement"
+        const val KEY_ANCHOR_STATUS_BAR = "sp_island_anchor_status_bar"
 
         private val KEYS = setOf(
             KEY_LIVE_UPDATES, KEY_MODE, KEY_STYLE, KEY_SPEED, KEY_BOUNCE, KEY_WAVY, KEY_OVERLAY,
-            KEY_ALIGNMENT, KEY_OFFSET_X, KEY_OFFSET_Y, KEY_IS_NOTCH, KEY_NOTCH_FLARE
+            KEY_ALIGNMENT, KEY_OFFSET_X, KEY_OFFSET_Y, KEY_IS_NOTCH, KEY_NOTCH_FLARE,
+            KEY_PLACEMENT, KEY_ANCHOR_STATUS_BAR
         )
 
         fun read(sp: SharedPreferences): IslandSettings = IslandSettings(
@@ -97,6 +109,8 @@ data class IslandSettings(
             offsetYDp = sp.getInt(KEY_OFFSET_Y, 0).coerceIn(0, 40),
             isNotch = sp.getBoolean(KEY_IS_NOTCH, false),
             notchFlareDp = sp.getInt(KEY_NOTCH_FLARE, 20).coerceIn(12, 36),
+            placementMode = (sp.getString(KEY_PLACEMENT, PLACE_AUTO) ?: PLACE_AUTO).uppercase(Locale.US),
+            anchorStatusBar = sp.getBoolean(KEY_ANCHOR_STATUS_BAR, true),
         )
 
         fun flow(context: Context): Flow<IslandSettings> {

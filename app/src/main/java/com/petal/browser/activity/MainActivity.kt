@@ -292,6 +292,7 @@ class MainActivity : FragmentActivity(), BrowserController {
     fun addAlbum(title: String?, url: String?, foreground: Boolean = true, incognito: Boolean = false) {
         val effectiveUrl = if (url.isNullOrBlank()) "about:home" else url
         viewModel.openNewTab(effectiveUrl, selectTab = foreground, private = incognito)
+        if (incognito) com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.INCOGNITO_STATE, "incognito", "Private tab", "History and cookies won't be saved")
     }
 
     fun addAlbumInGroup(title: String?, url: String?, foreground: Boolean, groupId: String?, groupTitle: String?) {
@@ -369,6 +370,7 @@ class MainActivity : FragmentActivity(), BrowserController {
         if (controller != null) {
             val isReader = controller.url?.startsWith("about:reader?url=") == true
             controller.toggleReaderMode(!isReader)
+            com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.READER_MODE, "reader", if (isReader) "Reader mode off" else "Reader mode on")
         }
     }
     fun showDeleteScreen() {
@@ -915,6 +917,7 @@ class MainActivity : FragmentActivity(), BrowserController {
                 if (intent.type == "text/plain") {
                     val text = intent.getStringExtra(Intent.EXTRA_TEXT)
                     if (!text.isNullOrBlank()) {
+                        com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.SHARED_TO_PETAL, "shared", "Shared to Petal", text.take(60))
                         viewModel.loadUrl(text)
                     }
                 }

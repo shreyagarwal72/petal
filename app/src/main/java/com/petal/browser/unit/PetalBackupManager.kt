@@ -558,6 +558,7 @@ object PetalBackupManager {
         val handler = Handler(Looper.getMainLooper())
         executor.execute {
             try {
+                com.petal.browser.live.PetalLiveActionBus.postBackupProgress("Backing up", "Preparing your data…", -1)
                 val backupJson = buildBackupJson(context, backupBookmarks, backupHistory, backupStartSites, backupTabSessions, backupSavedSites, backupSettings)
                 val dataBytes = backupJson.toString(2).toByteArray(StandardCharsets.UTF_8)
 
@@ -624,11 +625,13 @@ object PetalBackupManager {
 
                 handler.post {
                     PetalToast.show(context, "Backup downloaded to Downloads: $fileName")
+                    com.petal.browser.live.PetalLiveActionBus.postBackupResult(true, "Saved to Downloads: $fileName")
                 }
             } catch (e: Exception) {
                 Log.e("Petal", "backupToDownloadManager error", e)
                 handler.post {
                     PetalToast.show(context, "Backup failed: ${e.message}")
+                    com.petal.browser.live.PetalLiveActionBus.postBackupResult(false, e.message ?: "Unknown error")
                 }
             }
         }
@@ -680,6 +683,7 @@ object PetalBackupManager {
         if (destinationStream == null) {
             Handler(Looper.getMainLooper()).post {
                 PetalToast.show(context, "Backup failed: cannot open file for writing")
+                com.petal.browser.live.PetalLiveActionBus.postBackupResult(false, "Cannot open the file for writing")
             }
             return
         }
@@ -689,6 +693,7 @@ object PetalBackupManager {
         val finalStream = destinationStream
         executor.execute {
             try {
+                com.petal.browser.live.PetalLiveActionBus.postBackupProgress("Backing up", "Collecting your data…", -1)
                 finalStream.use { stream ->
                     val backupJson = buildBackupJson(context, backupBookmarks, backupHistory, backupStartSites, backupTabSessions, backupSavedSites, backupSettings)
                     val dataBytes = backupJson.toString(2).toByteArray(StandardCharsets.UTF_8)
@@ -705,11 +710,15 @@ object PetalBackupManager {
                             context,
                             "${context.getString(R.string.app_done)}: Backup saved (${dataBytes.size} bytes)"
                         )
+                        com.petal.browser.live.PetalLiveActionBus.postBackupResult(true, "${dataBytes.size / 1024} KB saved")
                     }
                 }
             } catch (e: Exception) {
                 Log.e("Petal", "backupToUri error", e)
-                handler.post { PetalToast.show(context, "Backup failed: ${e.message}") }
+                handler.post {
+                    PetalToast.show(context, "Backup failed: ${e.message}")
+                    com.petal.browser.live.PetalLiveActionBus.postBackupResult(false, e.message ?: "Unknown error")
+                }
             }
         }
     }
@@ -986,11 +995,17 @@ object PetalBackupManager {
     ) {
         val executor: ExecutorService = Executors.newSingleThreadExecutor()
         val handler = Handler(Looper.getMainLooper())
+        // Restoring rewrites many preferences at once; keep the "settings changed" cards quiet.
+        com.petal.browser.live.PetalLiveActionBus.suppressFor(20_000L)
         executor.execute {
             try {
+                com.petal.browser.live.PetalLiveActionBus.postEvent(com.petal.browser.live.LiveEventItem("backup", com.petal.browser.live.LiveEventKind.BACKUP_PROGRESS, "Restoring", "Reading your backup…", -1))
                 val inputStream = context.contentResolver.openInputStream(uri)
                 if (inputStream == null) {
-                    handler.post { PetalToast.show(context, "Failed to open selected file") }
+                    handler.post {
+                        PetalToast.show(context, "Failed to open selected file")
+                        com.petal.browser.live.PetalLiveActionBus.postBackupResult(false, "Could not open the selected file", null, "Restore failed")
+                    }
                     return@execute
                 }
 
@@ -1010,6 +1025,7 @@ object PetalBackupManager {
                 )
                 handler.post {
                     PetalToast.show(context, summary)
+                    com.petal.browser.live.PetalLiveActionBus.postBackupResult(true, "Restore finished", null, "Restore complete")
                     if (restoreSettings) {
                         var act: androidx.activity.ComponentActivity? = null
                         var c: Context? = context
@@ -1031,6 +1047,7 @@ object PetalBackupManager {
                 Log.e("Petal", "restoreFromUri error", e)
                 handler.post {
                     PetalToast.show(context, "Restore failed: ${e.message}")
+                    com.petal.browser.live.PetalLiveActionBus.postBackupResult(false, e.message ?: "Unknown error", null, "Restore failed")
                 }
             }
         }

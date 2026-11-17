@@ -238,14 +238,19 @@ object PetalFolderSync {
         try {
             _syncing.value = true
             _error.value = null
+            // NowBar: only user-started syncs (publishTabs) show a running card; the background job stays silent.
+            if (publishTabs) com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.SYNC_RUNNING, "sync", "Syncing", "Talking to your sync folder…")
             _message.value = doSync(context, publishTabs)
+            if (publishTabs) com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.SYNC_DONE, "sync", "Sync complete", _message.value.orEmpty().take(60))
             val now = System.currentTimeMillis()
             prefs(context).edit().putLong(KEY_LAST_SYNC, now).apply()
             _lastSync.value = now
         } catch (e: SyncException) {
             _error.value = e.message
+            com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.SYNC_FAILED, "sync", "Sync failed", e.message.orEmpty().take(80))
         } catch (e: Exception) {
             _error.value = "Sync failed: ${e.message ?: e.javaClass.simpleName}"
+            com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.SYNC_FAILED, "sync", "Sync failed", e.message.orEmpty().take(80))
         } finally {
             _syncing.value = false
             mutex.unlock()
@@ -427,6 +432,16 @@ object PetalFolderSync {
         val trimmedSeen = JSONArray()
         val start = maxOf(0, seen.length() - 300)
         for (i in start until seen.length()) trimmedSeen.put(seen.optString(i))
+        // NowBar: announce tabs that arrived from another device (new ids only).
+        try {
+            val known = _received.value.map { it.id }.toSet()
+            list.filter { it.id !in known }.take(1).forEach { t ->
+                com.petal.browser.live.PetalLiveActionBus.postSimple(
+                    com.petal.browser.live.LiveEventKind.TAB_RECEIVED, "tab_received",
+                    "Tab received", t.title.ifBlank { t.url }.take(60)
+                )
+            }
+        } catch (_: Throwable) {}
         _received.value = list
         p.edit().putString(KEY_SEEN_IDS, trimmedSeen.toString()).putString(KEY_RECEIVED, receivedToJson(list).toString()).apply()
     }

@@ -108,6 +108,7 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.live.LiveActionActionListener
 import com.petal.browser.live.LiveActionBusState
 import com.petal.browser.live.LiveActionItem
+import com.petal.browser.live.LiveEventItem
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.PictureAsPdf
@@ -129,7 +130,7 @@ import androidx.compose.material3.Icon
 /** How long an expanded card stays open with no touch before it folds back into the pill. */
 private const val AUTO_COLLAPSE_MS = 8_000L
 
-private class IslandPalette(
+internal class IslandPalette(
     val surface: Color,
     val content: Color,
     val contentMuted: Color,
@@ -160,6 +161,7 @@ private fun islandPalette(primaryItem: LiveActionItem?): IslandPalette {
     val accentColor = when {
         primaryItem is LiveActionItem.Achievement -> Color(0xFFFFB74D) // Celebratory Gold
         primaryItem is LiveActionItem.Credential -> Color(0xFF00E676) // Security Emerald
+        primaryItem is LiveEventItem && primaryItem.kind.accent != 0L -> Color(primaryItem.kind.accent)
         audioPalette?.primary != null -> audioPalette.primary
         else -> c.primary
     }
@@ -294,7 +296,7 @@ fun PetalLiveIsland(
                     translationY = animatedOffsetY + burnShift.y
                     alpha = oledLuminance
                 }
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = 8.dp, vertical = if (settings.anchorStatusBar) 2.dp else 6.dp),
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -346,7 +348,7 @@ fun PetalLiveIsland(
                             onCollapse = { expanded = false; focusSecondary = false }
                         )
                     } else {
-                        CompactPill(item = primary, palette = palette)
+                        CompactPill(item = primary, palette = palette, height = if (settings.anchorStatusBar) 38.dp else 44.dp)
                     }
                 }
             }
@@ -375,10 +377,10 @@ fun PetalLiveIsland(
 /* ───────────────────────────── Compact pill ───────────────────────────── */
 
 @Composable
-private fun CompactPill(item: LiveActionItem, palette: IslandPalette) {
+private fun CompactPill(item: LiveActionItem, palette: IslandPalette, height: androidx.compose.ui.unit.Dp = 44.dp) {
     Row(
         modifier = Modifier
-            .height(44.dp)
+            .height(height)
             .padding(start = 8.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -518,6 +520,8 @@ private fun CompactPill(item: LiveActionItem, palette: IslandPalette) {
                 )
             }
 
+            is LiveEventItem -> EventPillContent(item, palette)
+
             is LiveActionItem.Credential -> {
                 Box(
                     modifier = Modifier
@@ -593,6 +597,7 @@ private fun SatelliteBubble(item: LiveActionItem, palette: IslandPalette, onClic
                 is LiveActionItem.Credential -> {
                     Icon(Icons.Rounded.Lock, contentDescription = null, tint = palette.accent, modifier = Modifier.size(20.dp))
                 }
+                is LiveEventItem -> EventBubbleContent(item, palette)
             }
         }
     }
@@ -816,6 +821,14 @@ private fun ExpandedCard(
                 Text(item.statusText, style = MaterialTheme.typography.bodySmall, color = palette.contentMuted)
             }
 
+            is LiveEventItem -> EventExpandedContent(
+                item = item,
+                palette = palette,
+                wavy = wavy,
+                onCollapse = onCollapse,
+                onDismiss = { listener.onDismiss(item.id); onCollapse() }
+            )
+
             is LiveActionItem.FileViewer -> {
                 val icon = when (item.fileType) {
                     "PDF" -> Icons.Rounded.PictureAsPdf
@@ -1024,7 +1037,7 @@ private fun ExpandedCard(
 }
 
 @Composable
-private fun CardHeader(
+internal fun CardHeader(
     leading: @Composable () -> Unit,
     title: String,
     subtitle: String,
@@ -1073,7 +1086,7 @@ private fun CardHeader(
 
 /** Icon inside a circular progress ring. The ring eases to each new value instead of jumping. */
 @Composable
-private fun ProgressBadge(
+internal fun ProgressBadge(
     progress: Float,
     indeterminate: Boolean,
     icon: androidx.compose.ui.graphics.vector.ImageVector,

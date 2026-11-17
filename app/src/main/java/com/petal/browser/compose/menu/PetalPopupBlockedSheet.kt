@@ -274,6 +274,7 @@ object PetalPopupBlockedBridge {
         onAllowOnce: () -> Unit,
         onAlwaysAllow: () -> Unit,
     ) {
+        try { com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.POPUP_BLOCKED, "popup", "Pop-up blocked", targetUrl.take(60)) } catch (_: Throwable) {}
         activity.runOnUiThread {
             try {
                 val dialog = Dialog(activity, R.style.PetalContextMenuDialogTheme)

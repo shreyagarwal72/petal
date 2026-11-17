@@ -62,6 +62,18 @@ internal class PetalPermissionDelegateWrapper(
         callback: GeckoSession.PermissionDelegate.MediaCallback
     ) {
         val act = activitySupplier()
+        try {
+            val what = when {
+                video != null && video.isNotEmpty() && audio != null && audio.isNotEmpty() -> "Camera & microphone"
+                video != null && video.isNotEmpty() -> "Camera"
+                audio != null && audio.isNotEmpty() -> "Microphone"
+                else -> null
+            }
+            if (what != null) {
+                val host = try { android.net.Uri.parse(uri).host ?: uri } catch (_: Throwable) { uri }
+                com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.PERMISSION_IN_USE, "perm_media", "$what requested", host.take(60))
+            }
+        } catch (_: Throwable) {}
         if (act != null) {
             inner().onMediaPermissionRequest(session, uri, video, audio, callback)
         } else if (engine != null) {

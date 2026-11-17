@@ -518,6 +518,27 @@ object PetalSettingsSearchIndex {
             keywords = listOf("nowbar", "petal nowbar", "island", "cutout", "camera cutout", "punch hole", "notch", "live updates", "amoled", "burn protection", "dynamic island", "password")
         ),
         SettingsSearchItem(
+            id = "media_nowbar_placement",
+            title = "NowBar placement mode",
+            subtitle = "Status bar (Accessibility), Display over other apps, or In-app only; draw inside the status bar",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("nowbar", "accessibility", "status bar", "overlay", "display over other apps", "in-app", "placement", "restricted settings", "sideload")
+        ),
+        SettingsSearchItem(
+            id = "media_nowbar_events",
+            title = "NowBar live events",
+            subtitle = "Master switch and per-category toggles for downloads, backups, ad blocker, tabs, sync, security and more",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("nowbar", "live events", "master switch", "downloads", "backup", "adblock", "security", "permissions", "sync", "extensions", "updates", "network", "storage")
+        ),
+        SettingsSearchItem(
+            id = "media_nowbar_test",
+            title = "Test the NowBar",
+            subtitle = "Fire sample events to check placement and styling",
+            category = SettingsCategory.MEDIA,
+            keywords = listOf("nowbar", "test", "preview", "sample events", "island")
+        ),
+        SettingsSearchItem(
             id = "account_sync_folder",
             title = "Account & Sync",
             subtitle = "Profile, and sync bookmarks and history through a folder you own",

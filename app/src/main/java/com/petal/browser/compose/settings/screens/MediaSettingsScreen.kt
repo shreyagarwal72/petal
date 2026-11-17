@@ -368,6 +368,11 @@ fun MediaSettingsScreen(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
+                        // NowBar placement (status bar / overlay / in-app) and per-event switches
+                        NowBarEventsSettingsSection()
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
                         // Interactive Live Preview
                         IslandAnimationPreviewCard(
                             style = animStyle,

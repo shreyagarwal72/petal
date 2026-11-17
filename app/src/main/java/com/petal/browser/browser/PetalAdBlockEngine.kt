@@ -161,6 +161,8 @@ object PetalAdBlockEngine {
 
     fun recordBlock(pageUrl: String?) {
         totalBlockedCount.incrementAndGet()
+        // NowBar: posts a card only at milestones (10, 25, 50, 100...), so it never spams.
+        try { com.petal.browser.island.PetalIslandEventSources.onAdBlocked(pageUrl) } catch (_: Throwable) {}
         if (!pageUrl.isNullOrBlank()) {
             val pageHost = try { Uri.parse(pageUrl).host ?: "" } catch (e: Exception) { "" }
             val cleanHost = pageHost.lowercase(Locale.US).removePrefix("www.")

@@ -841,7 +841,8 @@ object PetalFetchDownloadBridge {
                 if (it.status == DownloadStatus.STATUS_SUCCESSFUL && announcedDoneIds.add(it.id)) {
                     bus.updateDownload(it) // shows the "complete" card, auto-dismisses itself
                 } else if (it.status == DownloadStatus.STATUS_FAILED) {
-                    bus.dismiss("dl_${it.id}")
+                    // First time: dismiss the progress card AND show a "Download failed" card.
+                    if (announcedDoneIds.add(it.id)) bus.updateDownload(it) else bus.dismiss("dl_${it.id}")
                 }
             }
         } catch (ignored: Throwable) {}

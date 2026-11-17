@@ -823,6 +823,7 @@ object PetalExtensionManager {
                 attachActionDelegate(extension)
                 attachExtensionToOpenSessions(extension)
                 refresh()
+                com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.EXTENSION_INSTALLED, "ext_${extension.id}", "Extension installed", extension.metaData?.name ?: extension.id)
             }
 
             override fun onInstallationFailed(
@@ -832,10 +833,12 @@ object PetalExtensionManager {
                 _busy.value = false
                 _lastError.value = describeInstallError(installException)
                 Log.w(TAG, "Extension installation failed: ${installException.code}")
+                com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.EXTENSION_ERROR, "ext_failed", "Extension install failed", describeInstallError(installException).take(80))
             }
 
             override fun onUninstalled(extension: WebExtension) {
                 refresh()
+                com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.EXTENSION_REMOVED, "ext_${extension.id}", "Extension removed", extension.metaData?.name ?: extension.id)
             }
 
             override fun onEnabling(extension: WebExtension) { refresh() }

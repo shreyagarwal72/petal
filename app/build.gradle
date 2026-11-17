@@ -41,18 +41,21 @@ android {
     productFlavors {
         github {
             dimension "distribution"
+            buildConfigField "boolean", "ENABLE_ACCESSIBILITY_ISLAND", "true"
             buildConfigField "boolean", "IS_PLAY_STORE_BUILD", "false"
             buildConfigField "boolean", "IS_FDROID_BUILD", "false"
             buildConfigField "String", "DISTRIBUTION_CHANNEL", "\"github\""
         }
         play {
             dimension "distribution"
+            buildConfigField "boolean", "ENABLE_ACCESSIBILITY_ISLAND", "false"
             buildConfigField "boolean", "IS_PLAY_STORE_BUILD", "true"
             buildConfigField "boolean", "IS_FDROID_BUILD", "false"
             buildConfigField "String", "DISTRIBUTION_CHANNEL", "\"play\""
         }
         fdroid {
             dimension "distribution"
+            buildConfigField "boolean", "ENABLE_ACCESSIBILITY_ISLAND", "true"
             buildConfigField "boolean", "IS_PLAY_STORE_BUILD", "false"
             buildConfigField "boolean", "IS_FDROID_BUILD", "true"
             buildConfigField "String", "DISTRIBUTION_CHANNEL", "\"fdroid\""
@@ -276,6 +279,10 @@ dependencies {
     // Google Sign-In via Credential Manager (real OAuth, consent-screen based —
     // replaces the old WebView-cookie account sync)
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0'
+
+    // Unit tests (JVM)
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0'
 
     // Legacy Google Sign-In (play-services-auth). Deprecated by Google in favor of
     // Credential Manager, but kept as the active sign-in path here as a workaround for a

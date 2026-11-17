@@ -165,6 +165,7 @@ object PetalUpdateManager {
                     .apply()
                 if (path.isNotBlank() && apkFile.exists() && apkFile.length() > 0L) {
                     _downloadState.value = UpdateDownloadState.Completed(version, apkFile)
+                    com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.UPDATE_DOWNLOADED, "update_ready", "Update ready", "Petal $version is ready to install")
                     PetalUpdateInstallerReceiver.installDownloadedApk(appContext, apkFile)
                 } else {
                     _downloadState.value = UpdateDownloadState.Failed("The downloaded update file could not be found", version)

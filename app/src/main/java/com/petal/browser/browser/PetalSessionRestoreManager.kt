@@ -359,6 +359,7 @@ object PetalSessionRestoreManager {
 
             if (restoredState != null && restoredState.tabs.isNotEmpty()) {
                 Log.i(TAG, "Restoring ${restoredState.tabs.size} tabs into empty BrowserStore")
+                com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.TAB_RESTORED, "tabs_restored", "${restoredState.tabs.size} tabs restored", "Picked up where you left off")
                 val mozillaRestore = sp.getBoolean("sp_mozilla_session_restore", false)
                 if (mozillaRestore) {
                     try {

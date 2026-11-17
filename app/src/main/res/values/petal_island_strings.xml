@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="petal_island_a11y_label">Petal NowBar</string>
+    <string name="petal_island_a11y_description">Lets Petal draw its NowBar (downloads, backups, milestones and other live events) inside the status bar. It does not read your screen, record what you type or send any data anywhere.</string>
+</resources>

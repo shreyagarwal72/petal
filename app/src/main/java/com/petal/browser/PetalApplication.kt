@@ -206,6 +206,11 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             }
             override fun onActivityResumed(activity: Activity) {
                 com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(activity)
+                // In-app NowBar for every Petal screen (idempotent; steps aside when the
+                // accessibility window is drawing the bar).
+                (activity as? androidx.activity.ComponentActivity)?.let {
+                    try { com.petal.browser.island.PetalNowBarBridge.attachToActivity(it) } catch (_: Throwable) {}
+                }
             }
             override fun onActivityPaused(activity: Activity) {
                 if (com.petal.browser.engine.gecko.PetalGeckoRuntime.getForegroundActivity() === activity) {
@@ -246,7 +251,14 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             Log.w(TAG, "Theme prefs init failed", t)
         }
 
-        // Over-other-apps live island. Idle until the user turns it on in Settings > Downloads.
+        // NowBar: event bus (per-category switches + quiet period), app-wide event sources,
+        // and the status-bar / over-other-apps window. All idle until there is something to show.
+        try {
+            com.petal.browser.live.PetalLiveActionBus.init(this)
+            com.petal.browser.island.PetalIslandEventSources.init(this)
+        } catch (t: Throwable) {
+            Log.w(TAG, "NowBar event init failed", t)
+        }
         try {
             com.petal.browser.island.PetalLiveOverlayController.init(this)
         } catch (t: Throwable) {

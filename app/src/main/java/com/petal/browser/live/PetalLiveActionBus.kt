@@ -9,7 +9,10 @@
 
 package com.petal.browser.live
 
+import android.content.Context
 import android.graphics.Bitmap
+import androidx.preference.PreferenceManager
+import kotlinx.coroutines.Job
 import com.petal.browser.compose.downloads.DownloadItem
 import com.petal.browser.compose.downloads.DownloadStatus
 import kotlinx.coroutines.CoroutineScope
@@ -136,6 +139,15 @@ object PetalLiveActionBus {
 
         if (isFailed) {
             dismiss("dl_${item.id}")
+            postEvent(
+                LiveEventItem(
+                    key = "dl_failed_${item.id}",
+                    kind = LiveEventKind.DOWNLOAD_FAILED,
+                    title = "Download failed",
+                    subtitle = item.fileName,
+                    actions = listOf(LiveEventAction("Downloads", true) { actionListener?.onOpenDownloads() })
+                )
+            )
             return
         }
 
@@ -285,44 +297,277 @@ object PetalLiveActionBus {
 
     @JvmStatic
     fun dismiss(id: String) {
-        _state.update { current ->
-            when {
-                current.primary?.id == id -> current.copy(primary = current.secondary, secondary = null)
-                current.secondary?.id == id -> current.copy(secondary = null)
-                else -> current
+        synchronized(lock) {
+            expiryJobs.remove(id)?.cancel()
+            pending.removeAll { it.id == id }
+            val cur = _state.value
+            _state.value = when {
+                cur.primary?.id == id -> cur.copy(primary = cur.secondary, secondary = null)
+                cur.secondary?.id == id -> cur.copy(secondary = null)
+                else -> cur
             }
+            refillFromPending()
         }
     }
 
     /** Removes unfinished download cards whose id is no longer active (cancelled / removed). */
     @JvmStatic
     fun pruneDownloads(activeIds: Set<Long>) {
-        _state.update { cur ->
+        synchronized(lock) {
             fun stale(i: LiveActionItem?) =
                 i is LiveActionItem.Download && !i.isCompleted && i.downloadId !in activeIds
+            pending.removeAll { stale(it) }
+            val cur = _state.value
             val p = cur.primary.takeUnless { stale(it) }
             val s = cur.secondary.takeUnless { stale(it) }
-            if (p === cur.primary && s === cur.secondary) cur
-            else LiveActionBusState(primary = p ?: s, secondary = if (p == null) null else s)
+            if (p !== cur.primary || s !== cur.secondary) {
+                _state.value = LiveActionBusState(primary = p ?: s, secondary = if (p == null) null else s)
+            }
+            refillFromPending()
         }
     }
 
     @JvmStatic
     fun clearAll() {
-        _state.value = LiveActionBusState()
+        synchronized(lock) {
+            pending.clear()
+            expiryJobs.values.forEach { it.cancel() }
+            expiryJobs.clear()
+            _state.value = LiveActionBusState()
+        }
+    }
+
+    // ───────────────────────────── Slots, queue, priority ─────────────────────────────
+
+    /** Items waiting for a free slot. Guarded by [lock]. */
+    private val pending = ArrayList<LiveActionItem>()
+    private val expiryJobs = HashMap<String, Job>()
+    private val lastPosted = HashMap<String, Long>()
+    private val lock = Any()
+    private const val MAX_PENDING = 8
+    private const val DUPLICATE_WINDOW_MS = 600L
+
+    @Volatile private var appContext: Context? = null
+    @Volatile private var quietUntilMs = 0L
+
+    /**
+     * Call once from Application.onCreate(). Lets the bus read the per-category switches.
+     * Also starts a short quiet period so startup noise never flashes on the bar.
+     */
+    @JvmStatic
+    fun init(context: Context) {
+        appContext = context.applicationContext
+        suppressFor(STARTUP_QUIET_MS)
+    }
+
+    /**
+     * Drops low-importance events (settings changes, info) for [ms]. Use while restoring a
+     * backup or applying many settings at once.
+     */
+    @JvmStatic
+    fun suppressFor(ms: Long) {
+        quietUntilMs = maxOf(quietUntilMs, System.currentTimeMillis() + ms)
+    }
+
+    private const val STARTUP_QUIET_MS = 5_000L
+
+    /** True during the startup / restore quiet period. */
+    @JvmStatic
+    fun isQuiet(): Boolean = System.currentTimeMillis() < quietUntilMs
+
+    /** True when the master switch and this item's category switch are both on. */
+    @JvmStatic
+    fun isCategoryEnabled(category: LiveEventCategory): Boolean {
+        val ctx = appContext ?: return true
+        return try {
+            val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
+            sp.getBoolean(PetalLiveEvents.KEY_MASTER, true) && sp.getBoolean(category.prefKey, true)
+        } catch (_: Throwable) {
+            true
+        }
     }
 
     private fun promoteOrUpdate(item: LiveActionItem) {
-        _state.update { current ->
+        if (!isCategoryEnabled(liveCategoryOf(item))) return
+        synchronized(lock) {
+            val cur = _state.value
             when {
-                current.primary?.id == item.id -> current.copy(primary = item)
-                current.secondary?.id == item.id -> current.copy(secondary = item)
-                current.primary == null -> current.copy(primary = item)
-                // Secondary slot for multi-activity satellite pills
-                else -> current.copy(secondary = item)
+                cur.primary?.id == item.id -> _state.value = cur.copy(primary = item)
+                cur.secondary?.id == item.id -> _state.value = cur.copy(secondary = item)
+                pending.any { it.id == item.id } -> {
+                    val i = pending.indexOfFirst { it.id == item.id }
+                    pending[i] = item
+                }
+                cur.primary == null -> _state.value = LiveActionBusState(primary = item)
+                cur.secondary == null -> _state.value =
+                    // A more important newcomer takes the main pill; the old one becomes the bubble.
+                    if (livePriorityOf(item) > livePriorityOf(cur.primary))
+                        LiveActionBusState(primary = item, secondary = cur.primary)
+                    else cur.copy(secondary = item)
+                else -> {
+                    val victim = if (livePriorityOf(cur.secondary) <= livePriorityOf(cur.primary)) cur.secondary else cur.primary
+                    if (livePriorityOf(item) > livePriorityOf(victim)) {
+                        // Bump the least important card back into the queue; it returns when a slot frees up.
+                        addPending(victim!!)
+                        _state.value =
+                            if (victim === cur.secondary) cur.copy(secondary = item)
+                            else LiveActionBusState(primary = item, secondary = cur.secondary)
+                    } else {
+                        addPending(item)
+                    }
+                }
             }
         }
     }
+
+    private fun addPending(item: LiveActionItem) {
+        pending.removeAll { it.id == item.id }
+        pending.add(item)
+        while (pending.size > MAX_PENDING) {
+            // Drop the least important, oldest entry first.
+            val drop = pending.withIndex().minWithOrNull(
+                compareBy<IndexedValue<LiveActionItem>>({ livePriorityOf(it.value) }, { it.index })
+            )?.index ?: 0
+            pending.removeAt(drop)
+        }
+    }
+
+    /** Moves the most important waiting card into any free slot. Call with [lock] held. */
+    private fun refillFromPending() {
+        while (pending.isNotEmpty()) {
+            val cur = _state.value
+            if (cur.primary != null && cur.secondary != null) return
+            val best = pending.withIndex().maxWithOrNull(
+                compareBy<IndexedValue<LiveActionItem>>({ livePriorityOf(it.value) }, { -it.index })
+            )?.index ?: return
+            val item = pending.removeAt(best)
+            _state.value = if (cur.primary == null) LiveActionBusState(primary = item, secondary = cur.secondary)
+            else cur.copy(secondary = item)
+        }
+    }
+
+    // ───────────────────────────── Generic events ─────────────────────────────
+
+    /**
+     * Shows (or updates) a generic event card. Repeats of the same [LiveEventItem.key] replace the
+     * card and restart its timer. Noisy repeats within 0.6 s are ignored. Low-importance events are
+     * dropped during the startup / restore quiet period.
+     */
+    @JvmStatic
+    fun postEvent(item: LiveEventItem) {
+        val kind = item.kind
+        if (!isCategoryEnabled(kind.category)) return
+        val now = System.currentTimeMillis()
+        val quiet = now < quietUntilMs
+        if (quiet && (kind.priority <= LiveEventPriority.INFO || kind.category == LiveEventCategory.SETTINGS)) return
+        synchronized(lock) {
+            val last = lastPosted[item.key]
+            val same = (_state.value.primary as? LiveEventItem ?: _state.value.secondary as? LiveEventItem)
+                ?.takeIf { it.key == item.key } == item
+            if (kind.priority < LiveEventPriority.URGENT && last != null && now - last < DUPLICATE_WINDOW_MS && same) return
+            lastPosted[item.key] = now
+        }
+        promoteOrUpdate(item)
+        scheduleExpiry(item)
+    }
+
+    private fun scheduleExpiry(item: LiveEventItem) {
+        val ttl = item.kind.ttlMs
+        synchronized(lock) {
+            expiryJobs.remove(item.id)?.cancel()
+            if (ttl <= 0L) return
+            expiryJobs[item.id] = scope.launch {
+                delay(ttl)
+                dismiss(item.id)
+            }
+        }
+    }
+
+    // Convenience posters. Each one is a single line at the call site.
+
+    @JvmStatic
+    fun postBackupProgress(title: String, subtitle: String, percent: Int) = postEvent(
+        LiveEventItem("backup", LiveEventKind.BACKUP_PROGRESS, title, subtitle, percent.coerceIn(-1, 100))
+    )
+
+    @JvmStatic
+    @JvmOverloads
+    fun postBackupResult(
+        success: Boolean,
+        message: String,
+        openAction: LiveEventAction? = null,
+        title: String? = null
+    ) = postEvent(
+        LiveEventItem(
+            key = "backup",
+            kind = if (success) LiveEventKind.BACKUP_DONE else LiveEventKind.BACKUP_FAILED,
+            title = title ?: if (success) "Backup complete" else "Backup failed",
+            subtitle = message,
+            actions = listOfNotNull(openAction)
+        )
+    )
+
+    @JvmStatic
+    fun postAdBlockState(
+        enabled: Boolean,
+        blockedOnPage: Int,
+        domain: String?,
+        onToggle: (Boolean) -> Unit,
+        openSettings: (() -> Unit)? = null
+    ) = postEvent(
+        LiveEventItem(
+            key = "adblock",
+            kind = LiveEventKind.ADBLOCK_STATE,
+            title = if (enabled) "Ad blocker on" else "Ad blocker off",
+            subtitle = when {
+                !enabled -> "Ads and trackers are allowed"
+                blockedOnPage > 0 && !domain.isNullOrBlank() -> "$blockedOnPage blocked on $domain"
+                else -> "Blocking ads and trackers"
+            },
+            toggle = LiveEventToggle("Block ads & trackers", enabled, onToggle),
+            actions = if (openSettings != null) listOf(LiveEventAction("Ad blocker settings", true, openSettings)) else emptyList()
+        )
+    )
+
+    @JvmStatic
+    fun postSettingChanged(key: String, label: String, oldValue: String, newValue: String, undo: (() -> Unit)?) = postEvent(
+        LiveEventItem(
+            key = "setting_$key",
+            kind = LiveEventKind.SETTING_CHANGED,
+            title = label,
+            subtitle = "$oldValue  →  $newValue",
+            actions = if (undo != null) listOf(LiveEventAction("Undo", true, undo)) else emptyList()
+        )
+    )
+
+    @JvmStatic
+    fun postLiquidGlassIntro(openAppearance: (() -> Unit)?) = postEvent(
+        LiveEventItem(
+            key = "liquid_glass_intro",
+            kind = LiveEventKind.LIQUID_GLASS_INTRO,
+            title = "Liquid Glass is on",
+            subtitle = "Bars and sheets now refract what's behind them",
+            actions = if (openAppearance != null) listOf(LiveEventAction("Appearance settings", true, openAppearance)) else emptyList()
+        )
+    )
+
+    /** Simple one-line event: icon from [kind], [title], optional [subtitle] and one optional button. */
+    @JvmStatic
+    @JvmOverloads
+    fun postSimple(
+        kind: LiveEventKind,
+        key: String,
+        title: String,
+        subtitle: String = "",
+        progressPercent: Int = -1,
+        action: LiveEventAction? = null
+    ) = postEvent(
+        LiveEventItem(key, kind, title, subtitle, progressPercent, listOfNotNull(action))
+    )
+
+    /** Removes a generic event card by key. */
+    @JvmStatic
+    fun dismissEvent(key: String) = dismiss("ev_$key")
 
     private fun formatSpeed(bytesPerSec: Long): String {
         if (bytesPerSec <= 0L) return "0 KB/s"

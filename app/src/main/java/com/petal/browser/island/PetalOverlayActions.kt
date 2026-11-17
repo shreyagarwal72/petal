@@ -49,6 +49,7 @@ class PetalOverlayActions(context: Context) : LiveActionActionListener {
         try {
             val cm = app.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
             cm.setPrimaryClip(android.content.ClipData.newPlainText(label, text))
+            PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.CLIPBOARD_COPIED, "clipboard", "$label copied")
         } catch (_: Exception) {
         }
     }
