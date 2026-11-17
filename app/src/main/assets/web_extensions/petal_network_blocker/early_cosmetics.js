@@ -1,5 +1,5 @@
 // Petal Early Cosmetics & Main-World Scriptlet Injector
-// Injected at document_start across all frames to prevent ad flash & layout shifts.
+// Injected at document_start across all frames to eliminate ad layout shift before initial render.
 // Communicates with adblock-rust WASM background engine for dynamic cosmetic resources & MutationObserver batching.
 
 (function () {
@@ -8,6 +8,104 @@
     if (window.__petal_adblock_cosmetics_injected__) return;
     window.__petal_adblock_cosmetics_injected__ = true;
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // 1. Generic Cosmetic Hiding Stylesheet (Applied synchronously at document_start)
+    // ─────────────────────────────────────────────────────────────────────────
+    // Selectors match WHOLE class tokens / id prefixes only.
+    // html/body are never hidden, whatever a site names them.
+    const GENERIC_COSMETIC_CSS = `
+        :not(html):not(body):is(
+            /* Generic ad slots, banners & containers */
+            [id^="google_ads_"],
+            #banner-ad,
+            #advertisement,
+            .ad-banner,
+            .ad-container,
+            .ad-wrapper,
+            .sponsored-post,
+            .sponsored-content,
+            [data-ad-unit],
+            [data-ad-client],
+            [data-ad-slot],
+            .adsbygoogle,
+            .ad-slot,
+            .ad_wrapper,
+            .ad-zone,
+            .advertisement,
+            .ad-box,
+            .native-ad,
+            .outbrain,
+            .taboola,
+            .trc_related_container,
+
+            /* Video & YouTube ad overlays & companion cards */
+            .ytp-ad-overlay-container,
+            .ytp-ad-message-container,
+            .ytp-ad-action-interstitial,
+            ytd-promoted-sparkles-web-renderer,
+            ytd-compact-promoted-item-renderer,
+            ytd-promoted-video-renderer,
+            #masthead-ad,
+            rendered-ad-background,
+            .ytd-in-feed-ad-layout-renderer,
+            ytd-ad-slot-renderer,
+            #player-ads
+        ) {
+            display: none !important;
+        }
+    `;
+
+    function injectGenericCosmetics() {
+        try {
+            const style = document.createElement("style");
+            style.id = "petal-adblock-generic-cosmetics";
+            style.textContent = GENERIC_COSMETIC_CSS;
+            const target = document.head || document.documentElement;
+            if (target) {
+                target.appendChild(style);
+            } else {
+                document.addEventListener("DOMContentLoaded", function () {
+                    (document.head || document.documentElement)?.appendChild(style);
+                }, { once: true });
+            }
+        } catch (_) {}
+    }
+
+    injectGenericCosmetics();
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 2. YouTube Mobile Video Ad Skipper & Accelerator
+    // ─────────────────────────────────────────────────────────────────────────
+    const isYouTube = location.hostname.includes("youtube.com");
+    if (isYouTube) {
+        function handleYouTubeAds() {
+            try {
+                // YouTube marks the player with ad-showing / ad-interrupting only while an ad plays
+                const player = document.querySelector(".html5-video-player");
+                const adShowing = !!(player && (player.classList.contains("ad-showing") || player.classList.contains("ad-interrupting")));
+                const skipBtn = document.querySelector(".ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, .ytp-ad-skip-button-slot");
+
+                if (adShowing || skipBtn) {
+                    const video = (player && player.querySelector("video")) || document.querySelector("video");
+                    if (video) {
+                        video.muted = true;
+                        video.playbackRate = 16.0;
+                        if (video.duration && isFinite(video.duration) && video.currentTime < video.duration - 0.2) {
+                            video.currentTime = video.duration;
+                        }
+                    }
+                    if (skipBtn && typeof skipBtn.click === "function") {
+                        skipBtn.click();
+                    }
+                }
+            } catch (_) {}
+        }
+        setInterval(handleYouTubeAds, 350);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 3. Dynamic Engine Communication & Scriptlet Injections
+    // ─────────────────────────────────────────────────────────────────────────
     const api = (typeof browser !== "undefined") ? browser : chrome;
     if (!api || !api.runtime || !api.runtime.sendMessage) return;
 
@@ -57,7 +155,7 @@
 
     /**
      * Injects uBO / Brave scriptlets directly into the page's main world.
-     * On GeckoView 159: verifies main-world access; falls back to DOM <script> element injection.
+     * On GeckoView: verifies main-world access; falls back to DOM <script> element injection.
      */
     function injectScriptletIntoMainWorld(scriptContent) {
         if (!scriptContent || typeof scriptContent !== "string") return;
@@ -95,7 +193,7 @@
         }, { once: true });
     }
 
-    // 1. Fetch initial cosmetic resources & scriptlets from adblock-rust background engine
+    // Fetch initial cosmetic resources & scriptlets from adblock background engine
     api.runtime.sendMessage({
         type: "GET_COSMETIC_RESOURCES",
         url: location.href
@@ -116,7 +214,9 @@
         }
     });
 
-    // 2. Batched DOM MutationObserver for hidden_class_id_selectors
+    // ─────────────────────────────────────────────────────────────────────────
+    // 4. Batched DOM MutationObserver for hidden_class_id_selectors
+    // ─────────────────────────────────────────────────────────────────────────
     function flushBatchClassIdQuery() {
         if (pendingClasses.size === 0 && pendingIds.size === 0) return;
 
@@ -150,7 +250,7 @@
             }
         }
 
-        // Sample children
+        // Sample child nodes (limit recursion depth for efficiency)
         if (node.children && node.children.length > 0 && node.children.length < 20) {
             for (let i = 0; i < node.children.length; i++) {
                 queueNodeTokens(node.children[i]);
@@ -184,9 +284,8 @@
             observer.observe(target, { childList: true, subtree: true });
         } else {
             document.addEventListener("DOMContentLoaded", function () {
-                (document.documentElement || document.body)?.let(t => {
-                    observer.observe(t, { childList: true, subtree: true });
-                });
+                const t = document.documentElement || document.body;
+                if (t) observer.observe(t, { childList: true, subtree: true });
             }, { once: true });
         }
     }

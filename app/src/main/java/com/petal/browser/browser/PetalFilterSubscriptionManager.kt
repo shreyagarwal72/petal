@@ -101,7 +101,7 @@ object PetalFilterSubscriptionManager {
             id = "brave_unbreak",
             name = "Brave Unbreak",
             description = "Official Brave Shields compatibility fixes and exceptions from Brave Software.",
-            url = "https://raw.githubusercontent.com/brave/adblock-resources/master/filter_lists/brave-unbreak.txt",
+            url = "https://raw.githubusercontent.com/brave/adblock-lists/master/brave-lists/brave-unbreak.txt",
             isEnabled = true,
             isCustom = false
         ),
@@ -109,7 +109,23 @@ object PetalFilterSubscriptionManager {
             id = "brave_specific",
             name = "Brave Specific Filters",
             description = "Specialized filter list designed specifically for Brave Shields adblock-rust.",
-            url = "https://raw.githubusercontent.com/brave/adblock-resources/master/filter_lists/brave-specific.txt",
+            url = "https://raw.githubusercontent.com/brave/adblock-lists/master/brave-lists/brave-specific.txt",
+            isEnabled = true,
+            isCustom = false
+        ),
+        PetalFilterSubscription(
+            id = "brave_firstparty",
+            name = "Brave First-Party Protections",
+            description = "Brave Shields advanced rules blocking first-party advertising scripts and telemetry.",
+            url = "https://raw.githubusercontent.com/brave/adblock-lists/master/brave-lists/brave-firstparty.txt",
+            isEnabled = true,
+            isCustom = false
+        ),
+        PetalFilterSubscription(
+            id = "brave_cookie_specific",
+            name = "Brave Cookie Specific",
+            description = "Brave Shields dedicated cookie consent dialog and banner dismissal filters.",
+            url = "https://raw.githubusercontent.com/brave/adblock-lists/master/brave-lists/brave-cookie-specific.txt",
             isEnabled = true,
             isCustom = false
         ),
@@ -117,8 +133,16 @@ object PetalFilterSubscriptionManager {
             id = "brave_social",
             name = "Brave Social",
             description = "Hides embedded social widgets, like buttons, and tracking plugins.",
-            url = "https://raw.githubusercontent.com/brave/adblock-resources/master/filter_lists/brave-social.txt",
+            url = "https://raw.githubusercontent.com/brave/adblock-lists/master/brave-lists/brave-social.txt",
             isEnabled = false,
+            isCustom = false
+        ),
+        PetalFilterSubscription(
+            id = "brave_cname",
+            name = "Brave CNAME Uncloaking",
+            description = "Blocks cloaked third-party trackers disguised as first-party subdomains.",
+            url = "https://raw.githubusercontent.com/brave/adblock-lists/master/brave-lists/brave-firstparty-cname.txt",
+            isEnabled = true,
             isCustom = false
         ),
         PetalFilterSubscription(
@@ -140,12 +164,18 @@ object PetalFilterSubscriptionManager {
             val list = mutableListOf<PetalFilterSubscription>()
             for (i in 0 until jsonArray.length()) {
                 val obj = jsonArray.getJSONObject(i)
+                val id = obj.getString("id")
+                var url = obj.getString("url")
+                // Migrate stale brave-resources 404 URLs to active brave-lists repo
+                if (url.contains("brave/adblock-resources/master/filter_lists/")) {
+                    url = url.replace("brave/adblock-resources/master/filter_lists/", "brave/adblock-lists/master/brave-lists/")
+                }
                 list.add(
                     PetalFilterSubscription(
-                        id = obj.getString("id"),
+                        id = id,
                         name = obj.getString("name"),
                         description = obj.optString("description", ""),
-                        url = obj.getString("url"),
+                        url = url,
                         isEnabled = obj.optBoolean("isEnabled", true),
                         isCustom = obj.optBoolean("isCustom", false),
                         rulesCount = obj.optInt("rulesCount", 0),
@@ -153,6 +183,17 @@ object PetalFilterSubscriptionManager {
                         etag = obj.optString("etag").takeIf { it.isNotEmpty() }
                     )
                 )
+            }
+            // Auto-heal: Ensure all official Brave and uBlock lists are included
+            var modified = false
+            for (defaultSub in DEFAULT_SUBSCRIPTIONS) {
+                if (list.none { it.id == defaultSub.id }) {
+                    list.add(defaultSub)
+                    modified = true
+                }
+            }
+            if (modified) {
+                saveSubscriptions(context, list)
             }
             if (list.isEmpty()) DEFAULT_SUBSCRIPTIONS else list
         } catch (_: Exception) {

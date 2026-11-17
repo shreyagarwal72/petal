@@ -169,13 +169,19 @@
 
     /**
      * Fallback high-speed filter engine adhering strictly to adblock-rust semantics
-     * (supporting $important, $badfilter, $removeparam, $csp, redirect resources and cosmetic resources).
+     * (supporting network exceptions @@, $important, $badfilter, $removeparam, $csp,
+     *  $third-party, redirect resources and cosmetic resources).
      */
     function createFastFilterEngine(ruleLists) {
         const networkRules = [];
+        const networkExceptions = [];
         const cosmeticHideSelectors = new Set();
         const exceptions = new Set();
         const scriptletInjections = [];
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
 
         for (const list of ruleLists) {
             if (typeof list !== "string") continue;
@@ -183,6 +189,16 @@
             for (let line of lines) {
                 line = line.trim();
                 if (!line || line.startsWith("!") || line.startsWith("[")) continue;
+
+                // Network exception rules (@@) for unbreak compatibility
+                if (line.startsWith("@@")) {
+                    const excRaw = line.substring(2);
+                    const excPattern = excRaw.split("$")[0].replace(/^\|\|/, "").replace(/\^.*$/, "");
+                    if (excPattern.length > 2) {
+                        networkExceptions.push(excPattern);
+                    }
+                    continue;
+                }
 
                 // Cosmetic rules
                 if (line.includes("##")) {
@@ -215,31 +231,72 @@
                 const cspRule = cspMatch ? cspMatch[1] : null;
 
                 const hasRemoveParam = line.includes("$removeparam");
+                const isThirdPartyOnly = line.includes("$third-party") || line.includes("$3p") || line.includes(",third-party") || line.includes(",3p");
+
+                const startsWithDomain = line.startsWith("||");
+                const rawPattern = line.split("$")[0].replace(/^\|\|/, "").replace(/\^.*$/, "");
 
                 networkRules.push({
                     raw: line,
+                    pattern: rawPattern,
+                    startsWithDomain: startsWithDomain,
+                    hasWildcard: rawPattern.includes("*"),
                     important: isImportant,
                     redirect: redirectRes,
                     csp: cspRule,
-                    removeParam: hasRemoveParam
+                    removeParam: hasRemoveParam,
+                    thirdPartyOnly: isThirdPartyOnly
                 });
             }
         }
 
+        function isPatternMatch(url, targetHost, rule) {
+            const pat = rule.pattern;
+            if (!pat || pat.length < 3) return false;
+
+            if (rule.hasWildcard) {
+                try {
+                    const regexParts = pat.split("*").map(escapeRegExp);
+                    const regex = new RegExp(regexParts.join(".*"));
+                    return regex.test(url);
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            if (rule.startsWithDomain) {
+                if (targetHost && (targetHost === pat || targetHost.endsWith("." + pat))) {
+                    return true;
+                }
+            }
+            return url.includes(pat);
+        }
+
         return {
             checkNetworkRequest: function (url, sourceUrl, reqType) {
-                // Fast domain and substring match
                 const targetHost = extractDomain(url);
+
+                // 1. Check network exception rules (unbreak)
+                for (let j = 0; j < networkExceptions.length; j++) {
+                    const exc = networkExceptions[j];
+                    if (url.includes(exc) || (targetHost && (targetHost === exc || targetHost.endsWith("." + exc)))) {
+                        return { matched: false, important: false, redirect: null, rewritten_url: null, csp: null, filter: null };
+                    }
+                }
+
+                // 2. Evaluate network rules
                 for (let i = 0; i < networkRules.length; i++) {
                     const r = networkRules[i];
-                    // Check removeparam
+
+                    // Check removeparam query parameter stripping
                     if (r.removeParam) {
                         try {
                             const u = new URL(url);
                             let altered = false;
-                            for (const param of ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "fbclid", "gclid", "ttclid", "msclkid", "dclid", "yclid"]) {
-                                if (u.searchParams.has(param)) {
-                                    u.searchParams.delete(param);
+                            const paramsToRemove = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "fbclid", "gclid", "ttclid", "msclkid", "dclid", "yclid"];
+                            for (let p = 0; p < paramsToRemove.length; p++) {
+                                if (u.searchParams.has(paramsToRemove[p])) {
+                                    u.searchParams.delete(paramsToRemove[p]);
                                     altered = true;
                                 }
                             }
@@ -249,9 +306,13 @@
                         } catch (_) {}
                     }
 
-                    // Check pattern
-                    let pattern = r.raw.split("$")[0].replace(/^\|\|/, "").replace(/\^.*$/, "");
-                    if (pattern.length > 3 && (url.includes(pattern) || (targetHost && targetHost.includes(pattern)))) {
+                    // Check third-party constraint
+                    if (r.thirdPartyOnly && sourceUrl && isFirstParty(url, sourceUrl)) {
+                        continue;
+                    }
+
+                    // Match pattern against target URL / domain
+                    if (isPatternMatch(url, targetHost, r)) {
                         return {
                             matched: true,
                             important: r.important,

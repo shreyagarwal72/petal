@@ -91,4 +91,32 @@ class Stage4NetworkBlockerTest {
         val payload = PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload("https://$testDomain")
         assertEquals("Deprecated cosmetic payload must return empty string", "", payload)
     }
+
+    @Test
+    fun testConsentManagerWebExtensionIntegrity() {
+        val extensionId = "petal-consent-manager@petalbrowser.app"
+        assertTrue("Consent manager should be recognized as built-in", PetalBuiltInExtensionManager.isBuiltIn(extensionId))
+
+        val manifestFile = File("src/main/assets/web_extensions/petal_consent_manager/manifest.json")
+            .takeIf { it.exists() } ?: File("app/src/main/assets/web_extensions/petal_consent_manager/manifest.json")
+        assertTrue("petal_consent_manager/manifest.json must exist", manifestFile.exists())
+
+        val json = JSONObject(manifestFile.readText())
+        assertEquals(2, json.getInt("manifest_version"))
+        val contentScripts = json.getJSONArray("content_scripts")
+        val scriptConfig = contentScripts.getJSONObject(0)
+        assertEquals("document_start", scriptConfig.getString("run_at"))
+        assertTrue("Must run in all frames", scriptConfig.getBoolean("all_frames"))
+
+        val scriptFile = File("src/main/assets/web_extensions/petal_consent_manager/consent.js")
+            .takeIf { it.exists() } ?: File("app/src/main/assets/web_extensions/petal_consent_manager/consent.js")
+        assertTrue("consent.js must exist", scriptFile.exists())
+
+        val scriptText = scriptFile.readText()
+        assertTrue("consent.js must inject ANTI_FLASH_CSS", scriptText.contains("ANTI_FLASH_CSS"))
+        assertTrue("consent.js must support OneTrust reject handler", scriptText.contains("#onetrust-reject-all-handler"))
+        assertTrue("consent.js must support CookieBot decline handler", scriptText.contains("#CybotCookiebotDialogBodyButtonDecline"))
+        assertTrue("consent.js must support unfreezePageScroll", scriptText.contains("unfreezePageScroll"))
+        assertTrue("consent.js must support seedConsentTokens", scriptText.contains("seedConsentTokens"))
+    }
 }

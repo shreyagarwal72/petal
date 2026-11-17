@@ -1,14 +1,15 @@
 {
   "manifest_version": 2,
   "name": "Petal Consent Manager",
-  "version": "1.0",
-  "description": "Automatically rejects non-essential cookies in GDPR consent dialogs",
+  "version": "2.0.0",
+  "description": "Seamlessly dismisses GDPR/CCPA cookie banners and rejects non-essential tracking",
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": ["consent.js"],
-      "run_at": "document_idle",
-      "all_frames": false
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": false
     }
   ],
   "browser_specific_settings": {
