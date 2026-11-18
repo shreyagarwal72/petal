@@ -67,7 +67,7 @@ import androidx.compose.ui.zIndex
 import com.petal.browser.ui.containment.liquidGlassChrome
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.matchParentSize
+import androidx.compose.foundation.background
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
