@@ -346,9 +346,57 @@ fun PetalRootApp(
             !isOmniboxOpen && !isTabSwitcherOpen && !isAiSheetOpen &&
             !isSafeLockerOpen && pendingExtensionPopup == null
     )
+
+    // A GeckoView SurfaceView is composited by the system outside of Compose, so a RenderEffect cannot
+    // blur it. Over a web page the overlay therefore needs a real snapshot of the page (taken before the
+    // overlay covers it) that it blurs itself. The home page is Compose, so it blurs live.
+    val overlayHold = remember { OverlaySnapshotHold() }
+    val wantsPageSnapshot = isOverlayShowing && !isHome && !isOmniboxOpen && !isTabSwitcherOpen &&
+        !isAiSheetOpen && !isSafeLockerOpen && pendingExtensionPopup == null &&
+        predictiveBlurEnabled && junctionPredictiveEnabled
+    val menuWasOpen = overlayHold.menuOpen
+    overlayHold.menuOpen = isMenuOpen
+    if (wantsPageSnapshot != overlayHold.active) {
+        overlayHold.active = wantsPageSnapshot
+        overlayHold.snapshot = if (wantsPageSnapshot && rootView != null) {
+            // Composition runs before the overlay's first frame, so the window still shows the page.
+            // If the overflow menu was just open, the last frame contains it, so copy the page surface only.
+            try {
+                if (menuWasOpen) {
+                    PetalContentSnapshot.capturePageSurface(activeWebEngineView)?.asImageBitmap()
+                } else {
+                    PetalContentSnapshot.capturePreview(rootView)
+                    PetalContentSnapshot.current?.asImageBitmap()
+                }
+            } catch (_: Throwable) { null }
+        } else null
+    }
+    val overlayPageSnapshot = overlayHold.snapshot
+    val overlayPageSnapshotState by androidx.compose.runtime.rememberUpdatedState(overlayPageSnapshot)
+    val isHomeState by androidx.compose.runtime.rememberUpdatedState(isHome)
+    val webViewState by androidx.compose.runtime.rememberUpdatedState(activeWebEngineView)
+    val blurOnState by androidx.compose.runtime.rememberUpdatedState(predictiveBlurEnabled)
+
+    /** True when the page behind can take a live RenderEffect blur (Compose home or a TextureView-backed Gecko). */
+    fun liveBlurCapable(): Boolean {
+        if (isHomeState) return true
+        fun hasTexture(v: android.view.View?): Boolean {
+            if (v == null) return false
+            if (v is android.view.TextureView) return true
+            if (v is android.view.ViewGroup) {
+                for (i in 0 until v.childCount) if (hasTexture(v.getChildAt(i))) return true
+            }
+            return false
+        }
+        return hasTexture(webViewState)
+    }
+
     DisposableEffect(Unit) {
         val host = object : com.petal.browser.predictive.PetalLiveUnderlay.Host {
-            override fun hasLiveUnderlay() = liveEligible
+            // Live path only where it can really blur (or blur is off / no snapshot exists). Otherwise the
+            // screen falls back to its own blurred snapshot, which fixes "no blur over web pages".
+            override fun hasLiveUnderlay() = liveEligible &&
+                (!blurOnState || liveBlurCapable() || overlayPageSnapshotState == null)
             override fun onGestureStart(swipeEdge: Int) {
                 liveBehind = com.petal.browser.predictive.PetalLiveUnderlay.behindValues().copyOf()
             }
@@ -604,7 +652,7 @@ fun PetalRootApp(
                             translationY = lb[2]
                             // A GeckoView surface cannot be blurred by a render effect, so depth blur only
                             // applies to the Compose home page; web pages still get parallax and dim.
-                            if (isHome && lb[4] > 0.5f) {
+                            if (lb[4] > 0.5f && liveBlurCapable()) {
                                 val px = lb[4].dp.toPx()
                                 compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
                                 renderEffect = androidx.compose.ui.graphics.BlurEffect(
@@ -1166,6 +1214,7 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalBookmarksScreen(
+                    backgroundSnapshot = overlayPageSnapshot,
                     onOpenUrl = { url ->
                         viewModel.setBookmarksOpen(false)
                         viewModel.loadUrl(url)
@@ -1185,6 +1234,7 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalHistoryScreen(
+                    backgroundSnapshot = overlayPageSnapshot,
                     onOpenUrl = { url ->
                         viewModel.setHistoryOpen(false)
                         viewModel.loadUrl(url)
@@ -1211,6 +1261,7 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalDownloadManagerScreen(
+                    backgroundSnapshot = overlayPageSnapshot,
                     onBackPress = { viewModel.setDownloadsOpen(false) }
                 )
             }
@@ -1225,6 +1276,7 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalSettingsScreen(
+                    backgroundSnapshot = overlayPageSnapshot,
                     initialCategory = settingsCategory,
                     onBackPress = {
                         viewModel.setSettingsOpen(false)
@@ -1249,7 +1301,7 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalExtensionsScreen(
-                    backgroundSnapshot = tabSwitcherSnapshot,
+                    backgroundSnapshot = overlayPageSnapshot ?: tabSwitcherSnapshot,
                     onDismiss = { viewModel.setExtensionsOpen(false) }
                 )
             }
@@ -1264,7 +1316,7 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalAccountScreen(
-                    backgroundSnapshot = tabSwitcherSnapshot,
+                    backgroundSnapshot = overlayPageSnapshot ?: tabSwitcherSnapshot,
                     onBack = { viewModel.setAccountSyncOpen(false) }
                 )
             }
@@ -1279,7 +1331,7 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalDeleteScreen(
-                    backgroundSnapshot = tabSwitcherSnapshot,
+                    backgroundSnapshot = overlayPageSnapshot ?: tabSwitcherSnapshot,
                     onBackPress = { viewModel.setDeleteOpen(false) }
                 )
             }
@@ -1367,6 +1419,13 @@ fun PetalRootApp(
                 }
             }
     }
+}
+
+/** Plain holder (not Compose state): page snapshot taken as a full-screen overlay opens over a web page. */
+private class OverlaySnapshotHold {
+    var active: Boolean = false
+    var menuOpen: Boolean = false
+    var snapshot: androidx.compose.ui.graphics.ImageBitmap? = null
 }
 
 /** Plain holder (not Compose state): keeps the open-time snapshot alive while the switcher fades out. */

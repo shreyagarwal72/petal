@@ -300,7 +300,24 @@ fun PrivacySettingsScreenContent(
     }
 
     CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
-        Box(modifier = modifier.fillMaxSize()) {
+        val passwordsActivity = context as? ComponentActivity
+        // The Password Manager is a real sub-page: this page stays composed (and blurred / dimmed by the
+        // sub-page's own back gesture) behind it, instead of a bare overlay with nothing behind it.
+        com.petal.browser.predictive.PetalSubPageHost(
+            visible = showPasswordsScreen && passwordsActivity != null,
+            onBack = { showPasswordsScreen = false },
+            modifier = modifier,
+            subPage = {
+                if (passwordsActivity != null) {
+                    PetalPasswordsScreen(
+                        activity = passwordsActivity,
+                        onNavigateBack = { showPasswordsScreen = false },
+                        embedded = true
+                    )
+                }
+            },
+            parent = {
+        Box(modifier = Modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(
                 pageSeed = "privacy_settings",
                 modifier = Modifier.matchParentSize()
@@ -889,21 +906,6 @@ fun PrivacySettingsScreenContent(
             }
         }
 
-        val passwordsActivity = context as? ComponentActivity
-        if (passwordsActivity != null) {
-            AnimatedVisibility(
-                visible = showPasswordsScreen,
-                enter = PetalMotion.forwardEnter(),
-                exit = PetalMotion.backExit(),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                PetalPasswordsScreen(
-                    activity = passwordsActivity,
-                    onNavigateBack = { showPasswordsScreen = false }
-                )
-            }
-        }
-
         if (showDeleteScreenDialog) {
             Box(modifier = Modifier.fillMaxSize()) {
                 com.petal.browser.compose.settings.PetalDeleteScreen(
@@ -911,6 +913,8 @@ fun PrivacySettingsScreenContent(
                 )
             }
         }
+            }
+        )
     }
 }
 

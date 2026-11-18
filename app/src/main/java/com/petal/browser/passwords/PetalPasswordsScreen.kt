@@ -96,7 +96,9 @@ fun PetalPasswordsScreen(
     activity: ComponentActivity,
     onNavigateBack: () -> Unit,
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** True when a host page (PetalSubPageHost) already owns the back gesture and surface wrapper. */
+    embedded: Boolean = false
 ) {
     val context = LocalContext.current
     val haptic = remember { PetalHapticEngine.getInstance(context) }
@@ -282,53 +284,61 @@ fun PetalPasswordsScreen(
         }
     }
 
-    PetalPredictiveBackSurface(
+    com.petal.browser.predictive.PetalPredictiveShell(
+        wrap = !embedded,
         enabled = !hasSubOverlay,
-        onBack = onNavigateBack
+        onBack = onNavigateBack,
+        backgroundSnapshot = backgroundSnapshot
     ) {
-        PetalScreenWrapper(
-            backgroundSnapshot = backgroundSnapshot,
-            modifier = modifier.fillMaxSize()
-        ) {
+        run {
             CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
                 androidx.compose.material3.MaterialExpressiveTheme {
                     Box(modifier = Modifier.fillMaxSize()) {
                         M3ExpressiveVariableBackground(
-                            pageSeed = "petal_passwords_screen",
+                            // "_settings" seed = the same clean background as its parent Privacy page.
+                            pageSeed = "passwords_settings",
                             modifier = Modifier.matchParentSize()
                         )
 
                         Scaffold(
                             containerColor = Color.Transparent,
-                            snackbarHost = { SnackbarHost(snackbarHostState) }
-                        ) { innerPadding ->
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(innerPadding)
-                            ) {
-                                ExpressiveHeader(
-                                    title = "Password Manager",
-                                    subtitle = "Encrypted vault & autofill",
-                                    onBack = { if (hasSubOverlay) handleBack() else onNavigateBack() }
-                                )
-
+                            // The header already pads for the status bar itself; letting Scaffold inset too
+                            // doubled it (tall header floating below the status bar).
+                            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                            snackbarHost = {
+                                SnackbarHost(snackbarHostState, modifier = Modifier.navigationBarsPadding())
+                            }
+                        ) { _ ->
+                            // Header glass refracts the list scrolling under it (LastWave-style); with glass
+                            // off the layout simply stacks the Material 3 Expressive header above the list.
+                            com.petal.browser.ui.components.PetalGlassHeaderLayout(
+                                modifier = Modifier.fillMaxSize(),
+                                header = { headerModifier, headerBackdrop ->
+                                    ExpressiveHeader(
+                                        modifier = headerModifier,
+                                        backdrop = headerBackdrop,
+                                        title = "Password Manager",
+                                        subtitle = "Encrypted vault & autofill",
+                                        onBack = { if (hasSubOverlay) handleBack() else onNavigateBack() }
+                                    )
+                                }
+                            ) { topInset ->
                                 val passwordsListState = rememberLazyListState()
-                                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                                Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
                                     LazyColumn(
                                         state = passwordsListState,
                                         modifier = Modifier
                                             .fillMaxSize()
                                             .padding(horizontal = 16.dp),
                                         verticalArrangement = Arrangement.spacedBy(16.dp),
-                                        contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
+                                        contentPadding = PaddingValues(top = topInset + 16.dp, bottom = 96.dp)
                                     ) {
                                         // 1. Vault Security Hero Card
                                         item {
                                             PetalStatusHeroCard(
                                                 title = "Petal Secure Vault",
                                                 subtitle = "${credentials.size} saved logins • Hardware Keystore AES-256",
-                                                statusText = if (isWriteBlocked) "Vault Read-Only" else "Hardware Encrypted",
+                                                statusText = if (isWriteBlocked) "Read-Only" else "Encrypted",
                                                 icon = Icons.Rounded.Security,
                                                 statusActive = !isWriteBlocked,
                                                 actionLabel = if (isAutofillEnabled) "Autofill Enabled" else "Set up Autofill",
@@ -721,7 +731,7 @@ private fun VaultSecurityAuditSection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(
                             text = "Vault Health Score",
                             style = MaterialTheme.typography.titleMedium,
@@ -765,16 +775,17 @@ private fun VaultSecurityAuditSection(
                             }
                         },
                         shape = RoundedCornerShape(50.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         enabled = !isAuditing && credentials.isNotEmpty()
                     ) {
                         if (isAuditing) {
                             PetalContainedLoadingIndicator(size = 16.dp)
                             Spacer(Modifier.width(8.dp))
-                            Text("Auditing...")
+                            Text("Auditing", maxLines = 1, softWrap = false)
                         } else {
                             Icon(Icons.Rounded.SecurityUpdateGood, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("Audit Vault")
+                            Text("Audit", maxLines = 1, softWrap = false)
                         }
                     }
                 }
@@ -787,7 +798,7 @@ private fun VaultSecurityAuditSection(
                     AuditMetricCard(
                         modifier = Modifier.weight(1f),
                         count = compromisedCount,
-                        label = "Compromised",
+                        label = "Breached",
                         isAlert = compromisedCount > 0
                     )
                     AuditMetricCard(
@@ -805,10 +816,15 @@ private fun VaultSecurityAuditSection(
                     AuditMetricCard(
                         modifier = Modifier.weight(1f),
                         count = oldCount,
-                        label = "Old (>180d)",
+                        label = "Old",
                         isAlert = false
                     )
                 }
+                Text(
+                    text = "Old = password not changed in 180+ days",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -827,7 +843,7 @@ private fun AuditMetricCard(
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -841,7 +857,7 @@ private fun AuditMetricCard(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                softWrap = false
             )
         }
     }

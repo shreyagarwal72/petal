@@ -66,6 +66,21 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.petal.browser.ui.containment.liquidGlassChrome
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.matchParentSize
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.petal.browser.ui.containment.PetalBackdrop
+import com.petal.browser.ui.containment.petalBackdropSource
+import com.petal.browser.ui.containment.petalRealGlassSupported
 
 /** Large continuous-curvature bottom corners (squircle) for the expressive header silhouette. */
 private val HeaderShape = com.petal.browser.ui.theme.SmoothRoundedShape(
@@ -106,34 +121,66 @@ fun ExpressiveHeader(
     // Motion comes from the theme's scheme (instant when reduce-motion is on), not hardcoded springs.
     val motion = MaterialTheme.motionScheme
 
+    val scheme = MaterialTheme.colorScheme
+    val isDarkSurface = scheme.background.luminance() < 0.5f
+    val sharedWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current?.ready == true
+    val backgroundColor = scheme.background
+    val washBrush = petalHeaderGlassWash()
+
+    // Liquid glass (all wired through the existing prefs: master toggle, opacity, blur, sheen,
+    // refraction and the low-end fallback live inside liquidGlassChrome). Ported from LastWave:
+    // a LOCAL sibling backdrop (page colour + themed wash) so the glass always has something to
+    // blur and refract, even on a flat page. A screen can pass its own backdrop instead (see
+    // PetalGlassHeaderLayout) so real content scrolls under the glass.
+    val localBackdrop: PetalBackdrop? =
+        if (enableLiquidGlass && petalRealGlassSupported && backdrop == null) {
+            rememberLayerBackdrop {
+                drawRect(backgroundColor)
+                drawContent()
+            }
+        } else null
+    val effectiveBackdrop: PetalBackdrop? = if (enableLiquidGlass && petalRealGlassSupported) backdrop ?: localBackdrop else null
+    val realGlass = effectiveBackdrop != null
+    val wallpaperGlass = enableLiquidGlass && !realGlass && sharedWallpaper
+    val glass = realGlass || wallpaperGlass
+
+    val headerColor = when {
+        glass -> Color.Transparent
+        enableLiquidGlass -> com.petal.browser.ui.containment.petalGroupSurfaceColor()
+        // Material 3 Expressive (glass off): a surface tinted toward the primary container.
+        else -> lerp(scheme.surfaceContainer, scheme.primaryContainer, if (isDarkSurface) 0.30f else 0.42f)
+    }
+
     Box(modifier.fillMaxWidth().zIndex(1f)) {
-        val sharedWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current?.ready == true
-        val realGlass = enableLiquidGlass && ((backdrop != null &&
-            com.petal.browser.ui.containment.petalRealGlassSupported) ||
-            sharedWallpaper)
-        val isDarkSurface = MaterialTheme.colorScheme.background.luminance() < 0.5f
-        val headerColor = when {
-            realGlass -> Color.Transparent
-            enableLiquidGlass -> com.petal.browser.ui.containment.petalGroupSurfaceColor()
-            else -> MaterialTheme.colorScheme.surfaceContainer
+        if (localBackdrop != null) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .clip(HeaderShape)
+                    .petalBackdropSource(localBackdrop)
+            ) {
+                Box(Modifier.fillMaxSize().background(washBrush))
+            }
         }
         Surface(
             shape = HeaderShape,
             // Real glass draws its own blurred backdrop, so the container must be see-through.
             color = headerColor,
-            tonalElevation = if (enableLiquidGlass) 0.dp else 2.dp,
+            tonalElevation = 0.dp,
+            shadowElevation = if (!enableLiquidGlass) 3.dp else 0.dp,
             modifier = Modifier.fillMaxWidth().liquidGlassChrome(
                 shape = HeaderShape,
                 enabled = enableLiquidGlass,
-                backdrop = if (realGlass && !sharedWallpaper) backdrop else null,
+                backdrop = effectiveBackdrop,
                 isDark = isDarkSurface
             ),
         ) {
             val decorColor = MaterialTheme.colorScheme.primary
+            val decorAccent = MaterialTheme.colorScheme.tertiary
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .expressiveHeaderDecor(decorColor)
+                    .expressiveHeaderDecor(decorColor, decorAccent, strong = !enableLiquidGlass)
                     .statusBarsPadding()
                     .padding(horizontal = 20.dp)
                     .padding(top = 8.dp, bottom = 16.dp),
@@ -189,12 +236,12 @@ fun ExpressiveHeader(
                                 containerColor = if (enableLiquidGlass) {
                                     com.petal.browser.ui.containment.petalGroupSurfaceColor()
                                 } else {
-                                    MaterialTheme.colorScheme.secondaryContainer
+                                    MaterialTheme.colorScheme.primaryContainer
                                 },
                                 contentColor = if (enableLiquidGlass) {
                                     MaterialTheme.colorScheme.onSurface
                                 } else {
-                                    MaterialTheme.colorScheme.onSecondaryContainer
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 },
                                 modifier = if (enableLiquidGlass) {
                                     Modifier.liquidGlassChrome(com.petal.browser.ui.theme.ExpressiveAccentShape, enabled = true)
@@ -399,13 +446,13 @@ fun HeaderActionIcon(
 ) {
     val container = when {
         enableLiquidGlass -> com.petal.browser.ui.containment.petalGroupSurfaceColor()
-        emphasized -> MaterialTheme.colorScheme.primaryContainer
-        else -> MaterialTheme.colorScheme.secondaryContainer
+        emphasized -> MaterialTheme.colorScheme.tertiaryContainer
+        else -> MaterialTheme.colorScheme.primaryContainer
     }
     val content = when {
         enableLiquidGlass -> MaterialTheme.colorScheme.onSurface
-        emphasized -> MaterialTheme.colorScheme.onPrimaryContainer
-        else -> MaterialTheme.colorScheme.onSecondaryContainer
+        emphasized -> MaterialTheme.colorScheme.onTertiaryContainer
+        else -> MaterialTheme.colorScheme.onPrimaryContainer
     }
     com.petal.browser.ui.theme.ExpressiveIconButton(
         icon = icon,
@@ -421,8 +468,11 @@ fun HeaderActionIcon(
     )
 }
 
-/** Soft, oversized expressive shape peeking in from the top-end corner of the header. */
-private fun Modifier.expressiveHeaderDecor(color: Color): Modifier = this.drawWithCache {
+/**
+ * Expressive accent shapes peeking in from the header corners. Glass keeps one faint shape (the glass
+ * itself is the statement); the Material 3 Expressive look (glass off) gets two clearly visible ones.
+ */
+private fun Modifier.expressiveHeaderDecor(color: Color, accent: Color, strong: Boolean): Modifier = this.drawWithCache {
     val preset = com.petal.browser.ui.theme.PetalShapeState.effectivePreset
     val show = preset != com.petal.browser.ui.theme.ExpressiveButtonPreset.CIRCLE &&
         preset != com.petal.browser.ui.theme.ExpressiveButtonPreset.PILL
@@ -431,12 +481,77 @@ private fun Modifier.expressiveHeaderDecor(color: Color): Modifier = this.drawWi
             com.petal.browser.ui.theme.ExpressiveButtonPreset.SUNNY,
             cx = size.width * 0.98f,
             cy = size.height * 0.02f,
-            // Kept well inside the header so it reads as a soft accent in the corner instead of a
-            // dark blob that bleeds behind the action buttons and the rounded bottom edge.
-            radius = size.height * 0.55f,
+            radius = size.height * (if (strong) 0.62f else 0.55f),
+        )
+    } else null
+    val path2 = if (show && strong) {
+        com.petal.browser.ui.theme.buildExpressivePath(
+            com.petal.browser.ui.theme.ExpressiveButtonPreset.SUNNY,
+            cx = size.width * 0.04f,
+            cy = size.height * 1.02f,
+            radius = size.height * 0.42f,
         )
     } else null
     onDrawBehind {
-        if (path != null) drawPath(path, color.copy(alpha = 0.05f))
+        if (path != null) drawPath(path, color.copy(alpha = if (strong) 0.16f else 0.05f))
+        if (path2 != null) drawPath(path2, accent.copy(alpha = 0.14f))
+    }
+}
+
+/** Theme-tinted wash the glass blurs when no content sits under the header (from LastWave). */
+@Composable
+internal fun petalHeaderGlassWash(): Brush {
+    val scheme = MaterialTheme.colorScheme
+    return Brush.horizontalGradient(
+        listOf(
+            scheme.primary.copy(alpha = 0.20f),
+            scheme.tertiary.copy(alpha = 0.08f),
+            scheme.secondary.copy(alpha = 0.16f),
+        ),
+    )
+}
+
+/**
+ * Puts [header] over [content] so content scrolls UNDER the glass (ported from LastWave's
+ * GlassHeaderLayout). [header] receives the modifier + backdrop to hand to [ExpressiveHeader].
+ * [content] receives the header height to add to its scroll container's top padding; without real
+ * glass it gets 0 and starts below the header as before. The content is the backdrop source and the
+ * header a sibling, never inside it (a feedback loop would crash).
+ */
+@Composable
+fun PetalGlassHeaderLayout(
+    modifier: Modifier = Modifier,
+    enableLiquidGlass: Boolean = com.petal.browser.ui.containment.isLiquidGlassEnabled(),
+    header: @Composable (modifier: Modifier, backdrop: PetalBackdrop?) -> Unit,
+    content: @Composable (topInset: Dp) -> Unit,
+) {
+    val background = MaterialTheme.colorScheme.background
+    val wash = petalHeaderGlassWash()
+    var headerHeightPx by androidx.compose.runtime.remember { mutableIntStateOf(0) }
+    val glass = enableLiquidGlass && petalRealGlassSupported
+    val backdrop: PetalBackdrop? = if (glass) {
+        rememberLayerBackdrop {
+            drawRect(background)
+            // Screens whose content starts below the header would otherwise give the glass only flat colour.
+            drawRect(wash, size = Size(size.width, headerHeightPx.toFloat()))
+            drawContent()
+        }
+    } else null
+    val headerHeight = with(LocalDensity.current) { headerHeightPx.toDp() }
+    Box(modifier) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .then(if (backdrop != null) Modifier.petalBackdropSource(backdrop) else Modifier)
+                .padding(top = if (backdrop != null) 0.dp else headerHeight)
+        ) {
+            content(if (backdrop != null) headerHeight else 0.dp)
+        }
+        header(
+            Modifier
+                .align(Alignment.TopCenter)
+                .onSizeChanged { if (it.height != headerHeightPx) headerHeightPx = it.height },
+            backdrop,
+        )
     }
 }

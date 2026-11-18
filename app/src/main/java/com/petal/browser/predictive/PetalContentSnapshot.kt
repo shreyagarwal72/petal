@@ -142,6 +142,59 @@ object PetalContentSnapshot {
     }
 
     /**
+     * Captures ONLY the web page surface (no menus, bars or popups drawn over it), for the case where the
+     * last window frame still contains a popup that is closing. Returns null if nothing could be copied.
+     */
+    @JvmStatic
+    fun capturePageSurface(pageHost: View?): Bitmap? {
+        val surface = findSurface(pageHost) ?: return null
+        if (surface.width <= 0 || surface.height <= 0) return null
+        val width = (surface.width * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
+        val height = (surface.height * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
+        return try {
+            val result: Bitmap? = when (surface) {
+                is android.view.TextureView -> surface.getBitmap(width, height)
+                is android.view.SurfaceView -> {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || !surface.holder.surface.isValid) {
+                        null
+                    } else {
+                        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                        val done = java.util.concurrent.CountDownLatch(1)
+                        var ok = false
+                        PixelCopy.request(surface, bitmap, { code ->
+                            ok = code == PixelCopy.SUCCESS
+                            done.countDown()
+                        }, copyHandler)
+                        try {
+                            done.await(PREVIEW_WAIT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+                        } catch (_: InterruptedException) {
+                            Thread.currentThread().interrupt()
+                        }
+                        if (ok) bitmap else { bitmap.recycle(); null }
+                    }
+                }
+                else -> null
+            }
+            if (result != null) {
+                _current = result
+                currentAt = SystemClock.uptimeMillis()
+            }
+            result
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    private fun findSurface(root: View?): View? {
+        if (root == null) return null
+        if (root is android.view.SurfaceView || root is android.view.TextureView) return root
+        if (root is android.view.ViewGroup) {
+            for (i in 0 until root.childCount) findSurface(root.getChildAt(i))?.let { return it }
+        }
+        return null
+    }
+
+    /**
      * @param forceFresh skip the cached transition snapshot. The tab switcher needs the page exactly
      * as it is NOW; a snapshot left over from an earlier transition would morph the wrong picture.
      */
