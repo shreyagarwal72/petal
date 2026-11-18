@@ -89,7 +89,7 @@
     <!-- Pre-Android 12: static cookie + pinwheel. Android 12+ overrides this in values-v31/petal_splash_theme.xml. -->
     <style name="Theme.Petal.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/petal_splash_bg</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_petal</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_bloom</item>
         <item name="postSplashScreenTheme">@style/AppTheme</item>
     </style>
 

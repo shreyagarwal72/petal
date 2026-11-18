@@ -73,6 +73,9 @@ enum class PetalAppIcon(
 object PetalAppIcons {
 
     private const val PREF_SPLASH_SYNCED = "sp_app_icon_splash_synced"
+    private const val PREF_SPLASH_VERSION = "sp_app_icon_splash_version"
+    /** Bump to force every install to re-apply the splash theme once after an update. */
+    private const val SPLASH_VERSION = 2
 
     private fun component(context: Context, icon: PetalAppIcon) =
         ComponentName(context.packageName, icon.aliasName)
@@ -131,10 +134,13 @@ object PetalAppIcons {
     fun syncSplashTheme(activity: Activity, icon: PetalAppIcon = current(activity), force: Boolean = false) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
         val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-        if (!force && sp.getString(PREF_SPLASH_SYNCED, null) == icon.id) return
+        // The pref alone is not trusted: a restore/reinstall resets the system-side theme while the pref
+        // survives, so the theme is re-applied when forced or after an app update (SPLASH_VERSION).
+        if (!force && sp.getString(PREF_SPLASH_SYNCED, null) == icon.id &&
+            sp.getInt(PREF_SPLASH_VERSION, 0) == SPLASH_VERSION) return
         runCatching {
             activity.splashScreen.setSplashScreenTheme(icon.splashTheme)
-            sp.edit().putString(PREF_SPLASH_SYNCED, icon.id).apply()
+            sp.edit().putString(PREF_SPLASH_SYNCED, icon.id).putInt(PREF_SPLASH_VERSION, SPLASH_VERSION).apply()
         }
     }
 

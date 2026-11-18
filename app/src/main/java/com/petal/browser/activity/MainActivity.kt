@@ -154,8 +154,22 @@ class MainActivity : FragmentActivity(), BrowserController {
             try {
                 provider.view.isClickable = false
                 provider.view.isFocusable = false
-                provider.remove()
-            } catch (_: Throwable) { }
+                // Let the animated icon finish its run (the system may report "ready" earlier), then
+                // fade the splash out instead of cutting it off mid-animation.
+                val remaining = (provider.iconAnimationStartMillis + provider.iconAnimationDurationMillis -
+                    System.currentTimeMillis()).coerceIn(0L, 1000L)
+                provider.view.postDelayed({
+                    try {
+                        provider.view.animate().alpha(0f).setDuration(180L)
+                            .withEndAction { runCatching { provider.remove() } }
+                            .start()
+                    } catch (_: Throwable) {
+                        runCatching { provider.remove() }
+                    }
+                }, remaining)
+            } catch (_: Throwable) {
+                runCatching { provider.remove() }
+            }
         }
         super.onCreate(savedInstanceState)
         // Keep the next cold-start splash in sync with the selected app icon (Android 13+; no-op elsewhere).
