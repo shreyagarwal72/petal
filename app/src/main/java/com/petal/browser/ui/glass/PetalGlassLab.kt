@@ -301,7 +301,7 @@ private fun Modifier.labGlass(
         effects = {
             vibrancy()
             blur((3f + t.opacity * 9f).dp.toPx())
-            if (t.refraction > 0.001f && t.refractionWidth > 0.001f) {
+            if (shape is androidx.compose.foundation.shape.CornerBasedShape && t.refraction > 0.001f && t.refractionWidth > 0.001f) {
                 val boost = lensBoost()
                 val height = (22.dp.toPx() * t.refractionWidth * (1f + 0.5f * boost))
                     .coerceAtMost(size.minDimension / 2f)

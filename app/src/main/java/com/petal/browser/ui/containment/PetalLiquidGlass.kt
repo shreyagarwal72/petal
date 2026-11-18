@@ -3,6 +3,7 @@ package com.petal.browser.ui.containment
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -105,6 +106,9 @@ internal fun Modifier.petalRealGlass(
 ): Modifier {
     if (backdrop == null || !petalRealGlassSupported) return this
     val luminance = rememberBackdropLuminance(backdrop, if (isDark) 0f else 1f)
+    // Kyant's lens() throws for anything but a corner-based shape (Expressive*, GenericShape,
+    // RectangleShape...). Those keep real blur/highlight, just without rim refraction.
+    val lensSafe = shape is CornerBasedShape
     return this.drawBackdrop(
         backdrop = backdrop,
         shape = { shape },
@@ -123,7 +127,7 @@ internal fun Modifier.petalRealGlass(
             blur((blurDp ?: 7f).dp.toPx())
             // Stride's panel lens, clamped to fit short headers. Past 1.25x strength the rim
             // also splits colours (chromatic aberration), as in Kyant's toggle.
-            if (refraction.enabled && petalLensSupported) {
+            if (lensSafe && refraction.enabled && petalLensSupported) {
                 val lensHeight = (24.dp.toPx() * refraction.width).coerceAtMost(size.minDimension / 2f)
                 lens(
                     lensHeight,
