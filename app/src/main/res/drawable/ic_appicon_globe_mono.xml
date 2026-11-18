@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed-icon layer (Android 13+). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+  <group android:scaleX="0.95" android:scaleY="0.95" android:pivotX="256" android:pivotY="256">
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M96,256a160,160 0 1,0 320,0a160,160 0 1,0 -320,0z"/>
+    <path android:fillColor="#FF000000" android:pathData="M230,176a26,46 0 1,0 52,0a26,46 0 1,0 -52,0z"/>
+    <group android:rotation="60" android:pivotX="256" android:pivotY="256">
+      <path android:fillColor="#FF000000" android:pathData="M230,176a26,46 0 1,0 52,0a26,46 0 1,0 -52,0z"/>
+    </group>
+    <group android:rotation="120" android:pivotX="256" android:pivotY="256">
+      <path android:fillColor="#FF000000" android:pathData="M230,176a26,46 0 1,0 52,0a26,46 0 1,0 -52,0z"/>
+    </group>
+    <group android:rotation="180" android:pivotX="256" android:pivotY="256">
+      <path android:fillColor="#FF000000" android:pathData="M230,176a26,46 0 1,0 52,0a26,46 0 1,0 -52,0z"/>
+    </group>
+    <group android:rotation="240" android:pivotX="256" android:pivotY="256">
+      <path android:fillColor="#FF000000" android:pathData="M230,176a26,46 0 1,0 52,0a26,46 0 1,0 -52,0z"/>
+    </group>
+    <group android:rotation="300" android:pivotX="256" android:pivotY="256">
+      <path android:fillColor="#FF000000" android:pathData="M230,176a26,46 0 1,0 52,0a26,46 0 1,0 -52,0z"/>
+    </group>
+  </group>
+</vector>

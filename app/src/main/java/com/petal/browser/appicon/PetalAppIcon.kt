@@ -59,6 +59,21 @@ enum class PetalAppIcon(
         "shield", "com.petal.browser.appicon.Shield",
         R.string.app_icon_shield, R.string.app_icon_shield_desc,
         R.mipmap.ic_launcher_shield, R.style.Theme_Petal_Splash_Shield, R.drawable.ic_splash_shield_animated
+    ),
+    GLOBE(
+        "globe", "com.petal.browser.appicon.Globe",
+        R.string.app_icon_globe, R.string.app_icon_globe_desc,
+        R.mipmap.ic_launcher_globe, R.style.Theme_Petal_Splash_Globe, R.drawable.ic_splash_globe_animated
+    ),
+    POINTER(
+        "pointer", "com.petal.browser.appicon.Pointer",
+        R.string.app_icon_pointer, R.string.app_icon_pointer_desc,
+        R.mipmap.ic_launcher_pointer, R.style.Theme_Petal_Splash_Pointer, R.drawable.ic_splash_pointer_animated
+    ),
+    WINDOW(
+        "window", "com.petal.browser.appicon.Window",
+        R.string.app_icon_window, R.string.app_icon_window_desc,
+        R.mipmap.ic_launcher_window, R.style.Theme_Petal_Splash_Window, R.drawable.ic_splash_window_animated
     );
 
     companion object {

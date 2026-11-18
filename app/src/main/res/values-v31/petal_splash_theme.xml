@@ -27,4 +27,13 @@
     <style name="Theme.Petal.Splash.Shield" parent="Theme.Petal.Splash">
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_shield_animated</item>
     </style>
+    <style name="Theme.Petal.Splash.Globe" parent="Theme.Petal.Splash">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_globe_animated</item>
+    </style>
+    <style name="Theme.Petal.Splash.Pointer" parent="Theme.Petal.Splash">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_pointer_animated</item>
+    </style>
+    <style name="Theme.Petal.Splash.Window" parent="Theme.Petal.Splash">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_window_animated</item>
+    </style>
 </resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed-icon layer (Android 13+). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+  <group android:scaleX="0.95" android:scaleY="0.95" android:pivotX="256" android:pivotY="256">
+    <group android:rotation="45" android:pivotX="228" android:pivotY="226">
+      <path android:strokeColor="#FF000000" android:strokeWidth="22" android:pathData="M144,226a84,160 0 1,0 168,0a84,160 0 1,0 -168,0z"/>
+    </group>
+    <path android:fillColor="#FF000000" android:pathData="M124,146a26,26 0 1,0 52,0a26,26 0 1,0 -52,0z"/>
+    <path android:fillColor="#FF000000" android:strokeColor="#FF000000" android:strokeWidth="18" android:strokeLineJoin="round" android:pathData="M262,236 L262,396 L304,356 L336,424 L376,406 L344,340 L402,340 Z"/>
+  </group>
+</vector>
