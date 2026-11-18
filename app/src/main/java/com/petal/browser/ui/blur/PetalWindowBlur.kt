@@ -28,6 +28,8 @@ import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.ColorFilter
+import android.graphics.PorterDuff
+import android.graphics.Rect
 import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.drawable.ColorDrawable
@@ -37,6 +39,8 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.view.PixelCopy
+import android.view.SurfaceView
+import android.view.ViewGroup
 import android.view.View
 import android.view.Window
 import android.view.WindowManager
@@ -177,11 +181,33 @@ data class PetalBlurState(
     val active: Boolean get() = enabled && mode != PetalBlurMode.NONE
 }
 
-private fun readState(sp: SharedPreferences, surface: PetalBlurSurface, osAvailable: Boolean): PetalBlurState {
+/**
+ * True when the host activity is translucent (e.g. the APK installer floating over another app). Its
+ * own window is empty, so the in-app capture would only ever blur black: only the OS blur can work.
+ */
+internal fun isTranslucentHost(context: Context): Boolean {
+    return try {
+        val a = context.theme.obtainStyledAttributes(intArrayOf(android.R.attr.windowIsTranslucent))
+        val v = a.getBoolean(0, false)
+        a.recycle()
+        v && findActivity(context) !is com.petal.browser.activity.MainActivity
+    } catch (_: Throwable) {
+        false
+    }
+}
+
+private fun readState(
+    sp: SharedPreferences,
+    surface: PetalBlurSurface,
+    osAvailable: Boolean,
+    translucentHost: Boolean = false,
+): PetalBlurState {
     val enabled = PetalBlurPrefs.surfaceEnabled(sp, surface)
+    var resolved = if (enabled) PetalBlurPrefs.resolveMode(PetalBlurPrefs.method(sp), osAvailable) else PetalBlurMode.NONE
+    if (translucentHost && resolved == PetalBlurMode.IN_APP) resolved = PetalBlurMode.NONE
     return PetalBlurState(
         enabled = enabled,
-        mode = if (enabled) PetalBlurPrefs.resolveMode(PetalBlurPrefs.method(sp), osAvailable) else PetalBlurMode.NONE,
+        mode = resolved,
         strengthDp = PetalBlurPrefs.strengthDp(sp),
         dim = PetalBlurPrefs.dim(sp),
     )
@@ -320,6 +346,8 @@ internal class PetalBackdropCapturer(
     private var running = false
     @Volatile private var inFlight = false
     private var copy: Bitmap? = null
+    private var svCopy: Bitmap? = null
+    private var composed: Bitmap? = null
     private val outs = arrayOfNulls<Bitmap>(2)
     private var outIndex = 0
     private var pixelsA = IntArray(0)
@@ -360,19 +388,84 @@ internal class PetalBackdropCapturer(
             bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
             copy = bmp
         }
+        // PixelCopy of a Window only returns the window's own buffer. A SurfaceView (GeckoView's page)
+        // is a separate layer that leaves a transparent hole there, which used to be blurred as black.
+        // Find it now (main thread) and copy it separately, then lay the window capture on top.
+        val sv = findVisibleSurfaceView(decor)
+        var svRect: Rect? = null
+        if (sv != null) {
+            val loc = IntArray(2)
+            sv.getLocationInWindow(loc)
+            val dl = IntArray(2)
+            decor.getLocationInWindow(dl)
+            val sx = w.toFloat() / decor.width
+            val sy = h.toFloat() / decor.height
+            val l = ((loc[0] - dl[0]) * sx).roundToInt()
+            val t = ((loc[1] - dl[1]) * sy).roundToInt()
+            svRect = Rect(l, t, l + max(1, (sv.width * sx).roundToInt()), t + max(1, (sv.height * sy).roundToInt()))
+        }
         inFlight = true
         try {
             val target = bmp
             PixelCopy.request(window, target, { result ->
-                if (result == PixelCopy.SUCCESS) {
-                    process(target)
-                } else {
+                if (result != PixelCopy.SUCCESS) {
                     inFlight = false
+                } else if (sv != null && svRect != null) {
+                    copySurfaceView(sv, svRect, target)
+                } else {
+                    process(target)
                 }
             }, PetalBackdropThread.handler)
         } catch (_: Throwable) {
             inFlight = false
         }
+    }
+
+    /** Runs on the blur thread. Falls back to the window capture alone when the surface has no frame. */
+    private fun copySurfaceView(sv: SurfaceView, rect: Rect, windowCopy: Bitmap) {
+        try {
+            val rw = max(1, rect.width())
+            val rh = max(1, rect.height())
+            var s = svCopy
+            if (s == null || s.width != rw || s.height != rh) {
+                s = Bitmap.createBitmap(rw, rh, Bitmap.Config.ARGB_8888)
+                svCopy = s
+            }
+            val dst = s
+            PixelCopy.request(sv, dst, { result ->
+                try {
+                    if (result == PixelCopy.SUCCESS) {
+                        var c = composed
+                        if (c == null || c.width != windowCopy.width || c.height != windowCopy.height) {
+                            c = Bitmap.createBitmap(windowCopy.width, windowCopy.height, Bitmap.Config.ARGB_8888)
+                            composed = c
+                        }
+                        val canvas = Canvas(c)
+                        canvas.drawColor(0, PorterDuff.Mode.CLEAR)
+                        canvas.drawBitmap(dst, null, rect, null)
+                        canvas.drawBitmap(windowCopy, 0f, 0f, null)
+                        process(c)
+                    } else {
+                        process(windowCopy)
+                    }
+                } catch (_: Throwable) {
+                    inFlight = false
+                }
+            }, PetalBackdropThread.handler)
+        } catch (_: Throwable) {
+            process(windowCopy)
+        }
+    }
+
+    private fun findVisibleSurfaceView(root: View): SurfaceView? {
+        if (root.visibility != View.VISIBLE) return null
+        if (root is SurfaceView) {
+            return if (root.width > 0 && root.height > 0 && root.holder.surface?.isValid == true) root else null
+        }
+        if (root is ViewGroup) {
+            for (i in 0 until root.childCount) findVisibleSurfaceView(root.getChildAt(i))?.let { return it }
+        }
+        return null
     }
 
     /** Runs on the blur thread. */
@@ -577,11 +670,12 @@ fun rememberPetalBlurState(surface: PetalBlurSurface): PetalBlurState {
     val context = LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     var osAvailable by remember(context) { mutableStateOf(PetalBlurPrefs.isOsBlurAvailable(context)) }
-    var state by remember(sp, surface) { mutableStateOf(readState(sp, surface, osAvailable)) }
+    val translucent = remember(context) { isTranslucentHost(context) }
+    var state by remember(sp, surface) { mutableStateOf(readState(sp, surface, osAvailable, translucent)) }
     DisposableEffect(sp, surface, context) {
         val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == null || key.startsWith(PetalBlurPrefs.PREFIX) || key == "sp_overflow_menu_blur_bg") {
-                state = readState(sp, surface, osAvailable)
+                state = readState(sp, surface, osAvailable, translucent)
             }
         }
         sp.registerOnSharedPreferenceChangeListener(prefListener)
@@ -592,7 +686,7 @@ fun rememberPetalBlurState(surface: PetalBlurSurface): PetalBlurState {
                 wm = context.getSystemService(WindowManager::class.java)
                 osListener = Consumer { enabled ->
                     osAvailable = enabled
-                    state = readState(sp, surface, enabled)
+                    state = readState(sp, surface, enabled, translucent)
                 }
                 wm?.addCrossWindowBlurEnabledListener(ContextCompat.getMainExecutor(context), osListener)
             } catch (_: Throwable) {
@@ -601,7 +695,7 @@ fun rememberPetalBlurState(surface: PetalBlurSurface): PetalBlurState {
         }
         // Re-read once now: the OS switch may have changed between composition and this effect.
         osAvailable = PetalBlurPrefs.isOsBlurAvailable(context)
-        state = readState(sp, surface, osAvailable)
+        state = readState(sp, surface, osAvailable, translucent)
         onDispose {
             sp.unregisterOnSharedPreferenceChangeListener(prefListener)
             val l = osListener
@@ -687,9 +781,10 @@ fun bindPetalWindowBlur(
     )
     val density = context.resources.displayMetrics.density
     var osAvailable = PetalBlurPrefs.isOsBlurAvailable(context)
+    val translucent = isTranslucentHost(context)
 
     fun refresh() {
-        val state = readState(sp, surface, osAvailable)
+        val state = readState(sp, surface, osAvailable, translucent)
         controller.update(
             mode = state.mode,
             visible = true,

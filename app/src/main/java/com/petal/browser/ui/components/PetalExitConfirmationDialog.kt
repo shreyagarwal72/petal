@@ -172,16 +172,15 @@ object PetalExitConfirmationDialog {
                 decor.setViewTreeSavedStateRegistryOwner(owner)
             }
         }
-        dialog.setOnDismissListener { }
+        var unbindBlur: (() -> Unit)? = null
+        dialog.setOnDismissListener {
+            unbindBlur?.invoke()
+            unbindBlur = null
+            com.petal.browser.predictive.PetalContentSnapshot.clear()
+        }
         dialog.setOnShowListener {
             val window = dialog.window ?: return@setOnShowListener
             window.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
-            window.setDimAmount(0.68f)
-            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                window.setBackgroundBlurRadius(34)
-            }
             window.setGravity(Gravity.CENTER)
             window.setLayout(
                 (activity.resources.displayMetrics.widthPixels * 0.84f).toInt().coerceAtMost(dp(activity, 360)),
@@ -204,20 +203,22 @@ object PetalExitConfirmationDialog {
         }
         dialog.show()
 
-        // Dialog.show() creates the window after setOnShowListener registration.
-        val isGlass = com.petal.browser.ui.containment.isLiquidGlassDirect(activity)
+        // Live blur behind the dialog (Petal's shared engine: OS blur, or in-app capture incl. the page).
+        // It owns the window dim: blurred dim when active, the old dim otherwise.
         dialog.window?.let { window ->
             window.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
-            window.setDimAmount(if (isGlass) 0.12f else 0.68f)
-            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             window.setLayout(
                 (activity.resources.displayMetrics.widthPixels * 0.84f).toInt().coerceAtMost(dp(activity, 360)),
                 WindowManager.LayoutParams.WRAP_CONTENT
             )
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                window.setBackgroundBlurRadius(34)
-            }
+            val isGlass = com.petal.browser.ui.containment.isLiquidGlassDirect(activity)
+            unbindBlur?.invoke()
+            unbindBlur = com.petal.browser.ui.blur.bindPetalWindowBlur(
+                context = activity,
+                window = window,
+                surface = com.petal.browser.ui.blur.PetalBlurSurface.DIALOGS,
+                fallbackDim = if (isGlass) 0.12f else 0.68f,
+            )
         }
     }
 

@@ -568,6 +568,7 @@ object PetalPermissionDialogBridge {
             }
         }
 
+        var unbindBlur: (() -> Unit)? = null
         dialog.setContentView(composeView)
         dialog.setCancelable(true)
         dialog.setCanceledOnTouchOutside(true)
@@ -577,8 +578,18 @@ object PetalPermissionDialogBridge {
             win.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             win.setGravity(Gravity.CENTER)
             win.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            // Light dim so the live page stays vivid through the glass.
+            // Live blur behind the dialog; falls back to the light dim (page stays vivid through the glass).
             win.setDimAmount(0.12f)
+            unbindBlur = com.petal.browser.ui.blur.bindPetalWindowBlur(
+                context = activity,
+                window = win,
+                surface = com.petal.browser.ui.blur.PetalBlurSurface.DIALOGS,
+                fallbackDim = 0.12f,
+            )
+        }
+        dialog.setOnDismissListener {
+            unbindBlur?.invoke()
+            unbindBlur = null
         }
         try {
             dialog.show()
