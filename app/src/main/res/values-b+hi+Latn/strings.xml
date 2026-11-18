@@ -1827,4 +1827,37 @@
     <string name="pw_pick_color">Pick a color</string>
     <string name="pw_ok">OK</string>
     <string name="pw_visibility_note">Text and icon colors adjust automatically so they stay readable on any color you pick.</string>
+
+    <!-- Setup redesign -->
+    <string name="petal_setup_step_of">Step %1$d / %2$d</string>
+    <string name="petal_setup_tab_look">Look</string>
+    <string name="petal_setup_tab_privacy">Privacy</string>
+    <string name="petal_setup_look_title">Isse apna banao</string>
+    <string name="petal_setup_look_body">Colors aur layout chuno. Preview mein badlav turant dikhenge.</string>
+    <string name="petal_setup_mode_label">Appearance</string>
+    <string name="petal_setup_mode_system">System</string>
+    <string name="petal_setup_mode_light">Light</string>
+    <string name="petal_setup_mode_dark">Dark</string>
+    <string name="petal_setup_address_bar_label">Address bar ki jagah</string>
+    <string name="petal_setup_pos_top">Upar</string>
+    <string name="petal_setup_pos_bottom">Neeche</string>
+    <string name="petal_setup_tools_label">Kaam ke tools</string>
+    <string name="petal_setup_grant_recommended">Recommended permissions do</string>
+    <string name="petal_setup_access_progress">%2$d mein se %1$d allowed</string>
+    <string name="petal_setup_ready_title">Sab ready hai</string>
+    <string name="petal_setup_ready_body">Petal aapki pasand ke hisaab se set hai. Sab kuch Settings mein badal sakte ho.</string>
+    <string name="petal_setup_ready_summary_label">Aapka setup</string>
+    <string name="petal_setup_ready_xp">+%1$d XP welcome bonus</string>
+    <string name="petal_setup_ready_chip_shield_on">Ad blocker on</string>
+    <string name="petal_setup_ready_chip_shield_off">Ad blocker off</string>
+    <string name="petal_setup_ready_chip_perms">%1$d permissions allowed</string>
+    <string name="petal_setup_ready_default_title">Petal ko default browser banao</string>
+    <string name="petal_setup_ready_default_reason">Dusre apps ke links seedha Petal mein khulein.</string>
+    <string name="petal_setup_ready_default_done">Petal aapka default browser hai</string>
+    <string name="petal_setup_skip_title">Setup skip karein?</string>
+    <string name="petal_setup_feat_private">Default se private</string>
+    <string name="petal_setup_feat_yours">Aapke hisaab se</string>
+    <string name="petal_setup_feat_tools">Built-in power tools</string>
+    <string name="petal_setup_all_languages">Saari languages</string>
+    <string name="petal_setup_language_search">Language khojo</string>
 </resources>

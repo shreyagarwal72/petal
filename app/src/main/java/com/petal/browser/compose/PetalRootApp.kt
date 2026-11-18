@@ -877,6 +877,21 @@ fun PetalRootApp(
 
             // ── Fullscreen Overlay Screens ──────────────────────────────────
 
+            // First-run setup. Topmost layer; only composed while the gate says so (fresh installs / replay).
+            if (activity != null) {
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    com.petal.browser.setup.PetalSetupGate.evaluate(activity)
+                }
+                if (com.petal.browser.setup.PetalSetupGate.visible) {
+                    Box(Modifier.fillMaxSize().zIndex(100f)) {
+                        com.petal.browser.setup.PetalSetupFlow(
+                            activity = activity,
+                            onFinished = { com.petal.browser.setup.PetalSetupGate.complete(activity) }
+                        )
+                    }
+                }
+            }
+
             // Omnibox Query Page with Seamless Enter/Exit Transition
             if (isOmniboxOpen && activity != null) {
                 androidx.compose.animation.AnimatedVisibility(

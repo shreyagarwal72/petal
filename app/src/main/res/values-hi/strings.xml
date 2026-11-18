@@ -1806,4 +1806,37 @@
     <string name="pw_pick_color">Pick a color</string>
     <string name="pw_ok">OK</string>
     <string name="pw_visibility_note">Text and icon colors adjust automatically so they stay readable on any color you pick.</string>
+
+    <!-- Setup redesign -->
+    <string name="petal_setup_step_of">चरण %1$d / %2$d</string>
+    <string name="petal_setup_tab_look">रूप</string>
+    <string name="petal_setup_tab_privacy">गोपनीयता</string>
+    <string name="petal_setup_look_title">इसे अपना बनाएँ</string>
+    <string name="petal_setup_look_body">रंग और लेआउट चुनें। बदलाव प्रीव्यू में तुरंत दिखेंगे।</string>
+    <string name="petal_setup_mode_label">दिखावट</string>
+    <string name="petal_setup_mode_system">सिस्टम</string>
+    <string name="petal_setup_mode_light">लाइट</string>
+    <string name="petal_setup_mode_dark">डार्क</string>
+    <string name="petal_setup_address_bar_label">एड्रेस बार की जगह</string>
+    <string name="petal_setup_pos_top">ऊपर</string>
+    <string name="petal_setup_pos_bottom">नीचे</string>
+    <string name="petal_setup_tools_label">काम के टूल</string>
+    <string name="petal_setup_grant_recommended">सुझाई गई अनुमतियाँ दें</string>
+    <string name="petal_setup_access_progress">%2$d में से %1$d अनुमत</string>
+    <string name="petal_setup_ready_title">सब तैयार है</string>
+    <string name="petal_setup_ready_body">Petal आपकी पसंद के हिसाब से तैयार है। सब कुछ सेटिंग्स में बदला जा सकता है।</string>
+    <string name="petal_setup_ready_summary_label">आपका सेटअप</string>
+    <string name="petal_setup_ready_xp">+%1$d XP वेलकम बोनस</string>
+    <string name="petal_setup_ready_chip_shield_on">विज्ञापन ब्लॉकर चालू</string>
+    <string name="petal_setup_ready_chip_shield_off">विज्ञापन ब्लॉकर बंद</string>
+    <string name="petal_setup_ready_chip_perms">%1$d अनुमतियाँ दी गईं</string>
+    <string name="petal_setup_ready_default_title">Petal को डिफ़ॉल्ट ब्राउज़र बनाएँ</string>
+    <string name="petal_setup_ready_default_reason">दूसरे ऐप के लिंक सीधे Petal में खुलें।</string>
+    <string name="petal_setup_ready_default_done">Petal आपका डिफ़ॉल्ट ब्राउज़र है</string>
+    <string name="petal_setup_skip_title">सेटअप छोड़ें?</string>
+    <string name="petal_setup_feat_private">डिफ़ॉल्ट रूप से निजी</string>
+    <string name="petal_setup_feat_yours">आपके हिसाब से</string>
+    <string name="petal_setup_feat_tools">बिल्ट-इन पावर टूल</string>
+    <string name="petal_setup_all_languages">सभी भाषाएँ</string>
+    <string name="petal_setup_language_search">भाषा खोजें</string>
 </resources>
