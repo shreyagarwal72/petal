@@ -131,7 +131,7 @@ fun PetalRootApp(
         if (viewModel.hasOpenOverlay) {
             viewModel.goBack()
         } else if (ctrl != null && ctrl.canGoBack()) {
-            ctrl.goBack()
+            ctrl.goBackChecked { viewModel.goHomeFromStuckBack() }
             true
         } else {
             viewModel.goBack()
@@ -425,7 +425,7 @@ fun PetalRootApp(
     var exitArmed by remember { mutableStateOf(false) }
     val doubleBackExit = remember(sp, exitArmed) { sp.getBoolean("sp_double_back_exit", true) }
     val presentedCount = (activity as? MainActivity)?.presentedScreenCount ?: 0
-    val atExitRoot = isHome && !canGoBack && !isOverlayShowing && !isFindInPageOpen && !isDevConsoleOpen &&
+    val atExitRoot = isHome && !isLoading && !canGoBack && !isOverlayShowing && !isFindInPageOpen && !isDevConsoleOpen &&
         pendingExtensionPopup == null && presentedCount == 0
     val systemHandlesExit = atExitRoot && PetalPredictiveJunction.isDeviceSupported &&
         junctionPredictiveEnabled && poseEnabledState.value && (!doubleBackExit || exitArmed)

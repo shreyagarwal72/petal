@@ -743,6 +743,15 @@ class PetalBrowserViewModel @Inject constructor(
         return false
     }
 
+    /** Back found nothing to go back to although the engine said it could: leave the page for Home. */
+    fun goHomeFromStuckBack() {
+        val tab = activeTab.value ?: return
+        val effectiveHome = if (tab.content.private) "about:home" else PetalBrowserUtils.getEffectiveHomepageUrl(context)
+        val isAlreadyHome = PetalBrowserUtils.isHomePage(tab.content.url) ||
+                tab.content.url.trim().trimEnd('/').equals(effectiveHome.trim().trimEnd('/'), ignoreCase = true)
+        if (tab.content.url.isNotBlank() && !isAlreadyHome) loadUrl(effectiveHome)
+    }
+
     fun goForward() {
         activeTab.value?.let { tab ->
             if (tab.content.canGoForward) {

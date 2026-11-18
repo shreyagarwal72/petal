@@ -81,6 +81,9 @@ class PetalTabViewController private constructor(
         return android.os.SystemClock.uptimeMillis() - pendingNavSince < 8000L
     }
     private var backAvailable = false
+    // Uptime of the last navigation event Gecko reported (location or load start). Lets Back notice that
+    // goBack() was accepted but nothing happened (stale canGoBack), instead of swallowing the gesture.
+    @Volatile private var lastNavEventAt = 0L
     private var forwardAvailable = false
 
     // True from the moment saved history is restored into a fresh session until the first real page has
@@ -379,6 +382,7 @@ class PetalTabViewController private constructor(
 
     private val observer = object : EngineSession.Observer {
         override fun onLocationChange(url: String, hasUserGesture: Boolean) {
+            lastNavEventAt = android.os.SystemClock.uptimeMillis()
             dismissCrashErrorState()
             maybeDismissOfflineGame(url)
             android.util.Log.d("PetalTabNav", "observer.onLocationChange: url=$url gesture=$hasUserGesture oldPageUrl=$pageUrl")
@@ -435,6 +439,7 @@ class PetalTabViewController private constructor(
             if (!loading && historyPending && restoreLocationSeen) {
                 historyPending = false
             }
+            if (loading) lastNavEventAt = android.os.SystemClock.uptimeMillis()
             if (this@PetalTabViewController.loading != loading && loading) {
                 previewRevision++
                 previewRetryCount = 0
@@ -1387,6 +1392,22 @@ class PetalTabViewController private constructor(
         if (canTrailBack()) {
             trailBack()
         }
+    }
+
+    /**
+     * Back for the system gesture/button. Gives the page first refusal (leaves a fullscreen video
+     * instead of navigating away), then goes back, and if the engine accepted the call but never
+     * navigated (a stale canGoBack flag at the real start of history) walks the URL trail or reports
+     * [onStuck] so the caller can fall back, rather than leaving Back doing nothing.
+     */
+    fun goBackChecked(onStuck: () -> Unit) {
+        if (fullScreenFeature?.onBackPressed() == true) return
+        val startedAt = android.os.SystemClock.uptimeMillis()
+        goBack()
+        postDelayed({
+            if (lastNavEventAt >= startedAt || loading || isHistoryPending()) return@postDelayed
+            if (canTrailBack()) trailBack() else onStuck()
+        }, 700L)
     }
 
     @JvmOverloads
