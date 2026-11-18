@@ -487,6 +487,7 @@ fun PetalDialog(
     shape: androidx.compose.ui.graphics.Shape = MaterialTheme.shapes.extraLarge,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
+    scrollable: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
@@ -555,7 +556,12 @@ fun PetalDialog(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .verticalScroll(androidx.compose.foundation.rememberScrollState())
+                        .then(
+                            // Content hosting its own lazy list must opt out of scrolling, otherwise the
+                            // list is measured with infinite height and Compose throws.
+                            if (scrollable) Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())
+                            else Modifier
+                        )
                         .imePadding()
                         .padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),

@@ -2856,6 +2856,7 @@ private fun PetalTabGroupInspectionDialog(
     com.petal.browser.ui.containment.PetalDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxHeight(0.75f),
+        scrollable = false,
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
