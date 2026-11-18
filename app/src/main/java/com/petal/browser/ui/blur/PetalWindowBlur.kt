@@ -17,13 +17,25 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- */
 package com.petal.browser.ui.blur
 
 import android.animation.ValueAnimator
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.ColorFilter
+import android.graphics.Paint
+import android.graphics.PixelFormat
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.os.Build
+import android.os.Handler
+import android.os.HandlerThread
+import android.os.Looper
+import android.view.PixelCopy
 import android.view.View
 import android.view.Window
 import android.view.WindowManager
@@ -42,15 +54,21 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import java.util.function.Consumer
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * Universal live background blur: blurs whatever is visible BEHIND a window (overflow menu, bottom
- * sheet, dialog, popup). It uses the OS compositor blur (`blurBehindRadius`, Android 12+), so it is
- * truly live, works over Gecko's SurfaceView and over video, and costs nothing on the UI thread.
+ * sheet, dialog). It never touches the surface that sits on top, so it works the same in Material 3
+ * Expressive and in Liquid Glass, and it never reads any Liquid Glass preference.
  *
- * It never touches the surface that sits on top, so it works the same in Material 3 Expressive and in
- * Liquid Glass, and it never reads any Liquid Glass preference. The only thing a style changes is the
- * fallback dim the caller passes in.
+ * Two engines, picked per device (see [PetalBlurMethod]):
+ *  - SYSTEM: the OS compositor blur (`blurBehindRadius`, Android 12+). Truly live and free, but many
+ *    OEM builds switch it off (`isCrossWindowBlurEnabled == false`), and then it cannot work at all.
+ *  - IN_APP: no OS support needed. The app window is captured with PixelCopy at low resolution
+ *    (which includes Gecko's SurfaceView and video), blurred on a background thread, and drawn as the
+ *    background of the overlay window. Live at about 20 fps, works on Android 8+.
  */
 enum class PetalBlurSurface(val key: String) {
     OVERFLOW_MENU("sp_blur_overflow_menu"),
@@ -60,10 +78,25 @@ enum class PetalBlurSurface(val key: String) {
     MEDIA("sp_blur_media"),
 }
 
+/** What the user picked in settings. */
+enum class PetalBlurMethod(val id: String) {
+    AUTO("auto"),
+    SYSTEM("system"),
+    IN_APP("inapp");
+
+    companion object {
+        fun fromId(id: String?): PetalBlurMethod = values().firstOrNull { it.id == id } ?: AUTO
+    }
+}
+
+/** What is actually running for a surface right now. */
+enum class PetalBlurMode { SYSTEM, IN_APP, NONE }
+
 object PetalBlurPrefs {
     const val KEY_ENABLED = "sp_blur_enabled"
     const val KEY_STRENGTH = "sp_blur_strength"
     const val KEY_DIM = "sp_blur_dim"
+    const val KEY_METHOD = "sp_blur_method"
     const val PREFIX = "sp_blur_"
 
     /** Pre-rework per-surface key for the overflow menu. Read once as a fallback, never written. */
@@ -77,23 +110,21 @@ object PetalBlurPrefs {
     /** Hard cap on the radius handed to the compositor, in px. */
     private const val MAX_RADIUS_PX = 200
 
+    private fun surfaceDefault(sp: SharedPreferences, surface: PetalBlurSurface): Boolean =
+        if (surface == PetalBlurSurface.OVERFLOW_MENU && sp.contains(LEGACY_OVERFLOW_KEY)) {
+            sp.getBoolean(LEGACY_OVERFLOW_KEY, true)
+        } else true
+
     @JvmStatic
     fun surfaceEnabled(sp: SharedPreferences, surface: PetalBlurSurface): Boolean {
         if (!sp.getBoolean(KEY_ENABLED, true)) return false
-        val default = if (surface == PetalBlurSurface.OVERFLOW_MENU && sp.contains(LEGACY_OVERFLOW_KEY)) {
-            sp.getBoolean(LEGACY_OVERFLOW_KEY, true)
-        } else true
-        return sp.getBoolean(surface.key, default)
+        return sp.getBoolean(surface.key, surfaceDefault(sp, surface))
     }
 
     /** Value shown by the settings toggle for [surface] (ignores the master switch). */
     @JvmStatic
-    fun surfaceToggle(sp: SharedPreferences, surface: PetalBlurSurface): Boolean {
-        val default = if (surface == PetalBlurSurface.OVERFLOW_MENU && sp.contains(LEGACY_OVERFLOW_KEY)) {
-            sp.getBoolean(LEGACY_OVERFLOW_KEY, true)
-        } else true
-        return sp.getBoolean(surface.key, default)
-    }
+    fun surfaceToggle(sp: SharedPreferences, surface: PetalBlurSurface): Boolean =
+        sp.getBoolean(surface.key, surfaceDefault(sp, surface))
 
     @JvmStatic
     fun strengthDp(sp: SharedPreferences): Float =
@@ -102,6 +133,10 @@ object PetalBlurPrefs {
     @JvmStatic
     fun dim(sp: SharedPreferences): Float =
         sp.getFloat(KEY_DIM, DEFAULT_DIM).coerceIn(0f, MAX_DIM)
+
+    @JvmStatic
+    fun method(sp: SharedPreferences): PetalBlurMethod =
+        PetalBlurMethod.fromId(sp.getString(KEY_METHOD, PetalBlurMethod.AUTO.id))
 
     /** True when the OS can blur behind windows right now (Android 12+, not disabled by policy or battery saver). */
     @JvmStatic
@@ -115,23 +150,63 @@ object PetalBlurPrefs {
     }
 
     @JvmStatic
+    fun resolveMode(method: PetalBlurMethod, osAvailable: Boolean): PetalBlurMode = when (method) {
+        PetalBlurMethod.AUTO -> if (osAvailable) PetalBlurMode.SYSTEM else PetalBlurMode.IN_APP
+        PetalBlurMethod.SYSTEM -> if (osAvailable) PetalBlurMode.SYSTEM else PetalBlurMode.NONE
+        PetalBlurMethod.IN_APP -> PetalBlurMode.IN_APP
+    }
+
+    @JvmStatic
     fun radiusPx(strengthDp: Float, density: Float): Int =
         (strengthDp * density).toInt().coerceIn(0, MAX_RADIUS_PX)
 }
 
 /**
- * Resolved blur settings for one surface. [enabled] is what the user asked for; [active] additionally
- * requires the OS to be able to blur right now. When [enabled] but not [active] callers use a dim.
+ * Resolved blur settings for one surface. [enabled] is what the user asked for; [mode] is the engine
+ * that will run (NONE when disabled, or when System was forced but the OS cannot blur). When blur is
+ * not [active] callers use a plain dim.
  */
 @Immutable
 data class PetalBlurState(
     val enabled: Boolean,
-    val active: Boolean,
+    val mode: PetalBlurMode,
     val strengthDp: Float,
     val dim: Float,
-)
+) {
+    val active: Boolean get() = enabled && mode != PetalBlurMode.NONE
+}
 
-/** Where a blur is written: a real [Window] (Dialog) or a view added straight to the window manager. */
+private fun readState(sp: SharedPreferences, surface: PetalBlurSurface, osAvailable: Boolean): PetalBlurState {
+    val enabled = PetalBlurPrefs.surfaceEnabled(sp, surface)
+    return PetalBlurState(
+        enabled = enabled,
+        mode = if (enabled) PetalBlurPrefs.resolveMode(PetalBlurPrefs.method(sp), osAvailable) else PetalBlurMode.NONE,
+        strengthDp = PetalBlurPrefs.strengthDp(sp),
+        dim = PetalBlurPrefs.dim(sp),
+    )
+}
+
+private fun findActivity(context: Context): Activity? {
+    var c: Context? = context
+    while (c is ContextWrapper) {
+        if (c is Activity) return c
+        c = c.baseContext
+    }
+    return null
+}
+
+/** Compose Dialog wrappers reset the window background to transparent; never clobber a blur backdrop. */
+fun keepTransparentWindowBackground(window: Window) {
+    if (window.decorView.background !is PetalBackdropDrawable) {
+        window.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// SYSTEM engine targets
+// ---------------------------------------------------------------------------------------------
+
+/** Where the OS blur is written: a real [Window] (Dialog) or a view added straight to the window manager. */
 internal interface PetalBlurTarget {
     /** [dim] null leaves the window's own dim untouched. */
     fun set(radiusPx: Int, dim: Float?)
@@ -195,31 +270,219 @@ private class ViewBlurTarget(private val view: View) : PetalBlurTarget {
     override fun reset() = apply(0, null)
 }
 
+// ---------------------------------------------------------------------------------------------
+// IN_APP engine: PixelCopy -> low-res box blur -> window background
+// ---------------------------------------------------------------------------------------------
+
+/** Background drawable that shows the latest blurred frame stretched over the whole window. */
+class PetalBackdropDrawable : Drawable() {
+    @Volatile
+    var bitmap: Bitmap? = null
+    private val paint = Paint(Paint.FILTER_BITMAP_FLAG)
+    private var fade = 0
+
+    override fun draw(canvas: Canvas) {
+        val b = bitmap ?: return
+        if (b.isRecycled || fade <= 0) return
+        paint.alpha = fade
+        canvas.drawBitmap(b, null, bounds, paint)
+    }
+
+    override fun setAlpha(alpha: Int) {
+        if (fade != alpha) {
+            fade = alpha
+            invalidateSelf()
+        }
+    }
+
+    override fun getAlpha(): Int = fade
+    override fun setColorFilter(colorFilter: ColorFilter?) {}
+
+    @Deprecated("Deprecated in Java")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+}
+
+private object PetalBackdropThread {
+    val handler: Handler by lazy {
+        val t = HandlerThread("PetalBackdropBlur").apply { start() }
+        Handler(t.looper)
+    }
+}
+
+/** Captures the host activity window at low resolution, blurs it, and feeds [drawable]. Main thread API. */
+internal class PetalBackdropCapturer(
+    private val hostWindow: () -> Window?,
+    private val drawable: PetalBackdropDrawable,
+) {
+    private val main = Handler(Looper.getMainLooper())
+    @Volatile private var radiusPx = 0
+    private var running = false
+    @Volatile private var inFlight = false
+    private var copy: Bitmap? = null
+    private val outs = arrayOfNulls<Bitmap>(2)
+    private var outIndex = 0
+    private var pixelsA = IntArray(0)
+    private var pixelsB = IntArray(0)
+
+    private val tick = object : Runnable {
+        override fun run() {
+            if (!running) return
+            capture()
+            main.postDelayed(this, FRAME_INTERVAL_MS)
+        }
+    }
+
+    fun setRadius(px: Int) {
+        radiusPx = px
+    }
+
+    fun start() {
+        if (running) return
+        running = true
+        main.post(tick)
+    }
+
+    fun stop() {
+        running = false
+        main.removeCallbacks(tick)
+    }
+
+    private fun capture() {
+        if (inFlight) return
+        val window = hostWindow() ?: return
+        val decor = window.decorView
+        if (!decor.isAttachedToWindow || decor.width <= 0 || decor.height <= 0) return
+        val w = max(MIN_SIDE, decor.width / DOWNSCALE)
+        val h = max(MIN_SIDE, decor.height / DOWNSCALE)
+        var bmp = copy
+        if (bmp == null || bmp.width != w || bmp.height != h) {
+            bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            copy = bmp
+        }
+        inFlight = true
+        try {
+            val target = bmp
+            PixelCopy.request(window, target, { result ->
+                if (result == PixelCopy.SUCCESS) {
+                    process(target)
+                } else {
+                    inFlight = false
+                }
+            }, PetalBackdropThread.handler)
+        } catch (_: Throwable) {
+            inFlight = false
+        }
+    }
+
+    /** Runs on the blur thread. */
+    private fun process(src: Bitmap) {
+        try {
+            val w = src.width
+            val h = src.height
+            val n = w * h
+            if (pixelsA.size != n) {
+                pixelsA = IntArray(n)
+                pixelsB = IntArray(n)
+            }
+            src.getPixels(pixelsA, 0, w, 0, 0, w, h)
+            // radiusPx is the full-resolution blur radius; the capture is DOWNSCALE times smaller.
+            val r = (radiusPx * SIGMA_PER_RADIUS / DOWNSCALE).roundToInt()
+            val blurred = if (r >= 1) boxBlur3(pixelsA, pixelsB, w, h, r) else pixelsA
+            var out = outs[outIndex]
+            if (out == null || out.width != w || out.height != h) {
+                out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+                outs[outIndex] = out
+            }
+            out.setPixels(blurred, 0, w, 0, 0, w, h)
+            val ready = out
+            outIndex = 1 - outIndex
+            main.post {
+                drawable.bitmap = ready
+                drawable.invalidateSelf()
+                inFlight = false
+            }
+        } catch (_: Throwable) {
+            inFlight = false
+        }
+    }
+
+    private companion object {
+        const val FRAME_INTERVAL_MS = 50L // ~20 fps
+        const val DOWNSCALE = 6
+        const val MIN_SIDE = 48
+        /** Window blur radius to Gaussian sigma, in full-resolution px. Tuned by eye, adjust on device. */
+        const val SIGMA_PER_RADIUS = 0.6f
+    }
+}
+
+/** Three box-blur passes (about a Gaussian) on both axes. Returns the array holding the result. */
+private fun boxBlur3(a: IntArray, b: IntArray, w: Int, h: Int, r: Int): IntArray {
+    var src = a
+    var dst = b
+    repeat(3) {
+        for (y in 0 until h) blurLine(src, dst, y * w, 1, w, r)
+        var t = src; src = dst; dst = t
+        for (x in 0 until w) blurLine(src, dst, x, w, h, r)
+        t = src; src = dst; dst = t
+    }
+    return src
+}
+
+private fun blurLine(src: IntArray, dst: IntArray, start: Int, stride: Int, len: Int, r: Int) {
+    val div = 2 * r + 1
+    var rs = 0
+    var gs = 0
+    var bs = 0
+    for (i in -r..r) {
+        val p = src[start + min(len - 1, max(0, i)) * stride]
+        rs += (p shr 16) and 0xFF
+        gs += (p shr 8) and 0xFF
+        bs += p and 0xFF
+    }
+    for (i in 0 until len) {
+        dst[start + i * stride] = (0xFF shl 24) or ((rs / div) shl 16) or ((gs / div) shl 8) or (bs / div)
+        val add = src[start + min(len - 1, i + r + 1) * stride]
+        val sub = src[start + max(0, i - r) * stride]
+        rs += ((add shr 16) and 0xFF) - ((sub shr 16) and 0xFF)
+        gs += ((add shr 8) and 0xFF) - ((sub shr 8) and 0xFF)
+        bs += (add and 0xFF) - (sub and 0xFF)
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Controller: runs one overlay window's blur with either engine and fades it in and out
+// ---------------------------------------------------------------------------------------------
+
 /**
- * Drives one window's blur and fades it in and out. Main thread only.
- * [update] is cheap and idempotent: call it whenever any input changes.
+ * Main thread only. [update] is cheap and idempotent: call it whenever any input changes.
+ * [setBackdrop] installs (or, with null, removes) the in-app blur drawable as the window background.
  */
 internal class PetalBlurController(
     private val target: PetalBlurTarget,
+    private val setBackdrop: (Drawable?) -> Unit,
+    private val hostWindow: () -> Window?,
     private val manageDim: Boolean = true,
 ) {
     private var animator: ValueAnimator? = null
     private var animGoal = -1f
     private var fraction = 0f
-    private var active = false
+    private var mode = PetalBlurMode.NONE
     private var radiusPx = 0
     private var blurDim = 0f
     private var fallbackDim: Float? = 0f
     private var released = false
+    private var drawable: PetalBackdropDrawable? = null
+    private var capturer: PetalBackdropCapturer? = null
 
     /** [fallbackDim] null leaves the window's own dim alone while blur is not running. */
-    fun update(active: Boolean, visible: Boolean, radiusPx: Int, blurDim: Float, fallbackDim: Float?) {
+    fun update(mode: PetalBlurMode, visible: Boolean, radiusPx: Int, blurDim: Float, fallbackDim: Float?) {
         if (released) return
-        this.active = active
+        switchMode(mode)
         this.radiusPx = radiusPx
         this.blurDim = blurDim
         this.fallbackDim = fallbackDim
-        if (!active) {
+        capturer?.setRadius(radiusPx)
+        if (mode == PetalBlurMode.NONE) {
             animator?.cancel()
             animator = null
             animGoal = -1f
@@ -252,11 +515,45 @@ internal class PetalBlurController(
         }
     }
 
+    private fun switchMode(newMode: PetalBlurMode) {
+        if (newMode == mode) return
+        when (mode) {
+            PetalBlurMode.SYSTEM -> target.reset()
+            PetalBlurMode.IN_APP -> stopBackdrop()
+            PetalBlurMode.NONE -> {}
+        }
+        mode = newMode
+        if (newMode == PetalBlurMode.IN_APP) startBackdrop()
+    }
+
+    private fun startBackdrop() {
+        val d = PetalBackdropDrawable()
+        drawable = d
+        setBackdrop(d)
+        capturer = PetalBackdropCapturer(hostWindow, d).also {
+            it.setRadius(radiusPx)
+            it.start()
+        }
+    }
+
+    private fun stopBackdrop() {
+        capturer?.stop()
+        capturer = null
+        drawable = null
+        setBackdrop(null)
+    }
+
     private fun render() {
-        if (active) {
-            target.set((radiusPx * fraction).toInt(), if (manageDim) blurDim * fraction else null)
-        } else {
-            target.set(0, if (manageDim) fallbackDim else null)
+        val dim: Float? = if (!manageDim) null
+        else if (mode != PetalBlurMode.NONE) blurDim * fraction
+        else fallbackDim
+        when (mode) {
+            PetalBlurMode.SYSTEM -> target.set((radiusPx * fraction).toInt(), dim)
+            PetalBlurMode.IN_APP -> {
+                drawable?.alpha = (255 * fraction).roundToInt().coerceIn(0, 255)
+                target.set(0, dim)
+            }
+            PetalBlurMode.NONE -> target.set(0, dim)
         }
     }
 
@@ -264,19 +561,14 @@ internal class PetalBlurController(
         released = true
         animator?.cancel()
         animator = null
+        if (mode == PetalBlurMode.IN_APP) stopBackdrop()
         target.reset()
     }
 }
 
-private fun readState(sp: SharedPreferences, surface: PetalBlurSurface, osAvailable: Boolean): PetalBlurState {
-    val enabled = PetalBlurPrefs.surfaceEnabled(sp, surface)
-    return PetalBlurState(
-        enabled = enabled,
-        active = enabled && osAvailable,
-        strengthDp = PetalBlurPrefs.strengthDp(sp),
-        dim = PetalBlurPrefs.dim(sp),
-    )
-}
+// ---------------------------------------------------------------------------------------------
+// Compose and View entry points
+// ---------------------------------------------------------------------------------------------
 
 /** Live blur settings for [surface], re-evaluated when a preference or the OS blur switch changes. */
 @Composable
@@ -339,17 +631,32 @@ fun PetalWindowBlurEffect(
     manageDim: Boolean = true,
 ) {
     val view = LocalView.current
+    val context = LocalContext.current
     val density = LocalDensity.current.density
     val controller = remember(view) {
         val window = (view.parent as? DialogWindowProvider)?.window
-        val target: PetalBlurTarget = if (window != null) WindowBlurTarget(window) else ViewBlurTarget(view)
-        PetalBlurController(target, manageDim)
+        val host = findActivity(context)?.window
+        if (window != null) {
+            PetalBlurController(
+                target = WindowBlurTarget(window),
+                setBackdrop = { d -> window.setBackgroundDrawable(d ?: ColorDrawable(android.graphics.Color.TRANSPARENT)) },
+                hostWindow = { host },
+                manageDim = manageDim,
+            )
+        } else {
+            PetalBlurController(
+                target = ViewBlurTarget(view),
+                setBackdrop = { d -> view.rootView.background = d },
+                hostWindow = { host },
+                manageDim = manageDim,
+            )
+        }
     }
     DisposableEffect(controller) { onDispose { controller.release() } }
     // Runs on every state change, including slider drags from Settings while a surface is open.
     DisposableEffect(controller, state, fallbackDim, visible, density) {
         controller.update(
-            active = state.active,
+            mode = if (state.enabled) state.mode else PetalBlurMode.NONE,
             visible = visible,
             radiusPx = PetalBlurPrefs.radiusPx(state.strengthDp, density),
             blurDim = state.dim,
@@ -371,14 +678,19 @@ fun bindPetalWindowBlur(
     fallbackDim: Float?,
 ): () -> Unit {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val controller = PetalBlurController(WindowBlurTarget(window))
+    val host = findActivity(context)?.window
+    val controller = PetalBlurController(
+        target = WindowBlurTarget(window),
+        setBackdrop = { d -> window.setBackgroundDrawable(d ?: ColorDrawable(android.graphics.Color.TRANSPARENT)) },
+        hostWindow = { host },
+    )
     val density = context.resources.displayMetrics.density
     var osAvailable = PetalBlurPrefs.isOsBlurAvailable(context)
 
     fun refresh() {
         val state = readState(sp, surface, osAvailable)
         controller.update(
-            active = state.active,
+            mode = state.mode,
             visible = true,
             radiusPx = PetalBlurPrefs.radiusPx(state.strengthDp, density),
             blurDim = state.dim,

@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BlurCircular
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Layers
@@ -50,6 +51,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
+import com.petal.browser.ui.components.ExpressiveButtonGroup
+import com.petal.browser.ui.components.ExpressiveSegmentItem
 import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalSettingsSection
@@ -82,6 +85,7 @@ fun PetalBlurSettingsSection(targetHighlightId: String? = null) {
     var masterOn by remember(sp) { mutableStateOf(sp.getBoolean(PetalBlurPrefs.KEY_ENABLED, true)) }
     var strength by remember(sp) { mutableFloatStateOf(PetalBlurPrefs.strengthDp(sp)) }
     var dim by remember(sp) { mutableFloatStateOf(PetalBlurPrefs.dim(sp)) }
+    var method by remember(sp) { mutableStateOf(PetalBlurPrefs.method(sp)) }
     // Bumped on any blur pref change so the per-surface rows re-read (e.g. after a backup restore).
     var revision by remember(sp) { mutableStateOf(0) }
 
@@ -91,6 +95,7 @@ fun PetalBlurSettingsSection(targetHighlightId: String? = null) {
                 masterOn = sp.getBoolean(PetalBlurPrefs.KEY_ENABLED, true)
                 strength = PetalBlurPrefs.strengthDp(sp)
                 dim = PetalBlurPrefs.dim(sp)
+                method = PetalBlurPrefs.method(sp)
                 revision++
             }
         }
@@ -99,7 +104,7 @@ fun PetalBlurSettingsSection(targetHighlightId: String? = null) {
     }
     // Live: battery saver or an OEM policy can switch the OS blur off while this screen is open.
     val state = rememberPetalBlurState(PetalBlurSurface.SHEETS)
-    val osAvailable = state.active || PetalBlurPrefs.isOsBlurAvailable(context)
+    val osAvailable = PetalBlurPrefs.isOsBlurAvailable(context)
 
     PetalSettingsSection(
         title = "Background blur",
@@ -123,9 +128,36 @@ fun PetalBlurSettingsSection(targetHighlightId: String? = null) {
                 sp.edit().putBoolean(PetalBlurPrefs.KEY_ENABLED, it).apply()
             }
         )
-        if (masterOn && !osAvailable) {
+        if (masterOn) {
+            Text(
+                text = "Blur method",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            ExpressiveButtonGroup(
+                items = listOf(
+                    ExpressiveSegmentItem(id = PetalBlurMethod.AUTO.id, label = "Auto", icon = Icons.Rounded.AutoAwesome),
+                    ExpressiveSegmentItem(id = PetalBlurMethod.SYSTEM.id, label = "System", icon = Icons.Rounded.BlurOn),
+                    ExpressiveSegmentItem(id = PetalBlurMethod.IN_APP.id, label = "In-app", icon = Icons.Rounded.Layers)
+                ),
+                selectedId = method.id,
+                onItemSelected = {
+                    method = PetalBlurMethod.fromId(it)
+                    sp.edit().putString(PetalBlurPrefs.KEY_METHOD, it).apply()
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+            val running = PetalBlurPrefs.resolveMode(method, osAvailable)
             PetalSettingsToggleRowNote(
-                "Blur isn't available on this device or in battery saver; a dim is used instead."
+                when (running) {
+                    PetalBlurMode.SYSTEM -> "Using system blur."
+                    PetalBlurMode.IN_APP ->
+                        if (method == PetalBlurMethod.AUTO && !osAvailable)
+                            "System blur is switched off on this device, so Petal uses its own in-app blur."
+                        else "Using in-app blur."
+                    PetalBlurMode.NONE ->
+                        "System blur isn't available on this device or in battery saver; a dim is used instead. Try Auto or In-app."
+                }
             )
         }
         if (masterOn) {

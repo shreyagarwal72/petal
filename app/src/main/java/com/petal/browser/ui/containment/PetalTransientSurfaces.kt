@@ -395,7 +395,7 @@ fun PetalMaterialAlertDialog(
         val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
         androidx.compose.runtime.SideEffect {
             dialogWindow?.let { win ->
-                win.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+                com.petal.browser.ui.blur.keepTransparentWindowBackground(win)
             }
         }
         // Live blur behind the dialog (same in Material 3 Expressive and Liquid Glass). It owns the
@@ -513,7 +513,7 @@ fun PetalDialog(
         val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
         androidx.compose.runtime.SideEffect {
             dialogWindow?.let { win ->
-                win.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+                com.petal.browser.ui.blur.keepTransparentWindowBackground(win)
             }
         }
         // Live blur behind the dialog (same in Material 3 Expressive and Liquid Glass). It owns the
