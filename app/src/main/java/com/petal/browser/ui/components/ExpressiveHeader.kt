@@ -81,6 +81,7 @@ import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.petal.browser.ui.containment.PetalBackdrop
 import com.petal.browser.ui.containment.petalBackdropSource
 import com.petal.browser.ui.containment.petalRealGlassSupported
+import com.petal.browser.ui.containment.petalHeaderGlass
 
 /** Large continuous-curvature bottom corners (squircle) for the expressive header silhouette. */
 private val HeaderShape = com.petal.browser.ui.theme.SmoothRoundedShape(
@@ -89,6 +90,12 @@ private val HeaderShape = com.petal.browser.ui.theme.SmoothRoundedShape(
     bottomEnd = 36.dp,
     bottomStart = 36.dp,
 )
+
+/**
+ * Glass-only silhouette: Kyant's lens (edge refraction) accepts corner-based shapes only, and the
+ * squircle above is not one. Same radii, so the header outline stays put when glass turns on.
+ */
+private val GlassHeaderShape = RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp)
 
 /**
  * Material 3 Expressive Header component ported from LastWave-native (duxtami).
@@ -144,6 +151,18 @@ fun ExpressiveHeader(
     val wallpaperGlass = enableLiquidGlass && !realGlass && sharedWallpaper
     val glass = realGlass || wallpaperGlass
 
+    // LastWave header glass (blur + vibrancy + lens + sheen + rim) whenever real backdrop glass is on.
+    // Low-end devices keep the cheap frosted fallback inside liquidGlassChrome.
+    val glassContext = androidx.compose.ui.platform.LocalContext.current
+    com.petal.browser.ui.glass.LocalPetalGlassRevision.current // live-update on glass slider changes
+    val glassPrefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(glassContext)
+    val useLastWaveGlass = realGlass && !com.petal.browser.motion.MotionGate.isLowEndDevice(glassContext) &&
+        com.petal.browser.ui.containment.isLiquidGlassMaster(glassPrefs)
+    val glassOpacity = glassPrefs.getFloat("sp_liquid_glass_alpha", 0.70f).coerceIn(0.10f, 0.95f)
+    val glassBlur = com.petal.browser.ui.glass.readGlassBlurDp(glassPrefs)
+
+    val shape: androidx.compose.ui.graphics.Shape = if (useLastWaveGlass) GlassHeaderShape else HeaderShape
+
     val headerColor = when {
         glass -> Color.Transparent
         enableLiquidGlass -> com.petal.browser.ui.containment.petalGroupSurfaceColor()
@@ -156,23 +175,35 @@ fun ExpressiveHeader(
             Box(
                 Modifier
                     .matchParentSize()
-                    .clip(HeaderShape)
+                    .clip(shape)
                     .petalBackdropSource(localBackdrop)
             ) {
                 Box(Modifier.fillMaxSize().background(washBrush))
             }
         }
         Surface(
-            shape = HeaderShape,
+            shape = shape,
             // Real glass draws its own blurred backdrop, so the container must be see-through.
             color = headerColor,
             tonalElevation = 0.dp,
             shadowElevation = if (!enableLiquidGlass) 3.dp else 0.dp,
-            modifier = Modifier.fillMaxWidth().liquidGlassChrome(
-                shape = HeaderShape,
-                enabled = enableLiquidGlass,
-                backdrop = effectiveBackdrop,
-                isDark = isDarkSurface
+            modifier = Modifier.fillMaxWidth().then(
+                if (useLastWaveGlass && effectiveBackdrop != null) {
+                    Modifier.petalHeaderGlass(
+                        backdrop = effectiveBackdrop,
+                        shape = shape,
+                        isDark = isDarkSurface,
+                        opacity = glassOpacity,
+                        blurDp = glassBlur,
+                    )
+                } else {
+                    Modifier.liquidGlassChrome(
+                        shape = shape,
+                        enabled = enableLiquidGlass,
+                        backdrop = effectiveBackdrop,
+                        isDark = isDarkSurface
+                    )
+                }
             ),
         ) {
             val decorColor = MaterialTheme.colorScheme.primary
@@ -537,21 +568,29 @@ fun PetalGlassHeaderLayout(
             drawContent()
         }
     } else null
-    val headerHeight = with(LocalDensity.current) { headerHeightPx.toDp() }
-    Box(modifier) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .then(if (backdrop != null) Modifier.petalBackdropSource(backdrop) else Modifier)
-                .padding(top = if (backdrop != null) 0.dp else headerHeight)
-        ) {
-            content(if (backdrop != null) headerHeight else 0.dp)
+    // Header is measured first, so with glass off the content sits exactly below it on the first
+    // frame (the old stacked Column layout) and with glass on it fills the screen under the header.
+    // One tree for both modes: toggling glass never resets the content's scroll state.
+    androidx.compose.ui.layout.SubcomposeLayout(modifier) { constraints ->
+        val w = constraints.maxWidth
+        val headerPlaceable = subcompose("header") { header(Modifier, backdrop) }
+            .firstOrNull()?.measure(androidx.compose.ui.unit.Constraints(w, w, 0, constraints.maxHeight))
+        // A hoisted (yielding) header composes nothing: height 0, content simply fills the screen.
+        val h = headerPlaceable?.height ?: 0
+        if (h != headerHeightPx) headerHeightPx = h
+        val top = if (backdrop != null) 0 else h
+        val contentHeight = (constraints.maxHeight - top).coerceAtLeast(0)
+        val inset = if (backdrop != null) h.toDp() else 0.dp
+        val contentPlaceable = subcompose("content") {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .then(if (backdrop != null) Modifier.petalBackdropSource(backdrop) else Modifier)
+            ) { content(inset) }
+        }.first().measure(androidx.compose.ui.unit.Constraints(w, w, contentHeight, contentHeight))
+        layout(w, constraints.maxHeight) {
+            contentPlaceable.place(0, top)
+            headerPlaceable?.place(0, 0)
         }
-        header(
-            Modifier
-                .align(Alignment.TopCenter)
-                .onSizeChanged { if (it.height != headerHeightPx) headerHeightPx = it.height },
-            backdrop,
-        )
     }
 }

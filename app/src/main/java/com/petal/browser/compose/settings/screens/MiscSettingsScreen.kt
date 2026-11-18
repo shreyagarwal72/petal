@@ -81,21 +81,27 @@ fun MiscSettingsScreenContent(
     Box(modifier = modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "misc_settings")
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            ExpressiveHeader(
-                title = stringResource(R.string.ui_miscellaneous),
-                subtitle = stringResource(R.string.ui_custom_tabs_external_apps_and),
-                onBack = onNavigateBack
-            )
+        com.petal.browser.ui.components.PetalGlassHeaderLayout(
+            modifier = Modifier.fillMaxSize(),
+            header = { headerModifier, headerBackdrop ->
+                ExpressiveHeader(
+                    modifier = headerModifier,
+                    backdrop = headerBackdrop,
+                    title = stringResource(R.string.ui_miscellaneous),
+                    subtitle = stringResource(R.string.ui_custom_tabs_external_apps_and),
+                    onBack = onNavigateBack
+                )
+            }
+        ) { topInset ->
 
             val scrollState = rememberScrollState()
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .fillMaxSize()
                     .scrollMotionBlur(scrollState)
                     .verticalScroll(scrollState, flingBehavior = com.petal.browser.ui.theme.layout.petalFlingBehavior())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = topInset + 12.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // External Applications & Tools Card: Snap Photo Scanner

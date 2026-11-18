@@ -11,7 +11,10 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.unit.DpOffset
@@ -21,6 +24,7 @@ import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.colorControls
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
@@ -145,6 +149,59 @@ internal fun Modifier.petalRealGlass(
             val base = if (isDark) 0.08f + opacity * 0.20f else 0.12f + opacity * 0.28f
             val veil = (base + 0.22f * clash.coerceIn(0f, 1f)).coerceIn(0f, 0.9f)
             drawRect((if (isDark) Color.Black else Color.White).copy(alpha = veil))
+        }
+    )
+}
+
+/**
+ * LastWave's header glass: vibrant saturated blur, a light tint instead of a scrim, a soft top
+ * sheen, a gentle lens so the curved bottom edge bends the content passing under it, and a thin
+ * rim. Static (no pointer input, no per-frame state): one blur pass. Honours the Petal glass
+ * sliders: blur (default 24dp) and translucency (scales the tint, 0.70 = LastWave's tint).
+ * The element MUST be a sibling of the backdrop source, never inside it.
+ */
+@Composable
+internal fun Modifier.petalHeaderGlass(
+    backdrop: PetalBackdrop,
+    shape: Shape,
+    isDark: Boolean,
+    opacity: Float = 0.70f,
+    blurDp: Float? = null
+): Modifier {
+    if (!petalRealGlassSupported) return this
+    // Kyant's lens() throws for a plain RectangleShape; a zero-radius rounded rect is identical.
+    val safeShape = if (shape == RectangleShape) RoundedCornerShape(0.dp) else shape
+    val lensSafe = safeShape is CornerBasedShape
+    val tintScale = (opacity / 0.70f).coerceIn(0.2f, 1.35f)
+    val tint = (if (isDark) 0.30f else 0.46f) * tintScale
+    return this.drawBackdrop(
+        backdrop = backdrop,
+        shape = { safeShape },
+        highlight = { Highlight(width = 1.dp) },
+        effects = {
+            colorControls(
+                brightness = if (isDark) 0f else 0.04f,
+                contrast = 1f,
+                saturation = 1.6f
+            )
+            blur((blurDp ?: 24f).dp.toPx())
+            if (lensSafe && petalLensSupported) {
+                lens(
+                    14.dp.toPx().coerceAtMost(size.minDimension / 3f),
+                    28.dp.toPx().coerceAtMost(size.minDimension / 2f),
+                    false
+                )
+            }
+        },
+        onDrawSurface = {
+            drawRect((if (isDark) Color.Black else Color.White).copy(alpha = tint.coerceIn(0f, 0.85f)))
+            // Sheen: light catching the top of the pane.
+            drawRect(
+                brush = Brush.verticalGradient(
+                    0f to Color.White.copy(alpha = if (isDark) 0.07f else 0.16f),
+                    0.55f to Color.Transparent
+                )
+            )
         }
     )
 }

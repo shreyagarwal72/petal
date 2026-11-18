@@ -323,21 +323,27 @@ fun PrivacySettingsScreenContent(
                 modifier = Modifier.matchParentSize()
             )
 
-            Column(modifier = Modifier.fillMaxSize()) {
-                ExpressiveHeader(
-                    title = "Privacy & Security",
-                    subtitle = "AdBlock, Tracking Protection & Connection Security",
-                    onBack = onNavigateBack
-                )
+            com.petal.browser.ui.components.PetalGlassHeaderLayout(
+                modifier = Modifier.fillMaxSize(),
+                header = { headerModifier, headerBackdrop ->
+                    ExpressiveHeader(
+                        modifier = headerModifier,
+                        backdrop = headerBackdrop,
+                        title = "Privacy & Security",
+                        subtitle = "AdBlock, Tracking Protection & Connection Security",
+                        onBack = onNavigateBack
+                    )
+                }
+            ) { topInset ->
 
                 val scrollState = rememberScrollState()
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
+                        .fillMaxSize()
                         .scrollMotionBlur(scrollState)
                         .verticalScroll(scrollState, flingBehavior = com.petal.browser.ui.theme.layout.petalFlingBehavior())
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(start = 16.dp, end = 16.dp, top = topInset + 12.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // ── 1. Ad & Tracker Blocking (Master Switch + Hero Counter + Filters + Whitelist) ──

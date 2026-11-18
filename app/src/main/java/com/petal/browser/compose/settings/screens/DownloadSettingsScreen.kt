@@ -125,21 +125,27 @@ fun DownloadSettingsScreenContent(
     Box(modifier = modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "download_settings")
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            ExpressiveHeader(
-                title = "Downloads",
-                subtitle = "Download engine, live progress chips and file management",
-                onBack = onNavigateBack
-            )
+        com.petal.browser.ui.components.PetalGlassHeaderLayout(
+            modifier = Modifier.fillMaxSize(),
+            header = { headerModifier, headerBackdrop ->
+                ExpressiveHeader(
+                    modifier = headerModifier,
+                    backdrop = headerBackdrop,
+                    title = "Downloads",
+                    subtitle = "Download engine, live progress chips and file management",
+                    onBack = onNavigateBack
+                )
+            }
+        ) { topInset ->
 
             val scrollState = rememberScrollState()
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .fillMaxSize()
                     .scrollMotionBlur(scrollState)
                     .verticalScroll(scrollState, flingBehavior = com.petal.browser.ui.theme.layout.petalFlingBehavior())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = topInset + 12.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Download Deletion Card

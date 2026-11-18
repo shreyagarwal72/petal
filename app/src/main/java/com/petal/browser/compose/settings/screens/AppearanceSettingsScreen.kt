@@ -347,12 +347,18 @@ fun AppearanceSettingsScreenContent(
     Box(modifier = modifier.fillMaxSize().trackRevealOrigin(reveal)) {
         M3ExpressiveVariableBackground(pageSeed = "appearance_settings")
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            ExpressiveHeader(
-                title = "Appearance & Theme",
-                subtitle = "Fonts, theme modes, color palettes, AMOLED & Material You",
-                onBack = onNavigateBack
-            )
+        com.petal.browser.ui.components.PetalGlassHeaderLayout(
+            modifier = Modifier.fillMaxSize(),
+            header = { headerModifier, headerBackdrop ->
+                ExpressiveHeader(
+                    modifier = headerModifier,
+                    backdrop = headerBackdrop,
+                    title = "Appearance & Theme",
+                    subtitle = "Fonts, theme modes, color palettes, AMOLED & Material You",
+                    onBack = onNavigateBack
+                )
+            }
+        ) { topInset ->
 
             val petalLayoutSettings = rememberPetalLayoutSettings()
 
@@ -369,10 +375,10 @@ fun AppearanceSettingsScreenContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .fillMaxSize()
                     .scrollMotionBlur(scrollState, enabled = motionBlurEnabled)
                     .verticalScroll(scrollState, flingBehavior = com.petal.browser.ui.theme.layout.petalFlingBehavior())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = topInset + 12.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Section 1: App Theme & Dynamic Color Palette
