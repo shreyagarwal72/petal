@@ -606,9 +606,15 @@ class MainActivity : FragmentActivity(), BrowserController {
     val presentedScreens = java.util.Stack<View>()
     val hasPresentedScreens: Boolean get() = presentedScreens.isNotEmpty()
 
+    /** Observable by Compose (the Stack is not): lets the root decide when the system may handle Back. */
+    var presentedScreenCount by androidx.compose.runtime.mutableIntStateOf(0)
+        private set
+    private fun syncPresentedCount() { presentedScreenCount = presentedScreens.size }
+
     fun dismissTopPresentedScreen(): Boolean {
         if (presentedScreens.isNotEmpty()) {
             val screen = presentedScreens.pop()
+            syncPresentedCount()
             val content = findViewById<android.view.ViewGroup>(android.R.id.content)
             screen.animate()
                 .alpha(0f)
@@ -733,6 +739,7 @@ class MainActivity : FragmentActivity(), BrowserController {
             content.addView(screen)
         }
         presentedScreens.push(screen)
+        syncPresentedCount()
     }
 
     fun clearContentFrameKeepingTabs() {
@@ -741,6 +748,7 @@ class MainActivity : FragmentActivity(), BrowserController {
             val screen = presentedScreens.pop()
             content?.removeView(screen)
         }
+        syncPresentedCount()
     }
 
     fun onTabUrlStarted(webView: AlbumController?, url: String?) { }

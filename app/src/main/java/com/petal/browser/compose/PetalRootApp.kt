@@ -419,7 +419,25 @@ fun PetalRootApp(
     }
 
     // ── Single Authoritative Predictive Back Handler ────────────────────────
-    PredictiveBackHandler(enabled = true) { progressFlow ->
+    // At the home root with nothing to close, Petal steps aside so Android plays its own back-to-launcher
+    // animation (API 34+). With "double back to exit" on, the first Back is still ours (toast); once armed,
+    // the second Back within 2s goes to the system. Everything observable here, so the handler re-registers.
+    var exitArmed by remember { mutableStateOf(false) }
+    val doubleBackExit = remember(sp, exitArmed) { sp.getBoolean("sp_double_back_exit", true) }
+    val presentedCount = (activity as? MainActivity)?.presentedScreenCount ?: 0
+    val atExitRoot = isHome && !canGoBack && !isOverlayShowing && !isFindInPageOpen && !isDevConsoleOpen &&
+        pendingExtensionPopup == null && presentedCount == 0
+    val systemHandlesExit = atExitRoot && PetalPredictiveJunction.isDeviceSupported &&
+        junctionPredictiveEnabled && poseEnabledState.value && (!doubleBackExit || exitArmed)
+    LaunchedEffect(exitArmed, atExitRoot) {
+        if (exitArmed) {
+            kotlinx.coroutines.delay(2000L)
+            exitArmed = false
+        }
+    }
+    LaunchedEffect(atExitRoot) { if (!atExitRoot) exitArmed = false }
+
+    PredictiveBackHandler(enabled = !systemHandlesExit) { progressFlow ->
         val currentStyle = PetalPredictiveJunction.backStyle.value
         var gestureStarted = false
         var lastProgress = 0f
@@ -542,6 +560,7 @@ fun PetalRootApp(
                 val now = android.os.SystemClock.elapsedRealtime()
                 if (doubleBack && now - lastExitBackAt[0] > 2000L) {
                     lastExitBackAt[0] = now
+                    exitArmed = true
                     com.petal.browser.view.PetalToast.show(
                         context,
                         com.petal.browser.R.string.ui_press_back_twice_quickly_to
