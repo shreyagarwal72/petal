@@ -1512,14 +1512,6 @@ fun AppearanceSettingsScreenContent(
                                             }
                                         )
                                         com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                            title = "Overflow Menu Background Blur",
-                                            subtitle = "Blur outside wallpaper & window instead of dark dimming when menu opens",
-                                            icon = Icons.Rounded.BlurCircular,
-                                            checked = liquidGlassOverflowBlurBg,
-                                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                                            onCheckedChange = onLiquidGlassOverflowBlurBgChange
-                                        )
-                                        com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                             title = "Home Screen Widgets",
                                             subtitle = "Hardware-blurred liquid glass and specular sheen on search widgets",
                                             icon = Icons.Rounded.Widgets,
@@ -1657,6 +1649,9 @@ fun AppearanceSettingsScreenContent(
                         }
                     }
                 }
+
+                // Background blur behind menus, sheets and dialogs (works in M3E and Liquid Glass).
+                com.petal.browser.ui.blur.PetalBlurSettingsSection(targetHighlightId = targetHighlightItemId)
 
                 // Text selection toolbar (Material 3 Expressive / liquid glass), app-wide.
                 com.petal.browser.ui.selection.PetalSelectionToolbarSettingsSection(targetHighlightId = targetHighlightItemId)

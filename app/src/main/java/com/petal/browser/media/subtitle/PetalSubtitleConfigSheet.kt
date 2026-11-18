@@ -75,6 +75,7 @@ fun PetalSubtitleConfigSheet(
 
     PetalSheet(
         onDismissRequest = onDismissRequest,
+        blurSurface = com.petal.browser.ui.blur.PetalBlurSurface.MEDIA,
         modifier = modifier
     ) {
         Column(

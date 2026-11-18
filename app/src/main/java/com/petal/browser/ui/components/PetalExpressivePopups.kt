@@ -1183,6 +1183,7 @@ object PetalExpressivePromptBridge {
     ) {
         val activity = findActivity(context) ?: run { onCancel.run(); return }
         var dialog: com.google.android.material.bottomsheet.BottomSheetDialog? = null
+        var unbindBlur: (() -> Unit)? = null
         var finished = false
         val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
@@ -1228,7 +1229,18 @@ object PetalExpressivePromptBridge {
                     onCancel.run()
                 }
             }
+            setOnShowListener {
+                // Live blur behind the sheet; keeps the sheet's own dim when blur is off.
+                window?.let { w ->
+                    unbindBlur?.invoke()
+                    unbindBlur = com.petal.browser.ui.blur.bindPetalWindowBlur(
+                        activity, w, com.petal.browser.ui.blur.PetalBlurSurface.SHEETS, fallbackDim = null
+                    )
+                }
+            }
             setOnDismissListener {
+                unbindBlur?.invoke()
+                unbindBlur = null
                 if (!finished) {
                     finished = true
                     onCancel.run()
@@ -1267,6 +1279,19 @@ object PetalExpressivePromptBridge {
             .setOnCancelListener { complete { onCancel.run() } }
             .create().apply {
                 window?.setBackgroundDrawableResource(android.R.color.transparent)
+                var unbindBlur: (() -> Unit)? = null
+                setOnShowListener {
+                    window?.let { w ->
+                        unbindBlur?.invoke()
+                        unbindBlur = com.petal.browser.ui.blur.bindPetalWindowBlur(
+                            activity, w, com.petal.browser.ui.blur.PetalBlurSurface.DIALOGS, fallbackDim = null
+                        )
+                    }
+                }
+                setOnDismissListener {
+                    unbindBlur?.invoke()
+                    unbindBlur = null
+                }
                 show()
             }
     }

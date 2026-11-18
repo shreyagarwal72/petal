@@ -107,6 +107,7 @@ fun PetalTabGlanceSheet(
 
     PetalSheet(
         onDismissRequest = onDismiss,
+        blurSurface = com.petal.browser.ui.blur.PetalBlurSurface.TAB_MANAGER,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {

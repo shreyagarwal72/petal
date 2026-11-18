@@ -117,23 +117,17 @@ object PetalOverflowBridge {
         try {
             val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
             com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
-            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-            val defGlass = false
-            val isLiquidGlass = sp.getBoolean("sp_liquid_glass_containments", defGlass)
-            val useBlurBg = sp.getBoolean("sp_overflow_menu_blur_bg", true) && isLiquidGlass
 
             var pendingDismissAction: (() -> Unit)? = null
+            // Releases the live window blur (and its listeners) when the menu closes.
+            var unbindBlur: (() -> Unit)? = null
             val dialog = android.app.Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar).apply {
                 setCanceledOnTouchOutside(true)
                 setCancelable(true)
             }
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && useBlurBg) {
-                dialog.window?.setDimAmount(0f)
-                dialog.window?.setBackgroundBlurRadius(32)
-            } else if (!useBlurBg) {
-                dialog.window?.setDimAmount(0.4f)
-            }
             dialog.setOnDismissListener {
+                unbindBlur?.invoke()
+                unbindBlur = null
                 com.petal.browser.predictive.PetalContentSnapshot.clear()
                 val action = pendingDismissAction
                 pendingDismissAction = null
@@ -334,13 +328,15 @@ object PetalOverflowBridge {
                     window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
                     window.setGravity(android.view.Gravity.BOTTOM or android.view.Gravity.END)
                     window.setBackgroundDrawableResource(android.R.color.transparent)
-                    if (useBlurBg && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                        window.setBackgroundBlurRadius(54)
-                        window.setDimAmount(0.12f)
-                    } else {
-                        window.setDimAmount(0.35f)
-                    }
+                    // Live OS blur behind the menu. Same in Material 3 Expressive and Liquid Glass; falls
+                    // back to the old 0.35 dim when blur is off or the OS cannot blur right now.
+                    unbindBlur?.invoke()
+                    unbindBlur = com.petal.browser.ui.blur.bindPetalWindowBlur(
+                        context = activity,
+                        window = window,
+                        surface = com.petal.browser.ui.blur.PetalBlurSurface.OVERFLOW_MENU,
+                        fallbackDim = 0.35f
+                    )
                 }
             }
             dialog.show()
@@ -467,17 +463,10 @@ fun PetalOverflowMenuSheet(
     )
 
     val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    var useBlurBg by remember { mutableStateOf(sp.getBoolean("sp_overflow_menu_blur_bg", true)) }
-    DisposableEffect(sp) {
-        val l = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, k ->
-            if (k == "sp_overflow_menu_blur_bg") {
-                useBlurBg = prefs.getBoolean("sp_overflow_menu_blur_bg", true)
-            }
-        }
-        sp.registerOnSharedPreferenceChangeListener(l)
-        onDispose { sp.unregisterOnSharedPreferenceChangeListener(l) }
-    }
+    // Window blur is applied by showOverflowMenu; this only decides what the Compose layer draws.
+    val blur = com.petal.browser.ui.blur.rememberPetalBlurState(com.petal.browser.ui.blur.PetalBlurSurface.OVERFLOW_MENU)
+    val useBlurBg = blur.enabled
+    val windowBlurActive = blur.active
     val ambientWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
     val ambientSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
     val liveSource = remember(context, ambientSource) {
@@ -518,23 +507,29 @@ fun PetalOverflowMenuSheet(
                     .background(Color.Black.copy(alpha = 0.35f * alpha))
             )
         } else if (isLiquidGlass && liveSource != null) {
-            // Live: re-record the real app window behind the menu every frame.
+            // Live: re-record the real app window behind the menu every frame. This only feeds the
+            // glass panels; the blurred page itself comes from the window blur. The tint is only
+            // drawn when the window blur (which carries its own dim) is not running.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .liveGlassWallpaper(wallpaper, liveSource) { frameTick.longValue }
             )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.18f * alpha))
-            )
+            if (!windowBlurActive) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.18f * alpha))
+                )
+            }
         } else if (isLiquidGlass && isHomeGlass) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.18f * alpha))
-            )
+            if (!windowBlurActive) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.18f * alpha))
+                )
+            }
         } else if (isLiquidGlass) {
             Box(
                 modifier = Modifier
@@ -552,10 +547,19 @@ fun PetalOverflowMenuSheet(
                     com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
                 }
             }
+            if (!windowBlurActive) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.20f * alpha))
+                )
+            }
+        } else if (!windowBlurActive) {
+            // Material 3 Expressive, blur wanted but the OS cannot blur right now: plain dim.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.20f * alpha))
+                    .background(Color.Black.copy(alpha = 0.35f * alpha))
             )
         }
 

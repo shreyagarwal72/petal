@@ -279,12 +279,14 @@ object PetalImageScannerBridge {
                             paletteId = paletteId
                         ) {
                             ModalBottomSheet(
+                                scrimColor = com.petal.browser.ui.blur.rememberPetalSheetScrim(com.petal.browser.ui.blur.PetalBlurSurface.SHEETS),
                                 onDismissRequest = dismissAction,
                                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                                 shape = BottomSheetDefaults.ExpandedShape,
                                 containerColor = Color.Transparent,
                                 dragHandle = { BottomSheetDefaults.DragHandle() }
                             ) {
+                                com.petal.browser.ui.blur.PetalSheetBlur(com.petal.browser.ui.blur.PetalBlurSurface.SHEETS)
                                 PetalGlassContainer(
                                     modifier = Modifier.fillMaxWidth(),
                                     enabled = isLiquidGlassEnabled("sp_liquid_glass_containments"),

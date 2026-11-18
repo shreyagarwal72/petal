@@ -990,6 +990,7 @@ fun PetalAudioPlayerScreen(
                 if (showMoreBottomSheet) {
                     com.petal.browser.ui.containment.PetalSheet(
                         onDismissRequest = { showMoreBottomSheet = false },
+                        blurSurface = com.petal.browser.ui.blur.PetalBlurSurface.MEDIA,
                         title = "Track Options"
                     ) {
                         Column(

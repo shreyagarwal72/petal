@@ -131,7 +131,8 @@ object PetalBackupManager {
             key.startsWith("sp_reader_line_height") || key == "sp_font_width" ||
             key == "sp_font_roundness" || key == "sp_font_size_scale" ||
             key == "sp_zoom_level_scale" || key.startsWith("sp_gs_d_") ||
-            key.startsWith("sp_gs_h_") || key.startsWith("sp_gs_b_")
+            key.startsWith("sp_gs_h_") || key.startsWith("sp_gs_b_") ||
+            key == "sp_blur_strength"
         ) {
             return true
         }

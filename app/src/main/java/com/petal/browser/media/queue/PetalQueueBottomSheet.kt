@@ -128,6 +128,7 @@ fun PetalQueueBottomSheet(
     val sheetShape = BottomSheetDefaults.ExpandedShape
 
     ModalBottomSheet(
+        scrimColor = com.petal.browser.ui.blur.rememberPetalSheetScrim(com.petal.browser.ui.blur.PetalBlurSurface.MEDIA),
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = sheetShape,
@@ -136,6 +137,7 @@ fun PetalQueueBottomSheet(
         dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = modifier.fillMaxHeight(0.88f)
     ) {
+        com.petal.browser.ui.blur.PetalSheetBlur(com.petal.browser.ui.blur.PetalBlurSurface.MEDIA)
         PetalGlassContainer(
             modifier = Modifier.fillMaxSize(),
             enabled = isGlass,

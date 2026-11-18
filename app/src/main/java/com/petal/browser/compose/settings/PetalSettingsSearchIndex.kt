@@ -303,6 +303,13 @@ object PetalSettingsSearchIndex {
             keywords = listOf("predictive back", "back gesture", "animations", "gesture navigation", "back preview", "back animation style", "petal", "aosp", "slide", "scale", "classic")
         ),
         SettingsSearchItem(
+            id = "appearance_background_blur",
+            title = "Background blur",
+            subtitle = "Live blur behind the overflow menu, bottom sheets and dialogs, with strength and per-place switches",
+            category = SettingsCategory.APPEARANCE,
+            keywords = listOf("blur", "background blur", "overflow menu blur", "sheet blur", "dialog blur", "frosted", "dim", "scrim", "blur strength", "liquid glass", "material 3 expressive")
+        ),
+        SettingsSearchItem(
             id = "display_depth_blur",
             title = "Depth Blur & Frosted Glass",
             subtitle = "Render real-time blur and frosted glass layers behind dialogs, bottom sheets, and toolbars",

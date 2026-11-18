@@ -64,12 +64,14 @@ object PetalExtensionPopupSheet {
                 ) {
                     PetalExpressiveTheme {
                         ModalBottomSheet(
+                            scrimColor = com.petal.browser.ui.blur.rememberPetalSheetScrim(com.petal.browser.ui.blur.PetalBlurSurface.SHEETS),
                             onDismissRequest = dismissAction,
                             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                             shape = sheetShape,
                             containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
                             dragHandle = { BottomSheetDefaults.DragHandle() }
                         ) {
+                            com.petal.browser.ui.blur.PetalSheetBlur(com.petal.browser.ui.blur.PetalBlurSurface.SHEETS)
                             com.petal.browser.ui.glass.PetalGlassContainer(
                                 modifier = Modifier.fillMaxWidth(),
                                 enabled = isGlass,

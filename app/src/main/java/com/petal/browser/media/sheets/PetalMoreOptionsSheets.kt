@@ -129,6 +129,7 @@ fun PetalSleepTimerSheet(
     val sheetShape = BottomSheetDefaults.ExpandedShape
 
     ModalBottomSheet(
+        scrimColor = com.petal.browser.ui.blur.rememberPetalSheetScrim(com.petal.browser.ui.blur.PetalBlurSurface.MEDIA),
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = sheetShape,
@@ -137,6 +138,7 @@ fun PetalSleepTimerSheet(
         dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = modifier
     ) {
+        com.petal.browser.ui.blur.PetalSheetBlur(com.petal.browser.ui.blur.PetalBlurSurface.MEDIA)
         PetalGlassContainer(
             modifier = Modifier.fillMaxWidth(),
             enabled = isGlass,
@@ -366,6 +368,7 @@ fun PetalSongInfoSheet(
     val sheetShape = BottomSheetDefaults.ExpandedShape
 
     ModalBottomSheet(
+        scrimColor = com.petal.browser.ui.blur.rememberPetalSheetScrim(com.petal.browser.ui.blur.PetalBlurSurface.MEDIA),
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = sheetShape,
@@ -374,6 +377,7 @@ fun PetalSongInfoSheet(
         dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = modifier
     ) {
+        com.petal.browser.ui.blur.PetalSheetBlur(com.petal.browser.ui.blur.PetalBlurSurface.MEDIA)
         PetalGlassContainer(
             modifier = Modifier.fillMaxWidth(),
             enabled = isGlass,
@@ -507,6 +511,7 @@ fun PetalSpeedSelectorSheet(
     val sheetShape = BottomSheetDefaults.ExpandedShape
 
     ModalBottomSheet(
+        scrimColor = com.petal.browser.ui.blur.rememberPetalSheetScrim(com.petal.browser.ui.blur.PetalBlurSurface.MEDIA),
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = sheetShape,
@@ -515,6 +520,7 @@ fun PetalSpeedSelectorSheet(
         dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = modifier
     ) {
+        com.petal.browser.ui.blur.PetalSheetBlur(com.petal.browser.ui.blur.PetalBlurSurface.MEDIA)
         PetalGlassContainer(
             modifier = Modifier.fillMaxWidth(),
             enabled = isGlass,
@@ -677,6 +683,7 @@ fun PetalAudioRouteSheet(
     val sheetShape = BottomSheetDefaults.ExpandedShape
 
     ModalBottomSheet(
+        scrimColor = com.petal.browser.ui.blur.rememberPetalSheetScrim(com.petal.browser.ui.blur.PetalBlurSurface.MEDIA),
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = sheetShape,
@@ -685,6 +692,7 @@ fun PetalAudioRouteSheet(
         dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = modifier
     ) {
+        com.petal.browser.ui.blur.PetalSheetBlur(com.petal.browser.ui.blur.PetalBlurSurface.MEDIA)
         PetalGlassContainer(
             modifier = Modifier.fillMaxWidth(),
             enabled = isGlass,

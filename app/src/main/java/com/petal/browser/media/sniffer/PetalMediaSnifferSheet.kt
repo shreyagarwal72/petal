@@ -279,6 +279,7 @@ private fun PetalMediaSheet(
 
     com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismiss,
+        blurSurface = com.petal.browser.ui.blur.PetalBlurSurface.MEDIA,
         title = stringResource(R.string.ui_media_sources)
     ) {
         LazyColumn(

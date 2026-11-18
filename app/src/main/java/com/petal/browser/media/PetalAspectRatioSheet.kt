@@ -75,6 +75,7 @@ fun PetalAspectRatioSheet(
 
     com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismissRequest,
+        blurSurface = com.petal.browser.ui.blur.PetalBlurSurface.MEDIA,
         sheetState = sheetState,
     ) {
         Column(

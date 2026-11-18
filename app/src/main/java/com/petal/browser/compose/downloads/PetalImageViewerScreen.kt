@@ -1189,12 +1189,14 @@ private fun ImageInfoBottomSheet(
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
     ModalBottomSheet(
+        scrimColor = com.petal.browser.ui.blur.rememberPetalSheetScrim(com.petal.browser.ui.blur.PetalBlurSurface.SHEETS),
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         shape = sheetShape,
         containerColor = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
+        com.petal.browser.ui.blur.PetalSheetBlur(com.petal.browser.ui.blur.PetalBlurSurface.SHEETS)
         PetalGlassContainer(
             modifier = Modifier.fillMaxWidth(),
             enabled = isGlass,

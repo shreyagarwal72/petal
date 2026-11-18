@@ -91,12 +91,14 @@ object PetalPagePreviewBridge {
                         CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
                             PetalExpressiveTheme {
                                 androidx.compose.material3.ModalBottomSheet(
+                                    scrimColor = com.petal.browser.ui.blur.rememberPetalSheetScrim(com.petal.browser.ui.blur.PetalBlurSurface.SHEETS),
                                     onDismissRequest = dismissAction,
                                     sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
                                     shape = androidx.compose.material3.BottomSheetDefaults.ExpandedShape,
                                     containerColor = androidx.compose.ui.graphics.Color.Transparent,
                                     dragHandle = { androidx.compose.material3.BottomSheetDefaults.DragHandle() }
                                 ) {
+                                    com.petal.browser.ui.blur.PetalSheetBlur(com.petal.browser.ui.blur.PetalBlurSurface.SHEETS)
                                     PetalPagePreviewSheet(
                                         url = url,
                                         onOpenFullTab = {

@@ -574,7 +574,8 @@ private fun PetalPreReleaseSheet(
     onConfirm: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(scrimColor = com.petal.browser.ui.blur.rememberPetalSheetScrim(com.petal.browser.ui.blur.PetalBlurSurface.SHEETS), onDismissRequest = onDismiss, sheetState = sheetState) {
+        com.petal.browser.ui.blur.PetalSheetBlur(com.petal.browser.ui.blur.PetalBlurSurface.SHEETS)
         Column(
             modifier = Modifier
                 .fillMaxWidth()

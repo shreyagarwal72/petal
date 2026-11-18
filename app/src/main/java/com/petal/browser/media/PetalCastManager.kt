@@ -165,12 +165,14 @@ object PetalCastManager {
                     ) {
                         PetalExpressiveTheme {
                             ModalBottomSheet(
+                                scrimColor = com.petal.browser.ui.blur.rememberPetalSheetScrim(com.petal.browser.ui.blur.PetalBlurSurface.MEDIA),
                                 onDismissRequest = dismissAction,
                                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                                 shape = BottomSheetDefaults.ExpandedShape,
                                 containerColor = if (isGlass) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
                                 dragHandle = { BottomSheetDefaults.DragHandle() }
                             ) {
+                                com.petal.browser.ui.blur.PetalSheetBlur(com.petal.browser.ui.blur.PetalBlurSurface.MEDIA)
                                 com.petal.browser.ui.glass.PetalGlassContainer(
                                     modifier = Modifier.fillMaxWidth(),
                                     enabled = isGlass,

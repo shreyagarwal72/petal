@@ -396,9 +396,15 @@ fun PetalMaterialAlertDialog(
         androidx.compose.runtime.SideEffect {
             dialogWindow?.let { win ->
                 win.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
-                win.setDimAmount(if (isGlass) 0.16f else 0.35f)
             }
         }
+        // Live blur behind the dialog (same in Material 3 Expressive and Liquid Glass). It owns the
+        // window dim: blurred dim when active, the original 0.16 / 0.35 dim otherwise.
+        com.petal.browser.ui.blur.PetalWindowBlurEffect(
+            state = com.petal.browser.ui.blur.rememberPetalBlurState(com.petal.browser.ui.blur.PetalBlurSurface.DIALOGS),
+            fallbackDim = if (isGlass) 0.16f else 0.35f,
+            visible = true
+        )
         val maxDialogHeight = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
         com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = modifier
@@ -508,9 +514,15 @@ fun PetalDialog(
         androidx.compose.runtime.SideEffect {
             dialogWindow?.let { win ->
                 win.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
-                win.setDimAmount(if (isGlass) 0.16f else 0.35f)
             }
         }
+        // Live blur behind the dialog (same in Material 3 Expressive and Liquid Glass). It owns the
+        // window dim: blurred dim when active, the original 0.16 / 0.35 dim otherwise.
+        com.petal.browser.ui.blur.PetalWindowBlurEffect(
+            state = com.petal.browser.ui.blur.rememberPetalBlurState(com.petal.browser.ui.blur.PetalBlurSurface.DIALOGS),
+            fallbackDim = if (isGlass) 0.16f else 0.35f,
+            visible = isEntering
+        )
         val maxDialogHeight = (LocalConfiguration.current.screenHeightDp * 0.85f).dp
         com.petal.browser.ui.glass.PetalGlassContainer(
             modifier = modifier
@@ -740,9 +752,11 @@ fun PetalSheet(
     containerColor: Color? = null,
     scrimColor: Color? = null,
     dragHandle: (@Composable () -> Unit)? = { BottomSheetDefaults.DragHandle() },
+    blurSurface: com.petal.browser.ui.blur.PetalBlurSurface = com.petal.browser.ui.blur.PetalBlurSurface.SHEETS,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val blur = com.petal.browser.ui.blur.rememberPetalBlurState(blurSurface)
     val context = androidx.compose.ui.platform.LocalContext.current
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val sheetShape = com.petal.browser.ui.theme.layout.PetalLayoutState.settings.shapeType.cornerShape(
@@ -756,7 +770,12 @@ fun PetalSheet(
     val activeWallpaper = if (isGlass && ownsGlassBackdrop) ownWallpaper else com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
 
     val resolvedContainerColor = containerColor ?: if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh
-    val resolvedScrimColor = scrimColor ?: if (isGlass) Color.Black.copy(alpha = 0.14f) else BottomSheetDefaults.ScrimColor
+    // With live blur running the scrim is just the light dim over the blurred page; otherwise the original scrim.
+    val resolvedScrimColor = scrimColor ?: when {
+        blur.active -> Color.Black.copy(alpha = blur.dim)
+        isGlass -> Color.Black.copy(alpha = 0.14f)
+        else -> BottomSheetDefaults.ScrimColor
+    }
 
     var sheetDragOffset by remember { mutableStateOf(0f) }
     val animatedDragOffset by animateFloatAsState(
@@ -782,6 +801,14 @@ fun PetalSheet(
         tonalElevation = 0.dp,
         contentWindowInsets = { androidx.compose.foundation.layout.WindowInsets(0) },
     ) {
+        // Blur behind the sheet window; fades out as soon as the sheet starts to hide. The sheet draws
+        // its own scrim, so the window dim is left alone.
+        com.petal.browser.ui.blur.PetalWindowBlurEffect(
+            state = blur,
+            fallbackDim = 0f,
+            visible = sheetState.targetValue != SheetValue.Hidden,
+            manageDim = false
+        )
         val density = androidx.compose.ui.platform.LocalDensity.current
         val view = androidx.compose.ui.platform.LocalView.current
         val fallbackStatusTop = WindowInsets.statusBars.getTop(density)
