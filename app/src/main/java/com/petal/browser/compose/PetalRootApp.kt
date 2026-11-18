@@ -1071,6 +1071,28 @@ fun PetalRootApp(
                 androidx.compose.runtime.CompositionLocalProvider(
                     com.petal.browser.ui.glass.LocalPetalGlassSource provides menuSource
                 ) {
+                // The menu lives in its own window (like every other blurred surface). Window blur
+                // only blurs what is BEHIND a window, so drawing the menu inside the activity window
+                // left nothing to blur, and the sheet also skipped its own dim: no blur, no scrim.
+                androidx.compose.ui.window.Dialog(
+                    onDismissRequest = { viewModel.setMenuOpen(false) },
+                    properties = androidx.compose.ui.window.DialogProperties(
+                        usePlatformDefaultWidth = false,
+                        decorFitsSystemWindows = false,
+                        dismissOnClickOutside = false
+                    )
+                ) {
+                val menuWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+                androidx.compose.runtime.SideEffect {
+                    menuWindow?.let { com.petal.browser.ui.blur.keepTransparentWindowBackground(it) }
+                }
+                // Owns the window dim. fallbackDim is 0 because the sheet draws its own plain dim
+                // when blur is off or unavailable.
+                com.petal.browser.ui.blur.PetalWindowBlurEffect(
+                    state = com.petal.browser.ui.blur.rememberPetalBlurState(com.petal.browser.ui.blur.PetalBlurSurface.OVERFLOW_MENU),
+                    fallbackDim = 0f,
+                    visible = true
+                )
                 Box(
                     Modifier.fillMaxSize()
                         .overlayBackPose(overlayPose, 0.9f, 0.12f)
@@ -1217,8 +1239,10 @@ fun PetalRootApp(
                     onOpenQuickTools = {
                         viewModel.setMenuOpen(false)
                         (activity as? MainActivity)?.showQuickTools()
-                    }
+                    },
+                    handleBackInternally = true
                 )
+                }
                 }
                 }
             }

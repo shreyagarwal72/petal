@@ -463,7 +463,7 @@ fun PetalOverflowMenuSheet(
     )
 
     val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-    // Window blur is applied by showOverflowMenu; this only decides what the Compose layer draws.
+    // Window blur is applied by the hosting window (PetalRootApp Dialog, or showOverflowMenu); this only decides what the Compose layer draws.
     val blur = com.petal.browser.ui.blur.rememberPetalBlurState(com.petal.browser.ui.blur.PetalBlurSurface.OVERFLOW_MENU)
     val useBlurBg = blur.enabled
     val windowBlurActive = blur.active
