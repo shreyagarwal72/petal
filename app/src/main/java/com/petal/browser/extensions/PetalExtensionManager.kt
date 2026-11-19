@@ -563,7 +563,14 @@ object PetalExtensionManager {
         val default = synchronized(actionByExtensionId) { actionByExtensionId[extId] }
         val override = session?.let { sessionActionByExtensionId[it]?.get(extId) }
         return when {
-            override != null && default != null -> override.withDefault(default)
+            override != null && default != null -> try {
+                override.withDefault(default)
+            } catch (_: IllegalArgumentException) {
+                // GeckoView refuses to merge a page action with a browser action ("defaultValue must be
+                // of the same type"). Browser and page actions share one slot per extension here, so a
+                // mismatch is possible; keep the tab's own action instead of crashing the result thread.
+                override
+            }
             override != null -> override
             else -> default
         }
