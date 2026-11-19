@@ -1,3 +1,58 @@
+### v4.9 (490) — 🎬 Native Media Grabber, LastWave Liquid Header Glass & Decentralized Sync
+
+- **Native Media Grabber & Stream Extraction**:
+  - Integrated native `yt-dlp` and `ffmpeg` engine for high-resolution video and audio downloads.
+  - New Material 3 Expressive + Liquid Glass grabber bottom sheet (`PetalMediaGrabberSheet`) with live video thumbnail, title, and media format chooser.
+  - Direct quality selection (1080p, 720p, 360p, high frame rate 60fps) and audio extraction (m4a, mp3).
+  - Proactive address bar integration (`YtDlpSites`): media action button appears immediately on supported media platforms (YouTube, Vimeo, X, TikTok, Instagram, Reddit, SoundCloud, Twitch, Bilibili) prior to sniffer detection.
+  - In-app media player handoff with continuous playback positioning.
+  - Real-time download progress tracking with live transfer speed, ETA, cancel, and retry.
+- **LastWave Real Header Glass & Live Window Blur**:
+  - Implemented real frosted glass backdrops with optical lens refraction and AGSL chromatic dispersion across all core screens (Bookmarks, Downloads, Extensions, History, Incognito, Settings Hub, and Store) via `PetalGlassHeaderLayout`.
+  - Live window blur behind modal sheets, dialogs, and overflow menus (`PetalWindowBlur`) with composited `SurfaceView` rendering.
+  - Added configurable blur strength slider and fine-tuning controls.
+- **Material 3 Expressive & Spatial Gestures**:
+  - System-wide integration of all 35 official Material 3 Expressive shapes from `PetalMaterialShapes.kt`.
+  - Dynamic color palette with tonal depth hierarchy, spring physics, and spatial gesture responsiveness.
+  - Floating Island Navigation Dock.
+  - Zenith-style smooth pull-to-refresh with continuous shape morphing.
+  - Redesigned modular first-run setup wizard.
+- **Selectable App Icons Suite**:
+  - Home-screen launcher customization suite with 9 distinct icon styles: *Bloom*, *Classic Swirl*, *Tab Bloom*, *Petal P*, *Lens*, *Shield*, *Globe*, *Pointer*, and *Window*.
+  - Full Android 13+ adaptive monochrome styling and dynamic wallpaper tinting.
+  - Synchronized animated splash screen exit transitions.
+- **Full Decentralized Folder Sync**:
+  - Complete user-owned encrypted sync via Storage Access Framework (SAF) eliminating cloud lock-in.
+  - `.psync` file import, export, and encrypted restore support.
+  - Automated background sync via Android JobService (`PetalSyncJobService`).
+  - Encrypted password sync (`PetalSyncPasswords`), device pairing list, and remote open tabs visibility.
+  - "Send to device" link dispatch directly from page actions.
+- **Mozilla GeckoView 161 & Android Components 161.0b3**:
+  - Upgraded core browsing engine to Mozilla GeckoView Beta 161 (`161.0.20261113104103`) with refreshed Firefox 161 User-Agent profiles.
+  - Synchronized all 38 Mozilla Android Components to `161.0b3`.
+  - Standalone Viewers with task affinity isolation (`com.petal.browser.viewer.pdf`, `.file`, `.image`, `.media`) and `documentLaunchMode="always"`.
+  - Official Mozilla `about:config` page support loaded natively inside tabs.
+  - Android 16 Live Updates (promoted ongoing notifications) support.
+- **Built-in Network Blocker & Hardened Privacy**:
+  - Subresource ad and tracker blocking powered by `petal_network_blocker` WebExtension with Brave, EasyList, uAssets, and Hagezi lists.
+  - Early cosmetic filtering (`early_cosmetics.js`) at `document_start` to eliminate ad layout shift and auto-skip video ads.
+  - Authoritative Gecko Cookie Jar & Storage Isolation (`PetalGeckoCookieBridge`) strictly segregating private and normal sessions.
+  - Automated URL tracking parameter cleaning (`utm_*`, `fbclid`, `gclid`, `mc_eid`).
+  - Biometric & PIN App Lock for private browsing and vault protection.
+- **Navigation & Viewport Polish**:
+  - Native predictive back animations with system-level back poses and back-to-launcher exit at home root.
+  - Viewport collapse jump eliminated: batched resize state with ~110ms paint settle delay.
+  - Address bar pill crossfade without text ghosting.
+  - Restored desktop tab bar for tablets and large displays.
+  - Bidirectional history tracking using Mozilla Places observation and GeckoView `getVisited`.
+  - Custom homepage URL normalization and navigation routing with fallback to `about:home`.
+- **Performance & Reliability**:
+  - Eliminated 2.4s download notification Binder IPC stall.
+  - Intelligent process crash recovery distinguishing normal memory reclamation (`onKill`) from unexpected termination.
+  - Removed infinite `javascript:` location reload loops.
+  - Resolved infinite height constraints on dialogs and app lock screens.
+  - Memory optimization: inactive background tabs unload engine session views (`PetalTabSurface`).
+
 ### v4.8.1 (481) — 💎 LastWave Liquid Header Glass, Selectable App Icons & Parity Alignment
 
 - **LastWave Real Header Glass**: Implemented real backdrop frosted glass and lens refraction across all browser screens (Bookmarks, Downloads, Extensions, File Picker, History, Incognito Home, Petal Browser Store, and Settings Hub) with `PetalGlassHeaderLayout` and integrated search/tab bars.

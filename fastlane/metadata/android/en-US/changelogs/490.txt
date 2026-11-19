@@ -1,0 +1,10 @@
+Petal Browser v4.9 Release:
+- Native Media Grabber & Stream Extraction: Built-in native yt-dlp & ffmpeg engine with quality selector (1080p, 720p, 360p, 60fps, mp3/m4a), real-time progress & speed parsing, in-app player handoff, and proactive address bar integration on YouTube, Vimeo, X, TikTok, and Reddit.
+- LastWave Liquid Header Glass: Real frosted glass backdrops with optical lens refraction and AGSL chromatic dispersion across all core screens via PetalGlassHeaderLayout.
+- Live Window Blur: Real-time window blur behind sheets, dialogs, overflow menus, and transient surfaces.
+- Material 3 Expressive & Spatial Gestures: Full 35-shape M3E catalog, tonal depth color system, spring physics, and Floating Island navigation dock.
+- Selectable App Icons Suite: 9 home screen icon styles (Bloom, Classic Swirl, Tab Bloom, Petal P, Lens, Shield, Globe, Pointer, Window) with Android 13+ adaptive monochrome styling.
+- Full Decentralized Folder Sync: SAF-backed encrypted sync for bookmarks, history, logins, and open tabs via Android JobService.
+- Mozilla GeckoView 161 & Android Components 161.0b3: Upgraded core browsing engine with standalone viewers task affinity isolation and official in-tab about:config.
+- Navigation & Viewport Polish: Smooth address bar collapse without viewport resize jump, address bar pill crossfade, and system predictive back animations.
+- Privacy & Adblocking Hardening: Built-in WebExtension network blocker with Brave filter lists, early cosmetic filtering, Gecko cookie jar isolation, and automated URL tracking parameter trimming.
