@@ -283,37 +283,9 @@ fun PetalExtensionsScreen(
                     Box(modifier = Modifier.fillMaxSize()) {
                         M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "extensions_page")
 
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            ExpressiveHeader(
-                                title = stringResource(R.string.ui_extensions),
-                                subtitle = when (selectedTabIndex) {
-                                    0 -> "${firefoxExtensions.size} Firefox add-on${if (firefoxExtensions.size == 1) "" else "s"} installed"
-                                    1 -> "Explore curated add-ons from Mozilla AMO"
-                                    else -> "Developer tools, local XPI & custom collections"
-                                },
-                                onBack = { if (hasSubOverlay) handleDismiss() else onDismiss() },
-                                actions = {
-                                    FilledTonalIconButton(
-                                        shape = ExpressiveButtonShape,
-                                        onClick = {
-                                            haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
-                                            (context as? com.petal.browser.activity.MainActivity)?.addAlbum(
-                                                "Firefox Add-ons",
-                                                PetalExtensionManager.amoAndroidBrowseUrl,
-                                                true
-                                            )
-                                        },
-                                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    ) {
-                                        Icon(Icons.Rounded.Storefront, contentDescription = stringResource(R.string.ui_find_firefox_extensions))
-                                    }
-                                }
-                            )
-
-                            // 3-Tab Firefox Parity Bar
+                        val headerGlassPaneE = com.petal.browser.ui.components.rememberHeaderGlassActive()
+                        // 3-Tab Firefox Parity Bar
+                        val headerExtrasE: @Composable () -> Unit = {
                             PrimaryTabRow(
                                 selectedTabIndex = selectedTabIndex,
                                 containerColor = Color.Transparent,
@@ -349,6 +321,46 @@ fun PetalExtensionsScreen(
                                     icon = { Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(18.dp)) }
                                 )
                             }
+                        }
+                        com.petal.browser.ui.components.PetalGlassHeaderLayout(
+                            modifier = Modifier.fillMaxSize(),
+                            header = { headerModifier, headerBackdrop ->
+                                ExpressiveHeader(
+                                    modifier = headerModifier,
+                                    backdrop = headerBackdrop,
+
+                                title = stringResource(R.string.ui_extensions),
+                                subtitle = when (selectedTabIndex) {
+                                    0 -> "${firefoxExtensions.size} Firefox add-on${if (firefoxExtensions.size == 1) "" else "s"} installed"
+                                    1 -> "Explore curated add-ons from Mozilla AMO"
+                                    else -> "Developer tools, local XPI & custom collections"
+                                },
+                                onBack = { if (hasSubOverlay) handleDismiss() else onDismiss() },
+                                actions = {
+                                    FilledTonalIconButton(
+                                        shape = ExpressiveButtonShape,
+                                        onClick = {
+                                            haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                            (context as? com.petal.browser.activity.MainActivity)?.addAlbum(
+                                                "Firefox Add-ons",
+                                                PetalExtensionManager.amoAndroidBrowseUrl,
+                                                true
+                                            )
+                                        },
+                                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    ) {
+                                        Icon(Icons.Rounded.Storefront, contentDescription = stringResource(R.string.ui_find_firefox_extensions))
+                                    }
+                                },
+                                    bottomContent = if (headerGlassPaneE) { { headerExtrasE() } } else null
+                                )
+                            }
+                        ) { topInset ->
+                            Column(Modifier.fillMaxSize()) {
+                                if (!headerGlassPaneE) headerExtrasE()
 
                             if (busy) {
                                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
@@ -356,7 +368,7 @@ fun PetalExtensionsScreen(
 
                             when (selectedTabIndex) {
                                 0 -> InstalledExtensionsTab(
-                                    innerPadding = innerPadding,
+                                    innerPadding = PaddingValues(top = topInset, bottom = innerPadding.calculateBottomPadding()),
                                     extensions = firefoxExtensions,
                                     activeTabActions = activeTabActions,
                                     onToggleEnabled = { ext, enabled ->
@@ -389,14 +401,15 @@ fun PetalExtensionsScreen(
                                     onExploreClick = { selectedTabIndex = 1 }
                                 )
                                 1 -> ExploreExtensionsTab(
-                                    innerPadding = innerPadding,
+                                    innerPadding = PaddingValues(top = topInset, bottom = innerPadding.calculateBottomPadding()),
                                     installedExtensions = firefoxExtensions
                                 )
                                 2 -> TweaksExtensionsTab(
-                                    innerPadding = innerPadding,
+                                    innerPadding = PaddingValues(top = topInset, bottom = innerPadding.calculateBottomPadding()),
                                     installedExtensions = firefoxExtensions,
                                     onRequestFileImport = { showXpiPicker = true }
                                 )
+                            }
                             }
                         }
                     }
@@ -529,7 +542,7 @@ private fun InstalledExtensionsTab(
         LazyColumn(
             state = addonsListState,
             contentPadding = PaddingValues(
-                start = 16.dp, end = 16.dp, top = 16.dp,
+                start = 16.dp, end = 16.dp, top = 16.dp + innerPadding.calculateTopPadding(),
                 bottom = innerPadding.calculateBottomPadding() + 96.dp
             ),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -802,7 +815,7 @@ private fun ExploreExtensionsTab(
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(
-                start = 16.dp, end = 16.dp, top = 16.dp,
+                start = 16.dp, end = 16.dp, top = 16.dp + innerPadding.calculateTopPadding(),
                 bottom = innerPadding.calculateBottomPadding() + 96.dp
             ),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -1014,7 +1027,7 @@ private fun TweaksExtensionsTab(
 
     LazyColumn(
         contentPadding = PaddingValues(
-            start = 16.dp, end = 16.dp, top = 16.dp,
+            start = 16.dp, end = 16.dp, top = 16.dp + innerPadding.calculateTopPadding(),
             bottom = innerPadding.calculateBottomPadding() + 96.dp
         ),
         verticalArrangement = Arrangement.spacedBy(14.dp),

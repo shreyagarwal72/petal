@@ -100,27 +100,8 @@ fun SettingsHubScreen(
     ) {
         M3ExpressiveVariableBackground(pageSeed = "settings_hub")
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            ExpressiveHeader(
-                title = "Settings",
-                subtitle = "Browser Preferences & Customization",
-                onBack = onNavigateBack,
-                actions = {
-                    HeaderActionIcon(
-                        icon = if (effectiveSearchOpen) Icons.Rounded.Close else Icons.Rounded.Search,
-                        contentDescription = if (effectiveSearchOpen) "Close search" else "Search settings",
-                        onClick = {
-                            if (effectiveSearchOpen) {
-                                toggleSearch(false)
-                                onSearchQueryChange("")
-                            } else {
-                                toggleSearch(true)
-                            }
-                        }
-                    )
-                }
-            )
-
+        val headerGlassPaneX = com.petal.browser.ui.components.rememberHeaderGlassActive()
+        val headerExtrasX: @Composable () -> Unit = {
             AnimatedVisibility(
                 visible = effectiveSearchOpen,
                 enter = expandVertically() + fadeIn(),
@@ -203,6 +184,37 @@ fun SettingsHubScreen(
                     }
                 }
             }
+        }
+        com.petal.browser.ui.components.PetalGlassHeaderLayout(
+            modifier = Modifier.fillMaxSize(),
+            header = { headerModifier, headerBackdrop ->
+                ExpressiveHeader(
+                    modifier = headerModifier,
+                    backdrop = headerBackdrop,
+
+                title = "Settings",
+                subtitle = "Browser Preferences & Customization",
+                onBack = onNavigateBack,
+                actions = {
+                    HeaderActionIcon(
+                        icon = if (effectiveSearchOpen) Icons.Rounded.Close else Icons.Rounded.Search,
+                        contentDescription = if (effectiveSearchOpen) "Close search" else "Search settings",
+                        onClick = {
+                            if (effectiveSearchOpen) {
+                                toggleSearch(false)
+                                onSearchQueryChange("")
+                            } else {
+                                toggleSearch(true)
+                            }
+                        }
+                    )
+                },
+                    bottomContent = if (headerGlassPaneX) { { headerExtrasX() } } else null
+                )
+            }
+        ) { topInset ->
+            Column(Modifier.fillMaxSize()) {
+                if (!headerGlassPaneX) headerExtrasX()
 
             val hubListState = androidx.compose.foundation.lazy.rememberLazyListState()
             LazyColumn(
@@ -212,7 +224,7 @@ fun SettingsHubScreen(
                     .weight(1f)
                     .scrollMotionBlur(hubListState),
                 contentPadding = PaddingValues(
-                    top = 12.dp,
+                    top = 12.dp + topInset,
                     bottom = 24.dp,
                     start = 16.dp,
                     end = 16.dp
@@ -349,6 +361,7 @@ fun SettingsHubScreen(
                         }
                     }
                 }
+            }
             }
         }
     }

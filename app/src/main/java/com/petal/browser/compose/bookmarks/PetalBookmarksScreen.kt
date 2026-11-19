@@ -263,11 +263,90 @@ fun PetalBookmarksScreen(
                 pageSeed = "bookmarks_page"
             )
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                ExpressiveHeader(
+            val headerGlassPaneB = com.petal.browser.ui.components.rememberHeaderGlassActive()
+            // Search Filter Bar
+                val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
+                val searchShape = RoundedCornerShape(24.dp)
+            val headerExtrasB: @Composable () -> Unit = {
+                TextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text(stringResource(R.string.ui_search_bookmarks)) },
+                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear_search))
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = searchShape,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .liquidGlassChrome(shape = searchShape, enabled = isGlass, sheenIntensity = 0.45f), glass = false
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                // Reading List filter chip row - Material 3 Expressive FilterChip with a
+                // springy scale-in, matching the bouncy selection feel used elsewhere in
+                // Petal's Compose surfaces rather than a static Material 3 toggle.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val readingListCount = remember(rawBookmarks) {
+                        rawBookmarks?.count { it.isReadingList } ?: 0
+                    }
+                    val chipScale by animateFloatAsState(
+                        targetValue = if (showReadingListOnly) 1f else 0.96f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        ),
+                        label = "readingListChipScale"
+                    )
+                    FilterChip(
+                        selected = showReadingListOnly,
+                        onClick = { showReadingListOnly = !showReadingListOnly },
+                        label = { Text(if (readingListCount > 0) "Reading List ($readingListCount)" else "Reading List") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Rounded.AutoStories,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            labelColor = MaterialTheme.colorScheme.onSurface,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        border = null,
+                        modifier = Modifier.graphicsLayer(scaleX = chipScale, scaleY = chipScale)
+                    )
+                }
+            }
+            com.petal.browser.ui.components.PetalGlassHeaderLayout(
+                modifier = Modifier.fillMaxSize(),
+                header = { headerModifier, headerBackdrop ->
+                    ExpressiveHeader(
+                        modifier = headerModifier,
+                        backdrop = headerBackdrop,
+
                     title = "Bookmarks",
                     subtitle = "${filteredBookmarks.size} saved items",
                     onBack = { if (hasSubOverlay) handleDismiss() else onDismiss() },
@@ -355,83 +434,13 @@ fun PetalBookmarksScreen(
                                 }
                             }
                         }
-                    }
-                )
-
-                // Search Filter Bar
-                val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
-                val searchShape = RoundedCornerShape(24.dp)
-                TextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text(stringResource(R.string.ui_search_bookmarks)) },
-                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear_search))
-                            }
-                        }
                     },
-                    singleLine = true,
-                    shape = searchShape,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp)
-                        .liquidGlassChrome(shape = searchShape, enabled = isGlass, sheenIntensity = 0.45f), glass = false
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                // Reading List filter chip row - Material 3 Expressive FilterChip with a
-                // springy scale-in, matching the bouncy selection feel used elsewhere in
-                // Petal's Compose surfaces rather than a static Material 3 toggle.
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val readingListCount = remember(rawBookmarks) {
-                        rawBookmarks?.count { it.isReadingList } ?: 0
-                    }
-                    val chipScale by animateFloatAsState(
-                        targetValue = if (showReadingListOnly) 1f else 0.96f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        ),
-                        label = "readingListChipScale"
-                    )
-                    FilterChip(
-                        selected = showReadingListOnly,
-                        onClick = { showReadingListOnly = !showReadingListOnly },
-                        label = { Text(if (readingListCount > 0) "Reading List ($readingListCount)" else "Reading List") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Rounded.AutoStories,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        shape = RoundedCornerShape(14.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            labelColor = MaterialTheme.colorScheme.onSurface,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
-                        border = null,
-                        modifier = Modifier.graphicsLayer(scaleX = chipScale, scaleY = chipScale)
+                        bottomContent = if (headerGlassPaneB) { { headerExtrasB() } } else null
                     )
                 }
+            ) { topInset ->
+                Column(Modifier.fillMaxSize()) {
+                    if (!headerGlassPaneB) headerExtrasB()
 
                 Spacer(Modifier.height(4.dp))
 
@@ -461,7 +470,7 @@ fun PetalBookmarksScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .scrollMotionBlur(bookmarksListState),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = topInset + 8.dp, bottom = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
                         itemsIndexed(filteredBookmarks, key = { index, record -> "${record.url}_${record.time}_${record.iconColor}_$index" }) { index, record ->
@@ -568,7 +577,8 @@ fun PetalBookmarksScreen(
                     )
                 }
             }
-        }
+                }
+            }
     }
 
     // Bookmark Item Options Sheet (Material 3 Expressive)

@@ -600,10 +600,13 @@ fun PetalDownloadManagerScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(pageSeed = "downloads_page")
 
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            ExpressiveHeader(
+        com.petal.browser.ui.components.PetalGlassHeaderLayout(
+            modifier = Modifier.fillMaxSize(),
+            header = { headerModifier, headerBackdrop ->
+                ExpressiveHeader(
+                    modifier = headerModifier,
+                    backdrop = headerBackdrop,
+
                 title = if (isSelectionMode) "${selectedIds.size} Selected" else "Downloads",
                 subtitle = if (isSelectionMode) "Selecting Mode" else "${downloadList.size} files",
                 onBack = { if (hasSubOverlay) handleDismiss() else onBackPress() },
@@ -700,7 +703,11 @@ fun PetalDownloadManagerScreen(
                         )
                     }
                 }
-            )
+                )
+            }
+        ) { topInset ->
+            Column(Modifier.fillMaxSize()) {
+
 
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             if (isLoading) {
@@ -718,7 +725,7 @@ fun PetalDownloadManagerScreen(
                         .fillMaxSize()
                         .scrollMotionBlur(downloadsListState),
                     verticalArrangement = Arrangement.spacedBy(3.dp),
-                    contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 24.dp)
+                    contentPadding = PaddingValues(top = topInset, bottom = innerPadding.calculateBottomPadding() + 24.dp)
                 ) {
                     if (downloadList.any { it.status == DownloadStatus.STATUS_RUNNING }) {
                         item(key = "active_summary") {
@@ -881,7 +888,8 @@ fun PetalDownloadManagerScreen(
                 )
             }
         }
-    }
+            }
+        }
     } // closes Box (inner)
     } // closes innerPadding lambda
     } // closes Scaffold

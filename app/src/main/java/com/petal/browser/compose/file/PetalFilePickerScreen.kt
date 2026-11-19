@@ -421,9 +421,89 @@ private fun FilePickerBrowserContent(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Expressive Header
-        ExpressiveHeader(
+    val headerGlassPaneF = com.petal.browser.ui.components.rememberHeaderGlassActive()
+    // Search Bar Input
+    val headerExtrasF: @Composable () -> Unit = {
+        AnimatedVisibility(visible = isSearching) {
+            val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
+            val pickerSearchShape = RoundedCornerShape(16.dp)
+            Surface(
+                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .liquidGlassChrome(shape = pickerSearchShape, enabled = isGlass, sheenIntensity = 0.45f),
+                shape = pickerSearchShape
+            ) {
+                TextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text(stringResource(R.string.file_picker_search_hint)) },
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        // Storage volumes as one M3E connected (segmented) button group + a single breadcrumb pill.
+        val downloadsDir = remember { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) }
+        val downloadsLabel = stringResource(R.string.file_picker_downloads)
+        val volumeOptions = remember(roots, downloadsDir, downloadsLabel) {
+            buildList {
+                if (downloadsDir != null && downloadsDir.exists()) {
+                    add(PetalButtonGroupItem(downloadsDir.absolutePath, downloadsLabel, icon = Icons.Rounded.Download))
+                }
+                roots.forEach { (label, rootDir) ->
+                    val icon = when {
+                        label.contains("SD", true) -> Icons.Rounded.SdCard
+                        rootDir.absolutePath == "/" -> Icons.Rounded.DeveloperMode
+                        else -> Icons.Rounded.Storage
+                    }
+                    add(PetalButtonGroupItem(rootDir.absolutePath, label, icon = icon))
+                }
+            }
+        }
+        val volumePaths = remember(volumeOptions) { volumeOptions.map { it.value }.toSet() }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (volumeOptions.isNotEmpty()) {
+                PetalChoiceButtonGroup(
+                    options = volumeOptions,
+                    // Not a volume root (we're inside a subfolder) -> nothing selected, all segments neutral.
+                    selected = currentDir.absolutePath.takeIf { it in volumePaths } ?: "",
+                    onSelect = { path ->
+                        haptics.playClick(context)
+                        currentDir = File(path)
+                    }
+                )
+            }
+            PickerBreadcrumbs(
+                crumbs = breadcrumbs,
+                onNavigate = { dir ->
+                    haptics.playClick(context)
+                    currentDir = dir
+                }
+            )
+        }
+    }
+    com.petal.browser.ui.components.PetalGlassHeaderLayout(
+        modifier = Modifier.fillMaxSize(),
+        header = { headerModifier, headerBackdrop ->
+            ExpressiveHeader(
+                modifier = headerModifier,
+                backdrop = headerBackdrop,
+
             title = if (allowFolderSelection) stringResource(R.string.file_picker_select_folder_title) else stringResource(R.string.file_picker_title),
             subtitle = currentDir.name.ifEmpty { currentDir.absolutePath },
             onBack = {
@@ -509,84 +589,15 @@ private fun FilePickerBrowserContent(
                         }
                     }
                 }
-            }
-        )
-
-        // Search Bar Input
-        AnimatedVisibility(visible = isSearching) {
-            val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
-            val pickerSearchShape = RoundedCornerShape(16.dp)
-            Surface(
-                color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerLow,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
-                    .liquidGlassChrome(shape = pickerSearchShape, enabled = isGlass, sheenIntensity = 0.45f),
-                shape = pickerSearchShape
-            ) {
-                TextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text(stringResource(R.string.file_picker_search_hint)) },
-                    singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-
-        // Storage volumes as one M3E connected (segmented) button group + a single breadcrumb pill.
-        val downloadsDir = remember { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) }
-        val downloadsLabel = stringResource(R.string.file_picker_downloads)
-        val volumeOptions = remember(roots, downloadsDir, downloadsLabel) {
-            buildList {
-                if (downloadsDir != null && downloadsDir.exists()) {
-                    add(PetalButtonGroupItem(downloadsDir.absolutePath, downloadsLabel, icon = Icons.Rounded.Download))
-                }
-                roots.forEach { (label, rootDir) ->
-                    val icon = when {
-                        label.contains("SD", true) -> Icons.Rounded.SdCard
-                        rootDir.absolutePath == "/" -> Icons.Rounded.DeveloperMode
-                        else -> Icons.Rounded.Storage
-                    }
-                    add(PetalButtonGroupItem(rootDir.absolutePath, label, icon = icon))
-                }
-            }
-        }
-        val volumePaths = remember(volumeOptions) { volumeOptions.map { it.value }.toSet() }
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            if (volumeOptions.isNotEmpty()) {
-                PetalChoiceButtonGroup(
-                    options = volumeOptions,
-                    // Not a volume root (we're inside a subfolder) -> nothing selected, all segments neutral.
-                    selected = currentDir.absolutePath.takeIf { it in volumePaths } ?: "",
-                    onSelect = { path ->
-                        haptics.playClick(context)
-                        currentDir = File(path)
-                    }
-                )
-            }
-            PickerBreadcrumbs(
-                crumbs = breadcrumbs,
-                onNavigate = { dir ->
-                    haptics.playClick(context)
-                    currentDir = dir
-                }
+            },
+                bottomContent = if (headerGlassPaneF) { { headerExtrasF() } } else null
             )
         }
+    ) { topInset ->
+        Column(Modifier.fillMaxSize()) {
+            if (!headerGlassPaneF) headerExtrasF()
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        if (!headerGlassPaneF) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
         // Files List
         val listState = rememberLazyListState()
@@ -613,7 +624,7 @@ private fun FilePickerBrowserContent(
                     state = listState,
                     // Clears the gesture/nav bar so the last row is never cut off; no scrollbar overlay.
                     contentPadding = PaddingValues(
-                        top = 8.dp,
+                        top = 8.dp + topInset,
                         bottom = 16.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                     ),
                     modifier = Modifier.fillMaxSize()
@@ -742,6 +753,7 @@ private fun FilePickerBrowserContent(
                     }
                 }
             }
+        }
         }
     }
 }

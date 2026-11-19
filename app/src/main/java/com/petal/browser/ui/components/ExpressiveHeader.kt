@@ -17,9 +17,11 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -116,6 +118,13 @@ fun ExpressiveHeader(
     isRootHeader: Boolean = false,
     targetTitle: String? = null,
     targetSubtitle: String? = null,
+    /**
+     * Extra row (search field, tab row...) drawn inside the same glass pane, under the title row.
+     * Only shown while real glass is active; a screen renders the same content itself below the
+     * header when [rememberHeaderGlassActive] is false, so the Material 3 Expressive layout is
+     * unchanged. Full width, no side padding.
+     */
+    bottomContent: (@Composable ColumnScope.() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val isHoisted = com.petal.browser.predictive.LocalZenithHeaderHoisted.current
@@ -208,13 +217,23 @@ fun ExpressiveHeader(
         ) {
             val decorColor = MaterialTheme.colorScheme.primary
             val decorAccent = MaterialTheme.colorScheme.tertiary
+            val showBottom = useLastWaveGlass && bottomContent != null
+            Column(Modifier.fillMaxWidth()) {
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .expressiveHeaderDecor(decorColor, decorAccent, strong = !enableLiquidGlass)
+                    // Glass has its own look: no M3E colour blobs, the blurred page is the decoration.
+                    .then(if (useLastWaveGlass) Modifier else Modifier.expressiveHeaderDecor(decorColor, decorAccent, strong = !enableLiquidGlass))
                     .statusBarsPadding()
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 8.dp, bottom = 16.dp),
+                    .padding(horizontal = if (useLastWaveGlass) 16.dp else 20.dp)
+                    .padding(
+                        top = if (useLastWaveGlass) 6.dp else 8.dp,
+                        bottom = when {
+                            showBottom -> 4.dp
+                            useLastWaveGlass -> 12.dp
+                            else -> 16.dp
+                        }
+                    ),
             ) {
                 val backState = com.petal.browser.predictive.LocalPredictiveBackState.current
                 val effectiveTargetTitle = targetTitle
@@ -259,7 +278,9 @@ fun ExpressiveHeader(
                                 translationX = backButtonOffset
                             }
                         ) {
-                            com.petal.browser.ui.theme.ExpressiveIconButton(
+                            if (useLastWaveGlass) {
+                                GlassBackButton(onClick = { onBack?.invoke() }, isDark = isDarkSurface)
+                            } else com.petal.browser.ui.theme.ExpressiveIconButton(
                                 icon = Icons.AutoMirrored.Rounded.ArrowBack,
                                 contentDescription = "Back",
                                 onClick = { onBack?.invoke() },
@@ -278,7 +299,7 @@ fun ExpressiveHeader(
                                     Modifier.liquidGlassChrome(com.petal.browser.ui.theme.ExpressiveAccentShape, enabled = true)
                                 } else Modifier,
                             )
-                            Spacer(Modifier.width(12.dp))
+                            Spacer(Modifier.width(if (useLastWaveGlass) 10.dp else 12.dp))
                         }
                     }
 
@@ -303,7 +324,8 @@ fun ExpressiveHeader(
                                     title = title,
                                     subtitle = subtitle,
                                     hasBack = onBack != null,
-                                    maxSubtitleLines = maxSubtitleLines
+                                    maxSubtitleLines = maxSubtitleLines,
+                                    glass = useLastWaveGlass
                                 )
                             }
 
@@ -322,7 +344,8 @@ fun ExpressiveHeader(
                                     title = effectiveTargetTitle,
                                     subtitle = effectiveTargetSubtitle,
                                     hasBack = false,
-                                    maxSubtitleLines = maxSubtitleLines
+                                    maxSubtitleLines = maxSubtitleLines,
+                                    glass = useLastWaveGlass
                                 )
                             }
                         }
@@ -357,7 +380,8 @@ fun ExpressiveHeader(
                                 title = currentTitle,
                                 subtitle = currentSubtitle.takeIf { it.isNotBlank() },
                                 hasBack = onBack != null,
-                                maxSubtitleLines = maxSubtitleLines
+                                maxSubtitleLines = maxSubtitleLines,
+                                glass = useLastWaveGlass
                             )
                         }
                     }
@@ -399,6 +423,31 @@ fun ExpressiveHeader(
                     }
                 }
             }
+            if (showBottom) {
+                bottomContent?.invoke(this)
+                Spacer(Modifier.height(10.dp))
+            }
+            }
+        }
+    }
+}
+
+/** Round frosted chip with a hairline rim: the glass header's back button (M3E keeps its morphing shape). */
+@Composable
+private fun GlassBackButton(onClick: () -> Unit, isDark: Boolean) {
+    val rim = Brush.verticalGradient(
+        listOf(Color.White.copy(alpha = if (isDark) 0.28f else 0.85f), Color.White.copy(alpha = if (isDark) 0.06f else 0.25f))
+    )
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isDark) 0.12f else 0.07f),
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = androidx.compose.foundation.BorderStroke(0.75.dp, rim),
+        modifier = Modifier.size(40.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", modifier = Modifier.size(22.dp))
         }
     }
 }
@@ -408,7 +457,8 @@ private fun HeaderTitleBlock(
     title: String,
     subtitle: String?,
     hasBack: Boolean,
-    maxSubtitleLines: Int = 2
+    maxSubtitleLines: Int = 2,
+    glass: Boolean = false
 ) {
     Column(modifier = Modifier.fillMaxWidth().clipToBounds()) {
         val titleFontSize = remember(title, hasBack) {
@@ -428,10 +478,12 @@ private fun HeaderTitleBlock(
             text = title,
             style = MaterialTheme.typography.titleLarge.copy(
                 fontSize = titleFontSize,
-                lineHeight = (titleFontSize.value + 4).sp
+                lineHeight = (titleFontSize.value + 4).sp,
+                // Glass title: crisper and tighter, lets the blurred page carry the personality.
+                letterSpacing = if (glass) (-0.4).sp else MaterialTheme.typography.titleLarge.letterSpacing
             ),
             color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = if (glass) FontWeight.Bold else FontWeight.ExtraBold,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
@@ -452,7 +504,7 @@ private fun HeaderTitleBlock(
                     fontSize = subtitleFontSize,
                     lineHeight = (subtitleFontSize.value + 4).sp
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (glass) 0.82f else 1f),
                 maxLines = maxSubtitleLines,
                 softWrap = maxSubtitleLines > 1,
                 overflow = TextOverflow.Ellipsis,
@@ -529,6 +581,23 @@ private fun Modifier.expressiveHeaderDecor(color: Color, accent: Color, strong: 
     }
 }
 
+/**
+ * True while headers draw LastWave's real backdrop glass (glass on, API 31+, not a low-end device).
+ * Screens use it to decide whether their search/tab row goes into the header's `bottomContent`
+ * (glass) or stays where it always was below the header (Material 3 Expressive).
+ */
+@Composable
+fun rememberHeaderGlassActive(
+    enableLiquidGlass: Boolean = com.petal.browser.ui.containment.isLiquidGlassEnabled(),
+): Boolean {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    com.petal.browser.ui.glass.LocalPetalGlassRevision.current
+    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(ctx)
+    return enableLiquidGlass && petalRealGlassSupported &&
+        !com.petal.browser.motion.MotionGate.isLowEndDevice(ctx) &&
+        com.petal.browser.ui.containment.isLiquidGlassMaster(sp)
+}
+
 /** Theme-tinted wash the glass blurs when no content sits under the header (from LastWave). */
 @Composable
 internal fun petalHeaderGlassWash(): Brush {
@@ -549,6 +618,9 @@ internal fun petalHeaderGlassWash(): Brush {
  * glass it gets 0 and starts below the header as before. The content is the backdrop source and the
  * header a sibling, never inside it (a feedback loop would crash).
  */
+/** Height of the floating glass header over the current content, 0.dp when glass is off. */
+val LocalGlassHeaderInset = androidx.compose.runtime.compositionLocalOf { 0.dp }
+
 @Composable
 fun PetalGlassHeaderLayout(
     modifier: Modifier = Modifier,
@@ -586,7 +658,9 @@ fun PetalGlassHeaderLayout(
                 Modifier
                     .fillMaxSize()
                     .then(if (backdrop != null) Modifier.petalBackdropSource(backdrop) else Modifier)
-            ) { content(inset) }
+            ) {
+                androidx.compose.runtime.CompositionLocalProvider(LocalGlassHeaderInset provides inset) { content(inset) }
+            }
         }.first().measure(androidx.compose.ui.unit.Constraints(w, w, contentHeight, contentHeight))
         layout(w, constraints.maxHeight) {
             contentPlaceable.place(0, top)

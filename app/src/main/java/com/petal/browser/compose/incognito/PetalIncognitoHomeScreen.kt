@@ -133,41 +133,47 @@ fun PetalIncognitoHomeScreen(
                     pageSeed = "incognito_firefox_stealth"
                 )
 
-                Column(modifier = Modifier.fillMaxSize()) {
-                    ExpressiveHeader(
-                        title = stringResource(R.string.private_browsing_title),
-                        subtitle = if (liveIncognitoCount > 1) {
-                            "$liveIncognitoCount isolated tabs open • Zero traces"
-                        } else {
-                            "Isolated session • Zero traces"
-                        },
-                        maxTitleLines = 1,
-                        maxSubtitleLines = 2,
-                        onBack = null,
-                        actions = {
-                            IconButton(
-                                onClick = {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.75f)
-                                    onCloseIncognito()
-                                },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = stringResource(R.string.private_browsing_close_all),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                com.petal.browser.ui.components.PetalGlassHeaderLayout(
+                    modifier = Modifier.fillMaxSize(),
+                    header = { headerModifier, headerBackdrop ->
+                        ExpressiveHeader(
+                            modifier = headerModifier,
+                            backdrop = headerBackdrop,
+                            title = stringResource(R.string.private_browsing_title),
+                            subtitle = if (liveIncognitoCount > 1) {
+                                "$liveIncognitoCount isolated tabs open • Zero traces"
+                            } else {
+                                "Isolated session • Zero traces"
+                            },
+                            maxTitleLines = 1,
+                            maxSubtitleLines = 2,
+                            onBack = null,
+                            actions = {
+                                IconButton(
+                                    onClick = {
+                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.75f)
+                                        onCloseIncognito()
+                                    },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Close,
+                                        contentDescription = stringResource(R.string.private_browsing_close_all),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
+                ) { topInset ->
 
                     // Scrollable main content column
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f)
+                            .fillMaxSize()
                             .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 20.dp),
+                            .padding(start = 20.dp, end = 20.dp, top = topInset),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Column(

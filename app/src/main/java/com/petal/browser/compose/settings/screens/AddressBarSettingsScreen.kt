@@ -99,18 +99,24 @@ fun AddressBarSettingsScreen(
 
     Box(modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "address_bar_settings")
-        Column(Modifier.fillMaxSize()) {
-            ExpressiveHeader(
-                title = "Address Bar",
-                subtitle = "Toolbar layout, merge buttons, position and minimize style",
-                onBack = onNavigateBack
-            )
+        com.petal.browser.ui.components.PetalGlassHeaderLayout(
+            modifier = Modifier.fillMaxSize(),
+            header = { headerModifier, headerBackdrop ->
+                ExpressiveHeader(
+                    modifier = headerModifier,
+                    backdrop = headerBackdrop,
+                    title = "Address Bar",
+                    subtitle = "Toolbar layout, merge buttons, position and minimize style",
+                    onBack = onNavigateBack
+                )
+            }
+        ) { topInset ->
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = topInset + 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // ── Live Interactive Toolbar Preview ─────────────────────────────────

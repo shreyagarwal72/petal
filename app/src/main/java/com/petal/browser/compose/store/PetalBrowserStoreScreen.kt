@@ -181,14 +181,8 @@ fun PetalBrowserStoreScreen(
                 Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                     M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "petal_browser_store")
 
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        // Expressive Header
-                        ExpressiveHeader(
-                            title = stringResource(R.string.ui_browser_store_title),
-                            subtitle = stringResource(R.string.ui_browser_store_subtitle),
-                            onBack = { if (hasSubOverlay) searchQuery = "" else onDismiss() }
-                        )
-
+                    val headerGlassPaneS = com.petal.browser.ui.components.rememberHeaderGlassActive()
+                    val headerExtrasS: @Composable () -> Unit = {
                         // Containment Navigation: Connected Button Group
                         Box(
                             modifier = Modifier
@@ -233,6 +227,23 @@ fun PetalBrowserStoreScreen(
                                 .padding(horizontal = 16.dp, vertical = 4.dp)
                                 .liquidGlassChrome(shape = storeSearchShape, enabled = isGlass, sheenIntensity = 0.45f), glass = false
                         )
+                    }
+                    com.petal.browser.ui.components.PetalGlassHeaderLayout(
+                        modifier = Modifier.fillMaxSize(),
+                        header = { headerModifier, headerBackdrop ->
+                            ExpressiveHeader(
+                                modifier = headerModifier,
+                                backdrop = headerBackdrop,
+
+                            title = stringResource(R.string.ui_browser_store_title),
+                            subtitle = stringResource(R.string.ui_browser_store_subtitle),
+                            onBack = { if (hasSubOverlay) searchQuery = "" else onDismiss() },
+                                bottomContent = if (headerGlassPaneS) { { headerExtrasS() } } else null
+                            )
+                        }
+                    ) { topInset ->
+                        Column(Modifier.fillMaxSize()) {
+                            if (!headerGlassPaneS) headerExtrasS()
 
                         // Content Pages Area with weight(1f) to ensure full layout reach
                         Box(
@@ -306,6 +317,7 @@ fun PetalBrowserStoreScreen(
                                 }
                             }
                         }
+                        }
                     }
                 }
             }
@@ -356,6 +368,7 @@ private fun StoreExtensionsPage(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
+        Spacer(Modifier.height(com.petal.browser.ui.components.LocalGlassHeaderInset.current))
         // Category Filter Chips
         LazyRow(
             modifier = Modifier
@@ -628,7 +641,7 @@ private fun StoreScriptsPage(
             contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
-            top = 8.dp,
+            top = 8.dp + com.petal.browser.ui.components.LocalGlassHeaderInset.current,
             bottom = 32.dp
         ),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -790,7 +803,7 @@ private fun StoreFilterListsPage(
             contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
-            top = 8.dp,
+            top = 8.dp + com.petal.browser.ui.components.LocalGlassHeaderInset.current,
             bottom = 32.dp
         ),
         verticalArrangement = Arrangement.spacedBy(16.dp)

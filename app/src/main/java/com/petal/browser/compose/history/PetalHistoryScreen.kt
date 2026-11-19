@@ -404,80 +404,10 @@ fun PetalHistoryScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(pageSeed = "history_page")
 
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-                ExpressiveHeader(
-                    title = "History",
-                    subtitle = "${filteredHistory.size} items",
-                    onBack = { if (hasSubOverlay) handleDismiss() else onDismiss() },
-                    actions = {
-                        Box {
-                            HeaderActionIcon(
-                                icon = Icons.Rounded.Sort,
-                                contentDescription = "Sort History",
-                                onClick = { sortMenuExpanded = true }
-                            )
-                            com.petal.browser.ui.containment.PetalPopupMenu(
-                                expanded = sortMenuExpanded,
-                                onDismissRequest = { sortMenuExpanded = false }
-                            ) {
-                                HistorySortOption.values().forEach { option ->
-                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                        text = {
-                                            Text(
-                                                text = when (option) {
-                                                    HistorySortOption.TIME_DESC -> "Date (Newest first)"
-                                                    HistorySortOption.TIME_ASC -> "Date (Oldest first)"
-                                                    HistorySortOption.NAME_ASC -> "Name (A–Z)"
-                                                    HistorySortOption.NAME_DESC -> "Name (Z–A)"
-                                                    HistorySortOption.SITE_ASC -> "Site (A–Z)"
-                                                },
-                                                fontWeight = if (sortOption == option) FontWeight.Bold else FontWeight.Normal
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = when (option) {
-                                                    HistorySortOption.TIME_DESC -> Icons.Rounded.Schedule
-                                                    HistorySortOption.TIME_ASC -> Icons.Rounded.History
-                                                    HistorySortOption.NAME_ASC -> Icons.Rounded.FormatListBulleted
-                                                    HistorySortOption.NAME_DESC -> Icons.Rounded.FormatListBulleted
-                                                    HistorySortOption.SITE_ASC -> Icons.Rounded.Public
-                                                },
-                                                contentDescription = null
-                                            )
-                                        },
-                                        trailingIcon = {
-                                            if (sortOption == option) {
-                                                Icon(
-                                                    Icons.Rounded.Check,
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                        },
-                                        onClick = {
-                                            sortOption = option
-                                            sp.edit().putString("sp_history_sort_mode", option.name).apply()
-                                            sortMenuExpanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                        if (rawHistory?.isNotEmpty() == true) {
-                            HeaderActionIcon(
-                                icon = Icons.Rounded.DeleteSweep,
-                                contentDescription = "Clear History",
-                                onClick = { showClearConfirm = true }
-                            )
-                        }
-                    }
-                )
-
-                val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
+        val headerGlassPaneH = com.petal.browser.ui.components.rememberHeaderGlassActive()
+        val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                 val searchShape = RoundedCornerShape(16.dp)
+        val headerExtrasH: @Composable () -> Unit = {
                 TextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -564,6 +494,86 @@ fun PetalHistoryScreen(
                         )
                     }
                 }
+        }
+        com.petal.browser.ui.components.PetalGlassHeaderLayout(
+            modifier = Modifier.fillMaxSize(),
+            header = { headerModifier, headerBackdrop ->
+                ExpressiveHeader(
+                    modifier = headerModifier,
+                    backdrop = headerBackdrop,
+
+                    title = "History",
+                    subtitle = "${filteredHistory.size} items",
+                    onBack = { if (hasSubOverlay) handleDismiss() else onDismiss() },
+                    actions = {
+                        Box {
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.Sort,
+                                contentDescription = "Sort History",
+                                onClick = { sortMenuExpanded = true }
+                            )
+                            com.petal.browser.ui.containment.PetalPopupMenu(
+                                expanded = sortMenuExpanded,
+                                onDismissRequest = { sortMenuExpanded = false }
+                            ) {
+                                HistorySortOption.values().forEach { option ->
+                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                        text = {
+                                            Text(
+                                                text = when (option) {
+                                                    HistorySortOption.TIME_DESC -> "Date (Newest first)"
+                                                    HistorySortOption.TIME_ASC -> "Date (Oldest first)"
+                                                    HistorySortOption.NAME_ASC -> "Name (A–Z)"
+                                                    HistorySortOption.NAME_DESC -> "Name (Z–A)"
+                                                    HistorySortOption.SITE_ASC -> "Site (A–Z)"
+                                                },
+                                                fontWeight = if (sortOption == option) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = when (option) {
+                                                    HistorySortOption.TIME_DESC -> Icons.Rounded.Schedule
+                                                    HistorySortOption.TIME_ASC -> Icons.Rounded.History
+                                                    HistorySortOption.NAME_ASC -> Icons.Rounded.FormatListBulleted
+                                                    HistorySortOption.NAME_DESC -> Icons.Rounded.FormatListBulleted
+                                                    HistorySortOption.SITE_ASC -> Icons.Rounded.Public
+                                                },
+                                                contentDescription = null
+                                            )
+                                        },
+                                        trailingIcon = {
+                                            if (sortOption == option) {
+                                                Icon(
+                                                    Icons.Rounded.Check,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        },
+                                        onClick = {
+                                            sortOption = option
+                                            sp.edit().putString("sp_history_sort_mode", option.name).apply()
+                                            sortMenuExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        if (rawHistory?.isNotEmpty() == true) {
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.DeleteSweep,
+                                contentDescription = "Clear History",
+                                onClick = { showClearConfirm = true }
+                            )
+                        }
+                    },
+                    bottomContent = if (headerGlassPaneH) { { headerExtrasH() } } else null
+                )
+            }
+        ) { topInset ->
+            Column(Modifier.fillMaxSize()) {
+                if (!headerGlassPaneH) headerExtrasH()
 
                 Box(
                     modifier = Modifier
@@ -587,7 +597,7 @@ fun PetalHistoryScreen(
                             contentPadding = PaddingValues(
                                 start = 20.dp,
                                 end = 20.dp,
-                                top = 8.dp,
+                                top = topInset + 8.dp,
                                 bottom = navBarBottom + 24.dp
                             )
                         ) {
@@ -755,6 +765,7 @@ fun PetalHistoryScreen(
                     }
                 }
             }
+        }
         }
     }
 
