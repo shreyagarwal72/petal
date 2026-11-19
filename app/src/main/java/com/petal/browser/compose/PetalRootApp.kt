@@ -76,6 +76,9 @@ import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.privacy.SafeLockerScreen
 import com.petal.browser.compose.tabs.PetalTabGridSwitcher
 import com.petal.browser.compose.tabs.PetalTabGroupManager
+import com.petal.browser.compose.tabs.PetalDesktopTabBar
+import com.petal.browser.compose.tabs.PetalDesktopTabBarBridge
+import com.petal.browser.compose.tabs.PetalDesktopTabBarHandler
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.ui.components.PetalAddressBar
@@ -732,11 +735,62 @@ fun PetalRootApp(
                     .asPaddingValues().calculateTopPadding()
                 val isCompact = "COMPACT".equals(addressBarHeight, ignoreCase = true)
                 val barBaseHeight = if (isCompact) 50.dp else 56.dp
-                val barTotalTopHeight = statusBarTopInset + barBaseHeight + (if (isCompact) 6.dp else 10.dp)
+
+                val desktopTabBarMode = sp.getString(
+                    PetalDesktopTabBarBridge.PREF_KEY,
+                    PetalDesktopTabBarBridge.MODE_AUTO
+                ) ?: PetalDesktopTabBarBridge.MODE_AUTO
+                val screenWidthDp = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
+                val isDesktopTabBarActive = remember(desktopTabBarMode, screenWidthDp) {
+                    when (desktopTabBarMode) {
+                        PetalDesktopTabBarBridge.MODE_ALWAYS -> true
+                        PetalDesktopTabBarBridge.MODE_NEVER -> false
+                        else -> screenWidthDp >= 600
+                    }
+                }
+                val showDesktopTabBar = isDesktopTabBarActive && !isHome
+                val desktopBarHeight = if (showDesktopTabBar) PetalDesktopTabBarBridge.BAR_HEIGHT_DP.dp else 0.dp
+
+                val desktopTabHandler = remember(viewModel, activity) {
+                    object : PetalDesktopTabBarHandler {
+                        override fun onTabSelect(controller: com.petal.browser.browser.AlbumController) {
+                            val mainAct = activity as? MainActivity
+                            if (mainAct != null) {
+                                mainAct.selectTab(controller)
+                            } else {
+                                controller.tabId?.let { viewModel.selectTab(it) }
+                            }
+                        }
+
+                        override fun onTabClose(controller: com.petal.browser.browser.AlbumController) {
+                            val mainAct = activity as? MainActivity
+                            if (mainAct != null) {
+                                mainAct.closeTab(controller)
+                            } else {
+                                controller.tabId?.let { viewModel.closeTab(it) }
+                            }
+                        }
+
+                        override fun onNewTab(incognito: Boolean) {
+                            val mainAct = activity as? MainActivity
+                            if (mainAct != null) {
+                                mainAct.addAlbum(context.getString(R.string.app_name), "about:home", true, incognito)
+                            } else {
+                                viewModel.openNewTab("about:home", selectTab = true, private = incognito)
+                            }
+                        }
+
+                        override fun currentController(): com.petal.browser.browser.AlbumController? {
+                            return (activity as? MainActivity)?.currentAlbumController
+                        }
+                    }
+                }
+
+                val barTotalTopHeight = statusBarTopInset + desktopBarHeight + barBaseHeight + (if (isCompact) 6.dp else 10.dp)
                 val barTotalBottomHeight = navBarBottomInset + barBaseHeight + (if (isCompact) 6.dp else 10.dp)
 
                 val effectiveTopPadding = if (isBottomAddressBar) {
-                    statusBarTopInset
+                    statusBarTopInset + desktopBarHeight
                 } else {
                     barTotalTopHeight
                 }
@@ -754,7 +808,7 @@ fun PetalRootApp(
                     topPadding = effectiveTopPadding,
                     bottomPadding = effectiveBottomPadding,
                     // Minimized bars: page keeps only the status bar gap on top and runs edge to edge below.
-                    collapsedTopPadding = statusBarTopInset,
+                    collapsedTopPadding = statusBarTopInset + desktopBarHeight,
                     collapsedBottomPadding = 0.dp,
                     onEngineViewReady = { activeWebEngineView = it },
                     modifier = Modifier
@@ -765,108 +819,225 @@ fun PetalRootApp(
                 androidx.compose.runtime.CompositionLocalProvider(
                     com.petal.browser.ui.glass.LocalPetalGlassSource provides (if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content)))
                 ) {
-                    if (isMerge) {
-                    PetalMergedBar(
-                        url = activeUrl,
-                        title = activeTitle.ifBlank { activeUrl },
-                        progress = loadProgress / 100f,
-                        isIncognito = isIncognito,
-                        isLoading = isLoading,
-                        canGoBack = canGoBack,
-                        canGoForward = canGoForward,
-                        tabCount = tabCount,
-                        onBackClick = { webGoBack() },
-                        onForwardClick = { viewModel.goForward() },
-                        onReloadClick = { viewModel.reload() },
-                        onShareClick = {
-                            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
-                            }
-                            activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
-                        },
-                        onAddressClick = { viewModel.openOmnibox() },
-                        onHomeClick = {
-                            haptic.playClick(context)
-                            viewModel.goHome(isIncognito = isIncognito)
-                        },
-                        onNewTabClick = {
-                            haptic.playClick(context)
-                            viewModel.openNewTab(selectTab = true, private = isIncognito)
-                        },
-                        onTabsClick = {
-                            haptic.playClick(context)
-                            viewModel.toggleTabSwitcher()
-                        },
-                        onMenuClick = {
-                            haptic.playClick(context)
-                            viewModel.toggleMenu()
-                        },
-                        onSearchClick = { viewModel.openOmnibox() },
-                        onDownloadsClick = { viewModel.openDownloads() },
-                        onFindInPageClick = { viewModel.openFindInPage() },
-                        onBookmarkClick = { viewModel.toggleBookmark(activeTitle, activeUrl) },
-                        onHistoryClick = { viewModel.openHistory() },
-                        onBookmarksManagerClick = { viewModel.openBookmarks() },
-                        onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
-                        onMediaClick = {
-                            com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
-                        },
-                        onSwipeNextTab = { viewModel.switchToNextTab() },
-                        onSwipePrevTab = { viewModel.switchToPreviousTab() },
-                        onHardRefresh = { viewModel.reload() },
-                        onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
-                        onCustomizeClick = { viewModel.openSettings(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR) },
-                        isBottom = isBottomAddressBar,
-                        modifier = if (isBottomAddressBar) {
-                            Modifier
+                    if (showDesktopTabBar && isBottomAddressBar) {
+                        Box(
+                            modifier = Modifier
                                 .fillMaxWidth()
-                                .align(Alignment.BottomCenter)
+                                .align(Alignment.TopCenter)
+                                .statusBarsPadding()
                                 .zIndex(2f)
-                        } else {
-                            Modifier
+                        ) {
+                            PetalDesktopTabBar(
+                                handler = desktopTabHandler,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+
+                    if (showDesktopTabBar && !isBottomAddressBar) {
+                        Column(
+                            modifier = Modifier
                                 .fillMaxWidth()
                                 .align(Alignment.TopCenter)
                                 .zIndex(2f)
-                        }
-                    )
-                } else {
-                    PetalAddressBar(
-                        url = activeUrl,
-                        title = activeTitle.ifBlank { activeUrl },
-                        progress = loadProgress / 100f,
-                        isIncognito = isIncognito,
-                        isLoading = isLoading,
-                        canGoBack = canGoBack,
-                        onBackClick = { webGoBack() },
-                        onShareClick = {
-                            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .statusBarsPadding()
+                            ) {
+                                PetalDesktopTabBar(
+                                    handler = desktopTabHandler,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
-                            activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
-                        },
-                        onAddressClick = { viewModel.openOmnibox() },
-                        onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
-                        onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
-                        onHardRefresh = { viewModel.reload() },
-                        onSwipeNextTab = { viewModel.switchToNextTab() },
-                        onSwipePrevTab = { viewModel.switchToPreviousTab() },
-                        isBottom = isBottomAddressBar,
-                        hasBottomNav = isBottomBarVisible,
-                        modifier = if (isBottomAddressBar) {
-                            Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomCenter)
-                                .zIndex(2f)
-                        } else {
-                            Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.TopCenter)
-                                .zIndex(2f)
+                            if (isMerge) {
+                                PetalMergedBar(
+                                    url = activeUrl,
+                                    title = activeTitle.ifBlank { activeUrl },
+                                    progress = loadProgress / 100f,
+                                    isIncognito = isIncognito,
+                                    isLoading = isLoading,
+                                    canGoBack = canGoBack,
+                                    canGoForward = canGoForward,
+                                    tabCount = tabCount,
+                                    onBackClick = { webGoBack() },
+                                    onForwardClick = { viewModel.goForward() },
+                                    onReloadClick = { viewModel.reload() },
+                                    onShareClick = {
+                                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
+                                        }
+                                        activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
+                                    },
+                                    onAddressClick = { viewModel.openOmnibox() },
+                                    onHomeClick = {
+                                        haptic.playClick(context)
+                                        viewModel.goHome(isIncognito = isIncognito)
+                                    },
+                                    onNewTabClick = {
+                                        haptic.playClick(context)
+                                        viewModel.openNewTab(selectTab = true, private = isIncognito)
+                                    },
+                                    onTabsClick = {
+                                        haptic.playClick(context)
+                                        viewModel.toggleTabSwitcher()
+                                    },
+                                    onMenuClick = {
+                                        haptic.playClick(context)
+                                        viewModel.toggleMenu()
+                                    },
+                                    onSearchClick = { viewModel.openOmnibox() },
+                                    onDownloadsClick = { viewModel.openDownloads() },
+                                    onFindInPageClick = { viewModel.openFindInPage() },
+                                    onBookmarkClick = { viewModel.toggleBookmark(activeTitle, activeUrl) },
+                                    onHistoryClick = { viewModel.openHistory() },
+                                    onBookmarksManagerClick = { viewModel.openBookmarks() },
+                                    onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
+                                    onMediaClick = {
+                                        com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
+                                    },
+                                    onSwipeNextTab = { viewModel.switchToNextTab() },
+                                    onSwipePrevTab = { viewModel.switchToPreviousTab() },
+                                    onHardRefresh = { viewModel.reload() },
+                                    onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
+                                    onCustomizeClick = { viewModel.openSettings(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR) },
+                                    isBottom = false,
+                                    suppressStatusBarTopInset = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            } else {
+                                PetalAddressBar(
+                                    url = activeUrl,
+                                    title = activeTitle.ifBlank { activeUrl },
+                                    progress = loadProgress / 100f,
+                                    isIncognito = isIncognito,
+                                    isLoading = isLoading,
+                                    canGoBack = canGoBack,
+                                    onBackClick = { webGoBack() },
+                                    onShareClick = {
+                                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
+                                        }
+                                        activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
+                                    },
+                                    onAddressClick = { viewModel.openOmnibox() },
+                                    onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
+                                    onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
+                                    onHardRefresh = { viewModel.reload() },
+                                    onSwipeNextTab = { viewModel.switchToNextTab() },
+                                    onSwipePrevTab = { viewModel.switchToPreviousTab() },
+                                    isBottom = false,
+                                    hasBottomNav = isBottomBarVisible,
+                                    suppressStatusBarTopInset = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
-                    )
-                }
+                    } else if (isMerge) {
+                        PetalMergedBar(
+                            url = activeUrl,
+                            title = activeTitle.ifBlank { activeUrl },
+                            progress = loadProgress / 100f,
+                            isIncognito = isIncognito,
+                            isLoading = isLoading,
+                            canGoBack = canGoBack,
+                            canGoForward = canGoForward,
+                            tabCount = tabCount,
+                            onBackClick = { webGoBack() },
+                            onForwardClick = { viewModel.goForward() },
+                            onReloadClick = { viewModel.reload() },
+                            onShareClick = {
+                                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
+                                }
+                                activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
+                            },
+                            onAddressClick = { viewModel.openOmnibox() },
+                            onHomeClick = {
+                                haptic.playClick(context)
+                                viewModel.goHome(isIncognito = isIncognito)
+                            },
+                            onNewTabClick = {
+                                haptic.playClick(context)
+                                viewModel.openNewTab(selectTab = true, private = isIncognito)
+                            },
+                            onTabsClick = {
+                                haptic.playClick(context)
+                                viewModel.toggleTabSwitcher()
+                            },
+                            onMenuClick = {
+                                haptic.playClick(context)
+                                viewModel.toggleMenu()
+                            },
+                            onSearchClick = { viewModel.openOmnibox() },
+                            onDownloadsClick = { viewModel.openDownloads() },
+                            onFindInPageClick = { viewModel.openFindInPage() },
+                            onBookmarkClick = { viewModel.toggleBookmark(activeTitle, activeUrl) },
+                            onHistoryClick = { viewModel.openHistory() },
+                            onBookmarksManagerClick = { viewModel.openBookmarks() },
+                            onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
+                            onMediaClick = {
+                                com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
+                            },
+                            onSwipeNextTab = { viewModel.switchToNextTab() },
+                            onSwipePrevTab = { viewModel.switchToPreviousTab() },
+                            onHardRefresh = { viewModel.reload() },
+                            onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
+                            onCustomizeClick = { viewModel.openSettings(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR) },
+                            isBottom = isBottomAddressBar,
+                            modifier = if (isBottomAddressBar) {
+                                Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.BottomCenter)
+                                    .zIndex(2f)
+                            } else {
+                                Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.TopCenter)
+                                    .zIndex(2f)
+                            }
+                        )
+                    } else {
+                        PetalAddressBar(
+                            url = activeUrl,
+                            title = activeTitle.ifBlank { activeUrl },
+                            progress = loadProgress / 100f,
+                            isIncognito = isIncognito,
+                            isLoading = isLoading,
+                            canGoBack = canGoBack,
+                            onBackClick = { webGoBack() },
+                            onShareClick = {
+                                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
+                                }
+                                activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
+                            },
+                            onAddressClick = { viewModel.openOmnibox() },
+                            onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
+                            onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
+                            onHardRefresh = { viewModel.reload() },
+                            onSwipeNextTab = { viewModel.switchToNextTab() },
+                            onSwipePrevTab = { viewModel.switchToPreviousTab() },
+                            isBottom = isBottomAddressBar,
+                            hasBottomNav = isBottomBarVisible,
+                            modifier = if (isBottomAddressBar) {
+                                Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.BottomCenter)
+                                    .zIndex(2f)
+                            } else {
+                                Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.TopCenter)
+                                    .zIndex(2f)
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -1076,6 +1247,7 @@ fun PetalRootApp(
                 // left nothing to blur, and the sheet also skipped its own dim: no blur, no scrim.
                 androidx.compose.ui.window.Dialog(
                     onDismissRequest = { viewModel.setMenuOpen(false) },
+                    onGoHome = { viewModel.goHome(isIncognito) },
                     properties = androidx.compose.ui.window.DialogProperties(
                         usePlatformDefaultWidth = false,
                         decorFitsSystemWindows = false,
@@ -1107,6 +1279,7 @@ fun PetalRootApp(
                     isAdBlockEnabled = isAdBlockEnabled,
                     isMediaPlaying = isMediaPlaying,
                     onDismissRequest = { viewModel.setMenuOpen(false) },
+                    onGoHome = { viewModel.goHome(isIncognito) },
                     onGoBack = { webGoBack() },
                     onGoForward = { viewModel.goForward() },
                     onToggleBookmark = { viewModel.toggleBookmark(activeTitle, activeUrl) },

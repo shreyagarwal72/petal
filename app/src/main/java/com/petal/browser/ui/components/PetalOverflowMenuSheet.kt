@@ -357,6 +357,7 @@ fun PetalOverflowMenuSheet(
     isAdBlockEnabled: Boolean = true,
     isMediaPlaying: Boolean = false,
     onDismissRequest: () -> Unit = {},
+    onGoHome: () -> Unit = {},
     onGoBack: () -> Unit,
     onGoForward: () -> Unit,
     onToggleBookmark: () -> Unit,
@@ -625,6 +626,15 @@ fun PetalOverflowMenuSheet(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    CircularIconButton(
+                        icon = Icons.Rounded.Home,
+                        contentDescription = stringResource(R.string.ui_home),
+                        enabled = !isHomePage,
+                        onClick = {
+                            onDismissRequest()
+                            onGoHome()
+                        }
+                    )
                     CircularIconButton(
                         icon = Icons.Rounded.ArrowBack,
                         contentDescription = stringResource(R.string.ui_back),

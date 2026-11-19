@@ -83,6 +83,7 @@ fun PetalMergedBar(
     onCustomizeClick: () -> Unit = {},
     isBottom: Boolean = false,
     isPreview: Boolean = false,
+    suppressStatusBarTopInset: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -149,7 +150,7 @@ fun PetalMergedBar(
 
     val rawStatusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val isImmersive = rawStatusTop == 0.dp
-    val statusBarTopInset = if (isPreview || isImmersive) 0.dp else WindowInsets.statusBars.union(WindowInsets.displayCutout)
+    val statusBarTopInset = if (isPreview || isImmersive || suppressStatusBarTopInset) 0.dp else WindowInsets.statusBars.union(WindowInsets.displayCutout)
         .asPaddingValues().calculateTopPadding()
     val navBarBottomInset = if (isPreview) 0.dp else WindowInsets.navigationBars
         .asPaddingValues().calculateBottomPadding()

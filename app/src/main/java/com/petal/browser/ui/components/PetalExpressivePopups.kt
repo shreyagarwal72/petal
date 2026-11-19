@@ -65,6 +65,7 @@ fun PetalExpressiveDialog(
     shape: Shape = PetalExpressivePopupDefaults.dialogShape,
     containerColor: Color = PetalExpressivePopupDefaults.dialogContainerColor,
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
+    scrollable: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     com.petal.browser.ui.containment.PetalDialog(
@@ -73,6 +74,7 @@ fun PetalExpressiveDialog(
         shape = shape,
         containerColor = containerColor,
         properties = properties,
+        scrollable = scrollable,
         content = content,
     )
 }
@@ -387,7 +389,7 @@ fun PetalExpressiveChoiceDialog(
                         .fillMaxWidth()
                         .heightIn(max = 420.dp)
                 ) {
-                    items(count = options.size, key = { options[it].id.ifEmpty { "${options[it].label}_$it" } }) { index ->
+                    items(count = options.size, key = { index -> "${index}_${options[index].id.ifEmpty { options[index].label }}" }) { index ->
                         val opt = options[index]
                         when {
                             opt.isSeparator -> HorizontalDivider(

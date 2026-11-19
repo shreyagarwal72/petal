@@ -1015,12 +1015,6 @@ fun PetalTabGridSwitcher(
                             scaleY = 1f - 0.015f * newTabExitProgress
                         }
                         .nestedScroll(vaultNestedScrollConnection)
-                        .animateContentSize(
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioNoBouncy,
-                                stiffness = Spring.StiffnessMediumLow
-                            )
-                        )
                 ) {
                     // ── Pull-to-reveal Vault indicator ──
                     // Drawn above the tabs (zIndex) and centred in the gap the tabs leave when pulled down,
@@ -1763,6 +1757,7 @@ fun PetalTabGridSwitcher(
         com.petal.browser.ui.containment.PetalDialog(
             onDismissRequest = { showAddToGroupDialog = false },
             modifier = Modifier.fillMaxWidth(0.92f),
+            scrollable = false,
         ) {
             Column(
                 modifier = Modifier

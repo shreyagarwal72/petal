@@ -330,6 +330,10 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun goHome(isIncognito: Boolean = activeTab.value?.content?.private ?: false) {
+        val curTabId = activeTab.value?.id
+        if (curTabId != null) {
+            com.petal.browser.unit.TabThumbnailCache.remove(curTabId)
+        }
         val homeUrl = if (isIncognito) "about:home" else PetalBrowserUtils.getEffectiveHomepageUrl(context)
         loadUrl(homeUrl)
     }
@@ -696,7 +700,7 @@ class PetalBrowserViewModel @Inject constructor(
         editor.apply()
         activeTab.value?.engineState?.engineSession?.let { session ->
             try {
-                val gs = (session as? mozilla.components.browser.engine.gecko.GeckoEngineSession)?.geckoSession
+                val gs = com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(session)
                 gs?.settings?.let { s ->
                     s.viewportMode = if (newTarget) org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_DESKTOP else org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE
                     s.userAgentMode = if (newTarget) org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_DESKTOP else org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_MOBILE

@@ -412,6 +412,15 @@ object PetalFilterSubscriptionManager {
             }
         }
 
+        // Out-of-the-box fallback: load bundled asset rules if no subscriptions have downloaded files yet
+        if (newSet.isEmpty()) {
+            try {
+                context.assets.open("petal_default_rules.txt").bufferedReader().useLines { lines ->
+                    lines.forEach { line -> parseRuleToDomain(line)?.let { newSet.add(it) } }
+                }
+            } catch (_: Exception) {}
+        }
+
         compiledRulesCache.clear()
         compiledRulesCache.addAll(newSet)
         invalidateCachedEngineBlob(context)
@@ -460,6 +469,18 @@ object PetalFilterSubscriptionManager {
         val custom = getCustomUserRules(context)
         if (custom.isNotBlank()) {
             allRules.add(custom)
+        }
+        if (allRules.isEmpty()) {
+            try {
+                context.assets.open("petal_default_rules.txt").bufferedReader().use {
+                    allRules.add(it.readText())
+                }
+            } catch (_: Exception) {}
+            try {
+                context.assets.open("uassets_advanced_filters.txt").bufferedReader().use {
+                    allRules.add(it.readText())
+                }
+            } catch (_: Exception) {}
         }
         return allRules
     }

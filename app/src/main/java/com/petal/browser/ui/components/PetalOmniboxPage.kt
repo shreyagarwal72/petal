@@ -1019,7 +1019,7 @@ fun PetalOmniboxPage(
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
-                                    items(siteShortcuts, key = { it.url.ifEmpty { it.title } }) { shortcut ->
+                                    itemsIndexed(siteShortcuts, key = { index, shortcut -> "${index}_${shortcut.url.ifEmpty { shortcut.title }}" }) { _, shortcut ->
                                         val faviconUrl = remember(shortcut.url) {
                                             com.petal.browser.database.FaviconHelper.getGoogleFaviconUrl(shortcut.url)
                                         }
@@ -1097,12 +1097,6 @@ fun PetalOmniboxPage(
                                     .fillMaxWidth()
                                     .weight(1f, fill = false)
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .animateContentSize(
-                                        animationSpec = spring(
-                                            dampingRatio = Spring.DampingRatioNoBouncy,
-                                            stiffness = Spring.StiffnessMediumLow
-                                        )
-                                    )
                                     .liquidGlassChrome(shape = heroShape, enabled = isGlass, sheenIntensity = sheen)
                             ) {
                                 Column(
@@ -1118,14 +1112,15 @@ fun PetalOmniboxPage(
                                     )
 
                                     // Build a flat list interleaving section header entries and suggestion row entries.
-                                    // Grouped by source so each header is only added once, with guaranteed unique keys.
+                                    // Grouped by source with strictly unique composite index keys to prevent Compose collision crashes.
                                     val listEntries = remember(suggestions) {
                                         buildList {
                                             val grouped = suggestions.groupBy { it.source }
+                                            var globalIndex = 0
                                             grouped.forEach { (source, items) ->
-                                                add("header_${source.name}" to source)
-                                                items.forEach { item ->
-                                                    add("item_${source.name}_${item.query}_${item.targetUrl ?: ""}" to item)
+                                                add("header_${source.name}_${globalIndex++}" to source)
+                                                items.forEachIndexed { idx, item ->
+                                                    add("item_${source.name}_${globalIndex++}_${idx}_${item.query}_${item.targetUrl ?: ""}" to item)
                                                 }
                                             }
                                         }

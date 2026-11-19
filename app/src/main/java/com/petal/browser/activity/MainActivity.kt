@@ -781,6 +781,10 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     fun showAlbum(albumController: AlbumController?, targetUrl: String?) {
         currentAlbumController = albumController
+        val id = albumController?.tabId?.takeIf { it.isNotBlank() }
+        if (id != null) {
+            viewModel.selectTab(id)
+        }
         if (!targetUrl.isNullOrBlank()) {
             viewModel.loadUrl(targetUrl)
         }

@@ -103,8 +103,9 @@ object PetalGeckoRuntime {
             ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS
         }
 
+        val isAdBlockEnabled = sp.getBoolean("sp_ad_block", true)
         var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT
-        if (etpStrict || privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT) {
+        if (isAdBlockEnabled || etpStrict || privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT) {
             antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or
                     ContentBlocking.AntiTracking.ANALYTIC or ContentBlocking.AntiTracking.SOCIAL or
                     ContentBlocking.AntiTracking.CONTENT or ContentBlocking.AntiTracking.STP or
@@ -378,8 +379,9 @@ object PetalGeckoRuntime {
                 rt.settings.contentBlocking.setCookieBehavior(cookieBehavior)
 
                 // 4. Anti-Tracking Flags (STP, Social, Cryptominers, Ads)
+                val isAdBlockOn = sp.getBoolean("sp_ad_block", true)
                 var antiTrackingFlags = ContentBlocking.AntiTracking.DEFAULT
-                if (etpStrict || privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT) {
+                if (isAdBlockOn || etpStrict || privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT) {
                     antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or
                             ContentBlocking.AntiTracking.ANALYTIC or ContentBlocking.AntiTracking.SOCIAL or
                             ContentBlocking.AntiTracking.CONTENT or ContentBlocking.AntiTracking.STP or

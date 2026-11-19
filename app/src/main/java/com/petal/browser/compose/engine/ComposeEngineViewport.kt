@@ -244,12 +244,12 @@ fun ComposeEngineViewport(
             }
     }
 
-    // Inform GeckoView of dynamic toolbar height for smooth scrolling and proper viewport calculations
-    val totalToolbarHeightPx = with(density) { (topPadding + bottomPadding).roundToPx() }
-    LaunchedEffect(totalToolbarHeightPx, engineView) {
-        try { engineView.setDynamicToolbarMaxHeight(totalToolbarHeightPx) } catch (_: Throwable) {}
+    // Keep GeckoView dynamic toolbar offset at 0 since ComposeEngineViewport already manages view padding directly.
+    // Non-zero dynamic toolbar heights cause GeckoView to double-offset fixed-position elements (e.g. YouTube bottom nav).
+    LaunchedEffect(engineView) {
+        try { engineView.setDynamicToolbarMaxHeight(0) } catch (_: Throwable) {}
         findGeckoView(engineView.asView())?.let { gv ->
-            try { gv.setDynamicToolbarMaxHeight(totalToolbarHeightPx) } catch (_: Throwable) {}
+            try { gv.setDynamicToolbarMaxHeight(0) } catch (_: Throwable) {}
         }
     }
 
@@ -336,8 +336,7 @@ fun ComposeEngineViewport(
         val fallback = MaterialTheme.colorScheme.background
         val topStrip by animateColorAsState(
             if (PageEdgeColors.top == Color.Unspecified) fallback else PageEdgeColors.top, label = "pageEdgeTop")
-        val bottomStrip by animateColorAsState(
-            if (PageEdgeColors.bottom == Color.Unspecified) fallback else PageEdgeColors.bottom, label = "pageEdgeBottom")
+        val bottomStrip = Color.Transparent
         val collapsedF = BarCollapseState.collapsedFraction
         val topStripH = lerp(topPadding.value, collapsedTopPadding.value, collapsedF).dp
         val bottomStripH = lerp(bottomPadding.value, collapsedBottomPadding.value, collapsedF).dp
