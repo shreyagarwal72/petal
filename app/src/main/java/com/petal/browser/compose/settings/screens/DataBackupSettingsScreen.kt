@@ -168,10 +168,9 @@ fun DataBackupSettingsScreen(
                 )
             },
             text = {
+                // PetalMaterialAlertDialog already scrolls its content; a nested verticalScroll crashes.
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(
@@ -399,10 +398,9 @@ fun DataBackupSettingsScreen(
                 )
             },
             text = {
+                // PetalMaterialAlertDialog already scrolls its content; a nested verticalScroll crashes.
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(

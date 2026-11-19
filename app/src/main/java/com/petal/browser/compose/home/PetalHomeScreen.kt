@@ -1533,10 +1533,10 @@ private fun EditShortcutDialog(
         onDismissRequest = onDismiss,
         title = { Text(dialogTitle) },
         text = {
+            // No verticalScroll here: PetalMaterialAlertDialog already scrolls its whole content, and a
+            // nested vertical scroll gets infinite max height and crashes on open.
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 TextField(

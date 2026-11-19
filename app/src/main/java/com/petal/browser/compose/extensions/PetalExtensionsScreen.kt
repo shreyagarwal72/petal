@@ -1219,10 +1219,9 @@ private fun TweaksExtensionsTab(
                 }
             },
             text = {
+                // PetalMaterialAlertDialog already scrolls its content; a nested verticalScroll crashes.
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
