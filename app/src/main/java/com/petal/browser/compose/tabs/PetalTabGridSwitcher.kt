@@ -2557,13 +2557,13 @@ private fun PetalHomePreviewCard(
                                 modifier = Modifier
                                     .size(20.dp)
                                     .clip(ExpressiveButtonShape)
-                                    .background(shortcut.color.copy(alpha = 0.25f)),
+                                    .background(shortcut.containerColor.copy(alpha = 0.25f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = shortcut.label.take(1).uppercase(),
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
-                                    color = shortcut.color
+                                    color = shortcut.containerColor
                                 )
                             }
                         }

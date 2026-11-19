@@ -127,9 +127,9 @@ object PetalBrowserUtils {
             }
 
             val encodedQuery = try {
-                URLEncoder.encode(term, URL_ENCODING)
+                URLEncoder.encode(term, URL_ENCODING).replace("+", "%20")
             } catch (e: Exception) {
-                term.replace(" ", "+")
+                term.replace(" ", "%20")
             }
 
             if (prefix.isNotEmpty()) {
@@ -724,46 +724,55 @@ object PetalBrowserUtils {
         return "about:home"
     }
 
+    private val TRACKING_PARAM_PREFIXES = listOf("utm_", "pk_", "piwik_")
+    private val TRACKING_PARAM_NAMES = setOf(
+        "fbclid", "gclid", "dclid", "gclsrc", "wbraid", "gbraid", "yclid",
+        "msclkid", "igshid", "mc_cid", "mc_eid", "mkt_tok", "_hsenc", "_hsmi",
+        "ref_src", "ref_url"
+    )
+
+    private fun isTrackingParam(name: String): Boolean {
+        val lower = name.lowercase(Locale.ROOT)
+        return TRACKING_PARAM_PREFIXES.any { lower.startsWith(it) } || lower in TRACKING_PARAM_NAMES
+    }
+
     @JvmStatic
     fun cleanTrackingParams(url: String?): String? {
         if (url.isNullOrBlank()) return url
         return try {
-            val uri = Uri.parse(url)
-            if (uri == null || uri.query.isNullOrEmpty()) {
-                return url
-            }
-            val builder = uri.buildUpon().clearQuery()
-            for (paramName in uri.queryParameterNames) {
-                if (paramName == null) continue
-                val lower = paramName.lowercase(Locale.ROOT)
-                if (lower.startsWith("utm_") ||
-                    lower == "fbclid" ||
-                    lower == "gclid" ||
-                    lower == "dclid" ||
-                    lower == "gclsrc" ||
-                    lower == "wbraid" ||
-                    lower == "gbraid" ||
-                    lower == "yclid" ||
-                    lower == "msclkid" ||
-                    lower == "igshid" ||
-                    lower == "mc_cid" ||
-                    lower == "mc_eid" ||
-                    lower == "mkt_tok" ||
-                    lower.startsWith("pk_") ||
-                    lower.startsWith("piwik_") ||
-                    lower == "_hsenc" ||
-                    lower == "_hsmi" ||
-                    lower == "ref_src" ||
-                    lower == "ref_url"
-                ) {
-                    continue
-                }
-                for (value in uri.getQueryParameters(paramName)) {
-                    builder.appendQueryParameter(paramName, value)
+            val queryStart = url.indexOf('?')
+            if (queryStart < 0) return url
+            var rawQuery = url.substring(queryStart + 1)
+            val fragStart = rawQuery.indexOf('#')
+            val fragment = if (fragStart >= 0) {
+                val f = rawQuery.substring(fragStart)
+                rawQuery = rawQuery.substring(0, fragStart)
+                f
+            } else ""
+            if (rawQuery.isBlank()) return url
+
+            val pairs = rawQuery.split('&')
+            var hasTracking = false
+            for (pair in pairs) {
+                val key = pair.substringBefore('=')
+                if (isTrackingParam(key)) {
+                    hasTracking = true
+                    break
                 }
             }
-            builder.build().toString()
-        } catch (e: Exception) {
+            if (!hasTracking) return url
+
+            val cleanPairs = pairs.filterNot { pair ->
+                val key = pair.substringBefore('=')
+                isTrackingParam(key)
+            }
+            val base = url.substring(0, queryStart)
+            if (cleanPairs.isEmpty()) {
+                base + fragment
+            } else {
+                base + "?" + cleanPairs.joinToString("&") + fragment
+            }
+        } catch (_: Exception) {
             url
         }
     }

@@ -117,7 +117,7 @@ object SearchSuggestionsManager {
             var results: List<String> = emptyList()
             var connection: HttpURLConnection? = null
             try {
-                val encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name())
+                val encodedQuery = encodeQuery(query)
                 val urlString = "https://suggestqueries.google.com/complete/search?client=firefox&q=$encodedQuery"
                 val url = URL(urlString)
 
@@ -161,7 +161,7 @@ object SearchSuggestionsManager {
             var results: List<String> = emptyList()
             var connection: HttpURLConnection? = null
             try {
-                val encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name())
+                val encodedQuery = encodeQuery(query)
                 val urlString = "https://duckduckgo.com/ac/?q=$encodedQuery&type=list"
                 val url = URL(urlString)
 
@@ -196,7 +196,7 @@ object SearchSuggestionsManager {
             var results: List<String> = emptyList()
             var connection: HttpURLConnection? = null
             try {
-                val encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name())
+                val encodedQuery = encodeQuery(query)
                 val urlString = "https://api.bing.com/osjson.aspx?query=$encodedQuery"
                 val url = URL(urlString)
 
@@ -235,7 +235,7 @@ object SearchSuggestionsManager {
             var results: List<String> = emptyList()
             var connection: HttpURLConnection? = null
             try {
-                val encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name())
+                val encodedQuery = encodeQuery(query)
                 val urlString = "https://search.brave.com/api/suggest?q=$encodedQuery"
                 val url = URL(urlString)
                 connection = url.openConnection() as HttpURLConnection
@@ -269,7 +269,7 @@ object SearchSuggestionsManager {
             var results: List<String> = emptyList()
             var connection: HttpURLConnection? = null
             try {
-                val encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name())
+                val encodedQuery = encodeQuery(query)
                 val urlString = "https://ac.ecosia.org/autocomplete?q=$encodedQuery&type=list"
                 val url = URL(urlString)
 
@@ -304,7 +304,7 @@ object SearchSuggestionsManager {
             var results: List<String> = emptyList()
             var connection: HttpURLConnection? = null
             try {
-                val encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name())
+                val encodedQuery = encodeQuery(query)
                 val urlString = "https://api.qwant.com/v3/suggest?q=$encodedQuery&client=opensearch"
                 val url = URL(urlString)
 
@@ -339,7 +339,7 @@ object SearchSuggestionsManager {
             var results: List<String> = emptyList()
             var connection: HttpURLConnection? = null
             try {
-                val encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name())
+                val encodedQuery = encodeQuery(query)
                 val urlString = "https://www.startpage.com/osjson.aspx?query=$encodedQuery"
                 val url = URL(urlString)
 
@@ -374,7 +374,7 @@ object SearchSuggestionsManager {
             var results: List<String> = emptyList()
             var connection: HttpURLConnection? = null
             try {
-                val encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name())
+                val encodedQuery = encodeQuery(query)
                 val urlString = "https://searx.space/autocompleter?q=$encodedQuery"
                 val url = URL(urlString)
 
@@ -409,7 +409,7 @@ object SearchSuggestionsManager {
             var results: List<String> = emptyList()
             var connection: HttpURLConnection? = null
             try {
-                val encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name())
+                val encodedQuery = encodeQuery(query)
                 val urlString = suggestUrlTemplate.replace("{searchTerms}", encodedQuery).replace("%s", encodedQuery)
                 val url = URL(urlString)
 
@@ -495,7 +495,7 @@ object SearchSuggestionsManager {
         var list: List<String> = emptyList()
         var conn: HttpURLConnection? = null
         try {
-            val encoded = URLEncoder.encode(query, StandardCharsets.UTF_8.name())
+            val encoded = encodeQuery(query)
             val url = URL("https://suggestqueries.google.com/complete/search?client=firefox&q=$encoded")
             conn = url.openConnection() as HttpURLConnection
             conn.connectTimeout = 1800
@@ -514,7 +514,7 @@ object SearchSuggestionsManager {
         var list: List<String> = emptyList()
         var conn: HttpURLConnection? = null
         try {
-            val encoded = URLEncoder.encode(query, StandardCharsets.UTF_8.name())
+            val encoded = encodeQuery(query)
             val url = URL("https://api.bing.com/osjson.aspx?query=$encoded")
             conn = url.openConnection() as HttpURLConnection
             conn.connectTimeout = 1800
@@ -528,6 +528,13 @@ object SearchSuggestionsManager {
         }
         return list
     }
+
+    private fun encodeQuery(query: String): String =
+        try {
+            URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name()).replace("+", "%20")
+        } catch (_: Exception) {
+            query.trim().replace(" ", "%20")
+        }
 
     private fun dispatchCallback(callback: SuggestionCallback?, results: List<String>, seq: Long) {
         if (callback != null && querySequence.get() == seq) {

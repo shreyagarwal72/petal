@@ -431,7 +431,7 @@ class MainActivity : FragmentActivity(), BrowserController {
                 if (!bmp.isRecycled && bmp.width > 1 && bmp.height > 1) {
                     val targetWidth = Math.min(bmp.width, 480)
                     val targetHeight = Math.max(1, (bmp.height.toFloat() * targetWidth / bmp.width).toInt())
-                    val scaled = Bitmap.createScaledBitmap(bmp, targetWidth, targetHeight, true)
+                    val scaled = android.graphics.Bitmap.createScaledBitmap(bmp, targetWidth, targetHeight, true)
                     com.petal.browser.unit.TabThumbnailCache.put(curTab.id, scaled, curTab.content.private, allowUniform = true)
                 }
             } else {
