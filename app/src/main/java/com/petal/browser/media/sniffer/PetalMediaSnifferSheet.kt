@@ -107,14 +107,6 @@ fun PetalMediaSnifferOverlay(
         PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(currentPageUrl)
     }
 
-    val forceOpen by PetalMediaSnifferOverlayBridge.isSheetForcedOpen
-    LaunchedEffect(forceOpen) {
-        if (forceOpen) {
-            sheetOpen = true
-            PetalMediaSnifferOverlayBridge.isSheetForcedOpen.value = false
-        }
-    }
-
     LaunchedEffect(currentPageUrl, media) {
         dismissed = false
         if (autoOpenPanel && !isSearchOrInternal && media.isNotEmpty()) {

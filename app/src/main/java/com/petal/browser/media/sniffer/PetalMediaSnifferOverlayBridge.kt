@@ -68,32 +68,36 @@ object PetalMediaSnifferOverlayBridge {
                 PetalMediaSnifferOverlay(
                     context        = activity,
                     currentPageUrl = pageUrl
-                ) { request ->
-                    val act = activity as? com.petal.browser.activity.MainActivity
-                    val tabController = act?.currentAlbumController as? com.petal.browser.browser.PetalTabViewController ?: act?.getOrCreateTabViewController()
-                    tabController?.captureVideoHandoffState { handoff ->
-                        val intent = Intent(activity, MediaPlayerActivity::class.java).apply {
-                            action = Intent.ACTION_VIEW
-                            setDataAndType(android.net.Uri.parse(request.url), request.mimeType)
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
-                            if (handoff != null) {
-                                putExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_POSITION_MS, handoff.positionMs)
-                                putExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_SPEED, handoff.playbackSpeed)
-                                putExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_IS_PAUSED, handoff.isPaused)
-                            }
-                        }
-                        activity.startActivity(intent)
-                    } ?: run {
-                        activity.startActivity(
-                            Intent(activity, MediaPlayerActivity::class.java).apply {
-                                action = Intent.ACTION_VIEW
-                                setDataAndType(android.net.Uri.parse(request.url), request.mimeType)
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
-                            }
-                        )
-                    }
+                ) { request -> openPlayer(activity, request) }
+            }
+        }
+    }
+
+    /** Opens the in-app media player for [request], handing over playback state from the page video. */
+    @JvmStatic
+    fun openPlayer(activity: ComponentActivity, request: MediaInterceptor.MediaPlaybackRequest) {
+        val act = activity as? com.petal.browser.activity.MainActivity
+        val tabController = act?.currentAlbumController as? com.petal.browser.browser.PetalTabViewController ?: act?.getOrCreateTabViewController()
+        tabController?.captureVideoHandoffState { handoff ->
+            val intent = Intent(activity, MediaPlayerActivity::class.java).apply {
+                action = Intent.ACTION_VIEW
+                setDataAndType(android.net.Uri.parse(request.url), request.mimeType)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
+                if (handoff != null) {
+                    putExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_POSITION_MS, handoff.positionMs)
+                    putExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_SPEED, handoff.playbackSpeed)
+                    putExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_IS_PAUSED, handoff.isPaused)
                 }
             }
+            activity.startActivity(intent)
+        } ?: run {
+            activity.startActivity(
+                Intent(activity, MediaPlayerActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    setDataAndType(android.net.Uri.parse(request.url), request.mimeType)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
+                }
+            )
         }
     }
 }

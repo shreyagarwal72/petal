@@ -71,4 +71,12 @@ class YtDlpOptionBuilderTest {
         assertEquals("1.0 MB", YtDlpOptionBuilder.formatBytes(1024L * 1024))
         assertEquals("512 B", YtDlpOptionBuilder.formatBytes(512))
     }
+
+    @Test
+    fun recognisesSupportedSiteHosts() {
+        assertTrue(YtDlpSites.isLikelySupported("https://m.youtube.com/watch?v=abc"))
+        assertTrue(YtDlpSites.isLikelySupported("https://youtu.be/abc"))
+        assertFalse(YtDlpSites.isLikelySupported("https://notyoutube.com/watch"))
+        assertFalse(YtDlpSites.isLikelySupported("not a url"))
+    }
 }

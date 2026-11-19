@@ -1636,6 +1636,29 @@ fun PetalRootApp(
                     )
                 }
             }
+
+            // Media Grabber sheet: opened by the address bar / quick tools / menu media buttons.
+            val mediaSheetRequested by com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.isSheetForcedOpen
+            if (mediaSheetRequested) {
+                com.petal.browser.media.ytdlp.PetalMediaGrabberSheet(
+                    pageUrl = activeUrl,
+                    onDismiss = {
+                        com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.isSheetForcedOpen.value = false
+                    },
+                    onPlayVideo = { videoUrl ->
+                        activity?.let {
+                            com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openPlayer(
+                                it,
+                                com.petal.browser.media.sniffer.MediaInterceptor.MediaPlaybackRequest(
+                                    url = videoUrl,
+                                    mimeType = "video/mp4",
+                                    mediaType = com.petal.browser.media.sniffer.MediaInterceptor.MediaType.MP4
+                                )
+                            )
+                        }
+                    }
+                )
+            }
     }
 }
 

@@ -139,7 +139,7 @@ fun AddressPill(
 
     val totalMediaCount = maxOf(capturedMedia.size, nativeResources.size + (if (hasPlayableMedia) 1 else 0))
     val isBlankOrSearch = url.isEmpty() || url == "about:blank" || url.startsWith("file:///android_asset/")
-    val showMediaButton = isMediaButtonPrefEnabled && (totalMediaCount > 0 || hasPlayableMedia) && !isBlankOrSearch
+    val showMediaButton = isMediaButtonPrefEnabled && (totalMediaCount > 0 || hasPlayableMedia || com.petal.browser.media.ytdlp.YtDlpSites.isLikelySupported(url)) && !isBlankOrSearch
 
     val isHttps = url.startsWith("https://")
     val isHttp = url.startsWith("http://")

@@ -18,3 +18,9 @@
 ## Needs a device build to verify
 - The youtubedl-android version and the `VideoFormat`/`VideoInfo` accessors (formatId, fileSize, fileSizeApproximate, fps, etc.) were written from memory of the library; I had no network or compiler here.
 - First launch unpacks yt-dlp, so the first fetch is slower.
+
+## Fix: sheet never opened from the address bar
+- Root cause: `PetalMediaSnifferOverlayBridge.bind()` was never called anywhere, so the old overlay was never hosted and `openMediaSheet()` flipped a flag nobody read.
+- `PetalRootApp` now hosts `PetalMediaGrabberSheet` and shows it when `isSheetForcedOpen` is set (address bar, quick tools, overflow menu).
+- `openPlayer()` extracted into the bridge so Play works from the sheet.
+- Address bar media button now also shows on known yt-dlp sites (YouTube, Vimeo, X, Instagram, TikTok, etc.) before anything is sniffed.

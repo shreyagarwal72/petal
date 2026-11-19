@@ -130,3 +130,17 @@ object YtDlpOptionBuilder {
         return (value * mult).toLong()
     }
 }
+
+/** Hosts yt-dlp is known to handle, so the grabber button shows even before the sniffer has captured anything. */
+object YtDlpSites {
+    private val HOSTS = listOf(
+        "youtube.com", "youtu.be", "vimeo.com", "dailymotion.com", "twitter.com", "x.com",
+        "instagram.com", "facebook.com", "fb.watch", "tiktok.com", "reddit.com",
+        "soundcloud.com", "twitch.tv", "bilibili.com"
+    )
+
+    fun isLikelySupported(url: String): Boolean {
+        val host = runCatching { java.net.URI(url).host?.lowercase() }.getOrNull() ?: return false
+        return HOSTS.any { host == it || host.endsWith(".$it") }
+    }
+}
