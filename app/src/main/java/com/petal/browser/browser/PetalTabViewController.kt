@@ -204,6 +204,20 @@ class PetalTabViewController private constructor(
                 } else {
                     preferences.getBoolean("sp_desktop_site", false)
                 }
+                try {
+                    getGeckoSession()?.settings?.let { s ->
+                        s.viewportMode = if (desktopEnabled) {
+                            org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_DESKTOP
+                        } else {
+                            org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE
+                        }
+                        s.userAgentMode = if (desktopEnabled) {
+                            org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
+                        } else {
+                            org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_MOBILE
+                        }
+                    }
+                } catch (_: Throwable) {}
                 observedSession?.toggleDesktopMode(desktopEnabled, reload = false)
             }
             "sp_font_size_scale", "sp_zoom_level_scale", "sp_force_enable_zoom", "sp_caret_browsing" -> {
@@ -1282,6 +1296,11 @@ class PetalTabViewController private constructor(
                 } else {
                     org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE
                 }
+                s.userAgentMode = if (enabled) {
+                    org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
+                } else {
+                    org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_MOBILE
+                }
             }
         } catch (_: Throwable) {}
         observedSession?.toggleDesktopMode(enabled, reload = true)
@@ -1315,6 +1334,11 @@ class PetalTabViewController private constructor(
                     org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_DESKTOP
                 } else {
                     org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE
+                }
+                s.userAgentMode = if (desktopEnabled) {
+                    org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
+                } else {
+                    org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_MOBILE
                 }
             }
         } catch (_: Throwable) {}

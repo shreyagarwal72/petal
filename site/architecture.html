@@ -44,8 +44,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,25..151,100..1000&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=159.0.1">
-  <link rel="stylesheet" href="/pages.css?v=159.0.1">
+  <link rel="stylesheet" href="/styles.css?v=161.0.0">
+  <link rel="stylesheet" href="/pages.css?v=161.0.0">
 </head>
 <body>
 
@@ -150,40 +150,86 @@
         <p class="page-meta">Mirrored from architecture.md in the Petal repository</p>
       </header>
       <div class="page-grid">
-        <aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li><a href="#1-system-overview-mozilla-geckoview-engine-core">1. System Overview &amp; Mozilla GeckoView Engine Core</a></li><li><a href="#2-composeview-bridging-pattern-viewtree-requirements">2. ComposeView Bridging Pattern &amp; ViewTree Requirements</a></li><li><a href="#3-navigation-predictive-back-handling">3. Navigation &amp; Predictive Back Handling</a></li><li><a href="#4-subpackage-directory-structure">4. Subpackage Directory Structure</a></li></ol></aside>
+        <aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li><a href="#1-unified-engine-architecture-single-engine-view-browserstore">1. Unified Engine Architecture: Single Engine View &amp; BrowserStore</a></li><li><a href="#2-delegate-ownership-activity-recreation-rebinding">2. Delegate Ownership &amp; Activity Recreation Rebinding</a></li><li><a href="#3-store-driven-state-apz-touch-filtering">3. Store-Driven State &amp; APZ Touch Filtering</a></li><li><a href="#4-composeview-bridging-pattern-viewtree-requirements">4. ComposeView Bridging Pattern &amp; ViewTree Requirements</a></li><li><a href="#5-subpackage-directory-structure">5. Subpackage Directory Structure</a></li></ol></aside>
         <div class="prose">
-<section id="1-system-overview-mozilla-geckoview-engine-core"><h2>1. System Overview &amp; Mozilla GeckoView Engine Core</h2>
-<p>Petal Browser employs a modern architecture combining a robust Java/Kotlin Android Activity foundation with Mozilla GeckoView and declarative Jetpack Compose Material 3 Expressive UI layers.</p>
-<h3>Browsing Core Architecture</h3>
-<p>All web browsing sessions, tab surfaces, and WebExtensions run exclusively on <strong>Mozilla GeckoView</strong>:</p>
-<ol>
-<li><strong>Mozilla GeckoView (Standalone Engine Core)</strong>:
+<section id="1-unified-engine-architecture-single-engine-view-browserstore"><h2>1. Unified Engine Architecture: Single Engine View &amp; BrowserStore</h2>
+<p>Petal Browser employs a consolidated, production-grade browser engine architecture modeled after Firefox / Fenix. All tabs, browser surfaces, and WebExtensions run on a single unified engine stack:</p>
 <ul>
-<li><strong>Artifact</strong>: <code>org.mozilla.geckoview:geckoview</code>.</li>
-<li><strong>Runtime Management</strong>: Managed by the thread-safe process singleton <code>com.petal.browser.engine.gecko.PetalGeckoRuntime</code>. Configures Firefox Enhanced Tracking Protection (ETP), Total Cookie Protection, cookie banner blocker, safe browsing, and full WebExtensions support.</li>
-<li><strong>View &amp; Tab Layer</strong>: Implemented in <code>com.petal.browser.view.PetalGeckoView</code>, which encapsulates <code>GeckoView</code> and <code>GeckoSession</code>. Implements <code>AlbumController</code> and AndroidX <code>NestedScrollingChild3</code> to integrate smoothly with the browser's address bar collapse, swipe refresh, and tab overview.</li>
-<li><strong>Controller Wiring</strong>: Managed through <code>com.petal.browser.browser.PetalTabViewController</code> and official Mozilla Android Components.</li>
+<li><strong>Engine Core</strong>: <code>org.mozilla.geckoview:geckoview</code> 159.0.20261102144711</li>
+<li><strong>Component Stack</strong>: Mozilla Android Components 159.0.1 (<code>concept-engine</code>, <code>browser-engine-gecko</code>, <code>browser-state</code>, <code>browser-store</code>, <code>feature-downloads</code>, <code>service-firefox-accounts</code>)</li>
+<li><strong>Runtime Singleton</strong>: <code>com.petal.browser.engine.gecko.PetalGeckoRuntime</code> configures Firefox Enhanced Tracking Protection (ETP), Total Cookie Protection, cookie banner blocker, safe browsing, and WebExtensions.</li>
+<li><strong>Authoritative Cookie Bridge</strong>: <code>PetalGeckoCookieBridge</code> interfaces with GeckoView's <code>StorageController</code> with strict isolation between standard and private tab contexts.</li>
+<li><strong>Built-in Network Blocker</strong>: <code>petal_network_blocker</code> WebExtension intercepts all subresource network requests at <code>webRequest.onBeforeRequest</code> and runs early cosmetic CSS injection at <code>document_start</code>.</li>
+<li><strong>Unified Tab Surface</strong>: <code>PetalTabSurface</code> defines the tab contract across active <code>PetalTabViewController</code> and background <code>PlaceholderTabController</code> instances.</li>
+</ul>
+<h3>Single-Engine View Architecture (Fenix Model)</h3>
+<p>Instead of allocating a separate <code>GeckoView</code> / <code>SurfaceView</code> texture per open tab (which caused GPU memory exhaustion and render-thread stall ANRs), Petal uses a <strong>single active tab viewport</strong>:</p>
+<ol>
+<li><strong>Single View Controller (<code>PetalTabViewController</code>)</strong>:
+<ul>
+<li><code>BrowserActivity</code> maintains one retained <code>singleTabViewController</code> instance mounted in <code>contentFrame</code>.</li>
+<li>When switching tabs (<code>showAlbum()</code>), the outgoing tab is demoted to a lightweight <code>PlaceholderAlbumController</code> (preserving its title, URL, favicon, and thumbnail) while its engine session remains managed in <code>BrowserStore</code>.</li>
+<li>The newly selected tab session is bound and rendered in <code>singleTabViewController.render(session)</code>.</li>
+</ul>
+</li>
+<li><strong>Background Tabs</strong>:
+<ul>
+<li>Background tabs do NOT allocate native Android views or SurfaceViews.</li>
+<li>Background tab sessions are tracked inside <code>BrowserStore</code>. Inactive tabs can be suspended to session state envelopes by <code>PetalTabSuspender</code> under memory pressure.</li>
+</ul>
+</li>
+<li><strong>Consolidated Engine Bridge (<code>PetalEngineBridge</code>)</strong>:
+<ul>
+<li>Centralizes static engine utilities, download dispatching, intent routing, profile resolution, and user agent generation.</li>
+<li>Replaced legacy static helpers from deprecated <code>PetalGeckoView</code>.</li>
 </ul>
 </li>
 </ol>
 <pre><code class="language-mermaid">graph TD
-    A[BrowserActivity.java] --&gt; B[PetalTabViewController.kt]
-    B --&gt; D[PetalGeckoView.kt]
+    A[BrowserActivity.java] --&gt; B[PetalTabViewController.kt (Single Active View)]
+    A --&gt; C[PetalEngineStore / BrowserStore]
+    C --&gt; D[GeckoEngine / EngineSession Pool]
     D --&gt; E[GeckoRuntime Singleton / GeckoSession]
-    A --&gt; G[ComposeView Bridging Container]
-    G --&gt; H[Jetpack Compose M3 UI Screens]
+    B --&gt; E
+    A --&gt; F[BrowserContainer (Tab Manager)]
+    F --&gt; G[PlaceholderAlbumController (Background Tabs)]
+    A --&gt; H[ComposeView Bridging Container]
+    H --&gt; I[Jetpack Compose M3 UI Screens]
 </code></pre>
 </section>
-<section id="2-composeview-bridging-pattern-viewtree-requirements"><h2>2. ComposeView Bridging Pattern &amp; ViewTree Requirements</h2>
-<p>Rather than rewriting the entire application into a single-activity Compose navigation graph, Petal embeds Jetpack Compose modular screens into <code>BrowserActivity</code> using dynamic <code>ComposeView</code> bridging.</p>
-<h3>Presentation Workflow</h3>
+<section id="2-delegate-ownership-activity-recreation-rebinding"><h2>2. Delegate Ownership &amp; Activity Recreation Rebinding</h2>
+<p>Petal browser delegates implement the <code>PetalOwnedDelegate</code> contract to survive Android Activity recreations without leaking stale closures or tearing down live Gecko sessions:</p>
 <ul>
-<li>The primary container is a plain <code>FrameLayout contentFrame</code> inside <code>activity_main.xml</code>; pull-to-refresh is Mozilla's <code>SwipeRefreshFeature</code> on each <code>PetalTabViewController</code>.</li>
-<li>Sub-screens (Settings, Tab Switcher, Downloads, History, Bookmarks, Omnibox, Credits, Reader, Incognito Home) are generated via companion bridge objects (e.g., <code>PetalSettingsBridge</code>, <code>PetalVideoPlayerOverlayBridge</code>).</li>
-<li>Screens are presented via <code>BrowserActivity.presentComposeScreen(View screen, boolean animate)</code>.</li>
+<li><code>PetalPromptDelegateWrapper</code>: Expressive Material 3 prompts (alerts, auth, file pickers, choices, credit card prompts) with fallback forwarding.</li>
+<li><code>PetalPermissionDelegateWrapper</code>: Runtime permissions (camera, microphone, geolocation) with automatic Android permission requests.</li>
+<li><code>PetalContentDelegateWrapper</code>: Dynamic title, URL, crash recovery, and security changes.</li>
+<li><strong>Dynamic Rebinding</strong>: When an Activity is recreated, <code>PetalTabViewController.bindTab()</code> calls <code>rebind()</code> on all owned delegates, updating the volatile activity supplier without re-instantiating delegates on active Gecko sessions.</li>
 </ul>
-<h3>Mandatory ViewTree Wiring</h3>
-<p>When embedding a dynamic <code>ComposeView</code> into a Java <code>Activity</code>, the Compose runtime requires explicit ownership definitions. Failing to provide these causes runtime crashes during composition:</p>
+</section>
+<section id="3-store-driven-state-apz-touch-filtering"><h2>3. Store-Driven State &amp; APZ Touch Filtering</h2>
+<p>State synchronization is strictly unidirectional and reactive:</p>
+<ol>
+<li><strong>BrowserStore Observation</strong>:
+<ul>
+<li><code>BrowserActivity</code> subscribes to <code>PetalEngineStore.observeManually()</code> in <code>onCreate()</code>.</li>
+<li>Loading completion, refresh resets, omnibox updates, and back stack states are driven directly from store actions.</li>
+</ul>
+</li>
+<li><strong>APZ (Async Pan Zoom) Overscroll Arbitration</strong>:
+<ul>
+<li>Pull-to-refresh checks <code>PanZoomController.onTouchEventForDetailResult</code> (<code>canOverscrollTop()</code>) in <code>PetalTabViewController</code>.</li>
+<li>Distinguishes document-level overscroll top from inner scroll containers (overflow divs, carousels), preventing false refresh triggers.</li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="4-composeview-bridging-pattern-viewtree-requirements"><h2>4. ComposeView Bridging Pattern &amp; ViewTree Requirements</h2>
+<p>Petal embeds Jetpack Compose modular screens into <code>BrowserActivity</code> using dynamic <code>ComposeView</code> bridging:</p>
+<ul>
+<li>Primary container is a plain <code>FrameLayout contentFrame</code> in <code>activity_main.xml</code>; pull-to-refresh is Mozilla's <code>SwipeRefreshFeature</code> on each <code>PetalTabViewController</code>.</li>
+<li>Sub-screens (Settings, Tab Switcher, Downloads, History, Bookmarks, Omnibox, Credits, Reader, Incognito Home) are generated via companion bridge objects.</li>
+<li>ViewTree lifecycle, ViewModel store, and saved state registry owners are explicitly wired:</li>
+</ul>
 <pre><code class="language-kotlin">composeView.apply {
     setViewTreeLifecycleOwner(activity)
     setViewTreeViewModelStoreOwner(activity)
@@ -192,50 +238,19 @@
 }
 </code></pre>
 </section>
-<section id="3-navigation-predictive-back-handling"><h2>3. Navigation &amp; Predictive Back Handling</h2>
-<p>Back gesture dispatching is carefully split between the native Android platform dispatcher and Compose-level gesture interceptors:</p>
-<ol>
-<li><strong>Activity-Level Back Dispatcher (<code>BrowserActivity.java</code>)</strong>:
+<section id="5-subpackage-directory-structure"><h2>5. Subpackage Directory Structure</h2>
 <ul>
-<li>Registers an <code>OnBackPressedCallback</code> with the system <code>OnBackPressedDispatcher</code>.</li>
-<li>Listens to <code>handleOnBackStarted</code>, <code>handleOnBackProgressed</code>, <code>handleOnBackPressed</code>, and <code>handleOnBackCancelled</code>.</li>
-<li>Checks <code>isOverlayScreenShowing</code> to determine whether a Compose screen or the web album is currently visible.</li>
-<li>Coordinates with <code>isDecorOverlayShowing</code> for window-level overlays (such as App Lock via <code>PetalAppLockBridge</code>).</li>
-</ul>
-</li>
-<li><strong>Compose-Level Predictive Back Handler (<code>PetalPredictiveJunction.kt</code>)</strong>:
-<ul>
-<li>Uses AndroidX <code>PredictiveBackHandler</code> inside Compose surfaces.</li>
-<li>Computes real-time progress physics, applying surface scaling, corner radius morphing, and backdrop blur (<code>PetalContentSnapshot</code>).</li>
-</ul>
-</li>
-<li><strong>Display Edge Gesture Exclusion Reset</strong>:
-<ul>
-<li>To prevent the web rendering surface from trapping Android 10+ (API 29+) system edge gestures, <code>PetalGeckoView</code> actively enforces empty system gesture exclusion rects on touch interactions (<code>ACTION_DOWN</code>, <code>ACTION_UP</code>, <code>ACTION_CANCEL</code>).</li>
-</ul>
-</li>
-</ol>
-</section>
-<section id="4-subpackage-directory-structure"><h2>4. Subpackage Directory Structure</h2>
-<ul>
-<li><code>com.petal.browser.activity</code>: Core Android activities (<code>BrowserActivity</code>, <code>SettingsActivity</code>, <code>AppLockActivity</code>).</li>
-<li><code>com.petal.browser.browser</code>: Core browser contracts and controllers (<code>BrowserController</code>, <code>AlbumController</code>, <code>BrowserContainer</code>).</li>
-<li><code>com.petal.browser.view</code>: Engine rendering views (<code>PetalGeckoView</code>).</li>
-<li><code>com.petal.browser.engine</code>: Low-level engine integrations (<code>PetalGeckoRuntime</code>, <code>FullscreenVideoRules</code>).</li>
+<li><code>com.petal.browser.activity</code>: Core activities (<code>BrowserActivity</code>, <code>SettingsActivity</code>, <code>PetalPwaActivity</code>).</li>
+<li><code>com.petal.browser.browser</code>: Core browser tab contracts (<code>PetalTabViewController</code>, <code>PlaceholderAlbumController</code>, <code>AlbumController</code>, <code>BrowserContainer</code>).</li>
+<li><code>com.petal.browser.engine.gecko</code>: Engine integrations (<code>PetalEngineStore</code>, <code>PetalEngineBridge</code>, <code>PetalGeckoRuntime</code>, <code>PetalTabSuspender</code>).</li>
 <li><code>com.petal.browser.compose</code>: Jetpack Compose UI surfaces (settings, tabs, omnibox, context menus, video player).</li>
 <li><code>com.petal.browser.predictive</code>: Predictive back gesture coordination, blur snapshots, and transition curves.</li>
-<li><code>com.petal.browser.media</code>: Video overlays, PiP coordination (<code>BrowserMediaDelegate</code>), and <code>PetalMediaBridge</code>.</li>
-<li><code>com.petal.browser.download</code>: Download UI and state, backed by Mozilla's AbstractFetchDownloadService.</li>
-<li><code>com.petal.browser.security</code>: App lock, biometric authentication, and sandboxed storage protection.</li>
-<li><code>com.petal.browser.passkey</code>: Hardware-backed FIDO2 / Passkey authentication bridge.</li>
+<li><code>com.petal.browser.media</code>: Video overlays, PiP coordination, and <code>PetalMediaBridge</code>.</li>
+<li><code>com.petal.browser.download</code>: Download UI and state, backed by Mozilla's <code>AbstractFetchDownloadService</code>.</li>
 <li><code>com.petal.browser.pwa</code>: Progressive Web App (PWA) manifest installation and notification manager.</li>
-<li><code>com.petal.browser.account</code>: Google Sign-In &amp; credential sync architecture.</li>
-<li><code>com.petal.browser.haptics</code>: Waveform tactile haptic feedback synthesis (<code>PetalHapticEngine</code>).</li>
-<li><code>com.petal.browser.accessibility</code>: Caret browsing, high-contrast, and accessibility toggles.</li>
-<li><code>com.petal.browser.database</code>: SQLite bookmark, history, and search suggestions persistence.</li>
-<li><code>com.petal.browser.di</code>: Dagger Hilt dependency injection modules.</li>
-<li><code>com.petal.browser.torrent</code>: Native torrent protocol integration classes.</li>
-<li><code>com.petal.browser.ui.theme</code>: Material 3 Expressive theme tokens, dynamic shapes, and color styles.</li>
+<li><code>com.petal.browser.passwords</code>: Hardware-backed credential vault and autofill.</li>
+<li><code>com.petal.browser.ui.glass</code>: Liquid glass material rendering and background blurs.</li>
+<li><code>com.petal.browser.ui.theme</code>: Material 3 Expressive theme tokens and anti-slop design system.</li>
 </ul>
 </section>
         </div>
@@ -301,6 +316,6 @@
     </div>
   </footer>
 
-  <script src="/page.js?v=159.0.1" defer></script>
+  <script src="/page.js?v=161.0.0" defer></script>
 </body>
 </html>

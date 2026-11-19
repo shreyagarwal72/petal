@@ -44,8 +44,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,25..151,100..1000&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=159.0.1">
-  <link rel="stylesheet" href="/pages.css?v=159.0.1">
+  <link rel="stylesheet" href="/styles.css?v=161.0.0">
+  <link rel="stylesheet" href="/pages.css?v=161.0.0">
 </head>
 <body>
 
@@ -153,7 +153,7 @@
         <aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li><a href="#1-executive-summary-product-positioning">1. Executive Summary &amp; Product Positioning</a></li><li><a href="#2-target-platform-runtime-constraints">2. Target Platform &amp; Runtime Constraints</a></li><li><a href="#3-core-differentiators-product-features">3. Core Differentiators &amp; Product Features</a></li><li><a href="#4-architectural-boundaries-non-functional-requirements">4. Architectural Boundaries &amp; Non-Functional Requirements</a></li></ol></aside>
         <div class="prose">
 <section id="1-executive-summary-product-positioning"><h2>1. Executive Summary &amp; Product Positioning</h2>
-<p><strong>Petal Browser</strong> is a fast, ultra-lightweight, and privacy-focused Android web browser built upon a modern architecture combining a Mozilla GeckoView engine core with a Material 3 Expressive Jetpack Compose user interface.</p>
+<p><strong>Petal Browser</strong> is a fast, ultra-lightweight, and privacy-focused Android web browser built upon a modern architecture combining a Mozilla GeckoView engine core with a Material 3 Expressive Jetpack Compose user interface and LastWave Liquid Glass theming.</p>
 <p>Petal Browser retains non-invasive, open-source privacy values while delivering modern Android design paradigms, predictive gesture motion, full WebExtension support, and advanced media playback capabilities.</p>
 </section>
 <section id="2-target-platform-runtime-constraints"><h2>2. Target Platform &amp; Runtime Constraints</h2>
@@ -163,7 +163,8 @@
 <li><strong>Target Architectures</strong>: <code>arm64-v8a</code>, <code>armeabi-v7a</code>, <code>x86</code>, <code>x86_64</code> (Universal APK and ABI-split builds).</li>
 <li><strong>Hardware Integration</strong>:
 <ul>
-<li>Android 12+ (API 31+) Dynamic Wallpaper Color Extraction (<code>Monet</code>).</li>
+<li>Android 13+ (API 33+) Live Wallpaper Lens Refraction and Per-App Language Preferences.</li>
+<li>Android 12+ (API 31+) Real Backdrop Blur, Dynamic Wallpaper Color Extraction (<code>Monet</code>), and LastWave Liquid Header Glass.</li>
 <li>Android 10+ (API 29+) System Gesture Navigation &amp; Gesture Exclusion APIs.</li>
 <li>Android 8.0+ Picture-in-Picture (PiP) Windowing.</li>
 <li>Hardware Biometrics (<code>androidx.biometric:biometric:1.2.0-alpha05</code>).</li>
@@ -174,44 +175,43 @@
 </section>
 <section id="3-core-differentiators-product-features"><h2>3. Core Differentiators &amp; Product Features</h2>
 <p>As evidenced strictly by the current codebase implementation:</p>
-<h3>3.1 Mozilla GeckoView Standalone Browsing Core</h3>
+<h3>3.1 Mozilla GeckoView 161 Standalone Browsing Core</h3>
 <ul>
-<li><strong>Mozilla GeckoView Integration</strong>: Complete standalone engine providing modern web standard compliance, independent of system WebView bugs or manufacturer delays.</li>
+<li><strong>Mozilla GeckoView Beta 161</strong>: Standalone engine core (<code>161.0.20261113104103</code>) with Mozilla Android Components <code>161.0b3</code> providing modern web standard compliance, independent of system WebView bugs or manufacturer delays.</li>
 <li><strong>Strict Enhanced Tracking Protection (ETP)</strong>: Integrated content blocking configured to reject third-party tracking cookies, cryptominers, and malicious fingerprinting domains.</li>
+<li><strong>URL Tracking Parameter Stripping</strong>: Automatic query parameter sanitizer (<code>utm_*</code>, <code>fbclid</code>, <code>gclid</code>, <code>mc_eid</code>) stripping trackers before page requests dispatch.</li>
 <li><strong>Total Cookie Protection &amp; AMO Extensions</strong>: Isolated cookie jars per site, full support for Firefox WebExtensions (AMO) and native Petal built-in extensions.</li>
 </ul>
-<h3>3.2 Material 3 Expressive UI &amp; Physics-Based Motion</h3>
+<h3>3.2 Material 3 Expressive UI &amp; LastWave Liquid Glass</h3>
 <ul>
+<li><strong>LastWave Liquid Header Glass</strong>: Real backdrop frosted glass with lens refraction across headers, sheets, and dialogs with smooth fallback on low-end devices.</li>
 <li><strong>35 Dynamic Shapes</strong>: Interactive shortcuts and UI components adapt across 35 dynamic polygon geometries (<code>PetalMaterialShapes.kt</code>).</li>
 <li><strong>Living Ambient Mesh</strong>: Day/night dynamic backdrop responding smoothly to daylight and palette shifts.</li>
 <li><strong>AMOLED Pitch-Black Support</strong>: Genuine <code>#000000</code> surface theming across all elevated containers.</li>
 <li><strong>Waveform Tactile Haptics</strong>: Rich micro-haptic ticks on scrolling, address bar tab swiping, and gesture triggers (<code>PetalHapticEngine</code>).</li>
 </ul>
-<h3>3.3 Advanced Native Media Player</h3>
+<h3>3.3 Advanced Native Media Player &amp; Cutout Island</h3>
 <ul>
 <li><strong>mpvEx-Inspired Overlay</strong>: Native Compose video controls overlay featuring auto-hide, dual time readouts, speed selector, and brightness/volume vertical slide gestures.</li>
 <li><strong>Wavy Animated Seekbar</strong>: Dynamic sine-wave propagation with instant flattening during scrubbing and pause.</li>
 <li><strong>Dynamic Picture-in-Picture</strong>: Source aspect ratio calculation with playback skip/pause action triggers.</li>
-<li><strong>Smart YouTube Bypass</strong>: Gracefully avoids overlay collisions on native YouTube playback.</li>
+<li><strong>Cutout Island Player</strong>: Floating interactive media island with burn-in protection, wavy progress, and quick controls.</li>
 </ul>
-<h3>3.4 Predictive Back Gestures</h3>
+<h3>3.4 Standalone Viewers &amp; Native Predictive Back</h3>
 <ul>
-<li>Dual-surface depth blur and corner-radius morphing during back navigation swipes.</li>
-<li>System edge-swipe touch protection ensuring browser gestures never interfere with Android system back.</li>
+<li><strong>Task Affinity Isolation</strong>: Standalone viewers for PDF, media, image, and file viewing in dedicated recents tasks (<code>documentLaunchMode=&quot;always&quot;</code>).</li>
+<li><strong>Native Predictive Back</strong>: Fluid back-gesture animations with system-level back handlers (<code>enableOnBackInvokedCallback=&quot;true&quot;</code>).</li>
 </ul>
-<h3>3.5 Power Tools &amp; Ecosystem Bridges</h3>
+<h3>3.5 Decentralized Folder Sync</h3>
 <ul>
-<li><strong>PWA Manager</strong>: First-class support for installing Progressive Web Apps directly to the home screen.</li>
-<li><strong>Passkey Support</strong>: Hardware-backed FIDO2 / Passkey authentication bridge (<code>com.petal.browser.passkey</code>).</li>
-<li><strong>Mozilla Download Service</strong>: Downloads run on Mozilla's AbstractFetchDownloadService with pause, resume and live notifications, inheriting cookies and private mode from Gecko.</li>
-<li><strong>Torrent Subsystem</strong>: Package structure and contracts present (<code>com.petal.browser.torrent</code>); full UI availability <em>needs developer confirmation</em>.</li>
-<li><strong>Petal AI Hub</strong>: On-device AI research and summary bridges (<code>com.petal.browser.lens</code>).</li>
+<li><strong>User-Owned Encrypted Sync</strong>: Safely sync bookmarks, history, passwords, and open tabs via Storage Access Framework (SAF) to any cloud folder (Drive, Nextcloud, Syncthing) without third-party accounts.</li>
+<li><strong>Android JobService</strong>: Scheduled background syncing with network constraint handling.</li>
 </ul>
 </section>
 <section id="4-architectural-boundaries-non-functional-requirements"><h2>4. Architectural Boundaries &amp; Non-Functional Requirements</h2>
 <ol>
 <li><strong>Zero Data Loss Guarantee</strong>: Strict backward compatibility for bookmarks, session tabs, passwords, and user settings across all updates.</li>
-<li><strong>Modular Compose Bridging</strong>: Seamless embedding of Compose screens into the Java Activity navigation shell without breaking lifecycle or ViewModel scoping.</li>
+<li><strong>Modular Compose Bridging</strong>: Seamless embedding of Compose screens into the Activity navigation shell without breaking lifecycle or ViewModel scoping.</li>
 <li><strong>Open-Source Compliance</strong>: Fully licensed under GPL-3.0 with transparent attribution for all upstream libraries.</li>
 </ol>
 </section>
@@ -278,6 +278,6 @@
     </div>
   </footer>
 
-  <script src="/page.js?v=159.0.1" defer></script>
+  <script src="/page.js?v=161.0.0" defer></script>
 </body>
 </html>

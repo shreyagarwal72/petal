@@ -171,7 +171,7 @@ def build_changelog() -> None:
         releases.append((header.strip(), body))
 
     # Petal's own history ends where the inherited FOSS Browser history starts ("v 24 (WIP)").
-    cut = next(i for i, (h, _) in enumerate(releases) if h.startswith("v 24"))
+    cut = next((i for i, (h, _) in enumerate(releases) if h.startswith("v 24")), len(releases))
     petal, upstream = releases[:cut], releases[cut:]
 
     # One Petal entry (v3.7) was appended at the very end of the file; put it in version order.
@@ -312,7 +312,9 @@ def fix_links(h: str, name: str) -> str:
 
     h = re.sub(rf'href="{re.escape(GH)}/blob/main/app/src/main/assets/([\w.\-]+)"(\s+target="_blank"\s+rel="noopener noreferrer")?', asset, h)
     h = h.replace(">PRD.md</a>", ">Product requirements</a>")
-    h = h.replace("pages.css?v=157.0.3", "pages.css?v=157.0.4")
+    h = re.sub(r'pages\.css\?v=[0-9.]+', 'pages.css?v=161.0.0', h)
+    h = re.sub(r'styles\.css\?v=[0-9.]+', 'styles.css?v=161.0.0', h)
+    h = re.sub(r'page\.js\?v=[0-9.]+', 'page.js?v=161.0.0', h)
 
     pre = h.split("<main", 1)[0]
     if 'href="/changelog"' not in pre:
@@ -353,14 +355,18 @@ def update_sitemap() -> None:
     p = SITE / "sitemap.xml"
     s = read(p)
     new = [("/changelog", "weekly", "0.7"), ("/architecture", "monthly", "0.4"), ("/design", "monthly", "0.4"),
-           ("/prd", "monthly", "0.4"), ("/code-of-conduct", "yearly", "0.3"), ("/gpl", "yearly", "0.3")]
+           ("/prd", "monthly", "0.4"), ("/code-of-conduct", "yearly", "0.3"), ("/gpl", "yearly", "0.3"),
+           ("/docs", "monthly", "0.8")]
     add = ""
     for path, freq, prio in new:
         if f"<loc>{BASE}{path}</loc>" not in s:
             add += f"  <url>\n    <loc>{BASE}{path}</loc>\n    <lastmod>{TODAY}</lastmod>\n    <changefreq>{freq}</changefreq>\n    <priority>{prio}</priority>\n  </url>\n"
     if add:
         s = s.replace("</urlset>", add + "</urlset>")
-    s = re.sub(r"(<lastmod>)[^<]*(</lastmod>)", lambda m: m.group(1) + TODAY + m.group(2), s) if add else s
+    # Always refresh lastmod for existing URLs that have <lastmod>
+    s = re.sub(r"(<lastmod>)[^<]*(</lastmod>)", lambda m: m.group(1) + TODAY + m.group(2), s)
+    # Add lastmod to any url block that lacks it (e.g., /docs)
+    s = re.sub(r"(<loc>[^<]+</loc>)(?!\s*<lastmod>)", lambda m: m.group(1) + f"\n    <lastmod>{TODAY}</lastmod>", s)
     write(p, s)
 
 

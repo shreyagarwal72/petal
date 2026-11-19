@@ -47,8 +47,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,25..151,100..1000&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=159.0.1">
-  <link rel="stylesheet" href="/pages.css?v=159.0.1">
+  <link rel="stylesheet" href="/styles.css?v=161.0.0">
+  <link rel="stylesheet" href="/pages.css?v=161.0.0">
 </head>
 <body>
 
@@ -153,7 +153,7 @@
         
       </header>
       <div class="page-grid">
-        <aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li><a href="#requirements">Requirements</a></li><li><a href="#install">Install</a></li><li><a href="#updates">Updating</a></li><li><a href="#other">Other channels</a></li><li><a href="#safety">Stay safe</a></li></ol></aside>
+        <aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li><a href="#requirements">Requirements</a></li><li><a href="#architectures">Architectures</a></li><li><a href="#install">Install</a></li><li><a href="#updates">Updating</a></li><li><a href="#other">Other channels</a></li><li><a href="#safety">Stay safe</a></li></ol></aside>
         <div class="prose">
 
 <div class="dl-row">
@@ -162,7 +162,16 @@
 </div>
 
 <section id="requirements"><h2>Requirements</h2>
-<ul><li>Android 8.0 (API 26) or newer.</li><li>A device with enough free storage for the app and the GeckoView engine.</li></ul></section>
+<ul><li>Android 8.0 (API 26) or newer.</li><li>A device with enough free storage for the app and the GeckoView engine (~120 MB).</li></ul></section>
+
+<section id="architectures"><h2>Which APK should I pick?</h2>
+<p>Each release publishes both a Universal APK and per-architecture optimized builds:</p>
+<ul>
+  <li><strong>arm64-v8a (Recommended)</strong>: For almost all modern Android phones and tablets (64-bit ARM). Smaller download and fastest performance.</li>
+  <li><strong>armeabi-v7a</strong>: For older 32-bit ARM phones and low-resource devices.</li>
+  <li><strong>x86_64 / x86</strong>: For Android emulators, Android-x86, and Intel-based Chromebooks.</li>
+  <li><strong>Universal (all architectures)</strong>: Runs on any supported Android device. Pick this if you are not sure of your device CPU.</li>
+</ul></section>
 
 <section id="install"><h2>Install from GitHub</h2>
 <ol class="steps">
@@ -246,6 +255,6 @@
     </div>
   </footer>
 
-  <script src="/page.js?v=159.0.1" defer></script>
+  <script src="/page.js?v=161.0.0" defer></script>
 </body>
 </html>

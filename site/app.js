@@ -360,12 +360,26 @@
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
         if (!en.isIntersecting) return;
-        links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id); });
+        var hash = '#' + en.target.id;
+        links.forEach(function (a) {
+          var href = a.getAttribute('href') || '';
+          var active = href === hash || href === '/' + hash;
+          a.classList.toggle('active', active);
+          if (active) a.setAttribute('aria-current', 'location');
+          else if (href.indexOf('#') > -1) a.removeAttribute('aria-current');
+        });
       });
     }, { rootMargin: '-40% 0px -55% 0px' });
     ids.forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
     var hero = $('#hero');
-    if (hero) new IntersectionObserver(function (e) { if (e[0].isIntersecting) links.forEach(function (a) { a.classList.remove('active'); }); }, { rootMargin: '-40% 0px -55% 0px' }).observe(hero);
+    if (hero) new IntersectionObserver(function (e) {
+      if (e[0].isIntersecting) links.forEach(function (a) {
+        if ((a.getAttribute('href') || '').indexOf('#') > -1) {
+          a.classList.remove('active');
+          a.removeAttribute('aria-current');
+        }
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' }).observe(hero);
   })();
 
   /* ======================================================================

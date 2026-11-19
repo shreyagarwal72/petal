@@ -44,8 +44,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,25..151,100..1000&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=159.0.1">
-  <link rel="stylesheet" href="/pages.css?v=159.0.1">
+  <link rel="stylesheet" href="/styles.css?v=161.0.0">
+  <link rel="stylesheet" href="/pages.css?v=161.0.0">
 </head>
 <body>
 
@@ -150,10 +150,10 @@
         <p class="page-meta">Mirrored from design.md in the Petal repository</p>
       </header>
       <div class="page-grid">
-        <aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li><a href="#1-design-direction-material-3-expressive">1. Design Direction: Material 3 Expressive</a></li><li><a href="#2-dynamic-35-material-3-expressive-shapes-catalog">2. Dynamic 35 Material 3 Expressive Shapes Catalog</a></li><li><a href="#3-app-identity-adaptive-flower-icon">3. App Identity &amp; Adaptive Flower Icon</a></li><li><a href="#4-omnibox-address-bar-collapse-navigation-mechanics">4. Omnibox, Address Bar Collapse &amp; Navigation Mechanics</a></li><li><a href="#5-color-palettes-amoled-pure-black-typography-tokens">5. Color Palettes, AMOLED Pure Black &amp; Typography Tokens</a></li></ol></aside>
+        <aside class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li><a href="#1-design-direction-material-3-expressive-lastwave-liquid-glass">1. Design Direction: Material 3 Expressive &amp; LastWave Liquid Glass</a></li><li><a href="#2-dynamic-35-material-3-expressive-shapes-catalog">2. Dynamic 35 Material 3 Expressive Shapes Catalog</a></li><li><a href="#3-lastwave-liquid-header-glass-engine">3. LastWave Liquid Header Glass Engine</a></li><li><a href="#4-app-identity-selectable-app-icons-themes">4. App Identity, Selectable App Icons &amp; Themes</a></li><li><a href="#5-omnibox-address-bar-collapse-navigation-mechanics">5. Omnibox, Address Bar Collapse &amp; Navigation Mechanics</a></li><li><a href="#6-color-palettes-amoled-pure-black-typography-tokens">6. Color Palettes, AMOLED Pure Black &amp; Typography Tokens</a></li><li><a href="#7-developer-checklist-for-new-screens">7. Developer Checklist for New Screens</a></li></ol></aside>
         <div class="prose">
-<section id="1-design-direction-material-3-expressive"><h2>1. Design Direction: Material 3 Expressive</h2>
-<p>Petal Browser implements Google's <strong>Material 3 Expressive</strong> design specification (<code>androidx.compose.material3:material3:1.5.0-alpha22</code>), prioritizing vibrant dynamic geometry, living visual hierarchy, playful spring animations, and tactile responsiveness.</p>
+<section id="1-design-direction-material-3-expressive-lastwave-liquid-glass"><h2>1. Design Direction: Material 3 Expressive &amp; LastWave Liquid Glass</h2>
+<p>Petal Browser implements Google's <strong>Material 3 Expressive</strong> design specification (<code>androidx.compose.material3:material3:1.5.0-alpha22</code>) paired with the <strong>LastWave Liquid Glass</strong> engine, prioritizing vibrant dynamic geometry, real backdrop blur, living visual hierarchy, playful spring animations, and tactile responsiveness.</p>
 </section>
 <section id="2-dynamic-35-material-3-expressive-shapes-catalog"><h2>2. Dynamic 35 Material 3 Expressive Shapes Catalog</h2>
 <p>Implemented in <code>com.petal.browser.ui.theme.PetalMaterialShapes.kt</code> using <code>androidx.graphics.shapes.RoundedPolygon</code>:
@@ -197,51 +197,49 @@ Every interactive chip, web shortcut pill, FAB, and dialog accent is mapped acro
 </ol>
 <p>The helper extension <code>RoundedPolygon.toShape()</code> renders smooth Compose-native vector paths with zero bitmap distortion.</p>
 </section>
-<section id="3-app-identity-adaptive-flower-icon"><h2>3. App Identity &amp; Adaptive Flower Icon</h2>
+<section id="3-lastwave-liquid-header-glass-engine"><h2>3. LastWave Liquid Header Glass Engine</h2>
 <ul>
-<li><strong>Vector Foreground</strong>: Defined in <code>res/drawable/ic_launcher_foreground.xml</code> with companion drawables in <code>res/mipmap-*/</code>.</li>
-<li><strong>Icon Visual Motif</strong>: Styled after the blossoming petal flower silhouette using layered geometry:
-<ul>
-<li>Deep midnight expressive background (<code>#1A0D1E</code>).</li>
-<li>Concentric radial glow layers (<code>#2D1537</code> and <code>#3E1A4A</code>).</li>
-<li>Adaptive Android icon support with full compatibility across API 26 through API 36.</li>
-</ul>
-</li>
+<li><strong>Backdrop Blur &amp; Refraction</strong>: On Android 12+ (API 31+), headers, sheets, and dialogs utilize real-time render effect backdrop blurs with customizable sheen intensity, specular highlights, and chromatic aberration.</li>
+<li><strong>Glass Header Architecture (<code>PetalGlassHeaderLayout</code>)</strong>: The page content acts as the backdrop source while the header floats above it. Search rows, tab strips, and filters sit seamlessly inside the header's <code>bottomContent</code> slot, eliminating content overlap and page jumps.</li>
+<li><strong>Hardware-Aware Fallback</strong>: Automatically falls back to high-contrast solid surfaces on low-end devices (<code>MotionGate.isLowEndDevice</code>) or when disabled in Settings.</li>
 </ul>
 </section>
-<section id="4-omnibox-address-bar-collapse-navigation-mechanics"><h2>4. Omnibox, Address Bar Collapse &amp; Navigation Mechanics</h2>
+<section id="4-app-identity-selectable-app-icons-themes"><h2>4. App Identity, Selectable App Icons &amp; Themes</h2>
+<ul>
+<li><strong>Adaptive Icon Themes</strong>: Choose how Petal looks on your home screen in Settings &gt; App Icon (Bloom, Classic Swirl, Tab Bloom, Petal P, Lens, Shield) with adaptive monochrome styling and dynamic wallpaper coloring.</li>
+<li><strong>Dynamic Launch Splash Screens</strong>: Synchronized animated splash screens on Android 13+ with smooth exit transitions.</li>
+</ul>
+</section>
+<section id="5-omnibox-address-bar-collapse-navigation-mechanics"><h2>5. Omnibox, Address Bar Collapse &amp; Navigation Mechanics</h2>
 <ul>
 <li><strong>Collapsing Address Bar</strong>:
 <ul>
-<li>Located at <code>R.id.compose_address_bar</code> / <code>activity_main.xml</code>.</li>
-<li>Driven by scroll offset deltas from <code>PetalGeckoView</code> and <code>NinjaWebView</code> (<code>animateAddressBarCollapse</code>).</li>
-<li>When scrolled downwards, the address bar collapses with a spring exit transition, revealing an unobtrusive floating action bubble (<code>fab_bubble</code>).</li>
-<li>Scrolling upwards smoothly restores the full omnibox pill.</li>
+<li>Located at <code>ComposeEngineViewport.kt</code> and <code>PetalAddressBar.kt</code>.</li>
+<li>Driven by scroll offset deltas from GeckoView.</li>
+<li>When scrolled downwards, the address bar collapses into a compact pill, waiting ~110 ms so GeckoView has painted the freed area before fading out, completely preventing black/gray viewport flashes or page jumps.</li>
+<li>Scrolling upwards smoothly restores the full omnibox pill with sequential cross-fading.</li>
 </ul>
 </li>
 <li><strong>Interactive Pill Enhancements</strong>:
 <ul>
 <li>Horizontal swipe gestures across the pill trigger rapid tab switching with micro-haptic ticks.</li>
 <li>Long-press triggers an Expressive Modal Bottom Sheet providing Clean URL Copying (stripping tracking parameters), Paste &amp; Go, Quick Bookmark, and Hard Refresh.</li>
-<li>Inline progress line morphing directly along the bottom contour of the omnibox container.</li>
 </ul>
 </li>
-<li><strong>Top-Anchored Overflow Menu</strong>:
+<li><strong>Expressive Header &amp; Navigation</strong>:
 <ul>
-<li>Compact Material 3 Expressive sheet anchored at the top-right toolbar.</li>
-<li>Displays quick toggles for Desktop Mode, JavaScript, AdBlock, and Dark Mode, flanked by primary navigation actions.</li>
+<li>Unified <code>ExpressiveHeader</code> supporting back navigation with frosted <code>GlassBackButton</code>, dynamic typography scaling, and actions.</li>
 </ul>
 </li>
 </ul>
 </section>
-<section id="5-color-palettes-amoled-pure-black-typography-tokens"><h2>5. Color Palettes, AMOLED Pure Black &amp; Typography Tokens</h2>
+<section id="6-color-palettes-amoled-pure-black-typography-tokens"><h2>6. Color Palettes, AMOLED Pure Black &amp; Typography Tokens</h2>
 <ul>
 <li><strong>Theme Definitions (<code>com.petal.browser.ui.theme.PetalTheme.kt</code>)</strong>:
 <ul>
 <li><strong>Dynamic Palette</strong>: Extracts system wallpaper tones on Android 12+ (API 31+) via <code>dynamicLightColorScheme</code> and <code>dynamicDarkColorScheme</code>.</li>
 <li><strong>Fallback Palettes</strong>: Hand-crafted color harmonies including <code>Petal</code>, <code>Tide</code>, <code>Sakura</code>, <code>Emerald</code>, and <code>Nord</code>.</li>
-<li><strong>Color Styles (<code>ColorStyles.kt</code>)</strong>: Full support for Material 3 tonal variants: <code>TONAL_SPOT</code>, <code>EXPRESSIVE</code>, <code>FRUIT_SALAD</code>, <code>RAINBOW</code>, <code>VIBRANT</code>, and <code>MONOCHROME</code>.</li>
-<li><strong>AMOLED Mode (<code>applyAmoled()</code>)</strong>: Replaces dark surfaces with true pitch black (<code>#000000</code>) across all elevation layers (<code>surfaceContainerLowest</code>, <code>surfaceContainerLow</code>, <code>surfaceContainerHigh</code>), saving battery life on OLED displays.</li>
+<li><strong>AMOLED Mode (<code>applyAmoled()</code>)</strong>: Replaces dark surfaces with true pitch black (<code>#000000</code>) across all elevation layers, saving battery life on OLED displays.</li>
 </ul>
 </li>
 <li><strong>Motion &amp; Spring Easing</strong>:
@@ -255,6 +253,20 @@ Every interactive chip, web shortcut pill, FAB, and dialog accent is mapped acro
 <li>Synthesizes distinct vibration patterns (<code>CLICK</code>, <code>TICK</code>, <code>DOUBLE_CLICK</code>, <code>HEAVY_CLICK</code>) mapped to address bar actions, swipe thresholds, and seek gestures.</li>
 </ul>
 </li>
+</ul>
+</section>
+<section id="7-developer-checklist-for-new-screens"><h2>7. Developer Checklist for New Screens</h2>
+<p>When building or updating any screen, sheet, dialog, or component in Petal, verify against this checklist:</p>
+<ul>
+<li>[ ] <strong>No Outlines/Borders</strong>: No <code>BorderStroke</code> or <code>Modifier.border</code> used for decoration. Borders only permitted for 2dp primary focus rings or selected tab thumbnails.</li>
+<li>[ ] <strong>No Outlined Material 3 Components</strong>: No <code>OutlinedButton</code>, <code>OutlinedTextField</code>, or <code>OutlinedCard</code>. Use tonal filled variants (<code>TextField</code>, <code>FilledTonalButton</code>, <code>Card</code> / <code>Surface</code>).</li>
+<li>[ ] <strong>Unified Button Groups</strong>: Side-by-side buttons use <code>PetalConnectedButtonGroup</code> or <code>PetalChoiceButtonGroup</code> with 6dp spacing and 50dp/6dp corner morphing.</li>
+<li>[ ] <strong>Standardized Shapes</strong>: Standard buttons use pills (<code>CircleShape</code> or 50dp); icon buttons use circles; cards use 16dp rounded corners.</li>
+<li>[ ] <strong>No Hardcoded Hex Colors</strong>: All colors use <code>MaterialTheme.colorScheme</code> tokens.</li>
+<li>[ ] <strong>Transient Surfaces</strong>: Bottom sheets use <code>PetalSheet</code>; dialogs use <code>PetalDialog</code> or <code>PetalMaterialAlertDialog</code>.</li>
+<li>[ ] <strong>Touch Targets</strong>: All interactive elements maintain a minimum touch target of 48.dp.</li>
+<li>[ ] <strong>Accessibility &amp; Ellipsis</strong>: Text labels have <code>maxLines = 1</code> and <code>TextOverflow.Ellipsis</code> where bounded, with descriptive content descriptions.</li>
+<li>[ ] <strong>Calm Motion</strong>: Transitions use <code>MotionScheme.expressive()</code> or fast effects specs with no aggressive overshoot.</li>
 </ul>
 </section>
         </div>
@@ -320,6 +332,6 @@ Every interactive chip, web shortcut pill, FAB, and dialog accent is mapped acro
     </div>
   </footer>
 
-  <script src="/page.js?v=159.0.1" defer></script>
+  <script src="/page.js?v=161.0.0" defer></script>
 </body>
 </html>

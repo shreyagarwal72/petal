@@ -687,8 +687,23 @@ class PetalBrowserViewModel @Inject constructor(
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val newTarget = enabled ?: !_isDesktopMode.value
         _isDesktopMode.value = newTarget
-        sp.edit().putBoolean("sp_desktop_site", newTarget).apply()
-        activeTab.value?.engineState?.engineSession?.toggleDesktopMode(newTarget, reload = true)
+        val activeUrl = activeTab.value?.content?.url.orEmpty()
+        val host = try { android.net.Uri.parse(activeUrl).host } catch (_: Throwable) { null }
+        val editor = sp.edit().putBoolean("sp_desktop_site", newTarget)
+        if (!host.isNullOrBlank()) {
+            editor.putBoolean("sp_desktop_site_$host", newTarget)
+        }
+        editor.apply()
+        activeTab.value?.engineState?.engineSession?.let { session ->
+            try {
+                val gs = (session as? mozilla.components.browser.engine.gecko.GeckoEngineSession)?.geckoSession
+                gs?.settings?.let { s ->
+                    s.viewportMode = if (newTarget) org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_DESKTOP else org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE
+                    s.userAgentMode = if (newTarget) org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_DESKTOP else org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_MOBILE
+                }
+            } catch (_: Throwable) {}
+            session.toggleDesktopMode(newTarget, reload = true)
+        }
     }
 
     fun shareLink(title: String, url: String) {
