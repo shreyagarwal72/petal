@@ -1157,125 +1157,24 @@ private fun PetalPdfViewerScreenImpl(
         )
     }
 
-    // ── Reading Options Sheet (glass sheet + PetalSlider + IconSwitch) ──
+    // ── Reading Options Sheet (Petal sheet language, M3 Expressive / Liquid Glass / background blur) ──
     if (showReadingToneDialog) {
-        com.petal.browser.ui.containment.PetalSheet(
-            onDismissRequest = { showReadingToneDialog = false }
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 4.dp, bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.ui_pdf_reading_settings),
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                // View mode — two equal glass cards
-                PdfOptionLabel(stringResource(R.string.ui_pdf_view_mode))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                    com.petal.browser.ui.containment.PetalSelectableOptionCard(
-                        title = stringResource(R.string.ui_pdf_continuous),
-                        selected = viewMode == PdfViewMode.CONTINUOUS_VERTICAL,
-                        onClick = { viewMode = PdfViewMode.CONTINUOUS_VERTICAL },
-                        modifier = Modifier.weight(1f),
-                        leading = { Icon(Icons.Rounded.ViewDay, null, Modifier.size(20.dp)) }
-                    )
-                    com.petal.browser.ui.containment.PetalSelectableOptionCard(
-                        title = stringResource(R.string.ui_pdf_page_by_page),
-                        selected = viewMode == PdfViewMode.PAGE_PAGER_HORIZONTAL,
-                        onClick = {
-                            isAutoScrolling = false
-                            viewMode = PdfViewMode.PAGE_PAGER_HORIZONTAL
-                        },
-                        modifier = Modifier.weight(1f),
-                        leading = { Icon(Icons.Rounded.ViewCarousel, null, Modifier.size(20.dp)) }
-                    )
-                }
-
-                // Color tone — full-width rows, so long names never wrap into 3-4 lines
-                PdfOptionLabel(stringResource(R.string.ui_pdf_reading_tone))
-                com.petal.browser.ui.containment.PetalSelectableOptionCard(
-                    title = stringResource(R.string.ui_pdf_tone_default),
-                    selected = readingTone == PdfReadingTone.DEFAULT,
-                    onClick = { readingTone = PdfReadingTone.DEFAULT },
-                    leading = { Icon(Icons.Rounded.LightMode, null, Modifier.size(20.dp)) }
-                )
-                com.petal.browser.ui.containment.PetalSelectableOptionCard(
-                    title = stringResource(R.string.ui_pdf_tone_sepia),
-                    selected = readingTone == PdfReadingTone.SEPIA,
-                    onClick = { readingTone = PdfReadingTone.SEPIA },
-                    leading = { Icon(Icons.Rounded.Coffee, null, Modifier.size(20.dp)) }
-                )
-                com.petal.browser.ui.containment.PetalSelectableOptionCard(
-                    title = stringResource(R.string.ui_pdf_tone_night),
-                    selected = readingTone == PdfReadingTone.DARK_INVERTED,
-                    onClick = { readingTone = PdfReadingTone.DARK_INVERTED },
-                    leading = { Icon(Icons.Rounded.DarkMode, null, Modifier.size(20.dp)) }
-                )
-
-                // Auto-scroll + speed (continuous mode only)
-                if (viewMode == PdfViewMode.CONTINUOUS_VERTICAL) {
-                    PdfGlassControlCard {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.ui_pdf_auto_scroll),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = stringResource(R.string.ui_pdf_scroll_speed) + ": " +
-                                        String.format(Locale.getDefault(), "%.1fx", autoScrollSpeed),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            com.petal.browser.ui.components.IconSwitch(
-                                checked = isAutoScrolling,
-                                icon = Icons.Rounded.PlayArrow,
-                                onCheckedChange = { isAutoScrolling = it }
-                            )
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        com.petal.browser.ui.components.PetalSlider(
-                            value = autoScrollSpeed,
-                            onValueChange = { autoScrollSpeed = (Math.round(it * 10f) / 10f) },
-                            valueRange = 0.5f..5.0f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
-                // Crop margins
-                PdfGlassControlCard {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.ui_pdf_crop_margins),
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
-                        )
-                        com.petal.browser.ui.components.IconSwitch(
-                            checked = isCropMarginsEnabled,
-                            icon = Icons.Rounded.CropFree,
-                            onCheckedChange = { isCropMarginsEnabled = it }
-                        )
-                    }
-                }
-            }
-        }
+        PdfReadingOptionsSheet(
+            viewMode = viewMode,
+            onViewModeChange = {
+                if (it == PdfViewMode.PAGE_PAGER_HORIZONTAL) isAutoScrolling = false
+                viewMode = it
+            },
+            readingTone = readingTone,
+            onReadingToneChange = { readingTone = it },
+            isAutoScrolling = isAutoScrolling,
+            onAutoScrollChange = { isAutoScrolling = it },
+            autoScrollSpeed = autoScrollSpeed,
+            onAutoScrollSpeedChange = { autoScrollSpeed = it },
+            isCropMarginsEnabled = isCropMarginsEnabled,
+            onCropMarginsChange = { isCropMarginsEnabled = it },
+            onDismiss = { showReadingToneDialog = false },
+        )
     }
 
     // ── Add Text Note Dialog ──
@@ -1449,32 +1348,6 @@ private fun PetalPdfViewerScreenImpl(
                 }
             }
         )
-    }
-}
-
-@Composable
-private fun PdfOptionLabel(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = 6.dp)
-    )
-}
-
-/** Glass card that holds a control group (toggle / slider) inside the sheet. */
-@Composable
-private fun PdfGlassControlCard(content: @Composable ColumnScope.() -> Unit) {
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val shape = RoundedCornerShape(24.dp)
-    Surface(
-        shape = shape,
-        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true) else Modifier)
-    ) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), content = content)
     }
 }
 

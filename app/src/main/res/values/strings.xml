@@ -1628,6 +1628,9 @@
     <string name="ui_pdf_crop_margins">Crop whitespace margins</string>
     <string name="ui_pdf_reading_settings">Reading options</string>
     <string name="ui_pdf_scroll_speed">Scroll speed</string>
+    <string name="ui_pdf_options_display">Display</string>
+    <string name="ui_pdf_options_scroll">Scroll</string>
+    <string name="ui_pdf_auto_scroll_unavailable">Auto-scroll is available in continuous scroll mode.</string>
 
     <!-- Petal Progress, Badges & Rewards (English) -->
     <string name="progress_explorer">PETAL EXPLORER</string>

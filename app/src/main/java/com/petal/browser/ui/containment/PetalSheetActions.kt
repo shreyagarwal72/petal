@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
@@ -355,4 +357,106 @@ fun PetalSheetActionRow(content: @Composable RowScope.() -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         content = content,
     )
+}
+
+/** Cookie-shaped check badge shown on a selected [PetalSheetChoicePill] / row. */
+@Composable
+fun PetalSheetCheckBadge(modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.primary, checkColor: Color = MaterialTheme.colorScheme.onPrimary) {
+    Box(
+        modifier = modifier
+            .size(26.dp)
+            .clip(com.petal.browser.ui.theme.ExpressiveButtonShape)
+            .background(color),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Rounded.Check, contentDescription = null, tint = checkColor, modifier = Modifier.size(16.dp))
+    }
+}
+
+/**
+ * Selectable choice for a pair/trio of options (view mode, layout...). Icon above a (max 2 line) label so
+ * long names never get chopped mid-word, fully rounded, with a cookie check badge when [selected].
+ * Selected = primaryContainer, unselected = tonal [PetalSheetTone.Neutral] on glass/filled surface.
+ */
+@Composable
+fun PetalSheetChoicePill(
+    text: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    minHeight: Dp = 88.dp,
+) {
+    val container by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+        animationSpec = tween(300), label = "sheet_choice_container"
+    )
+    val content by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = tween(300), label = "sheet_choice_content"
+    )
+    Box(
+        modifier = modifier
+            .heightIn(min = minHeight)
+            .petalSheetSurface(RoundedCornerShape(40.dp), container, onClick, role = Role.RadioButton)
+    ) {
+        Column(
+            modifier = Modifier.align(Alignment.Center).padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(26.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                color = content,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+        }
+        if (selected) PetalSheetCheckBadge(Modifier.align(Alignment.TopEnd).padding(10.dp))
+    }
+}
+
+/**
+ * Full-width row with a round icon chip, title/subtitle and a switch. The whole row toggles. The switch
+ * is the shared [com.petal.browser.ui.components.IconSwitch], so it follows the chosen switch style and
+ * becomes the liquid glass toggle while Liquid Glass is on.
+ */
+@Composable
+fun PetalSheetToggleRow(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    switchIcon: ImageVector,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    icon: ImageVector? = null,
+    tone: PetalSheetTone = PetalSheetTone.Secondary,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 72.dp)
+            .petalSheetSurface(RoundedCornerShape(36.dp), MaterialTheme.colorScheme.surfaceContainerHighest, { onCheckedChange(!checked) }, role = Role.Switch)
+            .padding(start = 12.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) {
+            Box(Modifier.size(48.dp).petalSheetSurface(CircleShape, tone.container()), contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = tone.content(), modifier = Modifier.size(24.dp))
+            }
+            Spacer(Modifier.width(14.dp))
+        } else Spacer(Modifier.width(6.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (!subtitle.isNullOrBlank()) {
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        com.petal.browser.ui.components.IconSwitch(checked = checked, icon = switchIcon, onCheckedChange = onCheckedChange)
+    }
 }
