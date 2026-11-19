@@ -10,29 +10,46 @@
 
 package com.petal.browser.compose.extensions
 
-import android.content.Context
-import android.graphics.Bitmap
 import android.net.Uri
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import com.petal.browser.ui.kit.IconButton
-import com.petal.browser.ui.kit.TextButton
-import com.petal.browser.ui.kit.FilledTonalButton
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Extension
+import androidx.compose.material.icons.rounded.ExtensionOff
+import androidx.compose.material.icons.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -40,13 +57,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
@@ -56,13 +73,28 @@ import com.petal.browser.R
 import com.petal.browser.extensions.PetalBuiltInExtensionManager
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.haptics.PetalHapticEngine
-import com.petal.browser.ui.containment.*
+import com.petal.browser.ui.blur.PetalBlurSurface
+import com.petal.browser.ui.containment.PetalContainmentShapes
+import com.petal.browser.ui.containment.PetalSheet
+import com.petal.browser.ui.containment.PetalSheetHeader
+import com.petal.browser.ui.containment.PetalSheetIconPill
+import com.petal.browser.ui.containment.PetalSheetListRow
+import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.containment.PetalSheetTone
+import com.petal.browser.ui.containment.petalSheetSurface
 import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
-import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.SmoothRoundedShape
+import kotlinx.coroutines.launch
 
+/**
+ * Extensions menu as a real bottom sheet ([PetalSheet]) in the Petal sheet language, replacing the old
+ * floating dialog. Same features: live toolbar badges, 1-tap browser action, options-page shortcut,
+ * empty / all-disabled states, Manage extensions and "More on AMO". Liquid Glass and Background blur
+ * ("Bottom sheets") are handled by [PetalSheet] and the shared sheet parts.
+ */
 object PetalExtensionsMenuSheet {
 
     @JvmStatic
@@ -80,26 +112,18 @@ object PetalExtensionsMenuSheet {
 
         activity.runOnUiThread {
             try {
-                val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
-                com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
-
-                val dialog = android.app.Dialog(activity, com.petal.browser.R.style.PetalContextMenuDialogTheme).apply {
-                    setCanceledOnTouchOutside(true)
-                    setCancelable(true)
-                }
-                dialog.setOnDismissListener {
-                    com.petal.browser.predictive.PetalContentSnapshot.clear()
+                val decorView = activity.window.decorView as? ViewGroup ?: return@runOnUiThread
+                val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: decorView
+                lateinit var composeView: ComposeView
+                val remove: () -> Unit = {
+                    if (composeView.parent != null) decorView.removeView(composeView)
                 }
 
-                val composeView = ComposeView(activity).apply {
+                composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
                     setViewTreeViewModelStoreOwner(activity)
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
                     setContent {
                         val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
                         val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
@@ -121,8 +145,8 @@ object PetalExtensionsMenuSheet {
                         val colorStyle = remember(styleName) {
                             try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                         }
+                        val hostSource = activity.findViewById<android.view.View>(R.id.main) ?: rootView
 
-                        val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main) ?: rootView
                         CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
                             PetalExpressiveTheme(
                                 darkTheme = darkTheme,
@@ -132,37 +156,20 @@ object PetalExtensionsMenuSheet {
                                 colorStyle = colorStyle,
                                 paletteId = paletteId
                             ) {
-                                com.petal.browser.ui.glass.PetalGlassContainer(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .wrapContentHeight(),
-                                    enabled = isLiquidGlassEnabled("sp_liquid_glass_containments"),
-                                    live = true
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .navigationBarsPadding()
-                                            .padding(horizontal = 16.dp, vertical = 20.dp),
-                                        contentAlignment = Alignment.BottomCenter
-                                    ) {
-                                        ExtensionsMenuContent(
-                                            activity = activity,
-                                            domain = host.ifEmpty { "Current Page" },
-                                            onDismiss = { dialog.dismiss() },
-                                            onOpenManager = {
-                                                dialog.dismiss()
-                                                onOpenManager()
-                                            }
-                                        )
-                                    }
-                                }
+                                ExtensionsMenuSheetContent(
+                                    activity = activity,
+                                    domain = host.ifEmpty { "Current Page" },
+                                    onClosed = remove,
+                                    onOpenManager = onOpenManager
+                                )
                             }
                         }
                     }
                 }
-                dialog.setContentView(composeView)
-                dialog.show()
+                decorView.addView(
+                    composeView,
+                    ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                )
             } catch (t: Throwable) {
                 android.util.Log.e("PetalExtensionsMenu", "Failed to show extensions menu sheet", t)
             }
@@ -170,11 +177,12 @@ object PetalExtensionsMenuSheet {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ExtensionsMenuContent(
+private fun ExtensionsMenuSheetContent(
     activity: ComponentActivity,
     domain: String,
-    onDismiss: () -> Unit,
+    onClosed: () -> Unit,
     onOpenManager: () -> Unit
 ) {
     val extensions by PetalExtensionManager.extensions.collectAsStateWithLifecycle()
@@ -187,108 +195,105 @@ private fun ExtensionsMenuContent(
 
     val context = LocalContext.current
     val haptic = remember(context) { PetalHapticEngine.getInstance(context) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val maxBody = (LocalConfiguration.current.screenHeightDp * 0.5f).dp
 
-    PetalHeroCard(
-        shape = PetalContainmentShapes.Hero,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier
-            .fillMaxWidth()
-            .widthIn(max = 440.dp)
-            .clickable(
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                indication = null,
-                onClick = {}
-            )
+    /** Animate the sheet away, remove the host view, then run [then]. */
+    fun closeThen(then: (() -> Unit)? = null) {
+        scope.launch { sheetState.hide() }.invokeOnCompletion {
+            onClosed()
+            then?.invoke()
+        }
+    }
+
+    PetalSheet(
+        onDismissRequest = onClosed,
+        blurSurface = PetalBlurSurface.SHEETS,
+        sheetState = sheetState
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // Header: expressive badge, title, current site pill, close
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                PetalGroupIconBadge(Icons.Rounded.Extension, PetalBadgeVariant.PRIMARY, size = 48.dp, iconSize = 24.dp)
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.ui_extensions),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1
-                    )
-                    Text(
-                        text = domain,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Surface(
-                    onClick = {
-                        haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
-                        onDismiss()
-                    },
-                    shape = petalBadgeShape("extensions_close"),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    modifier = Modifier.size(44.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
+        Column(Modifier.fillMaxWidth()) {
+            PetalSheetHeader(
+                title = stringResource(R.string.ui_extensions),
+                subtitle = domain,
+                modifier = Modifier.padding(horizontal = 16.dp),
+                leading = {
+                    Box(
+                        Modifier
+                            .size(80.dp)
+                            .petalSheetSurface(SmoothRoundedShape(24.dp), MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
-                            Icons.Rounded.Close,
-                            contentDescription = stringResource(R.string.ui_close),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
+                            Icons.Rounded.Extension,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(40.dp)
                         )
                     }
+                },
+                trailing = {
+                    PetalSheetIconPill(
+                        icon = Icons.Rounded.Close,
+                        contentDescription = stringResource(R.string.ui_close),
+                        modifier = Modifier.size(48.dp),
+                        minHeight = 48.dp,
+                        onClick = {
+                            haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                            closeThen()
+                        }
+                    )
                 }
-            }
+            )
 
-            // Body
-            when {
-                firefoxExtensions.isEmpty() -> PetalGroupRow(
-                    icon = Icons.Rounded.Add,
-                    title = stringResource(R.string.ui_find_firefox_extensions),
-                    subtitle = "No add-ons installed yet",
-                    position = PetalGroupPosition.SINGLE,
-                    onClick = {
-                        haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.75f)
-                        onOpenManager()
-                    }
-                )
-                enabledExtensions.isEmpty() -> PetalGroupRow(
-                    icon = Icons.Rounded.ExtensionOff,
-                    title = "All add-ons are disabled",
-                    subtitle = stringResource(R.string.ui_manage_extensions),
-                    position = PetalGroupPosition.SINGLE,
-                    iconContainer = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    onClick = onOpenManager
-                )
-                else -> LazyColumn(
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
-                ) {
-                    itemsIndexed(enabledExtensions, key = { _, item -> item.id }) { index, ext ->
-                        ExtensionMenuCardRow(
+            Spacer(Modifier.height(16.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = maxBody + 200.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                when {
+                    firefoxExtensions.isEmpty() -> PetalSheetListRow(
+                        title = stringResource(R.string.ui_find_firefox_extensions),
+                        subtitle = "No add-ons installed yet",
+                        icon = Icons.Rounded.Add,
+                        tone = PetalSheetTone.Primary,
+                        trailing = { Icon(Icons.Rounded.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        onClick = {
+                            haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.75f)
+                            closeThen { onOpenManager() }
+                        }
+                    )
+                    enabledExtensions.isEmpty() -> PetalSheetListRow(
+                        title = "All add-ons are disabled",
+                        subtitle = stringResource(R.string.ui_manage_extensions),
+                        icon = Icons.Rounded.ExtensionOff,
+                        tone = PetalSheetTone.Neutral,
+                        trailing = { Icon(Icons.Rounded.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        onClick = { closeThen { onOpenManager() } }
+                    )
+                    else -> enabledExtensions.forEach { ext ->
+                        ExtensionSheetRow(
                             extension = ext,
                             actionState = activeTabActions[ext.id],
-                            position = petalGroupPositionFor(index, enabledExtensions.size),
                             onActionClick = {
                                 haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.8f)
-                                onDismiss()
-                                activity.window.decorView.post {
-                                    PetalExtensionManager.triggerBrowserAction(ext.id, activity)
+                                closeThen {
+                                    activity.window.decorView.post {
+                                        PetalExtensionManager.triggerBrowserAction(ext.id, activity)
+                                    }
                                 }
                             },
                             onSettingsClick = {
                                 haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
-                                onDismiss()
-                                activity.window.decorView.post {
-                                    PetalExtensionManager.openOptionsPage(ext.id, activity)
+                                closeThen {
+                                    activity.window.decorView.post {
+                                        PetalExtensionManager.openOptionsPage(ext.id, activity)
+                                    }
                                 }
                             }
                         )
@@ -296,40 +301,49 @@ private fun ExtensionsMenuContent(
                 }
             }
 
-            // Footer: connected buttons never wrap (single line, ellipsized)
-            PetalConnectedButtonGroup(
-                items = listOf(
-                    PetalConnectedButtonItem(stringResource(R.string.ui_manage_extensions), Icons.Rounded.Tune),
-                    PetalConnectedButtonItem("More on AMO", Icons.Rounded.OpenInNew)
-                ),
-                selectedIndex = -1,
-                onSelect = { index ->
-                    haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
-                    if (index == 0) {
-                        onOpenManager()
-                    } else {
-                        onDismiss()
-                        if (activity is com.petal.browser.activity.MainActivity) {
-                            activity.addAlbum("Firefox Add-ons", PetalExtensionManager.amoAndroidBrowseUrl, true)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 12.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                PetalSheetPill(
+                    text = stringResource(R.string.ui_manage_extensions),
+                    icon = Icons.Rounded.Tune,
+                    tone = PetalSheetTone.Primary,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                        closeThen { onOpenManager() }
+                    }
+                )
+                PetalSheetPill(
+                    text = "More on AMO",
+                    icon = Icons.Rounded.OpenInNew,
+                    tone = PetalSheetTone.Secondary,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
+                        closeThen {
+                            if (activity is com.petal.browser.activity.MainActivity) {
+                                activity.addAlbum("Firefox Add-ons", PetalExtensionManager.amoAndroidBrowseUrl, true)
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun ExtensionMenuCardRow(
+private fun ExtensionSheetRow(
     extension: PetalExtensionManager.InstalledExtension,
     actionState: PetalExtensionManager.ExtensionActionState?,
-    position: PetalGroupPosition,
     onActionClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
-    val shape = rememberPetalGroupShape(position)
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
     val displayName = actionState?.title?.ifBlank { null } ?: extension.name
     val badgeText = actionState?.badgeText?.trim()
     val actionEnabled = actionState?.enabled ?: true
@@ -339,95 +353,78 @@ private fun ExtensionMenuCardRow(
     val badgeFg = actionState?.badgeTextColor?.takeIf { it != 0 }?.let { Color(it) }
         ?: MaterialTheme.colorScheme.onPrimary
 
-    Surface(
-        onClick = onActionClick,
-        enabled = actionEnabled,
-        shape = shape,
-        color = petalGroupSurfaceColor(),
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true)
+            .heightIn(min = 72.dp)
             .alpha(if (actionEnabled) 1f else 0.5f)
+            .petalSheetSurface(
+                RoundedCornerShape(36.dp),
+                MaterialTheme.colorScheme.surfaceContainerHighest,
+                if (actionEnabled) onActionClick else null
+            )
+            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 64.dp)
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            Modifier
+                .size(48.dp)
+                .petalSheetSurface(CircleShape, MaterialTheme.colorScheme.secondaryContainer),
+            contentAlignment = Alignment.Center
         ) {
-            PetalGroupIconBadge(
-                shape = petalBadgeShape(extension.id),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                contentColor = MaterialTheme.colorScheme.primary,
-                size = 44.dp,
-                iconSize = 28.dp
-            ) {
-                val bmp = actionState?.icon ?: extension.icon
-                if (bmp != null) {
-                    Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.fillMaxSize())
-                } else {
-                    Icon(Icons.Rounded.Extension, contentDescription = null, modifier = Modifier.fillMaxSize())
-                }
+            val bmp = actionState?.icon ?: extension.icon
+            if (bmp != null) {
+                Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.size(30.dp).clip(CircleShape))
+            } else {
+                Icon(Icons.Rounded.Extension, null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(26.dp))
             }
-
-            Spacer(Modifier.width(14.dp))
-
-            Column(Modifier.weight(1f)) {
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = displayName,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (extension.version.isNotBlank()) {
                 Text(
-                    text = displayName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    text = "v${extension.version}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
                 )
-                if (extension.version.isNotBlank()) {
-                    Text(
-                        text = "v${extension.version}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
-                    )
-                }
             }
-
-            if (!badgeText.isNullOrBlank()) {
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 6.dp)
-                        .clip(PetalContainmentShapes.Pill)
-                        .background(badgeBg)
-                        .padding(horizontal = 9.dp, vertical = 3.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = badgeText,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = badgeFg,
-                        maxLines = 1
-                    )
-                }
+        }
+        if (!badgeText.isNullOrBlank()) {
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 6.dp)
+                    .clip(PetalContainmentShapes.Pill)
+                    .background(badgeBg)
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = badgeText,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = badgeFg,
+                    maxLines = 1
+                )
             }
-
-            if (extension.optionsPageUrl != null) {
-                Surface(
-                    onClick = onSettingsClick,
-                    shape = petalBadgeShape("extension_row_settings"),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Rounded.Settings,
-                            contentDescription = stringResource(R.string.ui_extension_settings),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
+        }
+        if (extension.optionsPageUrl != null) {
+            PetalSheetIconPill(
+                icon = Icons.Rounded.Settings,
+                contentDescription = stringResource(R.string.ui_extension_settings),
+                tone = PetalSheetTone.Neutral,
+                minHeight = 44.dp,
+                modifier = Modifier.size(44.dp),
+                onClick = onSettingsClick
+            )
         }
     }
 }
