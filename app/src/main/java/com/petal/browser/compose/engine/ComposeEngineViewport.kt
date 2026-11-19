@@ -123,6 +123,7 @@ fun ComposeEngineViewport(
         PetalVerticalSwipeRefreshLayout(context).apply {
             background = null
             isNestedScrollingEnabled = true
+            isPageLoading = { currentIsLoading }
             onPullProgress = { refreshBarState.pullProgress = it }
             onRefreshStateChanged = { refreshing ->
                 refreshBarState.isRefreshing = refreshing

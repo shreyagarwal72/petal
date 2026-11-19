@@ -9,6 +9,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.os.SystemClock
 import android.view.ViewConfiguration
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import kotlin.math.abs
@@ -39,6 +40,30 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
 
     /** Callback dispatched whenever refresh state commits or completes. */
     var onRefreshStateChanged: ((isRefreshing: Boolean) -> Unit)? = null
+
+    /**
+     * Tells the layout whether the page is still loading. Used only to recover from a refresh that
+     * never got its "finished" signal, which otherwise leaves SwipeRefreshLayout's private
+     * `mRefreshing` stuck true and makes every later pull a silent no-op ("works only once").
+     */
+    var isPageLoading: (() -> Boolean)? = null
+
+    private var refreshCommittedAt = 0L
+    private val refreshWatchdog = object : Runnable {
+        override fun run() {
+            if (!isRefreshing) {
+                refreshCommittedAt = 0L
+                return
+            }
+            val elapsed = SystemClock.uptimeMillis() - refreshCommittedAt
+            val stillLoading = isPageLoading?.invoke() ?: true
+            if (elapsed >= REFRESH_MAX_VISIBLE_MS || (!stillLoading && elapsed >= REFRESH_MIN_VISIBLE_MS)) {
+                isRefreshing = false
+            } else {
+                postDelayed(this, REFRESH_POLL_MS)
+            }
+        }
+    }
 
     private var isQuickScaleInProgress = false
     private var quickScaleEvents = QuickScaleEvents()
@@ -86,7 +111,50 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
 
     override fun setRefreshing(refreshing: Boolean) {
         super.setRefreshing(refreshing)
+        if (refreshing) markRefreshCommitted() else clearRefreshCommitted()
         onRefreshStateChanged?.invoke(refreshing)
+    }
+
+    private fun markRefreshCommitted() {
+        if (refreshCommittedAt == 0L) {
+            refreshCommittedAt = SystemClock.uptimeMillis()
+            removeCallbacks(refreshWatchdog)
+            postDelayed(refreshWatchdog, REFRESH_MIN_VISIBLE_MS)
+        }
+    }
+
+    private fun clearRefreshCommitted() {
+        refreshCommittedAt = 0L
+        removeCallbacks(refreshWatchdog)
+    }
+
+    /** A new touch while a finished/never-started reload still holds the spinner: release it now. */
+    private fun healStuckRefresh() {
+        if (!isRefreshing || refreshCommittedAt == 0L) return
+        val elapsed = SystemClock.uptimeMillis() - refreshCommittedAt
+        if (elapsed >= REFRESH_MIN_VISIBLE_MS && isPageLoading?.invoke() == false) {
+            isRefreshing = false
+        }
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            // requestDisallowInterceptTouchEvent() is swallowed below, so the framework's per-gesture
+            // reset of its disallow flag never applies to ours. Without this reset one page-handled
+            // touch disabled pull-to-refresh for the rest of the session.
+            disallowInterceptTouchEvent = false
+            healStuckRefresh()
+        }
+        val handled = super.dispatchTouchEvent(ev)
+        if (ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL) {
+            disallowInterceptTouchEvent = false
+        }
+        return handled
+    }
+
+    override fun onDetachedFromWindow() {
+        removeCallbacks(refreshWatchdog)
+        super.onDetachedFromWindow()
     }
 
     @Suppress("ReturnCount")
@@ -169,7 +237,14 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
                 }
             }
         }
+        val wasRefreshing = isRefreshing
         val handled = super.onTouchEvent(event)
+        // A pull that crosses the threshold calls SwipeRefreshLayout's private setRefreshing(true, true),
+        // which bypasses the override above: tell the indicator and arm the watchdog ourselves.
+        if (!wasRefreshing && isRefreshing) {
+            markRefreshCommitted()
+            onRefreshStateChanged?.invoke(true)
+        }
         // Reset AFTER super so a committed refresh (setRefreshing(true)) and the end of the pull
         // reach the indicator in the same frame and it settles instead of dipping to zero first.
         if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
@@ -266,3 +341,7 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
         var secondDownEvent: MotionEvent? = null
     )
 }
+
+private const val REFRESH_MIN_VISIBLE_MS = 1_500L
+private const val REFRESH_POLL_MS = 1_000L
+private const val REFRESH_MAX_VISIBLE_MS = 20_000L

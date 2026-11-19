@@ -611,6 +611,7 @@ class PetalTabViewController private constructor(
         background = null
         try { engineView.asView().background = null } catch (_: Throwable) {}
         isNestedScrollingEnabled = true
+        isPageLoading = { loading }
         addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
             if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) {
                 lastLayoutChangeTime = android.os.SystemClock.uptimeMillis()
