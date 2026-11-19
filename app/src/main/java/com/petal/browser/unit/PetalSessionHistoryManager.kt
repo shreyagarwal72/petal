@@ -42,6 +42,9 @@ object PetalSessionHistoryManager {
     @JvmStatic
     fun clearSessionHistory(context: Context) {
         try {
+            // History lives in Mozilla Places; delete this session's visits there (the legacy
+            // SQLite table below is only kept for installs that still have old rows).
+            com.petal.browser.database.PetalPlacesProvider.deleteVisitsSince(context, sessionStartTime)
             val action = HistoryBookmarkRepository(context)
             action.open(true)
             action.deleteSessionHistory(sessionStartTime, sessionUrls)

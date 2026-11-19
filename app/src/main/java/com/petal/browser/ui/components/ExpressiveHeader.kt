@@ -643,15 +643,23 @@ fun PetalGlassHeaderLayout(
     // Header is measured first, so with glass off the content sits exactly below it on the first
     // frame (the old stacked Column layout) and with glass on it fills the screen under the header.
     // One tree for both modes: toggling glass never resets the content's scroll state.
+    // A host can measure this layout unbounded (transition/underlay layers, wrapContent parents).
+    // Forcing content to Constraints.Infinity makes any verticalScroll/LazyColumn inside crash with
+    // "measured with an infinity maximum height", so fall back to the screen size in that case.
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val fallbackWidthPx = with(density) { configuration.screenWidthDp.dp.roundToPx() }
+    val fallbackHeightPx = with(density) { configuration.screenHeightDp.dp.roundToPx() }
     androidx.compose.ui.layout.SubcomposeLayout(modifier) { constraints ->
-        val w = constraints.maxWidth
+        val w = if (constraints.hasBoundedWidth) constraints.maxWidth else fallbackWidthPx
+        val maxH = if (constraints.hasBoundedHeight) constraints.maxHeight else fallbackHeightPx
         val headerPlaceable = subcompose("header") { header(Modifier, backdrop) }
-            .firstOrNull()?.measure(androidx.compose.ui.unit.Constraints(w, w, 0, constraints.maxHeight))
+            .firstOrNull()?.measure(androidx.compose.ui.unit.Constraints(w, w, 0, maxH))
         // A hoisted (yielding) header composes nothing: height 0, content simply fills the screen.
         val h = headerPlaceable?.height ?: 0
         if (h != headerHeightPx) headerHeightPx = h
         val top = if (backdrop != null) 0 else h
-        val contentHeight = (constraints.maxHeight - top).coerceAtLeast(0)
+        val contentHeight = (maxH - top).coerceAtLeast(0)
         val inset = if (backdrop != null) h.toDp() else 0.dp
         val contentPlaceable = subcompose("content") {
             Box(
@@ -662,7 +670,7 @@ fun PetalGlassHeaderLayout(
                 androidx.compose.runtime.CompositionLocalProvider(LocalGlassHeaderInset provides inset) { content(inset) }
             }
         }.first().measure(androidx.compose.ui.unit.Constraints(w, w, contentHeight, contentHeight))
-        layout(w, constraints.maxHeight) {
+        layout(w, maxH) {
             contentPlaceable.place(0, top)
             headerPlaceable?.place(0, 0)
         }

@@ -26,14 +26,23 @@ object SiteDomainRules {
         return PrivacyRequestSanitizer.webHost(safeUrl)?.let(::normalizedDomain)
     }
 
+    // Bounded cache: the PSL lookup uses runBlocking, so repeating it for every stored
+    // domain on every navigation would stall the calling (often main) thread.
+    private val domainCache = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private const val DOMAIN_CACHE_MAX = 512
+
     fun normalizedDomain(host: String?): String? {
         val normalizedHost = PetalHostCanonicalizer.canonicalHost(host) ?: return null
+        domainCache[normalizedHost]?.let { return it }
         val pslInstance = getPsl() ?: return normalizedHost
-        return try {
+        val resolved = try {
             runBlocking { pslInstance.getPublicSuffixPlusOne(normalizedHost).await() } ?: normalizedHost
         } catch (_: Throwable) {
-            normalizedHost
+            return normalizedHost
         }
+        if (domainCache.size >= DOMAIN_CACHE_MAX) domainCache.clear()
+        domainCache[normalizedHost] = resolved
+        return resolved
     }
 
     fun contains(url: String?, domains: Collection<String>): Boolean {

@@ -119,6 +119,11 @@ object PetalEngineStore {
         val runtime = PetalGeckoRuntime.getOrCreate(appContext)
 
         val defaultSettings = DefaultSettings(
+            // Official Firefox history tracking: types visits (link/reload/redirect), skips error
+            // pages and non-top-level loads, and records page titles, all into Places.
+            historyTrackingDelegate = mozilla.components.feature.session.HistoryDelegate(
+                lazy { com.petal.browser.database.PetalPlacesProvider.getHistoryStorage(appContext) }
+            ),
             requestInterceptor = object : RequestInterceptor {
                 override fun onErrorRequest(
                     session: EngineSession,

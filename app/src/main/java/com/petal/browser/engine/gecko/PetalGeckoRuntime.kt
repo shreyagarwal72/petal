@@ -108,8 +108,13 @@ object PetalGeckoRuntime {
         if (isAdBlockEnabled || etpStrict || privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT) {
             antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or
                     ContentBlocking.AntiTracking.ANALYTIC or ContentBlocking.AntiTracking.SOCIAL or
-                    ContentBlocking.AntiTracking.CONTENT or ContentBlocking.AntiTracking.STP or
+                    ContentBlocking.AntiTracking.STP or
                     ContentBlocking.AntiTracking.CRYPTOMINING or ContentBlocking.AntiTracking.FINGERPRINTING
+            // CONTENT (strict-level content tracking) is the main cause of broken embeds/logins;
+            // only apply it when the user explicitly chose strict protection.
+            if (etpStrict || privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT) {
+                antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.CONTENT
+            }
         }
         // Match official Firefox standard: DEFAULT for standard browsing, STRICT when strictly requested.
         val etpLevel = if (etpStrict) ContentBlocking.EtpLevel.STRICT else ContentBlocking.EtpLevel.DEFAULT
@@ -141,7 +146,7 @@ object PetalGeckoRuntime {
         val insecureMode = if (httpsOnly) GeckoRuntimeSettings.HTTPS_ONLY else GeckoRuntimeSettings.ALLOW_ALL
 
         val settingsBuilder = GeckoRuntimeSettings.Builder()
-            .aboutConfigEnabled(true)
+            .aboutConfigEnabled(isDebug)
             .allowInsecureConnections(insecureMode)
             .trustedRecursiveResolverMode(trrMode)
             .preferredColorScheme(targetColorScheme)
@@ -384,8 +389,11 @@ object PetalGeckoRuntime {
                 if (isAdBlockOn || etpStrict || privacyProfile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT) {
                     antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.AD or
                             ContentBlocking.AntiTracking.ANALYTIC or ContentBlocking.AntiTracking.SOCIAL or
-                            ContentBlocking.AntiTracking.CONTENT or ContentBlocking.AntiTracking.STP or
+                            ContentBlocking.AntiTracking.STP or
                             ContentBlocking.AntiTracking.CRYPTOMINING or ContentBlocking.AntiTracking.FINGERPRINTING
+                    if (etpStrict) {
+                        antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.CONTENT
+                    }
                 }
                 if (sp.getBoolean("sp_fingerprint_protection", false)) {
                     antiTrackingFlags = antiTrackingFlags or ContentBlocking.AntiTracking.FINGERPRINTING

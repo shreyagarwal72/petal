@@ -106,22 +106,33 @@ private enum class HistoryDateGroup(val label: String) {
     OLDER("Older")
 }
 
-private fun getHistoryDateGroup(timestamp: Long): String {
+/** Day boundaries computed once per list build (not once per record). */
+private class HistoryDateBounds {
+    val today: Long
+    val yesterday: Long
+    val week: Long
+    val month: Long
+
+    init {
+        val start = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }
+        today = start.timeInMillis
+        yesterday = (start.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -1) }.timeInMillis
+        week = (start.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -6) }.timeInMillis
+        month = (start.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -29) }.timeInMillis
+    }
+}
+
+private fun getHistoryDateGroup(timestamp: Long, bounds: HistoryDateBounds): String {
     if (timestamp <= 0L) return HistoryDateGroup.OLDER.label
 
-    val todayStart = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-    }
-    val yesterdayStart = (todayStart.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -1) }
-    val weekStart = (todayStart.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -6) }
-    val monthStart = (todayStart.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -29) }
-
     return when {
-        timestamp >= todayStart.timeInMillis -> HistoryDateGroup.TODAY.label
-        timestamp >= yesterdayStart.timeInMillis -> HistoryDateGroup.YESTERDAY.label
-        timestamp >= weekStart.timeInMillis -> HistoryDateGroup.THIS_WEEK.label
-        timestamp >= monthStart.timeInMillis -> HistoryDateGroup.THIS_MONTH.label
+        timestamp >= bounds.today -> HistoryDateGroup.TODAY.label
+        timestamp >= bounds.yesterday -> HistoryDateGroup.YESTERDAY.label
+        timestamp >= bounds.week -> HistoryDateGroup.THIS_WEEK.label
+        timestamp >= bounds.month -> HistoryDateGroup.THIS_MONTH.label
         else -> {
             // Older items grouped by "Month Year" (e.g. "September 2026")
             SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(timestamp))
@@ -177,6 +188,7 @@ private fun buildGroupedItems(
         )
     }
 
+    val dateBounds = HistoryDateBounds()
     val result = mutableListOf<HistoryListItem>()
     var currentGroup: String? = null
     var groupBuffer = mutableListOf<Record>()
@@ -192,7 +204,7 @@ private fun buildGroupedItems(
 
     for (record in sortedRecords) {
         val group = when (sortOption) {
-            HistorySortOption.TIME_DESC, HistorySortOption.TIME_ASC -> getHistoryDateGroup(record.time)
+            HistorySortOption.TIME_DESC, HistorySortOption.TIME_ASC -> getHistoryDateGroup(record.time, dateBounds)
             HistorySortOption.NAME_ASC, HistorySortOption.NAME_DESC -> {
                 extractFastScrollGlyph(record.title?.ifBlank { record.url }) ?: "#"
             }

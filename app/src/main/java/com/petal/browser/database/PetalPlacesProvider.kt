@@ -265,7 +265,21 @@ object PetalPlacesProvider {
         val hs = getHistoryStorage(context)
         return runBlocking(Dispatchers.IO) {
             try {
-                val visits = hs.getDetailedVisits(0L, Long.MAX_VALUE)
+                // Same exclusions as Firefox's history list: no reloads, redirect hops, embeds,
+                // downloads or framed links, so counts and "Today/Yesterday" groups match Firefox.
+                val visits = hs.getDetailedVisits(
+                    0L,
+                    Long.MAX_VALUE,
+                    excludeTypes = listOf(
+                        VisitType.NOT_A_VISIT,
+                        VisitType.DOWNLOAD,
+                        VisitType.REDIRECT_PERMANENT,
+                        VisitType.REDIRECT_TEMPORARY,
+                        VisitType.RELOAD,
+                        VisitType.EMBED,
+                        VisitType.FRAMED_LINK
+                    )
+                )
                 visits.map { v ->
                     Record(
                         v.title?.ifBlank { v.url } ?: v.url,
@@ -333,6 +347,16 @@ object PetalPlacesProvider {
         runBlocking(Dispatchers.IO) {
             try {
                 hs.deleteVisitsFor(url.trim())
+            } catch (_: Throwable) {}
+        }
+    }
+
+    /** Deletes every visit recorded at or after [sinceMillis] (used for session-isolated history). */
+    fun deleteVisitsSince(context: Context, sinceMillis: Long) {
+        val hs = getHistoryStorage(context)
+        runBlocking(Dispatchers.IO) {
+            try {
+                hs.deleteVisitsSince(sinceMillis)
             } catch (_: Throwable) {}
         }
     }

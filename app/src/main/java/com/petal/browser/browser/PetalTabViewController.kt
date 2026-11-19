@@ -432,9 +432,6 @@ class PetalTabViewController private constructor(
             if (title.isNotBlank() && !isIncognito() && !pageUrl.startsWith("about:") && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(pageUrl)) {
                 com.petal.browser.browser.PetalPlacesStorage.recordTitleObservation(context, pageUrl, title)
             }
-            if (!loading && title.isNotBlank() && pageUrl == lastRecordedHistoryUrl) {
-                recordHistoryVisit(pageUrl, title, force = true)
-            }
         }
 
         override fun onProgress(progress: Int) {
@@ -468,7 +465,7 @@ class PetalTabViewController private constructor(
                         ?.onActivePageLoadFinished()
                 }
                 injectPagePrivacyAndAdBlock()
-                recordHistoryVisit(pageUrl, pageTitle)
+                // Visit is recorded once by HistoryDelegate.onVisited; do not add another here.
                 com.petal.browser.accessibility.PetalAccessibilityEngine.applyAccessibilitySettings(this@PetalTabViewController)
             }
         }
@@ -1026,8 +1023,26 @@ class PetalTabViewController private constructor(
                     val isRedirect = (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE) != 0 ||
                                      (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE_PERMANENT) != 0
 
+                    if (isIncognito()) {
+                        return org.mozilla.geckoview.GeckoResult.fromValue(false)
+                    }
                     if (isTopLevel && !isError && !isRedirect) {
-                        recordHistoryVisit(url, pageTitle)
+                        com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(url)
+                    }
+                    // Mozilla's HistoryDelegate (set in PetalEngineStore) records the visit with the
+                    // right visit type and redirect source. Only fall back to Petal's own writer if
+                    // the engine delegate is missing.
+                    val engineDelegate = engineHistoryDelegate
+                    if (engineDelegate != null) {
+                        return try {
+                            engineDelegate.onVisited(session, url, lastVisitedURL, flags)
+                                ?: org.mozilla.geckoview.GeckoResult.fromValue(true)
+                        } catch (_: Throwable) {
+                            org.mozilla.geckoview.GeckoResult.fromValue(true)
+                        }
+                    }
+                    if (isTopLevel && !isError && !isRedirect) {
+                        recordHistoryVisit(url, pageTitle, force = true)
                     }
                     return org.mozilla.geckoview.GeckoResult.fromValue(true)
                 }
@@ -1036,6 +1051,9 @@ class PetalTabViewController private constructor(
                     session: org.mozilla.geckoview.GeckoSession,
                     urls: Array<out String>
                 ): org.mozilla.geckoview.GeckoResult<BooleanArray>? {
+                    engineHistoryDelegate?.let { d ->
+                        try { d.getVisited(session, urls)?.let { return it } } catch (_: Throwable) {}
+                    }
                     val result = org.mozilla.geckoview.GeckoResult<BooleanArray>()
                     kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                         try {
