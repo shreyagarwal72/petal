@@ -94,3 +94,9 @@
 
 
 
+
+# yt-dlp (youtubedl-android): reflection/Jackson-bound models and native bridge
+-keep class com.yausername.youtubedl_android.** { *; }
+-keep class com.yausername.ffmpeg.** { *; }
+-keepclassmembers class com.yausername.youtubedl_android.mapper.** { *; }
+-dontwarn com.yausername.**

@@ -211,7 +211,8 @@ fun PetalMediaSnifferOverlay(
     }
 
     if (sheetOpen) {
-        PetalResourceSnifferSheet(
+        com.petal.browser.media.ytdlp.PetalMediaGrabberSheet(
+            pageUrl = currentPageUrl,
             onDismiss = { sheetOpen = false },
             onPlayVideo = { videoUrl ->
                 onPlay(
