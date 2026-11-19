@@ -47,15 +47,6 @@
 -dontwarn org.yaml.snakeyaml.**
 -dontwarn java.beans.**
 
-# ---- yt-dlp (youtubedl-android) -------------------------------------------------------------
-# Maps yt-dlp's JSON output onto its model classes with Jackson.
--keep class com.yausername.** { *; }
--keepclassmembers class com.yausername.** { *; }
--keepclassmembers enum com.yausername.** { *; }
--keep class com.fasterxml.jackson.** { *; }
--dontwarn com.fasterxml.jackson.databind.**
--dontwarn com.yausername.**
-
 # ---- Media3 ---------------------------------------------------------------------------------
 # The animated wallpaper switches PlayerView's surface type by reflection.
 -keep class androidx.media3.ui.PlayerView {
@@ -92,16 +83,6 @@
 -dontwarn mozilla.telemetry.glean.**
 -dontwarn org.mozilla.experiments.nimbus.**
 -dontwarn mozilla.components.service.nimbus.**
-
-# ---- youtubedl-android, aria2c, ffmpeg & Python JNI -------------------------
--keep class com.yausername.** { *; }
--keepclassmembers class com.yausername.** { *; }
--keep interface com.yausername.** { *; }
--dontwarn com.yausername.**
-
--keep class com.chaquo.python.** { *; }
--keepclassmembers class com.chaquo.python.** { *; }
--dontwarn com.chaquo.python.**
 
 # ---- Play Hardening & Log Stripping (Stage 9) ------------------------------
 -assumenosideeffects class android.util.Log {

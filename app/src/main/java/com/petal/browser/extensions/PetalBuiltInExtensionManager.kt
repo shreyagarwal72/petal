@@ -247,7 +247,7 @@ object PetalBuiltInExtensionManager {
                         com.petal.browser.media.sniffer.PetalMediaCaptureStore.parseDomScanResult(tabId, sniffedPageUrl, items)
                     }
                 }
-                "MEDIA_GRABBED", "REQUEST_DOWNLOAD", "SITE_DOWNLOAD_REQUEST" -> {
+                "MEDIA_GRABBED" -> {
                     val url = json.optString("url").takeIf { it.startsWith("http") } ?: return null
                     if (PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(url)) return null
                     val mime = json.optString("mimeType", "video/mp4")
@@ -266,6 +266,44 @@ object PetalBuiltInExtensionManager {
                         tabId = tabId,
                         pageUrl = pageUrl ?: ""
                     )
+                }
+                "REQUEST_DOWNLOAD", "SITE_DOWNLOAD_REQUEST" -> {
+                    val url = json.optString("url").takeIf { it.startsWith("http") } ?: return null
+                    if (PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(url)) return null
+                    val mime = json.optString("mimeType", "video/mp4")
+                    val size = json.optLong("sizeBytes", -1L).takeIf { it > 0 }
+                    val title = json.optString("title").takeIf { it.isNotBlank() } ?: "video_${System.currentTimeMillis()}"
+                    PetalMediaSniffer.onAggressiveMedia(url, mime, cookies, size)
+                    val tabId = json.optString("tabId").takeIf { it.isNotBlank() } ?: com.petal.browser.media.sniffer.PetalNativeSnifferEngine.activeTabId.value
+                    com.petal.browser.media.sniffer.PetalNativeSnifferEngine.registerResource(
+                        tabId = tabId,
+                        url = url,
+                        mimeType = mime,
+                        sizeBytes = size,
+                        pageUrl = pageUrl ?: ""
+                    )
+                    com.petal.browser.media.sniffer.PetalMediaCaptureStore.registerMediaCandidate(
+                        url = url,
+                        tabId = tabId,
+                        pageUrl = pageUrl ?: ""
+                    )
+                    appContext?.let { ctx ->
+                        val cleanTitle = title.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim().take(100)
+                        val ext = when {
+                            mime.contains("audio", ignoreCase = true) -> ".mp3"
+                            mime.contains("webm", ignoreCase = true) -> ".webm"
+                            url.contains(".m3u8", ignoreCase = true) -> ".mp4"
+                            else -> ".mp4"
+                        }
+                        val fileName = if (cleanTitle.endsWith(ext, ignoreCase = true)) cleanTitle else "$cleanTitle$ext"
+                        com.petal.browser.compose.downloads.PetalFetchDownloadBridge.enqueueMediaDownload(
+                            context = ctx,
+                            url = url,
+                            fileName = fileName,
+                            mimeType = mime,
+                            cookie = cookies
+                        )
+                    }
                 }
             }
             return null

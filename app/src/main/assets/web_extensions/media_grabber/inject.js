@@ -3,8 +3,8 @@
     'use strict';
 
     // Prevent duplicate injection in the same frame
-    if (window._omniMediaGrabberInjected) return;
-    window._omniMediaGrabberInjected = true;
+    if (window._petalMediaGrabberInjected) return;
+    window._petalMediaGrabberInjected = true;
 
     // Configuration
     let nativePlayerEnabled = true;
@@ -28,16 +28,16 @@
 
     function registerVideo(video) {
         if (!video || video.tagName !== 'VIDEO') return;
-        if (!video._omniVideoId) {
-            video._omniVideoId = 'omni_vid_' + (++videoIdCounter) + '_' + Math.random().toString(36).substr(2, 6);
+        if (!video._petalVideoId) {
+            video._petalVideoId = 'petal_vid_' + (++videoIdCounter) + '_' + Math.random().toString(36).substr(2, 6);
         }
-        trackedVideos.set(video._omniVideoId, { video: video });
+        trackedVideos.set(video._petalVideoId, { video: video });
     }
 
     function associateStreamWithActiveVideos(streamUrl) {
         if (!streamUrl) return;
         document.querySelectorAll('video').forEach(video => {
-            const id = video._omniVideoId;
+            const id = video._petalVideoId;
             if (id && (!video.paused || trackedVideos.has(id))) {
                 if (!videoStreamAssociations.has(id)) {
                     videoStreamAssociations.set(id, new Set());
@@ -49,7 +49,7 @@
 
     function getAssociatedStreamsForVideo(video) {
         const set = new Set();
-        const id = video ? video._omniVideoId : null;
+        const id = video ? video._petalVideoId : null;
         if (id && videoStreamAssociations.has(id)) {
             videoStreamAssociations.get(id).forEach(u => set.add(u));
         }
@@ -65,7 +65,7 @@
         const data = event.data;
         if (!data || !data.type) return;
 
-        if (data.type === 'OMNI_SET_NATIVE_PLAYER') {
+        if (data.type === 'PETAL_SET_NATIVE_PLAYER') {
             nativePlayerEnabled = !!data.enabled;
             youtubeEnabled = !!data.youtubeEnabled;
         } else if (data.type === 'EVAL_JS') {
@@ -93,7 +93,7 @@
                 try {
                     targetVideo.pause();
                 } catch(e) {}
-                targetVideo._omniIntercepted = true;
+                targetVideo._petalIntercepted = true;
             }
             pendingHandoffVideo = null;
             pendingHandoffId = null;
@@ -112,11 +112,11 @@
 
             if (targetVideo) {
                 try {
-                    if (targetVideo._omniWasPlayingBeforeHandoff) {
+                    if (targetVideo._petalWasPlayingBeforeHandoff) {
                         targetVideo.play().catch(() => {});
                     }
                 } catch(e) {}
-                delete targetVideo._omniIntercepted;
+                delete targetVideo._petalIntercepted;
             }
             pendingHandoffVideo = null;
             pendingHandoffId = null;
@@ -133,7 +133,7 @@
             console.log('[inject.js] Native session complete');
             activeSessionId = null;
             document.querySelectorAll('video').forEach(v => {
-                delete v._omniIntercepted;
+                delete v._petalIntercepted;
             });
         } else if (data.type === 'ADD_DETECTED_MANIFEST') {
             const url = data.url;
@@ -198,7 +198,7 @@
                 targetVideo.pause();
             }
 
-            delete targetVideo._omniIntercepted;
+            delete targetVideo._petalIntercepted;
         } catch(e) {
             console.error('[inject.js] Error applying restored state to video:', e);
         }
@@ -207,7 +207,7 @@
         window.postMessage({
             type: 'HANDOFF_RESTORED',
             sessionId: sessionId || '',
-            videoId: targetVideo._omniVideoId || videoId || '',
+            videoId: targetVideo._petalVideoId || videoId || '',
             currentTimeMs: Math.floor(targetVideo.currentTime * 1000),
             isPlaying: !targetVideo.paused
         }, '*');
@@ -225,8 +225,8 @@
         return {
             sessionId: 'h_' + Math.random().toString(36).substr(2, 9),
             handoffId: 'h_' + Math.random().toString(36).substr(2, 9),
-            videoId: video._omniVideoId || '',
-            videoElementId: video._omniVideoId || '',
+            videoId: video._petalVideoId || '',
+            videoElementId: video._petalVideoId || '',
             sourceUri: videoUrl,
             pageUrl: window.location.href,
             title: document.title || '',
@@ -254,7 +254,7 @@
 
         pendingHandoffVideo = video;
         pendingHandoffId = handoff.sessionId || handoff.handoffId;
-        video._omniWasPlayingBeforeHandoff = !video.paused;
+        video._petalWasPlayingBeforeHandoff = !video.paused;
 
         // Collect streams specifically associated with this video element
         const associatedStreams = getAssociatedStreamsForVideo(video);
@@ -290,7 +290,7 @@
             associatedStreams: associatedStreams,
             mimeType: getMimeType(videoUrl),
             title: document.title || 'Video',
-            videoId: video._omniVideoId || '',
+            videoId: video._petalVideoId || '',
             requestId: 'dl_' + Math.random().toString(36).substr(2, 9)
         }, '*');
     }
@@ -363,13 +363,7 @@
                (lower.includes('/dash/') && !lower.includes('/thumbnails/')) ||
                lower.includes('mpegurl') ||
                lower.includes('googlevideo.com') ||
-               lower.includes('videoplayback') ||
-               lower.includes('cdninstagram.com') ||
-               lower.includes('fbcdn.net') ||
-               lower.includes('tiktokcdn.com') ||
-               lower.includes('byteoversea.com') ||
-               lower.includes('twimg.com') ||
-               lower.includes('v.redd.it');
+               lower.includes('videoplayback');
     }
 
     function reportMedia(url, mimeType) {
@@ -457,9 +451,9 @@
     // Site Player Overlay — Quetta-Style Download Button
     // =========================================================
 
-    const OVERLAY_STYLE_ID = '_omni_site_overlay_style';
-    const OVERLAY_BUTTON_CLASS = '_omni_site_overlay_btn';
-    const OVERLAY_CLASS = '_omni_site_overlay';
+    const OVERLAY_STYLE_ID = '_petal_site_overlay_style';
+    const OVERLAY_BUTTON_CLASS = '_petal_site_overlay_btn';
+    const OVERLAY_CLASS = '_petal_site_overlay';
 
     function ensureOverlayStyles() {
         if (document.getElementById(OVERLAY_STYLE_ID)) return;
@@ -477,13 +471,13 @@
             '  align-items: center;',
             '  gap: 6px;',
             '}',
-            '.' + OVERLAY_CLASS + '._omni_visible {',
+            '.' + OVERLAY_CLASS + '._petal_visible {',
             '  opacity: 1;',
             '  transform: translateY(0);',
             '}',
-            '.' + OVERLAY_CLASS + '._omni_right { right: 12px; top: 12px; flex-direction: column; }',
-            '.' + OVERLAY_CLASS + '._omni_top { top: 12px; }',
-            '.' + OVERLAY_CLASS + '._omni_bottom { bottom: 12px; }',
+            '.' + OVERLAY_CLASS + '._petal_right { right: 12px; top: 12px; flex-direction: column; }',
+            '.' + OVERLAY_CLASS + '._petal_top { top: 12px; }',
+            '.' + OVERLAY_CLASS + '._petal_bottom { bottom: 12px; }',
             '.' + OVERLAY_BUTTON_CLASS + ' {',
             '  pointer-events: auto;',
             '  width: 40px;',
@@ -524,7 +518,7 @@
 
     function buildOverlay(video) {
         const overlay = document.createElement('div');
-        overlay.className = OVERLAY_CLASS + ' _omni_right';
+        overlay.className = OVERLAY_CLASS + ' _petal_right';
         overlay.dataset.omniOverlay = '1';
 
         const btn = document.createElement('button');
@@ -555,7 +549,7 @@
     }
 
     function attachOverlayToVideo(video) {
-        if (!video || video._omniOverlay) return;
+        if (!video || video._petalOverlay) return;
         ensureOverlayStyles();
         const position = window.getComputedStyle(video).position;
         if (position === 'static') {
@@ -564,11 +558,11 @@
         const overlay = buildOverlay(video);
         const host = video.parentElement || video;
         host.appendChild(overlay);
-        video._omniOverlay = overlay;
-        video._omniOverlayHost = host;
+        video._petalOverlay = overlay;
+        video._petalOverlayHost = host;
 
-        const show = () => overlay.classList.add('_omni_visible');
-        const hide = () => overlay.classList.remove('_omni_visible');
+        const show = () => overlay.classList.add('_petal_visible');
+        const hide = () => overlay.classList.remove('_petal_visible');
         video.addEventListener('mouseenter', show);
         video.addEventListener('mouseleave', hide);
         video.addEventListener('play', show);
@@ -578,13 +572,13 @@
     }
 
     function detachOverlayFromVideo(video) {
-        const overlay = video._omniOverlay;
-        const host = video._omniOverlayHost || (video.parentElement || video);
+        const overlay = video._petalOverlay;
+        const host = video._petalOverlayHost || (video.parentElement || video);
         if (overlay && overlay.parentElement === host) {
             host.removeChild(overlay);
         }
-        video._omniOverlay = null;
-        video._omniOverlayHost = null;
+        video._petalOverlay = null;
+        video._petalOverlayHost = null;
     }
 
     // =========================================================
@@ -604,20 +598,23 @@
         if (!video || video.tagName !== 'VIDEO') return false;
         // Fast-path: videoWidth/videoHeight do not force DOM layout reflow
         if (video.videoWidth > 0 && video.videoHeight > 0) {
-            if (video.videoWidth < 140 || video.videoHeight < 80) return false;
+            if (video.videoWidth < 200 || video.videoHeight < 120) return false;
         } else {
             const rect = video.getBoundingClientRect();
-            if (rect.width < 140 || rect.height < 80) return false;
+            if (rect.width < 200 || rect.height < 120) return false;
+        }
+        if (video.muted && video.controls === false && video.getAttribute('autoplay') !== null) {
+            return false;
         }
         return true;
     }
 
     function scanAndAttachSiteOverlays() {
         document.querySelectorAll('video').forEach(v => {
-            if (isOverlayCandidate(v) && !v._omniOverlay) {
+            if (isOverlayCandidate(v) && !v._petalOverlay) {
                 registerVideo(v);
                 attachOverlayToVideo(v);
-            } else if (v._omniOverlay && !isOverlayCandidate(v)) {
+            } else if (v._petalOverlay && !isOverlayCandidate(v)) {
                 detachOverlayFromVideo(v);
             }
         });
@@ -645,13 +642,13 @@
                 for (const node of mutation.removedNodes) {
                     if (node.nodeType === 1) {
                         if (node.tagName === 'VIDEO') {
-                            if (node._omniVideoId) trackedVideos.delete(node._omniVideoId);
-                            if (node._omniOverlay) detachOverlayFromVideo(node);
+                            if (node._petalVideoId) trackedVideos.delete(node._petalVideoId);
+                            if (node._petalOverlay) detachOverlayFromVideo(node);
                             hasVideoMutation = true;
                         } else if (node.firstElementChild && node.querySelector('video')) {
                             node.querySelectorAll('video').forEach(v => {
-                                if (v._omniVideoId) trackedVideos.delete(v._omniVideoId);
-                                if (v._omniOverlay) detachOverlayFromVideo(v);
+                                if (v._petalVideoId) trackedVideos.delete(v._petalVideoId);
+                                if (v._petalOverlay) detachOverlayFromVideo(v);
                             });
                             hasVideoMutation = true;
                         }

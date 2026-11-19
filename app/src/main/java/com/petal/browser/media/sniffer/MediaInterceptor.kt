@@ -18,8 +18,6 @@
 
 package com.petal.browser.media.sniffer
 
-import com.petal.browser.media.ytdlp.SupportedPlatforms
-
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -232,7 +230,7 @@ class MediaInterceptor {
             clear()
             return
         }
-        if (!SupportedPlatforms.isSupported(activePageUrl) && isYouTubeEnabled && isYouTubePage(activePageUrl) && !isDomainBlocked(activePageUrl)) {
+        if (isYouTubeEnabled && isYouTubePage(activePageUrl) && !isDomainBlocked(activePageUrl)) {
             youtubeExtractionJob = scope.launch {
                 extractYouTubePage(activePageUrl, pageId)
             }

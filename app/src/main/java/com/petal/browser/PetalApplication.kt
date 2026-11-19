@@ -140,28 +140,6 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             }
             com.petal.browser.media.sniffer.PetalMediaGrabberInstaller.install(this)
             com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(this)
-            // Initialize yt-dlp through the same synchronized engine used by
-            // the Social Downloader. This prevents a first-use race between
-            // Application startup and the media sheet.
-            try {
-                // yt-dlp/ffmpeg/aria2c init unpacks native bundles; keep it off the main thread.
-                // PetalYtDlpEngine's init lock makes a concurrent first use simply wait for it.
-                // Silently auto-update the yt-dlp extractor in the background once per day.
-                // YouTube frequently pushes extractor changes that break downloads — keeping
-                // yt-dlp current eliminates the "couldn't fetch media" failure for most users.
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        com.petal.browser.media.ytdlp.PetalYtDlpEngine.initialize(this@PetalApplication)
-                        com.petal.browser.media.ytdlp.PetalYtDlpEngine.checkAutoUpdate(
-                            this@PetalApplication
-                        )
-                    } catch (t: Throwable) {
-                        android.util.Log.w(TAG, "Background yt-dlp update check failed", t)
-                    }
-                }
-            } catch (t: Throwable) {
-                Log.w(TAG, "yt-dlp init failed; it will retry on first use", t)
-            }
             PetalPredictiveJunction.init(
                 PreferenceManager.getDefaultSharedPreferences(this)
             )

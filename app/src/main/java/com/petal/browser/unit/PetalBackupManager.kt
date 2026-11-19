@@ -186,9 +186,9 @@ object PetalBackupManager {
     }
 
     private val BUILTIN_PREF_NAMES = arrayOf(
-        "petal_settings", "petal_menu", "petal_tab_groups", "petal_inactive_tabs", "petal_ytdlp",
+        "petal_settings", "petal_menu", "petal_tab_groups", "petal_inactive_tabs",
         "MenuPreferences", "petal_tab_collections_prefs",
-        "petal_inactive_tabs_prefs", "petal_tab_groups_prefs", "petal_ytdlp_engine_prefs",
+        "petal_inactive_tabs_prefs", "petal_tab_groups_prefs",
         // Firefox Sync choices (engines, device name). The account sign-in itself is never backed up.
         "petal_sync_settings"
     )

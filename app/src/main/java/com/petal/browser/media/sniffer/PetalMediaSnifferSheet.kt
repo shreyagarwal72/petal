@@ -84,24 +84,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
-import com.petal.browser.media.ytdlp.PetalSocialDownloadService
-import com.petal.browser.media.ytdlp.PetalYtDlpEngine
-import com.petal.browser.media.ytdlp.SupportedPlatforms
-import com.petal.browser.media.ytdlp.YtDlpFormat
-import com.petal.browser.media.ytdlp.YtDlpMediaInfo
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import androidx.compose.material3.Icon
-
-// ── Social downloader state machine ───────────────────────────────────────────
-private sealed class SocialState {
-    object Idle : SocialState()
-    object Loading : SocialState()
-    data class Ready(val info: YtDlpMediaInfo, val selected: YtDlpFormat) : SocialState()
-    data class Failed(val message: String) : SocialState()
-    object Done : SocialState()
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,8 +101,6 @@ fun PetalMediaSnifferOverlay(
     val autoOpenPanel = remember { sp.getBoolean("sp_media_auto_open_panel", false) }
 
     val media by PetalMediaSniffer.interceptor.playableMedia.collectAsStateWithLifecycle()
-    val platform = remember(currentPageUrl) { SupportedPlatforms.getPlatform(currentPageUrl) }
-    val socialOnly = platform != null
     var sheetOpen by remember { mutableStateOf(false) }
     var dismissed by remember { mutableStateOf(false) }
     val isSearchOrInternal = remember(currentPageUrl) {
@@ -131,14 +115,14 @@ fun PetalMediaSnifferOverlay(
         }
     }
 
-    LaunchedEffect(currentPageUrl, media, socialOnly) {
+    LaunchedEffect(currentPageUrl, media) {
         dismissed = false
-        if (autoOpenPanel && !isSearchOrInternal && (media.isNotEmpty() || socialOnly)) {
+        if (autoOpenPanel && !isSearchOrInternal && media.isNotEmpty()) {
             sheetOpen = true
         }
     }
 
-    val isVisible = detectBackground && !isSearchOrInternal && (media.isNotEmpty() || socialOnly) && !dismissed
+    val isVisible = detectBackground && !isSearchOrInternal && media.isNotEmpty() && !dismissed
 
     AnimatedVisibility(
         visible = isVisible,
@@ -270,12 +254,7 @@ private fun PetalMediaSheet(
     onPlay: (MediaInterceptor.MediaPlaybackRequest) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val scope    = rememberCoroutineScope()
-    val platform = remember(currentPageUrl) { SupportedPlatforms.getPlatform(currentPageUrl) }
-
-    var socialState    by remember { mutableStateOf<SocialState>(SocialState.Idle) }
-    var formatMenuOpen by remember { mutableStateOf(false) }
-    var isUpdatingExtractor by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     com.petal.browser.ui.containment.PetalSheet(
         onDismissRequest = onDismiss,
@@ -448,303 +427,6 @@ private fun PetalMediaSheet(
                                                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                                 PetalToast.show(context, "Media link copied")
                                             }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ── Section 2: Social Downloader (yt-dlp) ────────────────────
-            if (platform != null && currentPageUrl.isNotBlank()) {
-                item {
-                    com.petal.browser.ui.containment.PetalSectionLabel(
-                        stringResource(R.string.ui_social_download) + " • " + platform.displayName
-                    )
-
-                    com.petal.browser.ui.containment.PetalHeroCard(
-                        shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                        containerColor = com.petal.browser.ui.containment.petalGroupSurfaceColor()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(18.dp),
-                            verticalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                    icon = Icons.Rounded.Public,
-                                    container = MaterialTheme.colorScheme.secondaryContainer,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    size = 44.dp,
-                                    iconSize = 22.dp
-                                )
-                                Column(Modifier.weight(1f)) {
-                                    Text(
-                                        platform.displayName,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                                    )
-                                    Text(
-                                        stringResource(R.string.ui_fetch_the_available_media_formats),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 2
-                                    )
-                                }
-                                TextButton(
-                                    onClick = {
-                                        if (!isUpdatingExtractor) {
-                                            isUpdatingExtractor = true
-                                            scope.launch {
-                                                PetalToast.show(context, context.getString(R.string.ui_updating_extractor))
-                                                val res = PetalYtDlpEngine.updateEngine(context)
-                                                isUpdatingExtractor = false
-                                                if (res.isSuccess) {
-                                                    PetalToast.show(context, context.getString(R.string.ui_extractor_updated))
-                                                } else {
-                                                    PetalToast.show(context, context.getString(R.string.ui_extractor_update_failed))
-                                                }
-                                            }
-                                        }
-                                    },
-                                    enabled = !isUpdatingExtractor
-                                ) {
-                                    if (isUpdatingExtractor) {
-                                        PetalContainedLoadingIndicator(size = 16.dp)
-                                    } else {
-                                        Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    }
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        stringResource(R.string.ui_update_extractor),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
-                                    )
-                                }
-                            }
-
-                            when (val state = socialState) {
-                                SocialState.Idle -> {
-                                    Button(
-                                        onClick = {
-                                            socialState = SocialState.Loading
-                                            scope.launch {
-                                                val cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(currentPageUrl)
-                                                    ?: PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
-
-                                                val info = PetalYtDlpEngine.fetchInfo(
-                                                    context = context,
-                                                    url = currentPageUrl,
-                                                    cookies = cookies
-                                                )
-
-                                                socialState = if (
-                                                    info != null && info.formats.isNotEmpty()
-                                                ) {
-                                                    SocialState.Ready(info, info.formats.first())
-                                                } else {
-                                                    SocialState.Failed(
-                                                        "Couldn't fetch media information. " +
-                                                            "The site may require an updated " +
-                                                            "extractor or a signed-in session."
-                                                    )
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ) {
-                                        Icon(Icons.Rounded.Refresh, contentDescription = null)
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(stringResource(R.string.ui_fetch_media_info))
-                                    }
-                                }
-
-                                SocialState.Loading -> {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 12.dp),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        PetalContainedLoadingIndicator(size = 20.dp)
-                                        Spacer(Modifier.width(12.dp))
-                                        Text(
-                                            stringResource(R.string.ui_fetching_media_information),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-
-                                is SocialState.Ready -> {
-                                    val info = state.info
-                                    val selFmt = state.selected
-
-                                    if (info.thumbnailUrl != null) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(176.dp)
-                                                .clip(MaterialTheme.shapes.large)
-                                                .background(
-                                                    MaterialTheme.colorScheme.surfaceContainerHighest
-                                                )
-                                        ) {
-                                            AsyncImage(
-                                                model = info.thumbnailUrl,
-                                                contentDescription = null,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier.matchParentSize()
-                                            )
-                                        }
-                                    }
-
-                                    Text(
-                                        info.title,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-
-                                    val meta = listOfNotNull(
-                                        info.uploader,
-                                        info.durationFormatted?.let { "Duration $it" }
-                                    ).joinToString("  •  ")
-
-                                    if (meta.isNotBlank()) {
-                                        Text(
-                                            meta,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-
-                                    Box(modifier = Modifier.fillMaxWidth()) {
-                                        ExpressiveSplitButton(
-                                            label = stringResource(R.string.ui_download_2, selFmt.label),
-                                            onPrimaryClick = {
-                                                val cookies = com.petal.browser.download.PetalGeckoCookieBridge.getCookies(currentPageUrl)
-                                                    ?: PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
-
-                                                when {
-                                                    selFmt.isDirectUrl -> {
-                                                        val mimeType = when {
-                                                            selFmt.isAudioOnly -> "audio/mp4"
-                                                            selFmt.formatId.contains(".webm", ignoreCase = true) -> "video/webm"
-                                                            else -> "video/mp4"
-                                                        }
-                                                        PetalFetchDownloadBridge.enqueueMediaDownload(
-                                                            context = context,
-                                                            url = selFmt.formatId,
-                                                            fileName = info.title.ifBlank { "Petal media" },
-                                                            mimeType = mimeType,
-                                                            userAgent = android.webkit.WebSettings.getDefaultUserAgent(context),
-                                                            cookie = cookies,
-                                                            headers = mapOf("Referer" to currentPageUrl),
-                                                            onFailed = { socialState = SocialState.Failed("Petal Download Manager could not queue this media.") }
-                                                        )
-                                                    }
-                                                    else -> {
-                                                        PetalSocialDownloadService.enqueue(
-                                                            context = context,
-                                                            url = currentPageUrl,
-                                                            format = selFmt,
-                                                            cookies = cookies,
-                                                            title = info.title
-                                                        )
-                                                    }
-                                                }
-
-                                                socialState = SocialState.Done
-                                                onDismiss()
-                                            },
-                                            onMenuClick = { formatMenuOpen = !formatMenuOpen },
-                                            icon = Icons.Rounded.Download,
-                                            isMenuExpanded = formatMenuOpen,
-                                            variant = SplitButtonVariant.FILLED,
-                                            height = 50.dp,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-
-                                        com.petal.browser.ui.containment.PetalPopupMenu(
-                                            expanded = formatMenuOpen,
-                                            onDismissRequest = { formatMenuOpen = false }
-                                        ) {
-                                            info.formats.forEach { fmt ->
-                                                com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                                    text = { Text(fmt.label) },
-                                                    onClick = {
-                                                        socialState = SocialState.Ready(info, fmt)
-                                                        formatMenuOpen = false
-                                                    },
-                                                    leadingIcon = {
-                                                        Icon(
-                                                            if (fmt.isAudioOnly) Icons.Rounded.Public else Icons.Rounded.VideoLibrary,
-                                                            contentDescription = null
-                                                        )
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                is SocialState.Failed -> {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.Top,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.ErrorOutline,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
-                                        Text(
-                                            state.message,
-                                            modifier = Modifier.weight(1f),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-
-                                    FilledTonalButton(
-                                        onClick = { socialState = SocialState.Idle },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = ButtonDefaults.filledTonalButtonColors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                            contentColor = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    ) {
-                                        Icon(Icons.Rounded.Refresh, contentDescription = null)
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(stringResource(R.string.ui_try_again))
-                                    }
-                                }
-
-                                SocialState.Done -> {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.CheckCircle,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                        Text(
-                                            stringResource(R.string.ui_download_started_check_petal_s),
-                                            style = MaterialTheme.typography.bodyMedium
                                         )
                                     }
                                 }

@@ -168,11 +168,6 @@ android {
         jniLibs {
             useLegacyPackaging true
             pickFirsts += ['**/libxul.so', '**/libc++_shared.so', '**/libmozglue.so']
-            // These are ZIP archives (Python interpreter, ffmpeg, aria2c binaries bundled by
-            // youtubedl-android), not ELF shared objects — named .so only so useLegacyPackaging
-            // extracts them to disk for the library's own ZipFile/RandomAccessFile access.
-            // Excluding them from stripping prevents llvm-strip from failing on non-ELF input.
-            keepDebugSymbols += ['**/libaria2c.zip.so', '**/libffmpeg.zip.so', '**/libpython.zip.so']
         }
         resources {
             pickFirsts += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE*', 'META-INF/NOTICE*']
@@ -305,12 +300,6 @@ dependencies {
     implementation 'androidx.autofill:autofill:1.3.0'
 
     // Google ML Kit On-Device Recognition APIs
-
-    // yt-dlp (via youtubedl-android) — powers Petal Social Downloader for YouTube,
-    // Instagram, TikTok, Twitter/X, Facebook, Reddit, and 1800+ more platforms.
-    implementation 'io.github.junkfood02.youtubedl-android:library:0.18.1'
-    implementation 'io.github.junkfood02.youtubedl-android:ffmpeg:0.18.1'
-    implementation 'io.github.junkfood02.youtubedl-android:aria2c:0.18.1'
 
     // Mozilla GeckoView & Android Components (161.0b3 / GeckoView Beta 161)
     implementation 'org.mozilla.geckoview:geckoview-beta:161.0.20261113104103'

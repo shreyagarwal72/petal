@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Petal Media Grabber",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "description": "Passively detects video stream URLs for download without blocking playback.",
     "browser_specific_settings": {
         "gecko": {
@@ -14,7 +14,7 @@
     "content_scripts": [
         {
             "matches": ["<all_urls>"],
-            "js": ["petal_media_scanner.js", "content.js"],
+            "js": ["content.js"],
             "run_at": "document_start",
             "all_frames": true
         }
