@@ -170,18 +170,13 @@ fun PetalMediaSnifferOverlay(
                 }
                 Column(Modifier.weight(1f)) {
                     Text(
-                        if (media.isNotEmpty()) "Media found" else "Social download",
+                        "Media found",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        when {
-                            media.isNotEmpty() && platform != null -> "${media.size} source${if (media.size == 1) "" else "s"} • ${platform.displayName}"
-                            media.isNotEmpty() -> "${media.size} source${if (media.size == 1) "" else "s"} on this page"
-                            platform != null -> platform.displayName
-                            else -> "Media available"
-                        },
+                        "${media.size} source${if (media.size == 1) "" else "s"} on this page",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

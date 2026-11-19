@@ -361,6 +361,7 @@ fun PetalMediaGrabberPopupDialog(
         }
     }
 }
+}
 
 private fun formatMediaSize(bytes: Long?): String? {
     if (bytes == null || bytes <= 0L) return null
