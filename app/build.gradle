@@ -168,6 +168,7 @@ android {
         jniLibs {
             useLegacyPackaging true
             pickFirsts += ['**/libxul.so', '**/libc++_shared.so', '**/libmozglue.so']
+            keepDebugSymbols += ['**/libffmpeg.zip.so', '**/libpython.zip.so']
         }
         resources {
             pickFirsts += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE*', 'META-INF/NOTICE*']
@@ -263,9 +264,9 @@ dependencies {
     implementation 'androidx.browser:browser:1.10.0'
     implementation 'androidx.navigation:navigation-compose:2.10.2'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    // Native yt-dlp (Python via Chaquopy-style bundle) + ffmpeg for merging. Resolved from jitpack.
-    implementation 'com.github.yausername.youtubedl-android:library:0.18.1'
-    implementation 'com.github.yausername.youtubedl-android:ffmpeg:0.18.1'
+    // Native yt-dlp (Python via Chaquopy-style bundle) + ffmpeg for merging. Resolved from Maven Central.
+    implementation 'io.github.junkfood02.youtubedl-android:library:0.18.1'
+    implementation 'io.github.junkfood02.youtubedl-android:ffmpeg:0.18.1'
     implementation 'io.coil-kt:coil-compose:2.7.0'
     implementation 'io.coil-kt:coil-gif:2.7.0'
     // Real liquid glass (backdrop blur + lens refraction + specular rim); same library SimpMusic uses
