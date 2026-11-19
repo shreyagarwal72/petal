@@ -11,7 +11,6 @@ import com.petal.browser.download.DownloadSource
 import com.petal.browser.download.PetalSmartDownloadRouter
 import com.petal.browser.media.sniffer.PetalMediaSniffer
 import com.yausername.ffmpeg.FFmpeg
-import com.yausername.youtubedl_android.DownloadProgressCallback
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import kotlinx.coroutines.CoroutineScope
@@ -212,8 +211,8 @@ object PetalYtDlpEngine {
                     }
                 }
 
-                YoutubeDL.getInstance().execute(request, taskId, DownloadProgressCallback { percent, eta, line ->
-                    if (taskId in cancelled) return@DownloadProgressCallback
+                YoutubeDL.getInstance().execute(request, taskId) { percent, eta, line ->
+                    if (taskId in cancelled) return@execute
                     val fraction = (percent / 100f).coerceIn(0f, 0.99f)
                     row(
                         status = DownloadStatus.STATUS_RUNNING,
@@ -221,7 +220,7 @@ object PetalYtDlpEngine {
                         speed = YtDlpOptionBuilder.parseSpeed(line),
                         eta = eta.coerceAtLeast(0L)
                     )
-                })
+                }
 
                 if (taskId in cancelled) throw InterruptedException("Cancelled")
 
