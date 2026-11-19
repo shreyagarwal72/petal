@@ -271,7 +271,6 @@ object PetalPlacesProvider {
                     0L,
                     Long.MAX_VALUE,
                     excludeTypes = listOf(
-                        VisitType.NOT_A_VISIT,
                         VisitType.DOWNLOAD,
                         VisitType.REDIRECT_PERMANENT,
                         VisitType.REDIRECT_TEMPORARY,
