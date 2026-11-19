@@ -928,6 +928,9 @@ fun PetalRootApp(
                                     },
                                     onAddressClick = { viewModel.openOmnibox() },
                                     onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
+                                    onMediaClick = {
+                                        com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
+                                    },
                                     onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
                                     onHardRefresh = { viewModel.reload() },
                                     onSwipeNextTab = { viewModel.switchToNextTab() },
@@ -1022,6 +1025,9 @@ fun PetalRootApp(
                             },
                             onAddressClick = { viewModel.openOmnibox() },
                             onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
+                            onMediaClick = {
+                                com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
+                            },
                             onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
                             onHardRefresh = { viewModel.reload() },
                             onSwipeNextTab = { viewModel.switchToNextTab() },

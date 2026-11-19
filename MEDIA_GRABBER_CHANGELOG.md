@@ -24,3 +24,6 @@
 - `PetalRootApp` now hosts `PetalMediaGrabberSheet` and shows it when `isSheetForcedOpen` is set (address bar, quick tools, overflow menu).
 - `openPlayer()` extracted into the bridge so Play works from the sheet.
 - Address bar media button now also shows on known yt-dlp sites (YouTube, Vimeo, X, Instagram, TikTok, etc.) before anything is sniffed.
+
+## Fix 2: media button did nothing on the plain address bar
+- Both `PetalAddressBar(...)` instances in `PetalRootApp` (top and bottom placement) never passed `onMediaClick`, so it defaulted to a no-op. Both now call `openMediaSheet()`, same as the merged bar and `PetalAddressBarBridge`.
