@@ -1571,6 +1571,66 @@ fun PetalTabGridSwitcher(
             }
             }
 
+            // New tab split button: tap = new tab in the current category, arrow = the other kind.
+            AnimatedVisibility(
+                visible = !selectionMode,
+                enter = slideInVertically(initialOffsetY = { it * 2 }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { it * 2 }) + fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = 16.dp)
+            ) {
+                var newTabMenuExpanded by remember { mutableStateOf(false) }
+                val inIncognito = selectedCategory == TabCategory.INCOGNITO
+                Box {
+                    com.petal.browser.ui.components.ExpressiveSplitButton(
+                        label = stringResource(if (inIncognito) R.string.ui_new_incognito_tab else R.string.ui_new_tab),
+                        icon = Icons.Rounded.Add,
+                        onPrimaryClick = {
+                            newTabMenuExpanded = false
+                            if (inIncognito) {
+                                withIncognitoAccess { launchNewTab(true) }
+                            } else {
+                                launchNewTab(false)
+                            }
+                        },
+                        onMenuClick = { newTabMenuExpanded = !newTabMenuExpanded },
+                        isMenuExpanded = newTabMenuExpanded,
+                        role = com.petal.browser.ui.components.PetalGroupRole.Primary,
+                        menuExpandedRole = com.petal.browser.ui.components.PetalGroupRole.Tertiary,
+                        height = 56.dp
+                    )
+                    com.petal.browser.ui.containment.PetalPopupMenu(
+                        expanded = newTabMenuExpanded,
+                        onDismissRequest = { newTabMenuExpanded = false }
+                    ) {
+                        if (inIncognito) {
+                            PetalExpressiveMenuItem(
+                                text = stringResource(R.string.ui_new_tab),
+                                leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = accentColor) },
+                                onClick = {
+                                    newTabMenuExpanded = false
+                                    selectedCategory = TabCategory.REGULAR
+                                    launchNewTab(false)
+                                }
+                            )
+                        } else {
+                            PetalExpressiveMenuItem(
+                                text = stringResource(R.string.ui_new_incognito_tab),
+                                leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
+                                onClick = {
+                                    newTabMenuExpanded = false
+                                    withIncognitoAccess {
+                                        selectedCategory = TabCategory.INCOGNITO
+                                        launchNewTab(true)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
             // Multi-Select Floating Action Bar (Firefox Parity)
             AnimatedVisibility(
                 visible = selectionMode && selectedTabIds.isNotEmpty(),

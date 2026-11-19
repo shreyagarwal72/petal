@@ -239,6 +239,11 @@ enum class DownloadSortOption(val label: String) {
     STATUS("Download Status")
 }
 
+/** Status filter shown as a connected button group at the top of the Downloads list. */
+private enum class DownloadStatusFilter(val label: String) {
+    ALL("All"), ACTIVE("Active"), DONE("Done"), FAILED("Failed")
+}
+
 fun formatDownloadTime(timestampMs: Long, includeDate: Boolean = false): String {
     if (timestampMs <= 0) return ""
     val pattern = if (includeDate) "d MMM yyyy, h:mm a" else "h:mm a"
@@ -429,6 +434,7 @@ fun PetalDownloadManagerScreen(
         rawDownloadList.filter { !pendingDeletedIds.contains(it.id) }
     }
     var sortOption by remember { mutableStateOf(DownloadSortOption.DATE_DESC) }
+    var statusFilter by remember { mutableStateOf(DownloadStatusFilter.ALL) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
 
     val sortedDownloadList = remember(downloadList, sortOption) {
@@ -500,10 +506,20 @@ fun PetalDownloadManagerScreen(
     // Completed images are represented by the preview strip below. Keep active,
     // failed, and paused image downloads in the file list so their controls remain
     // available, but do not render a second completed-image row.
-    val listDownloads = remember(sortedDownloadList, autoPreviewDownloadedImages) {
-        if (autoPreviewDownloadedImages) {
+    val listDownloads = remember(sortedDownloadList, autoPreviewDownloadedImages, statusFilter) {
+        val base = if (autoPreviewDownloadedImages) {
             sortedDownloadList.filterNot { it.status == DownloadStatus.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) }
         } else sortedDownloadList
+        when (statusFilter) {
+            DownloadStatusFilter.ALL -> base
+            DownloadStatusFilter.ACTIVE -> base.filter {
+                it.status == DownloadStatus.STATUS_RUNNING ||
+                    it.status == DownloadStatus.STATUS_PAUSED ||
+                    it.status == DownloadStatus.STATUS_PENDING
+            }
+            DownloadStatusFilter.DONE -> base.filter { it.status == DownloadStatus.STATUS_SUCCESSFUL }
+            DownloadStatusFilter.FAILED -> base.filter { it.status == DownloadStatus.STATUS_FAILED }
+        }
     }
     val groupedDownloads = remember(listDownloads, sortOption) {
         if (sortOption == DownloadSortOption.DATE_DESC || sortOption == DownloadSortOption.DATE_ASC) {
@@ -727,6 +743,27 @@ fun PetalDownloadManagerScreen(
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                     contentPadding = PaddingValues(top = topInset, bottom = innerPadding.calculateBottomPadding() + 24.dp)
                 ) {
+                    item(key = "status_filter") {
+                        com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                            options = DownloadStatusFilter.values().map { f ->
+                                com.petal.browser.ui.components.PetalButtonGroupItem(
+                                    value = f,
+                                    label = f.label,
+                                    icon = when (f) {
+                                        DownloadStatusFilter.ALL -> Icons.Rounded.Download
+                                        DownloadStatusFilter.ACTIVE -> Icons.Rounded.Downloading
+                                        DownloadStatusFilter.DONE -> Icons.Rounded.CheckCircle
+                                        DownloadStatusFilter.FAILED -> Icons.Rounded.Error
+                                    }
+                                )
+                            },
+                            selected = statusFilter,
+                            onSelect = { statusFilter = it },
+                            role = com.petal.browser.ui.components.PetalGroupRole.Primary,
+                            collapseUnselected = true,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
                     if (downloadList.any { it.status == DownloadStatus.STATUS_RUNNING }) {
                         item(key = "active_summary") {
                             ActiveDownloadsSummary(

@@ -313,7 +313,6 @@ fun PetalHistoryScreen(
         val saved = sp.getString("sp_history_sort_mode", HistorySortOption.TIME_DESC.name)
         mutableStateOf(try { HistorySortOption.valueOf(saved ?: "") } catch (_: Exception) { HistorySortOption.TIME_DESC })
     }
-    var sortMenuExpanded by remember { mutableStateOf(false) }
 
     val filteredHistory = remember(searchQuery, rawHistory) {
         val historyList = rawHistory ?: emptyList()
@@ -382,11 +381,10 @@ fun PetalHistoryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    val hasSubOverlay = showClearConfirm || sortMenuExpanded || searchQuery.isNotEmpty()
+    val hasSubOverlay = showClearConfirm || searchQuery.isNotEmpty()
     val handleDismiss: () -> Unit = {
         when {
             showClearConfirm -> showClearConfirm = false
-            sortMenuExpanded -> sortMenuExpanded = false
             searchQuery.isNotEmpty() -> searchQuery = ""
             else -> onDismiss()
         }
@@ -447,65 +445,30 @@ fun PetalHistoryScreen(
                     ), glass = false
                 )
 
-                // ── Material 3 Expressive Liquid Glass Sort Chips ──
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    HistorySortOption.values().forEach { option ->
-                        val selected = sortOption == option
-                        val chipScale by animateFloatAsState(
-                            targetValue = if (selected) 1f else 0.96f,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessMedium
-                            ),
-                            label = "historySortChipScale_${option.name}"
+                // ── Sort: connected toggle group (selected option expands, others collapse to icons) ──
+                com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                    options = HistorySortOption.values().map { option ->
+                        com.petal.browser.ui.components.PetalButtonGroupItem(
+                            value = option,
+                            label = option.label,
+                            icon = when (option) {
+                                HistorySortOption.TIME_DESC -> Icons.Rounded.Schedule
+                                HistorySortOption.NAME_ASC -> Icons.Rounded.SortByAlpha
+                                HistorySortOption.NAME_DESC -> Icons.Rounded.Sort
+                                HistorySortOption.SITE_ASC -> Icons.Rounded.Public
+                                HistorySortOption.TIME_ASC -> Icons.Rounded.History
+                            }
                         )
-                        val chipShape = RoundedCornerShape(14.dp)
-                        FilterChip(
-                            selected = selected,
-                            onClick = {
-                                sortOption = option
-                                sp.edit().putString("sp_history_sort_mode", option.name).apply()
-                            },
-                            label = {
-                                Text(
-                                    text = option.label,
-                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                                    fontSize = 13.sp
-                                )
-                            },
-                            leadingIcon = {
-                                val icon = when (option) {
-                                    HistorySortOption.TIME_DESC -> Icons.Rounded.Schedule
-                                    HistorySortOption.TIME_ASC -> Icons.Rounded.History
-                                    HistorySortOption.NAME_ASC -> Icons.Rounded.FormatListBulleted
-                                    HistorySortOption.NAME_DESC -> Icons.Rounded.FormatListBulleted
-                                    HistorySortOption.SITE_ASC -> Icons.Rounded.Public
-                                }
-                                Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
-                            },
-                            shape = chipShape,
-                            colors = FilterChipDefaults.filterChipColors(
-                                containerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                labelColor = MaterialTheme.colorScheme.onSurface,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            border = null,
-                            modifier = Modifier
-                                .graphicsLayer(scaleX = chipScale, scaleY = chipScale)
-                                .liquidGlassChrome(shape = chipShape, enabled = isGlass, sheenIntensity = 0.35f), glass = false
-                        )
-                    }
-                }
+                    },
+                    selected = sortOption,
+                    onSelect = { option ->
+                        sortOption = option
+                        sp.edit().putString("sp_history_sort_mode", option.name).apply()
+                    },
+                    role = com.petal.browser.ui.components.PetalGroupRole.Secondary,
+                    collapseUnselected = true,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
         }
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
@@ -518,60 +481,6 @@ fun PetalHistoryScreen(
                     subtitle = "${filteredHistory.size} items",
                     onBack = { if (hasSubOverlay) handleDismiss() else onDismiss() },
                     actions = {
-                        Box {
-                            HeaderActionIcon(
-                                icon = Icons.Rounded.Sort,
-                                contentDescription = "Sort History",
-                                onClick = { sortMenuExpanded = true }
-                            )
-                            com.petal.browser.ui.containment.PetalPopupMenu(
-                                expanded = sortMenuExpanded,
-                                onDismissRequest = { sortMenuExpanded = false }
-                            ) {
-                                HistorySortOption.values().forEach { option ->
-                                    com.petal.browser.ui.containment.PetalPopupMenuItem(
-                                        text = {
-                                            Text(
-                                                text = when (option) {
-                                                    HistorySortOption.TIME_DESC -> "Date (Newest first)"
-                                                    HistorySortOption.TIME_ASC -> "Date (Oldest first)"
-                                                    HistorySortOption.NAME_ASC -> "Name (A–Z)"
-                                                    HistorySortOption.NAME_DESC -> "Name (Z–A)"
-                                                    HistorySortOption.SITE_ASC -> "Site (A–Z)"
-                                                },
-                                                fontWeight = if (sortOption == option) FontWeight.Bold else FontWeight.Normal
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = when (option) {
-                                                    HistorySortOption.TIME_DESC -> Icons.Rounded.Schedule
-                                                    HistorySortOption.TIME_ASC -> Icons.Rounded.History
-                                                    HistorySortOption.NAME_ASC -> Icons.Rounded.FormatListBulleted
-                                                    HistorySortOption.NAME_DESC -> Icons.Rounded.FormatListBulleted
-                                                    HistorySortOption.SITE_ASC -> Icons.Rounded.Public
-                                                },
-                                                contentDescription = null
-                                            )
-                                        },
-                                        trailingIcon = {
-                                            if (sortOption == option) {
-                                                Icon(
-                                                    Icons.Rounded.Check,
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                        },
-                                        onClick = {
-                                            sortOption = option
-                                            sp.edit().putString("sp_history_sort_mode", option.name).apply()
-                                            sortMenuExpanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
                         if (rawHistory?.isNotEmpty() == true) {
                             HeaderActionIcon(
                                 icon = Icons.Rounded.DeleteSweep,

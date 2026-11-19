@@ -2042,42 +2042,17 @@ private fun PdfEditTopBar(
                         Icon(Icons.Rounded.Close, contentDescription = null)
                     }
 
-                    val annotationChipColors = FilterChipDefaults.filterChipColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        labelColor = MaterialTheme.colorScheme.onSurface,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        FilterChip(
-                            selected = selectedTool == AnnotationTool.PEN,
-                            onClick = { onToolChange(AnnotationTool.PEN) },
-                            label = { Text(stringResource(R.string.ui_pen)) },
-                            leadingIcon = { Icon(Icons.Rounded.Draw, null, Modifier.size(16.dp)) },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = annotationChipColors,
-                            border = null
-                        )
-
-                        FilterChip(
-                            selected = selectedTool == AnnotationTool.HIGHLIGHTER,
-                            onClick = { onToolChange(AnnotationTool.HIGHLIGHTER) },
-                            label = { Text(stringResource(R.string.ui_highlighter)) },
-                            leadingIcon = { Icon(Icons.Rounded.Highlight, null, Modifier.size(16.dp)) },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = annotationChipColors,
-                            border = null
-                        )
-
-                        FilterChip(
-                            selected = selectedTool == AnnotationTool.TEXT,
-                            onClick = { onToolChange(AnnotationTool.TEXT) },
-                            label = { Text(stringResource(R.string.ui_text)) },
-                            leadingIcon = { Icon(Icons.Rounded.TextFields, null, Modifier.size(16.dp)) },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = annotationChipColors,
-                            border = null
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                            options = listOf(
+                                com.petal.browser.ui.components.PetalButtonGroupItem(AnnotationTool.PEN, stringResource(R.string.ui_pen), icon = Icons.Rounded.Draw),
+                                com.petal.browser.ui.components.PetalButtonGroupItem(AnnotationTool.HIGHLIGHTER, stringResource(R.string.ui_highlighter), icon = Icons.Rounded.Highlight),
+                                com.petal.browser.ui.components.PetalButtonGroupItem(AnnotationTool.TEXT, stringResource(R.string.ui_text), icon = Icons.Rounded.TextFields),
+                            ),
+                            selected = selectedTool,
+                            onSelect = onToolChange,
+                            collapseUnselected = true,
+                            modifier = Modifier.width(220.dp)
                         )
 
                         PetalLiquidIconButton(

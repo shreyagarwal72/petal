@@ -297,48 +297,24 @@ fun PetalBookmarksScreen(
 
                 Spacer(Modifier.height(8.dp))
 
-                // Reading List filter chip row - Material 3 Expressive FilterChip with a
-                // springy scale-in, matching the bouncy selection feel used elsewhere in
-                // Petal's Compose surfaces rather than a static Material 3 toggle.
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val readingListCount = remember(rawBookmarks) {
-                        rawBookmarks?.count { it.isReadingList } ?: 0
-                    }
-                    val chipScale by animateFloatAsState(
-                        targetValue = if (showReadingListOnly) 1f else 0.96f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        ),
-                        label = "readingListChipScale"
-                    )
-                    FilterChip(
-                        selected = showReadingListOnly,
-                        onClick = { showReadingListOnly = !showReadingListOnly },
-                        label = { Text(if (readingListCount > 0) "Reading List ($readingListCount)" else "Reading List") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Rounded.AutoStories,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        shape = RoundedCornerShape(14.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            labelColor = MaterialTheme.colorScheme.onSurface,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
-                        border = null,
-                        modifier = Modifier.graphicsLayer(scaleX = chipScale, scaleY = chipScale)
-                    )
+                // All / Reading List: connected toggle group (secondary role, glass-aware).
+                val readingListCount = remember(rawBookmarks) {
+                    rawBookmarks?.count { it.isReadingList } ?: 0
                 }
+                com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                    options = listOf(
+                        com.petal.browser.ui.components.PetalButtonGroupItem(false, "All", icon = Icons.Rounded.Bookmarks),
+                        com.petal.browser.ui.components.PetalButtonGroupItem(
+                            true,
+                            if (readingListCount > 0) "Reading List ($readingListCount)" else "Reading List",
+                            icon = Icons.Rounded.AutoStories
+                        ),
+                    ),
+                    selected = showReadingListOnly,
+                    onSelect = { showReadingListOnly = it },
+                    role = com.petal.browser.ui.components.PetalGroupRole.Secondary,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
             }
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),

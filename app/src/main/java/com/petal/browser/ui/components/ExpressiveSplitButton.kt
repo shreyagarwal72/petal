@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.motion.MotionGate
+import androidx.compose.animation.animateColorAsState
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
@@ -62,7 +64,11 @@ fun ExpressiveSplitButton(
     height: Dp = 48.dp,
     enabled: Boolean = true,
     containerColorOverride: Color? = null,
-    contentColorOverride: Color? = null
+    contentColorOverride: Color? = null,
+    /** Design-system role for the fill (FILLED = solid role color, TONAL = role container). */
+    role: PetalGroupRole? = null,
+    /** When set, the menu button switches to this role while the menu is open. */
+    menuExpandedRole: PetalGroupRole? = null,
 ) {
     val pillRadius = height / 2
     val innerRadius = 6.dp
@@ -71,42 +77,34 @@ fun ExpressiveSplitButton(
     // Morphing corner radius animation
     val animatedMenuInnerCorner by animateDpAsState(
         targetValue = if (isMenuExpanded) pillRadius else innerRadius,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        animationSpec = PetalSpring.spatial(),
         label = "SplitButtonMenuCorner"
     )
 
     val animatedPrimaryInnerCorner by animateDpAsState(
         targetValue = if (isMenuExpanded) pillRadius else innerRadius,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        animationSpec = PetalSpring.spatial(),
         label = "SplitButtonPrimaryCorner"
     )
 
     // Smooth drop-down arrow rotation
     val arrowRotation by animateFloatAsState(
         targetValue = if (isMenuExpanded) 180f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        animationSpec = PetalSpring.spatial(),
         label = "SplitButtonArrowRotation"
     )
 
     // Color resolution — explicit overrides win (used where the button must match
     // sibling controls, e.g. HeaderActionIcon's neutral surfaceContainerHighest in headers)
-    val containerColor = containerColorOverride ?: when (variant) {
+    val roleColors = role?.let { petalRoleColors(it) }
+    val containerColor = containerColorOverride ?: roleColors?.let { if (variant == SplitButtonVariant.FILLED) it.solid else it.container } ?: when (variant) {
         SplitButtonVariant.FILLED -> MaterialTheme.colorScheme.primary
         SplitButtonVariant.TONAL -> MaterialTheme.colorScheme.secondaryContainer
         SplitButtonVariant.ELEVATED -> MaterialTheme.colorScheme.surfaceContainerHigh
         SplitButtonVariant.OUTLINED -> MaterialTheme.colorScheme.surfaceContainerHighest
     }
 
-    val contentColor = contentColorOverride ?: when (variant) {
+    val contentColor = contentColorOverride ?: roleColors?.let { if (variant == SplitButtonVariant.FILLED) it.onSolid else it.onContainer } ?: when (variant) {
         SplitButtonVariant.FILLED -> MaterialTheme.colorScheme.onPrimary
         SplitButtonVariant.TONAL -> MaterialTheme.colorScheme.onSecondaryContainer
         SplitButtonVariant.ELEVATED -> MaterialTheme.colorScheme.primary
@@ -145,7 +143,28 @@ fun ExpressiveSplitButton(
     )
 
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val effectiveContainer = if (isGlass) petalGroupSurfaceColor() else containerColor
+    val simplifyFx = MotionGate.shouldSimplifyEffects()
+    // Glass keeps filled / tonal buttons tinted with their role color so the label stays readable;
+    // neutral variants (and explicit overrides) use the plain glass surface.
+    val tintedInGlass = containerColorOverride == null &&
+        (role != null || variant == SplitButtonVariant.FILLED || variant == SplitButtonVariant.TONAL)
+    val effectiveContainer = when {
+        !isGlass -> containerColor
+        tintedInGlass -> containerColor.copy(alpha = 0.85f)
+        else -> petalGroupSurfaceColor()
+    }
+    val expandedColors = menuExpandedRole?.let { petalRoleColors(it) }
+    val menuExpandedActive = isMenuExpanded && expandedColors != null
+    val menuContainer by animateColorAsState(
+        targetValue = if (menuExpandedActive) expandedColors!!.solid else effectiveContainer,
+        animationSpec = PetalSpring.crossfade(),
+        label = "SplitButtonMenuContainer"
+    )
+    val menuContent by animateColorAsState(
+        targetValue = if (menuExpandedActive) expandedColors!!.onSolid else contentColor,
+        animationSpec = PetalSpring.crossfade(),
+        label = "SplitButtonMenuContent"
+    )
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -167,7 +186,7 @@ fun ExpressiveSplitButton(
                     scaleY = primaryScale
                 }
                 .then(
-                    if (isGlass) Modifier.liquidGlassChrome(
+                    if (isGlass && !simplifyFx) Modifier.liquidGlassChrome(
                         shape = primaryShape,
                         enabled = true,
                         sheenIntensity = 0.55f,
@@ -212,7 +231,7 @@ fun ExpressiveSplitButton(
         // --- CONNECTED MORPHING MENU SURFACE ---
         Surface(
             shape = menuShape,
-            color = effectiveContainer,
+            color = menuContainer,
             tonalElevation = if (isGlass || variant != SplitButtonVariant.ELEVATED) 0.dp else 4.dp,
             shadowElevation = if (isGlass || variant != SplitButtonVariant.ELEVATED) 0.dp else 3.dp,
             modifier = Modifier
@@ -223,7 +242,7 @@ fun ExpressiveSplitButton(
                     scaleY = menuScale
                 }
                 .then(
-                    if (isGlass) Modifier.liquidGlassChrome(
+                    if (isGlass && !simplifyFx) Modifier.liquidGlassChrome(
                         shape = menuShape,
                         enabled = true,
                         sheenIntensity = 0.55f,
@@ -246,7 +265,7 @@ fun ExpressiveSplitButton(
                 Icon(
                     imageVector = Icons.Rounded.KeyboardArrowDown,
                     contentDescription = stringResource(R.string.ui_show_more_options),
-                    tint = contentColor,
+                    tint = menuContent,
                     modifier = Modifier
                         .size((height.value * 0.48f).dp)
                         .rotate(arrowRotation)

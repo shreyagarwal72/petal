@@ -1,6 +1,7 @@
 package com.petal.browser.ui.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.horizontalScroll
@@ -32,12 +33,14 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.motion.MotionGate
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
@@ -80,20 +83,31 @@ fun <T> PetalChoiceButtonGroup(
     modifier: Modifier = Modifier,
     minHeight: Dp = 48.dp,
     scrollableIfCrowded: Boolean = true,
+    role: PetalGroupRole = PetalGroupRole.Primary,
+    /**
+     * Wordkeep-style layout: only the selected segment shows its label and grows, the others
+     * become icon-only. null = automatic (on when the group is crowded and every option has an icon).
+     */
+    collapseUnselected: Boolean? = null,
 ) {
     if (options.isEmpty()) return
 
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val resolvedMinHeight = minHeight.coerceAtLeast(48.dp)
-    val shouldScroll = scrollableIfCrowded && (options.size > 4 || options.any { it.label.length > 12 })
+    val crowded = options.size > 4 || options.any { it.label.length > 12 }
+    val allIcons = options.all { it.icon != null || it.iconRes != null }
+    val collapse = collapseUnselected ?: (allIcons && crowded)
+    val shouldScroll = scrollableIfCrowded && crowded && !collapse
+    val simplifyFx = MotionGate.shouldSimplifyEffects()
+    val roleColors = petalRoleColors(role)
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val hasSelection = options.any { it.value == selected }
 
     val unselectedContainer = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh
     val unselectedContent = MaterialTheme.colorScheme.onSurface
-    val selectedContainer = if (isGlass) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primaryContainer
-    val selectedContent = MaterialTheme.colorScheme.onPrimaryContainer
+    val selectedContainer = if (isGlass) roleColors.container.copy(alpha = 0.85f) else roleColors.container
+    val selectedContent = roleColors.onContainer
 
     val rowModifier = if (shouldScroll) {
         modifier
@@ -117,7 +131,12 @@ fun <T> PetalChoiceButtonGroup(
             val isActive = isChecked || isPressed
 
             val animatedWeight by animateFloatAsState(
-                targetValue = if (!hasSelection && !isPressed) 1f else if (isActive) 1.15f else 0.88f,
+                targetValue = when {
+                    collapse -> if (isChecked) 2.4f else 1f
+                    !hasSelection && !isPressed -> 1f
+                    isActive -> 1.15f
+                    else -> 0.88f
+                },
                 animationSpec = PetalSpring.segment(),
                 label = "ChoiceButtonWeight"
             )
@@ -125,15 +144,27 @@ fun <T> PetalChoiceButtonGroup(
             val baseModifier = if (shouldScroll) {
                 Modifier
                     .defaultMinSize(minHeight = resolvedMinHeight)
-                    .semantics { role = Role.RadioButton }
+                    .semantics { this.role = Role.RadioButton; this.selected = isChecked }
             } else {
                 Modifier
                     .weight(animatedWeight)
                     .defaultMinSize(minHeight = resolvedMinHeight)
-                    .semantics { role = Role.RadioButton }
+                    .semantics { this.role = Role.RadioButton; this.selected = isChecked }
             }
 
-            val buttonModifier = if (isGlass) {
+            val animatedContainer by animateColorAsState(
+                targetValue = if (isChecked) selectedContainer else unselectedContainer,
+                animationSpec = PetalSpring.crossfade(),
+                label = "ChoiceButtonContainer"
+            )
+            val animatedContent by animateColorAsState(
+                targetValue = if (isChecked) selectedContent else unselectedContent,
+                animationSpec = PetalSpring.crossfade(),
+                label = "ChoiceButtonContent"
+            )
+            val showLabel = !collapse || isChecked
+
+            val buttonModifier = if (isGlass && !simplifyFx) {
                 baseModifier.liquidGlassChrome(
                     shape = shape,
                     enabled = true,
@@ -156,12 +187,12 @@ fun <T> PetalChoiceButtonGroup(
                 modifier = buttonModifier,
                 enabled = option.enabled,
                 shape = shape,
-                color = if (isChecked) selectedContainer else unselectedContainer,
-                contentColor = if (isChecked) selectedContent else unselectedContent,
+                color = animatedContainer,
+                contentColor = animatedContent,
                 border = null,
                 interactionSource = interactionSource
             ) {
-                val compact = !shouldScroll && count >= 3
+                val compact = !shouldScroll && !collapse && count >= 3
                 Row(
                     modifier = Modifier
                         .defaultMinSize(minHeight = resolvedMinHeight)
@@ -172,20 +203,20 @@ fun <T> PetalChoiceButtonGroup(
                     if (option.icon != null) {
                         Icon(
                             imageVector = option.icon,
-                            contentDescription = null,
+                            contentDescription = if (showLabel) null else option.label,
                             modifier = Modifier.size(if (compact) 16.dp else 18.dp)
                         )
-                        Spacer(Modifier.width(if (compact) 4.dp else 6.dp))
+                        if (showLabel && option.label.isNotEmpty()) Spacer(Modifier.width(if (compact) 4.dp else 6.dp))
                     } else if (option.iconRes != null) {
                         Icon(
                             painter = painterResource(id = option.iconRes),
-                            contentDescription = null,
+                            contentDescription = if (showLabel) null else option.label,
                             modifier = Modifier.size(if (compact) 16.dp else 18.dp)
                         )
-                        Spacer(Modifier.width(if (compact) 4.dp else 6.dp))
+                        if (showLabel && option.label.isNotEmpty()) Spacer(Modifier.width(if (compact) 4.dp else 6.dp))
                     }
 
-                    if (option.label.isNotEmpty()) {
+                    if (showLabel && option.label.isNotEmpty()) {
                         Text(
                             text = option.label,
                             style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
@@ -213,6 +244,8 @@ fun PetalChoiceButtonGroup(
     icons: List<ImageVector?>? = null,
     minHeight: Dp = 48.dp,
     scrollableIfCrowded: Boolean = true,
+    role: PetalGroupRole = PetalGroupRole.Primary,
+    collapseUnselected: Boolean? = null,
 ) {
     val options = labels.mapIndexed { index, label ->
         PetalButtonGroupItem(
@@ -227,6 +260,8 @@ fun PetalChoiceButtonGroup(
         onSelect = onSelectIndex,
         modifier = modifier,
         minHeight = minHeight,
-        scrollableIfCrowded = scrollableIfCrowded
+        scrollableIfCrowded = scrollableIfCrowded,
+        role = role,
+        collapseUnselected = collapseUnselected
     )
 }

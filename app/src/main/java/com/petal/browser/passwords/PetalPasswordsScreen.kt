@@ -655,19 +655,48 @@ fun PetalPasswordsScreen(
                                     }
 
                                     if (selectedMainTab == 0) {
-                                        ExtendedFloatingActionButton(
-                                            onClick = {
-                                                haptic.playClick(context)
-                                                isAddingNew = true
-                                            },
-                                            icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
-                                            text = { Text("Add Login") },
-                                            containerColor = MaterialTheme.colorScheme.primary,
-                                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                                        var addMenuExpanded by remember { mutableStateOf(false) }
+                                        Box(
                                             modifier = Modifier
                                                 .align(Alignment.BottomEnd)
                                                 .padding(end = 20.dp, bottom = 20.dp)
-                                        )
+                                        ) {
+                                            com.petal.browser.ui.components.ExpressiveSplitButton(
+                                                label = "Add Login",
+                                                icon = Icons.Rounded.Add,
+                                                onPrimaryClick = {
+                                                    haptic.playClick(context)
+                                                    addMenuExpanded = false
+                                                    isAddingNew = true
+                                                },
+                                                onMenuClick = { addMenuExpanded = !addMenuExpanded },
+                                                isMenuExpanded = addMenuExpanded,
+                                                role = com.petal.browser.ui.components.PetalGroupRole.Primary,
+                                                menuExpandedRole = com.petal.browser.ui.components.PetalGroupRole.Tertiary,
+                                                height = 56.dp
+                                            )
+                                            com.petal.browser.ui.containment.PetalPopupMenu(
+                                                expanded = addMenuExpanded,
+                                                onDismissRequest = { addMenuExpanded = false }
+                                            ) {
+                                                com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                                    text = { Text("Import passwords") },
+                                                    leadingIcon = { Icon(Icons.Rounded.FileDownload, contentDescription = null) },
+                                                    onClick = {
+                                                        addMenuExpanded = false
+                                                        showImportSheet = true
+                                                    }
+                                                )
+                                                com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                                    text = { Text("Generator & audit") },
+                                                    leadingIcon = { Icon(Icons.Rounded.Key, contentDescription = null) },
+                                                    onClick = {
+                                                        addMenuExpanded = false
+                                                        selectedMainTab = 2
+                                                    }
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -948,13 +977,6 @@ private fun PasswordGeneratorSection(
                                 onPresetChange(preset)
                             },
                             label = { Text(preset.displayName.split(" ")[0]) },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = FilterChipDefaults.filterChipColors(
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                labelColor = MaterialTheme.colorScheme.onSurface,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
                         )
                     }
                 }
@@ -1592,13 +1614,6 @@ private fun PasswordEditSheet(
                                     haptic.playClick(context)
                                 },
                                 label = { Text(preset.name.lowercase().replaceFirstChar { it.uppercaseChar() }, fontSize = 11.sp) },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = FilterChipDefaults.filterChipColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    labelColor = MaterialTheme.colorScheme.onSurface,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                ),
                                 border = null
                             )
                         }

@@ -302,17 +302,29 @@ fun FilterChip(
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     shape: Shape = petalChipShape(),
-    colors: SelectableChipColors = FilterChipDefaults.filterChipColors(),
+    colors: SelectableChipColors? = null,
     elevation: SelectableChipElevation? = FilterChipDefaults.filterChipElevation(),
     border: BorderStroke? = FilterChipDefaults.filterChipBorder(enabled, selected),
     interactionSource: MutableInteractionSource? = null,
     glass: Boolean = true,
+    /** Design-system color role of the selected state (Primary / Secondary / Tertiary). */
+    role: com.petal.browser.ui.components.PetalGroupRole = com.petal.browser.ui.components.PetalGroupRole.Primary,
 ) {
     val useGlass = kitGlass(glass)
-    val glassColors = if (useGlass) colors.copy(
+    val rc = com.petal.browser.ui.components.petalRoleColors(role)
+    val baseColors = colors ?: FilterChipDefaults.filterChipColors(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        labelColor = MaterialTheme.colorScheme.onSurface,
+        iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        selectedContainerColor = rc.container,
+        selectedLabelColor = rc.onContainer,
+        selectedLeadingIconColor = rc.onContainer,
+        selectedTrailingIconColor = rc.onContainer,
+    )
+    val glassColors = if (useGlass) baseColors.copy(
         containerColor = petalGroupSurfaceColor(),
-        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
-    ) else colors
+        selectedContainerColor = rc.container.copy(alpha = 0.55f),
+    ) else baseColors
     val check: @Composable (() -> Unit)? = leadingIcon ?: if (selected) {
         { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
     } else null
