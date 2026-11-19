@@ -134,11 +134,6 @@ object PetalRecentlyClosedManager {
             return
         }
 
-        // Wipe thumbnail cache immediately and completely
-        if (!id.isNullOrBlank()) {
-            TabThumbnailCache.remove(id)
-        }
-
         // Avoid exact duplicate at the top
         if (closedTabs.isNotEmpty() && closedTabs[0].url.equals(cleanUrl, ignoreCase = true)) {
             closedTabs.removeAt(0)

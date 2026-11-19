@@ -330,10 +330,6 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun goHome(isIncognito: Boolean = activeTab.value?.content?.private ?: false) {
-        val curTabId = activeTab.value?.id
-        if (curTabId != null) {
-            com.petal.browser.unit.TabThumbnailCache.remove(curTabId)
-        }
         val homeUrl = if (isIncognito) "about:home" else PetalBrowserUtils.getEffectiveHomepageUrl(context)
         loadUrl(homeUrl)
     }
@@ -465,7 +461,7 @@ class PetalBrowserViewModel @Inject constructor(
                 controller?.getSessionState()?.let { PetalSessionRestoreManager.wrapGeckoState(it) }
             } catch (_: Throwable) { null }
             val saved = liveState ?: tab.engineState.engineSessionState
-            val thumb = TabThumbnailCache.getMemoryOnly(tab.id, false)?.let { b ->
+            val thumb = TabThumbnailCache.getMemoryOrDisk(tab.id)?.let { b ->
                 if (b.isRecycled) null else try { b.copy(b.config ?: android.graphics.Bitmap.Config.ARGB_8888, false) } catch (_: Throwable) { null }
             }
             val snap = ClosedTabSnapshot(
@@ -742,24 +738,47 @@ class PetalBrowserViewModel @Inject constructor(
             return true
         }
 
-        // Priority 2: Navigate back inside Gecko web history
         val tab = activeTab.value ?: return false
-        if (tab.content.canGoBack) {
-            sessionUseCases.goBack(tab.id)
-            return true
-        }
-
-        // Priority 3: If not on home page, return to home
         val currentUrl = tab.content.url
         val effectiveHome = if (tab.content.private) "about:home" else PetalBrowserUtils.getEffectiveHomepageUrl(context)
         val isAlreadyHome = PetalBrowserUtils.isHomePage(currentUrl) ||
                 currentUrl.trim().trimEnd('/').equals(effectiveHome.trim().trimEnd('/'), ignoreCase = true)
-        if (currentUrl.isNotBlank() && !isAlreadyHome) {
-            loadUrl(effectiveHome)
-            return true
-        }
+        val meta = PetalTabMetadataStore.get(context, tab.id)
+        val totalTabs = browserStore.state.tabs.size
 
-        return false
+        val target = com.petal.browser.browser.rules.PetalRootTabBackRules.decide(
+            isOverlayShowing = false,
+            isFullscreen = false,
+            hasDialog = false,
+            canGoBack = tab.content.canGoBack,
+            isHomePage = isAlreadyHome,
+            totalTabs = totalTabs,
+            hasOpener = !meta?.parentId.isNullOrBlank(),
+            isPinned = meta?.isPinned == true,
+            confirmExitEnabled = false
+        )
+
+        return when (target) {
+            com.petal.browser.browser.rules.PetalBackTarget.WEB_HISTORY -> {
+                sessionUseCases.goBack(tab.id)
+                true
+            }
+            com.petal.browser.browser.rules.PetalBackTarget.RETURN_TO_HOME -> {
+                loadUrl(effectiveHome)
+                true
+            }
+            com.petal.browser.browser.rules.PetalBackTarget.RETURN_TO_OPENER -> {
+                meta?.parentId?.let { selectTab(it); true } ?: false
+            }
+            com.petal.browser.browser.rules.PetalBackTarget.CLOSE_AND_RETURN_TO_OPENER,
+            com.petal.browser.browser.rules.PetalBackTarget.CLOSE_TAB_AND_PREVIOUS -> {
+                closeTab(tab.id)
+                true
+            }
+            com.petal.browser.browser.rules.PetalBackTarget.CONFIRM_EXIT_DIALOG,
+            com.petal.browser.browser.rules.PetalBackTarget.DELEGATE_TO_SYSTEM -> false
+            else -> false
+        }
     }
 
     /** Back found nothing to go back to although the engine said it could: leave the page for Home. */

@@ -258,7 +258,8 @@ object PetalTabSwitcherBridge {
                                     restoredTab.groupColorHex,
                                     true
                                 )
-                                val newId = newAlbum.hashCode().toString()
+                                val newId = newAlbum?.tabId?.takeIf { it.isNotBlank() }
+                                    ?: ("restored_" + System.currentTimeMillis() + "_" + java.util.UUID.randomUUID().toString().take(6))
                                 val newItem = restoredTab.copy(
                                     id = newId,
                                     isSelected = false

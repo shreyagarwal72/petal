@@ -347,9 +347,15 @@ class MainActivity : FragmentActivity(), BrowserController {
         groupColorHex: String?,
         keepOverviewOpen: Boolean
     ): AlbumController? {
-        if (!url.isNullOrBlank()) {
-            addAlbum(title, url, false, isIncognito)
-        }
+        val effectiveUrl = if (url.isNullOrBlank()) "about:home" else url
+        viewModel.openNewTab(
+            url = effectiveUrl,
+            selectTab = false,
+            private = isIncognito,
+            groupId = groupId,
+            groupTitle = groupTitle,
+            keepSwitcherOpen = keepOverviewOpen
+        )
         return null
     }
 
@@ -418,7 +424,19 @@ class MainActivity : FragmentActivity(), BrowserController {
     /** Refreshes the thumbnail of the tab on screen so the tab manager never shows a stale frame. */
     fun captureVisibleTabThumbnail() {
         try {
-            (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.updatePreviewCache(true)
+            val curTab = viewModel.activeTab.value
+            if (curTab != null && com.petal.browser.unit.PetalBrowserUtils.isHomePage(curTab.content.url)) {
+                val root = findViewById<View>(android.R.id.content) ?: window.decorView
+                val bmp = com.petal.browser.predictive.PetalContentSnapshot.capture(root, forceFresh = true)
+                if (!bmp.isRecycled && bmp.width > 1 && bmp.height > 1) {
+                    val targetWidth = Math.min(bmp.width, 480)
+                    val targetHeight = Math.max(1, (bmp.height.toFloat() * targetWidth / bmp.width).toInt())
+                    val scaled = Bitmap.createScaledBitmap(bmp, targetWidth, targetHeight, true)
+                    com.petal.browser.unit.TabThumbnailCache.put(curTab.id, scaled, curTab.content.private, allowUniform = true)
+                }
+            } else {
+                (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.updatePreviewCache(true)
+            }
         } catch (_: Throwable) {}
         try {
             com.petal.browser.compose.engine.PetalViewportThumbnailer.capture?.invoke()
@@ -780,6 +798,7 @@ class MainActivity : FragmentActivity(), BrowserController {
     }
 
     fun showAlbum(albumController: AlbumController?, targetUrl: String?) {
+        captureVisibleTabThumbnail()
         currentAlbumController = albumController
         val id = albumController?.tabId?.takeIf { it.isNotBlank() }
         if (id != null) {

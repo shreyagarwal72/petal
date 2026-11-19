@@ -98,6 +98,7 @@ import com.petal.browser.ui.components.PetalSiteInfoBridge
 import com.petal.browser.tools.PetalDevConsoleSheet
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.unit.PetalBrowserUtils
+import com.petal.browser.unit.TabThumbnailCache
 
 /**
  * PetalRootApp
@@ -186,8 +187,24 @@ fun PetalRootApp(
     // Take the page snapshot BEFORE the switcher opens. capture() above runs after the page is
     // already hidden and falls back to a software draw that cannot see the GeckoView surface,
     // which is why the page used to turn black the moment Tabs was tapped.
+    // When the active tab is a home surface, store the captured snapshot into TabThumbnailCache
+    // so home tabs display real thumbnails rather than placeholder cards.
     DisposableEffect(viewModel, rootView) {
-        viewModel.beforeTabSwitcherOpen = { rootView?.let { PetalContentSnapshot.capturePreview(it) } }
+        viewModel.beforeTabSwitcherOpen = {
+            rootView?.let { rv ->
+                PetalContentSnapshot.capturePreview(rv)
+                val curTab = viewModel.activeTab.value
+                if (curTab != null && PetalBrowserUtils.isHomePage(curTab.content.url)) {
+                    val bmp = PetalContentSnapshot.capture(rv, forceFresh = true)
+                    if (!bmp.isRecycled && bmp.width > 1 && bmp.height > 1) {
+                        val targetWidth = Math.min(bmp.width, 480)
+                        val targetHeight = Math.max(1, (bmp.height.toFloat() * targetWidth / bmp.width).toInt())
+                        val scaled = android.graphics.Bitmap.createScaledBitmap(bmp, targetWidth, targetHeight, true)
+                        TabThumbnailCache.put(curTab.id, scaled, curTab.content.private, allowUniform = true)
+                    }
+                }
+            }
+        }
         onDispose { viewModel.beforeTabSwitcherOpen = null }
     }
 
@@ -432,7 +449,7 @@ fun PetalRootApp(
     val doubleBackExit = remember(sp, exitArmed) { sp.getBoolean("sp_double_back_exit", true) }
     val presentedCount = (activity as? MainActivity)?.presentedScreenCount ?: 0
     val atExitRoot = isHome && !isLoading && !canGoBack && !isOverlayShowing && !isFindInPageOpen && !isDevConsoleOpen &&
-        pendingExtensionPopup == null && presentedCount == 0
+        pendingExtensionPopup == null && presentedCount == 0 && tabCount <= 1
     val systemHandlesExit = atExitRoot && PetalPredictiveJunction.isDeviceSupported &&
         junctionPredictiveEnabled && poseEnabledState.value && (!doubleBackExit || exitArmed)
     LaunchedEffect(exitArmed, atExitRoot) {

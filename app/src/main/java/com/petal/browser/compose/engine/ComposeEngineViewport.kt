@@ -312,9 +312,23 @@ fun ComposeEngineViewport(
         if (id != null) {
             PetalViewportThumbnailer.capture = {
                 val current = PetalEngineStore.getStore(context).state.tabs.firstOrNull { it.id == id }
-                if (current != null && !PetalBrowserUtils.isHomePage(current.content.url)) {
-                    findGeckoView(engineView.asView())?.let { gv ->
-                        captureGeckoThumbnail(context, gv, id, current.content.private)
+                if (current != null) {
+                    if (!PetalBrowserUtils.isHomePage(current.content.url)) {
+                        findGeckoView(engineView.asView())?.let { gv ->
+                            captureGeckoThumbnail(context, gv, id, current.content.private)
+                        }
+                    } else {
+                        val root = (context as? android.app.Activity)?.findViewById<View>(android.R.id.content)
+                            ?: (context as? android.app.Activity)?.window?.decorView
+                        if (root != null) {
+                            val bmp = com.petal.browser.predictive.PetalContentSnapshot.capture(root, forceFresh = true)
+                            if (!bmp.isRecycled && bmp.width > 1 && bmp.height > 1) {
+                                val targetWidth = Math.min(bmp.width, 480)
+                                val targetHeight = Math.max(1, (bmp.height.toFloat() * targetWidth / bmp.width).toInt())
+                                val scaled = Bitmap.createScaledBitmap(bmp, targetWidth, targetHeight, true)
+                                com.petal.browser.unit.TabThumbnailCache.put(id, scaled, current.content.private, allowUniform = true)
+                            }
+                        }
                     }
                 }
             }

@@ -268,6 +268,22 @@ object TabThumbnailCache {
     }
 
     @JvmStatic
+    fun getMemoryOrDisk(tabId: String?): Bitmap? {
+        if (isBlank(tabId)) return null
+        val memory = getMemoryOnly(tabId, false)
+        if (memory != null) return memory
+        return try {
+            val loaded = loadFromDisk(tabId!!)
+            if (loaded != null && !loaded.isRecycled) {
+                regularMemoryCache.put(tabId, loaded)
+                loaded
+            } else null
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    @JvmStatic
     fun loadAsync(tabId: String?, callback: ThumbnailCallback) {
         loadFirstAsync(arrayOf(tabId ?: ""), false, callback)
     }

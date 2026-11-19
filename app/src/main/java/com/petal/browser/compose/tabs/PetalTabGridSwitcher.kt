@@ -2538,18 +2538,42 @@ private fun PetalHomePreviewCard(
                     }
                 }
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    repeat(4) {
-                        Box(
-                            modifier = Modifier
-                                .size(18.dp)
-                                .clip(ExpressiveButtonShape)
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                        )
+                val homeContext = LocalContext.current
+                val homeShortcuts = remember {
+                    try {
+                        com.petal.browser.compose.home.loadHomeShortcuts(homeContext).take(4)
+                    } catch (_: Throwable) {
+                        emptyList()
                     }
+                }
+
+                if (homeShortcuts.isNotEmpty() && !tab.isIncognito) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        homeShortcuts.forEach { shortcut ->
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(ExpressiveButtonShape)
+                                    .background(shortcut.color.copy(alpha = 0.25f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = shortcut.label.take(1).uppercase(),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                                    color = shortcut.color
+                                )
+                            }
+                        }
+                    }
+                } else if (tab.isIncognito) {
+                    Text(
+                        text = "Private Browsing",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
+                        color = accentColor.copy(alpha = 0.8f)
+                    )
                 }
 
                 Text(
