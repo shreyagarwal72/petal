@@ -57,6 +57,7 @@ import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
+import com.petal.browser.ui.theme.layout.cornerShape
 import com.petal.browser.unit.PetalAndroidUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
