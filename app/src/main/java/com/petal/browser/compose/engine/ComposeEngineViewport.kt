@@ -48,7 +48,8 @@ import com.petal.browser.browser.PetalPermissionDelegateWrapper
 import com.petal.browser.browser.PetalPromptDelegateWrapper
 import com.petal.browser.browser.PetalVerticalSwipeRefreshLayout
 import com.petal.browser.compose.composable.PetalRefreshBarState
-import com.petal.browser.compose.composable.RefreshBarLoadingIndicatorLazy
+import com.petal.browser.ui.components.PetalPullRefreshIndicator
+import com.petal.browser.ui.components.PetalPullRefreshNativeTheme
 import com.petal.browser.compose.menu.BrowserContextMenuManager
 import com.petal.browser.engine.gecko.PetalContentDelegateWrapper
 import com.petal.browser.engine.gecko.PetalEngineBridge
@@ -230,6 +231,8 @@ fun ComposeEngineViewport(
     // left an unpainted black block where the bar had been. The visual slide between the two
     // layouts is a plain translation of the view, so the page still follows the bars smoothly.
     val fullTopPx = with(density) { topPadding.roundToPx() }
+    // Keep the Firefox-style spinner below the bars (the page itself starts at topPadding).
+    SideEffect { swipeLayout.extraTopInsetPx = fullTopPx }
     val fullBottomPx = with(density) { bottomPadding.roundToPx() }
     val minTopPx = with(density) { collapsedTopPadding.roundToPx() }
     val minBottomPx = with(density) { collapsedBottomPadding.roundToPx() }
@@ -410,7 +413,10 @@ fun ComposeEngineViewport(
                 .fillMaxSize()
         )
 
-        RefreshBarLoadingIndicatorLazy(
+        // Style comes from PetalLayoutState (live). FIREFOX draws nothing here: the layout's own
+        // SwipeRefreshLayout circle is shown instead, themed from the live MaterialTheme.
+        PetalPullRefreshNativeTheme(swipeLayout)
+        PetalPullRefreshIndicator(
             isRefreshing = refreshBarState.isRefreshing,
             pullProgressProvider = { refreshBarState.pullProgress },
             modifier = Modifier

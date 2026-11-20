@@ -59,7 +59,7 @@ State synchronization is strictly unidirectional and reactive:
 
 ## 4. ComposeView Bridging Pattern & ViewTree Requirements
 Petal embeds Jetpack Compose modular screens into `BrowserActivity` using dynamic `ComposeView` bridging:
-- Primary container is a plain `FrameLayout contentFrame` in `activity_main.xml`; pull-to-refresh is Mozilla's `SwipeRefreshFeature` on each `PetalTabViewController`.
+- Primary container is a plain `FrameLayout contentFrame` in `activity_main.xml`; pull-to-refresh is Mozilla's `SwipeRefreshFeature` on each `PetalTabViewController` (see "Pull-to-refresh" below).
 - Sub-screens (Settings, Tab Switcher, Downloads, History, Bookmarks, Omnibox, Credits, Reader, Incognito Home) are generated via companion bridge objects.
 - ViewTree lifecycle, ViewModel store, and saved state registry owners are explicitly wired:
 ```kotlin
@@ -85,3 +85,13 @@ composeView.apply {
 - `com.petal.browser.passwords`: Hardware-backed credential vault and autofill.
 - `com.petal.browser.ui.glass`: Liquid glass material rendering and background blurs.
 - `com.petal.browser.ui.theme`: Material 3 Expressive theme tokens and anti-slop design system.
+
+
+## Pull-to-refresh
+
+Gesture and behavior are Mozilla's: `PetalVerticalSwipeRefreshLayout` (port of Fenix's `VerticalSwipeRefreshLayout`) + `SwipeRefreshFeature`, Gecko's `canOverscrollTop`, and the refresh watchdog. Only the visuals are selectable (`PetalPullRefreshStyle`, pref `sp_pull_refresh_style`, snapshot state in `PetalLayoutState`):
+
+- `PetalPullRefreshIndicator` (ui/components) is the Compose dispatcher used by `ComposeEngineViewport`, `PetalRefreshBarBridge.bindRefreshBar` and `PetalCustomTabActivity`. `CURRENT` delegates to `RefreshBarLoadingIndicatorLazy`; the other Compose styles share one `PullRefreshTimeline` (`shown`, `ready` haptic + pop, bouncy settle, soft exit; progress read in the draw phase only) and live in `ui/components/pullrefresh/` (OvercastMorph, WavyArc, MorphLadder, LiquidBridge).
+- `FIREFOX` is not drawn by Compose. In that style `PetalVerticalSwipeRefreshLayout` shows SwipeRefreshLayout's own circle (child 0, found by position because R8 renames `CircleImageView`), offset below the status/top bar with `setProgressViewOffset` and colored from MaterialTheme via `PetalPullRefreshNativeTheme`. In every other style the circle stays hidden (alpha 0, elevation 0, skipped in `drawChild`).
+- The layout observes `PetalLayoutState` itself (`SnapshotStateObserver`, re-checked at each `ACTION_DOWN`), so a style change, even mid-refresh, never leaves two spinners or none.
+- Settings previews (`PullRefreshStylePreview`) run the same composables on a fake progress; the Firefox preview is a Compose replica because the real view cannot be hosted in the sheet.

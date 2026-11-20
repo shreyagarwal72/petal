@@ -38,7 +38,10 @@ import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.Gesture
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material.icons.rounded.LinearScale
 import androidx.compose.material.icons.rounded.Waves
 import com.petal.browser.ui.kit.Button
@@ -103,6 +106,8 @@ import com.petal.browser.ui.icons.imagetoolbox.Windows
 import com.petal.browser.ui.theme.layout.PetalBadgeShape
 import com.petal.browser.ui.theme.layout.PetalContainmentShapeChoice
 import com.petal.browser.ui.theme.layout.PetalFlingType
+import com.petal.browser.ui.theme.layout.PetalPullRefreshStyle
+import com.petal.browser.ui.components.pullrefresh.PullRefreshStylePreview
 import com.petal.browser.ui.theme.layout.PetalLayoutState
 import com.petal.browser.ui.theme.layout.PetalShapeType
 import com.petal.browser.ui.theme.layout.PetalSliderType
@@ -132,7 +137,7 @@ fun PetalLayoutSettingsSection(
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
 
     var sheet by rememberSaveable { mutableStateOf<String?>(null) }
-    val total = 6
+    val total = 7
     fun pos(i: Int) = petalGroupPositionFor(i, total)
 
     PetalSettingsSection(
@@ -202,6 +207,17 @@ fun PetalLayoutSettingsSection(
             onClick = { sheet = SHEET_FLING }
         )
 
+        PetalGroupRow(
+            icon = Icons.Rounded.Refresh,
+            title = "Pull to Refresh",
+            subtitle = "${settings.pullRefreshStyle.title} · Pull-down indicator style",
+            position = pos(5),
+            iconContainer = MaterialTheme.colorScheme.secondaryContainer,
+            iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+            trailing = { EditGlyph() },
+            onClick = { sheet = SHEET_PULL_REFRESH }
+        )
+
         EnhancedSliderItem(
             value = settings.motionDurationScale,
             title = "Motion Duration Scale",
@@ -210,7 +226,7 @@ fun PetalLayoutSettingsSection(
             defaultValue = 1f,
             valueRange = 0.25f..3f,
             steps = 10,
-            position = pos(5),
+            position = pos(6),
             onValueChange = { v -> PetalLayoutState.update(context) { it.copy(motionDurationScale = v) } }
         )
     }
@@ -457,12 +473,36 @@ fun PetalLayoutSettingsSection(
             )
         }
     }
+
+    if (sheet == SHEET_PULL_REFRESH) {
+        ChoiceSheet(
+            title = "Pull to Refresh",
+            headerIcon = Icons.Rounded.Refresh,
+            items = PetalPullRefreshStyle.entries,
+            selected = settings.pullRefreshStyle,
+            banner = "Each preview loops a simulated pull and is the same indicator the browser draws - " +
+                "drag on a preview to scrub it yourself. Only the look changes; the gesture is Firefox's.",
+            onSelect = { t -> PetalLayoutState.update(context) { it.copy(pullRefreshStyle = t) } },
+            onDismiss = { sheet = null }
+        ) { item, selected, position, onClick ->
+            ChoiceCard(
+                selected = selected,
+                title = item.title,
+                subtitle = item.subtitle,
+                icon = item.icon(),
+                position = position,
+                onClick = onClick,
+                bottomPreview = { PullRefreshStylePreview(item) }
+            )
+        }
+    }
 }
 
 private const val SHEET_SWITCH = "switch"
 private const val SHEET_SLIDER = "slider"
 private const val SHEET_SHAPE = "shape"
 private const val SHEET_FLING = "fling"
+private const val SHEET_PULL_REFRESH = "pull_refresh"
 private const val SHEET_CONTAIN_SHAPE = "containment_shape"
 private const val SHEET_BADGE_SHAPE = "badge_shape"
 
@@ -483,6 +523,15 @@ private fun PetalSliderType.icon(): ImageVector = when (this) {
     PetalSliderType.MATERIAL_YOU -> ImageToolboxIcons.Outlined.MaterialDesign
     PetalSliderType.MATERIAL -> ImageToolboxIcons.Rounded.Android
     PetalSliderType.HYPEROS -> ImageToolboxIcons.Outlined.HyperOS
+}
+
+private fun PetalPullRefreshStyle.icon(): ImageVector = when (this) {
+    PetalPullRefreshStyle.CURRENT -> Icons.Rounded.Refresh
+    PetalPullRefreshStyle.OVERCAST_MORPH -> Icons.Rounded.Category
+    PetalPullRefreshStyle.FIREFOX -> Icons.Rounded.Language
+    PetalPullRefreshStyle.WAVY_ARC -> Icons.Rounded.Waves
+    PetalPullRefreshStyle.MORPH_LADDER -> ImageToolboxIcons.Rounded.AutoAwesome
+    PetalPullRefreshStyle.LIQUID_BRIDGE -> Icons.Rounded.WaterDrop
 }
 
 private fun PetalFlingType.icon(): ImageVector = when (this) {

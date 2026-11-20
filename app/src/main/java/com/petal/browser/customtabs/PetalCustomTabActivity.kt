@@ -51,7 +51,8 @@ import com.petal.browser.compose.composable.PetalRefreshBarState
 import mozilla.components.feature.customtabs.createCustomTabConfigFromIntent
 import mozilla.components.feature.customtabs.getConfiguredColorSchemeParams
 import mozilla.components.feature.customtabs.getToolbarBackgroundColor
-import com.petal.browser.compose.composable.RefreshBarLoadingIndicatorLazy
+import com.petal.browser.ui.components.PetalPullRefreshIndicator
+import com.petal.browser.ui.components.PetalPullRefreshNativeTheme
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
@@ -190,6 +191,7 @@ class PetalCustomTabActivity : ComponentActivity() {
                                     )
                                     val surface = PetalTabViewController(ctx).also { sfc ->
                                         customTabId = tabId
+                                        refreshState.nativeLayout = sfc
                                         sfc.bindTab(sessionPair.first)
                                         sfc.attachLifecycle(this@PetalCustomTabActivity)
                                         sfc.activate()
@@ -233,7 +235,8 @@ class PetalCustomTabActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize()
                         )
 
-                        RefreshBarLoadingIndicatorLazy(
+                        PetalPullRefreshNativeTheme(refreshState.nativeLayout)
+                        PetalPullRefreshIndicator(
                             isRefreshing = refreshState.isRefreshing,
                             pullProgressProvider = { refreshState.pullProgress },
                             modifier = Modifier.align(Alignment.TopCenter)

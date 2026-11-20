@@ -11,7 +11,13 @@ import android.view.MotionEvent
 import android.view.View
 import android.os.SystemClock
 import android.view.ViewConfiguration
+import android.view.WindowInsets
+import androidx.compose.runtime.snapshots.SnapshotStateObserver
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.petal.browser.ui.theme.layout.PetalLayoutState
+import com.petal.browser.ui.theme.layout.PetalPullRefreshStyle
 import kotlin.math.abs
 
 /**
@@ -80,7 +86,10 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
     /**
      * SwipeRefreshLayout's own spinner (its private CircleImageView). The gesture, the Gecko
      * "can the page scroll up" check and the refresh commit stay 100% Mozilla/AndroidX; only its
-     * drawing is replaced by Petal's Compose indicator.
+     * drawing differs per [PetalPullRefreshStyle]:
+     *  - every style except FIREFOX: this view is never rasterized and Petal's Compose indicator
+     *    draws instead (exactly the historic behavior);
+     *  - FIREFOX: this view is the indicator (and the Compose overlay draws nothing).
      *
      * SwipeRefreshLayout's constructor adds this view first, so right after `super(...)` it is
      * child 0. It is found by position, NOT by class name: release builds are minified by R8, which
@@ -89,21 +98,142 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
      */
     private val legacySpinner: View? = if (childCount > 0) getChildAt(0) else null
 
-    init {
-        legacySpinner?.apply {
-            alpha = 0f
-            elevation = 0f
-            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+    /** True while the style is FIREFOX and [legacySpinner] is the visible indicator. */
+    private var nativeSpinnerShown = false
+
+    /** Extra top inset (px) a host can add when its content starts below the layout's own top. */
+    var extraTopInsetPx: Int = 0
+        set(value) {
+            if (field == value) return
+            field = value
+            applyNativeOffset()
         }
+
+    private var nativeArrowColor = 0
+    private var nativeDiscColor = 0
+    private var hasNativeTheme = false
+    private var appliedOffsetStart = Int.MIN_VALUE
+    private var appliedOffsetEnd = Int.MIN_VALUE
+    private var offsetDirty = false
+
+    // Observes PetalLayoutState (Compose snapshot state) so a style change applies live, even
+    // mid-refresh. The executor hops to the main thread through the view.
+    private val styleObserver = SnapshotStateObserver { callback -> post { callback() } }
+    private val onStyleStateChanged: (PetalVerticalSwipeRefreshLayout) -> Unit = { it.observeStyle() }
+
+    init {
+        PetalLayoutState.install(context)
+        applyNativeSpinnerShown(PetalLayoutState.settings.pullRefreshStyle == PetalPullRefreshStyle.FIREFOX)
+        addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> applyNativeOffset() }
+    }
+
+    private fun observeStyle() {
+        var style = PetalPullRefreshStyle.CURRENT
+        styleObserver.observeReads(this, onStyleStateChanged) {
+            style = PetalLayoutState.settings.pullRefreshStyle
+        }
+        applyNativeSpinnerShown(style == PetalPullRefreshStyle.FIREFOX)
+    }
+
+    /** Cheap, non-observed re-check used at the start of every gesture as a safety net. */
+    private fun syncStyleNow() {
+        val shouldShow = PetalLayoutState.settings.pullRefreshStyle == PetalPullRefreshStyle.FIREFOX
+        if (shouldShow != nativeSpinnerShown) applyNativeSpinnerShown(shouldShow)
+    }
+
+    /**
+     * Shows exactly one spinner: either this view's own circle (FIREFOX) or none here (the
+     * Compose overlay draws). Safe to call at any time, including mid-refresh: it only changes
+     * how the circle is drawn, never SwipeRefreshLayout's refreshing state.
+     */
+    private fun applyNativeSpinnerShown(show: Boolean) {
+        nativeSpinnerShown = show
+        legacySpinner?.apply {
+            if (show) {
+                alpha = 1f
+                // CircleImageView's own shadow elevation (SHADOW_ELEVATION = 4dp).
+                elevation = 4f * resources.displayMetrics.density
+            } else {
+                alpha = 0f
+                elevation = 0f
+            }
+            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+            invalidate()
+        }
+        if (show) {
+            applyNativeThemeColors()
+            applyNativeOffset()
+        }
+        invalidate()
+    }
+
+    /** Colors for the Firefox-style spinner, fed from the live MaterialTheme by the host. */
+    fun applyNativeSpinnerTheme(arrowColor: Int, discColor: Int) {
+        if (hasNativeTheme && arrowColor == nativeArrowColor && discColor == nativeDiscColor) return
+        nativeArrowColor = arrowColor
+        nativeDiscColor = discColor
+        hasNativeTheme = true
+        applyNativeThemeColors()
+    }
+
+    private fun applyNativeThemeColors() {
+        if (!hasNativeTheme) return
+        setColorSchemeColors(nativeArrowColor)
+        setProgressBackgroundColorSchemeColor(nativeDiscColor)
+    }
+
+    private fun computeTopInsetPx(): Int {
+        val bars = ViewCompat.getRootWindowInsets(this)
+            ?.getInsets(WindowInsetsCompat.Type.statusBars())?.top ?: 0
+        val loc = IntArray(2)
+        getLocationInWindow(loc)
+        return maxOf(extraTopInsetPx, (bars - loc[1]).coerceAtLeast(0))
+    }
+
+    /**
+     * Places the FIREFOX spinner below the status bar / top bar. setProgressViewOffset() resets
+     * SwipeRefreshLayout's private refreshing flag, so it is only called while idle; otherwise it
+     * is deferred to the start of the next gesture.
+     */
+    private fun applyNativeOffset() {
+        if (!nativeSpinnerShown) return
+        if (isRefreshing) {
+            offsetDirty = true
+            return
+        }
+        val density = resources.displayMetrics.density
+        val inset = computeTopInsetPx()
+        // scale = true: the disc scales in while it is pulled; it rests 12dp below the inset
+        // (same rest line as the Compose glyph styles).
+        val start = inset - (8f * density).toInt()
+        val end = inset + (12f * density).toInt()
+        offsetDirty = false
+        if (start == appliedOffsetStart && end == appliedOffsetEnd) return
+        appliedOffsetStart = start
+        appliedOffsetEnd = end
+        setProgressViewOffset(true, start, end)
+    }
+
+    override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
+        val result = super.onApplyWindowInsets(insets)
+        post { applyNativeOffset() }
+        return result
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        styleObserver.start()
+        observeStyle()
+        post { applyNativeOffset() }
     }
 
     private fun isLegacySpinner(view: View): Boolean =
         view === legacySpinner || view.javaClass.name.contains("CircleImageView")
 
     override fun drawChild(canvas: android.graphics.Canvas, child: View, drawingTime: Long): Boolean {
-        // The default circle is never rasterized, whatever SwipeRefreshLayout does to its
-        // visibility/alpha/scale while pulling, refreshing or resetting.
-        if (isLegacySpinner(child)) {
+        // Except in FIREFOX mode the default circle is never rasterized, whatever
+        // SwipeRefreshLayout does to its visibility/alpha/scale while pulling, refreshing or resetting.
+        if (!nativeSpinnerShown && isLegacySpinner(child)) {
             return false
         }
         return super.drawChild(canvas, child, drawingTime)
@@ -144,6 +274,8 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
             // touch disabled pull-to-refresh for the rest of the session.
             disallowInterceptTouchEvent = false
             healStuckRefresh()
+            syncStyleNow()
+            if (offsetDirty && !isRefreshing) applyNativeOffset()
         }
         val handled = super.dispatchTouchEvent(ev)
         if (ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL) {
@@ -154,6 +286,8 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         removeCallbacks(refreshWatchdog)
+        styleObserver.stop()
+        styleObserver.clear()
         super.onDetachedFromWindow()
     }
 

@@ -136,6 +136,13 @@ object PetalSettingsSearchIndex {
             keywords = listOf("expressive shapes", "material 3 shapes", "35 shapes", "polygons", "geometry", "icons", "shortcuts", "badges")
         ),
         SettingsSearchItem(
+            id = "appearance_layout_controls",
+            title = "Pull to Refresh Style",
+            subtitle = "Pick the pull-down refresh indicator: Current, Overcast Morph, Firefox, Wavy Arc, Morph Ladder or Liquid Bridge",
+            category = SettingsCategory.APPEARANCE,
+            keywords = listOf("pull to refresh", "pull down", "refresh", "reload", "spinner", "indicator", "overcast", "firefox", "wavy", "morph", "liquid", "bridge", "ladder", "swipe refresh")
+        ),
+        SettingsSearchItem(
             id = "appearance_refresh_rate",
             title = "High Refresh Rate (90Hz / 120Hz / 144Hz)",
             subtitle = "Force peak display refresh rate for buttery-smooth scrolling and animations",

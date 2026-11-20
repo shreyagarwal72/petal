@@ -1,3 +1,12 @@
+### Unreleased — Selectable pull-to-refresh styles
+
+- **Pull to Refresh** picker in Settings > Appearance > Expressive Layout & Controls, between *Fling Type* and *Motion Duration Scale*. Six styles, applied live (no restart) through `PetalLayoutState` (`sp_pull_refresh_style`):
+  - *Current* (default, unchanged), *Overcast Morph*, *Firefox* (the original SwipeRefreshLayout circle), *Wavy Arc*, *Morph Ladder* (33% / 66% / 100% steps) and *Liquid Bridge* (a droplet that peels off the top edge).
+  - Every card shows a looping simulated pull that you can also scrub by dragging; previews pause when animations are inactive.
+- Gesture and behavior are untouched: still Mozilla's `SwipeRefreshFeature` + `PetalVerticalSwipeRefreshLayout`, Gecko's `canOverscrollTop` check and the "works only once" watchdog.
+- New `PetalPullRefreshIndicator` dispatcher replaces the direct indicator in the Compose viewport, the tab view bridge and Custom Tabs. Respects Motion Duration Scale and reduced motion.
+- Removed the unused `ExpressivePullToRefreshWaterRipple`.
+
 ### v4.9 (490) — 🎬 Native Media Grabber, LastWave Liquid Header Glass & Decentralized Sync
 
 - **Native Media Grabber & Stream Extraction**:

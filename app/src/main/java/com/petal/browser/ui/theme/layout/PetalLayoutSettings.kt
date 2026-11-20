@@ -26,6 +26,24 @@ enum class UiExperience(val key: String, val title: String, val subtitle: String
 }
 
 /**
+ * Visual style of the pull-to-refresh indicator. Only the drawing changes: the gesture, the Gecko
+ * "can the page scroll up" check and the refresh commit stay Mozilla's (SwipeRefreshFeature).
+ */
+enum class PetalPullRefreshStyle(val key: String, val title: String, val subtitle: String) {
+    CURRENT("CURRENT", "Current", "Contained expressive loader (default)"),
+    OVERCAST_MORPH("OVERCAST_MORPH", "Overcast Morph", "Shape-morphing loader with rubber-band pull"),
+    FIREFOX("FIREFOX", "Firefox", "Original Firefox for Android pull spinner"),
+    WAVY_ARC("WAVY_ARC", "Wavy Arc", "A wavy ring that grows with the pull"),
+    MORPH_LADDER("MORPH_LADDER", "Morph Ladder", "Shape steps up at 33%, 66% and 100% of the pull"),
+    LIQUID_BRIDGE("LIQUID_BRIDGE", "Liquid Bridge", "A droplet that peels off the top edge");
+
+    companion object {
+        fun fromKey(key: String?): PetalPullRefreshStyle =
+            entries.firstOrNull { it.key.equals(key, ignoreCase = true) } ?: CURRENT
+    }
+}
+
+/**
  * Expressive layout & control settings (ported from ImageToolbox's appearance settings).
  * Liquid Glass has no switch/slider "type" of its own: when Liquid Glass is active every switch
  * and slider automatically renders in its glass form (see PetalSwitch / PetalSlider).
@@ -40,6 +58,7 @@ data class PetalLayoutSettings(
     val cornersThrottleMs: Long = 153L,
     val flingType: PetalFlingType = PetalFlingType.DEFAULT,
     val motionDurationScale: Float = 1.0f,
+    val pullRefreshStyle: PetalPullRefreshStyle = PetalPullRefreshStyle.CURRENT,
     /** Containment (cards, rows, chips, hero surfaces) shape style. [PetalContainmentShapeChoice.FOLLOW_APP] = use [shapeType]. */
     val containmentShape: PetalContainmentShapeChoice = PetalContainmentShapeChoice.FOLLOW_APP,
     /** When false containment uses the app-wide [cornersSize]; when true it uses [containmentCornersSize]. */
@@ -65,6 +84,7 @@ data class PetalLayoutSettings(
         const val KEY_CORNERS_THROTTLE = "sp_corners_animation_throttle"
         const val KEY_FLING_TYPE = "sp_fling_type"
         const val KEY_MOTION_DURATION_SCALE = "sp_motion_duration_scale"
+        const val KEY_PULL_REFRESH_STYLE = "sp_pull_refresh_style"
         const val KEY_CONTAINMENT_SHAPE = "sp_containment_shape_type"
         const val KEY_CONTAINMENT_OWN_CORNERS = "sp_containment_own_corners"
         const val KEY_CONTAINMENT_CORNERS_SIZE = "sp_containment_corners_size"
@@ -88,6 +108,7 @@ data class PetalLayoutSettings(
                 cornersThrottleMs = sp.safeLong(KEY_CORNERS_THROTTLE, 153L).coerceIn(0L, 500L),
                 flingType = PetalFlingType.fromKey(sp.getString(KEY_FLING_TYPE, PetalFlingType.DEFAULT.key)),
                 motionDurationScale = sp.safeFloat(KEY_MOTION_DURATION_SCALE, 1.0f).coerceIn(0.25f, 3f),
+                pullRefreshStyle = PetalPullRefreshStyle.fromKey(sp.getString(KEY_PULL_REFRESH_STYLE, PetalPullRefreshStyle.CURRENT.key)),
                 containmentShape = PetalContainmentShapeChoice.fromKey(sp.getString(KEY_CONTAINMENT_SHAPE, null)),
                 containmentOwnCorners = sp.getBoolean(KEY_CONTAINMENT_OWN_CORNERS, false),
                 containmentCornersSize = sp.safeFloat(KEY_CONTAINMENT_CORNERS_SIZE, 1.0f).coerceIn(0f, 2f),
@@ -159,6 +180,7 @@ object PetalLayoutState {
             .putLong(PetalLayoutSettings.KEY_CORNERS_THROTTLE, next.cornersThrottleMs)
             .putString(PetalLayoutSettings.KEY_FLING_TYPE, next.flingType.key)
             .putFloat(PetalLayoutSettings.KEY_MOTION_DURATION_SCALE, next.motionDurationScale)
+            .putString(PetalLayoutSettings.KEY_PULL_REFRESH_STYLE, next.pullRefreshStyle.key)
             .putString(PetalLayoutSettings.KEY_CONTAINMENT_SHAPE, next.containmentShape.key)
             .putBoolean(PetalLayoutSettings.KEY_CONTAINMENT_OWN_CORNERS, next.containmentOwnCorners)
             .putFloat(PetalLayoutSettings.KEY_CONTAINMENT_CORNERS_SIZE, next.containmentCornersSize)
@@ -175,6 +197,7 @@ object PetalLayoutState {
         PetalLayoutSettings.KEY_CORNERS_THROTTLE,
         PetalLayoutSettings.KEY_FLING_TYPE,
         PetalLayoutSettings.KEY_MOTION_DURATION_SCALE,
+        PetalLayoutSettings.KEY_PULL_REFRESH_STYLE,
         PetalLayoutSettings.KEY_CONTAINMENT_SHAPE,
         PetalLayoutSettings.KEY_CONTAINMENT_OWN_CORNERS,
         PetalLayoutSettings.KEY_CONTAINMENT_CORNERS_SIZE,

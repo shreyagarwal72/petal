@@ -262,6 +262,9 @@ fun RefreshBarLoadingIndicatorLazy(
 class PetalRefreshBarState {
     var isRefreshing by mutableStateOf(false)
     var pullProgress by mutableFloatStateOf(0f)
+
+    /** The layout whose own (Firefox-style) spinner must follow the live theme colors. */
+    var nativeLayout by mutableStateOf<com.petal.browser.browser.PetalVerticalSwipeRefreshLayout?>(null)
 }
 
 object PetalRefreshBarBridge {
@@ -277,6 +280,7 @@ object PetalRefreshBarBridge {
         layout: com.petal.browser.browser.PetalVerticalSwipeRefreshLayout
     ) {
         val state = PetalRefreshBarState()
+        state.nativeLayout = layout
         layout.onPullProgress = { state.pullProgress = it }
         layout.onRefreshStateChanged = { refreshing ->
             state.isRefreshing = refreshing
@@ -342,7 +346,8 @@ object PetalRefreshBarBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    RefreshBarLoadingIndicatorLazy(
+                    com.petal.browser.ui.components.PetalPullRefreshNativeTheme(state.nativeLayout)
+                    com.petal.browser.ui.components.PetalPullRefreshIndicator(
                         isRefreshing = state.isRefreshing,
                         pullProgressProvider = { state.pullProgress }
                     )
