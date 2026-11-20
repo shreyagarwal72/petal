@@ -303,6 +303,7 @@ fun PetalRootApp(
 
     // Omnibox Input Overlay State (Single authoritative source of truth via ViewModel)
     val isOmniboxOpen by viewModel.isOmniboxOpen.collectAsStateWithLifecycle()
+    val omniboxInitialQuery by viewModel.omniboxInitialQuery.collectAsStateWithLifecycle()
 
     val isHome = activeUrl.isBlank() || PetalBrowserUtils.isHomePage(activeUrl)
 
@@ -1176,7 +1177,7 @@ fun PetalRootApp(
                     PetalOmniboxPage(
                         handleBackInternally = false,
                         activity = activity!!,
-                        initialQuery = viewModel.omniboxInitialQuery.value ?: if (isHome) "" else activeUrl,
+                        initialQuery = omniboxInitialQuery ?: if (isHome) "" else activeUrl,
                         pageTitle = activeTitle,
                         pageUrl = activeUrl,
                         isIncognito = isIncognito,

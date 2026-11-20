@@ -961,18 +961,19 @@ class PetalBrowserViewModel @Inject constructor(
         activeTab.value?.engineState?.engineSession?.clearFindMatches()
     }
 
-    val omniboxInitialQuery = mutableStateOf<String?>(null)
+    private val _omniboxInitialQuery = MutableStateFlow<String?>(null)
+    val omniboxInitialQuery: StateFlow<String?> = _omniboxInitialQuery.asStateFlow()
 
     fun openOmnibox(initialQuery: String? = null) {
         _isMenuOpen.value = false
-        omniboxInitialQuery.value = initialQuery
+        _omniboxInitialQuery.value = initialQuery
         _isOmniboxOpen.value = true
     }
 
     fun setOmniboxOpen(open: Boolean) {
         _isOmniboxOpen.value = open
         if (!open) {
-            omniboxInitialQuery.value = null
+            _omniboxInitialQuery.value = null
         }
     }
 

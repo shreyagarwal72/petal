@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asComposePath
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.toPath
 
 /**
  * Reusable scratch objects so drawing a Morph every frame allocates nothing.
