@@ -8,12 +8,11 @@ import com.petal.browser.activity.FileViewerActivity
 import com.petal.browser.activity.ImageViewerActivity
 import com.petal.browser.activity.MediaPlayerActivity
 import com.petal.browser.activity.PdfViewerActivity
-import com.petal.browser.apk.PetalApkInstallActivity
 import java.util.Locale
 
 /**
  * Universal dispatcher for opening files directly using Petal's built-in features:
- * - APK packages -> PetalApkInstallActivity ("Install with Petal")
+ * - APK packages -> Android system package installer
  * - PDF documents -> PdfViewerActivity ("Petal PDF Viewer")
  * - Video & Audio -> MediaPlayerActivity ("Petal Media Player" with wavy controls)
  * - Images -> ImageViewerActivity ("Petal Image Viewer")
@@ -30,10 +29,9 @@ object PetalFileOpener {
         val mime = (rawMime?.takeIf { it.isNotBlank() && it != "*/*" } ?: detectedMime ?: "*/*").lowercase(Locale.ROOT)
 
         return when {
-            // 1. APKs -> Install with Petal
+            // 1. APKs -> System Package Installer
             ext == "apk" || mime == "application/vnd.android.package-archive" -> {
-                Intent(context, PetalApkInstallActivity::class.java).apply {
-                    action = Intent.ACTION_VIEW
+                Intent(Intent.ACTION_VIEW).apply {
                     setDataAndType(uri, "application/vnd.android.package-archive")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
                 }

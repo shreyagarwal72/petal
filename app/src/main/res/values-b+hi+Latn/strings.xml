@@ -1531,7 +1531,6 @@
     <string name="widget_glass_not_ready_desc">To render real home screen liquid glass, Petal needs your home screen wallpaper image.</string>
     <string name="tab_crash_error_title">Yeh page crash ho gaya</string>
     <string name="tab_crash_error_message">Petal stopped auto-reloading this page because it repeatedly crashed.</string>
-    <string name="petal_installer_name">Petal ke sath Install karein</string>
     <string name="ui_choose_scanner_for_image">Choose Scanner for Image</string>
     <string name="ui_choose_scanner_for_image_desc">Select whether to search this image using Google Lens or scan for QR / barcodes using Petal Scanner.</string>
     <string name="ui_search_with_google_lens">Google Lens se Search karein</string>
