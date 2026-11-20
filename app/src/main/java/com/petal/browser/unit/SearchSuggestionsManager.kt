@@ -247,8 +247,13 @@ object SearchSuggestionsManager {
                 if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                     results = parseOpenSearchJson(connection)
                 }
+
+                if (results.isEmpty()) {
+                    results = fetchDuckDuckGoSuggestionsSync(query)
+                }
             } catch (e: Exception) {
                 Log.w(TAG, "Brave suggestions failed for: $query", e)
+                results = fetchDuckDuckGoSuggestionsSync(query)
             } finally {
                 connection?.disconnect()
             }
@@ -317,8 +322,13 @@ object SearchSuggestionsManager {
                 if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                     results = parseOpenSearchJson(connection)
                 }
+
+                if (results.isEmpty()) {
+                    results = fetchDuckDuckGoSuggestionsSync(query)
+                }
             } catch (e: Exception) {
                 Log.w(TAG, "Qwant suggestions failed for: $query", e)
+                results = fetchDuckDuckGoSuggestionsSync(query)
             } finally {
                 connection?.disconnect()
             }
@@ -352,8 +362,13 @@ object SearchSuggestionsManager {
                 if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                     results = parseOpenSearchJson(connection)
                 }
+
+                if (results.isEmpty()) {
+                    results = fetchDuckDuckGoSuggestionsSync(query)
+                }
             } catch (e: Exception) {
                 Log.w(TAG, "Startpage suggestions failed for: $query", e)
+                results = fetchDuckDuckGoSuggestionsSync(query)
             } finally {
                 connection?.disconnect()
             }
@@ -375,7 +390,7 @@ object SearchSuggestionsManager {
             var connection: HttpURLConnection? = null
             try {
                 val encodedQuery = encodeQuery(query)
-                val urlString = "https://searx.space/autocompleter?q=$encodedQuery"
+                val urlString = "https://searx.be/autocompleter?q=$encodedQuery"
                 val url = URL(urlString)
 
                 connection = url.openConnection() as HttpURLConnection
@@ -387,8 +402,13 @@ object SearchSuggestionsManager {
                 if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                     results = parseOpenSearchJson(connection)
                 }
+
+                if (results.isEmpty()) {
+                    results = fetchDuckDuckGoSuggestionsSync(query)
+                }
             } catch (e: Exception) {
                 Log.w(TAG, "SearXNG suggestions failed for: $query", e)
+                results = fetchDuckDuckGoSuggestionsSync(query)
             } finally {
                 connection?.disconnect()
             }
@@ -410,7 +430,13 @@ object SearchSuggestionsManager {
             var connection: HttpURLConnection? = null
             try {
                 val encodedQuery = encodeQuery(query)
-                val urlString = suggestUrlTemplate.replace("{searchTerms}", encodedQuery).replace("%s", encodedQuery)
+                val urlString = if (suggestUrlTemplate.contains("{searchTerms}") || suggestUrlTemplate.contains("%s")) {
+                    suggestUrlTemplate.replace("{searchTerms}", encodedQuery).replace("%s", encodedQuery)
+                } else if (suggestUrlTemplate.endsWith("=") || suggestUrlTemplate.endsWith("/")) {
+                    suggestUrlTemplate + encodedQuery
+                } else {
+                    "$suggestUrlTemplate$encodedQuery"
+                }
                 val url = URL(urlString)
 
                 connection = url.openConnection() as HttpURLConnection
@@ -458,9 +484,28 @@ object SearchSuggestionsManager {
                     for (i in 0 until jsonArray.length()) {
                         val obj = jsonArray.get(i)
                         if (obj is JSONObject) {
-                            if (obj.has("phrase")) results.add(obj.getString("phrase"))
-                        } else if (obj is String && i > 0) {
-                            results.add(obj)
+                            val text = obj.optString("phrase", obj.optString("title", obj.optString("text", "")))
+                            if (text.isNotBlank()) results.add(text.trim())
+                        } else if (obj is String) {
+                            val str = obj.trim()
+                            if (str.isNotBlank()) results.add(str)
+                        }
+                    }
+                }
+            } else if (raw.startsWith("{")) {
+                val jsonObj = JSONObject(raw)
+                val array = jsonObj.optJSONArray("suggestions")
+                    ?: jsonObj.optJSONArray("results")
+                    ?: jsonObj.optJSONArray("items")
+                    ?: jsonObj.optJSONArray("queries")
+                if (array != null) {
+                    for (i in 0 until array.length()) {
+                        val item = array.opt(i)
+                        if (item is String && item.isNotBlank()) {
+                            results.add(item.trim())
+                        } else if (item is JSONObject) {
+                            val text = item.optString("phrase", item.optString("title", item.optString("text", "")))
+                            if (text.isNotBlank()) results.add(text.trim())
                         }
                     }
                 }
@@ -479,7 +524,7 @@ object SearchSuggestionsManager {
         val results = ArrayList<String>()
         try {
             val words = query.trim().split("\\s+".toRegex()).toTypedArray()
-            if (words.size > 2) {
+            if (words.size >= 2) {
                 val tailQuery = words.copyOfRange(Math.max(0, words.size - 2), words.size).joinToString(" ")
                 val subResults = searcher.search(tailQuery)
                 val prefix = words.copyOfRange(0, Math.max(0, words.size - 2)).joinToString(" ")
@@ -489,6 +534,25 @@ object SearchSuggestionsManager {
             }
         } catch (_: Exception) {}
         return results
+    }
+
+    private fun fetchDuckDuckGoSuggestionsSync(query: String): List<String> {
+        var list: List<String> = emptyList()
+        var conn: HttpURLConnection? = null
+        try {
+            val encoded = encodeQuery(query)
+            val url = URL("https://duckduckgo.com/ac/?q=$encoded&type=list")
+            conn = url.openConnection() as HttpURLConnection
+            conn.connectTimeout = 1800
+            conn.readTimeout = 1800
+            conn.setRequestProperty("User-Agent", FIREFOX_MOBILE_UA)
+            if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+                list = parseOpenSearchJson(conn)
+            }
+        } catch (_: Exception) {} finally {
+            conn?.disconnect()
+        }
+        return list
     }
 
     private fun fetchGoogleSuggestionsSync(query: String): List<String> {

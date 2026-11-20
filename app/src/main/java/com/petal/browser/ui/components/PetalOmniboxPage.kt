@@ -113,6 +113,15 @@ data class OmniboxSuggestion(
     val tabIndex: Int = -1
 )
 
+private sealed interface OmniboxListEntry {
+    data class Header(val source: SuggestionSource) : OmniboxListEntry
+    data class Item(
+        val suggestion: OmniboxSuggestion,
+        val indexInGroup: Int,
+        val groupSize: Int
+    ) : OmniboxListEntry
+}
+
 /**
  * Firefox-style smart ellipsis:
  * - URLs get start-ellipsis (…end/of/path) so the unique suffix stays visible.
@@ -131,6 +140,12 @@ private data class TopSiteShortcut(
     val title: String,
     val url: String,
     val icon: ImageVector
+)
+
+private data class LocalHistoryItem(
+    val title: String,
+    val url: String,
+    val time: Long
 )
 
 object PetalOmniboxBridge {
@@ -271,18 +286,12 @@ fun PetalOmniboxPage(
         return emptyList()
     }
 
-    fun submitSearch(query: String, saveToHistory: Boolean = false) {
+    fun submitSearch(query: String, saveToHistory: Boolean = true) {
         val normalized = query.trim()
         if (normalized.isBlank()) return
-        try {
-            keyboardController?.hide()
-            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
-            val windowToken = (context as? android.app.Activity)?.window?.decorView?.windowToken
-            if (imm != null && windowToken != null) {
-                imm.hideSoftInputFromWindow(windowToken, 0)
-            }
-        } catch (_: Throwable) {}
-        if (saveToHistory && !isIncognito) {
+        val isUrl = com.petal.browser.unit.PetalBrowserUtils.isURL(normalized)
+        val shouldSave = saveToHistory && !isUrl && !isIncognito
+        if (shouldSave) {
             val listKey = "sp_search_history_list"
             val legacyKey = "sp_search_history_queries"
             val limit = 40
@@ -298,18 +307,29 @@ fun PetalOmniboxPage(
                 .remove(legacyKey)
                 .apply()
         }
+        try {
+            keyboardController?.hide()
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            val windowToken = (context as? android.app.Activity)?.window?.decorView?.windowToken
+            if (imm != null && windowToken != null) {
+                imm.hideSoftInputFromWindow(windowToken, 0)
+            }
+        } catch (_: Throwable) {}
         onQuerySubmitted(normalized)
     }
     val snackbarHostState = remember { SnackbarHostState() }
     val cleanedInitialQuery = remember(initialQuery) {
         val trimmed = initialQuery.trim()
-        if (trimmed.equals("about:blank", ignoreCase = true) || trimmed.startsWith("about:", ignoreCase = true)) {
+        if (trimmed.equals("about:blank", ignoreCase = true) ||
+            trimmed.startsWith("about:", ignoreCase = true) ||
+            trimmed.startsWith("petal:", ignoreCase = true)
+        ) {
             ""
         } else {
             initialQuery
         }
     }
-    var queryState by remember {
+    var queryState by remember(cleanedInitialQuery) {
         // Opening the address bar is an edit action: select the complete current
         // URL so typing immediately replaces it instead of appending at the end.
         mutableStateOf(TextFieldValue(cleanedInitialQuery, TextRange(0, cleanedInitialQuery.length)))
@@ -390,22 +410,26 @@ fun PetalOmniboxPage(
     // Records are sorted by most-recently-visited first (Firefox AwesomeBar convention).
     val localHistoryList = remember(isIncognito) {
         if (isIncognito) {
-            emptyList<String>()
+            emptyList<LocalHistoryItem>()
         } else {
-            val list = mutableListOf<String>()
+            val list = mutableListOf<LocalHistoryItem>()
             try {
                 val action = HistoryBookmarkRepository(context)
                 action.open(false)
                 val records: List<Record> = action.listHistory(context)
                 action.close()
-                // Sort by time descending so most-recently-visited titles appear first
+                // Sort by time descending so most-recently-visited titles/urls appear first
                 records.sortedByDescending { it.time }.forEach { r ->
-                    if (!r.title.isNullOrBlank()) list.add(r.title)
+                    val url = r.url?.trim() ?: ""
+                    val title = r.title?.trim() ?: ""
+                    if (url.isNotBlank() || title.isNotBlank()) {
+                        list.add(LocalHistoryItem(title = title, url = url, time = r.time))
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            list.distinct()
+            list.distinctBy { it.url.ifBlank { it.title } }
         }
     }
 
@@ -440,11 +464,25 @@ fun PetalOmniboxPage(
 
             val recentSearchSet = recentSearchItems.map { it.query.lowercase() }.toSet()
             val browsingHistoryItems = localHistoryList
-                .filter { !removedSuggestions.contains(it) && !recentSearchSet.contains(it.lowercase()) }
+                .filter { rec ->
+                    val query = rec.title.ifBlank { rec.url }
+                    !removedSuggestions.contains(query) &&
+                    !removedSuggestions.contains(rec.url) &&
+                    !recentSearchSet.contains(query.lowercase()) &&
+                    !recentSearchSet.contains(rec.url.lowercase())
+                }
                 .take(8 - recentSearchItems.size)
-                .map { OmniboxSuggestion(it, isHistory = true, source = SuggestionSource.BROWSING_HISTORY) }
+                .map { rec ->
+                    OmniboxSuggestion(
+                        query = rec.title.ifBlank { rec.url },
+                        isHistory = true,
+                        source = SuggestionSource.BROWSING_HISTORY,
+                        targetUrl = rec.url
+                    )
+                }
 
             com.petal.browser.motion.MotionGate.postAfterTransition {
+                if (queryState.text.trim().isNotEmpty()) return@postAfterTransition
                 suggestions = recentSearchItems + browsingHistoryItems
             }
         } else {
@@ -452,9 +490,11 @@ fun PetalOmniboxPage(
             val lowerCurrent = currentText.lowercase()
 
             val matchedTabs = openTabs.filter { (title, url, _) ->
-                (title.lowercase().contains(lowerCurrent) || url.lowercase().contains(lowerCurrent) ||
-                        queryTokens.all { title.lowercase().contains(it) || url.lowercase().contains(it) }) &&
-                        !removedSuggestions.contains(title)
+                val titleLower = title.lowercase()
+                val urlLower = url.lowercase()
+                (titleLower.contains(lowerCurrent) || urlLower.contains(lowerCurrent) ||
+                        queryTokens.all { titleLower.contains(it) || urlLower.contains(it) }) &&
+                        !removedSuggestions.contains(title) && !removedSuggestions.contains(url)
             }.take(2).map { (title, url, index) ->
                 OmniboxSuggestion(
                     query = title.ifBlank { url },
@@ -470,7 +510,8 @@ fun PetalOmniboxPage(
                 val url = rec.url?.lowercase() ?: ""
                 (title.contains(lowerCurrent) || url.contains(lowerCurrent) ||
                         queryTokens.all { title.contains(it) || url.contains(it) }) &&
-                        !removedSuggestions.contains(rec.title)
+                        !removedSuggestions.contains(rec.title ?: "") &&
+                        !removedSuggestions.contains(rec.url ?: "")
             }.take(3).map { rec ->
                 OmniboxSuggestion(
                     query = rec.title?.ifBlank { rec.url } ?: rec.url ?: "",
@@ -489,26 +530,52 @@ fun PetalOmniboxPage(
                 .map { OmniboxSuggestion(it, isHistory = true, source = SuggestionSource.RECENT_SEARCH) }
 
             val localMatches = localHistoryList
-                .filter { title ->
-                    val lower = title.lowercase()
-                    (lower.contains(lowerCurrent) || queryTokens.all { lower.contains(it) }) &&
-                            !removedSuggestions.contains(title) &&
-                            savedMatches.none { it.query.equals(title, ignoreCase = true) }
+                .filter { rec ->
+                    val titleLower = rec.title.lowercase()
+                    val urlLower = rec.url.lowercase()
+                    val matches = titleLower.contains(lowerCurrent) || urlLower.contains(lowerCurrent) ||
+                            queryTokens.all { titleLower.contains(it) || urlLower.contains(it) }
+                    val notRemoved = !removedSuggestions.contains(rec.title) && !removedSuggestions.contains(rec.url)
+                    val notInSaved = savedMatches.none { it.query.equals(rec.title, ignoreCase = true) || it.query.equals(rec.url, ignoreCase = true) }
+                    matches && notRemoved && notInSaved
                 }
                 .take(4 - savedMatches.size)
-                .map { OmniboxSuggestion(it, isHistory = true, source = SuggestionSource.BROWSING_HISTORY) }
+                .map { rec ->
+                    OmniboxSuggestion(
+                        query = rec.title.ifBlank { rec.url },
+                        isHistory = true,
+                        source = SuggestionSource.BROWSING_HISTORY,
+                        targetUrl = rec.url
+                    )
+                }
 
             val historyMatches = savedMatches + localMatches
 
+            val isDirectUrl = com.petal.browser.unit.PetalBrowserUtils.isURL(currentText)
+            val directItem = OmniboxSuggestion(
+                query = currentText,
+                isHistory = false,
+                source = SuggestionSource.SEARCH_ENGINE,
+                targetUrl = if (isDirectUrl) {
+                    if (currentText.contains("://")) currentText
+                    else if (currentText.startsWith("localhost", ignoreCase = true) || currentText.startsWith("127.0.0.1")) "http://$currentText"
+                    else "https://$currentText"
+                } else null
+            )
+
             val liveSuggestionsEnabled = sp.getBoolean("sp_enable_live_suggestions", true)
             val privateSuggestionsEnabled = sp.getBoolean("sp_search_suggestions_private", false)
-            val shouldFetchRemote = liveSuggestionsEnabled && (!isIncognito || privateSuggestionsEnabled)
+            val shouldFetchRemote = liveSuggestionsEnabled && (!isIncognito || privateSuggestionsEnabled) && !isDirectUrl
 
             if (shouldFetchRemote) {
                 delay(180)
                 SearchSuggestionsManager.fetchSuggestionsForEngine(context, currentEngineIndexStr, currentText) { engineResults ->
                     com.petal.browser.motion.MotionGate.postAfterTransition {
+                        if (queryState.text.trim() != currentText) return@postAfterTransition
                         val combined = mutableListOf<OmniboxSuggestion>()
+                        if (currentText.isNotBlank() && !removedSuggestions.contains(currentText)) {
+                            combined.add(directItem)
+                        }
                         combined.addAll(matchedTabs)
                         combined.addAll(matchedBookmarks)
                         combined.addAll(historyMatches)
@@ -518,21 +585,18 @@ fun PetalOmniboxPage(
                                 combined.add(OmniboxSuggestion(trimmedRes, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
                             }
                         }
-                        // For direct searches, ensure the exact query is presented as an actionable row if not already present
-                        if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && combined.none { it.query.equals(currentText, ignoreCase = true) }) {
-                            combined.add(0, OmniboxSuggestion(currentText, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
-                        }
                         suggestions = combined
                     }
                 }
             } else {
                 com.petal.browser.motion.MotionGate.postAfterTransition {
+                    if (queryState.text.trim() != currentText) return@postAfterTransition
                     val combined = mutableListOf<OmniboxSuggestion>()
+                    if (currentText.isNotBlank() && !removedSuggestions.contains(currentText)) {
+                        combined.add(directItem)
+                    }
                     combined.addAll(matchedTabs)
                     combined.addAll(matchedBookmarks)
-                    if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && historyMatches.none { it.query.equals(currentText, ignoreCase = true) }) {
-                        combined.add(OmniboxSuggestion(currentText, isHistory = false, source = SuggestionSource.SEARCH_ENGINE))
-                    }
                     combined.addAll(historyMatches)
                     suggestions = combined
                 }
@@ -1118,9 +1182,9 @@ fun PetalOmniboxPage(
                                             val grouped = suggestions.groupBy { it.source }
                                             var globalIndex = 0
                                             grouped.forEach { (source, items) ->
-                                                add("header_${source.name}_${globalIndex++}" to source)
+                                                add("header_${source.name}_${globalIndex++}" to OmniboxListEntry.Header(source))
                                                 items.forEachIndexed { idx, item ->
-                                                    add("item_${source.name}_${globalIndex++}_${idx}_${item.query}_${item.targetUrl ?: ""}" to item)
+                                                    add("item_${source.name}_${globalIndex++}_${idx}_${item.query}_${item.targetUrl ?: ""}" to OmniboxListEntry.Item(item, idx, items.size))
                                                 }
                                             }
                                         }
@@ -1138,10 +1202,10 @@ fun PetalOmniboxPage(
                                             items = listEntries,
                                             key = { it.first }
                                         ) { entry ->
-                                            when (val payload = entry.second) {
-                                                is SuggestionSource -> {
+                                            when (val row = entry.second) {
+                                                is OmniboxListEntry.Header -> {
                                                     // Section header
-                                                    val headerLabel = when (payload) {
+                                                    val headerLabel = when (row.source) {
                                                         SuggestionSource.SWITCH_TO_TAB -> stringResource(R.string.ui_switch_to_tab)
                                                         SuggestionSource.RECENT_SEARCH -> stringResource(R.string.ui_recent_searches)
                                                         SuggestionSource.BROWSING_HISTORY -> stringResource(R.string.ui_from_browsing_history)
@@ -1166,9 +1230,9 @@ fun PetalOmniboxPage(
                                                             )
                                                     )
                                                 }
-                                                is OmniboxSuggestion -> {
-                                                    // Suggestion row index within `suggestions` for group shape
-                                                    val itemIndex = suggestions.indexOf(payload)
+                                                is OmniboxListEntry.Item -> {
+                                                    val payload = row.suggestion
+                                                    val isDirectEngineNav = payload.targetUrl != null && payload.source == SuggestionSource.SEARCH_ENGINE
 
                                                     // For URLs, keep end-visible if single line, but allow multi-line wrapped text for long search queries & titles like Brave
                                                     val isUrl = payload.query.startsWith("http") ||
@@ -1176,12 +1240,13 @@ fun PetalOmniboxPage(
                                                     val displayText = if (isUrl) smartEllipsize(payload.query, true, maxChars = 80) else payload.query
 
                                                     // Icon and tint per source group
-                                                    val badgeIcon = when (payload.source) {
-                                                        SuggestionSource.SWITCH_TO_TAB -> Icons.Rounded.Tab
-                                                        SuggestionSource.BOOKMARK -> Icons.Rounded.Bookmark
-                                                        SuggestionSource.RECENT_SEARCH -> Icons.Rounded.History
-                                                        SuggestionSource.BROWSING_HISTORY -> Icons.Rounded.History
-                                                        SuggestionSource.SEARCH_ENGINE -> Icons.Rounded.Search
+                                                    val badgeIcon = when {
+                                                        isDirectEngineNav -> Icons.Rounded.Language
+                                                        payload.source == SuggestionSource.SWITCH_TO_TAB -> Icons.Rounded.Tab
+                                                        payload.source == SuggestionSource.BOOKMARK -> Icons.Rounded.Bookmark
+                                                        payload.source == SuggestionSource.RECENT_SEARCH -> Icons.Rounded.History
+                                                        payload.source == SuggestionSource.BROWSING_HISTORY -> Icons.Rounded.History
+                                                        else -> Icons.Rounded.Search
                                                     }
                                                     val badgeContainer = when (payload.source) {
                                                         SuggestionSource.SWITCH_TO_TAB -> MaterialTheme.colorScheme.tertiaryContainer
@@ -1199,7 +1264,7 @@ fun PetalOmniboxPage(
                                                     }
 
                                                     com.petal.browser.ui.containment.PetalGroupListRow(
-                                                        position = com.petal.browser.ui.containment.petalGroupPositionFor(itemIndex, suggestions.size),
+                                                        position = com.petal.browser.ui.containment.petalGroupPositionFor(row.indexInGroup, row.groupSize),
                                                         minHeight = 48.dp,
                                                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                                                         onClick = {
@@ -1210,13 +1275,13 @@ fun PetalOmniboxPage(
                                                                     onBackPress()
                                                                 } catch (_: Exception) {
                                                                     val trimmed = payload.targetUrl?.trim() ?: payload.query.trim()
-                                                                    if (trimmed.isNotEmpty()) submitSearch(trimmed)
+                                                                    if (trimmed.isNotEmpty()) submitSearch(trimmed, saveToHistory = false)
                                                                 }
-                                                            } else if (payload.source == SuggestionSource.BOOKMARK && !payload.targetUrl.isNullOrBlank()) {
-                                                                submitSearch(payload.targetUrl.trim())
+                                                            } else if (!payload.targetUrl.isNullOrBlank()) {
+                                                                submitSearch(payload.targetUrl.trim(), saveToHistory = false)
                                                             } else {
                                                                 val trimmed = payload.query.trim()
-                                                                if (trimmed.isNotEmpty()) submitSearch(trimmed)
+                                                                if (trimmed.isNotEmpty()) submitSearch(trimmed, saveToHistory = true)
                                                             }
                                                         },
                                                         onLongClick = {
@@ -1254,7 +1319,7 @@ fun PetalOmniboxPage(
                                                                     maxLines = 2,
                                                                     overflow = TextOverflow.Ellipsis
                                                                 )
-                                                                if (payload.source == SuggestionSource.SWITCH_TO_TAB && !payload.targetUrl.isNullOrBlank()) {
+                                                                if (!payload.targetUrl.isNullOrBlank() && (payload.source == SuggestionSource.SWITCH_TO_TAB || payload.source == SuggestionSource.BOOKMARK || payload.source == SuggestionSource.BROWSING_HISTORY)) {
                                                                     Text(
                                                                         text = smartEllipsize(payload.targetUrl, true, maxChars = 60),
                                                                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
@@ -1262,11 +1327,19 @@ fun PetalOmniboxPage(
                                                                         maxLines = 1,
                                                                         overflow = TextOverflow.Ellipsis
                                                                     )
-                                                                } else if (payload.source == SuggestionSource.BOOKMARK && !payload.targetUrl.isNullOrBlank()) {
+                                                                } else if (isDirectEngineNav && !payload.targetUrl.isNullOrBlank()) {
                                                                     Text(
                                                                         text = smartEllipsize(payload.targetUrl, true, maxChars = 60),
                                                                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
                                                                         color = MaterialTheme.colorScheme.primary,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis
+                                                                    )
+                                                                } else if (payload.source == SuggestionSource.SEARCH_ENGINE && payload.query.equals(queryState.text.trim(), ignoreCase = true)) {
+                                                                    Text(
+                                                                        text = stringResource(R.string.ui_search_with, currentEngine.name),
+                                                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                                         maxLines = 1,
                                                                         overflow = TextOverflow.Ellipsis
                                                                     )
@@ -1274,8 +1347,13 @@ fun PetalOmniboxPage(
                                                             }
                                                         },
                                                         trailing = {
+                                                            val insertText = if (!payload.targetUrl.isNullOrBlank() && (payload.source == SuggestionSource.BROWSING_HISTORY || payload.source == SuggestionSource.BOOKMARK || payload.source == SuggestionSource.SWITCH_TO_TAB || isDirectEngineNav)) {
+                                                                payload.targetUrl
+                                                            } else {
+                                                                payload.query
+                                                            }
                                                             IconButton(
-                                                                onClick = { queryState = TextFieldValue(text = payload.query, selection = TextRange(payload.query.length)) },
+                                                                onClick = { queryState = TextFieldValue(text = insertText, selection = TextRange(insertText.length)) },
                                                                 modifier = Modifier.size(36.dp),
                                                             ) {
                                                                 Icon(Icons.Rounded.NorthWest, contentDescription = stringResource(R.string.ui_insert_query_into_omnibox), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
@@ -1318,7 +1396,7 @@ fun PetalOmniboxPage(
             },
             text = {
                 Text(
-                    text = stringResource(R.string.ui_remove_from_search_suggestions, item.query, if (item.isHistory) "This will also delete it from your browsing history." else ""),
+                    text = stringResource(R.string.ui_remove_from_search_suggestions, item.query, if (item.isHistory) " This will also delete it from your browsing history." else ""),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1327,25 +1405,32 @@ fun PetalOmniboxPage(
                 Button(
                     onClick = {
                         val targetQuery = item.query
+                        val targetUrl = item.targetUrl
                         suggestionToRemove = null
-                        val newSet = (removedSuggestions + targetQuery).toSet()
+                        val newSet = (removedSuggestions + targetQuery + (targetUrl ?: "")).filter { it.isNotBlank() }.toSet()
                         removedSuggestions = newSet
                         sp.edit().putStringSet("sp_removed_suggestions", newSet).apply()
 
                         // Remove from persistent search history list as well
-                        if (!isIncognito) {
+                        if (!isIncognito && (item.source == SuggestionSource.RECENT_SEARCH || item.targetUrl == null)) {
                             val listKey = "sp_search_history_list"
                             val updatedList = getSavedSearchHistory().filterNot { it.equals(targetQuery, ignoreCase = true) }
                             sp.edit().putString(listKey, JSONArray(updatedList).toString()).apply()
                         }
 
-                        suggestions = suggestions.filter { !it.query.equals(targetQuery, ignoreCase = true) }
+                        suggestions = suggestions.filter {
+                            !it.query.equals(targetQuery, ignoreCase = true) &&
+                                (targetUrl.isNullOrBlank() || !it.targetUrl.equals(targetUrl, ignoreCase = true))
+                        }
 
                         if (item.isHistory) {
                             Thread {
                                 try {
                                     val action = HistoryBookmarkRepository(context)
                                     action.open(true)
+                                    if (!targetUrl.isNullOrBlank()) {
+                                        action.deleteURL(targetUrl, com.petal.browser.database.HistoryBookmarkContract.TABLE_HISTORY)
+                                    }
                                     action.deleteHistoryByTitle(targetQuery)
                                     action.close()
                                 } catch (e: Exception) {
@@ -1361,10 +1446,10 @@ fun PetalOmniboxPage(
                                 duration = SnackbarDuration.Short
                             )
                             if (result == SnackbarResult.ActionPerformed) {
-                                val restoredSet = (removedSuggestions - targetQuery).toSet()
+                                val restoredSet = (removedSuggestions - targetQuery - (targetUrl ?: "")).toSet()
                                 removedSuggestions = restoredSet
                                 sp.edit().putStringSet("sp_removed_suggestions", restoredSet).apply()
-                                if (item.isHistory && !isIncognito) {
+                                if (item.source == SuggestionSource.RECENT_SEARCH && !isIncognito) {
                                     val currentHistory = getSavedSearchHistory().toMutableList()
                                     if (currentHistory.none { it.equals(targetQuery, ignoreCase = true) }) {
                                         currentHistory.add(0, targetQuery)

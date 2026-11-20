@@ -320,9 +320,12 @@ fun PetalHistoryScreen(
             historyList
         } else {
             val query = searchQuery.trim().lowercase()
+            val tokens = query.split("\\s+".toRegex()).filter { it.isNotBlank() }
             historyList.filter { record ->
-                (record.title?.lowercase()?.contains(query) == true) ||
-                (record.url?.lowercase()?.contains(query) == true)
+                val title = record.title?.lowercase() ?: ""
+                val url = record.url?.lowercase() ?: ""
+                title.contains(query) || url.contains(query) ||
+                    (tokens.isNotEmpty() && tokens.all { title.contains(it) || url.contains(it) })
             }
         }
     }
@@ -364,10 +367,7 @@ fun PetalHistoryScreen(
             destructive = true,
             onConfirm = {
                 try {
-                    val action = HistoryBookmarkRepository(context)
-                    action.open(true)
-                    action.clearTable(HistoryBookmarkContract.TABLE_HISTORY)
-                    action.close()
+                    com.petal.browser.unit.PetalBrowserUtils.clearHistory(context)
                     rawHistory = emptyList()
                 } catch (e: Exception) {
                     e.printStackTrace()

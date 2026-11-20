@@ -381,7 +381,7 @@ class MainActivity : FragmentActivity(), BrowserController {
     fun showBookmarksSheet() { viewModel.openBookmarks() }
     fun showHistoryScreen() { viewModel.openHistory() }
     fun showOmniboxPage(initialQuery: String? = null) {
-        viewModel.openOmnibox()
+        viewModel.openOmnibox(initialQuery)
     }
     fun showExtensionsScreen() { viewModel.openExtensions() }
     fun showQuickTools() {

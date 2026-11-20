@@ -61,6 +61,11 @@ object PetalBrowserUtils {
     @Volatile
     private var exitWorkFuture: Future<*>? = null
 
+    private val DOMAIN_OR_IP_PATTERN = Pattern.compile(
+        "^(?:(?:[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})|(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})|(?:localhost))(?::\\d+)?(?:/.*)?$",
+        Pattern.CASE_INSENSITIVE
+    )
+
     @JvmStatic
     fun isURL(urlString: String?): Boolean {
         if (urlString.isNullOrBlank()) {
@@ -77,16 +82,10 @@ object PetalBrowserUtils {
                 val scheme = uri.scheme.lowercase(Locale.ROOT)
                 return scheme == "http" || scheme == "https" || scheme == "file" ||
                         scheme == "content" || scheme == "about" || scheme == "chrome" ||
-                        scheme == "moz-extension" || scheme == "petal"
+                        scheme == "moz-extension" || scheme == "petal" || scheme == "javascript"
             }
 
-            val domainPattern = Pattern.compile("^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}(/.*)?$")
-            if (domainPattern.matcher(trimmed).matches()) {
-                val fallbackUri = URI("https://$trimmed")
-                fallbackUri.host != null && fallbackUri.host.contains(".")
-            } else {
-                false
-            }
+            DOMAIN_OR_IP_PATTERN.matcher(trimmed).matches()
         } catch (e: URISyntaxException) {
             false
         }
@@ -113,7 +112,11 @@ object PetalBrowserUtils {
                 return processed
             }
             if (!processed.contains("://")) {
-                processed = "https://$processed"
+                processed = if (processed.startsWith("localhost", ignoreCase = true) || processed.startsWith("127.0.0.1")) {
+                    "http://$processed"
+                } else {
+                    "https://$processed"
+                }
             }
             return processed
         } else {
@@ -247,6 +250,14 @@ object PetalBrowserUtils {
         action.open(true)
         action.clearTable(HistoryBookmarkContract.TABLE_HISTORY)
         action.close()
+        try {
+            val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            sp.edit()
+                .remove("sp_search_history_list")
+                .remove("sp_search_history_queries")
+                .remove("sp_removed_suggestions")
+                .apply()
+        } catch (_: Exception) {}
     }
 
     @JvmStatic

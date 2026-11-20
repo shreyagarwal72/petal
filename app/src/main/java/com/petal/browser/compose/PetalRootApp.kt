@@ -1176,7 +1176,7 @@ fun PetalRootApp(
                     PetalOmniboxPage(
                         handleBackInternally = false,
                         activity = activity!!,
-                        initialQuery = if (isHome) "" else activeUrl,
+                        initialQuery = viewModel.omniboxInitialQuery.value ?: if (isHome) "" else activeUrl,
                         pageTitle = activeTitle,
                         pageUrl = activeUrl,
                         isIncognito = isIncognito,
