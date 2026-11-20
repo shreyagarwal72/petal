@@ -8,6 +8,10 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -29,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -501,15 +506,57 @@ fun PetalLinkContextMenuSheet(
     }
 
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val menuShape = RoundedCornerShape(32.dp)
+    // Same top-rounded sheet shape the other Petal bottom sheets use.
+    val menuShape = com.petal.browser.ui.theme.layout.PetalLayoutState.settings.shapeType.cornerShape(
+        topStart = 28.dp, topEnd = 28.dp, bottomEnd = 0.dp, bottomStart = 0.dp,
+        multiplier = com.petal.browser.ui.theme.layout.PetalLayoutState.displayCorners
+    )
 
+    // Bottom-sheet motion: slides up on a calm spring, follows the finger while the handle or
+    // header is dragged, and slides back down before the window closes.
+    val enter = remember { Animatable(0f) }
+    var dragPx by remember { mutableFloatStateOf(0f) }
+    var sheetHeightPx by remember { mutableIntStateOf(0) }
+    var closing by remember { mutableStateOf(false) }
+    LaunchedEffect(sheetHeightPx > 0) {
+        if (sheetHeightPx > 0) enter.animateTo(1f, com.petal.browser.ui.components.PetalSpring.enter())
+    }
+    fun closeAnimated() {
+        if (closing) return
+        closing = true
+        scope.launch {
+            enter.animateTo(0f, com.petal.browser.ui.components.PetalSpring.exit())
+            onDismiss()
+        }
+    }
+    val dragState = rememberDraggableState { delta -> dragPx = (dragPx + delta).coerceAtLeast(0f) }
+    val dragFraction = (dragPx / sheetHeightPx.coerceAtLeast(1)).coerceIn(0f, 1f)
+    val scrimAlpha = (0.55f * enter.value * (1f - dragFraction)).coerceIn(0f, 1f)
+
+    // The window is full screen: the scrim below is drawn here so it can fade with the sheet,
+    // and tapping it closes the sheet with the same slide-down.
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = scrimAlpha))
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { closeAnimated() }
+            .statusBarsPadding(),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
     // Live backdrop: the dialog is its own window, so it records the browser behind it every
     // frame. The glass panel lives INSIDE the container, on the Surface, and every row/header
     // inside is its own refracting panel over the same backdrop.
     com.petal.browser.ui.glass.PetalGlassContainer(
         modifier = Modifier
-            .fillMaxWidth(0.92f)
-            .heightIn(max = 560.dp),
+            .fillMaxWidth()
+            .heightIn(max = 640.dp)
+            .onSizeChanged { sheetHeightPx = it.height }
+            .graphicsLayer {
+                val h = sheetHeightPx.toFloat()
+                translationY = if (h == 0f) 100000f else (1f - enter.value) * h + dragPx
+            }
+            // Taps on the sheet itself must not reach the scrim.
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
         enabled = isGlass,
         live = true,
     ) {
@@ -523,51 +570,91 @@ fun PetalLinkContextMenuSheet(
             .fillMaxWidth()
             .then(if (isGlass) Modifier.liquidGlassChrome(menuShape, enabled = true) else Modifier),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = 16.dp),
-        ) {
-
-            PetalMenuHeader(
-                kind = kind,
-                title = title,
-                subtitle = subtitle,
-                imageUrl = if (kind == MenuKind.IMAGE || kind == MenuKind.IMAGE_LINK) (imageUrl ?: linkUrl) else null,
-                faviconUrl = if (kind == MenuKind.LINK || kind == MenuKind.IMAGE_LINK || kind == MenuKind.PAGE) faviconUrl else null,
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Pinned top: drag handle + header. Dragging here swipes the sheet down to dismiss.
+            Column(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .petalStaggerIn(0),
-            )
-
-            var offset = 1
-            val showLabels = sections.size > 1
-            sections.forEach { section ->
-                Spacer(Modifier.height(if (showLabels) 14.dp else 10.dp))
-                if (showLabels) {
-                    PetalSectionLabel(
-                        section.label,
+                    .fillMaxWidth()
+                    .draggable(
+                        state = dragState,
+                        orientation = Orientation.Vertical,
+                        onDragStopped = { velocity ->
+                            if (dragPx > sheetHeightPx * 0.3f || velocity > 1400f) {
+                                closeAnimated()
+                            } else {
+                                androidx.compose.animation.core.animate(
+                                    initialValue = dragPx,
+                                    targetValue = 0f,
+                                    animationSpec = com.petal.browser.ui.components.PetalSpring.spatial(),
+                                ) { value, _ -> dragPx = value }
+                            }
+                        },
+                    ),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(28.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
                         modifier = Modifier
-                            .padding(horizontal = 20.dp)
-                            .petalStaggerIn(offset),
+                            .width(36.dp)
+                            .height(4.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)),
                     )
                 }
-                val base = offset
-                PetalGroup(rowCount = section.actions.size, modifier = Modifier.padding(horizontal = 16.dp)) { index, position ->
-                    val action = section.actions[index]
-                    PetalMenuRow(
-                        action = action,
-                        position = position,
-                        enterIndex = base + index,
-                        selected = selectedId == action.id,
-                        dimmed = selectedId != null && selectedId != action.id,
-                        onClick = { choose(action) },
-                    )
+                PetalMenuHeader(
+                    kind = kind,
+                    title = title,
+                    subtitle = subtitle,
+                    imageUrl = if (kind == MenuKind.IMAGE || kind == MenuKind.IMAGE_LINK) (imageUrl ?: linkUrl) else null,
+                    faviconUrl = if (kind == MenuKind.LINK || kind == MenuKind.IMAGE_LINK || kind == MenuKind.PAGE) faviconUrl else null,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .petalStaggerIn(0),
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 8.dp),
+            ) {
+                var offset = 1
+                val showLabels = sections.size > 1
+                sections.forEach { section ->
+                    Spacer(Modifier.height(if (showLabels) 14.dp else 10.dp))
+                    if (showLabels) {
+                        PetalSectionLabel(
+                            section.label,
+                            modifier = Modifier
+                                .padding(horizontal = 20.dp)
+                                .petalStaggerIn(offset),
+                        )
+                    }
+                    val base = offset
+                    PetalGroup(rowCount = section.actions.size, modifier = Modifier.padding(horizontal = 16.dp)) { index, position ->
+                        val action = section.actions[index]
+                        PetalMenuRow(
+                            action = action,
+                            position = position,
+                            enterIndex = base + index,
+                            selected = selectedId == action.id,
+                            dimmed = selectedId != null && selectedId != action.id,
+                            onClick = { choose(action) },
+                        )
+                    }
+                    offset += section.actions.size
                 }
-                offset += section.actions.size
+                // Keep the last row clear of the gesture / navigation bar.
+                Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
             }
         }
+    }
     }
     }
 }
@@ -838,12 +925,7 @@ object PetalLinkContextMenuBridge {
                             CompositionLocalProvider(
                                 com.petal.browser.ui.glass.LocalPetalGlassSource provides hostSource
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .wrapContentHeight(),
-                                    contentAlignment = Alignment.Center,
-                                ) {
+                                Box(modifier = Modifier.fillMaxSize()) {
                                     PetalLinkContextMenuSheet(
                                         linkTitle = linkTitle,
                                         linkUrl = linkUrl,
@@ -865,13 +947,20 @@ object PetalLinkContextMenuBridge {
                 dialog.setContentView(composeView)
                 dialog.window?.let { window ->
                     window.setBackgroundDrawableResource(android.R.color.transparent)
+                    // Full-screen window: the sheet draws its own scrim and sits at the bottom.
                     window.setLayout(
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                     )
-                    window.setGravity(android.view.Gravity.CENTER)
-                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                    window.setDimAmount(0.55f)
+                    window.setGravity(android.view.Gravity.BOTTOM)
+                    window.setDimAmount(0f)
+                    window.setWindowAnimations(0)
+                    androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+                    window.statusBarColor = android.graphics.Color.TRANSPARENT
+                    window.navigationBarColor = android.graphics.Color.TRANSPARENT
+                    if (android.os.Build.VERSION.SDK_INT >= 29) {
+                        window.isNavigationBarContrastEnforced = false
+                    }
                 }
                 dialog.setCanceledOnTouchOutside(true)
                 dialog.show()
