@@ -37,7 +37,6 @@ object BrowserNavigationDelegate {
         }
 
         val canGoBack = tabSurface?.canGoBack() ?: false
-        val canGoForward = tabSurface?.canGoForward() ?: false
         val profile = com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(activity)
         val prefs = activity.sp ?: PreferenceManager.getDefaultSharedPreferences(activity)
         val isDesktopSite = prefs.getBoolean("sp_desktop_site", false)
@@ -50,7 +49,6 @@ object BrowserNavigationDelegate {
             url,
             isBookmarked,
             canGoBack,
-            canGoForward,
             isDesktopSite,
             isAdBlock,
             isMediaActive,
@@ -58,12 +56,6 @@ object BrowserNavigationDelegate {
                 override fun onGoBack() {
                     if (tabSurface != null && tabSurface.canGoBack()) {
                         tabSurface.goBack()
-                    }
-                }
-
-                override fun onGoForward() {
-                    if (tabSurface != null && tabSurface.canGoForward()) {
-                        tabSurface.goForward()
                     }
                 }
 

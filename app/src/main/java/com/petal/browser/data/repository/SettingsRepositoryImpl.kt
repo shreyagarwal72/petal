@@ -485,6 +485,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_custom_tabs_etp", true)
     }
 
+    override val newMainMenuBeta: Flow<Boolean> = preferenceFlow("sp_new_main_menu_beta") {
+        sp.getBoolean("sp_new_main_menu_beta", false)
+    }
+
     override val checkUpdateOnLaunch: Flow<Boolean> = preferenceFlow("sp_check_update_on_launch") {
         sp.getBoolean("sp_check_update_on_launch", true)
     }
@@ -1040,6 +1044,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setCustomTabsEtp(enabled: Boolean) {
         sp.edit().putBoolean("sp_custom_tabs_etp", enabled).apply()
+    }
+
+    override suspend fun setNewMainMenuBeta(enabled: Boolean) {
+        sp.edit().putBoolean("sp_new_main_menu_beta", enabled).apply()
     }
 
     override suspend fun setCheckUpdateOnLaunch(enabled: Boolean) {

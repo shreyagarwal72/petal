@@ -65,7 +65,6 @@ import com.petal.browser.R
 
 interface PetalOverflowMenuActionHandler {
     fun onGoBack()
-    fun onGoForward()
     fun onToggleBookmark()
     fun onOpenDownloadsShortcut()
     fun onOpenPageInfo()
@@ -108,7 +107,6 @@ object PetalOverflowBridge {
         url: String,
         isBookmarked: Boolean,
         canGoBack: Boolean,
-        canGoForward: Boolean,
         isDesktopSite: Boolean,
         isAdBlockEnabled: Boolean = true,
         isMediaPlaying: Boolean = false,
@@ -174,7 +172,6 @@ object PetalOverflowBridge {
                                 pageUrl = url,
                                 isBookmarked = isBookmarked,
                                 canGoBack = canGoBack,
-                                canGoForward = canGoForward,
                             isDesktopSite = isDesktopSite,
                             isAdBlockEnabled = isAdBlockEnabled,
                             isMediaPlaying = isMediaPlaying,
@@ -182,10 +179,6 @@ object PetalOverflowBridge {
                             onGoBack = {
                                 dialog.dismiss()
                                 handler.onGoBack()
-                            },
-                            onGoForward = {
-                                dialog.dismiss()
-                                handler.onGoForward()
                             },
                             onToggleBookmark = {
                                 dialog.dismiss()
@@ -352,14 +345,11 @@ fun PetalOverflowMenuSheet(
     pageUrl: String,
     isBookmarked: Boolean,
     canGoBack: Boolean,
-    canGoForward: Boolean,
     isDesktopSite: Boolean,
     isAdBlockEnabled: Boolean = true,
     isMediaPlaying: Boolean = false,
     onDismissRequest: () -> Unit = {},
-    onGoHome: () -> Unit = {},
     onGoBack: () -> Unit,
-    onGoForward: () -> Unit,
     onToggleBookmark: () -> Unit,
     onOpenDownloadsShortcut: () -> Unit,
     onOpenPageInfo: () -> Unit,
@@ -393,213 +383,11 @@ fun PetalOverflowMenuSheet(
     onOpenQuickTools: () -> Unit = {},
     handleBackInternally: Boolean = false
 ) {
-    val context = LocalContext.current
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
-    var isVisible by remember { mutableStateOf(false) }
-    var isDismissing by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        com.petal.browser.motion.MotionGate.withMotion("overflow_menu_open") {
-            isVisible = true
-            kotlinx.coroutines.delay(250)
-        }
-    }
-
-    val handleDismiss = {
-        if (!isDismissing) {
-            isDismissing = true
-            isVisible = false
-        }
-    }
-
-    if (handleBackInternally) {
-        BackHandler(enabled = !isDismissing) {
-            handleDismiss()
-        }
-    }
-
-    LaunchedEffect(isDismissing) {
-        if (isDismissing) {
-            com.petal.browser.motion.MotionGate.withMotion("overflow_menu_close") {
-                kotlinx.coroutines.delay(180)
-            }
-            onDismissRequest()
-        }
-    }
-
-    val scale by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0.12f,
-        animationSpec = if (isVisible) {
-            PetalSpring.menuPop()
-        } else {
-            PetalSpring.exit()
-        },
-        label = "MenuExpandScale"
-    )
-
-    val translationY by animateFloatAsState(
-        targetValue = if (isVisible) 0f else 32f,
-        animationSpec = if (isVisible) {
-            PetalSpring.menuPop()
-        } else {
-            PetalSpring.exit()
-        },
-        label = "MenuSlideY"
-    )
-
-    val translationX by animateFloatAsState(
-        targetValue = if (isVisible) 0f else 8f,
-        animationSpec = if (isVisible) {
-            PetalSpring.menuPop()
-        } else {
-            PetalSpring.exit()
-        },
-        label = "MenuSlideX"
-    )
-
-    val alpha by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0f,
-        animationSpec = if (isVisible) PetalSpring.fadeIn() else PetalSpring.fadeOut(),
-        label = "MenuExpandAlpha"
-    )
-
-    val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-    // Window blur is applied by the hosting window (PetalRootApp Dialog, or showOverflowMenu); this only decides what the Compose layer draws.
-    val blur = com.petal.browser.ui.blur.rememberPetalBlurState(com.petal.browser.ui.blur.PetalBlurSurface.OVERFLOW_MENU)
-    val useBlurBg = blur.enabled
-    val windowBlurActive = blur.active
-    val ambientWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
-    val ambientSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
-    val liveSource = remember(context, ambientSource) {
-        if (ambientSource != null && ambientSource.isAttachedToWindow && ambientSource.width > 0) {
-            ambientSource
-        } else {
-            var c: android.content.Context? = context
-            while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
-            (c as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main_content)
-                ?: (c as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main)
-        }
-    }
-    val ownWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
-    val isHomeGlass = liveSource == null && ambientWallpaper != null && ambientWallpaper.ready
-    val wallpaper = if (isHomeGlass) ambientWallpaper!! else ownWallpaper
-    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
-    val frameTick = remember { mutableLongStateOf(0L) }
-    LaunchedEffect(isLiquidGlass, liveSource, useBlurBg, isVisible) {
-        if (isLiquidGlass && liveSource != null && useBlurBg && isVisible) {
-            while (isVisible) { withFrameNanos { frameTick.longValue = it } }
-        }
-    }
-
-    CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper) {
-      Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = handleDismiss
-            )
-      ) {
-        if (!useBlurBg) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f * alpha))
-            )
-        } else if (isLiquidGlass && liveSource != null) {
-            // Live: re-record the real app window behind the menu every frame. This only feeds the
-            // glass panels; the blurred page itself comes from the window blur. The tint is only
-            // drawn when the window blur (which carries its own dim) is not running.
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .liveGlassWallpaper(wallpaper, liveSource) { frameTick.longValue }
-            )
-            if (!windowBlurActive) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.18f * alpha))
-                )
-            }
-        } else if (isLiquidGlass && isHomeGlass) {
-            if (!windowBlurActive) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.18f * alpha))
-                )
-            }
-        } else if (isLiquidGlass) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .recordGlassWallpaper(wallpaper)
-            ) {
-                if (snapshotBitmap != null && !snapshotBitmap.isRecycled) {
-                    Image(
-                        bitmap = snapshotBitmap.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = androidx.compose.ui.layout.ContentScale.FillBounds
-                    )
-                } else {
-                    com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
-                }
-            }
-            if (!windowBlurActive) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.20f * alpha))
-                )
-            }
-        } else if (!windowBlurActive) {
-            // Material 3 Expressive, blur wanted but the OS cannot blur right now: plain dim.
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f * alpha))
-            )
-        }
-
-        val navBarBottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val statusBarTopInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val bottomOffset = navBarBottomInset + 76.dp
-        val topOffset = statusBarTopInset + 16.dp
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    top = topOffset,
-                    end = 12.dp,
-                    start = 12.dp,
-                    bottom = bottomOffset
-                ),
-            contentAlignment = Alignment.BottomEnd
-        ) {
-        com.petal.browser.ui.containment.PetalHeroCard(
-            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            modifier = Modifier
-                .fillMaxWidth(0.88f)
-                .widthIn(max = 350.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {}
-                )
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    this.translationY = translationY
-                    this.translationX = translationX
-                    this.alpha = alpha
-                    transformOrigin = TransformOrigin(0.92f, 1f)
-                }
-        ) {
+    PetalOverflowMenuShell(
+        onDismissRequest = onDismissRequest,
+        handleBackInternally = handleBackInternally
+    ) {
             val isHomePage = remember(pageUrl, pageTitle) {
                 pageUrl.isBlank() ||
                 pageUrl.equals("about:blank", ignoreCase = true) ||
@@ -627,25 +415,10 @@ fun PetalOverflowMenuSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CircularIconButton(
-                        icon = Icons.Rounded.Home,
-                        contentDescription = stringResource(R.string.ui_home),
-                        enabled = !isHomePage,
-                        onClick = {
-                            onDismissRequest()
-                            onGoHome()
-                        }
-                    )
-                    CircularIconButton(
                         icon = Icons.Rounded.ArrowBack,
                         contentDescription = stringResource(R.string.ui_back),
                         enabled = canGoBack,
                         onClick = onGoBack
-                    )
-                    CircularIconButton(
-                        icon = Icons.Rounded.ArrowForward,
-                        contentDescription = stringResource(R.string.ui_forward),
-                        enabled = canGoForward,
-                        onClick = onGoForward
                     )
                     CircularIconButton(
                         icon = Icons.Rounded.Refresh,
@@ -902,6 +675,227 @@ fun PetalOverflowMenuSheet(
 
                 Spacer(Modifier.height(8.dp))
             }
+    }
+}
+
+/**
+ * Shared popup shell for the stable and beta overflow menus: entrance animation, window-blur-aware
+ * backdrop, glass wallpaper, popup size/position (same anchor, insets and max size) and the hero card.
+ * Both menus draw through this, so size, position, blur, translucency and fallbacks stay identical.
+ */
+@Composable
+internal fun PetalOverflowMenuShell(
+    onDismissRequest: () -> Unit,
+    handleBackInternally: Boolean,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val context = LocalContext.current
+    var isVisible by remember { mutableStateOf(false) }
+    var isDismissing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        com.petal.browser.motion.MotionGate.withMotion("overflow_menu_open") {
+            isVisible = true
+            kotlinx.coroutines.delay(250)
+        }
+    }
+
+    val handleDismiss = {
+        if (!isDismissing) {
+            isDismissing = true
+            isVisible = false
+        }
+    }
+
+    if (handleBackInternally) {
+        BackHandler(enabled = !isDismissing) {
+            handleDismiss()
+        }
+    }
+
+    LaunchedEffect(isDismissing) {
+        if (isDismissing) {
+            com.petal.browser.motion.MotionGate.withMotion("overflow_menu_close") {
+                kotlinx.coroutines.delay(180)
+            }
+            onDismissRequest()
+        }
+    }
+
+    val scale by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0.12f,
+        animationSpec = if (isVisible) {
+            PetalSpring.menuPop()
+        } else {
+            PetalSpring.exit()
+        },
+        label = "MenuExpandScale"
+    )
+
+    val translationY by animateFloatAsState(
+        targetValue = if (isVisible) 0f else 32f,
+        animationSpec = if (isVisible) {
+            PetalSpring.menuPop()
+        } else {
+            PetalSpring.exit()
+        },
+        label = "MenuSlideY"
+    )
+
+    val translationX by animateFloatAsState(
+        targetValue = if (isVisible) 0f else 8f,
+        animationSpec = if (isVisible) {
+            PetalSpring.menuPop()
+        } else {
+            PetalSpring.exit()
+        },
+        label = "MenuSlideX"
+    )
+
+    val alpha by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0f,
+        animationSpec = if (isVisible) PetalSpring.fadeIn() else PetalSpring.fadeOut(),
+        label = "MenuExpandAlpha"
+    )
+
+    val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    // Window blur is applied by the hosting window (PetalRootApp Dialog, or showOverflowMenu); this only decides what the Compose layer draws.
+    val blur = com.petal.browser.ui.blur.rememberPetalBlurState(com.petal.browser.ui.blur.PetalBlurSurface.OVERFLOW_MENU)
+    val useBlurBg = blur.enabled
+    val windowBlurActive = blur.active
+    val ambientWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current
+    val ambientSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
+    val liveSource = remember(context, ambientSource) {
+        if (ambientSource != null && ambientSource.isAttachedToWindow && ambientSource.width > 0) {
+            ambientSource
+        } else {
+            var c: android.content.Context? = context
+            while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
+            (c as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main_content)
+                ?: (c as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main)
+        }
+    }
+    val ownWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
+    val isHomeGlass = liveSource == null && ambientWallpaper != null && ambientWallpaper.ready
+    val wallpaper = if (isHomeGlass) ambientWallpaper!! else ownWallpaper
+    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current }
+    val frameTick = remember { mutableLongStateOf(0L) }
+    LaunchedEffect(isLiquidGlass, liveSource, useBlurBg, isVisible) {
+        if (isLiquidGlass && liveSource != null && useBlurBg && isVisible) {
+            while (isVisible) { withFrameNanos { frameTick.longValue = it } }
+        }
+    }
+
+    CompositionLocalProvider(com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides wallpaper) {
+      Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = handleDismiss
+            )
+      ) {
+        if (!useBlurBg) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f * alpha))
+            )
+        } else if (isLiquidGlass && liveSource != null) {
+            // Live: re-record the real app window behind the menu every frame. This only feeds the
+            // glass panels; the blurred page itself comes from the window blur. The tint is only
+            // drawn when the window blur (which carries its own dim) is not running.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .liveGlassWallpaper(wallpaper, liveSource) { frameTick.longValue }
+            )
+            if (!windowBlurActive) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.18f * alpha))
+                )
+            }
+        } else if (isLiquidGlass && isHomeGlass) {
+            if (!windowBlurActive) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.18f * alpha))
+                )
+            }
+        } else if (isLiquidGlass) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .recordGlassWallpaper(wallpaper)
+            ) {
+                if (snapshotBitmap != null && !snapshotBitmap.isRecycled) {
+                    Image(
+                        bitmap = snapshotBitmap.asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.FillBounds
+                    )
+                } else {
+                    com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
+                }
+            }
+            if (!windowBlurActive) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.20f * alpha))
+                )
+            }
+        } else if (!windowBlurActive) {
+            // Material 3 Expressive, blur wanted but the OS cannot blur right now: plain dim.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f * alpha))
+            )
+        }
+
+        val navBarBottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val statusBarTopInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        val bottomOffset = navBarBottomInset + 76.dp
+        val topOffset = statusBarTopInset + 16.dp
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    top = topOffset,
+                    end = 12.dp,
+                    start = 12.dp,
+                    bottom = bottomOffset
+                ),
+            contentAlignment = Alignment.BottomEnd
+        ) {
+        com.petal.browser.ui.containment.PetalHeroCard(
+            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            modifier = Modifier
+                .fillMaxWidth(0.88f)
+                .widthIn(max = 350.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {}
+                )
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    this.translationY = translationY
+                    this.translationX = translationX
+                    this.alpha = alpha
+                    transformOrigin = TransformOrigin(0.92f, 1f)
+                }
+        ) {
+            content()
         }
         }
       }

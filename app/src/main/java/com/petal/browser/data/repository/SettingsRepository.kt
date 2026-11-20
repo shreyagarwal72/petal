@@ -125,6 +125,7 @@ interface SettingsRepository {
     val autoOpenApps: Flow<Boolean>
     val customTabsEnabled: Flow<Boolean>
     val customTabsEtp: Flow<Boolean>
+    val newMainMenuBeta: Flow<Boolean>
     val checkUpdateOnLaunch: Flow<Boolean>
     val torrentEngineMode: Flow<String>
     val downloadManagerMode: Flow<String>
@@ -259,6 +260,7 @@ interface SettingsRepository {
     suspend fun setAutoOpenApps(enabled: Boolean)
     suspend fun setCustomTabsEnabled(enabled: Boolean)
     suspend fun setCustomTabsEtp(enabled: Boolean)
+    suspend fun setNewMainMenuBeta(enabled: Boolean)
     suspend fun setCheckUpdateOnLaunch(enabled: Boolean)
     suspend fun setTorrentEngineMode(mode: String)
     suspend fun setDownloadManagerMode(mode: String)

@@ -785,6 +785,8 @@ fun PetalSettingsToggleRow(
     modifier: Modifier = Modifier,
     /** When set, the badge uses this variant's colours (like the Settings hub / Account rows) instead of the on/off colours. */
     variant: PetalBadgeVariant? = null,
+    /** Optional small label drawn right after the title (for example a "Beta" badge). */
+    titleSuffix: (@Composable () -> Unit)? = null,
 ) {
     val source = remember { MutableInteractionSource() }
     val scale = rememberPetalGroupPressScale(source)
@@ -824,14 +826,18 @@ fun PetalSettingsToggleRow(
             PetalGroupIconBadge(icon, badgeContainer, badgeTint)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f).padding(end = 8.dp)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.38f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.38f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    titleSuffix?.invoke()
+                }
                 if (subtitle.isNotBlank()) {
                     Text(
                         subtitle,

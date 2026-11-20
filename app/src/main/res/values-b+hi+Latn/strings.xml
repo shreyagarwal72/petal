@@ -1859,4 +1859,18 @@
     <string name="petal_setup_feat_tools">Built-in power tools</string>
     <string name="petal_setup_all_languages">Saari languages</string>
     <string name="petal_setup_language_search">Language khojo</string>
+    <string name="menu_beta_section_title">New main menu</string>
+    <string name="menu_beta_setting_title">New main menu (Beta)</string>
+    <string name="menu_beta_setting_subtitle">Experimental redesign of the main menu. Takes effect the next time you open it.</string>
+    <string name="menu_beta_badge">Beta</string>
+    <string name="menu_tile_private">Private tab</string>
+    <string name="menu_tile_addons">Add-ons</string>
+    <string name="menu_tile_shield">Shield</string>
+    <string name="menu_shield_open_stats">Open shield stats</string>
+    <string name="menu_addons_count_desc">Add-ons, %1$d active</string>
+    <string name="menu_view_page_source">View page source</string>
+    <string name="menu_more_tools_subtitle">Quick tools, DevTools, clean link &amp; PDF</string>
+    <string name="menu_active_add_ons">%1$d active add-ons</string>
+    <string name="menu_state_on">On</string>
+    <string name="menu_state_off">Off</string>
 </resources>

@@ -24,6 +24,9 @@ class MiscSettingsViewModel @Inject constructor(
     val customTabsEtp: StateFlow<Boolean> = settingsRepository.customTabsEtp
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val newMainMenuBeta: StateFlow<Boolean> = settingsRepository.newMainMenuBeta
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val checkUpdateOnLaunch: StateFlow<Boolean> = settingsRepository.checkUpdateOnLaunch
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -37,6 +40,10 @@ class MiscSettingsViewModel @Inject constructor(
 
     fun setCustomTabsEtp(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setCustomTabsEtp(enabled)
+    }
+
+    fun setNewMainMenuBeta(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setNewMainMenuBeta(enabled)
     }
 
     fun setCheckUpdateOnLaunch(enabled: Boolean) = viewModelScope.launch {

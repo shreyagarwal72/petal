@@ -93,6 +93,10 @@ import com.petal.browser.ui.components.PetalBottomNavBar
 import com.petal.browser.ui.components.PetalNavTab
 import com.petal.browser.ui.components.PetalOmniboxPage
 import com.petal.browser.ui.components.PetalOverflowMenuSheet
+import com.petal.browser.ui.components.PetalOverflowMenuSheetBeta
+import com.petal.browser.ui.components.PREF_NEW_MAIN_MENU_BETA
+import com.petal.browser.ui.components.PREF_NEW_MAIN_MENU_BETA_PENDING
+import com.petal.browser.ui.components.shouldUsePetalBetaMenu
 import com.petal.browser.ui.components.PetalPrivacyShieldSheet
 import com.petal.browser.ui.components.PetalSiteInfoBridge
 import com.petal.browser.tools.PetalDevConsoleSheet
@@ -1295,19 +1299,179 @@ fun PetalRootApp(
                     Modifier.fillMaxSize()
                         .overlayBackPose(overlayPose, 0.9f, 0.12f)
                 ) {
+                // Stable stays the default. The Beta setting is read once per open, so a change applies
+                // the next time the menu opens (no restart). A failed/unrenderable beta falls back to stable.
+                var betaMenuFailed by remember { mutableStateOf(false) }
+                val useBetaMenu = remember { shouldUsePetalBetaMenu(context, sp) } && !betaMenuFailed
+                androidx.compose.runtime.DisposableEffect(Unit) {
+                    onDispose { sp.edit().putBoolean(PREF_NEW_MAIN_MENU_BETA_PENDING, false).apply() }
+                }
+                if (useBetaMenu) {
+                PetalOverflowMenuSheetBeta(
+                    pageTitle = activeTitle,
+                    pageUrl = activeUrl,
+                    isBookmarked = isBookmarked,
+                    canGoBack = canGoBack,
+                    isDesktopSite = isDesktopMode,
+                    isAdBlockEnabled = isAdBlockEnabled,
+                    isMediaPlaying = isMediaPlaying,
+                    onDismissRequest = { viewModel.setMenuOpen(false) },
+                    onGoBack = { webGoBack() },
+                    onToggleBookmark = { viewModel.toggleBookmark(activeTitle, activeUrl) },
+                    onOpenDownloadsShortcut = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openDownloads()
+                    },
+                    onOpenPageInfo = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.let { act ->
+                            PetalSiteInfoBridge.showSiteInfoBottomSheet(act, act.currentAlbumController) {}
+                        }
+                    },
+                    onReload = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.reload()
+                    },
+                    onToggleDesktopSite = { enabled ->
+                        viewModel.toggleDesktopMode(enabled)
+                    },
+                    onToggleAdBlock = { enabled ->
+                        viewModel.toggleAdBlock(enabled)
+                    },
+                    onNewTab = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openNewTab("about:home", selectTab = true)
+                    },
+                    onNewIncognitoTab = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openNewTab("about:home", selectTab = true, private = true)
+                    },
+                    onOpenHistory = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openHistory()
+                    },
+                    onDeleteBrowsingData = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openDelete()
+                    },
+                    onOpenDownloads = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openDownloads()
+                    },
+                    onOpenBookmarks = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openBookmarks()
+                    },
+                    onInstallPwa = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.installPwaShortcut()
+                    },
+                    onSearchOnSite = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openFindInPage()
+                    },
+                    onShowReadingMode = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.showReaderMode()
+                    },
+                    onPrintPdf = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.createWebPrintJob(null)
+                    },
+                    onSavePage = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.savePageOffline()
+                    },
+                    onShareLink = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.shareLink(activeTitle, activeUrl)
+                    },
+                    onCopyCleanLink = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.copyCleanLink(activeUrl)
+                    },
+                    onOpenShieldHud = {
+                        viewModel.setMenuOpen(false)
+                        activity?.let { act ->
+                            PetalPrivacyShieldSheet.show(act, activeUrl) { enabled ->
+                                viewModel.toggleAdBlock(enabled)
+                            }
+                        }
+                    },
+                    onViewSource = {
+                        viewModel.setMenuOpen(false)
+                        if (activeUrl.isNotBlank() && !activeUrl.startsWith("about:") && !activeUrl.startsWith("view-source:")) {
+                            viewModel.loadUrl("view-source:$activeUrl")
+                        }
+                    },
+                    onOpenSettings = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openSettings(SettingsCategory.OVERVIEW)
+                    },
+                    onTriggerMediaMode = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.triggerSystemPipMode()
+                    },
+                    onOpenPetalAi = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openAiSheet()
+                    },
+                    onOpenExtensions = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openExtensions()
+                    },
+                    onOpenExtensionsMenu = {
+                        viewModel.setMenuOpen(false)
+                        activity?.let {
+                            PetalExtensionsMenuSheet.show(it, activeUrl) {
+                                viewModel.openExtensions()
+                            }
+                        } ?: viewModel.openExtensions()
+                    },
+                    onOpenExtensionAction = { extensionId ->
+                        viewModel.setMenuOpen(false)
+                        activity?.let { PetalExtensionManager.triggerBrowserAction(extensionId, it) }
+                    },
+                    onOpenExtensionSettings = { extensionId ->
+                        viewModel.setMenuOpen(false)
+                        activity?.let { PetalExtensionManager.openOptionsPage(extensionId, it) }
+                    },
+                    onOpenDevConsole = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openDevConsole()
+                    },
+                    onOpenSafeLocker = {
+                        viewModel.setMenuOpen(false)
+                        viewModel.openSafeLocker()
+                    },
+                    onOpenQuickTools = {
+                        viewModel.setMenuOpen(false)
+                        (activity as? MainActivity)?.showQuickTools()
+                    },
+                    handleBackInternally = true,
+                    onRenderConfirmed = {
+                        sp.edit().putBoolean(PREF_NEW_MAIN_MENU_BETA_PENDING, false).apply()
+                    },
+                    onRenderFailed = {
+                        // Could not render: back to the stable menu now and stop retrying the beta.
+                        sp.edit()
+                            .putBoolean(PREF_NEW_MAIN_MENU_BETA_PENDING, false)
+                            .putBoolean(PREF_NEW_MAIN_MENU_BETA, false)
+                            .apply()
+                        betaMenuFailed = true
+                    }
+                )
+                } else {
                 PetalOverflowMenuSheet(
                     pageTitle = activeTitle,
                     pageUrl = activeUrl,
                     isBookmarked = isBookmarked,
                     canGoBack = canGoBack,
-                    canGoForward = canGoForward,
                     isDesktopSite = isDesktopMode,
                     isAdBlockEnabled = isAdBlockEnabled,
                     isMediaPlaying = isMediaPlaying,
                     onDismissRequest = { viewModel.setMenuOpen(false) },
-                    onGoHome = { viewModel.goHome(isIncognito) },
                     onGoBack = { webGoBack() },
-                    onGoForward = { viewModel.goForward() },
                     onToggleBookmark = { viewModel.toggleBookmark(activeTitle, activeUrl) },
                     onOpenDownloadsShortcut = {
                         viewModel.setMenuOpen(false)
@@ -1441,6 +1605,7 @@ fun PetalRootApp(
                     },
                     handleBackInternally = true
                 )
+                }
                 }
                 }
                 }
