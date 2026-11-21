@@ -454,14 +454,8 @@ class PetalBrowserViewModel @Inject constructor(
     private fun snapshotBeforeClose(tab: TabSessionState) {
         if (tab.content.private) return
         try {
-            // Live engine session (if any) holds the freshest history; otherwise use the stored state.
-            val liveState = try {
-                tab.engineState.engineSession?.let { es ->
-                    val gs = com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(es)
-                    com.petal.browser.browser.PetalSessionRestoreManager.wrapGeckoState(gs?.sessionState)
-                }
-            } catch (_: Throwable) { null }
-            val saved = liveState ?: tab.engineState.engineSessionState
+            // Live history state is continuously synchronized to tab.engineState.engineSessionState by Mozilla engine delegates.
+            val saved = tab.engineState.engineSessionState
             val thumb = TabThumbnailCache.getMemoryOrDisk(tab.id)?.let { b ->
                 if (b.isRecycled) null else try { b.copy(b.config ?: android.graphics.Bitmap.Config.ARGB_8888, false) } catch (_: Throwable) { null }
             }

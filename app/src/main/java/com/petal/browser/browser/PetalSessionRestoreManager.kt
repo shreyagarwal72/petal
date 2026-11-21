@@ -122,23 +122,8 @@ object PetalSessionRestoreManager {
             val store = PetalEngineStore.getStore(activity)
             if (!store.state.restoreComplete) return
 
-            // 1. BrowserStore is the source of truth for url/title/selection. On stop, also capture the
-            //    engine state (history stack, scroll, form data) of every NORMAL tab that has a live
-            //    engine session. Private tabs are never captured or persisted.
-            if (isStopping) {
-                store.state.tabs.filter { !it.content.private }.forEach { tab ->
-                    val engineSession = tab.engineState.engineSession ?: return@forEach
-                    try {
-                        val gs = com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(engineSession)
-                        val engineState = wrapGeckoState(gs?.sessionState) ?: tab.engineState.engineSessionState
-                        if (engineState != null) {
-                            store.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, engineState))
-                        }
-                    } catch (t: Throwable) {
-                        Log.w(TAG, "Failed to capture engine state for tab ${tab.id}: ${t.message}")
-                    }
-                }
-            }
+            // 1. BrowserStore is the source of truth for url/title/selection and engineSessionState
+            //    (automatically synchronized by Mozilla engine delegates). Private tabs are never persisted.
 
             // 2. (selection already lives in BrowserStore; nothing to sync)
 
