@@ -2055,26 +2055,24 @@ private fun PdfEditTopBar(
                             modifier = Modifier.width(220.dp)
                         )
 
-                        PetalLiquidIconButton(
-                            onClick = onUndo,
-                            enabled = canUndo,
-                            size = 38.dp,
-                            contentDescription = stringResource(R.string.ui_undo),
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.Undo,
-                                contentDescription = null,
-                                tint = if (canUndo) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.35f)
-                            )
-                        }
-
-                        PetalLiquidIconButton(
-                            onClick = onClearAnnotations,
-                            size = 38.dp,
-                            contentDescription = stringResource(R.string.ui_clear),
-                        ) {
-                            Icon(Icons.Rounded.DeleteSweep, contentDescription = null)
-                        }
+                        com.petal.browser.ui.components.PetalOverflowActionRow(
+                            actions = listOf(
+                                com.petal.browser.ui.components.PetalOverflowAction(
+                                    id = "undo",
+                                    label = stringResource(R.string.ui_undo),
+                                    icon = Icons.AutoMirrored.Rounded.Undo,
+                                    enabled = canUndo,
+                                    onClick = onUndo
+                                ),
+                                com.petal.browser.ui.components.PetalOverflowAction(
+                                    id = "clear",
+                                    label = stringResource(R.string.ui_clear),
+                                    icon = Icons.Rounded.DeleteSweep,
+                                    onClick = onClearAnnotations
+                                ),
+                            ),
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
                     }
 
                     PetalLiquidButton(

@@ -367,6 +367,8 @@ private fun StoreExtensionsPage(
         }
     }
 
+    val featuredAddons = remember(allAddons) { allAddons.sortedByDescending { it.rating }.take(8) }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Spacer(Modifier.height(com.petal.browser.ui.components.LocalGlassHeaderInset.current))
         // Category Filter Chips
@@ -439,6 +441,15 @@ private fun StoreExtensionsPage(
                     }
                 }
 
+                item(key = "featured_addons") {
+                    FeaturedAddonsRow(
+                        addons = featuredAddons,
+                        installedExtensions = installedExtensions,
+                        isBusy = isBusy,
+                        onInstall = onInstall
+                    )
+                }
+
                 // Render each categorized PetalSettingsSection
                 categorySections.forEach { (category, title, icon) ->
                     val addonsInCategory = allAddons.filter { it.category == category }
@@ -502,6 +513,78 @@ private fun StoreExtensionsPage(
                 }
             }
         )
+        }
+    }
+}
+
+/** Top-rated add-ons in a horizontal uncontained carousel (fixed width cards, no mask). */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun FeaturedAddonsRow(
+    addons: List<PetalStoreCatalog.StoreAddon>,
+    installedExtensions: List<PetalExtensionManager.InstalledExtension>,
+    isBusy: Boolean,
+    onInstall: (PetalStoreCatalog.StoreAddon) -> Unit
+) {
+    if (addons.isEmpty()) return
+    val context = LocalContext.current
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.ui_store_featured),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+        )
+        val state = androidx.compose.material3.carousel.rememberCarouselState { addons.size }
+        androidx.compose.material3.carousel.HorizontalUncontainedCarousel(
+            state = state,
+            itemWidth = 156.dp,
+            itemSpacing = 8.dp,
+            modifier = Modifier.fillMaxWidth().height(148.dp),
+            contentPadding = PaddingValues(horizontal = 0.dp),
+        ) { index ->
+            val addon = addons[index]
+            val isInstalled = installedExtensions.any { PetalStoreCatalog.isAddonInstalled(addon, it) }
+            val iconUrl = PetalCuratedExtensionsData.getAmoIconUrl(addon.amoSlug) ?: PetalCuratedExtensionsData.getAmoIconUrl(addon.id)
+            val visual = PetalCuratedExtensionsData.getVisual(addon.amoSlug)
+            Surface(
+                onClick = { if (!isInstalled && !isBusy) onInstall(addon) },
+                shape = MaterialTheme.shapes.extraLarge,
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(14.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Box(
+                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (!iconUrl.isNullOrBlank()) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(context).data(iconUrl).crossfade(true).build(),
+                                contentDescription = addon.name,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        } else {
+                            Icon(visual?.icon ?: Icons.Rounded.Extension, null, tint = visual?.accentColor ?: MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
+                        }
+                    }
+                    Column {
+                        Text(addon.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            text = if (isInstalled) stringResource(R.string.ui_store_installed_short) else addon.category.displayName,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.75f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
         }
     }
 }

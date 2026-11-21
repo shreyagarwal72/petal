@@ -70,6 +70,9 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.components.PetalSwipeActionRow
+import com.petal.browser.ui.components.PetalRowSwipeAction
+import com.petal.browser.ui.components.PetalGroupRole
 import com.petal.browser.ui.containment.petalGroupPositionFor
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
@@ -151,10 +154,14 @@ fun PetalBookmarksScreen(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onOpenUrl: (String) -> Unit = {},
     onBookmarksChanged: () -> Unit = {},
-    onDismiss: () -> Unit = {}
+    onDismiss: () -> Unit = {},
+    isIncognito: Boolean = false
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
+    var searchExpanded by remember { mutableStateOf(false) }
+    val recentsKey = "bookmarks"
+    var recentSearches by remember { mutableStateOf(com.petal.browser.ui.components.PetalRecentSearches.load(context, recentsKey)) }
     var showClearConfirm by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showReadingListOnly by remember { mutableStateOf(false) }
@@ -223,9 +230,10 @@ fun PetalBookmarksScreen(
         }
     }
 
-    val hasSubOverlay = editingRecord != null || optionsRecord != null || showAddDialog || showClearConfirm || showReadingListOnly || searchQuery.isNotEmpty()
+    val hasSubOverlay = searchExpanded || editingRecord != null || optionsRecord != null || showAddDialog || showClearConfirm || showReadingListOnly || searchQuery.isNotEmpty()
     val handleDismiss: () -> Unit = {
         when {
+            searchExpanded -> searchExpanded = false
             optionsRecord != null -> optionsRecord = null
             editingRecord != null -> editingRecord = null
             showAddDialog -> showAddDialog = false
@@ -268,31 +276,11 @@ fun PetalBookmarksScreen(
                 val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                 val searchShape = RoundedCornerShape(24.dp)
             val headerExtrasB: @Composable () -> Unit = {
-                TextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text(stringResource(R.string.ui_search_bookmarks)) },
-                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear_search))
-                            }
-                        }
-                    },
-                    singleLine = true,
-                    shape = searchShape,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp)
-                        .liquidGlassChrome(shape = searchShape, enabled = isGlass, sheenIntensity = 0.45f), glass = false
+                com.petal.browser.ui.components.PetalSearchPill(
+                    query = searchQuery,
+                    placeholder = stringResource(R.string.ui_search_bookmarks),
+                    onClick = { searchExpanded = true },
+                    onClear = { searchQuery = "" }
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -452,10 +440,58 @@ fun PetalBookmarksScreen(
                         itemsIndexed(filteredBookmarks, key = { index, record -> "${record.url}_${record.time}_${record.iconColor}_$index" }) { index, record ->
                             val faviconUrl = remember(record.url) { getFaviconUrl(record.url) }
                             var isFaviconError by remember(record.url) { mutableStateOf(false) }
+                            val deleteEntry: () -> Unit = {
+                                                val deletedRecord = record
+                                                try {
+                                                    val action = HistoryBookmarkRepository(context)
+                                                    action.open(true)
+                                                    action.deleteURL(deletedRecord.url, HistoryBookmarkContract.TABLE_BOOKMARK)
+                                                    action.close()
+                                                } catch (_: Exception) {}
+                                                reloadBookmarks()
+
+                                                coroutineScope.launch {
+                                                    val displayTitle = deletedRecord.title?.takeIf { it.isNotBlank() } ?: deletedRecord.url ?: "Bookmark"
+                                                    val result = snackbarHostState.showSnackbar(
+                                                        message = "Deleted \"$displayTitle\"",
+                                                        actionLabel = "Undo",
+                                                        duration = SnackbarDuration.Short
+                                                    )
+                                                    if (result == SnackbarResult.ActionPerformed) {
+                                                        try {
+                                                            val action = HistoryBookmarkRepository(context)
+                                                            action.open(true)
+                                                            action.addBookmark(deletedRecord)
+                                                            action.close()
+                                                        } catch (_: Exception) {}
+                                                        reloadBookmarks()
+                                                    }
+                                                }
+                            }
+                            val swipeEditLabel = stringResource(R.string.ui_swipe_edit)
+                            val swipeDeleteLabel = stringResource(R.string.ui_delete)
+                            PetalSwipeActionRow(
+                                modifier = Modifier.animateItem().entrance(index = index, playKey = "${record.url}_${record.iconColor}"),
+                                startActions = listOf(
+                                    PetalRowSwipeAction(
+                                        label = swipeEditLabel,
+                                        icon = Icons.Rounded.Edit,
+                                        role = PetalGroupRole.Tertiary,
+                                        onTrigger = { optionsRecord = record }
+                                    )
+                                ),
+                                endActions = listOf(
+                                    PetalRowSwipeAction(
+                                        label = swipeDeleteLabel,
+                                        icon = Icons.Rounded.Close,
+                                        destructive = true,
+                                        onTrigger = deleteEntry
+                                    )
+                                )
+                            ) {
                             PetalGroupListRow(
                                 position = petalGroupPositionFor(index, filteredBookmarks.size),
                                 onClick = { onOpenUrl(record.url) },
-                                modifier = Modifier.animateItem().entrance(index = index, playKey = "${record.url}_${record.iconColor}"),
                                 leading = {
                                     Box(
                                         Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primaryContainer),
@@ -500,37 +536,7 @@ fun PetalBookmarksScreen(
                                                 modifier = Modifier.size(18.dp)
                                             )
                                         }
-                                        IconButton(
-                                            onClick = {
-                                                val deletedRecord = record
-                                                try {
-                                                    val action = HistoryBookmarkRepository(context)
-                                                    action.open(true)
-                                                    action.deleteURL(deletedRecord.url, HistoryBookmarkContract.TABLE_BOOKMARK)
-                                                    action.close()
-                                                } catch (_: Exception) {}
-                                                reloadBookmarks()
-
-                                                coroutineScope.launch {
-                                                    val displayTitle = deletedRecord.title?.takeIf { it.isNotBlank() } ?: deletedRecord.url ?: "Bookmark"
-                                                    val result = snackbarHostState.showSnackbar(
-                                                        message = "Deleted \"$displayTitle\"",
-                                                        actionLabel = "Undo",
-                                                        duration = SnackbarDuration.Short
-                                                    )
-                                                    if (result == SnackbarResult.ActionPerformed) {
-                                                        try {
-                                                            val action = HistoryBookmarkRepository(context)
-                                                            action.open(true)
-                                                            action.addBookmark(deletedRecord)
-                                                            action.close()
-                                                        } catch (_: Exception) {}
-                                                        reloadBookmarks()
-                                                    }
-                                                }
-                                            },
-                                            modifier = Modifier.size(36.dp)
-                                        ) {
+                                        IconButton(onClick = deleteEntry, modifier = Modifier.size(36.dp)) {
                                             Icon(
                                                 Icons.Rounded.Close,
                                                 contentDescription = "Delete Bookmark",
@@ -541,6 +547,7 @@ fun PetalBookmarksScreen(
                                     }
                                 }
                             )
+                            }
                         }
                     }
 
@@ -555,6 +562,26 @@ fun PetalBookmarksScreen(
             }
                 }
             }
+
+        com.petal.browser.ui.components.PetalSearchOverlay(
+            visible = searchExpanded,
+            query = searchQuery,
+            onQueryChange = { searchQuery = it },
+            placeholder = stringResource(R.string.ui_search_bookmarks),
+            recents = recentSearches,
+            resultCount = filteredBookmarks.size,
+            onSubmit = { q ->
+                recentSearches = com.petal.browser.ui.components.PetalRecentSearches.add(context, recentsKey, recentSearches, q, isIncognito)
+                searchExpanded = false
+            },
+            onRemoveRecent = { q -> recentSearches = com.petal.browser.ui.components.PetalRecentSearches.remove(context, recentsKey, recentSearches, q) },
+            onClearRecents = {
+                com.petal.browser.ui.components.PetalRecentSearches.clear(context, recentsKey)
+                recentSearches = emptyList()
+            },
+            onCollapse = { searchExpanded = false },
+            modifier = Modifier.fillMaxSize()
+        )
     }
 
     // Bookmark Item Options Sheet (Material 3 Expressive)

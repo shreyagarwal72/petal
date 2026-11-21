@@ -12,6 +12,9 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.rounded.MoreVert
+import com.petal.browser.R
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -396,15 +399,49 @@ private fun ActionsRow(
     pressedContainer: Color,
     pressedContent: Color
 ) {
-    Row(
-        modifier = Modifier
-            .horizontalScroll(rememberScrollState())
-            .padding(6.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        actions.forEach { action ->
-            ActionButton(action, contentColor, pressedContainer, pressedContent)
+    // Show as many labelled actions as fit; the rest go behind a trailing "more" button.
+    androidx.compose.foundation.layout.BoxWithConstraints {
+        val slot = 82.dp
+        val moreSlot = 56.dp
+        val available = if (constraints.hasBoundedWidth) maxWidth - 12.dp else 10000.dp
+        val fitAll = ((available + 2.dp) / (slot + 2.dp)).toInt()
+        val visibleCount = if (actions.size <= fitAll) actions.size
+            else ((available - moreSlot) / (slot + 2.dp)).toInt().coerceIn(1, actions.size - 1)
+        val overflow = actions.drop(visibleCount)
+        var menuOpen by remember { mutableStateOf(false) }
+        Row(
+            modifier = Modifier.padding(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            actions.take(visibleCount).forEach { action ->
+                ActionButton(action, contentColor, pressedContainer, pressedContent)
+            }
+            if (overflow.isNotEmpty()) {
+                Box {
+                    ActionButton(
+                        PetalSelectionAction(
+                            id = "overflow",
+                            label = stringResource(R.string.ui_overflow_more_short),
+                            icon = Icons.Rounded.MoreVert,
+                            onClick = { menuOpen = true }
+                        ),
+                        contentColor, pressedContainer, pressedContent
+                    )
+                    com.petal.browser.ui.containment.PetalPopupMenu(
+                        expanded = menuOpen,
+                        onDismissRequest = { menuOpen = false }
+                    ) {
+                        overflow.forEach { item ->
+                            com.petal.browser.ui.containment.PetalPopupMenuItem(
+                                text = item.label,
+                                onClick = { menuOpen = false; item.onClick() },
+                                leadingIcon = { Icon(item.icon, contentDescription = null) }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

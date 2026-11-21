@@ -1171,7 +1171,22 @@ fun PetalRootApp(
                             viewModel.setOmniboxOpen(false)
                             viewModel.loadUrl(query)
                         },
-                        onBackPress = { viewModel.setOmniboxOpen(false) }
+                        onBackPress = { viewModel.setOmniboxOpen(false) },
+                        onCommand = { command ->
+                            viewModel.setOmniboxOpen(false)
+                            when (command) {
+                                PetalOmniboxCommand.TABS -> viewModel.setTabSwitcherOpen(true)
+                                PetalOmniboxCommand.NEW_TAB ->
+                                    viewModel.openNewTab("about:home", selectTab = true)
+                                PetalOmniboxCommand.NEW_INCOGNITO_TAB ->
+                                    viewModel.openNewTab("about:home", selectTab = true, private = true)
+                                PetalOmniboxCommand.HISTORY -> viewModel.openHistory()
+                                PetalOmniboxCommand.BOOKMARKS -> viewModel.openBookmarks()
+                                PetalOmniboxCommand.DOWNLOADS -> viewModel.openDownloads()
+                                PetalOmniboxCommand.SETTINGS -> viewModel.openSettings(SettingsCategory.OVERVIEW)
+                                PetalOmniboxCommand.READER_MODE -> (activity as? MainActivity)?.showReaderMode()
+                            }
+                        }
                     )
                 }
             }
@@ -1609,7 +1624,8 @@ fun PetalRootApp(
                         viewModel.loadUrl(url)
                     },
                     onBookmarksChanged = { viewModel.notifyBookmarksChanged() },
-                    onDismiss = { viewModel.setBookmarksOpen(false) }
+                    onDismiss = { viewModel.setBookmarksOpen(false) },
+                    isIncognito = isIncognito
                 )
             }
 
@@ -1636,7 +1652,8 @@ fun PetalRootApp(
                         viewModel.setHistoryOpen(false)
                         viewModel.openDelete()
                     },
-                    onDismiss = { viewModel.setHistoryOpen(false) }
+                    onDismiss = { viewModel.setHistoryOpen(false) },
+                    isIncognito = isIncognito
                 )
             }
 

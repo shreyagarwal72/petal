@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_swipe_edit">Edit</string>
+    <string name="ui_search_back">Close search</string>
+    <string name="ui_search_recent">Recent searches</string>
+    <string name="ui_search_clear_recents">Clear</string>
+    <string name="ui_search_remove_recent">Remove \"%1$s\" from recent searches</string>
+    <string name="ui_search_show_results">Show %1$d results</string>
+</resources>

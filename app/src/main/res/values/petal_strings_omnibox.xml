@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_slash_title">Commands</string>
+    <string name="ui_slash_tabs">Tabs</string>
+    <string name="ui_slash_tabs_desc">Open the tab switcher</string>
+    <string name="ui_slash_new_tab">New tab</string>
+    <string name="ui_slash_new_tab_desc">Open a fresh tab</string>
+    <string name="ui_slash_incognito">New private tab</string>
+    <string name="ui_slash_incognito_desc">Browse without saving history</string>
+    <string name="ui_slash_history">History</string>
+    <string name="ui_slash_history_desc">Pages you visited recently</string>
+    <string name="ui_slash_bookmarks">Bookmarks</string>
+    <string name="ui_slash_bookmarks_desc">Your saved pages</string>
+    <string name="ui_slash_downloads">Downloads</string>
+    <string name="ui_slash_downloads_desc">Files you downloaded</string>
+    <string name="ui_slash_settings">Settings</string>
+    <string name="ui_slash_settings_desc">Change how Petal works</string>
+    <string name="ui_slash_reader">Reader mode</string>
+    <string name="ui_slash_reader_desc">Distraction-free view of this page</string>
+    <string name="ui_slash_unlock_title">Unlock private tabs</string>
+    <string name="ui_slash_unlock_subtitle">Confirm it is you to open a private tab</string>
+</resources>

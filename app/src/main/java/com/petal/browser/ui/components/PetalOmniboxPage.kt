@@ -35,7 +35,11 @@ import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -45,6 +49,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -102,6 +108,147 @@ import org.json.JSONArray
 import java.net.URI
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+
+/**
+ * Commands reachable from the address bar by typing "/" as the very first character.
+ * The host decides how each one is executed (see the `onCommand` parameter).
+ */
+enum class PetalOmniboxCommand {
+    TABS, NEW_TAB, NEW_INCOGNITO_TAB, HISTORY, BOOKMARKS, DOWNLOADS, SETTINGS, READER_MODE
+}
+
+private class SlashCommandSpec(
+    val command: PetalOmniboxCommand,
+    /** Untranslated token typed after the slash, e.g. "history". */
+    val trigger: String,
+    /** Extra untranslated words that also match, e.g. "recent". */
+    val keywords: List<String>,
+    val name: String,
+    val description: String,
+    val icon: ImageVector,
+    val role: PetalGroupRole,
+)
+
+@Composable
+private fun rememberSlashCommandSpecs(): List<SlashCommandSpec> = listOf(
+    SlashCommandSpec(PetalOmniboxCommand.TABS, "tabs", listOf("tab", "switcher"),
+        stringResource(R.string.ui_slash_tabs), stringResource(R.string.ui_slash_tabs_desc), Icons.Rounded.Layers, PetalGroupRole.Primary),
+    SlashCommandSpec(PetalOmniboxCommand.NEW_TAB, "new", listOf("newtab", "tab", "add"),
+        stringResource(R.string.ui_slash_new_tab), stringResource(R.string.ui_slash_new_tab_desc), Icons.Rounded.Add, PetalGroupRole.Primary),
+    SlashCommandSpec(PetalOmniboxCommand.NEW_INCOGNITO_TAB, "incognito", listOf("private", "newincognito"),
+        stringResource(R.string.ui_slash_incognito), stringResource(R.string.ui_slash_incognito_desc), Icons.Rounded.VisibilityOff, PetalGroupRole.Tertiary),
+    SlashCommandSpec(PetalOmniboxCommand.HISTORY, "history", listOf("recent", "visited"),
+        stringResource(R.string.ui_slash_history), stringResource(R.string.ui_slash_history_desc), Icons.Rounded.History, PetalGroupRole.Secondary),
+    SlashCommandSpec(PetalOmniboxCommand.BOOKMARKS, "bookmarks", listOf("saved", "favorites", "star"),
+        stringResource(R.string.ui_slash_bookmarks), stringResource(R.string.ui_slash_bookmarks_desc), Icons.Rounded.Bookmark, PetalGroupRole.Secondary),
+    SlashCommandSpec(PetalOmniboxCommand.DOWNLOADS, "downloads", listOf("files", "download"),
+        stringResource(R.string.ui_slash_downloads), stringResource(R.string.ui_slash_downloads_desc), Icons.Rounded.Download, PetalGroupRole.Secondary),
+    SlashCommandSpec(PetalOmniboxCommand.SETTINGS, "settings", listOf("preferences", "options", "setting"),
+        stringResource(R.string.ui_slash_settings), stringResource(R.string.ui_slash_settings_desc), Icons.Rounded.Settings, PetalGroupRole.Secondary),
+    SlashCommandSpec(PetalOmniboxCommand.READER_MODE, "reader", listOf("reading", "read"),
+        stringResource(R.string.ui_slash_reader), stringResource(R.string.ui_slash_reader_desc), Icons.Rounded.AutoStories, PetalGroupRole.Primary),
+)
+
+/** Matches the text after the leading slash against a command's trigger, keywords or translated name. */
+private fun filterSlashCommands(specs: List<SlashCommandSpec>, input: String): List<SlashCommandSpec> {
+    val q = input.removePrefix("/").trim().lowercase()
+    if (q.isEmpty()) return specs
+    return specs.filter { spec ->
+        spec.trigger.startsWith(q) ||
+            spec.keywords.any { it.startsWith(q) } ||
+            spec.name.lowercase().contains(q)
+    }
+}
+
+@Composable
+private fun SlashCommandCard(
+    specs: List<SlashCommandSpec>,
+    isGlass: Boolean,
+    sheen: Float,
+    onRun: (PetalOmniboxCommand) -> Unit,
+) {
+    val shape = RoundedCornerShape(20.dp)
+    // Glass with the same solid fallback the other glass surfaces use on low-end devices / transitions.
+    val glass = isGlass && !com.petal.browser.motion.MotionGate.shouldSimplifyEffects()
+    Surface(
+        shape = shape,
+        color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .entrance(index = 1)
+            .then(if (glass) Modifier.liquidGlassChrome(shape = shape, enabled = true, sheenIntensity = sheen) else Modifier)
+    ) {
+        Column(modifier = Modifier.padding(vertical = 6.dp)) {
+            Text(
+                text = stringResource(R.string.ui_slash_title),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 280.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                specs.forEach { spec -> SlashCommandRow(spec = spec, onRun = onRun) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SlashCommandRow(spec: SlashCommandSpec, onRun: (PetalOmniboxCommand) -> Unit) {
+    val colors = petalRoleColors(spec.role)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp)
+            .padding(horizontal = 6.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { onRun(spec.command) }
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(colors.container),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = spec.icon,
+                contentDescription = null,
+                tint = colors.onContainer,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = spec.name,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = spec.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Text(
+            text = "/" + spec.trigger,
+            style = MaterialTheme.typography.labelMedium,
+            color = colors.solid,
+            maxLines = 1
+        )
+    }
+}
 
 enum class SuggestionSource { RECENT_SEARCH, BROWSING_HISTORY, SEARCH_ENGINE, SWITCH_TO_TAB, BOOKMARK }
 
@@ -244,7 +391,9 @@ fun PetalOmniboxPage(
     isIncognito: Boolean = false,
     onQuerySubmitted: (String) -> Unit,
     onBackPress: () -> Unit,
-    onBackGesture: (() -> Unit)? = null
+    onBackGesture: (() -> Unit)? = null,
+    /** When set, typing "/" as the first character shows a command menu that calls this. */
+    onCommand: ((PetalOmniboxCommand) -> Unit)? = null
 ) {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
@@ -342,6 +491,39 @@ fun PetalOmniboxPage(
         )
     }
     val focusRequester = remember { FocusRequester() }
+
+    // Slash commands: only a leading "/" (index 0) can trigger this; "a.com/x", "https://x/y" never do.
+    val slashSpecs = rememberSlashCommandSpecs()
+    val slashMatches = remember(queryState.text, slashSpecs, onCommand) {
+        if (onCommand != null && queryState.text.startsWith("/")) {
+            filterSlashCommands(slashSpecs, queryState.text)
+        } else emptyList()
+    }
+    val slashUnlockTitle = stringResource(R.string.ui_slash_unlock_title)
+    val slashUnlockSubtitle = stringResource(R.string.ui_slash_unlock_subtitle)
+    fun runSlashCommand(command: PetalOmniboxCommand) {
+        val handler = onCommand ?: return
+        try { keyboardController?.hide() } catch (_: Throwable) {}
+        com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+            .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+        if (command == PetalOmniboxCommand.NEW_INCOGNITO_TAB) {
+            // Same gate the tab switcher uses before it opens private tabs.
+            val lockOn = sp.getBoolean("sp_biometric_incognito_tab_lock", false)
+            val fragmentActivity = (activity as? androidx.fragment.app.FragmentActivity)
+                ?: (context as? androidx.fragment.app.FragmentActivity)
+            if (lockOn && fragmentActivity != null && com.petal.browser.security.BiometricLockManager.canAuthenticate(context)) {
+                com.petal.browser.security.BiometricLockManager.authenticate(
+                    activity = fragmentActivity,
+                    title = slashUnlockTitle,
+                    subtitle = slashUnlockSubtitle,
+                    onSuccess = Runnable { handler(command) },
+                    onError = java.util.function.Consumer { }
+                )
+                return
+            }
+        }
+        handler(command)
+    }
 
     var currentEngineIndexStr by remember {
         mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0")
@@ -802,7 +984,12 @@ fun PetalOmniboxPage(
                                 maxLines = 3,
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                                 keyboardActions = KeyboardActions(onSearch = {
-                                    if (queryState.text.isNotBlank()) {
+                                    // "/word" that matches a command runs it; a bare "/" or an unknown
+                                    // "/word" falls through to the normal search / URL behaviour.
+                                    val slashWord = queryState.text.removePrefix("/").trim()
+                                    if (queryState.text.startsWith("/") && slashWord.isNotEmpty() && slashMatches.isNotEmpty()) {
+                                        runSlashCommand(slashMatches.first().command)
+                                    } else if (queryState.text.isNotBlank()) {
                                         submitSearch(queryState.text.trim(), saveToHistory = true)
                                     }
                                 }),
@@ -1147,6 +1334,22 @@ fun PetalOmniboxPage(
                                     }
                                 }
                             }
+                        }
+
+                        // Slash commands sit above the suggestions and only appear for a leading "/".
+                        AnimatedVisibility(
+                            visible = slashMatches.isNotEmpty(),
+                            enter = fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                                slideInVertically(animationSpec = PetalSpring.spatial()) { -it / 5 },
+                            exit = fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                                slideOutVertically(animationSpec = PetalSpring.spatial()) { -it / 5 },
+                        ) {
+                            SlashCommandCard(
+                                specs = slashMatches,
+                                isGlass = isGlass,
+                                sheen = sheen,
+                                onRun = { runSlashCommand(it) }
+                            )
                         }
 
                         // Suggestions List - fills the remaining space above the keyboard with Material 3 Expressive containment

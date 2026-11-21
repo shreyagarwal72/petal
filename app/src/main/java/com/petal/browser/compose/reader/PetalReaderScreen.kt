@@ -161,23 +161,29 @@ fun PetalReaderScreen(
                             subtitle = "${(article.wordCount / 200).coerceAtLeast(1)} min read • ${article.domain}",
                             onBack = onBack,
                             actions = {
-                                HeaderActionIcon(
-                                    icon = if (isTtsActive && ttsEngine.isSpeaking) Icons.Rounded.VolumeUp else Icons.Rounded.Headphones,
-                                    contentDescription = "Listen Aloud",
-                                    onClick = {
-                                        if (!isTtsActive) {
-                                            ttsEngine.loadText("${article.title}. ${article.contentText}")
-                                            isTtsActive = true
-                                            ttsEngine.play()
-                                        } else {
-                                            if (ttsEngine.isSpeaking) ttsEngine.pause() else ttsEngine.play()
-                                        }
-                                    }
-                                )
-                                HeaderActionIcon(
-                                    icon = Icons.Rounded.FormatSize,
-                                    contentDescription = "Format Appearance",
-                                    onClick = { showAppearanceSheet = true }
+                                com.petal.browser.ui.components.PetalOverflowActionRow(
+                                    actions = listOf(
+                                        com.petal.browser.ui.components.PetalOverflowAction(
+                                            id = "listen",
+                                            label = "Listen Aloud",
+                                            icon = if (isTtsActive && ttsEngine.isSpeaking) Icons.Rounded.VolumeUp else Icons.Rounded.Headphones,
+                                            onClick = {
+                                                if (!isTtsActive) {
+                                                    ttsEngine.loadText("${article.title}. ${article.contentText}")
+                                                    isTtsActive = true
+                                                    ttsEngine.play()
+                                                } else {
+                                                    if (ttsEngine.isSpeaking) ttsEngine.pause() else ttsEngine.play()
+                                                }
+                                            }
+                                        ),
+                                        com.petal.browser.ui.components.PetalOverflowAction(
+                                            id = "appearance",
+                                            label = "Format Appearance",
+                                            icon = Icons.Rounded.FormatSize,
+                                            onClick = { showAppearanceSheet = true }
+                                        ),
+                                    )
                                 )
                             }
                         )

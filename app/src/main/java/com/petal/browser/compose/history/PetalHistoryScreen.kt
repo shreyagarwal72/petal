@@ -58,6 +58,9 @@ import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
 import com.petal.browser.compose.composable.ContainedLoadingIndicator
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.components.PetalSwipeActionRow
+import com.petal.browser.ui.components.PetalRowSwipeAction
+import com.petal.browser.ui.components.PetalGroupRole
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.PetalExpressiveAlertDialog
 import com.petal.browser.ui.components.HeaderActionIcon
@@ -282,10 +285,14 @@ fun PetalHistoryScreen(
     onOpenUrl: (String) -> Unit = {},
     onOpenUrlInNewTab: ((String) -> Unit)? = null,
     onClearBrowsingData: () -> Unit = {},
-    onDismiss: () -> Unit = {}
+    onDismiss: () -> Unit = {},
+    isIncognito: Boolean = false
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
+    var searchExpanded by remember { mutableStateOf(false) }
+    val recentsKey = "history"
+    var recentSearches by remember { mutableStateOf(com.petal.browser.ui.components.PetalRecentSearches.load(context, recentsKey)) }
     var showClearConfirm by remember { mutableStateOf(false) }
     var optionsRecord by remember { mutableStateOf<Record?>(null) }
 
@@ -381,9 +388,10 @@ fun PetalHistoryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    val hasSubOverlay = showClearConfirm || searchQuery.isNotEmpty()
+    val hasSubOverlay = searchExpanded || showClearConfirm || searchQuery.isNotEmpty()
     val handleDismiss: () -> Unit = {
         when {
+            searchExpanded -> searchExpanded = false
             showClearConfirm -> showClearConfirm = false
             searchQuery.isNotEmpty() -> searchQuery = ""
             else -> onDismiss()
@@ -418,31 +426,11 @@ fun PetalHistoryScreen(
         val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                 val searchShape = RoundedCornerShape(16.dp)
         val headerExtrasH: @Composable () -> Unit = {
-                TextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 6.dp)
-                        .liquidGlassChrome(shape = searchShape, enabled = isGlass, sheenIntensity = 0.45f),
-                    placeholder = { Text(stringResource(R.string.ui_search_history)) },
-                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear))
-                            }
-                        }
-                    },
-                    singleLine = true,
-                    shape = searchShape,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        unfocusedContainerColor = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
-                    ), glass = false
+                com.petal.browser.ui.components.PetalSearchPill(
+                    query = searchQuery,
+                    placeholder = stringResource(R.string.ui_search_history),
+                    onClick = { searchExpanded = true },
+                    onClear = { searchQuery = "" }
                 )
 
                 // ── Sort: connected toggle group (selected option expands, others collapse to icons) ──
@@ -572,44 +560,7 @@ fun PetalHistoryScreen(
                                                     ?: try { java.net.URI(record.url ?: "").host } catch (_: Exception) { null }
                                                 if (!domain.isNullOrEmpty()) "https://www.google.com/s2/favicons?domain=$domain&sz=32" else null
                                             }
-                                            PetalGroupListRow(
-                                                position = petalGroupPositionFor(listItem.indexInGroup, listItem.groupSize),
-                                                onClick = { record.url?.let(onOpenUrl) },
-                                                onLongClick = { optionsRecord = record },
-                                                modifier = Modifier.animateItem(
-                                                    fadeInSpec = PetalSpring.fadeIn(),
-                                                    fadeOutSpec = PetalSpring.fadeOut(),
-                                                    placementSpec = PetalSpring.spatial()
-                                                ).entrance(index = listItem.indexInGroup, playKey = "${record.url}_${record.time}"),
-                                                leading = {
-                                                    Box(
-                                                        Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primaryContainer),
-                                                        contentAlignment = Alignment.Center
-                                                    ) {
-                                                        if (faviconUrl != null) {
-                                                            SubcomposeAsyncImage(
-                                                                model = faviconUrl,
-                                                                contentDescription = "Website Icon",
-                                                                modifier = Modifier.size(24.dp).clip(ExpressiveButtonShape),
-                                                                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                                                                loading = { Icon(Icons.Rounded.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) },
-                                                                error = { Icon(Icons.Rounded.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) }
-                                                            )
-                                                        } else Icon(Icons.Rounded.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
-                                                    }
-                                                },
-                                                content = {
-                                                    Text(record.title?.takeIf { it.isNotBlank() } ?: record.domain ?: "Web Page",
-                                                        style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
-                                                        maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                                    Text(record.url ?: "", style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                                    if (timeFormatted.isNotEmpty()) Text(timeFormatted, style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.primary)
-                                                },
-                                                trailing = {
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        IconButton(onClick = {
+                                            val deleteEntry: () -> Unit = {
                                                             val deletedRecord = record
                                                             val deletedIndex = rawHistory?.indexOfFirst { it.url == record.url } ?: -1
                                                             try {
@@ -646,13 +597,71 @@ fun PetalHistoryScreen(
                                                                     }
                                                                 }
                                                             }
-                                                        }) {
+                                            }
+                                            val swipeOpenLabel = stringResource(R.string.ui_new_tab)
+                                            val swipeDeleteLabel = stringResource(R.string.ui_delete)
+                                            PetalSwipeActionRow(
+                                                modifier = Modifier.animateItem(
+                                                    fadeInSpec = PetalSpring.fadeIn(),
+                                                    fadeOutSpec = PetalSpring.fadeOut(),
+                                                    placementSpec = PetalSpring.spatial()
+                                                ).entrance(index = listItem.indexInGroup, playKey = "${record.url}_${record.time}"),
+                                                // One direction only: the right edge belongs to the fast-scroll bar.
+                                                startActions = listOf(
+                                                    PetalRowSwipeAction(
+                                                        label = swipeOpenLabel,
+                                                        icon = Icons.Rounded.Public,
+                                                        role = PetalGroupRole.Secondary,
+                                                        onTrigger = { record.url?.let { u -> (onOpenUrlInNewTab ?: onOpenUrl)(u) } }
+                                                    ),
+                                                    PetalRowSwipeAction(
+                                                        label = swipeDeleteLabel,
+                                                        icon = Icons.Rounded.Close,
+                                                        destructive = true,
+                                                        onTrigger = deleteEntry
+                                                    )
+                                                )
+                                            ) {
+                                            PetalGroupListRow(
+                                                position = petalGroupPositionFor(listItem.indexInGroup, listItem.groupSize),
+                                                onClick = { record.url?.let(onOpenUrl) },
+                                                onLongClick = { optionsRecord = record },
+                                                leading = {
+                                                    Box(
+                                                        Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primaryContainer),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        if (faviconUrl != null) {
+                                                            SubcomposeAsyncImage(
+                                                                model = faviconUrl,
+                                                                contentDescription = "Website Icon",
+                                                                modifier = Modifier.size(24.dp).clip(ExpressiveButtonShape),
+                                                                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                                                loading = { Icon(Icons.Rounded.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) },
+                                                                error = { Icon(Icons.Rounded.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp)) }
+                                                            )
+                                                        } else Icon(Icons.Rounded.Public, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
+                                                    }
+                                                },
+                                                content = {
+                                                    Text(record.title?.takeIf { it.isNotBlank() } ?: record.domain ?: "Web Page",
+                                                        style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+                                                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                    Text(record.url ?: "", style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                    if (timeFormatted.isNotEmpty()) Text(timeFormatted, style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.primary)
+                                                },
+                                                trailing = {
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        IconButton(onClick = deleteEntry) {
                                                             Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_remove_entry), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                                                         }
                                                         Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                                     }
                                                 }
                                             )
+                                            }
                                         }
                                     }
                                 }
@@ -687,6 +696,26 @@ fun PetalHistoryScreen(
                 }
             }
         }
+
+        com.petal.browser.ui.components.PetalSearchOverlay(
+            visible = searchExpanded,
+            query = searchQuery,
+            onQueryChange = { searchQuery = it },
+            placeholder = stringResource(R.string.ui_search_history),
+            recents = recentSearches,
+            resultCount = filteredHistory.size,
+            onSubmit = { q ->
+                recentSearches = com.petal.browser.ui.components.PetalRecentSearches.add(context, recentsKey, recentSearches, q, isIncognito)
+                searchExpanded = false
+            },
+            onRemoveRecent = { q -> recentSearches = com.petal.browser.ui.components.PetalRecentSearches.remove(context, recentsKey, recentSearches, q) },
+            onClearRecents = {
+                com.petal.browser.ui.components.PetalRecentSearches.clear(context, recentsKey)
+                recentSearches = emptyList()
+            },
+            onCollapse = { searchExpanded = false },
+            modifier = Modifier.fillMaxSize()
+        )
         }
     }
 

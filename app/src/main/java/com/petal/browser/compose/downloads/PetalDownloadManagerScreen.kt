@@ -826,6 +826,20 @@ fun PetalDownloadManagerScreen(
                                     }
                                 )
                             }
+                            val shareRole = com.petal.browser.ui.components.petalRoleColors(com.petal.browser.ui.components.PetalGroupRole.Tertiary)
+                            val shareLabel = stringResource(R.string.ui_share)
+                            val swipeShare = remember(item.id, item.status, shareRole, shareLabel) {
+                                if (item.status == DownloadStatus.STATUS_SUCCESSFUL && !item.localUri.isNullOrBlank()) {
+                                    PetalSwipeAction(
+                                        icon = Icons.Rounded.Share,
+                                        label = shareLabel,
+                                        container = shareRole.container,
+                                        content = shareRole.onContainer,
+                                        removes = false,
+                                        onTrigger = { shareDownloadedFile(context, item) }
+                                    )
+                                } else null
+                            }
                             PetalSwipeRow(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -839,6 +853,7 @@ fun PetalDownloadManagerScreen(
                                     ),
                                 shape = petalGroupShape(rowPosition),
                                 enabled = !isSelectionMode,
+                                startToEnd = swipeShare,
                                 endToStart = swipeDelete,
                             ) {
                             DownloadRowItem(
@@ -1086,20 +1101,27 @@ private fun DownloadedImagePreviewStrip(
     var menuItem by remember { mutableStateOf<DownloadItem?>(null) }
     val images = downloads.filter { it.status == DownloadStatus.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }.take(6)
     if (images.isEmpty()) return
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Text(stringResource(R.string.ui_downloaded_images), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+        Text(stringResource(R.string.ui_downloaded_images), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp))
         Spacer(Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            images.forEach { item ->
+        val carouselState = androidx.compose.material3.carousel.rememberCarouselState { images.size }
+        androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel(
+            state = carouselState,
+            preferredItemWidth = 186.dp,
+            modifier = Modifier.fillMaxWidth().height(150.dp),
+            itemSpacing = 8.dp,
+            contentPadding = PaddingValues(horizontal = 16.dp),
+        ) { index ->
+            val item = images[index]
+            run {
                 val bitmap by produceState<android.graphics.Bitmap?>(initialValue = null, item.localUri) {
                     value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                         runCatching { BitmapFactory.decodeFile(Uri.parse(item.localUri).path ?: item.localUri) }.getOrNull()
                     }
                 }
-                Box(modifier = Modifier.weight(1f)) {
-                    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier
-                        .fillMaxWidth()
-                        .height(if (images.size == 1) 220.dp else 130.dp)
+                Box(modifier = Modifier.fillMaxSize().maskClip(MaterialTheme.shapes.extraLarge)) {
+                    Surface(shape = androidx.compose.ui.graphics.RectangleShape, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier
+                        .fillMaxSize()
                         .combinedClickable(
                             onClick = {
                                 val activity = context as? com.petal.browser.activity.MainActivity
@@ -1117,7 +1139,7 @@ private fun DownloadedImagePreviewStrip(
                             },
                             onLongClick = { menuItem = item }
                         )) {
-                        if (bitmap != null) Image(bitmap!!.asImageBitmap(), contentDescription = item.fileName, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)))
+                        if (bitmap != null) Image(bitmap!!.asImageBitmap(), contentDescription = item.fileName, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                         else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Image, null) }
                     }
                     if (menuItem?.id == item.id) {
