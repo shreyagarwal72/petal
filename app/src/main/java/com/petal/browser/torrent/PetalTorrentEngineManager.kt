@@ -11,10 +11,11 @@ import java.io.File
 
 /**
  * Petal Torrent Engine Manager
- * Supports:
- * 1. 1DM / 1DM+ High-Speed Torrent Engine (Option 1 - Official P2P SDK Intent)
- * 2. Embedded In-App Light Torrent Downloader (Option 2 - Native In-App WebSeed / Magnet Streamer)
- * 3. System External App Fallback
+ *
+ * Petal has NO built-in BitTorrent client. It hands torrents to an app that has one:
+ * 1. 1DM / 1DM+ (Official P2P SDK intent) for `.torrent` files and magnet links.
+ * 2. "Hand-off" mode: `.torrent` files are downloaded as ordinary files, magnet links with a web
+ *    seed (`ws=`) download that HTTP URL, and any other magnet link goes to the system chooser.
  *
  * Configured via Preference key "sp_torrent_engine" ("1DM", "EMBEDDED", "NATIVE").
  */
@@ -22,7 +23,7 @@ object PetalTorrentEngineManager {
 
     enum class TorrentEngineMode(val key: String, val title: String, val description: String) {
         ENGINE_1DM("1DM", "1DM Torrent Engine", "Integrates with 1DM/1DM+ for full BitTorrent P2P and DHT swarm downloads"),
-        ENGINE_EMBEDDED("EMBEDDED", "WebSeed / Torrent Hand-off", "Fetches .torrent files and web seeds directly; hands magnet links to external torrent clients")
+        ENGINE_EMBEDDED("EMBEDDED", "Torrent hand-off", "Saves .torrent files and web seeds as normal downloads; magnet links open in another torrent app (Petal has no built-in torrent client)")
     }
 
     @JvmStatic
@@ -87,8 +88,7 @@ object PetalTorrentEngineManager {
     }
 
     /**
-     * Option 2: Embedded In-App Magnet & Torrent Streamer.
-     * Parses web seeds, magnet hashes, and launches direct stream download.
+     * Hand-off path: saves `.torrent` files and web seeds as normal downloads and passes magnet links to another app.
      */
     private fun launchNativeInAppTorrent(activity: Activity, url: String, fileName: String?): Boolean {
         try {

@@ -79,6 +79,13 @@ object PetalMediaSniffer {
         } catch (_: Exception) {}
     }
 
+    fun clearCookies() = pageCookiesMap.clear()
+
+    fun clearCookiesForHost(host: String) {
+        pageCookiesMap.keys.filter { it == host || it.endsWith(".$host") || host.endsWith(".$it") }
+            .forEach { pageCookiesMap.remove(it) }
+    }
+
     fun getCookiesForUrl(url: String): String? {
         try {
             val host = android.net.Uri.parse(url).host?.lowercase()?.removePrefix("www.") ?: return null

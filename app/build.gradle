@@ -264,6 +264,10 @@ dependencies {
     implementation 'androidx.browser:browser:1.10.0'
     implementation 'androidx.navigation:navigation-compose:2.10.2'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    // Persistent download queue
+    implementation 'androidx.room:room-runtime:2.7.2'
+    implementation 'androidx.room:room-ktx:2.7.2'
+    ksp 'androidx.room:room-compiler:2.7.2'
     // Native yt-dlp (Python via Chaquopy-style bundle) + ffmpeg for merging. Resolved from Maven Central.
     implementation 'io.github.junkfood02.youtubedl-android:library:0.18.1'
     implementation 'io.github.junkfood02.youtubedl-android:ffmpeg:0.18.1'

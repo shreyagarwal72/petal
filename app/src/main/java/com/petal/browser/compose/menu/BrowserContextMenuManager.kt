@@ -159,7 +159,7 @@ object BrowserContextMenuManager {
                         val controller = activity.currentAlbumController
                         val referrerUrl = controller?.url
                         val isPrivate = controller?.isIncognito ?: false
-                        DownloadFileNameResolver.resolve(activity.lifecycleScope, imageURL) { fileName, mimeType ->
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, imageURL, isPrivate = isPrivate) { fileName, mimeType ->
                             com.petal.browser.download.PetalDownloadRouter.download(
                                 context = activity,
                                 url = imageURL,
@@ -353,7 +353,7 @@ object BrowserContextMenuManager {
                         val controller = activity.currentAlbumController
                         val referrerUrl = controller?.url
                         val isPrivate = controller?.isIncognito ?: false
-                        DownloadFileNameResolver.resolve(activity.lifecycleScope, urlResult) { fileName, mimeType ->
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, urlResult, isPrivate = isPrivate) { fileName, mimeType ->
                             com.petal.browser.download.PetalDownloadRouter.download(
                                 context = activity,
                                 url = urlResult,
@@ -503,7 +503,7 @@ object BrowserContextMenuManager {
                         val controller = activity.currentAlbumController
                         val referrerUrl = controller?.url
                         val isPrivate = controller?.isIncognito ?: false
-                        DownloadFileNameResolver.resolve(activity.lifecycleScope, cleanVideoUrl, fallbackMimeType = "video/mp4") { fileName, mimeType ->
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, cleanVideoUrl, isPrivate = isPrivate, fallbackMimeType = "video/mp4") { fileName, mimeType ->
                             com.petal.browser.download.PetalDownloadRouter.download(
                                 context = activity,
                                 url = cleanVideoUrl,
@@ -579,7 +579,7 @@ object BrowserContextMenuManager {
                         val controller = activity.currentAlbumController
                         val referrerUrl = controller?.url
                         val isPrivate = controller?.isIncognito ?: false
-                        DownloadFileNameResolver.resolve(activity.lifecycleScope, audioUrl, fallbackMimeType = "audio/mpeg") { fileName, mimeType ->
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, audioUrl, isPrivate = isPrivate, fallbackMimeType = "audio/mpeg") { fileName, mimeType ->
                             com.petal.browser.download.PetalDownloadRouter.download(
                                 context = activity,
                                 url = audioUrl,
@@ -788,7 +788,7 @@ object BrowserContextMenuManager {
                     try {
                         val controller = activity.currentAlbumController
                         val isPrivate = controller?.isIncognito ?: false
-                        DownloadFileNameResolver.resolve(activity.lifecycleScope, pageUrl) { fileName, mimeType ->
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, pageUrl, isPrivate = isPrivate) { fileName, mimeType ->
                             val resolvedName = if (fileName.endsWith(".html", true) || fileName.endsWith(".htm", true)) fileName else "$fileName.html"
                             com.petal.browser.download.PetalDownloadRouter.download(
                                 context = activity,
@@ -939,7 +939,7 @@ object BrowserContextMenuManager {
                         val controller = activity.currentAlbumController
                         val referrerUrl = controller?.url
                         val isPrivate = controller?.isIncognito ?: false
-                        DownloadFileNameResolver.resolve(activity.lifecycleScope, linkUrl) { fileName, mimeType ->
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, linkUrl, isPrivate = isPrivate) { fileName, mimeType ->
                             com.petal.browser.download.PetalDownloadRouter.download(
                                 context = activity,
                                 url = linkUrl,

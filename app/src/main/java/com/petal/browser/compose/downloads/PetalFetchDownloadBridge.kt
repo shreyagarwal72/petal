@@ -95,6 +95,7 @@ object PetalFetchDownloadBridge {
     private const val TAG = "PetalDownloadBridge"
     private const val MIN_FREE_BYTES = 20L * 1024 * 1024
     private const val START_GRACE_MS = 8_000L
+    private const val PUBLISH_MIN_INTERVAL_MS = 250L
 
     // Rows derived from Mozilla's BrowserStore, keyed by Mozilla's download id (UUID).
     private val downloadRepository = LinkedHashMap<String, DownloadItem>()
@@ -106,7 +107,8 @@ object PetalFetchDownloadBridge {
 
     // Throughput for Mozilla downloads (the store exposes bytes, not speed/ETA). One sliding-window
     // meter per download gives a steady readout that also decays when the transfer stalls.
-    private val mozillaMeters = HashMap<String, com.petal.browser.download.PetalSpeedMeter>()
+    private val mozillaMeters = ConcurrentHashMap<String, com.petal.browser.download.PetalSpeedMeter>()
+    private val releasedHeaderIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
     private val tickerScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var tickerJob: Job? = null
     @Volatile
@@ -163,6 +165,13 @@ object PetalFetchDownloadBridge {
 
             try {
                 PetalLiveAlertManager.startGlobalDownloadObserver(appContext)
+            } catch (_: Throwable) {
+            }
+
+            try {
+                com.petal.browser.download.PetalDownloadHeaderRegistry.retainDownloads(
+                    com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext).state.downloads.keys.toSet()
+                )
             } catch (_: Throwable) {
             }
 
@@ -367,6 +376,16 @@ object PetalFetchDownloadBridge {
                 android.util.Log.e(TAG, "Insufficient storage space ($freeSpace bytes free) to start download")
                 return StartResult(null, DownloadFailure.INSUFFICIENT_STORAGE)
             }
+            // The fetch client resolves headers by URL, so two live downloads of one URL would share
+            // (and overwrite) each other's headers. Reuse the one already running.
+            val existing = com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext)
+                .state.downloads.values.firstOrNull {
+                    it.url == url && it.private == isPrivate && (
+                        it.status == DownloadState.Status.DOWNLOADING ||
+                            it.status == DownloadState.Status.INITIATED ||
+                            it.status == DownloadState.Status.PAUSED)
+                }
+            if (existing != null) return StartResult(existing.id, null)
             PetalDownloadFailureLog.clear(url)
             com.petal.browser.download.PetalDownloadHeaderRegistry.put(
                 url = url,
@@ -426,9 +445,9 @@ object PetalFetchDownloadBridge {
         val isS3OrCdn = url.contains(".s3.amazonaws.com", ignoreCase = true) ||
             url.contains(".githubusercontent.com", ignoreCase = true) ||
             url.contains("github-production-release-asset", ignoreCase = true)
-        if (!isS3OrCdn) {
-            SafeDownloadValues.header(cookie, 16384)?.let { extra["Cookie"] = it }
-        }
+        // Never set Cookie here: GeckoViewFetchClient uses Gecko's own cookie jar, and a stale cached
+        // header would override the fresh cookie (403s). The `cookie` parameter is kept for call-site
+        // compatibility; only external managers and yt-dlp consume bridge cookies.
         var referrer = referrerUrl
         headers.forEach { (name, value) ->
             if (name.isBlank() || value.isBlank()) return@forEach
@@ -614,6 +633,59 @@ object PetalFetchDownloadBridge {
         publish()
     }
 
+    /** Store ids of Mozilla downloads that are moving bytes right now. */
+    @JvmStatic
+    fun runningMozillaIds(): List<String> = synchronized(downloadRepository) {
+        downloadRepository.values.filter { it.status == DownloadStatus.STATUS_RUNNING }.map { it.downloadId }
+    }
+
+    /** Store ids of Mozilla downloads that failed (candidates for an automatic retry once back online). */
+    @JvmStatic
+    fun failedNetworkMozillaIds(): List<String> = synchronized(downloadRepository) {
+        downloadRepository.values.filter { it.status == DownloadStatus.STATUS_FAILED && it.source.isMozillaOwned }.map { it.downloadId }
+    }
+
+    @JvmStatic
+    fun storeIdForStableId(id: Long): String? = synchronized(downloadRepository) {
+        downloadRepository.keys.firstOrNull { stableId(it) == id }
+    }
+
+    @JvmStatic
+    fun pauseByUuid(context: Context, uuid: String) {
+        ensureInitialized(context)
+        val appContext = context.applicationContext
+        if (uuid.isBlank()) return
+        if (com.petal.browser.download.PetalDownloadServiceState.isRunning(appContext)) {
+            sendMozillaDownloadAction(appContext, uuid, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_PAUSE)
+        } else {
+            try {
+                val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext)
+                store.state.downloads[uuid]?.let { store.dispatch(DownloadAction.UpdateDownloadAction(it.copy(status = DownloadState.Status.PAUSED))) }
+            } catch (_: Throwable) {
+            }
+        }
+    }
+
+    @JvmStatic
+    fun pauseAllRunning(context: Context) = runningMozillaIds().forEach { pauseByUuid(context, it) }
+
+    @JvmStatic
+    fun resumeAllPaused(context: Context) {
+        val ids = synchronized(downloadRepository) {
+            downloadRepository.values.filter { it.status == DownloadStatus.STATUS_PAUSED && it.source.isMozillaOwned }.map { it.downloadId }
+        }
+        ids.forEach { resumeByUuid(context, it) }
+    }
+
+    /** Restarts one interrupted download by its store id (used by the deferred resume path). */
+    @JvmStatic
+    fun resumeByUuid(context: Context, uuid: String) {
+        ensureInitialized(context)
+        if (uuid.isBlank()) return
+        restartDownload(context.applicationContext, uuid)
+        publish()
+    }
+
     @JvmStatic
     fun retry(context: Context, id: Long) {
         ensureInitialized(context)
@@ -670,6 +742,10 @@ object PetalFetchDownloadBridge {
     @JvmStatic
     fun cancel(context: Context, id: Long) {
         ensureInitialized(context)
+        _downloadItems.value.firstOrNull { it.id == id && it.queued }?.let {
+            com.petal.browser.download.queue.DownloadQueueManager.remove(context.applicationContext, it.queueId)
+            return
+        }
         val item = findItem(id) ?: return
         if (!item.source.isMozillaOwned) {
             localCancel[item.downloadId]?.invoke()
@@ -697,6 +773,7 @@ object PetalFetchDownloadBridge {
             }
             synchronized(downloadRepository) { downloadRepository.remove(uuid) }
             mozillaMeters.remove(uuid)
+            com.petal.browser.download.PetalDownloadHeaderRegistry.release(uuid)
             sourceById.remove(uuid)
             publish()
         }
@@ -744,6 +821,10 @@ object PetalFetchDownloadBridge {
     fun deleteDownload(context: Context, item: DownloadItem, deleteFile: Boolean = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_delete_download_file", false)) {
         ensureInitialized(context)
         val appContext = context.applicationContext
+        if (item.queued) {
+            com.petal.browser.download.queue.DownloadQueueManager.remove(appContext, item.queueId)
+            return
+        }
         val row = findItem(item.id) ?: item
 
         // 1. Stop live-alert tracking for this row.
@@ -813,10 +894,50 @@ object PetalFetchDownloadBridge {
     private val seenActiveIds = java.util.Collections.synchronizedSet(HashSet<Long>())
     private val announcedDoneIds = java.util.Collections.synchronizedSet(HashSet<Long>())
 
+    private val publishLock = Any()
+    @Volatile private var lastPublishAt = 0L
+    private val publishScheduled = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    /**
+     * Coalesced publish: the store emits on every byte tick, the ticker adds one per second and the
+     * UI adds more. Anything inside the 250 ms window (about 4 Hz) is folded into one trailing run.
+     */
     private fun publish() {
+        val now = SystemClock.elapsedRealtime()
+        val wait = PUBLISH_MIN_INTERVAL_MS - (now - lastPublishAt)
+        if (wait <= 0L) {
+            publishNow()
+        } else if (publishScheduled.compareAndSet(false, true)) {
+            tickerScope.launch {
+                delay(wait)
+                publishScheduled.set(false)
+                publishNow()
+            }
+        }
+    }
+
+    private fun publishNow() = synchronized(publishLock) {
+        lastPublishAt = SystemClock.elapsedRealtime()
+        publishLocked()
+    }
+
+    private fun publishLocked() {
         refreshMozillaDownloads()
+        val queuedRows = com.petal.browser.download.queue.DownloadQueueManager.entries.value
+            .filter { it.storeId == null && it.state != com.petal.browser.download.queue.QueuedDownload.STATE_RUNNING }
+            .map { q ->
+                DownloadItem(
+                    id = (1L shl 62) or (q.id and 0xFFFFFFFFL),
+                    fileName = q.fileName, fileUrl = q.url, progress = null,
+                    status = if (q.state == com.petal.browser.download.queue.QueuedDownload.STATE_FAILED) DownloadStatus.STATUS_FAILED
+                    else if (q.state == com.petal.browser.download.queue.QueuedDownload.STATE_PAUSED) DownloadStatus.STATUS_PAUSED
+                    else DownloadStatus.STATUS_PENDING,
+                    bytesDownloaded = 0L, totalSize = 0L, localUri = null, timestampMs = q.createdAt,
+                    failureReason = q.lastError, queued = true, queueId = q.id
+                )
+            }
         val items = (synchronized(downloadRepository) { downloadRepository.values.toList() } +
-            synchronized(localRows) { localRows.values.toList() })
+            synchronized(localRows) { localRows.values.toList() } + queuedRows)
             .sortedWith(
                 compareByDescending<DownloadItem> { item ->
                     item.status == DownloadStatus.STATUS_RUNNING ||
@@ -882,6 +1003,55 @@ object PetalFetchDownloadBridge {
         return DownloadSource.HTTP_MOZILLA
     }
 
+    /**
+     * Runs once per finished Mozilla download, off the main thread: checksum check first (the file
+     * is still where Mozilla wrote it), then the user's post-download rules, then smart routing.
+     */
+    private fun onMozillaCompleted(context: Context, download: DownloadState) {
+        tickerScope.launch(Dispatchers.IO) {
+            val name = download.fileName ?: return@launch
+            val path = download.filePath
+            val file = path?.let { File(it) }?.takeIf { it.exists() && it.canRead() }
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+
+            try {
+                if (file != null && sp.getBoolean(com.petal.browser.download.DownloadPrefs.KEY_VERIFY_CHECKSUM, true)) {
+                    com.petal.browser.download.PetalChecksumStore.expectedFor(download.url, download.id)?.let { expected ->
+                        val result = file.inputStream().use { com.petal.browser.download.PetalChecksum.verify(it, expected) }
+                        com.petal.browser.download.PetalChecksumStore.setResult(download.id, result)
+                        publish()
+                    }
+                }
+            } catch (t: Throwable) {
+                android.util.Log.w(TAG, "Checksum check failed: ${t.message}")
+            }
+
+            try {
+                val rules = com.petal.browser.download.PetalPostDownload.parseRules(
+                    sp.getString(com.petal.browser.download.DownloadPrefs.KEY_POST_ACTIONS, "")
+                )
+                com.petal.browser.download.PetalPostDownload.run(
+                    context, file, file?.let { android.net.Uri.fromFile(it) }, name, download.contentType, rules, path
+                )
+            } catch (t: Throwable) {
+                android.util.Log.w(TAG, "Post-download actions failed: ${t.message}")
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !download.private) {
+                val newDir = com.petal.browser.download.PetalDownloadStorage.relocateCompleted(
+                    context, name, download.contentType, path
+                ) ?: return@launch
+                try {
+                    val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context)
+                    store.state.downloads[download.id]?.let {
+                        store.dispatch(DownloadAction.UpdateDownloadAction(it.copy(directoryPath = newDir)))
+                    }
+                } catch (_: Throwable) {
+                }
+            }
+        }
+    }
+
     /** Mirrors Android Components' global BrowserStore download map into Petal's existing UI model. */
     private fun refreshMozillaDownloads() {
         val context = applicationContext ?: return
@@ -896,6 +1066,15 @@ object PetalFetchDownloadBridge {
             synchronized(downloadRepository) {
                 downloads.forEach { download ->
                     currentMozillaIds.add(download.id)
+                    if ((download.status == DownloadState.Status.COMPLETED || download.status == DownloadState.Status.CANCELLED) &&
+                        releasedHeaderIds.add(download.id)
+                    ) {
+                        // Header lifetime == download lifetime: nothing left to resume.
+                        com.petal.browser.download.PetalDownloadHeaderRegistry.release(download.id, download.url)
+                        if (download.status == DownloadState.Status.COMPLETED) {
+                            onMozillaCompleted(context, download)
+                        }
+                    }
                     val id = stableId(download.id)
                     val status = PetalDownloadStatusMapper.toStatus(download.status, serviceAlive, graceActive)
                     val total = download.contentLength ?: 0L
@@ -942,12 +1121,17 @@ object PetalFetchDownloadBridge {
                         connections = connections,
                         downloadId = download.id,
                         source = sourceFor(context, download.id),
-                        failureReason = reason
+                        failureReason = reason,
+                        checksumLabel = com.petal.browser.download.PetalChecksumStore.label(download.id)
                     )
                 }
                 // Drop meters and repository rows for Mozilla downloads that no longer exist
                 val toRemove = downloadRepository.keys.filter { key -> !currentMozillaIds.contains(key) }
-                toRemove.forEach { downloadRepository.remove(it) }
+                toRemove.forEach {
+                    downloadRepository.remove(it)
+                    com.petal.browser.download.PetalDownloadHeaderRegistry.release(it)
+                }
+                releasedHeaderIds.retainAll(currentMozillaIds)
                 mozillaMeters.keys.retainAll(currentMozillaIds)
                 sourceById.keys.retainAll(currentMozillaIds)
             }

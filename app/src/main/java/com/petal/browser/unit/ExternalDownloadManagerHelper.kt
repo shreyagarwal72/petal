@@ -105,6 +105,13 @@ object ExternalDownloadManagerHelper {
         return mode != MODE_IN_APP
     }
 
+    private fun originOf(url: String): String = try {
+        val u = Uri.parse(url)
+        "${u.scheme ?: "https"}://${u.host ?: ""}/"
+    } catch (_: Throwable) {
+        url
+    }
+
     private fun resolveActivity(context: Context): Activity? {
         var current: Context? = context
         while (current is ContextWrapper) {
@@ -123,7 +130,9 @@ object ExternalDownloadManagerHelper {
         mimeType: String?,
         preferredDownloader: ExternalDownloader? = null,
         userAgent: String? = null,
-        cookie: String? = null
+        cookie: String? = null,
+        referrerUrl: String? = null,
+        extraHeaders: Map<String, String> = emptyMap()
     ): Boolean {
         val activity = resolveActivity(context)
         val mode = getDownloadManagerMode(context)
@@ -147,14 +156,26 @@ object ExternalDownloadManagerHelper {
         val effectiveCookie = cookie?.takeIf { it.isNotBlank() }
             ?: com.petal.browser.download.PetalGeckoCookieBridge.getCookies(verifiedUrl)
 
+        // Real page referrer when known (hotlink-protected hosts check it); otherwise the file's own
+        // origin, never the full file URL.
+        val effectiveReferer = referrerUrl?.takeIf { it.isNotBlank() } ?: originOf(verifiedUrl)
+        val acceptLanguage = extraHeaders.entries.firstOrNull { it.key.equals("Accept-Language", true) }?.value
+            ?: activity?.let { runCatching { com.petal.browser.unit.PetalAndroidUtils.getAcceptLanguage(it) }.getOrNull() }
+        // A specific manager was chosen: if it cannot be launched we report failure to the caller
+        // (which toasts and offers the in-app download) instead of silently opening a chooser.
+        val explicitChoice = targetDownloader != null
+
         // 1. If target is 1DM (or installed and activity available)
         if (targetDownloader == ExternalDownloader.ENGINE_1DM) {
             if (activity != null) {
                 try {
                     val headers = HashMap<String, String>()
                     headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-                    headers["Accept-Language"] = com.petal.browser.unit.PetalAndroidUtils.getAcceptLanguage(activity)
-                    headers["Referer"] = verifiedUrl
+                    acceptLanguage?.let { headers["Accept-Language"] = it }
+                    headers["Referer"] = effectiveReferer
+                    extraHeaders.forEach { (k, v) ->
+                        if (!k.equals("Cookie", true) && !k.equals("User-Agent", true) && !k.equals("Referer", true)) headers[k] = v
+                    }
 
                     Util1DM.downloadFile(
                         activity,
@@ -201,8 +222,9 @@ object ExternalDownloadManagerHelper {
                             putExtra("extra_cookies", effectiveCookie)
                             putExtra("cookie", effectiveCookie)
                         }
-                        putExtra("extra_referer", verifiedUrl)
-                        putExtra("referer", verifiedUrl)
+                        putExtra("extra_referer", effectiveReferer)
+                        putExtra("referer", effectiveReferer)
+                        acceptLanguage?.let { putExtra("extra_accept_language", it) }
                     }
                     try {
                         context.startActivity(intent)
@@ -215,7 +237,12 @@ object ExternalDownloadManagerHelper {
             }
         }
 
-        // 3. Fallback: Generic ACTION_VIEW system chooser with download extras
+        if (explicitChoice) {
+            PetalToast.show(context, "${targetDownloader?.displayName ?: "The chosen download manager"} could not be opened")
+            return false
+        }
+
+        // 3. Auto mode: generic ACTION_VIEW system chooser with download extras
         return try {
             val genericIntent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(Uri.parse(verifiedUrl), mimeType ?: "*/*")
@@ -233,7 +260,7 @@ object ExternalDownloadManagerHelper {
                 if (!effectiveCookie.isNullOrBlank()) {
                     putExtra("extra_cookies", effectiveCookie)
                 }
-                putExtra("extra_referer", verifiedUrl)
+                putExtra("extra_referer", effectiveReferer)
             }
             val chooser = Intent.createChooser(genericIntent, "Download with...")
             if (activity == null) {

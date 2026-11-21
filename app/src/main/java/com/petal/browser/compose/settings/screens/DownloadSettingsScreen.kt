@@ -219,32 +219,17 @@ fun DownloadSettingsScreenContent(
                                 onCheckedChange = onAutoPreviewDownloadedImagesChange
                             )
                             1 -> {
-                                val downloadPrefs = remember(context) {
-                                    PreferenceManager.getDefaultSharedPreferences(context)
-                                }
-                                var smartRouting by remember {
-                                    mutableStateOf(
-                                        downloadPrefs.getBoolean(
-                                            com.petal.browser.download.PetalSmartDownloadRouter.PREF_SMART_ROUTING,
-                                            false
-                                        )
-                                    )
-                                }
+                                val smartRouting by viewModel.smartDownloadRouting.collectAsStateWithLifecycle()
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                     title = "Smart download routing",
-                                    subtitle = "Automatically sort downloaded files into subfolders by type (Images, Video, Audio, Documents, Apps)",
+                                    subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                                        "Sort finished downloads into Petal subfolders by type (Images, Video, Audio, Documents, Apps). Files are moved right after they complete."
+                                    else
+                                        "Automatically sort downloaded files into subfolders by type (Images, Video, Audio, Documents, Apps)",
                                     icon = Icons.Rounded.FolderSpecial,
                                     checked = smartRouting,
                                     position = rowPosition,
-                                    onCheckedChange = { isChecked ->
-                                        smartRouting = isChecked
-                                        downloadPrefs.edit()
-                                            .putBoolean(
-                                                com.petal.browser.download.PetalSmartDownloadRouter.PREF_SMART_ROUTING,
-                                                isChecked
-                                            )
-                                            .apply()
-                                    }
+                                    onCheckedChange = { viewModel.setSmartDownloadRouting(it) }
                                 )
                             }
                         }
@@ -258,16 +243,8 @@ fun DownloadSettingsScreenContent(
                     cardId = "misc_download_speed",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-                    var parallelEnabled by remember {
-                        mutableStateOf(sp.getBoolean(PetalParallelFetchClient.Settings.KEY_ENABLED, true))
-                    }
-                    var connections by remember {
-                        mutableStateOf(
-                            PetalParallelFetchClient.Settings.load(context).connections
-                                .coerceAtLeast(2)
-                        )
-                    }
+                    val parallelEnabled by viewModel.parallelDownloads.collectAsStateWithLifecycle()
+                    val connections by viewModel.parallelConnections.collectAsStateWithLifecycle()
                     var batteryExempt by remember { mutableStateOf(PetalBatteryOptimization.isExempt(context)) }
                     DisposableEffect(context) {
                         val owner = context as? androidx.lifecycle.LifecycleOwner
@@ -288,18 +265,14 @@ fun DownloadSettingsScreenContent(
                                 icon = Icons.Rounded.Speed,
                                 checked = parallelEnabled,
                                 position = rowPosition,
-                                onCheckedChange = {
-                                    parallelEnabled = it
-                                    sp.edit().putBoolean(PetalParallelFetchClient.Settings.KEY_ENABLED, it).apply()
-                                }
+                                onCheckedChange = { viewModel.setParallelDownloads(it) }
                             )
                             1 -> com.petal.browser.ui.containment.PetalGroupListRow(
                                 position = rowPosition,
                                 onClick = {
                                     if (parallelEnabled) {
                                         val options = listOf(2, 4, 6, 8)
-                                        connections = options[(options.indexOf(connections) + 1).mod(options.size)]
-                                        sp.edit().putInt(PetalParallelFetchClient.Settings.KEY_CONNECTIONS, connections).apply()
+                                        viewModel.setParallelConnections(options[(options.indexOf(connections) + 1).mod(options.size)])
                                     }
                                 },
                                 leading = {
@@ -351,6 +324,87 @@ fun DownloadSettingsScreenContent(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+                            )
+                        }
+                    }
+                }
+
+                // Queue, limits & post-download actions
+                PetalSettingsSection(
+                    title = "Queue & limits",
+                    icon = Icons.Rounded.Tune,
+                    cardId = "misc_download_queue",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    val maxConcurrent by viewModel.maxConcurrentDownloads.collectAsStateWithLifecycle()
+                    val wifiOnly by viewModel.wifiOnlyDownloads.collectAsStateWithLifecycle()
+                    val speedLimit by viewModel.downloadSpeedLimitKBps.collectAsStateWithLifecycle()
+                    val verify by viewModel.verifyDownloadChecksums.collectAsStateWithLifecycle()
+                    val offerClipboard by viewModel.offerClipboardImport.collectAsStateWithLifecycle()
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 5) { rowIndex, rowPosition ->
+                        when (rowIndex) {
+                            0 -> com.petal.browser.ui.containment.PetalGroupListRow(
+                                position = rowPosition,
+                                onClick = {
+                                    viewModel.setMaxConcurrentDownloads(if (maxConcurrent >= 6) 1 else maxConcurrent + 1)
+                                },
+                                leading = {
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                        icon = Icons.Rounded.Tune,
+                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                    )
+                                },
+                                content = {
+                                    Text("Simultaneous downloads", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                                    Text("Extra downloads wait in the queue. Tap to change.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                },
+                                trailing = {
+                                    Text("$maxConcurrent", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                                }
+                            )
+                            1 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                title = "Wi-Fi only",
+                                subtitle = "Pause downloads on mobile data and resume on Wi-Fi.",
+                                icon = Icons.Rounded.Speed,
+                                checked = wifiOnly,
+                                position = rowPosition,
+                                onCheckedChange = { viewModel.setWifiOnlyDownloads(it) }
+                            )
+                            2 -> com.petal.browser.ui.containment.PetalGroupListRow(
+                                position = rowPosition,
+                                onClick = {
+                                    val steps = listOf(0, 256, 512, 1024, 2048, 5120)
+                                    viewModel.setDownloadSpeedLimitKBps(steps[(steps.indexOf(speedLimit).takeIf { it >= 0 } ?: -1).plus(1).mod(steps.size)])
+                                },
+                                leading = {
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                        icon = Icons.Rounded.Speed,
+                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                    )
+                                },
+                                content = {
+                                    Text("Speed limit", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                                    Text("Caps total download speed. Tap to change. Applies to downloads Petal fetches itself.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                },
+                                trailing = {
+                                    Text(if (speedLimit == 0) "Off" else if (speedLimit >= 1024) "${speedLimit / 1024} MB/s" else "$speedLimit KB/s", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                                }
+                            )
+                            3 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                title = "Verify checksums",
+                                subtitle = "Check the file against the hash the server provides (Digest / Content-MD5) and show the result.",
+                                icon = Icons.Rounded.FolderSpecial,
+                                checked = verify,
+                                position = rowPosition,
+                                onCheckedChange = { viewModel.setVerifyDownloadChecksums(it) }
+                            )
+                            else -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                title = "Offer to import copied links",
+                                subtitle = "When Petal opens with links on the clipboard, offer to add them. Off by default; the clipboard is only read when Petal opens.",
+                                icon = Icons.Rounded.FolderSpecial,
+                                checked = offerClipboard,
+                                position = rowPosition,
+                                onCheckedChange = { viewModel.setOfferClipboardImport(it) }
                             )
                         }
                     }

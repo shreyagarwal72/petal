@@ -1,7 +1,6 @@
 package com.petal.browser.media.sniffer.download
 
 import android.content.Context
-import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
@@ -9,7 +8,7 @@ import com.petal.browser.compose.downloads.DownloadStatus
 import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.compose.downloads.PetalLiveAlertManager
 import com.petal.browser.download.DownloadSource
-import com.petal.browser.download.PetalSmartDownloadRouter
+import com.petal.browser.download.PetalDownloadStorage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -139,14 +138,15 @@ object PetalStreamDownloadEngine {
                 var lastProgressBytes = 0L
 
                 // Download segments in chunks of concurrent batches
+                val segIndexOf = HashMap<Any, Int>(segments.size * 2).also { m -> segments.forEachIndexed { i, sp -> m.putIfAbsent(sp, i) } }
                 val batchSize = request.concurrentSegments.coerceIn(1, 4)
                 for (chunk in segments.chunked(batchSize)) {
                     if (!isActive) throw CancellationException("Download cancelled")
 
-                    val tasks = chunk.mapIndexed { _, seg ->
+                    val tasks = chunk.map { seg ->
                         async(Dispatchers.IO) {
                             if (!isActive) throw CancellationException("Segment cancelled")
-                            val segIndex = segments.indexOf(seg)
+                            val segIndex = segIndexOf[seg] ?: segments.indexOf(seg)
                             val segFile = File(workDir, "seg_%05d.ts".format(segIndex))
                             val builder = Request.Builder().url(seg.url)
                             StreamRequestHeaders.apply(builder, seg.url, request.referer, request.cookies, request.userAgent, request.headers)
@@ -157,6 +157,7 @@ object PetalStreamDownloadEngine {
                             okHttpClient.newCall(builder.build()).execute().use { resp ->
                                 if (!resp.isSuccessful) throw IllegalStateException("Segment fetch error: ${resp.code}")
                                 var bytes = resp.body?.bytes() ?: throw IllegalStateException("Empty segment body")
+                                com.petal.browser.download.PetalBandwidthLimiter.acquire(bytes.size)
 
                                 // Decrypt if encrypted with AES-128
                                 if (seg.key != null && PetalHlsAesDecryptor.isSupported(seg.key.method)) {
@@ -229,8 +230,9 @@ object PetalStreamDownloadEngine {
                 }
 
                 // Stage 2: Remuxing to MP4 / AAC (80-100%)
-                val destinationDir = PetalSmartDownloadRouter.resolveDestinationDirectory(appContext, targetFileName, mimeType)
-                val finalFile = File(destinationDir, targetFileName)
+                // Remux into app-private cache first; the shared writer publishes it to Downloads
+                // (MediaStore on Android 10+, so no all-files access is needed).
+                val finalFile = File(workDir, targetFileName)
 
                 PetalFetchDownloadBridge.updateLocalRow(
                     context = appContext,
@@ -290,15 +292,7 @@ object PetalStreamDownloadEngine {
                 }
 
                 if (converted && finalFile.exists() && finalFile.length() > 0L) {
-                    try {
-                        MediaScannerConnection.scanFile(
-                            appContext,
-                            arrayOf(finalFile.absolutePath),
-                            arrayOf(mimeType),
-                            null
-                        )
-                    } catch (_: Throwable) {
-                    }
+                    val published = PetalDownloadStorage.publish(appContext, finalFile, targetFileName, mimeType)
 
                     PetalFetchDownloadBridge.updateLocalRow(
                         context = appContext,
@@ -308,14 +302,15 @@ object PetalStreamDownloadEngine {
                         fileUrl = targetUrl,
                         status = DownloadStatus.STATUS_SUCCESSFUL,
                         progress = 1.0f,
-                        bytes = finalFile.length(),
-                        total = finalFile.length(),
-                        localUri = Uri.fromFile(finalFile).toString()
+                        bytes = published.sizeBytes,
+                        total = published.sizeBytes,
+                        localUri = published.uri.toString()
                     )
 
                     withContext(Dispatchers.Main) {
                         onProgress(100)
-                        onComplete(finalFile)
+                        // The file now lives in MediaStore; callers only use the name.
+                        onComplete(File(published.displayName))
                     }
                 } else {
                     throw IllegalStateException("Stream remuxing failed")

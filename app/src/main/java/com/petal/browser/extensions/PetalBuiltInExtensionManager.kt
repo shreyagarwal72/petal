@@ -234,7 +234,10 @@ object PetalBuiltInExtensionManager {
                 return null
             }
             if (pageUrl != null && cookies != null) {
-                PetalMediaSniffer.recordCookiesForUrl(pageUrl, cookies)
+                // One capture point for every consumer (external managers, yt-dlp, image actions).
+                // Private sessions go to the in-memory private cache only, never to sniffer storage.
+                val privateSession = runCatching { sender.session?.settings?.usePrivateMode == true }.getOrDefault(false)
+                com.petal.browser.download.PetalGeckoCookieBridge.recordCookies(pageUrl, cookies, privateSession)
             }
 
             when (msgType) {

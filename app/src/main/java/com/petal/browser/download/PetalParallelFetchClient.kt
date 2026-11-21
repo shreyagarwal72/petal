@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
 
@@ -55,7 +56,7 @@ class PetalParallelFetchClient(
     private val settings: () -> Settings
 ) : Client() {
 
-    data class Settings(val enabled: Boolean, val connections: Int) {
+    data class Settings(val enabled: Boolean, val connections: Int, val speedLimitKBps: Int = 0) {
         companion object {
             const val KEY_ENABLED = "sp_parallel_downloads"
             const val KEY_CONNECTIONS = "sp_parallel_connections"
@@ -70,7 +71,8 @@ class PetalParallelFetchClient(
                 } catch (_: ClassCastException) {
                     DEFAULT_CONNECTIONS
                 }
-                return Settings(sp.getBoolean(KEY_ENABLED, true), n.coerceIn(1, MAX_CONNECTIONS))
+                val limit = try { sp.getInt(DownloadPrefs.KEY_SPEED_LIMIT_KBPS, 0) } catch (_: ClassCastException) { 0 }
+                return Settings(sp.getBoolean(KEY_ENABLED, true), n.coerceIn(1, MAX_CONNECTIONS), limit)
             }
         }
     }
@@ -82,8 +84,10 @@ class PetalParallelFetchClient(
         } catch (_: Throwable) {
             Settings(false, 1)
         }
+        PetalBandwidthLimiter.setLimitKBps(cfg.speedLimitKBps)
         if (!cfg.enabled || cfg.connections < 2) return delegate.fetch(request)
         val startOffset = resumeOffset(request) ?: return delegate.fetch(request)
+        if (CapabilityCache.isSingleStreamOnly(request.url)) return delegate.fetch(request)
 
         return try {
             fetchParallel(request, startOffset, cfg.connections) ?: delegate.fetch(request)
@@ -112,10 +116,14 @@ class PetalParallelFetchClient(
         try {
             // Server ignored Range: this IS the complete single-stream answer. Hand it back as-is.
             if (probe.status == 200) {
+                CapabilityCache.markSingleStream(request.url, probe.headers.get("ETag"))
                 handedOff = true
                 return probe
             }
-            if (probe.status != 206) return null
+            if (probe.status != 206) {
+                if (probe.status in 200..299) CapabilityCache.markSingleStream(request.url, probe.headers.get("ETag"))
+                return null
+            }
 
             val contentRange = probe.headers.get("Content-Range") ?: return null
             val match = CONTENT_RANGE.matchEntire(contentRange.trim()) ?: return null
@@ -145,6 +153,7 @@ class PetalParallelFetchClient(
                 val name = header.name
                 if (name.equals("Content-Range", true) ||
                     name.equals("Content-Length", true) ||
+                    name.equals("Content-MD5", true) || // describes the 206 slice, not the whole file
                     name.equals("Transfer-Encoding", true)
                 ) return@forEach
                 headers.append(name, header.value)
@@ -195,6 +204,31 @@ class PetalParallelFetchClient(
     }
 }
 
+/**
+ * Remembers URLs whose server ignored Range, so resume/retry skips the segmented probe.
+ * Keyed by URL (+ETag when known), short TTL so a server change is picked up again.
+ */
+internal object CapabilityCache {
+    private const val TTL_MS = 10 * 60 * 1000L
+    private const val MAX = 128
+    private class Mark(val etag: String?, val at: Long)
+    private val marks = ConcurrentHashMap<String, Mark>()
+
+    fun markSingleStream(url: String, etag: String?, now: Long = System.currentTimeMillis()) {
+        if (marks.size >= MAX) marks.entries.removeAll { now - it.value.at > TTL_MS }
+        if (marks.size >= MAX) marks.keys.firstOrNull()?.let { marks.remove(it) }
+        marks[url] = Mark(etag, now)
+    }
+
+    fun isSingleStreamOnly(url: String, now: Long = System.currentTimeMillis()): Boolean {
+        val m = marks[url] ?: return false
+        if (now - m.at > TTL_MS) { marks.remove(url); return false }
+        return true
+    }
+
+    fun clear() = marks.clear()
+}
+
 /** Live per-download connection counts, read by the UI to show a "x4" parallel badge. */
 object PetalParallelStats {
     private val connections = ConcurrentHashMap<String, Int>()
@@ -215,8 +249,12 @@ private class ThrottledException(val status: Int) : IOException("Server throttle
 private class FatalChunkException(message: String) : IOException(message)
 
 /**
- * Sequential [InputStream] backed by a small pool of workers that fetch fixed-size segments
- * ahead of the reader. Memory is bounded: at most `workers + 3` segments are held at once.
+ * Sequential [InputStream] backed by a small pool of workers that fetch byte ranges ahead of the
+ * reader (see [SegmentTable] for how ranges are sized and split).
+ *
+ * Memory is bounded: no more than [MEMORY_CAP_BYTES] beyond the read position is ever assigned.
+ * Connections come from the shared [PetalConnectionBudget] and every read goes through the
+ * global [PetalBandwidthLimiter].
  */
 internal class PetalParallelRangeStream(
     private val client: Client,
@@ -229,23 +267,22 @@ internal class PetalParallelRangeStream(
     firstResponse: Response
 ) : InputStream() {
 
-    private val chunk = PetalParallelFetchClient.CHUNK_BYTES
-    private val chunkCount: Int = (((total - start) + chunk - 1) / chunk).toInt()
-    private val workerCount = minOf(connections, chunkCount).coerceAtLeast(1)
-    private val window = workerCount + 3
     private val statKey = request.url
+    private val host: String = try { java.net.URI(request.url).host ?: "" } catch (_: Exception) { "" }
+    private val table = SegmentTable(start, total, minOf(PetalParallelFetchClient.CHUNK_BYTES, total - start))
+    private val workerCount: Int
+    private val startedAtNanos = System.nanoTime()
+    private val bytesRead = AtomicLong(0)
 
     private val lock = ReentrantLock()
     private val changed = lock.newCondition()
-    private val ready = HashMap<Int, ByteArray>()
-    private val retryQueue = java.util.ArrayDeque<Int>()
-    private val throttleCounts = ConcurrentHashMap<Int, Int>()
-    private val allowedWorkers = AtomicInteger(workerCount)
+    private val ready = HashMap<Long, ByteArray>()
+    private val retryQueue = java.util.ArrayDeque<SegmentTable.Seg>()
+    private val throttleCounts = ConcurrentHashMap<Long, Int>()
+    private val allowedWorkers: AtomicInteger
     private val firstResponse = AtomicReference<Response?>(firstResponse)
 
-    private var nextToAssign = 0
-    private var consumeIndex = 0
-    private var delivered = 0
+    private var consumePos = start
     private var current: ByteArray? = null
     private var currentPos = 0
 
@@ -255,11 +292,15 @@ internal class PetalParallelRangeStream(
     @Volatile
     private var closed = false
 
-    private val pool: ExecutorService = Executors.newFixedThreadPool(workerCount) { r ->
-        Thread(r, "PetalParallel-${THREAD_COUNTER.incrementAndGet()}").apply { isDaemon = true }
-    }
+    private val pool: ExecutorService
 
     init {
+        val maxUseful = (((total - start) + SegmentTable.MIN_SEGMENT - 1) / SegmentTable.MIN_SEGMENT).toInt().coerceAtLeast(1)
+        workerCount = PetalConnectionBudget.acquire(host, minOf(connections, maxUseful))
+        allowedWorkers = AtomicInteger(workerCount)
+        pool = Executors.newFixedThreadPool(workerCount) { r ->
+            Thread(r, "PetalParallel-${THREAD_COUNTER.incrementAndGet()}").apply { isDaemon = true }
+        }
         PetalParallelStats.set(statKey, workerCount)
         for (id in 0 until workerCount) pool.execute { workerLoop(id) }
     }
@@ -289,20 +330,20 @@ internal class PetalParallelRangeStream(
     private fun nextChunk(): ByteArray? {
         lock.lock()
         try {
-            if (consumeIndex >= chunkCount) {
+            if (consumePos >= total) {
                 current = null
                 return null
             }
-            while (!ready.containsKey(consumeIndex)) {
+            while (!ready.containsKey(consumePos)) {
                 if (closed) throw IOException("Stream closed")
                 failure?.let { throw it }
                 changed.await(1, TimeUnit.SECONDS)
             }
-            val data = ready.remove(consumeIndex)!!
-            consumeIndex++
+            val data = ready.remove(consumePos)!!
+            consumePos += data.size
             current = data
             currentPos = 0
-            changed.signalAll() // a window slot just opened up for the workers
+            changed.signalAll() // memory window opened up for the workers
             return data
         } finally {
             lock.unlock()
@@ -323,6 +364,7 @@ internal class PetalParallelRangeStream(
         pool.shutdownNow()
         PetalParallelFetchClient.closeQuietly(firstResponse.getAndSet(null))
         PetalParallelStats.clear(statKey)
+        PetalConnectionBudget.release(host, workerCount)
         current = null
     }
 
@@ -331,16 +373,16 @@ internal class PetalParallelRangeStream(
     private fun workerLoop(id: Int) {
         try {
             while (true) {
-                val index = claim(id) ?: return
+                val seg = claim(id) ?: return
                 val data: ByteArray = try {
-                    fetchChunk(index)
+                    fetchSegment(seg)
                 } catch (t: ThrottledException) {
-                    val attempts = throttleCounts.merge(index, 1) { a, b -> a + b } ?: 1
+                    val attempts = throttleCounts.merge(seg.from, 1) { a, b -> a + b } ?: 1
                     if (attempts >= MAX_THROTTLE_ATTEMPTS) {
                         fail(IOException("Server refused ranged download (HTTP ${t.status})"))
                         return
                     }
-                    requeue(index)
+                    requeue(seg)
                     shrinkConnections()
                     if (id > 0 && id >= allowedWorkers.get()) return // this worker retires
                     sleepBackoff(attempts)
@@ -351,9 +393,9 @@ internal class PetalParallelRangeStream(
                 } catch (t: InterruptedException) {
                     return
                 } catch (t: IOException) {
-                    val attempts = throttleCounts.merge(index, 1) { a, b -> a + b } ?: 1
+                    val attempts = throttleCounts.merge(seg.from, 1) { a, b -> a + b } ?: 1
                     if (attempts < MAX_THROTTLE_ATTEMPTS && !closed) {
-                        requeue(index)
+                        requeue(seg)
                         shrinkConnections()
                         if (id > 0 && id >= allowedWorkers.get()) return
                         sleepBackoff(attempts)
@@ -362,50 +404,65 @@ internal class PetalParallelRangeStream(
                     if (!closed) fail(t)
                     return
                 }
-                deliver(index, data)
+                deliver(seg, data)
             }
         } catch (t: Throwable) {
             if (!closed) fail(IOException("Parallel worker failed: ${t.message}", t))
         }
     }
 
+    /** Aggregate speed divided by live workers; 0 until enough time has passed to measure. */
+    private fun perConnectionSpeed(): Double {
+        val elapsed = (System.nanoTime() - startedAtNanos) / 1e9
+        if (elapsed < 1.5) return 0.0
+        return bytesRead.get() / elapsed / allowedWorkers.get().coerceAtLeast(1)
+    }
+
     /** Blocks until there is a segment this worker may fetch; null when it should exit. */
-    private fun claim(id: Int): Int? {
+    private fun claim(id: Int): SegmentTable.Seg? {
         lock.lock()
         try {
             while (true) {
                 if (closed || failure != null) return null
                 if (id > 0 && id >= allowedWorkers.get()) return null
                 val retry = retryQueue.pollFirst()
-                if (retry != null) return retry
-                if (delivered >= chunkCount) return null
-                if (nextToAssign < chunkCount && nextToAssign < consumeIndex + window) {
-                    return nextToAssign++
+                if (retry != null) {
+                    table.reacquire(retry)
+                    return retry
                 }
-                changed.await()
+                if (consumePos >= total) return null
+                if (!table.allAssigned) {
+                    if (table.assignedEndOffset - consumePos < MEMORY_CAP_BYTES) {
+                        table.allocate(SegmentTable.adaptiveSize(perConnectionSpeed()))?.let { return it }
+                    }
+                } else {
+                    // Everything is handed out and this worker is idle: take half of the slowest segment.
+                    table.splitSlowest(SegmentTable.MIN_SEGMENT)?.let { return it }
+                }
+                changed.await(500, TimeUnit.MILLISECONDS)
             }
         } finally {
             lock.unlock()
         }
     }
 
-    private fun deliver(index: Int, data: ByteArray) {
+    private fun deliver(seg: SegmentTable.Seg, data: ByteArray) {
         lock.lock()
         try {
             if (closed) return
-            ready[index] = data
-            delivered++
+            ready[seg.from] = data
             changed.signalAll()
         } finally {
             lock.unlock()
         }
     }
 
-    private fun requeue(index: Int) {
+    private fun requeue(seg: SegmentTable.Seg) {
         lock.lock()
         try {
             if (closed) return
-            retryQueue.addFirst(index)
+            table.release(seg)
+            retryQueue.addFirst(seg)
             changed.signalAll()
         } finally {
             lock.unlock()
@@ -429,39 +486,58 @@ internal class PetalParallelRangeStream(
     }
 
     /**
-     * Downloads one segment. Handles servers that cap the range they return (206 for fewer
-     * bytes than asked) by continuing from where the response ended, and retries transient
-     * errors with backoff, switching from the resolved URL back to the original URL after two
-     * failures in case the resolved one was single-use.
+     * Downloads one segment. The segment's end can shrink while it is being read (another worker
+     * took its tail), so the loop re-reads `seg.to` on every iteration and the result is trimmed
+     * to the final length. Handles servers that cap the range they return (206 for fewer bytes
+     * than asked) by continuing from where the response ended, and retries transient errors with
+     * backoff, switching from the resolved URL back to the original URL after two failures.
+     * A 403 is retried once on the original URL, then fails clearly (it is not throttling).
      */
-    private fun fetchChunk(index: Int): ByteArray {
-        val from = start + index.toLong() * chunk
-        val to = minOf(from + chunk - 1, total - 1)
-        val buf = ByteArray((to - from + 1).toInt())
-        var pos = from
+    private fun fetchSegment(seg: SegmentTable.Seg): ByteArray {
+        val buf = ByteArray(seg.length.toInt())
         var failures = 0
-        var pending: Response? = if (index == 0) firstResponse.getAndSet(null) else null
+        var forbiddenRetried = false
+        var forceOriginalUrl = false
+        var pending: Response? = if (seg.from == start) firstResponse.getAndSet(null) else null
 
-        while (pos <= to) {
+        while (seg.pos <= seg.to) {
             if (closed) throw InterruptedException("closed")
             var response: Response? = pending
             pending = null
             try {
                 if (response == null) {
-                    val url = if (failures >= 2) request.url else finalUrl
+                    val url = if (failures >= 2 || forceOriginalUrl) request.url else finalUrl
                     response = client.fetch(
-                        request.copy(url = url, headers = PetalParallelFetchClient.rangeHeadersFor(request, pos, to, etag))
+                        request.copy(url = url, headers = PetalParallelFetchClient.rangeHeadersFor(request, seg.pos, seg.to, etag))
                     )
                 }
                 val status = response.status
-                if (status == 429 || status == 503 || status == 403) throw ThrottledException(status)
-                if (status != 206) throw IOException("Unexpected HTTP $status for range $pos-$to")
+                if (status == 403) {
+                    if (!forbiddenRetried) {
+                        forbiddenRetried = true
+                        forceOriginalUrl = true
+                        PetalParallelFetchClient.closeQuietly(response)
+                        response = null
+                        continue
+                    }
+                    throw FatalChunkException("Access denied (HTTP 403). The link may have expired or needs a fresh sign-in.")
+                }
+                if (status == 429 || status == 503) throw ThrottledException(status)
+                if (status != 206) throw IOException("Unexpected HTTP $status for range ${seg.pos}-${seg.to}")
 
-                val servedTo = verifyContentRange(response, pos, to)
-                val length = (servedTo - pos + 1).toInt()
-                val offset = (pos - from).toInt()
-                response.body.useStream { stream -> readFully(stream, buf, offset, length) }
-                pos += length
+                val servedTo = verifyContentRange(response, seg.pos, seg.to)
+                response.body.useStream { stream ->
+                    while (seg.pos <= minOf(servedTo, seg.to)) {
+                        if (closed) throw InterruptedException("closed")
+                        val limit = minOf(servedTo, seg.to)
+                        val want = minOf(READ_BUFFER, limit - seg.pos + 1).toInt()
+                        PetalBandwidthLimiter.acquire(want)
+                        val n = stream.read(buf, (seg.pos - seg.from).toInt(), want)
+                        if (n < 0) throw IOException("Connection ended at ${seg.pos - seg.from} of ${seg.length} bytes into a segment")
+                        seg.pos += n
+                        bytesRead.addAndGet(n.toLong())
+                    }
+                }
                 failures = 0
             } catch (e: ThrottledException) {
                 throw e
@@ -478,7 +554,8 @@ internal class PetalParallelRangeStream(
                 PetalParallelFetchClient.closeQuietly(response)
             }
         }
-        return buf
+        val finalLength = table.finish(seg).toInt()
+        return if (finalLength == buf.size) buf else buf.copyOf(finalLength)
     }
 
     /** Validates a 206 response and returns the last byte index it actually serves (<= [to]). */
@@ -501,15 +578,6 @@ internal class PetalParallelRangeStream(
 
     private fun normalize(tag: String) = tag.removePrefix("W/").trim()
 
-    private fun readFully(stream: InputStream, buf: ByteArray, offset: Int, length: Int) {
-        var done = 0
-        while (done < length) {
-            val n = stream.read(buf, offset + done, length - done)
-            if (n < 0) throw IOException("Connection ended $done of $length bytes into a segment")
-            done += n
-        }
-    }
-
     private fun sleepBackoff(attempt: Int) {
         val ms = minOf(300L shl (attempt - 1).coerceIn(0, 5), 8_000L)
         try {
@@ -524,6 +592,8 @@ internal class PetalParallelRangeStream(
         const val TAG = "PetalParallelStream"
         const val MAX_ATTEMPTS = 4
         const val MAX_THROTTLE_ATTEMPTS = 6
+        const val READ_BUFFER = 64L * 1024
+        const val MEMORY_CAP_BYTES = 48L * 1024 * 1024
         val THREAD_COUNTER = AtomicInteger(0)
     }
 }

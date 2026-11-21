@@ -103,7 +103,7 @@ object PetalDownloadPromptObserver {
                     startDownload(resolvedName)
                 } else {
                     com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
-                        activity, url, contentDisposition, mimeType, contentLength, startDownload
+                        activity, url, contentDisposition, mimeType, contentLength, download.referrerUrl, download.private, startDownload
                     )
                 }
             } catch (t: Throwable) {

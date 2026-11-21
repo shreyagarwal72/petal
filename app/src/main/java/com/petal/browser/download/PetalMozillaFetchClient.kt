@@ -82,14 +82,31 @@ class PetalMozillaFetchClient(private val delegate: Client) : Client() {
     @Throws(IOException::class)
     override fun fetch(request: Request): Response {
         val extra = PetalDownloadHeaderRegistry.headersFor(request.url, isPrivate = request.private)
-        if (extra.isEmpty()) return delegate.fetch(request)
-        val merged = MutableHeaders()
-        request.headers?.forEach { header ->
-            if (extra.keys.none { it.equals(header.name, ignoreCase = true) }) {
-                merged.append(header.name, header.value)
+        val response = if (extra.isEmpty()) {
+            delegate.fetch(request)
+        } else {
+            val merged = MutableHeaders()
+            request.headers?.forEach { header ->
+                if (extra.keys.none { it.equals(header.name, ignoreCase = true) }) {
+                    merged.append(header.name, header.value)
+                }
             }
+            extra.forEach { (name, value) -> merged.append(name, value) }
+            delegate.fetch(request.copy(headers = merged))
         }
-        extra.forEach { (name, value) -> merged.append(name, value) }
-        return delegate.fetch(request.copy(headers = merged))
+        recordExpectedChecksum(request, response)
+        return response
+    }
+
+    /** Remembers a server-provided hash so the finished file can be verified (in memory only). */
+    private fun recordExpectedChecksum(request: Request, response: Response) {
+        try {
+            if (response.status != 200 && response.status != 206) return
+            val digest = response.headers.get("Digest")
+            // Content-MD5 describes the message body, which is only the whole file for a 200.
+            val md5 = if (response.status == 200) response.headers.get("Content-MD5") else null
+            PetalChecksum.fromHeaders(digest, md5)?.let { PetalChecksumStore.recordExpected(request.url, it) }
+        } catch (_: Throwable) {
+        }
     }
 }

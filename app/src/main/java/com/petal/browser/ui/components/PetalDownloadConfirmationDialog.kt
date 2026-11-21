@@ -535,6 +535,8 @@ object PetalDownloadDialogBridge {
         contentDisposition: String?,
         mimeType: String?,
         contentLength: Long,
+        referrerUrl: String? = null,
+        isPrivate: Boolean = false,
         onConfirmDownload: (String) -> Unit
     ) {
         val guessedFileName = com.petal.browser.unit.PetalAndroidUtils.resolveFileName(url, contentDisposition, mimeType)
@@ -570,16 +572,19 @@ object PetalDownloadDialogBridge {
                     // Magnet links can't go through the plain-URL external path (it would rewrite
                     // "magnet:" to "https://magnet:"), so the option is hidden (null) for them.
                     val externalDownloadAction: (() -> Unit)? =
-                        if (url.startsWith("magnet:", ignoreCase = true)) {
+                        // Private downloads never leave the browser: no external manager option.
+                        if (isPrivate || url.startsWith("magnet:", ignoreCase = true)) {
                             null
                         } else {
                             fun() {
                                 if (dialog.isShowing) dialog.dismiss()
                                 val launched = com.petal.browser.unit.ExternalDownloadManagerHelper.launchDownloadInExternalManager(
-                                    activity, url, guessedFileName, mimeType, null
+                                    activity, url, guessedFileName, mimeType, null,
+                                    null, null, referrerUrl
                                 )
                                 if (!launched) {
-                                    com.petal.browser.view.PetalToast.show(activity, "No external downloader found")
+                                    com.petal.browser.view.PetalToast.show(activity, "No external downloader found, downloading in Petal")
+                                    onConfirmDownload(guessedFileName)
                                 }
                             }
                         }

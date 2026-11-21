@@ -59,10 +59,14 @@ object DownloadFileNameResolver {
         scope: CoroutineScope,
         url: String,
         fallbackMimeType: String? = null,
+        isPrivate: Boolean = false,
         onResolved: (fileName: String, mimeType: String?) -> Unit
     ) {
         val fallbackName = com.petal.browser.unit.PetalAndroidUtils.resolveFileName(url, null, fallbackMimeType)
-        if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) {
+        // Private tabs: no out-of-Gecko request at all. A plain OkHttp HEAD would bypass the
+        // private session's proxy/DoH and leak the URL, so use the URL-only guess.
+        if (isPrivate ||
+            (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true))) {
             // data:/blob:/file: URIs etc. - no network request possible, use the guess as-is.
             onResolved(fallbackName, fallbackMimeType)
             return

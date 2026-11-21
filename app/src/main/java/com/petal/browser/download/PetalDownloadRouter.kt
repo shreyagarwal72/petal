@@ -91,12 +91,18 @@ object PetalDownloadRouter {
         //    Private downloads never leave the browser: an external manager would receive the URL,
         //    cookies and referrer of a private session.
         if (!isPrivate && ExternalDownloadManagerHelper.isExternalPreferred(context)) {
+            // Cookies for external managers come from the bridge (standard session only).
+            val externalCookie = cookie?.takeIf { it.isNotBlank() }
+                ?: PetalGeckoCookieBridge.getCookies(verifiedUrl, isPrivate = false)
             val launched = ExternalDownloadManagerHelper.launchDownloadInExternalManager(
-                context, verifiedUrl, fileName, mimeType, null, userAgent, cookie
+                context, verifiedUrl, fileName, mimeType, null,
+                effectiveUserAgent(context, userAgent), externalCookie, referrerUrl, headers
             )
             if (launched) {
                 return
             }
+            // The chosen manager failed: tell the user and carry on in-app instead of dropping the download.
+            PetalFetchDownloadBridge.notifyMessage(context, "Download manager unavailable, downloading in Petal")
         }
 
         // 2. Storage permission check for Android 9 and older
@@ -109,39 +115,56 @@ object PetalDownloadRouter {
             return
         }
 
-        // 3. Resolve context parameters (cookies, user-agent, referer)
+        // 3. Everything in-app goes through the persistent queue: it starts right away when a slot is
+        //    free and the network rules allow it, and otherwise waits.
         val effectiveUa = effectiveUserAgent(context, userAgent)
-        val effectiveCookie = cookie?.takeIf { it.isNotBlank() }
-            ?: PetalGeckoCookieBridge.getCookies(verifiedUrl, isPrivate)
-
         val extraHeaders = LinkedHashMap<String, String>()
-        if (!referrerUrl.isNullOrBlank()) {
-            extraHeaders["Referer"] = referrerUrl
-        }
+        if (!referrerUrl.isNullOrBlank()) extraHeaders["Referer"] = referrerUrl
         headers.forEach { (k, v) ->
-            if (k.isNotBlank() && v.isNotBlank() && !k.equals("Cookie", ignoreCase = true)) {
-                extraHeaders[k] = v
-            }
+            if (k.isNotBlank() && v.isNotBlank() && !k.equals("Cookie", ignoreCase = true)) extraHeaders[k] = v
         }
-
         val resolvedFileName = SafeDownloadValues.fileName(
-            url = verifiedUrl,
-            contentDisposition = null,
-            mimeType = mimeType,
-            preferredFileName = fileName
+            url = verifiedUrl, contentDisposition = null, mimeType = mimeType, preferredFileName = fileName
         ).ifBlank { "download" }
+        try {
+            com.petal.browser.download.queue.DownloadQueueManager.submit(
+                context = context, url = verifiedUrl, fileName = resolvedFileName, mimeType = mimeType,
+                referrerUrl = referrerUrl, isPrivate = isPrivate, userAgent = effectiveUa, headers = extraHeaders,
+                onEnqueued = onEnqueued, onFailed = onFailed
+            )
+        } catch (t: Throwable) {
+            // The queue must never be able to lose a download: fall back to starting it directly.
+            android.util.Log.w("PetalDownloadRouter", "Queue unavailable, starting directly: ${t.message}")
+            downloadImmediate(context, verifiedUrl, resolvedFileName, mimeType, referrerUrl, isPrivate, effectiveUa, null, extraHeaders, onEnqueued, onFailed)
+        }
+    }
 
-        // 4. Dispatch exclusively via Mozilla's official Firefox/Fenix download pipeline
+    /** Starts the download now (called by the queue when a slot is free). URL and name are already validated. */
+    @JvmStatic
+    fun downloadImmediate(
+        context: Context,
+        url: String,
+        fileName: String,
+        mimeType: String?,
+        referrerUrl: String?,
+        isPrivate: Boolean,
+        userAgent: String?,
+        cookie: String?,
+        headers: Map<String, String>,
+        onEnqueued: ((Long) -> Unit)?,
+        onFailed: (() -> Unit)?
+    ) {
+        // Gecko's own cookie jar serves the in-app path; no Cookie header is injected.
         PetalFetchDownloadBridge.enqueueUnifiedDownload(
             context = context,
-            url = verifiedUrl,
-            fileName = resolvedFileName,
+            url = url,
+            fileName = fileName,
             mimeType = mimeType,
             referrerUrl = referrerUrl,
             isPrivate = isPrivate,
-            userAgent = effectiveUa,
-            cookie = effectiveCookie,
-            headers = extraHeaders,
+            userAgent = userAgent,
+            cookie = null,
+            headers = headers,
             onEnqueued = onEnqueued,
             onFailed = onFailed
         )

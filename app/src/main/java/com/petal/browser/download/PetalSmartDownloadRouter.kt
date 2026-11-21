@@ -3,7 +3,6 @@ package com.petal.browser.download
 import android.content.Context
 import android.os.Build
 import android.os.Environment
-import androidx.preference.PreferenceManager
 import java.io.File
 import java.util.Locale
 
@@ -51,32 +50,22 @@ object PetalSmartDownloadRouter {
         return "Download/${getCategory(fileName, mimeType).subfolder}/"
     }
 
+    /**
+     * Directory handed to Mozilla's download writer.
+     *
+     * Android 10+: always the public Downloads directory. DefaultDownloadFileWriter only activates
+     * its MediaStore path for that directory; category folders are applied after completion by
+     * [PetalDownloadStorage.relocateCompleted] (and directly by [PetalDownloadStorage.publish] for
+     * Petal's own engines). Android 9-: the category directory when smart routing is on.
+     */
     @JvmStatic
     fun resolveDestinationDirectory(context: Context, fileName: String, mimeType: String?): File {
         val baseDownloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        // On Android 10+ (API 29+), Scoped Storage requires writing through MediaStore.Downloads.
-        // Mozilla Components' DefaultDownloadFileWriter specifically requires the public Downloads
-        // directory path (Environment.DIRECTORY_DOWNLOADS) to activate MediaStore integration.
-        // Returning custom subdirectory paths causes DefaultDownloadFileWriter to fail with:
-        // "directoryPath must be a content URI" or EACCES (Permission Denied).
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            return baseDownloads
-        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) return baseDownloads
+        if (!PetalDownloadStorage.smartRoutingEnabled(context)) return baseDownloads
 
-        val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
-        val enabled = sp.getBoolean(PREF_SMART_ROUTING, false)
-
-        if (!enabled) {
-            return baseDownloads
-        }
-
-        val category = getCategory(fileName, mimeType)
-        val targetDir = File(baseDownloads, category.subfolder)
-        if (!targetDir.exists()) {
-            if (!targetDir.mkdirs()) {
-                return baseDownloads
-            }
-        }
+        val targetDir = File(baseDownloads, getCategory(fileName, mimeType).subfolder)
+        if (!targetDir.exists() && !targetDir.mkdirs()) return baseDownloads
         return if (targetDir.canWrite()) targetDir else baseDownloads
     }
 }

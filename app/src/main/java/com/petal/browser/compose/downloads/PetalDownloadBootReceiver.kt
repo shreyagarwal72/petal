@@ -1,95 +1,55 @@
 package com.petal.browser.compose.downloads
 
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
-import androidx.core.app.NotificationCompat
-import com.petal.browser.R
-import com.petal.browser.activity.MainActivity
+import com.petal.browser.download.PetalDownloadResumer
+import mozilla.components.browser.state.state.content.DownloadState
 
 /**
- * Resumes unfinished downloads after device reboots or application updates,
- * matching Mozilla Firefox's download recovery architecture.
+ * Recovers unfinished downloads after a reboot or an app update.
  *
- * Android 15+ forbids starting a `dataSync` foreground service from BOOT_COMPLETED
- * (ForegroundServiceStartNotAllowedException). This receiver used to call startForegroundService
- * from inside the Fetch callback with no guard, which on a target-36 build crashed the app
- * process at every boot that had an unfinished download. The start is now guarded, and when the
- * system refuses it the user gets a tap-to-resume notification instead of a crash.
+ * Android 15+ forbids starting a `dataSync` foreground service from BOOT_COMPLETED, so this
+ * receiver NEVER starts the download service. It only restores the persisted store state, records
+ * which downloads were interrupted and posts a "tap to resume" notification. The resume itself
+ * (ACTION_TRY_AGAIN + download id) happens in [PetalDownloadResumer] once the app is in the
+ * foreground.
  */
 class PetalDownloadBootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null || intent == null) return
         val action = intent.action ?: return
+        if (action != Intent.ACTION_BOOT_COMPLETED &&
+            action != Intent.ACTION_MY_PACKAGE_REPLACED &&
+            action != "android.intent.action.QUICKBOOT_POWERON"
+        ) return
 
-        if (action == Intent.ACTION_BOOT_COMPLETED ||
-            action == Intent.ACTION_MY_PACKAGE_REPLACED ||
-            action == "android.intent.action.QUICKBOOT_POWERON"
-        ) {
-            Log.i("PetalDownloadBoot", "Received $action: restoring active background downloads")
+        Log.i(TAG, "Received $action: restoring download state (no service start)")
+        val pending = goAsync()
+        Thread {
             try {
-                val appContext = context.applicationContext
-                PetalFetchDownloadBridge.ensureInitialized(appContext)
-                val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext)
+                val app = context.applicationContext
+                val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(app)
                 store.dispatch(mozilla.components.browser.state.action.DownloadAction.RestoreDownloadsStateAction)
-                val hasActive = store.state.downloads.values.any {
-                    it.status == mozilla.components.browser.state.state.content.DownloadState.Status.DOWNLOADING ||
-                    it.status == mozilla.components.browser.state.state.content.DownloadState.Status.INITIATED
-                }
-                if (hasActive) {
-                    Log.i("PetalDownloadBoot", "Unfinished downloads found. Starting PetalMozillaDownloadService...")
-                    startServiceOrNotify(appContext)
+                val interrupted = store.state.downloads.values.filter {
+                    !it.private && (it.status == DownloadState.Status.DOWNLOADING ||
+                        it.status == DownloadState.Status.INITIATED ||
+                        it.status == DownloadState.Status.PAUSED)
+                }.map { it.id }
+                if (interrupted.isNotEmpty()) {
+                    PetalDownloadResumer.markPending(app, interrupted)
+                    PetalDownloadResumer.postResumeNotification(app)
                 }
             } catch (t: Throwable) {
-                Log.e("PetalDownloadBoot", "Failed to restore downloads on boot", t)
+                Log.e(TAG, "Failed to restore downloads on boot", t)
+            } finally {
+                pending.finish()
             }
-        }
-    }
-
-    private fun startServiceOrNotify(appContext: Context) {
-        try {
-            val serviceIntent = Intent(appContext, com.petal.browser.download.PetalMozillaDownloadService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                appContext.startForegroundService(serviceIntent)
-            } else {
-                appContext.startService(serviceIntent)
-            }
-        } catch (t: Throwable) {
-            Log.w("PetalDownloadBoot", "System refused to start the download service from the background", t)
-            postResumeNotification(appContext)
-        }
-    }
-
-    private fun postResumeNotification(appContext: Context) {
-        try {
-            LiveUpdateNotificationManager.ensureChannelCreated(appContext)
-            val open = Intent(appContext, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                putExtra("open_downloads", true)
-            }
-            val pending = PendingIntent.getActivity(
-                appContext, NOTIF_ID, open,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            val notification = NotificationCompat.Builder(appContext, LiveUpdateNotificationManager.CHANNEL_ID)
-                .setSmallIcon(R.drawable.icon_download)
-                .setContentTitle("Downloads paused")
-                .setContentText("Tap to resume your unfinished downloads")
-                .setAutoCancel(true)
-                .setContentIntent(pending)
-                .build()
-            (appContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)
-                ?.notify(NOTIF_ID, notification)
-        } catch (t: Throwable) {
-            Log.w("PetalDownloadBoot", "Could not post resume notification", t)
-        }
+        }.start()
     }
 
     private companion object {
-        const val NOTIF_ID = 888130
+        const val TAG = "PetalDownloadBoot"
     }
 }

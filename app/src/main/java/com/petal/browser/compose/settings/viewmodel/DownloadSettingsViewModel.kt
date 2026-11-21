@@ -49,6 +49,35 @@ class DownloadSettingsViewModel @Inject constructor(
     val islandOverlay: StateFlow<Boolean> = settingsRepository.islandOverlay
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val parallelDownloads: StateFlow<Boolean> = settingsRepository.parallelDownloads
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val parallelConnections: StateFlow<Int> = settingsRepository.parallelConnections
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 4)
+    val smartDownloadRouting: StateFlow<Boolean> = settingsRepository.smartDownloadRouting
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val maxConcurrentDownloads: StateFlow<Int> = settingsRepository.maxConcurrentDownloads
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 3)
+    val wifiOnlyDownloads: StateFlow<Boolean> = settingsRepository.wifiOnlyDownloads
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val downloadSpeedLimitKBps: StateFlow<Int> = settingsRepository.downloadSpeedLimitKBps
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val verifyDownloadChecksums: StateFlow<Boolean> = settingsRepository.verifyDownloadChecksums
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val postDownloadActionsJson: StateFlow<String> = settingsRepository.postDownloadActionsJson
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+    val offerClipboardImport: StateFlow<Boolean> = settingsRepository.offerClipboardImport
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setParallelDownloads(enabled: Boolean) = viewModelScope.launch { settingsRepository.setParallelDownloads(enabled) }
+    fun setParallelConnections(count: Int) = viewModelScope.launch { settingsRepository.setParallelConnections(count) }
+    fun setSmartDownloadRouting(enabled: Boolean) = viewModelScope.launch { settingsRepository.setSmartDownloadRouting(enabled) }
+    fun setMaxConcurrentDownloads(count: Int) = viewModelScope.launch { settingsRepository.setMaxConcurrentDownloads(count) }
+    fun setWifiOnlyDownloads(enabled: Boolean) = viewModelScope.launch { settingsRepository.setWifiOnlyDownloads(enabled) }
+    fun setDownloadSpeedLimitKBps(kbps: Int) = viewModelScope.launch { settingsRepository.setDownloadSpeedLimitKBps(kbps) }
+    fun setVerifyDownloadChecksums(enabled: Boolean) = viewModelScope.launch { settingsRepository.setVerifyDownloadChecksums(enabled) }
+    fun setPostDownloadActionsJson(json: String) = viewModelScope.launch { settingsRepository.setPostDownloadActionsJson(json) }
+    fun setOfferClipboardImport(enabled: Boolean) = viewModelScope.launch { settingsRepository.setOfferClipboardImport(enabled) }
+
     fun setDownloadManagerMode(mode: String) = viewModelScope.launch {
         settingsRepository.setDownloadManagerMode(mode)
     }

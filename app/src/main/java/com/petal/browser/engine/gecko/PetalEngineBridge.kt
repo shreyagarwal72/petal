@@ -387,7 +387,7 @@ object PetalEngineBridge {
 
         activity.runOnUiThread {
             com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
-                activity, responseUrl, contentDisposition, mimeType, contentLength
+                activity, responseUrl, contentDisposition, mimeType, contentLength, referrer, isPrivate
             ) { confirmedName ->
                 val finalName = confirmedName.ifBlank { fileName }
                 com.petal.browser.download.PetalDownloadRouter.download(

@@ -144,7 +144,13 @@ data class DownloadItem(
     /** Which subsystem produced this row (browser core, yt-dlp, updater, page data, ...). */
     val source: com.petal.browser.download.DownloadSource = com.petal.browser.download.DownloadSource.HTTP_MOZILLA,
     /** Short human-readable reason for a FAILED row (null when unknown or not failed). */
-    val failureReason: String? = null
+    val failureReason: String? = null,
+    /** Result of the checksum check ("Checksum verified" / "Checksum mismatch ..."), if one ran. */
+    val checksumLabel: String? = null,
+    /** True while the download waits in the queue (not started yet). */
+    val queued: Boolean = false,
+    /** Queue row id when [queued] (the row has no engine download yet). */
+    val queueId: Long = 0L
 )
 
 object PetalDownloadBridge {
@@ -633,30 +639,6 @@ fun PetalDownloadManagerScreen(
                             contentDescription = "Select All",
                             onClick = { toggleSelectAll() }
                         )
-                        HeaderActionIcon(
-                            icon = Icons.Rounded.Share,
-                            contentDescription = "Share Selected",
-                            onClick = {
-                                val itemsToShare = downloadList.filter { selectedIds.contains(it.id) }
-                                shareMultipleFiles(context, itemsToShare)
-                                selectedIds = emptySet()
-                            }
-                        )
-                        HeaderActionIcon(
-                            icon = Icons.Rounded.Delete,
-                            contentDescription = stringResource(R.string.ui_delete_selected),
-                            onClick = {
-                                val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
-                                val deletePrefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-                                deleteSelectedFiles = deletePrefs.getBoolean("sp_delete_download_file", false)
-                                if (deletePrefs.getBoolean("sp_confirm_download_delete", true)) {
-                                    pendingDeleteItems = itemsToDelete
-                                } else {
-                                    performStagedDelete(itemsToDelete)
-                                }
-                                selectedIds = emptySet()
-                            }
-                        )
                     } else {
                         Box {
                             HeaderActionIcon(
@@ -927,6 +909,141 @@ fun PetalDownloadManagerScreen(
         }
             }
         }
+        // ── Bottom-end "Paste links" split button (hidden in selection mode) ──
+        var importMenuExpanded by remember { mutableStateOf(false) }
+        var importLinks by remember { mutableStateOf<List<com.petal.browser.download.PetalLinkImport.ImportLink>?>(null) }
+        var showManualDialog by remember { mutableStateOf(false) }
+        var manualText by remember { mutableStateOf("") }
+        val filePicker = androidx.activity.compose.rememberLauncherForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            if (uri != null) {
+                val found = com.petal.browser.download.PetalLinkImport.extract(PetalLinkImportSource.readTextFile(context, uri))
+                if (found.isEmpty()) com.petal.browser.view.PetalToast.show(context, "No links found in that file") else importLinks = found
+            }
+        }
+        fun importFromClipboard() {
+            // Explicit tap only; the clipboard is never read in the background.
+            val found = com.petal.browser.download.PetalLinkImport.extract(PetalLinkImportSource.readClipboardText(context))
+            if (found.isEmpty()) com.petal.browser.view.PetalToast.show(context, "No links on the clipboard") else importLinks = found
+        }
+        // Optional (default off): offer the sheet when this screen opens with links on the clipboard.
+        LaunchedEffect(Unit) {
+            if (sharedPreferences.getBoolean(com.petal.browser.download.DownloadPrefs.KEY_OFFER_CLIPBOARD, false)) {
+                val found = com.petal.browser.download.PetalLinkImport.extract(PetalLinkImportSource.readClipboardText(context))
+                if (found.isNotEmpty()) importLinks = found
+            }
+        }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = !isSelectionMode,
+            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
+            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp).navigationBarsPadding()
+        ) {
+            Box {
+                com.petal.browser.ui.components.ExpressiveSplitButton(
+                    label = "Paste links",
+                    icon = Icons.Rounded.ContentPaste,
+                    onPrimaryClick = { importMenuExpanded = false; importFromClipboard() },
+                    onMenuClick = { importMenuExpanded = !importMenuExpanded },
+                    isMenuExpanded = importMenuExpanded,
+                    role = com.petal.browser.ui.components.PetalGroupRole.Primary,
+                    menuExpandedRole = com.petal.browser.ui.components.PetalGroupRole.Tertiary,
+                    height = 56.dp
+                )
+                com.petal.browser.ui.containment.PetalPopupMenu(
+                    expanded = importMenuExpanded,
+                    onDismissRequest = { importMenuExpanded = false }
+                ) {
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                        text = { Text("Import from clipboard") },
+                        onClick = { importMenuExpanded = false; importFromClipboard() }
+                    )
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                        text = { Text("Import from text file") },
+                        onClick = { importMenuExpanded = false; filePicker.launch(arrayOf("text/*")) }
+                    )
+                    com.petal.browser.ui.containment.PetalPopupMenuItem(
+                        text = { Text("Add link manually") },
+                        onClick = { importMenuExpanded = false; showManualDialog = true }
+                    )
+                }
+            }
+        }
+        if (showManualDialog) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showManualDialog = false },
+                title = { Text("Add link") },
+                text = {
+                    androidx.compose.material3.OutlinedTextField(
+                        value = manualText, onValueChange = { manualText = it },
+                        placeholder = { Text("https://… or magnet:?…") }, minLines = 2
+                    )
+                },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = {
+                        val found = com.petal.browser.download.PetalLinkImport.extract(manualText)
+                        showManualDialog = false
+                        manualText = ""
+                        if (found.isEmpty()) com.petal.browser.view.PetalToast.show(context, "That is not a valid link") else importLinks = found
+                    }) { Text("Next") }
+                },
+                dismissButton = { androidx.compose.material3.TextButton(onClick = { showManualDialog = false }) { Text("Cancel") } }
+            )
+        }
+        importLinks?.let { PetalLinkImportSheet(links = it, isPrivate = false, onDismiss = { importLinks = null }) }
+
+        // ── Selection mode: bottom floating toolbar ──
+        androidx.compose.animation.AnimatedVisibility(
+            visible = isSelectionMode,
+            enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it * 2 }) + androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it * 2 }) + androidx.compose.animation.fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp, start = 16.dp, end = 16.dp).navigationBarsPadding()
+        ) {
+            val picked = downloadList.filter { selectedIds.contains(it.id) }
+            com.petal.browser.ui.containment.PetalFloatingToolbar(modifier = Modifier.fillMaxWidth(), elevation = 6.dp) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ToolbarAction(Icons.Rounded.Pause, "Pause") {
+                        picked.filter { it.status == DownloadStatus.STATUS_RUNNING }.forEach { PetalFetchDownloadBridge.pause(context, it.id) }
+                        selectedIds = emptySet()
+                    }
+                    ToolbarAction(Icons.Rounded.PlayArrow, "Resume") {
+                        picked.filter { it.status == DownloadStatus.STATUS_PAUSED }.forEach { PetalFetchDownloadBridge.resume(context, it.id) }
+                        selectedIds = emptySet()
+                    }
+                    ToolbarAction(Icons.Rounded.Refresh, "Retry") {
+                        picked.filter { it.status == DownloadStatus.STATUS_FAILED }.forEach { PetalFetchDownloadBridge.retry(context, it.id) }
+                        selectedIds = emptySet()
+                    }
+                    ToolbarAction(Icons.Rounded.Share, "Share") {
+                        shareMultipleFiles(context, picked)
+                        selectedIds = emptySet()
+                    }
+                    ToolbarAction(Icons.Rounded.DriveFileMove, "Move") {
+                        // Moves finished files into their category folder (Android 10+: MediaStore row update).
+                        val moved = picked.count { item ->
+                            item.status == DownloadStatus.STATUS_SUCCESSFUL &&
+                                com.petal.browser.download.PetalDownloadStorage.relocateCompleted(
+                                    context, item.fileName, null, item.localUri?.let { android.net.Uri.parse(it).path }, force = true
+                                ) != null
+                        }
+                        com.petal.browser.view.PetalToast.show(context, if (moved > 0) "Moved $moved file(s)" else "Nothing to move")
+                        selectedIds = emptySet()
+                    }
+                    ToolbarAction(Icons.Rounded.Delete, stringResource(R.string.ui_delete_selected)) {
+                        val deletePrefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                        deleteSelectedFiles = deletePrefs.getBoolean("sp_delete_download_file", false)
+                        if (deletePrefs.getBoolean("sp_confirm_download_delete", true)) pendingDeleteItems = picked
+                        else performStagedDelete(picked)
+                        selectedIds = emptySet()
+                    }
+                }
+            }
+        }
     } // closes Box (inner)
     } // closes innerPadding lambda
     } // closes Scaffold
@@ -1051,6 +1168,18 @@ private fun isUniversalViewable(name: String): Boolean {
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+private fun ToolbarAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.height(2.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+    }
+}
+
 @Composable
 private fun DownloadRowItem(
     item: DownloadItem,
@@ -1228,8 +1357,11 @@ private fun DownloadRowItem(
                                 item.failureReason?.takeIf { it.isNotBlank() }?.let { "Failed • $it" } ?: "Failed • $formattedSize"
                             )
                             DownloadStatus.STATUS_PAUSED -> parts.add("Paused • $formattedSize")
-                            DownloadStatus.STATUS_PENDING -> parts.add("Starting…")
-                            else -> parts.add(formattedSize)
+                            DownloadStatus.STATUS_PENDING -> parts.add(if (item.queued) "Queued" else "Starting…")
+                            else -> {
+                                parts.add(formattedSize)
+                                item.checksumLabel?.let { parts.add(it) }
+                            }
                         }
                         // A running row already carries progress, speed and ETA; adding time and
                         // domain would only get everything truncated by the single-line ellipsis.

@@ -65,31 +65,19 @@ class PetalFallbackFetchClient(
  * choose between a broadcast to the running service and (re)starting the service for a download.
  */
 object PetalDownloadServiceState {
-    @Volatile private var cachedAt = 0L
-    @Volatile private var cachedValue = false
+    /** Set by [PetalMozillaDownloadService] itself; the service runs in the app process. */
+    @Volatile private var running = false
 
     @JvmStatic
-    fun isRunning(context: android.content.Context): Boolean {
-        val now = android.os.SystemClock.elapsedRealtime()
-        if (now - cachedAt < 400L) return cachedValue
-        val value = try {
-            val am = context.applicationContext.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-            val name = PetalMozillaDownloadService::class.java.name
-            @Suppress("DEPRECATION")
-            am.getRunningServices(Int.MAX_VALUE).any { it.service.className == name }
-        } catch (_: Throwable) {
-            false
-        }
-        cachedValue = value
-        cachedAt = now
-        return value
+    fun isRunning(@Suppress("UNUSED_PARAMETER") context: android.content.Context): Boolean = running
+
+    internal fun setRunning(value: Boolean) {
+        running = value
     }
 
-    /** Forget the cached answer, e.g. right after starting the service. */
+    /** Kept for call-site compatibility; the flag is exact, so there is nothing to forget. */
     @JvmStatic
-    fun invalidate() {
-        cachedAt = 0L
-    }
+    fun invalidate() {}
 }
 
 /**
@@ -104,7 +92,13 @@ object PetalDownloadServiceState {
 class PetalMozillaDownloadService : AbstractFetchDownloadService() {
     override fun onCreate() {
         super.onCreate()
+        PetalDownloadServiceState.setRunning(true)
         PetalNotificationChannelOptimizer.install()
+    }
+
+    override fun onDestroy() {
+        PetalDownloadServiceState.setRunning(false)
+        super.onDestroy()
     }
 
     override val store: BrowserStore
@@ -152,6 +146,10 @@ class PetalMozillaDownloadService : AbstractFetchDownloadService() {
             val active = store.state.downloads.values.filter {
                 it.status == mozilla.components.browser.state.state.content.DownloadState.Status.DOWNLOADING
             }
+            // Remember what we interrupted, then pause. Resume happens when the app is next in the
+            // foreground (PetalDownloadResumer); until then the user gets a tap-to-resume notification.
+            active.filter { !it.private }.map { it.id }.let { PetalDownloadResumer.markPending(this, it) }
+            active.filter { it.private }.map { it.id }.let { PetalDownloadResumer.markPending(this, it, isPrivate = true) }
             active.forEach { dl ->
                 val intent = android.content.Intent(ACTION_PAUSE).apply {
                     setPackage(packageName)
@@ -159,6 +157,7 @@ class PetalMozillaDownloadService : AbstractFetchDownloadService() {
                 }
                 sendBroadcast(intent)
             }
+            if (active.isNotEmpty()) PetalDownloadResumer.postResumeNotification(this)
         } catch (_: Throwable) {}
         super.onTimeout(startId)
     }

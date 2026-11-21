@@ -1,5 +1,6 @@
 package com.petal.browser.data.repository
 
+import com.petal.browser.download.DownloadPrefs
 import android.app.Application
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
@@ -499,6 +500,43 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override val downloadManagerMode: Flow<String> = preferenceFlow(com.petal.browser.unit.ExternalDownloadManagerHelper.PREF_DOWNLOAD_MANAGER_MODE) {
         sp.getString(com.petal.browser.unit.ExternalDownloadManagerHelper.PREF_DOWNLOAD_MANAGER_MODE, com.petal.browser.unit.ExternalDownloadManagerHelper.MODE_IN_APP) ?: com.petal.browser.unit.ExternalDownloadManagerHelper.MODE_IN_APP
+    }
+
+    override val parallelDownloads: Flow<Boolean> = preferenceFlow(DownloadPrefs.KEY_PARALLEL_ENABLED) {
+        sp.getBoolean(DownloadPrefs.KEY_PARALLEL_ENABLED, true)
+    }
+
+    override val parallelConnections: Flow<Int> = preferenceFlow(DownloadPrefs.KEY_PARALLEL_CONNECTIONS) {
+        runCatching { sp.getInt(DownloadPrefs.KEY_PARALLEL_CONNECTIONS, 4) }.getOrDefault(4).coerceIn(2, 8)
+    }
+
+    override val smartDownloadRouting: Flow<Boolean> = preferenceFlow(DownloadPrefs.KEY_SMART_ROUTING) {
+        sp.getBoolean(DownloadPrefs.KEY_SMART_ROUTING, false)
+    }
+
+    override val maxConcurrentDownloads: Flow<Int> = preferenceFlow(DownloadPrefs.KEY_MAX_CONCURRENT) {
+        runCatching { sp.getInt(DownloadPrefs.KEY_MAX_CONCURRENT, DownloadPrefs.DEFAULT_MAX_CONCURRENT) }
+            .getOrDefault(DownloadPrefs.DEFAULT_MAX_CONCURRENT).coerceIn(1, DownloadPrefs.MAX_CONCURRENT_LIMIT)
+    }
+
+    override val wifiOnlyDownloads: Flow<Boolean> = preferenceFlow(DownloadPrefs.KEY_WIFI_ONLY) {
+        sp.getBoolean(DownloadPrefs.KEY_WIFI_ONLY, false)
+    }
+
+    override val downloadSpeedLimitKBps: Flow<Int> = preferenceFlow(DownloadPrefs.KEY_SPEED_LIMIT_KBPS) {
+        runCatching { sp.getInt(DownloadPrefs.KEY_SPEED_LIMIT_KBPS, 0) }.getOrDefault(0).coerceAtLeast(0)
+    }
+
+    override val verifyDownloadChecksums: Flow<Boolean> = preferenceFlow(DownloadPrefs.KEY_VERIFY_CHECKSUM) {
+        sp.getBoolean(DownloadPrefs.KEY_VERIFY_CHECKSUM, true)
+    }
+
+    override val postDownloadActionsJson: Flow<String> = preferenceFlow(DownloadPrefs.KEY_POST_ACTIONS) {
+        sp.getString(DownloadPrefs.KEY_POST_ACTIONS, "") ?: ""
+    }
+
+    override val offerClipboardImport: Flow<Boolean> = preferenceFlow(DownloadPrefs.KEY_OFFER_CLIPBOARD) {
+        sp.getBoolean(DownloadPrefs.KEY_OFFER_CLIPBOARD, false)
     }
 
     override val confirmDownloadDelete: Flow<Boolean> = preferenceFlow("sp_confirm_download_delete") {
@@ -1060,6 +1098,42 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setDownloadManagerMode(mode: String) {
         sp.edit().putString(com.petal.browser.unit.ExternalDownloadManagerHelper.PREF_DOWNLOAD_MANAGER_MODE, mode).apply()
+    }
+
+    override suspend fun setParallelDownloads(enabled: Boolean) {
+        sp.edit().putBoolean(DownloadPrefs.KEY_PARALLEL_ENABLED, enabled).apply()
+    }
+
+    override suspend fun setParallelConnections(count: Int) {
+        sp.edit().putInt(DownloadPrefs.KEY_PARALLEL_CONNECTIONS, count.coerceIn(2, 8)).apply()
+    }
+
+    override suspend fun setSmartDownloadRouting(enabled: Boolean) {
+        sp.edit().putBoolean(DownloadPrefs.KEY_SMART_ROUTING, enabled).apply()
+    }
+
+    override suspend fun setMaxConcurrentDownloads(count: Int) {
+        sp.edit().putInt(DownloadPrefs.KEY_MAX_CONCURRENT, count.coerceIn(1, DownloadPrefs.MAX_CONCURRENT_LIMIT)).apply()
+    }
+
+    override suspend fun setWifiOnlyDownloads(enabled: Boolean) {
+        sp.edit().putBoolean(DownloadPrefs.KEY_WIFI_ONLY, enabled).apply()
+    }
+
+    override suspend fun setDownloadSpeedLimitKBps(kbps: Int) {
+        sp.edit().putInt(DownloadPrefs.KEY_SPEED_LIMIT_KBPS, kbps.coerceAtLeast(0)).apply()
+    }
+
+    override suspend fun setVerifyDownloadChecksums(enabled: Boolean) {
+        sp.edit().putBoolean(DownloadPrefs.KEY_VERIFY_CHECKSUM, enabled).apply()
+    }
+
+    override suspend fun setPostDownloadActionsJson(json: String) {
+        sp.edit().putString(DownloadPrefs.KEY_POST_ACTIONS, json).apply()
+    }
+
+    override suspend fun setOfferClipboardImport(enabled: Boolean) {
+        sp.edit().putBoolean(DownloadPrefs.KEY_OFFER_CLIPBOARD, enabled).apply()
     }
 
     override suspend fun setConfirmDownloadDelete(enabled: Boolean) {

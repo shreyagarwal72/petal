@@ -87,6 +87,7 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        com.petal.browser.download.PetalDownloadResumer.install(this)
         instance = this
         // Rewarded ads provider. Dispatched via PetalAdInit per build flavor (AdMob on github/play, PetalNoAds on fdroid).
         com.petal.browser.account.progress.PetalAdInit.init()
@@ -150,6 +151,7 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
                 com.petal.browser.wallpaper.PetalWallpaperManager.init(this)
                 com.petal.browser.collections.PetalCollectionManager.init(this)
                 com.petal.browser.compose.downloads.PetalFetchDownloadBridge.ensureInitialized(this)
+                com.petal.browser.download.queue.DownloadQueueManager.start(this)
                 // Sweep ephemeral upload buffers & compact SQLite databases
                 com.petal.browser.engine.gecko.PetalStorageManager.cleanEphemeralStorage(this)
                 com.petal.browser.engine.gecko.PetalStorageManager.optimizeDatabases(this)

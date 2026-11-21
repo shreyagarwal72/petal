@@ -22,15 +22,23 @@ import java.util.concurrent.ConcurrentHashMap
  */
 object PetalGeckoCookieBridge {
 
-    private val standardCookieCache = ConcurrentHashMap<String, String>()
-    private val privateCookieCache = ConcurrentHashMap<String, String>()
+    /** Captured cookies are a snapshot of what the page could see; they go stale, so they expire. */
+    private const val TTL_MS = 30 * 60 * 1000L
+
+    internal class Cached(val value: String, val at: Long)
+
+    private val standardCookieCache = ConcurrentHashMap<String, Cached>()
+    private val privateCookieCache = ConcurrentHashMap<String, Cached>()
+
+    /** Test hook: swap the clock. */
+    @Volatile internal var clock: () -> Long = System::currentTimeMillis
 
     @JvmStatic
     fun recordCookies(url: String, cookies: String, isPrivate: Boolean = false) {
         if (url.isBlank() || cookies.isBlank()) return
         val host = extractHost(url) ?: return
         val cache = if (isPrivate) privateCookieCache else standardCookieCache
-        cache[host] = cookies
+        cache[host] = Cached(cookies, clock())
         if (!isPrivate) {
             PetalMediaSniffer.recordCookiesForUrl(url, cookies)
         }
@@ -43,10 +51,13 @@ object PetalGeckoCookieBridge {
         val host = extractHost(url) ?: return null
         val cache = if (isPrivate) privateCookieCache else standardCookieCache
 
-        // 1. Direct or suffix domain match from Gecko cookie cache
-        val cached = cache[host] ?: cache.entries.firstOrNull { (k, _) ->
+        val now = clock()
+        cache.entries.removeAll { now - it.value.at > TTL_MS }
+
+        // 1. Direct or suffix domain match from the captured cache
+        val cached = (cache[host] ?: cache.entries.firstOrNull { (k, _) ->
             host == k || host.endsWith(".$k") || k.endsWith(".$host")
-        }?.value
+        }?.value)?.value
 
         if (!cached.isNullOrBlank()) {
             return cached
@@ -57,7 +68,7 @@ object PetalGeckoCookieBridge {
         if (!isPrivate) {
             val snifferCookies = PetalMediaSniffer.getCookiesForUrl(url)
             if (!snifferCookies.isNullOrBlank()) {
-                cache[host] = snifferCookies
+                cache[host] = Cached(snifferCookies, now)
                 return snifferCookies
             }
         }
@@ -87,6 +98,7 @@ object PetalGeckoCookieBridge {
     fun clearAllCookies() {
         standardCookieCache.clear()
         privateCookieCache.clear()
+        PetalMediaSniffer.clearCookies()
     }
 
     @JvmStatic
@@ -100,6 +112,7 @@ object PetalGeckoCookieBridge {
         privateCookieCache.keys.filter { it.endsWith(".$host") || host.endsWith(".$it") }.forEach {
             privateCookieCache.remove(it)
         }
+        PetalMediaSniffer.clearCookiesForHost(host)
     }
 
     private fun extractHost(url: String): String? {

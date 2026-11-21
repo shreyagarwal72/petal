@@ -133,6 +133,15 @@ interface SettingsRepository {
     val deleteDownloadFile: Flow<Boolean>
     val autoPreviewDownloadedImages: Flow<Boolean>
     val liveUpdates: Flow<Boolean>
+    val parallelDownloads: Flow<Boolean>
+    val parallelConnections: Flow<Int>
+    val smartDownloadRouting: Flow<Boolean>
+    val maxConcurrentDownloads: Flow<Int>
+    val wifiOnlyDownloads: Flow<Boolean>
+    val downloadSpeedLimitKBps: Flow<Int>
+    val verifyDownloadChecksums: Flow<Boolean>
+    val postDownloadActionsJson: Flow<String>
+    val offerClipboardImport: Flow<Boolean>
 
     // Petal NowBar & Live Actions Settings
     val islandMode: Flow<String>
@@ -264,6 +273,15 @@ interface SettingsRepository {
     suspend fun setCheckUpdateOnLaunch(enabled: Boolean)
     suspend fun setTorrentEngineMode(mode: String)
     suspend fun setDownloadManagerMode(mode: String)
+    suspend fun setParallelDownloads(enabled: Boolean)
+    suspend fun setParallelConnections(count: Int)
+    suspend fun setSmartDownloadRouting(enabled: Boolean)
+    suspend fun setMaxConcurrentDownloads(count: Int)
+    suspend fun setWifiOnlyDownloads(enabled: Boolean)
+    suspend fun setDownloadSpeedLimitKBps(kbps: Int)
+    suspend fun setVerifyDownloadChecksums(enabled: Boolean)
+    suspend fun setPostDownloadActionsJson(json: String)
+    suspend fun setOfferClipboardImport(enabled: Boolean)
     suspend fun setConfirmDownloadDelete(enabled: Boolean)
     suspend fun setDeleteDownloadFile(enabled: Boolean)
     suspend fun setAutoPreviewDownloadedImages(enabled: Boolean)

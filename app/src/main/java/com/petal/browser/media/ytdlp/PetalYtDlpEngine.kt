@@ -8,7 +8,7 @@ import com.petal.browser.compose.downloads.DownloadStatus
 import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.compose.downloads.PetalLiveAlertManager
 import com.petal.browser.download.DownloadSource
-import com.petal.browser.download.PetalSmartDownloadRouter
+import com.petal.browser.download.PetalDownloadStorage
 import com.petal.browser.media.sniffer.PetalMediaSniffer
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
@@ -81,7 +81,7 @@ object PetalYtDlpEngine {
         addOption("--no-warnings")
         userAgent?.takeIf { it.isNotBlank() }?.let { addOption("--user-agent", it) }
         referer?.takeIf { it.isNotBlank() }?.let { addOption("--referer", it) }
-        val cookie = cookies?.takeIf { it.isNotBlank() } ?: PetalMediaSniffer.getCookiesForUrl(pageUrl)
+        val cookie = cookies?.takeIf { it.isNotBlank() } ?: com.petal.browser.download.PetalGeckoCookieBridge.getCookies(pageUrl)
         cookie?.takeIf { it.isNotBlank() }?.let { addOption("--add-header", "Cookie:$it") }
     }
 
@@ -231,28 +231,22 @@ object PetalYtDlpEngine {
 
                 val finalName = produced.name
                 val mime = mimeFor(produced.extension)
-                val destDir = PetalSmartDownloadRouter.resolveDestinationDirectory(app, finalName, mime)
-                destDir.mkdirs()
-                val target = uniqueFile(destDir, finalName)
-                if (!produced.renameTo(target)) {
-                    produced.copyTo(target, overwrite = false)
-                    produced.delete()
-                }
-                runCatching { MediaScannerConnection.scanFile(app, arrayOf(target.absolutePath), arrayOf(mime), null) }
+                val published = PetalDownloadStorage.publish(app, produced, finalName, mime)
 
                 PetalFetchDownloadBridge.updateLocalRow(
                     context = app,
                     key = taskId,
                     source = DownloadSource.YTDLP,
-                    fileName = target.name,
+                    fileName = published.displayName,
                     fileUrl = info.pageUrl,
                     status = DownloadStatus.STATUS_SUCCESSFUL,
                     progress = 1f,
-                    bytes = target.length(),
-                    total = target.length(),
-                    localUri = Uri.fromFile(target).toString()
+                    bytes = published.sizeBytes,
+                    total = published.sizeBytes,
+                    localUri = published.uri.toString()
                 )
-                withContext(Dispatchers.Main) { onFinished(target, null) }
+                // The file now lives in MediaStore; callers only use the name.
+                withContext(Dispatchers.Main) { onFinished(File(published.displayName), null) }
             } catch (t: Throwable) {
                 val wasCancelled = taskId in cancelled
                 val reason = if (wasCancelled) "Cancelled" else (t.message?.lineSequence()?.lastOrNull { it.isNotBlank() } ?: "Download failed")
