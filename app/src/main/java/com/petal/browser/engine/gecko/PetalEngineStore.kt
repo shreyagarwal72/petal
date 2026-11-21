@@ -59,8 +59,6 @@ object PetalEngineStore {
     private var sessionStorage: SessionStorage? = null
 
     @Volatile
-
-    @Volatile
     private var thumbnailStorage: ThumbnailStorage? = null
 
     @Volatile
@@ -228,7 +226,6 @@ object PetalEngineStore {
                 PromptMiddleware(),
                 FileUploadsDirCleanerMiddleware(uploadCleaner),
                 SessionPrioritizationMiddleware(),
-                mozilla.components.browser.state.engine.middleware.LastAccessMiddleware(),
                 ReaderViewMiddleware(),
                 thumbnailsMiddleware
             ) + engineMiddleware
@@ -436,7 +433,16 @@ object PetalEngineStore {
     @JvmStatic
     fun noteDiskState(tabId: String, state: mozilla.components.concept.engine.EngineSessionState?) {
         if (state == null) { dbg("disk[$tabId] engineState=null"); return }
-        val hasHistory = try { historyHasBack(state.toJSON()) } catch (t: Throwable) { true }
+        val hasHistory = try {
+            val jsonMethod = state.javaClass.methods.firstOrNull { it.name == "toJSON" && it.parameterCount == 0 }
+            if (jsonMethod != null) {
+                jsonMethod.isAccessible = true
+                val json = jsonMethod.invoke(state) as? org.json.JSONObject
+                if (json != null) historyHasBack(json) else true
+            } else {
+                true
+            }
+        } catch (t: Throwable) { true }
         diskBackHint[tabId] = hasHistory
         dbg("disk[$tabId] engineState present, backHint=$hasHistory")
     }

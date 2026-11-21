@@ -447,7 +447,7 @@ private fun ActionsRow(
 }
 
 @Composable
-private fun RowScope.ActionButton(
+private fun ActionButton(
     action: PetalSelectionAction,
     contentColor: Color,
     pressedContainer: Color,

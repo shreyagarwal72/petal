@@ -91,6 +91,19 @@ object PetalSessionRestoreManager {
         val tabGroupColorHex: String? = null
     )
 
+    fun wrapGeckoState(actualState: org.mozilla.geckoview.GeckoSession.SessionState?): mozilla.components.concept.engine.EngineSessionState? {
+        if (actualState == null) return null
+        return try {
+            val cls = Class.forName("mozilla.components.browser.engine.gecko.GeckoEngineSessionState")
+            val ctor = cls.getDeclaredConstructor(org.mozilla.geckoview.GeckoSession.SessionState::class.java)
+            ctor.isAccessible = true
+            ctor.newInstance(actualState) as? mozilla.components.concept.engine.EngineSessionState
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to wrap GeckoSession.SessionState into GeckoEngineSessionState: ${t.message}")
+            null
+        }
+    }
+
     /**
      * Flushes open tabs state into BrowserStore (including full engineSessionState history stacks
      * and active indices) and writes the snapshot to disk via SessionStorage asynchronously.
@@ -116,8 +129,11 @@ object PetalSessionRestoreManager {
                 store.state.tabs.filter { !it.content.private }.forEach { tab ->
                     val engineSession = tab.engineState.engineSession ?: return@forEach
                     try {
-                        val engineState = engineSession.saveState()
-                        store.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, engineState))
+                        val gs = com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(engineSession)
+                        val engineState = wrapGeckoState(gs?.sessionState) ?: tab.engineState.engineSessionState
+                        if (engineState != null) {
+                            store.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, engineState))
+                        }
                     } catch (t: Throwable) {
                         Log.w(TAG, "Failed to capture engine state for tab ${tab.id}: ${t.message}")
                     }
@@ -372,7 +388,7 @@ object PetalSessionRestoreManager {
                 if (toRestore.isNotEmpty()) {
                     val selectId = plan.selectId
                     val location = if (plan.restoreBefore)
-                        TabListAction.RestoreAction.RestoreLocation.BEFORE
+                        TabListAction.RestoreAction.RestoreLocation.BEGINNING
                     else TabListAction.RestoreAction.RestoreLocation.END
                     store.dispatch(TabListAction.RestoreAction(toRestore, selectId, location))
                     if (preExistingTabs.isNotEmpty() && preExistingSelectedId != null) {

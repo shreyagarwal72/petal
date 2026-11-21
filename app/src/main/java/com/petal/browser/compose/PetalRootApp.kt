@@ -34,6 +34,7 @@ import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.BarCollapseState
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.components.PetalOmniboxCommand
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
