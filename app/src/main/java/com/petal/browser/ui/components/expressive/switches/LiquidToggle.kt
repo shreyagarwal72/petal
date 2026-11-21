@@ -299,15 +299,15 @@ private class DampedDragAnimation(
 ) {
 
     private val valueAnimationSpec =
-        PetalSpring.calm()
+        PetalSpring.calm<Float>()
     private val velocityAnimationSpec =
-        PetalSpring.quick()
+        PetalSpring.quick<Float>()
     private val pressProgressAnimationSpec =
-        PetalSpring.quick()
+        PetalSpring.quick<Float>()
     private val scaleXAnimationSpec =
-        PetalSpring.quick()
+        PetalSpring.quick<Float>()
     private val scaleYAnimationSpec =
-        PetalSpring.quick()
+        PetalSpring.quick<Float>()
 
     private val valueAnimation =
         Animatable(initialValue, visibilityThreshold)
