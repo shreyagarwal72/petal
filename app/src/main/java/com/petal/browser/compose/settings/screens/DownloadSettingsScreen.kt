@@ -85,7 +85,8 @@ fun DownloadSettingsScreen(
         onIslandOverlayChange = viewModel::setIslandOverlay,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
-        modifier = modifier
+        modifier = modifier,
+        viewModel = viewModel
     )
 }
 
@@ -115,12 +116,22 @@ fun DownloadSettingsScreenContent(
     onIslandOverlayChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: DownloadSettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val installedDownloaders = remember(context) {
         ExternalDownloadManagerHelper.getInstalledDownloaders(context)
     }
+
+    val smartRouting by viewModel.smartDownloadRouting.collectAsStateWithLifecycle()
+    val parallelEnabled by viewModel.parallelDownloads.collectAsStateWithLifecycle()
+    val connections by viewModel.parallelConnections.collectAsStateWithLifecycle()
+    val maxConcurrent by viewModel.maxConcurrentDownloads.collectAsStateWithLifecycle()
+    val wifiOnly by viewModel.wifiOnlyDownloads.collectAsStateWithLifecycle()
+    val speedLimit by viewModel.downloadSpeedLimitKBps.collectAsStateWithLifecycle()
+    val verify by viewModel.verifyDownloadChecksums.collectAsStateWithLifecycle()
+    val offerClipboard by viewModel.offerClipboardImport.collectAsStateWithLifecycle()
 
     Box(modifier = modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "download_settings")
@@ -219,7 +230,6 @@ fun DownloadSettingsScreenContent(
                                 onCheckedChange = onAutoPreviewDownloadedImagesChange
                             )
                             1 -> {
-                                val smartRouting by viewModel.smartDownloadRouting.collectAsStateWithLifecycle()
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                     title = "Smart download routing",
                                     subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
@@ -243,8 +253,6 @@ fun DownloadSettingsScreenContent(
                     cardId = "misc_download_speed",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    val parallelEnabled by viewModel.parallelDownloads.collectAsStateWithLifecycle()
-                    val connections by viewModel.parallelConnections.collectAsStateWithLifecycle()
                     var batteryExempt by remember { mutableStateOf(PetalBatteryOptimization.isExempt(context)) }
                     DisposableEffect(context) {
                         val owner = context as? androidx.lifecycle.LifecycleOwner
@@ -336,11 +344,6 @@ fun DownloadSettingsScreenContent(
                     cardId = "misc_download_queue",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    val maxConcurrent by viewModel.maxConcurrentDownloads.collectAsStateWithLifecycle()
-                    val wifiOnly by viewModel.wifiOnlyDownloads.collectAsStateWithLifecycle()
-                    val speedLimit by viewModel.downloadSpeedLimitKBps.collectAsStateWithLifecycle()
-                    val verify by viewModel.verifyDownloadChecksums.collectAsStateWithLifecycle()
-                    val offerClipboard by viewModel.offerClipboardImport.collectAsStateWithLifecycle()
                     com.petal.browser.ui.containment.PetalGroup(rowCount = 5) { rowIndex, rowPosition ->
                         when (rowIndex) {
                             0 -> com.petal.browser.ui.containment.PetalGroupListRow(
