@@ -29,39 +29,62 @@ object PetalTabMetadataStore {
     private const val TAG = "PetalTabMetadataStore"
     private const val PREFS_NAME = "petal_tab_metadata_sidecar"
     private const val KEY_METADATA_JSON = "tab_metadata_map"
+    private const val KEY_MIGRATED = "migrated_to_room_v1"
     private val gson = Gson()
 
+    // In-memory cache keeps the synchronous API; Room is the durable store, written off the main thread.
     private val cache = mutableMapOf<String, PetalTabMetadata>()
     private var isLoaded = false
 
+    private val writer: java.util.concurrent.ExecutorService =
+        java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "petal-tabmeta-writer") }
+
+    /** Loads Room (and migrates the legacy prefs blob once). Blocks only on the very first access. */
     @Synchronized
     private fun ensureLoaded(context: Context) {
         if (isLoaded) return
-        val sp = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val json = sp.getString(KEY_METADATA_JSON, null)
-        if (!json.isNullOrBlank()) {
-            try {
-                val type = object : TypeToken<Map<String, PetalTabMetadata>>() {}.type
-                val loaded: Map<String, PetalTabMetadata>? = gson.fromJson(json, type)
-                cache.clear()
-                if (loaded != null) {
-                    cache.putAll(loaded)
+        val app = context.applicationContext
+        try {
+            val loaded = writer.submit<Map<String, PetalTabMetadata>> {
+                val dao = PetalTabMetadataDatabase.get(app).dao()
+                val sp = app.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                val rows = dao.getAll().associate { it.tabId to it.toModel() }.toMutableMap()
+                if (!sp.getBoolean(KEY_MIGRATED, false)) {
+                    val legacy = PetalTabMetadataMigration.parseLegacyJson(sp.getString(KEY_METADATA_JSON, null))
+                    // Room rows win over legacy ones; legacy only fills what Room does not have.
+                    legacy.forEach { (k, v) -> rows.putIfAbsent(k, v) }
+                    if (legacy.isNotEmpty()) dao.insertAll(rows.values.map { PetalTabMetadataEntity.from(it) })
+                    sp.edit().putBoolean(KEY_MIGRATED, true).remove(KEY_METADATA_JSON).apply()
+                    Log.i(TAG, "Migrated ${legacy.size} tab metadata rows from SharedPreferences to Room")
                 }
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to load tab metadata sidecar", e)
-            }
+                rows
+            }.get()
+            cache.clear()
+            cache.putAll(loaded)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to load tab metadata from Room", e)
         }
         isLoaded = true
     }
 
+    /** Warm the cache off the main thread (call from Application/Activity start). */
+    @JvmStatic
+    fun preload(context: Context) {
+        val app = context.applicationContext
+        Thread({ try { ensureLoaded(app) } catch (_: Throwable) {} }, "petal-tabmeta-preload").start()
+    }
+
+    /** Snapshot the cache and write it to Room on the writer thread; never touches the caller's thread. */
     @Synchronized
     private fun persist(context: Context) {
-        try {
-            val sp = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            val json = gson.toJson(cache)
-            sp.edit().putString(KEY_METADATA_JSON, json).apply()
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to persist tab metadata sidecar", e)
+        val app = context.applicationContext
+        val rows = cache.values.map { PetalTabMetadataEntity.from(it) }
+        writer.execute {
+            try {
+                PetalTabMetadataDatabase.get(app).dao().replaceAll(rows)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to persist tab metadata to Room", e)
+            }
         }
     }
 
@@ -225,6 +248,21 @@ object PetalTabMetadataStore {
             persist(context)
         }
     }
+
+    /**
+     * Prunes metadata for tabs that are neither open nor kept for undo (recently closed).
+     * No-op when [liveTabIds] is empty so a not-yet-restored store can never wipe everything.
+     */
+    @JvmStatic
+    fun pruneKeeping(context: Context, liveTabIds: Collection<String>, recentlyClosedIds: Collection<String>) {
+        val keep = retainedIds(liveTabIds, recentlyClosedIds) ?: return
+        prune(context, keep)
+    }
+
+    /** Ids whose metadata survives a prune, or null when pruning must be skipped (empty live list). */
+    @JvmStatic
+    fun retainedIds(liveTabIds: Collection<String>, recentlyClosedIds: Collection<String>): Set<String>? =
+        if (liveTabIds.isEmpty()) null else liveTabIds.toSet() + recentlyClosedIds.toSet()
 
     @JvmStatic
     @Synchronized

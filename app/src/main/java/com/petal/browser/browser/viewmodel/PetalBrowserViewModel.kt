@@ -6,7 +6,6 @@ import androidx.preference.PreferenceManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.petal.browser.R
-import com.petal.browser.browser.BrowserContainer
 import com.petal.browser.browser.PetalSessionRestoreManager
 import com.petal.browser.browser.PetalTabMetadata
 import com.petal.browser.browser.PetalTabMetadataStore
@@ -122,7 +121,7 @@ class PetalBrowserViewModel @Inject constructor(
         _thumbnailRevision,
         _metadataRevision
     ) { state, _, _ ->
-        state.tabs.map { tab ->
+        state.tabs.filterNot { com.petal.browser.engine.gecko.PetalEngineStore.isEphemeralTabId(it.id) }.map { tab ->
             val meta = PetalTabMetadataStore.get(context, tab.id)
             val preview = TabThumbnailCache.getMemoryOnly(tab.id, tab.content.private)
             PetalTabItem(
@@ -140,7 +139,8 @@ class PetalBrowserViewModel @Inject constructor(
                 isMuted = false,
                 groupId = meta?.tabGroupId,
                 groupTitle = meta?.tabGroupTitle,
-                groupColorHex = meta?.tabGroupColorHex
+                groupColorHex = meta?.tabGroupColorHex,
+                isSleeping = com.petal.browser.engine.gecko.PetalTabSuspender.isSleeping(tab)
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -449,17 +449,13 @@ class PetalBrowserViewModel @Inject constructor(
         val closedAtMs: Long
     )
 
-    private val closedSnapshots = LinkedHashMap<String, ClosedTabSnapshot>()
+    private val closedSnapshots = com.petal.browser.browser.ClosedTabBuffer<ClosedTabSnapshot>(UNDO_SNAPSHOT_MAX, UNDO_SNAPSHOT_TTL_MS)
 
     private fun snapshotBeforeClose(tab: TabSessionState) {
         if (tab.content.private) return
         try {
-            val liveState = try {
-                val controller = BrowserContainer.list()
-                    .filterIsInstance<PetalTabViewController>()
-                    .firstOrNull { it.tabId == tab.id }
-                controller?.getSessionState()?.let { PetalSessionRestoreManager.wrapGeckoState(it) }
-            } catch (_: Throwable) { null }
+            // Live engine session (if any) holds the freshest history; otherwise use the stored state.
+            val liveState = try { tab.engineState.engineSession?.saveState() } catch (_: Throwable) { null }
             val saved = liveState ?: tab.engineState.engineSessionState
             val thumb = TabThumbnailCache.getMemoryOrDisk(tab.id)?.let { b ->
                 if (b.isRecycled) null else try { b.copy(b.config ?: android.graphics.Bitmap.Config.ARGB_8888, false) } catch (_: Throwable) { null }
@@ -470,17 +466,7 @@ class PetalBrowserViewModel @Inject constructor(
                 metadata = PetalTabMetadataStore.get(context, tab.id),
                 closedAtMs = android.os.SystemClock.elapsedRealtime()
             )
-            synchronized(closedSnapshots) {
-                closedSnapshots.remove(tab.id)
-                closedSnapshots[tab.id] = snap
-                val cutoff = snap.closedAtMs - UNDO_SNAPSHOT_TTL_MS
-                val it = closedSnapshots.entries.iterator()
-                while (it.hasNext()) { if (it.next().value.closedAtMs < cutoff) it.remove() }
-                while (closedSnapshots.size > UNDO_SNAPSHOT_MAX) {
-                    val oldest = closedSnapshots.entries.iterator()
-                    oldest.next(); oldest.remove()
-                }
-            }
+            closedSnapshots.put(tab.id, snap, snap.closedAtMs)
         } catch (t: Throwable) {
             android.util.Log.w("PetalBrowserViewModel", "snapshotBeforeClose failed: ${t.message}")
         }
@@ -488,12 +474,12 @@ class PetalBrowserViewModel @Inject constructor(
 
     /** Re-adds a just-closed tab exactly as it was. Returns false if no snapshot is available. */
     private fun restoreFromSnapshot(tabId: String): Boolean {
-        val snap = synchronized(closedSnapshots) { closedSnapshots.remove(tabId) } ?: return false
+        val snap = closedSnapshots.take(tabId) ?: return false
         if (browserStore.state.tabs.any { it.id == tabId }) return true
         browserStore.dispatch(TabListAction.AddTabAction(snap.tab, select = false))
         snap.metadata?.let { PetalTabMetadataStore.put(context, it) }
         snap.thumbnail?.let { TabThumbnailCache.put(tabId, it, false, true) }
-        // The Mozilla-style restore replaces the vault entry; drop it so the tab is not listed twice.
+        // Undo consumes the vault entry so the tab is not listed as both open and closed.
         PetalRecentlyClosedManager.removeClosedTab(tabId)
         return true
     }
@@ -529,6 +515,26 @@ class PetalBrowserViewModel @Inject constructor(
         if (browserStore.state.tabs.isEmpty()) {
             openPlaceholderHomeTab()
         }
+    }
+
+    /** Moves tabs untouched for the configured number of days into Recently Closed. Returns the count. */
+    fun archiveStaleTabs(now: Long = System.currentTimeMillis()): Int {
+        val days = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(com.petal.browser.browser.PetalTabArchiver.PREF_AUTO_ARCHIVE_DAYS, "0")?.toIntOrNull() ?: 0
+        val st = browserStore.state
+        val ids = com.petal.browser.browser.PetalTabArchiver.idsToArchive(
+            st.tabs.filterNot { com.petal.browser.engine.gecko.PetalEngineStore.isEphemeralTabId(it.id) }.map {
+                com.petal.browser.browser.HygieneTab(
+                    id = it.id, url = it.content.url, isPrivate = it.content.private,
+                    isSelected = it.id == st.selectedTabId,
+                    isPinned = PetalTabMetadataStore.isPinned(context, it.id),
+                    lastAccess = it.lastAccess,
+                    hasActiveMedia = com.petal.browser.engine.gecko.PetalTabSuspender.hasActiveMedia(it)
+                )
+            }, now, days
+        )
+        if (ids.isNotEmpty()) closeTabs(ids)
+        return ids.size
     }
 
     fun closeTabs(tabIds: Collection<String>) {

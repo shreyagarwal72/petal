@@ -778,23 +778,9 @@ fun PetalRootApp(
 
                 val desktopTabHandler = remember(viewModel, activity) {
                     object : PetalDesktopTabBarHandler {
-                        override fun onTabSelect(controller: com.petal.browser.browser.AlbumController) {
-                            val mainAct = activity as? MainActivity
-                            if (mainAct != null) {
-                                mainAct.selectTab(controller)
-                            } else {
-                                controller.tabId?.let { viewModel.selectTab(it) }
-                            }
-                        }
+                        override fun onTabSelect(tabId: String) { viewModel.selectTab(tabId) }
 
-                        override fun onTabClose(controller: com.petal.browser.browser.AlbumController) {
-                            val mainAct = activity as? MainActivity
-                            if (mainAct != null) {
-                                mainAct.closeTab(controller)
-                            } else {
-                                controller.tabId?.let { viewModel.closeTab(it) }
-                            }
-                        }
+                        override fun onTabClose(tabId: String) { viewModel.closeTab(tabId) }
 
                         override fun onNewTab(incognito: Boolean) {
                             val mainAct = activity as? MainActivity
@@ -803,10 +789,6 @@ fun PetalRootApp(
                             } else {
                                 viewModel.openNewTab("about:home", selectTab = true, private = incognito)
                             }
-                        }
-
-                        override fun currentController(): com.petal.browser.browser.AlbumController? {
-                            return (activity as? MainActivity)?.currentAlbumController
                         }
                     }
                 }

@@ -1,190 +1,133 @@
 package com.petal.browser.engine.gecko
 
+import android.content.ComponentCallbacks2
 import android.content.Context
 import android.util.Log
 import androidx.preference.PreferenceManager
-import com.petal.browser.browser.AlbumController
-import com.petal.browser.browser.BrowserContainer
-import com.petal.browser.browser.PlaceholderAlbumController
 import mozilla.components.browser.state.action.EngineAction
-import java.util.concurrent.TimeUnit
+import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.concept.engine.mediasession.MediaSession
 
 /**
- * PetalTabSuspender
- * ─────────────────────────────────────────────────────────────────────────
- * Official Firefox-style tab suspension and lifecycle hibernation system.
+ * PetalTabSuspender: store-driven Memory Saver.
  *
- * Background tabs that have been idle for longer than the configured threshold
- * or background tabs culled during OS memory trimming have their heavyweight native
- * Gecko content process unlinked and closed.
- *
- * The tab is seamlessly transformed into a [PlaceholderAlbumController] preserving:
- * - URL (including intended/persistent URLs)
- * - Tab Title
- * - Favicon & Cached Preview Thumbnail
- * - Tab ID, Group ID, Group Title
- * - Incognito state
- *
- * When the user switches back to a suspended tab, [MainActivity.showAlbum]
- * transparently materializes a fresh GeckoSession and restores the exact tab view.
+ * BrowserStore is the only source of truth. A background tab is suspended by dispatching
+ * [EngineAction.SuspendEngineSessionAction]: Mozilla's EngineMiddleware saves the engine state
+ * (history included) into the tab and closes the engine session. The tab keeps its title,
+ * favicon, thumbnail and id; selecting it later makes the tab view controller re-create the
+ * session and restore that state. Idle time comes from [TabSessionState.lastAccess]
+ * (maintained by LastAccessMiddleware), so there is no private access map to leak.
  */
 object PetalTabSuspender {
     private const val TAG = "PetalTabSuspender"
 
     const val PREF_MEMORY_SAVER_MODE = "sp_memory_saver_mode" // "aggressive", "balanced", "off"
     const val PREF_TAB_SUSPEND_TIMEOUT = "sp_tab_suspend_timeout" // "5", "15", "30", "never" (minutes)
+    const val PREF_NEVER_SUSPEND_PINNED_MEDIA = "sp_never_suspend_pinned_media" // default true
 
-    /**
-     * Determines whether a given tab is eligible for suspension.
-     */
-    fun canSuspendTab(tab: AlbumController, isForeground: Boolean): Boolean {
-        if (isForeground) return false
-        if (tab is PlaceholderAlbumController) return false
-        // Never suspend if playing media/audio
-        if (tab is com.petal.browser.browser.PetalTabViewController) {
-            val bridge = tab.getMediaBridge()
-            if (bridge != null && bridge.hasActiveMedia()) return false
-        }
-        return true
-    }
+    /** Tabs kept awake under memory pressure, besides the selected one. */
+    private const val MIN_AWAKE_TABS_BALANCED = 3
+    private const val MIN_AWAKE_TABS_AGGRESSIVE = 1
 
-    /**
-     * Suspends a specific tab at [index] in [BrowserContainer], replacing
-     * it with a lightweight [PlaceholderAlbumController].
-     *
-     * @return true if suspended, false otherwise.
-     */
+    /** Pure eligibility rule (unit-testable, no Android dependencies besides state classes). */
     @JvmStatic
-    fun suspendTab(context: Context, index: Int): Boolean {
-        if (index < 0 || index >= BrowserContainer.size()) return false
-        val controller = BrowserContainer.get(index)
-        if (controller is PlaceholderAlbumController) return false
-
-        val tabId: String
-        val url: String
-        val title: String
-        val favicon: android.graphics.Bitmap?
-        val groupId: String?
-        val groupTitle: String?
-        val isIncognito: Boolean
-
-        when (controller) {
-            is com.petal.browser.browser.PetalTabViewController -> {
-                tabId = controller.tabId.ifBlank { controller.hashCode().toString() }
-                url = controller.url
-                title = controller.title
-                favicon = controller.favicon
-                groupId = controller.getTabGroupId()
-                groupTitle = controller.getTabGroupTitle()
-                isIncognito = controller.isIncognito
-
-                try { controller.updatePreviewCache(true) } catch (_: Throwable) {}
-                try { PetalEngineStore.dispatch(EngineAction.SuspendEngineSessionAction(tabId)) } catch (_: Throwable) {}
-
-                try {
-                    controller.deactivate()
-                    com.petal.browser.extensions.PetalExtensionManager.detachSession(controller.getGeckoSession())
-                    // The tab stays open as a placeholder, so its thumbnail must survive.
-                    controller.destroy(keepThumbnail = true)
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Error destroying PetalTabViewController during suspension: ${t.message}")
-                }
-            }
-            else -> return false
-        }
-
-        // Replace with memory-friendly PlaceholderAlbumController
-        val placeholder = PlaceholderAlbumController(
-            context,
-            title,
-            url,
-            favicon,
-            tabId,
-            groupId,
-            groupTitle,
-            isIncognito
+    fun isEligible(
+        tab: TabSessionState,
+        selectedTabId: String?,
+        isPinned: Boolean,
+        protectPinnedAndMedia: Boolean
+    ): Boolean {
+        return isEligible(
+            isSelected = tab.id == selectedTabId,
+            hasEngineSession = tab.engineState.engineSession != null,
+            hasActiveMedia = hasActiveMedia(tab),
+            isPinned = isPinned,
+            protectPinned = protectPinnedAndMedia
         )
-        BrowserContainer.replace(index, placeholder)
-        Log.i(TAG, "Successfully suspended inactive tab '$title' ($tabId) -> native memory freed")
+    }
+
+    /** Pure rule: selected, already-sleeping and media tabs are never suspended; pinned optionally. */
+    @JvmStatic
+    fun isEligible(
+        isSelected: Boolean,
+        hasEngineSession: Boolean,
+        hasActiveMedia: Boolean,
+        isPinned: Boolean,
+        protectPinned: Boolean
+    ): Boolean {
+        if (isSelected) return false
+        if (!hasEngineSession) return false // already sleeping or never started
+        if (hasActiveMedia) return false // media tabs are never suspended
+        if (protectPinned && isPinned) return false
         return true
     }
 
-    private val tabAccessMap = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    @JvmStatic
+    fun hasActiveMedia(tab: TabSessionState): Boolean =
+        tab.mediaSessionState?.playbackState == MediaSession.PlaybackState.PLAYING
 
     @JvmStatic
-    fun recordTabAccess(tabId: String) {
-        tabAccessMap[tabId] = System.currentTimeMillis()
-    }
+    fun isSleeping(tab: TabSessionState): Boolean =
+        tab.engineState.engineSession == null && tab.engineState.engineSessionState != null
 
+    /** Idle threshold from settings, or null when suspension by time is disabled. */
     @JvmStatic
-    fun getTabLastAccess(tabId: String): Long {
-        return tabAccessMap[tabId] ?: 0L
-    }
-
-    /**
-     * Evaluates all open background tabs and suspends any tabs that exceed the inactivity threshold.
-     */
-    @JvmStatic
-    fun checkAndSuspendBackgroundTabs(context: Context, activeController: AlbumController?) {
+    fun timeoutMillis(context: Context): Long? {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        val saverMode = sp.getString(PREF_MEMORY_SAVER_MODE, "balanced") ?: "balanced"
-        if (saverMode == "off") return
+        if ((sp.getString(PREF_MEMORY_SAVER_MODE, "balanced") ?: "balanced") == "off") return null
+        val minutes = (sp.getString(PREF_TAB_SUSPEND_TIMEOUT, "15") ?: "15").toLongOrNull() ?: return null
+        return minutes * 60_000L
+    }
 
-        val timeoutStr = sp.getString(PREF_TAB_SUSPEND_TIMEOUT, if (saverMode == "aggressive") "5" else "15") ?: "15"
-        if (timeoutStr == "never") return
-
-        val timeoutMinutes = timeoutStr.toLongOrNull() ?: 15L
-        val timeoutMs = TimeUnit.MINUTES.toMillis(timeoutMinutes)
-        val now = System.currentTimeMillis()
-
-        // Snapshot: collect (index, controller) pairs eligible for suspension before modifying.
-        val toSuspend = mutableListOf<Pair<Int, AlbumController>>()
-        for (i in 0 until BrowserContainer.size()) {
-            val controller = BrowserContainer.get(i)
-            if (controller === activeController) continue
-            if (!canSuspendTab(controller, false)) continue
-            val tabId = (controller as? com.petal.browser.browser.PetalTabSurface)?.tabId?.takeIf { it.isNotBlank() } ?: continue
-            val lastAccess = getTabLastAccess(tabId)
-            if (lastAccess > 0L && (now - lastAccess) >= timeoutMs) {
-                toSuspend.add(Pair(i, controller))
-            }
-        }
-        // Suspend in reverse index order so earlier indices stay valid as later ones are replaced.
-        for ((index, _) in toSuspend.asReversed()) {
-            suspendTab(context, index)
+    private fun candidates(context: Context, protect: Boolean): List<TabSessionState> {
+        val state = PetalEngineStore.getStore(context).state
+        return state.tabs.filter {
+            !PetalEngineStore.isEphemeralTabId(it.id) && isEligible(
+                it, state.selectedTabId,
+                com.petal.browser.browser.PetalTabMetadataStore.isPinned(context, it.id),
+                protect
+            )
         }
     }
 
+    private fun protectPinnedAndMedia(context: Context): Boolean =
+        PreferenceManager.getDefaultSharedPreferences(context).getBoolean(PREF_NEVER_SUSPEND_PINNED_MEDIA, true)
+
+    /** Time-based sweep: suspends eligible background tabs idle longer than the timeout. */
     @JvmStatic
-    fun checkAndSuspendInactiveTabs(context: Context, activeController: AlbumController?) {
-        checkAndSuspendBackgroundTabs(context, activeController)
+    fun sweepIdleTabs(context: Context, now: Long = System.currentTimeMillis()): Int {
+        val timeout = timeoutMillis(context) ?: return 0
+        val store = PetalEngineStore.getStore(context)
+        var count = 0
+        for (tab in candidates(context, protectPinnedAndMedia(context))) {
+            val last = tab.lastAccess
+            if (last <= 0L || now - last < timeout) continue
+            store.dispatch(EngineAction.SuspendEngineSessionAction(tab.id))
+            count++
+        }
+        if (count > 0) Log.i(TAG, "Suspended $count idle background tab(s)")
+        return count
     }
 
-    /**
-     * Suspends background tabs under memory pressure in sorted LRU order, preserving
-     * at least [minActiveTabs] active tabs.
-     */
+    /** Memory-pressure sweep: suspends least-recently-used eligible tabs beyond the awake budget. */
     @JvmStatic
-    fun trimBackgroundTabs(context: Context, activeController: AlbumController?, minActiveTabs: Int = 3) {
-        val candidates = mutableListOf<Pair<Int, Long>>()
-
-        for (i in 0 until BrowserContainer.size()) {
-            val controller = BrowserContainer.get(i)
-            if (controller === activeController) continue
-            if (!canSuspendTab(controller, false)) continue
-            val tabId = (controller as? com.petal.browser.browser.PetalTabSurface)?.tabId?.takeIf { it.isNotBlank() } ?: continue
-            val lastAccess = getTabLastAccess(tabId)
-            candidates.add(Pair(i, lastAccess))
-        }
-
-        // Sort ascending by last access (oldest accessed tabs first)
-        candidates.sortBy { it.second }
-
-        val toSuspendCount = (candidates.size - minActiveTabs).coerceAtLeast(0)
-        for (k in 0 until toSuspendCount) {
-            val index = candidates[k].first
-            suspendTab(context, index)
-        }
-        Log.i(TAG, "Trimmed background tabs: suspended $toSuspendCount tabs (preserved $minActiveTabs)")
+    fun suspendUnderPressure(context: Context, level: Int): Int {
+        val mode = PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(PREF_MEMORY_SAVER_MODE, "balanced") ?: "balanced"
+        if (mode == "off" || !isRealPressure(level)) return 0
+        val keepAwake = if (mode == "aggressive") MIN_AWAKE_TABS_AGGRESSIVE else MIN_AWAKE_TABS_BALANCED
+        val store = PetalEngineStore.getStore(context)
+        val awake = store.state.tabs.count { it.engineState.engineSession != null }
+        val toSuspend = candidates(context, protectPinnedAndMedia(context))
+            .sortedBy { it.lastAccess }
+            .take((awake - keepAwake).coerceAtLeast(0))
+        toSuspend.forEach { store.dispatch(EngineAction.SuspendEngineSessionAction(it.id)) }
+        if (toSuspend.isNotEmpty()) Log.i(TAG, "Memory pressure level=$level: suspended ${toSuspend.size} tab(s)")
+        return toSuspend.size
     }
+
+    /** UI_HIDDEN (20) means "app went to background", not memory pressure. */
+    @JvmStatic
+    fun isRealPressure(level: Int): Boolean =
+        level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW && level != ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN
 }

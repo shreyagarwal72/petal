@@ -34,6 +34,29 @@ import java.util.UUID
  * BrowserStore in [PetalEngineStore] is the single source of truth for in-memory tab state.
  * Persistence to disk is handled by SessionStorage write on onStop/onPause.
  */
+/** Pure plan for restoring the saved session into a store that may already hold tabs. */
+data class SessionMergePlan(val restoreIds: List<String>, val selectId: String?, val restoreBefore: Boolean)
+
+object SessionMerge {
+    /** Saved tabs already present are skipped; the intent-created selection stays selected. */
+    @JvmStatic
+    fun plan(
+        existingIds: List<String>,
+        existingSelectedId: String?,
+        savedIds: List<String>,
+        savedSelectedId: String?
+    ): SessionMergePlan {
+        val have = existingIds.toSet()
+        val toRestore = savedIds.filter { it !in have }
+        val hasExisting = existingIds.isNotEmpty()
+        return SessionMergePlan(
+            restoreIds = toRestore,
+            selectId = if (hasExisting) existingSelectedId else savedSelectedId,
+            restoreBefore = hasExisting
+        )
+    }
+}
+
 object PetalSessionRestoreManager {
 
     private const val TAG = "PetalSessionRestore"
@@ -68,19 +91,6 @@ object PetalSessionRestoreManager {
         val tabGroupColorHex: String? = null
     )
 
-    fun wrapGeckoState(actualState: org.mozilla.geckoview.GeckoSession.SessionState?): mozilla.components.concept.engine.EngineSessionState? {
-        if (actualState == null) return null
-        return try {
-            val cls = Class.forName("mozilla.components.browser.engine.gecko.GeckoEngineSessionState")
-            val ctor = cls.getDeclaredConstructor(org.mozilla.geckoview.GeckoSession.SessionState::class.java)
-            ctor.isAccessible = true
-            ctor.newInstance(actualState) as? mozilla.components.concept.engine.EngineSessionState
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to wrap GeckoSession.SessionState into GeckoEngineSessionState: ${t.message}")
-            null
-        }
-    }
-
     /**
      * Flushes open tabs state into BrowserStore (including full engineSessionState history stacks
      * and active indices) and writes the snapshot to disk via SessionStorage asynchronously.
@@ -99,52 +109,31 @@ object PetalSessionRestoreManager {
             val store = PetalEngineStore.getStore(activity)
             if (!store.state.restoreComplete) return
 
-            // 1. Capture latest engineSessionState, URL, and title for every live tab
-            for (i in 0 until BrowserContainer.size()) {
-                val controller = BrowserContainer.get(i) ?: continue
-                when (controller) {
-                    is PetalTabViewController -> {
-                        val tabId = controller.tabId.takeIf { it.isNotBlank() } ?: continue
-                        if (isStopping) {
-                            try {
-                                val engineSessionState = wrapGeckoState(controller.getSessionState())
-                                if (engineSessionState != null) {
-                                    store.dispatch(EngineAction.UpdateEngineSessionStateAction(tabId, engineSessionState))
-                                }
-                            } catch (t: Throwable) {
-                                Log.w(TAG, "Failed to capture engine state for tab $tabId: ${t.message}")
-                            }
-                        }
-                        val url = controller.url
-                        if (url.isNotBlank() && !isHomeUrl(url) && !url.equals("about:blank", ignoreCase = true)) {
-                            store.dispatch(ContentAction.UpdateUrlAction(tabId, url))
-                        }
-                        val title = controller.title
-                        if (title.isNotBlank()) {
-                            store.dispatch(ContentAction.UpdateTitleAction(tabId, title))
-                        }
-                    }
-                    is PlaceholderAlbumController -> {
-                        // Already suspended with engineSessionState captured
+            // 1. BrowserStore is the source of truth for url/title/selection. On stop, also capture the
+            //    engine state (history stack, scroll, form data) of every NORMAL tab that has a live
+            //    engine session. Private tabs are never captured or persisted.
+            if (isStopping) {
+                store.state.tabs.filter { !it.content.private }.forEach { tab ->
+                    val engineSession = tab.engineState.engineSession ?: return@forEach
+                    try {
+                        val engineState = engineSession.saveState()
+                        store.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, engineState))
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Failed to capture engine state for tab ${tab.id}: ${t.message}")
                     }
                 }
             }
 
-            // 2. Update selected tab in store to match active album
-            val activeController = activity.currentAlbumController
-            val activeTabId = (activeController as? PetalTabSurface)?.tabId
-            if (activeTabId != null) {
-                store.dispatch(TabListAction.SelectTabAction(activeTabId))
-            }
+            // 2. (selection already lives in BrowserStore; nothing to sync)
 
-            // 3. Persist to disk off-main thread via SessionStorage when stopping
+            // 3. Flush through the single serialized writer (same path AutoSave uses).
             if (isStopping) {
                 val storage = PetalEngineStore.getSessionStorage(activity)
                 val snapshot = store.state
                 val future = SAVE_EXECUTOR.submit {
                     try {
-                        val saved = storage.save(snapshot)
-                        Log.d(TAG, "saveSession: flushed ${snapshot.tabs.size} tabs to SessionStorage (success=$saved)")
+                        val saved = PetalEngineStore.writeSession(activity, storage, snapshot)
+                        Log.d(TAG, "saveSession: flushed ${snapshot.tabs.size} tabs (success=$saved)")
                     } catch (t: Throwable) {
                         Log.w(TAG, "Failed to write session snapshot to disk: ${t.message}", t)
                     }
@@ -328,12 +317,16 @@ object PetalSessionRestoreManager {
     fun restoreSession(activity: MainActivity): Boolean {
         val store = PetalEngineStore.getStore(activity)
 
-        // Process is alive: reuse existing tabs in BrowserStore
-        if (store.state.tabs.isNotEmpty()) {
-            Log.i(TAG, "Process alive with ${store.state.tabs.size} tabs in BrowserStore. Reusing live tabs.")
-            PetalEngineStore.markRestoreComplete(activity)
+        // Live process: the saved session was already restored earlier in this process (activity
+        // recreation, rotation, theme change). restoreComplete is only ever set by restoreSession,
+        // so a cold process where a Custom Tab, PWA, share intent or widget created a tab first is
+        // NOT treated as live: its saved session is still restored below and merged with those tabs.
+        if (store.state.restoreComplete) {
+            Log.i(TAG, "Process alive (restore already complete) with ${store.state.tabs.size} tabs. Reusing live tabs.")
             return true
         }
+        val preExistingTabs = store.state.tabs
+        val preExistingSelectedId = store.state.selectedTabId
 
         // Cold start: perform legacy migration if needed
         performLegacyMigrationIfNeeded(activity)
@@ -355,38 +348,36 @@ object PetalSessionRestoreManager {
 
         return try {
             val storage = PetalEngineStore.getSessionStorage(activity)
-            val restoredState = storage.restore { !it.state.private }
+            var restoredState = try { storage.restore { !it.state.private } } catch (t: Throwable) { null }
+            if ((restoredState == null || restoredState.tabs.isEmpty()) &&
+                PetalEngineStore.recoverSessionFromBackup(activity)) {
+                restoredState = try { storage.restore { !it.state.private } } catch (t: Throwable) { null }
+            }
 
             if (restoredState != null && restoredState.tabs.isNotEmpty()) {
                 Log.i(TAG, "Restoring ${restoredState.tabs.size} tabs into empty BrowserStore")
                 com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.TAB_RESTORED, "tabs_restored", "${restoredState.tabs.size} tabs restored", "Picked up where you left off")
-                val mozillaRestore = sp.getBoolean("sp_mozilla_session_restore", false)
-                if (mozillaRestore) {
-                    try {
-                        val tabsUseCases = mozilla.components.feature.tabs.TabsUseCases(store)
-                        tabsUseCases.restore.invoke(
-                            tabs = restoredState.tabs,
-                            selectTabId = restoredState.selectedTabId,
-                            restoreLocation = TabListAction.RestoreAction.RestoreLocation.END
-                        )
-                    } catch (t: Throwable) {
-                        Log.w(TAG, "Mozilla TabsUseCases restore failed, falling back to direct dispatch: ${t.message}")
-                        store.dispatch(
-                            TabListAction.RestoreAction(
-                                tabs = restoredState.tabs,
-                                selectedTabId = restoredState.selectedTabId,
-                                restoreLocation = TabListAction.RestoreAction.RestoreLocation.END
-                            )
-                        )
+                // Merge, never overwrite: skip any saved tab already present in the store, place the
+                // saved tabs before the tabs created by the intent, and keep the intent's tab selected.
+                val plan = SessionMerge.plan(
+                    existingIds = preExistingTabs.map { it.id },
+                    existingSelectedId = preExistingSelectedId,
+                    savedIds = restoredState.tabs.map { it.state.id },
+                    savedSelectedId = restoredState.selectedTabId
+                )
+                val toRestore = restoredState.tabs.filter {
+                    it.state.id in plan.restoreIds && !PetalEngineStore.isEphemeralTabId(it.state.id)
+                }
+                toRestore.forEach { PetalEngineStore.noteDiskState(it.state.id, it.engineSessionState) }
+                if (toRestore.isNotEmpty()) {
+                    val selectId = plan.selectId
+                    val location = if (plan.restoreBefore)
+                        TabListAction.RestoreAction.RestoreLocation.BEFORE
+                    else TabListAction.RestoreAction.RestoreLocation.END
+                    store.dispatch(TabListAction.RestoreAction(toRestore, selectId, location))
+                    if (preExistingTabs.isNotEmpty() && preExistingSelectedId != null) {
+                        store.dispatch(TabListAction.SelectTabAction(preExistingSelectedId))
                     }
-                } else {
-                    store.dispatch(
-                        TabListAction.RestoreAction(
-                            tabs = restoredState.tabs,
-                            selectedTabId = restoredState.selectedTabId,
-                            restoreLocation = TabListAction.RestoreAction.RestoreLocation.END
-                        )
-                    )
                 }
                 PetalEngineStore.markRestoreComplete(activity)
                 // Thumbnails live exactly as long as their tab: drop files of tabs that no longer
@@ -408,93 +399,6 @@ object PetalSessionRestoreManager {
             PetalEngineStore.markRestoreComplete(activity)
             false
         }
-    }
-
-    /**
-     * Restores a single tab cleanly into the browser container at [targetIndex] without
-     * forcibly hiding the tab switcher overlay if [keepOverviewOpen] is true.
-     */
-    @JvmStatic
-    @JvmOverloads
-    fun restoreTabSilently(
-        activity: MainActivity,
-        title: String?,
-        url: String?,
-        targetIndex: Int = -1,
-        isIncognito: Boolean = false,
-        groupId: String? = null,
-        groupTitle: String? = null,
-        groupColorHex: String? = null,
-        keepOverviewOpen: Boolean = false
-    ): AlbumController {
-        val safeTitle = if (title.isNullOrBlank() || title == "Petal Home" || title == "about:blank") {
-            activity.getString(R.string.app_name)
-        } else {
-            title
-        }
-        val safeUrl = if (url.isNullOrBlank() || url == "Petal Home" || url.equals("about:blank", ignoreCase = true)) {
-            "about:blank"
-        } else {
-            url
-        }
-
-        val tabId = "tab_silently_${System.currentTimeMillis()}_${UUID.randomUUID().toString().substring(0, 8)}"
-
-        if (!groupId.isNullOrBlank()) {
-            PetalTabMetadataStore.setGroup(activity, tabId, groupId, groupTitle, groupColorHex)
-        }
-
-        val sessionPair = PetalEngineStore.materializeTabSession(
-            context = activity,
-            tabId = tabId,
-            fallbackUrl = safeUrl,
-            fallbackTitle = safeTitle,
-            isIncognito = isIncognito,
-            select = !keepOverviewOpen
-        )
-
-        if (keepOverviewOpen) {
-            val placeholder = PlaceholderAlbumController(
-                activity,
-                safeTitle,
-                safeUrl,
-                null,
-                tabId,
-                groupId,
-                groupTitle,
-                isIncognito
-            )
-            if (sessionPair.first.engineState.engineSessionState == null && safeUrl.isNotBlank() && !isHomeUrl(safeUrl)) {
-                sessionPair.second.loadUrl(safeUrl)
-            }
-            if (targetIndex >= 0 && targetIndex <= BrowserContainer.size()) {
-                BrowserContainer.add(placeholder, targetIndex)
-            } else {
-                BrowserContainer.add(placeholder)
-            }
-            return placeholder
-        }
-
-        val geckoView = activity.getOrCreateTabViewController()
-        geckoView.bindTab(sessionPair.first)
-        if (!groupId.isNullOrBlank()) {
-            geckoView.setTabGroupId(groupId)
-            geckoView.setTabGroupTitle(groupTitle)
-        }
-
-        if (!geckoView.isHistoryRestoring() && safeUrl.isNotBlank() && !isHomeUrl(safeUrl)) {
-            geckoView.loadUrl(safeUrl)
-        }
-
-        if (targetIndex >= 0 && targetIndex <= BrowserContainer.size()) {
-            BrowserContainer.add(geckoView, targetIndex)
-        } else {
-            BrowserContainer.add(geckoView)
-        }
-
-        geckoView.activate()
-        activity.showAlbum(geckoView)
-        return geckoView
     }
 
     /**
@@ -533,15 +437,13 @@ object PetalSessionRestoreManager {
                 val acSession = root.optString("ac_session", null)
                 val metadata = root.optString("metadata", null)
                 if (!acSession.isNullOrBlank()) {
-                    File(context.filesDir, "mozilla_components_session_storage_gecko.json")
-                        .writeText(acSession, Charsets.UTF_8)
+                    PetalEngineStore.replaceSessionFile(context, acSession)
                 }
                 if (!metadata.isNullOrBlank()) {
                     PetalTabMetadataStore.importJson(context, metadata)
                 }
             } else if (trimmed.startsWith("{") && trimmed.contains("\"tabs\"")) {
-                File(context.filesDir, "mozilla_components_session_storage_gecko.json")
-                    .writeText(trimmed, Charsets.UTF_8)
+                PetalEngineStore.replaceSessionFile(context, trimmed)
             } else if (trimmed.startsWith("[")) {
                 val listType = object : TypeToken<List<LegacyTabRecord>>() {}.type
                 val parsed: List<LegacyTabRecord>? = gson.fromJson(trimmed, listType)
@@ -592,7 +494,14 @@ object PetalSessionRestoreManager {
             val storage = PetalEngineStore.getSessionStorage(context)
             storage.save(BrowserState())
             PetalTabMetadataStore.clear(context)
-            File(context.filesDir, "mozilla_components_session_storage_gecko.json").delete()
+            PetalEngineStore.deleteSessionFiles(context)
+            // Closed-tab titles/URLs and page screenshots are history too: a cleared session must not
+            // leave them behind in the Recently Closed vault or the thumbnail cache.
+            try {
+                com.petal.browser.unit.PetalRecentlyClosedManager.init(context)
+                com.petal.browser.unit.PetalRecentlyClosedManager.clear()
+            } catch (_: Throwable) {}
+            try { com.petal.browser.unit.TabThumbnailCache.clear() } catch (_: Throwable) {}
         } catch (t: Throwable) {
             Log.w(TAG, "Error clearing session storage", t)
         }

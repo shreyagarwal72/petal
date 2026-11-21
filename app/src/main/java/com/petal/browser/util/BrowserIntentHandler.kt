@@ -13,7 +13,6 @@ import com.petal.browser.R
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.compose.incognito.PetalIncognitoSessionManager
 import com.petal.browser.compose.mlkit.PetalImageScannerBridge
-import com.petal.browser.browser.BrowserContainer
 import com.petal.browser.lens.PetalLensBridge
 import com.petal.browser.ui.components.PetalAiSearchBridge
 import com.petal.browser.ui.components.PetalVoiceSearchBridge

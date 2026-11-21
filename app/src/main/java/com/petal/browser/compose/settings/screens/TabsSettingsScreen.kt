@@ -146,7 +146,10 @@ fun TabsSettingsScreen(
                         mutableStateOf(sp.getString(com.petal.browser.engine.gecko.PetalTabSuspender.PREF_TAB_SUSPEND_TIMEOUT, "15") ?: "15")
                     }
 
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, position ->
+                    var neverSuspendPinnedMedia by remember { mutableStateOf(sp.getBoolean(com.petal.browser.engine.gecko.PetalTabSuspender.PREF_NEVER_SUSPEND_PINNED_MEDIA, true)) }
+                    var autoArchiveDays by remember { mutableStateOf(sp.getString(com.petal.browser.browser.PetalTabArchiver.PREF_AUTO_ARCHIVE_DAYS, "0") ?: "0") }
+
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 4) { index, position ->
                         when (index) {
                             0 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
@@ -166,19 +169,47 @@ fun TabsSettingsScreen(
                                 com.petal.browser.ui.containment.PetalGroupRow(
                                     icon = Icons.Rounded.HourglassTop,
                                     title = "Tab Hibernation Interval",
-                                    subtitle = if (memorySaverMode == "off") "Disabled" else "After $suspendTimeout minutes of inactivity",
+                                    subtitle = if (memorySaverMode == "off") "Disabled" else if (suspendTimeout == "never") "Never (only under memory pressure)" else "After $suspendTimeout minutes of inactivity",
                                     position = position,
                                     onClick = {
                                         if (memorySaverMode != "off") {
                                             val next = when (suspendTimeout) {
                                                 "5" -> "15"
                                                 "15" -> "30"
-                                                "30" -> "5"
+                                                "30" -> "never"
+                                                "never" -> "5"
                                                 else -> "15"
                                             }
                                             suspendTimeout = next
                                             sp.edit().putString(com.petal.browser.engine.gecko.PetalTabSuspender.PREF_TAB_SUSPEND_TIMEOUT, next).apply()
                                         }
+                                    }
+                                )
+                            }
+                            2 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_never_suspend_pinned_media),
+                                    subtitle = stringResource(R.string.ui_never_suspend_pinned_media_desc),
+                                    icon = Icons.Rounded.PushPin,
+                                    checked = neverSuspendPinnedMedia,
+                                    position = position,
+                                    onCheckedChange = {
+                                        neverSuspendPinnedMedia = it
+                                        sp.edit().putBoolean(com.petal.browser.engine.gecko.PetalTabSuspender.PREF_NEVER_SUSPEND_PINNED_MEDIA, it).apply()
+                                    }
+                                )
+                            }
+                            3 -> {
+                                com.petal.browser.ui.containment.PetalGroupRow(
+                                    icon = Icons.Rounded.Archive,
+                                    title = stringResource(R.string.ui_auto_archive_tabs),
+                                    subtitle = if (autoArchiveDays == "0") stringResource(R.string.ui_auto_archive_off)
+                                        else stringResource(R.string.ui_auto_archive_after_days, autoArchiveDays.toIntOrNull() ?: 0),
+                                    position = position,
+                                    onClick = {
+                                        val next = when (autoArchiveDays) { "0" -> "7"; "7" -> "14"; "14" -> "30"; else -> "0" }
+                                        autoArchiveDays = next
+                                        sp.edit().putString(com.petal.browser.browser.PetalTabArchiver.PREF_AUTO_ARCHIVE_DAYS, next).apply()
                                     }
                                 )
                             }

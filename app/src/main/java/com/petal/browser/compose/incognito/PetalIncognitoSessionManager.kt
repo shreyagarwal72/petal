@@ -53,8 +53,7 @@ object PetalIncognitoSessionManager {
         } catch (_: Throwable) {
             0
         }
-        val legacyCount = try { com.petal.browser.browser.BrowserContainer.getIncognitoCount() } catch (_: Throwable) { 0 }
-        return Math.max(countFromStore, Math.max(legacyCount, activeIncognitoTabCount))
+        return Math.max(countFromStore, activeIncognitoTabCount)
     }
 
     @JvmStatic
@@ -121,17 +120,10 @@ object PetalIncognitoSessionManager {
                 .remove("sp_incognito_search_history_list")
                 .apply()
 
-            // Purge GeckoView in-memory private session caches, cookies & auth sessions
-            try {
-                com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(context).storageController.clearData(
-                    org.mozilla.geckoview.StorageController.ClearFlags.ALL_CACHES or
-                    org.mozilla.geckoview.StorageController.ClearFlags.AUTH_SESSIONS or
-                    org.mozilla.geckoview.StorageController.ClearFlags.COOKIES or
-                    org.mozilla.geckoview.StorageController.ClearFlags.DOM_STORAGES
-                )
-            } catch (t: Throwable) {
-                android.util.Log.w("PetalIncognito", "Failed to clear GeckoView private session data: ${t.message}")
-            }
+            // NOTE: never call StorageController.clearData() here. It targets the shared runtime
+            // (and the normal profile), so it would wipe the user's regular cookies, logins and
+            // site storage. Gecko discards private-session data itself when the private
+            // sessions close; only Petal-owned state is cleaned below.
 
             // Purge private cookie cache in PetalGeckoCookieBridge
             com.petal.browser.download.PetalGeckoCookieBridge.clearPrivateCookies()

@@ -1952,5 +1952,14 @@
     <string name="menu_active_add_ons">%1$d active add-ons</string>
     <string name="menu_state_on">On</string>
     <string name="menu_state_off">Off</string>
+    <string name="ui_tab_sleeping">Sleeping tab</string>
+    <string name="ui_close_duplicate_tabs">Close duplicate tabs</string>
+    <string name="ui_close_duplicate_tabs_count">Close duplicate tabs (%1$d)</string>
+    <string name="ui_sleeping_tabs_badge">%1$d tabs sleeping to save memory</string>
+    <string name="ui_never_suspend_pinned_media">Never sleep pinned or media tabs</string>
+    <string name="ui_never_suspend_pinned_media_desc">Pinned tabs and tabs playing audio or video stay loaded</string>
+    <string name="ui_auto_archive_tabs">Auto-archive old tabs</string>
+    <string name="ui_auto_archive_off">Off</string>
+    <string name="ui_auto_archive_after_days">Untouched tabs move to Recently Closed after %1$d days</string>
 </resources>
 

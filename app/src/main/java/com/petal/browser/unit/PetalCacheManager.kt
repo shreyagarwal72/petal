@@ -305,21 +305,6 @@ object PetalCacheManager {
         }
     }
 
-    /**
-     * Official memory trim integration for low-memory events.
-     */
-    @JvmStatic
-    fun onTrimMemory(context: Context, level: Int) {
-        val appContext = context.applicationContext
-        try {
-            PetalGeckoRuntime.onTrimMemory(appContext, level)
-            // Thumbnails are trimmed in tiers by TabThumbnailCache itself. The old check
-            // (level >= RUNNING_CRITICAL) is true for TRIM_MEMORY_UI_HIDDEN, so every time the
-            // app was backgrounded all previews, including RAM-only incognito ones, were lost.
-            TabThumbnailCache.trimMemory(level)
-        } catch (_: Throwable) {}
-    }
-
     // ─────────────────────────────────────────────────────────────────────────
     // Utility helpers
     // ─────────────────────────────────────────────────────────────────────────

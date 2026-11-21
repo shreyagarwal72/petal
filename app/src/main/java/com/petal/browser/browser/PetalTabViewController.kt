@@ -69,12 +69,6 @@ class PetalTabViewController private constructor(
     private var pendingNavUrl: String? = null
     private var pendingNavSince = 0L
 
-    // Most recent GeckoView session state (back/forward history, scroll, zoom, form data) reported by
-    // Gecko through ProgressDelegate.onSessionStateChange. Kept as the raw object and only serialized
-    // on demand (see captureEngineState) because Gecko emits these updates very frequently.
-    @Volatile
-    private var latestGeckoState: org.mozilla.geckoview.GeckoSession.SessionState? = null
-
     private fun isStaleInitialBlank(newUrl: String): Boolean {
         if (!newUrl.equals("about:blank", ignoreCase = true)) return false
         if (pendingNavUrl == null) return false
@@ -108,7 +102,7 @@ class PetalTabViewController private constructor(
 
     /** Pending restored history is only trusted briefly; afterwards the URL trail takes over. */
     private fun isHistoryPending(): Boolean =
-        historyPending && android.os.SystemClock.uptimeMillis() - historyPendingSince < 4000L
+        historyPending && android.os.SystemClock.uptimeMillis() - historyPendingSince < 15000L
 
     private fun trackNavigation(url: String) {
         if (isIncognito() || url.isBlank() || url.equals("about:blank", ignoreCase = true) ||
@@ -162,9 +156,6 @@ class PetalTabViewController private constructor(
         }
     }
 
-    private fun onGeckoStateChanged(state: org.mozilla.geckoview.GeckoSession.SessionState) {
-        latestGeckoState = state
-    }
     private var loading = false
     private var progress = 0
     private var isSecure = false
@@ -474,7 +465,12 @@ class PetalTabViewController private constructor(
             canGoBack?.let { backAvailable = it }
             canGoForward?.let { forwardAvailable = it }
             // Gecko has now spoken about its history, so "pending" no longer applies.
-            if (canGoBack != null && restoreLocationSeen) historyPending = false
+            // Only a positive report ends the pending window; an early "false" is Gecko not having
+            // rebuilt its history yet (loading-finished or the timeout end it otherwise).
+            if (canGoBack == true && restoreLocationSeen) historyPending = false
+            if (PetalEngineStore.RESTORE_DEBUG && android.os.SystemClock.uptimeMillis() - historyPendingSince < 6000L) {
+                PetalEngineStore.dbg("navState[$boundTabId] canGoBack=$canGoBack back=$backAvailable pending=$historyPending locSeen=$restoreLocationSeen t=${android.os.SystemClock.uptimeMillis() - historyPendingSince}ms")
+            }
             tab?.let {
                 PetalEngineStore.updateNavigationState(
                     appContext,
@@ -691,7 +687,6 @@ class PetalTabViewController private constructor(
         // A spinner left over from the previously bound tab must not be shown on this one.
         removeCallbacks(refreshWatchdog)
         isRefreshing = false
-        if (observedSession !== session) latestGeckoState = null
         observedSession = session
         this.tab = tab
         boundTabId = tab.id
@@ -715,7 +710,14 @@ class PetalTabViewController private constructor(
         backAvailable = tab.content.canGoBack
         forwardAvailable = tab.content.canGoForward
         // A session rebuilt from saved state has not reported its history yet: trust Back briefly.
-        historyPending = PetalEngineStore.consumeRestoredFlag(tab.id)
+        // Trust restored history whichever code path created the session: either materializeTabSession
+        // restored it, or the state read from disk held more than one entry (derived from the saved
+        // engine state, not from canGoBack callbacks, which are not persisted).
+        val restoredHere = PetalEngineStore.consumeRestoredFlag(tab.id)
+        val diskHint = PetalEngineStore.consumeDiskBackHint(tab.id)
+        historyPending = restoredHere || diskHint
+        if (diskHint) backAvailable = true
+        PetalEngineStore.dbg("bind[${tab.id}] restoredHere=$restoredHere diskHint=$diskHint storeCanGoBack=${tab.content.canGoBack}")
         historyPendingSince = android.os.SystemClock.uptimeMillis()
         restoreLocationSeen = false
         if (pageUrl.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(pageUrl) && !pageUrl.equals("about:blank", ignoreCase = true)) {
@@ -897,12 +899,10 @@ class PetalTabViewController private constructor(
             val engineProgress = gs.progressDelegate
             if (engineProgress is SessionStateCapturingProgressDelegate) {
                 engineProgress.onSecurity = { sec -> currentSecurityInfo = sec }
-                engineProgress.onState = { state -> onGeckoStateChanged(state) }
             } else {
                 gs.progressDelegate = SessionStateCapturingProgressDelegate(
                     engine = engineProgress,
-                    onSecurity = { sec -> currentSecurityInfo = sec },
-                    onState = { state -> onGeckoStateChanged(state) }
+                    onSecurity = { sec -> currentSecurityInfo = sec }
                 )
             }
 
@@ -1836,51 +1836,6 @@ class PetalTabViewController private constructor(
         }
     }
 
-    fun getSessionState(): org.mozilla.geckoview.GeckoSession.SessionState? = latestGeckoState
-
-    /**
-     * Serialized GeckoView session state (history stack, scroll, zoom, form data) for persistence,
-     * or null when none is available yet or the tab is private (private tabs are never persisted).
-     */
-    fun captureEngineState(): String? {
-        if (isIncognito()) return null
-        val state = latestGeckoState ?: return null
-        return try {
-            state.toString().takeIf { it.length > 2 }
-        } catch (_: Throwable) {
-            null
-        }
-    }
-
-    /**
-     * Restores a previously captured [captureEngineState] value into this tab's fresh engine session so
-     * the back/forward history survives process death. Must be called on the main thread after
-     * [bindTab] and INSTEAD of [loadUrl]. Returns false when the state is unusable; the caller should
-     * then fall back to [loadUrl].
-     */
-    @MainThread
-    fun restoreEngineState(serializedState: String, expectedUrl: String): Boolean {
-        val gs = getGeckoSession() ?: return false
-        return try {
-            val state = org.mozilla.geckoview.GeckoSession.SessionState.fromString(serializedState)
-                ?: return false
-            // Same guard loadUrl() installs: a freshly created session first reports its own initial
-            // about:blank document, which must not be mistaken for "this tab is Home".
-            pendingNavUrl = expectedUrl
-            pendingNavSince = android.os.SystemClock.uptimeMillis()
-            gs.restoreState(state)
-            latestGeckoState = state
-            restoreLocationSeen = false
-            historyPendingSince = android.os.SystemClock.uptimeMillis()
-            historyPending = restoredStateHasHistory(serializedState)
-            true
-        } catch (t: Throwable) {
-            pendingNavUrl = null
-            android.util.Log.w("PetalTabNav", "restoreEngineState failed: ${t.message}")
-            false
-        }
-    }
-
     /**
      * Returns true if this tab has a restored real URL but has not yet navigated to or loaded it.
      */
@@ -1988,7 +1943,9 @@ class PetalTabViewController private constructor(
             val currentTab = tab
             val currentTabId = currentTab?.id ?: boundTabId
             val urlToRestore = if (pageUrl.isNotBlank() && !pageUrl.equals("about:blank", ignoreCase = true)) pageUrl else currentTab?.content?.url ?: ""
-            val stateToRestore = latestGeckoState
+            // The store holds the last engine state Mozilla's observer reported for this tab.
+            val stateToRestore = currentTabId?.let { id -> browserStore.state.tabs.firstOrNull { it.id == id } }
+                ?.engineState?.engineSessionState
 
             // 1. Release and close the dead GeckoSession
             val gs = getGeckoSession()
@@ -2005,6 +1962,7 @@ class PetalTabViewController private constructor(
             val eng = com.petal.browser.engine.gecko.PetalEngineStore.getEngine(context)
             val isPrivate = isIncognito()
             val newEngineSession = eng.createSession(private = isPrivate)
+            val stateRestored = stateToRestore != null && try { newEngineSession.restoreState(stateToRestore) } catch (_: Throwable) { false }
 
             if (currentTabId != null) {
                 browserStore.dispatch(
@@ -2029,9 +1987,7 @@ class PetalTabViewController private constructor(
                         if (updatedTab != null) {
                             bindTab(updatedTab)
                         }
-                        if (stateToRestore != null) {
-                            getGeckoSession()?.restoreState(stateToRestore)
-                        } else if (urlToRestore.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(urlToRestore)) {
+                        if (!stateRestored && urlToRestore.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(urlToRestore)) {
                             loadUrl(urlToRestore)
                         }
                     } catch (e: Exception) {
@@ -2043,9 +1999,7 @@ class PetalTabViewController private constructor(
                 if (updatedTab != null) {
                     bindTab(updatedTab)
                 }
-                if (stateToRestore != null) {
-                    getGeckoSession()?.restoreState(stateToRestore)
-                } else if (urlToRestore.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(urlToRestore)) {
+                if (!stateRestored && urlToRestore.isNotBlank() && !com.petal.browser.unit.PetalBrowserUtils.isHomePage(urlToRestore)) {
                     loadUrl(urlToRestore)
                 }
             }
@@ -2810,14 +2764,12 @@ private class ExternalSchemeNavigationDelegate(
 
 /**
  * Forwards every ProgressDelegate callback explicitly to Mozilla GeckoEngine's own delegate (no Kotlin
- * `by` delegation, which drops Java default methods per KT-18324) and additionally hands each
- * [org.mozilla.geckoview.GeckoSession.SessionState] to [onState]. The captured state carries the tab's
- * back/forward history, which is what lets Back keep working after the app is cleared from recents.
+ * `by` delegation, which drops Java default methods per KT-18324) and also reports security info. Engine state (history) is
+ * tracked by BrowserStore through Mozilla's own observer, so nothing is cached per controller here.
  */
 private class SessionStateCapturingProgressDelegate(
     private val engine: org.mozilla.geckoview.GeckoSession.ProgressDelegate?,
-    @Volatile var onSecurity: ((org.mozilla.geckoview.GeckoSession.ProgressDelegate.SecurityInformation) -> Unit)? = null,
-    @Volatile var onState: (org.mozilla.geckoview.GeckoSession.SessionState) -> Unit
+    @Volatile var onSecurity: ((org.mozilla.geckoview.GeckoSession.ProgressDelegate.SecurityInformation) -> Unit)? = null
 ) : org.mozilla.geckoview.GeckoSession.ProgressDelegate, PetalOwnedDelegate {
 
     override fun onPageStart(session: org.mozilla.geckoview.GeckoSession, url: String) {
@@ -2875,6 +2827,5 @@ private class SessionStateCapturingProgressDelegate(
         } catch (t: Throwable) {
             android.util.Log.w("PetalTabNav", "Error forwarding onSessionStateChange: ${t.message}")
         }
-        onState(sessionState)
     }
 }

@@ -57,7 +57,6 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.browser.AlbumController
-import com.petal.browser.browser.BrowserContainer
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
@@ -69,10 +68,9 @@ import androidx.compose.material3.Icon
 
 /** Callbacks from the desktop tab strip into the host activity. */
 interface PetalDesktopTabBarHandler {
-    fun onTabSelect(controller: AlbumController)
-    fun onTabClose(controller: AlbumController)
+    fun onTabSelect(tabId: String)
+    fun onTabClose(tabId: String)
     fun onNewTab(incognito: Boolean)
-    fun currentController(): AlbumController?
 }
 
 /** Lightweight snapshot of one tab for the strip. Equality drives recomposition. */
@@ -82,7 +80,7 @@ private data class PetalDesktopTabEntry(
     val favicon: Bitmap?,
     val incognito: Boolean,
     val selected: Boolean,
-    val controller: AlbumController
+    val tabId: String
 ) {
     // Controller identity is covered by [key]; keep equality cheap and stable.
     override fun equals(other: Any?): Boolean =
@@ -181,28 +179,26 @@ object PetalDesktopTabBarBridge {
     }
 }
 
-private fun resolveEntries(handler: PetalDesktopTabBarHandler): List<PetalDesktopTabEntry> {
-    val list = try { BrowserContainer.list() } catch (_: Exception) { return emptyList() }
-    val selected = try { handler.currentController() } catch (_: Exception) { null }
-    return list.map { album ->
-        val rawTitle = try { album.title } catch (_: Exception) { null }
-        val rawUrl = try { album.url } catch (_: Exception) { null }
+private fun resolveEntries(context: android.content.Context): List<PetalDesktopTabEntry> {
+    // BrowserStore is the single source of truth for the tab list.
+    val state = try { com.petal.browser.engine.gecko.PetalEngineStore.getStore(context).state } catch (_: Exception) { return emptyList() }
+    return state.tabs.filterNot { com.petal.browser.engine.gecko.PetalEngineStore.isEphemeralTabId(it.id) }.map { tab ->
+        val rawTitle = tab.content.title
+        val rawUrl = tab.content.url
         val title = when {
-            !rawTitle.isNullOrBlank() && !rawTitle.equals("about:blank", true) &&
+            rawTitle.isNotBlank() && !rawTitle.equals("about:blank", true) &&
                 !rawTitle.equals("Petal Start", true) && !rawTitle.equals("Petal Home", true) -> rawTitle
-            !rawUrl.isNullOrBlank() && !rawUrl.equals("about:blank", true) &&
+            rawUrl.isNotBlank() && !rawUrl.equals("about:blank", true) &&
                 !rawUrl.startsWith("file:///android_asset/") && !rawUrl.equals("petal://home", true) -> rawUrl
             else -> "Petal Home"
         }
-        val tabSurface = album as? com.petal.browser.browser.PetalTabSurface
-        val favicon = tabSurface?.favicon
         PetalDesktopTabEntry(
-            key = System.identityHashCode(album),
+            key = tab.id.hashCode(),
             title = title,
-            favicon = favicon,
-            incognito = tabSurface?.isIncognito ?: false,
-            selected = album === selected,
-            controller = album
+            favicon = tab.content.icon,
+            incognito = tab.content.private,
+            selected = tab.id == state.selectedTabId,
+            tabId = tab.id
         )
     }
 }
@@ -210,13 +206,13 @@ private fun resolveEntries(handler: PetalDesktopTabBarHandler): List<PetalDeskto
 @Composable
 fun PetalDesktopTabBar(handler: PetalDesktopTabBarHandler, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    var entries by remember { mutableStateOf(resolveEntries(handler)) }
+    var entries by remember { mutableStateOf(resolveEntries(context)) }
 
     // Poll the tab registry: titles, favicons and selection change from many places in the app.
     // Only a changed snapshot triggers recomposition (see PetalDesktopTabEntry.equals).
     LaunchedEffect(Unit) {
         while (true) {
-            val fresh = resolveEntries(handler)
+            val fresh = resolveEntries(context)
             if (fresh != entries) entries = fresh
             delay(350)
         }
@@ -254,8 +250,8 @@ fun PetalDesktopTabBar(handler: PetalDesktopTabBarHandler, modifier: Modifier = 
                         placementSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
                         fadeOutSpec = tween(150)
                     ),
-                    onSelect = { haptic(); handler.onTabSelect(entry.controller) },
-                    onClose = { haptic(); handler.onTabClose(entry.controller) }
+                    onSelect = { haptic(); handler.onTabSelect(entry.tabId) },
+                    onClose = { haptic(); handler.onTabClose(entry.tabId) }
                 )
             }
         }

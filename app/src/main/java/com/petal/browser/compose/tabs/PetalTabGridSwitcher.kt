@@ -162,7 +162,8 @@ data class PetalTabItem(
     val isMuted: Boolean = false,
     val groupId: String? = null,
     val groupTitle: String? = null,
-    val groupColorHex: String? = null
+    val groupColorHex: String? = null,
+    val isSleeping: Boolean = false
 )
 
 /**
@@ -872,6 +873,25 @@ fun PetalTabGridSwitcher(
                                     }
                                 )
                                 com.petal.browser.ui.containment.PetalMenuDivider()
+                                val duplicateIds = com.petal.browser.browser.PetalTabDuplicates.idsToClose(
+                                    tabs.map {
+                                        com.petal.browser.browser.HygieneTab(
+                                            id = it.id, url = it.url, isPrivate = it.isIncognito,
+                                            isSelected = it.isSelected, isPinned = it.isPinned
+                                        )
+                                    }
+                                )
+                                if (duplicateIds.isNotEmpty()) {
+                                    PetalExpressiveMenuItem(
+                                        text = stringResource(R.string.ui_close_duplicate_tabs_count, duplicateIds.size),
+                                        leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null, tint = accentColor) },
+                                        onClick = {
+                                            isOverflowMenuExpanded = false
+                                            val idSet = duplicateIds.toSet()
+                                            tabs.filter { it.id in idSet }.forEach { onTabClose(it) }
+                                        }
+                                    )
+                                }
                                 PetalExpressiveMenuItem(
                                     text = stringResource(R.string.ui_tab_manager_settings),
                                     leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null, tint = accentColor) },
@@ -944,6 +964,28 @@ fun PetalTabGridSwitcher(
                     }
 
                     Spacer(Modifier.height(10.dp))
+
+                    val sleepingCount = tabs.count { it.isSleeping }
+                    if (sleepingCount > 0) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Rounded.Memory, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    stringResource(R.string.ui_sleeping_tabs_badge, sleepingCount),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                    }
 
                     // ── Real-time tab & group search ─────────────
                     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
@@ -2396,6 +2438,14 @@ private fun PetalTabCard(
                             Icons.Rounded.PushPin,
                             contentDescription = stringResource(R.string.ui_pinned),
                             tint = accentColor,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                    if (tab.isSleeping) {
+                        Icon(
+                            Icons.Rounded.Bedtime,
+                            contentDescription = stringResource(R.string.ui_tab_sleeping),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(15.dp)
                         )
                     }

@@ -172,6 +172,7 @@ class MainActivity : FragmentActivity(), BrowserController {
             }
         }
         super.onCreate(savedInstanceState)
+        com.petal.browser.browser.PetalTabMetadataStore.preload(this)
         // Keep the next cold-start splash in sync with the selected app icon (Android 13+; no-op elsewhere).
         com.petal.browser.appicon.PetalAppIcons.syncSplashTheme(this)
         com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this)
@@ -219,6 +220,18 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     override fun onStop() {
         super.onStop()
+        window.decorView.removeCallbacks(suspendSweep)
+        try { com.petal.browser.engine.gecko.PetalTabSuspender.sweepIdleTabs(applicationContext) } catch (_: Throwable) {}
+        try {
+            // Drop sidecar metadata of tabs that are gone (keeping recently-closed ids for undo).
+            val st = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this).state
+            if (st.restoreComplete) {
+                com.petal.browser.browser.PetalTabMetadataStore.pruneKeeping(
+                    applicationContext, st.tabs.map { it.id },
+                    com.petal.browser.unit.PetalRecentlyClosedManager.getRecentlyClosedTabs().map { it.id }
+                )
+            }
+        } catch (_: Throwable) {}
         com.petal.browser.account.sync.PetalFolderSync.onAppBackground(this)
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
         val clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
@@ -237,8 +250,20 @@ class MainActivity : FragmentActivity(), BrowserController {
         browserFeatures = null
     }
 
+    // Memory Saver: periodic store-driven sweep of idle background tabs while the app is visible.
+    private val suspendSweep = object : Runnable {
+        override fun run() {
+            try { com.petal.browser.engine.gecko.PetalTabSuspender.sweepIdleTabs(applicationContext) } catch (_: Throwable) {}
+            window?.decorView?.postDelayed(this, 60_000L)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
+        window.decorView.removeCallbacks(suspendSweep)
+        window.decorView.postDelayed(suspendSweep, 60_000L)
+        // Scheduled auto-archive (setting, off by default): stale tabs go to Recently Closed.
+        window.decorView.postDelayed({ try { viewModel.archiveStaleTabs() } catch (_: Throwable) {} }, 3_000L)
         com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this)
         applyImmersiveFullscreen()
         com.petal.browser.engine.gecko.PetalEngineStore.pendingTabSelectionOnResume?.let { pendingId ->

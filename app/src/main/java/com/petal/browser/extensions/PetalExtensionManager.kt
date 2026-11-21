@@ -1,6 +1,7 @@
 package com.petal.browser.extensions
 
 import android.content.Context
+import com.petal.browser.engine.gecko.PetalEngineStore
 import android.net.Uri
 import android.graphics.Bitmap
 import android.provider.OpenableColumns
@@ -22,7 +23,6 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.WebExtension
 import org.mozilla.geckoview.WebExtensionController
 import com.petal.browser.browser.AlbumController
-import com.petal.browser.browser.BrowserContainer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.petal.browser.activity.MainActivity
@@ -1028,8 +1028,8 @@ object PetalExtensionManager {
                 val allSessions = mutableSetOf<GeckoSession>()
                 openSessions.filter { it.isOpen }.forEach { allSessions.add(it) }
                 openSessions.retainAll { it.isOpen }
-                BrowserContainer.list().forEach { controller ->
-                    val session = geckoSessionFor(controller)
+                PetalEngineStore.getStore(ctx).state.tabs.forEach { tab ->
+                    val session = geckoSessionFor(tab)
                     if (session != null && session.isOpen) allSessions.add(session)
                 }
                 allSessions.forEach { session ->
@@ -1068,10 +1068,12 @@ object PetalExtensionManager {
                 Handler(Looper.getMainLooper()).post {
                     try {
                         val activity = findMainActivity(context) ?: return@post
-                        val controller = BrowserContainer.list().firstOrNull {
+                        val tab = PetalEngineStore.getStore(context).state.tabs.firstOrNull {
                             geckoSessionFor(it) === session
                         }
-                        if (controller != null) activity.removeAlbum(controller)
+                        if (tab != null) PetalEngineStore.getStore(context).dispatch(
+                            mozilla.components.browser.state.action.TabListAction.RemoveTabAction(tab.id)
+                        )
                     } catch (t: Throwable) {
                         Log.w(TAG, "Extension tab close request failed", t)
                     }
@@ -1087,14 +1089,15 @@ object PetalExtensionManager {
                 Handler(Looper.getMainLooper()).post {
                     try {
                         val activity = findMainActivity(context) ?: return@post
-                        val controller = BrowserContainer.list().firstOrNull {
-                            geckoSessionFor(it) === session
-                        }
-                        if (controller != null) {
+                        val store = PetalEngineStore.getStore(context)
+                        val tab = store.state.tabs.firstOrNull { geckoSessionFor(it) === session }
+                        if (tab != null) {
                             details.url?.takeIf { it.isNotBlank() }?.let { url ->
-                                (controller as? com.petal.browser.browser.PetalTabViewController)?.loadUrl(url)
+                                tab.engineState.engineSession?.loadUrl(url)
                             }
-                            if (details.active == true) activity.showAlbum(controller)
+                            if (details.active == true) {
+                                store.dispatch(mozilla.components.browser.state.action.TabListAction.SelectTabAction(tab.id))
+                            }
                         }
                     } catch (t: Throwable) {
                         Log.w(TAG, "Extension tab update request failed", t)
@@ -1524,14 +1527,12 @@ object PetalExtensionManager {
             }
         } catch (_: Throwable) {}
 
-        val activity = findMainActivity(context) ?: return null
-        return activity.currentAlbumController?.let(::geckoSessionFor)
+        // BrowserStore is the single source of truth; there is no controller registry to fall back to.
+        return null
     }
 
-    private fun geckoSessionFor(controller: AlbumController): GeckoSession? = when (controller) {
-        is com.petal.browser.browser.PetalTabViewController -> controller.getGeckoSession()
-        else -> null
-    }
+    private fun geckoSessionFor(tab: mozilla.components.browser.state.state.TabSessionState): GeckoSession? =
+        com.petal.browser.engine.gecko.PetalEngineBridge.getEngineGeckoSession(tab.engineState.engineSession)
 
     private fun findMainActivity(context: Context): com.petal.browser.activity.MainActivity? {
         var ctx: Context? = context

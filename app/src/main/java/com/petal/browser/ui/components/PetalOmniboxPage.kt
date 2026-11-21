@@ -361,13 +361,11 @@ fun PetalOmniboxPage(
 
     val openTabs = remember(isIncognito) {
         try {
-            com.petal.browser.browser.PetalTabRegistry.list().mapIndexedNotNull { index, controller ->
-                if (controller != null && controller.isIncognito == isIncognito) {
-                    val title = controller.title ?: ""
-                    val url = controller.url ?: ""
-                    if (title.isNotBlank() || url.isNotBlank()) {
-                        Triple(title, url, index)
-                    } else null
+            com.petal.browser.engine.gecko.PetalEngineStore.getStore(context).state.tabs.mapIndexedNotNull { index, tab ->
+                if (tab.content.private == isIncognito && !com.petal.browser.engine.gecko.PetalEngineStore.isEphemeralTabId(tab.id)) {
+                    val title = tab.content.title
+                    val url = tab.content.url
+                    if (title.isNotBlank() || url.isNotBlank()) Triple(title, url, index) else null
                 } else null
             }
         } catch (_: Exception) {
@@ -1270,8 +1268,10 @@ fun PetalOmniboxPage(
                                                         onClick = {
                                                             if (payload.source == SuggestionSource.SWITCH_TO_TAB && payload.tabIndex >= 0) {
                                                                 try {
-                                                                    val target = com.petal.browser.browser.PetalTabRegistry.get(payload.tabIndex)
-                                                                    (activity as? com.petal.browser.activity.MainActivity)?.showAlbum(target)
+                                                                    val target = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context).state.tabs[payload.tabIndex]
+                                                                    com.petal.browser.engine.gecko.PetalEngineStore.getStore(context).dispatch(
+                                                                        mozilla.components.browser.state.action.TabListAction.SelectTabAction(target.id)
+                                                                    )
                                                                     onBackPress()
                                                                 } catch (_: Exception) {
                                                                     val trimmed = payload.targetUrl?.trim() ?: payload.query.trim()

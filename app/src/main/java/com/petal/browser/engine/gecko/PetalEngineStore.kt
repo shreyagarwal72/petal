@@ -18,8 +18,6 @@ import mozilla.components.feature.downloads.DownloadMiddleware
 import mozilla.components.feature.prompts.PromptMiddleware
 import mozilla.components.feature.prompts.file.FileUploadsDirCleaner
 import mozilla.components.feature.prompts.file.FileUploadsDirCleanerMiddleware
-import mozilla.components.feature.recentlyclosed.RecentlyClosedMiddleware
-import mozilla.components.feature.recentlyclosed.RecentlyClosedTabsStorage
 import mozilla.components.feature.readerview.ReaderViewMiddleware
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 import java.util.concurrent.ConcurrentHashMap
@@ -61,7 +59,6 @@ object PetalEngineStore {
     private var sessionStorage: SessionStorage? = null
 
     @Volatile
-    private var recentlyClosedStorage: RecentlyClosedTabsStorage? = null
 
     @Volatile
     private var thumbnailStorage: ThumbnailStorage? = null
@@ -208,7 +205,7 @@ object PetalEngineStore {
         val engineMiddleware = EngineMiddleware.create(
             engine = currentEngine,
             scope = mainScope,
-            trimMemoryAutomatically = true
+            trimMemoryAutomatically = false
         )
         val downloadMiddleware = DownloadMiddleware(
             applicationContext = appContext,
@@ -217,12 +214,8 @@ object PetalEngineStore {
             deleteFileFromStorage = { true }
         )
         val uploadCleaner = getFileUploadsDirCleaner(appContext)
-        val rcStorage = getRecentlyClosedStorage(appContext)
-        val recentlyClosedMiddleware = RecentlyClosedMiddleware(
-            storage = lazy { rcStorage },
-            maxSavedTabs = 25,
-            scope = mainScope
-        )
+        // Closed tabs are recorded only by PetalRecentlyClosedManager (single store, owns the vault UI
+        // and lock). Mozilla's RecentlyClosedMiddleware was a second, never-read copy and is removed.
 
         val thumbnailsMiddleware = PetalThumbnailsMiddleware()
 
@@ -235,7 +228,7 @@ object PetalEngineStore {
                 PromptMiddleware(),
                 FileUploadsDirCleanerMiddleware(uploadCleaner),
                 SessionPrioritizationMiddleware(),
-                recentlyClosedMiddleware,
+                mozilla.components.browser.state.engine.middleware.LastAccessMiddleware(),
                 ReaderViewMiddleware(),
                 thumbnailsMiddleware
             ) + engineMiddleware
@@ -261,26 +254,6 @@ object PetalEngineStore {
         return newStore
     }
 
-    @JvmStatic
-    @Synchronized
-    fun getRecentlyClosedStorage(context: Context): RecentlyClosedTabsStorage {
-        recentlyClosedStorage?.let { return it }
-
-        val appContext = context.applicationContext
-        val currentEngine = getEngine(appContext)
-        val crashReporter = object : mozilla.components.concept.base.crash.CrashReporting {
-            override fun submitCaughtException(throwable: Throwable) = kotlinx.coroutines.Job().apply { complete() }
-            override fun recordCrashBreadcrumb(breadcrumb: mozilla.components.concept.base.crash.Breadcrumb) {}
-        }
-        val storage = RecentlyClosedTabsStorage(
-            context = appContext,
-            engine = currentEngine,
-            crashReporting = crashReporter
-        )
-        recentlyClosedStorage = storage
-        Log.i(TAG, "Initialized Mozilla RecentlyClosedTabsStorage")
-        return storage
-    }
 
     @JvmStatic
     @Synchronized
@@ -419,7 +392,7 @@ object PetalEngineStore {
         val currentStorage = getSessionStorage(appContext)
         val saver = AutoSave(
             store = currentStore,
-            sessionStorage = RestoreGatedStorage(currentStorage),
+            sessionStorage = RestoreGatedStorage(appContext, currentStorage),
             minimumIntervalMs = 2000L,
             applicationScope = mainScope
         )
@@ -449,16 +422,128 @@ object PetalEngineStore {
     @JvmStatic
     fun consumeRestoredFlag(tabId: String): Boolean = restoredTabIds.remove(tabId)
 
+    // TEMPORARY restore diagnostics (finding #3). Filter logcat with tag PetalRestoreDbg.
+    const val RESTORE_DEBUG = true
+    @JvmStatic
+    fun dbg(msg: String) { if (RESTORE_DEBUG) Log.i("PetalRestoreDbg", msg) }
+
+    // tabId -> "the state read from disk holds more than one history entry". Set when a saved tab is
+    // put into the store, independent of which code path later creates its engine session, so Back
+    // can trust restored history even if materializeTabSession was not the creator.
+    private val diskBackHint: MutableMap<String, Boolean> = ConcurrentHashMap()
+
+    /** Records, from the engine state restored from disk, whether Back should be available. */
+    @JvmStatic
+    fun noteDiskState(tabId: String, state: mozilla.components.concept.engine.EngineSessionState?) {
+        if (state == null) { dbg("disk[$tabId] engineState=null"); return }
+        val hasHistory = try { historyHasBack(state.toJSON()) } catch (t: Throwable) { true }
+        diskBackHint[tabId] = hasHistory
+        dbg("disk[$tabId] engineState present, backHint=$hasHistory")
+    }
+
+    /** True once for a tab whose disk state had back history; consumed by bindTab. */
+    @JvmStatic
+    fun consumeDiskBackHint(tabId: String): Boolean = diskBackHint.remove(tabId) == true
+
+    @JvmStatic
+    fun historyHasBack(json: org.json.JSONObject): Boolean = PetalSessionRules.historyHasBack(json)
+
     /**
      * Never persists before the saved session has been restored into the store. SessionStorage.save()
      * DELETES the session file when the store holds no tabs, and an empty store before restore means
      * "not restored yet", not "the user closed every tab".
      */
-    private class RestoreGatedStorage(private val delegate: SessionStorage) : AutoSave.Storage {
-        override fun save(state: BrowserState): Boolean {
-            if (!state.restoreComplete) return false
-            return delegate.save(state)
+    private class RestoreGatedStorage(
+        private val context: Context,
+        private val delegate: SessionStorage
+    ) : AutoSave.Storage {
+        override fun save(state: BrowserState): Boolean = writeSession(context, delegate, state)
+    }
+
+    @JvmStatic
+    fun isEphemeralTabId(id: String): Boolean = PetalSessionRules.isEphemeralTabId(id)
+
+    @Volatile private var lastPersistedSelectedId: String? = null
+
+    private const val SESSION_FILE = "mozilla_components_session_storage_gecko.json"
+    private const val SESSION_BACKUP_FILE = "mozilla_components_session_storage_gecko.json.bak"
+    private const val BACKUP_MIN_INTERVAL_MS = 60_000L
+    private val sessionWriteLock = Any()
+
+    /**
+     * The single place session state is written to disk. AutoSave and the onStop flush both go
+     * through here, serialized by [sessionWriteLock], so writes can never interleave. Before
+     * overwriting, the previous file is kept as a rolling backup if (and only if) it parses.
+     */
+    @JvmStatic
+    fun writeSession(context: Context, storage: SessionStorage, state: BrowserState): Boolean {
+        if (!state.restoreComplete) return false
+        val toWrite = PetalSessionRules.withoutEphemeralTabs(state, lastPersistedSelectedId)
+        toWrite.selectedTabId?.let { lastPersistedSelectedId = it }
+        synchronized(sessionWriteLock) {
+            try { rollBackupLocked(context) } catch (t: Throwable) {
+                Log.w(TAG, "Session backup skipped: ${t.message}")
+            }
+            return storage.save(toWrite)
         }
+    }
+
+    private fun rollBackupLocked(context: Context) {
+        val dir = context.applicationContext.filesDir
+        val main = java.io.File(dir, SESSION_FILE)
+        val bak = java.io.File(dir, SESSION_BACKUP_FILE)
+        if (!main.exists() || main.length() < 2L) return
+        if (bak.exists() && System.currentTimeMillis() - bak.lastModified() < BACKUP_MIN_INTERVAL_MS) return
+        // Only a file that still parses is a "last good" session.
+        org.json.JSONObject(main.readText())
+        main.copyTo(bak, overwrite = true)
+    }
+
+    /** Replaces the session file with [text] (must be a JSON object). Locked, atomic, resets the backup. */
+    @JvmStatic
+    fun replaceSessionFile(context: Context, text: String): Boolean = synchronized(sessionWriteLock) {
+        try {
+            org.json.JSONObject(text)
+            val dir = context.applicationContext.filesDir
+            val tmp = java.io.File(dir, "$SESSION_FILE.tmp")
+            tmp.writeText(text, Charsets.UTF_8)
+            if (!tmp.renameTo(java.io.File(dir, SESSION_FILE))) {
+                java.io.File(dir, SESSION_FILE).writeText(text, Charsets.UTF_8)
+                tmp.delete()
+            }
+            java.io.File(dir, SESSION_BACKUP_FILE).delete() // stale after an import
+            true
+        } catch (t: Throwable) {
+            Log.w(TAG, "Refused to replace session file: ${t.message}")
+            false
+        }
+    }
+
+    /** Deletes the session file AND its rolling backup (privacy: a cleared session must not come back). */
+    @JvmStatic
+    fun deleteSessionFiles(context: Context) = synchronized(sessionWriteLock) {
+        val dir = context.applicationContext.filesDir
+        java.io.File(dir, SESSION_FILE).delete()
+        java.io.File(dir, SESSION_BACKUP_FILE).delete()
+        java.io.File(dir, "$SESSION_FILE.tmp").delete()
+    }
+
+    /**
+     * If the main session file is missing/corrupt, swaps in the rolling backup so the next
+     * restore can read it. Returns true if the backup was put in place.
+     */
+    @JvmStatic
+    fun recoverSessionFromBackup(context: Context): Boolean = synchronized(sessionWriteLock) {
+        val dir = context.applicationContext.filesDir
+        val main = java.io.File(dir, SESSION_FILE)
+        val bak = java.io.File(dir, SESSION_BACKUP_FILE)
+        if (!bak.exists() || bak.length() < 2L) return false
+        return try {
+            org.json.JSONObject(bak.readText())
+            bak.copyTo(main, overwrite = true)
+            Log.w(TAG, "Session file unreadable; restored from rolling backup")
+            true
+        } catch (t: Throwable) { false }
     }
 
     @JvmStatic
@@ -639,6 +724,7 @@ object PetalEngineStore {
                 val skipLoading = if (state != null) {
                     try {
                         val restored = newSession.restoreState(state)
+                        dbg("materialize[$tabId] restoreState=$restored")
                         if (restored) restoredTabIds.add(tabId)
                         restored
                     } catch (t: Throwable) {
@@ -928,7 +1014,11 @@ object PetalEngineStore {
      */
     @JvmStatic
     fun onLowMemory(context: Context, level: Int) {
+        // Single trim path (EngineMiddleware's trimMemoryAutomatically is off). UI_HIDDEN is
+        // "app in background", not memory pressure, so it must not unlink background sessions.
+        if (!PetalTabSuspender.isRealPressure(level)) return
         try {
+            PetalTabSuspender.suspendUnderPressure(context, level)
             getStore(context).dispatch(
                 mozilla.components.browser.state.action.SystemAction.LowMemoryAction(level)
             )
