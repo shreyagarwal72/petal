@@ -79,19 +79,11 @@ fun PetalSlider(
     }
 
     // Tick haptics for stepped sliders, like ImageToolbox.
-    if (steps != 0) {
-        var compositions by remember { mutableIntStateOf(0) }
-        val updated by rememberUpdatedState(value)
-        LaunchedEffect(updated) {
-            if (compositions > 0) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-            compositions++
-        }
-    }
 
     // Ease programmatic changes, but follow the finger exactly while it is down.
     val dragging by interactionSource.collectIsDraggedAsState()
     val pressing by interactionSource.collectIsPressedAsState()
-    val eased by animateFloatAsState(value, tween(100), label = "sliderValue")
+    val eased by animateFloatAsState(value, PetalSpring.quick(), label = "sliderValue")
     val shown = if (dragging || pressing) value else eased
 
     val body: @Composable (Modifier) -> Unit = { mod ->

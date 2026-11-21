@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
@@ -651,7 +653,7 @@ fun PrivacySettingsScreenContent(
                                                 }
                                             }
                                         )
-                                        AnimatedVisibility(visible = isExpanded) {
+                                        AnimatedVisibility(visible = isExpanded, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                                             Column(
                                                 modifier = Modifier.padding(start = 20.dp),
                                                 verticalArrangement = Arrangement.spacedBy(3.dp)

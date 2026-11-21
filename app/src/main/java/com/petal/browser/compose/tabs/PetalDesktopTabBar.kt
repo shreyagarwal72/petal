@@ -1,5 +1,7 @@
 package com.petal.browser.compose.tabs
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
@@ -224,10 +226,6 @@ fun PetalDesktopTabBar(handler: PetalDesktopTabBarHandler, modifier: Modifier = 
         if (selectedIndex >= 0) listState.animateScrollToItem(selectedIndex)
     }
 
-    val haptic: () -> Unit = {
-        try { PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.85f) } catch (_: Exception) {}
-    }
-
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -246,12 +244,12 @@ fun PetalDesktopTabBar(handler: PetalDesktopTabBarHandler, modifier: Modifier = 
                 PetalDesktopTabChip(
                     entry = entry,
                     modifier = Modifier.animateItem(
-                        fadeInSpec = tween(220, easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)),
-                        placementSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
-                        fadeOutSpec = tween(150)
+                        fadeInSpec = PetalSpring.calm(),
+                        placementSpec = PetalSpring.calm(),
+                        fadeOutSpec = PetalSpring.calm()
                     ),
-                    onSelect = { haptic(); handler.onTabSelect(entry.tabId) },
-                    onClose = { haptic(); handler.onTabClose(entry.tabId) }
+                    onSelect = { handler.onTabSelect(entry.tabId) },
+                    onClose = { handler.onTabClose(entry.tabId) }
                 )
             }
         }
@@ -263,7 +261,7 @@ fun PetalDesktopTabBar(handler: PetalDesktopTabBarHandler, modifier: Modifier = 
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = androidx.compose.material3.ripple()
-                ) { haptic(); handler.onNewTab(false) }
+                ) { handler.onNewTab(false) }
                 .semantics { contentDescription = "New tab" },
             contentAlignment = Alignment.Center
         ) {
@@ -284,13 +282,13 @@ private fun PetalDesktopTabChip(
         if (entry.selected) {
             if (entry.incognito) scheme.tertiaryContainer else scheme.secondaryContainer
         } else scheme.surfaceContainerHigh.copy(alpha = 0.0f),
-        animationSpec = spring(stiffness = Spring.StiffnessMedium), label = "tabChipColor"
+        animationSpec = PetalSpring.quick(), label = "tabChipColor"
     )
     val content = if (entry.selected) {
         if (entry.incognito) scheme.onTertiaryContainer else scheme.onSecondaryContainer
     } else scheme.onSurfaceVariant
-    val corner by animateDpAsState(if (entry.selected) 16.dp else 10.dp, spring(dampingRatio = 0.7f), label = "tabChipCorner")
-    val widthDp by animateDpAsState(if (entry.selected) 200.dp else 150.dp, spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow), label = "tabChipWidth")
+    val corner by animateDpAsState(if (entry.selected) 16.dp else 10.dp, PetalSpring.calm(), label = "tabChipCorner")
+    val widthDp by animateDpAsState(if (entry.selected) 200.dp else 150.dp, PetalSpring.calm(), label = "tabChipWidth")
 
     Row(
         modifier = modifier

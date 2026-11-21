@@ -9,6 +9,8 @@
  */
 
 package com.petal.browser.compose.home
+
+import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 
@@ -512,14 +514,13 @@ fun PetalHomeScreen(
         if (targetProfileId == com.petal.browser.profile.PetalProfileManager.activeProfile.id) return
         coroutineScope.launch {
             // Exit: 120ms tween fade & slide down
-            profileSwitchProgress.animateTo(0f, tween(120, easing = FastOutSlowInEasing))
+            profileSwitchProgress.animateTo(0f, PetalSpring.quick())
             com.petal.browser.profile.PetalProfileManager.switchProfile(context, targetProfileId)
             com.petal.browser.wallpaper.PetalWallpaperManager.loadForActiveProfile(context)
             shortcuts = loadHomeShortcuts(context)
             removedUrls = loadRemovedShortcutUrls(context)
-            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.5f)
             // Entrance: 460f stiffness / 0.78f damping ratio spring bounce
-            profileSwitchProgress.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = 460f))
+            profileSwitchProgress.animateTo(1f, PetalSpring.quick())
         }
     }
 
@@ -821,8 +822,8 @@ fun PetalHomeScreen(
 
                                                     androidx.compose.animation.AnimatedVisibility(
                                                         visible = isExpanded,
-                                                        enter = androidx.compose.animation.expandVertically(animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.8f, stiffness = 400f)) + androidx.compose.animation.fadeIn(),
-                                                        exit = androidx.compose.animation.shrinkVertically(animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.8f, stiffness = 400f)) + androidx.compose.animation.fadeOut()
+                                                        enter = androidx.compose.animation.expandVertically(animationSpec = PetalSpring.calm()) + androidx.compose.animation.fadeIn(),
+                                                        exit = androidx.compose.animation.shrinkVertically(animationSpec = PetalSpring.calm()) + androidx.compose.animation.fadeOut()
                                                     ) {
                                                         Column {
                                                             Spacer(Modifier.height(10.dp))
@@ -1031,7 +1032,7 @@ private fun ShortcutTile(
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.92f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        animationSpec = PetalSpring.quick(),
         label = "shortcut_press_scale"
     )
 
@@ -1178,7 +1179,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.98f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        animationSpec = PetalSpring.quick(),
         label = "search_bar_press_scale"
     )
     // Real on-screen bounds of this pill: the omnibox page grows out of / collapses back into it.

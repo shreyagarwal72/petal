@@ -81,10 +81,7 @@ fun PetalMinimizedPill(
     val isPressed by interactionSource.collectIsPressedAsState()
     val pressScale by animateFloatAsState(
         targetValue = if (isPressed) 0.94f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        animationSpec = PetalSpring.quick(),
         label = "pill_press_scale"
     )
 
@@ -123,7 +120,7 @@ fun PetalMinimizedPill(
                         onDragStart = { dragAccum = 0f },
                         onDragEnd = {
                             if (Math.abs(dragAccum) > 10.dp.toPx()) {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
                                 onExpand()
                             }
                             dragAccum = 0f
@@ -138,7 +135,6 @@ fun PetalMinimizedPill(
                     interactionSource = interactionSource,
                     indication = ripple(bounded = true)
                 ) {
-                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                     onExpand()
                 }
         ) {

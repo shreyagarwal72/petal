@@ -9,6 +9,8 @@
 
 package com.petal.browser.compose.security
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
@@ -297,8 +299,8 @@ fun PetalAppLockConfigScreen(
                         // ── Passcode management (only for passcode lock) ──
                         AnimatedVisibility(
                             visible = selectedLockType == "PASSWORD",
-                            enter = fadeIn(spring(stiffness = 400f)) + expandVertically(spring(dampingRatio = 0.8f, stiffness = 400f)),
-                            exit = fadeOut(spring(stiffness = 600f)) + shrinkVertically(spring(stiffness = 600f))
+                            enter = fadeIn(PetalSpring.calm()) + expandVertically(PetalSpring.calm()),
+                            exit = fadeOut(PetalSpring.calm()) + shrinkVertically(PetalSpring.calm())
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 PetalSettingsSection(

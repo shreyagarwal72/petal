@@ -1,5 +1,7 @@
 package com.petal.browser.media.sniffer
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
@@ -118,8 +120,8 @@ fun PetalMediaSnifferOverlay(
 
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInVertically { -it } + fadeIn() + scaleIn(initialScale = .92f),
-        exit  = slideOutVertically { -it } + fadeOut() + scaleOut(targetScale = .92f),
+        enter = slideInVertically { -it } + fadeIn(animationSpec = PetalSpring.calm()) + scaleIn(initialScale = .92f),
+        exit  = slideOutVertically { -it } + fadeOut(animationSpec = PetalSpring.calm()) + scaleOut(targetScale = .92f),
         modifier = Modifier.fillMaxWidth()
     ) {
         val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
@@ -412,7 +414,6 @@ private fun PetalMediaSheet(
                                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                                                 val clip = ClipData.newPlainText("Media URL", item.url)
                                                 clipboard?.setPrimaryClip(clip)
-                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                                 PetalToast.show(context, "Media link copied")
                                             }
                                         )

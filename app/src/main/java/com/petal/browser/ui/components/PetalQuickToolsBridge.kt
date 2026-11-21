@@ -164,9 +164,7 @@ object PetalQuickToolsBridge {
                             coroutineScope.launch {
                                 predictiveBackProgress.animateTo(
                                     0f,
-                                    androidx.compose.animation.core.spring(
-                                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
-                                    )
+                                    PetalSpring.calm()
                                 )
                             }
                         }

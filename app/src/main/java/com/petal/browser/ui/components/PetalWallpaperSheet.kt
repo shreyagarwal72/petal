@@ -832,7 +832,6 @@ fun PetalWallpaperSheet(
                 if (activeUri != null) {
                     FilledTonalButton(
                         onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                             PetalWallpaperManager.clearWallpaper(context)
                         },
                         colors = ButtonDefaults.filledTonalButtonColors(
@@ -886,7 +885,7 @@ fun PetalWallpaperSheet(
                     FilterChip(
                         selected = isCatSelected,
                         onClick = {
-                            PetalHapticEngine.getInstance(context).playTick(context)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                             selectedCategory = cat
                         },
                         label = { Text(cat, fontSize = 12.sp) },
@@ -925,7 +924,6 @@ fun PetalWallpaperSheet(
                             .height(130.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .clickable(enabled = loadingUri == null) {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                 applyPreset(preset)
                             }
                     ) {

@@ -11,6 +11,8 @@
 
 package com.petal.browser.compose.reader
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -281,8 +283,8 @@ fun PetalReaderScreen(
                     // Floating TTS Text-to-Speech Player Bar
                     AnimatedVisibility(
                         visible = isTtsActive,
-                        enter = slideInVertically { it } + fadeIn(),
-                        exit = slideOutVertically { it } + fadeOut(),
+                        enter = slideInVertically { it } + fadeIn(animationSpec = PetalSpring.calm()),
+                        exit = slideOutVertically { it } + fadeOut(animationSpec = PetalSpring.calm()),
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .navigationBarsPadding()
@@ -439,8 +441,8 @@ fun PetalReaderScreen(
                     // Floating Listen / Read Aloud Player Bar
                     AnimatedVisibility(
                         visible = isTtsActive,
-                        enter = fadeIn() + slideInVertically { it },
-                        exit = fadeOut() + slideOutVertically { it },
+                        enter = fadeIn(animationSpec = PetalSpring.calm()) + slideInVertically { it },
+                        exit = fadeOut(animationSpec = PetalSpring.calm()) + slideOutVertically { it },
                         modifier = Modifier.align(Alignment.BottomCenter)
                     ) {
                         PetalFloatingTtsPlayerBar(

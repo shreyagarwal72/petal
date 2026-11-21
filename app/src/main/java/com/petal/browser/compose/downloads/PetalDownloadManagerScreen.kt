@@ -550,6 +550,7 @@ fun PetalDownloadManagerScreen(
     val isSelectionMode = selectedIds.isNotEmpty()
 
     fun toggleSelectAll() {
+        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
         if (selectedIds.size == downloadList.size) {
             selectedIds = emptySet()
         } else {
@@ -558,6 +559,7 @@ fun PetalDownloadManagerScreen(
     }
 
     fun toggleSelection(id: Long) {
+        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
         selectedIds = if (selectedIds.contains(id)) {
             selectedIds - id
         } else {
@@ -847,9 +849,9 @@ fun PetalDownloadManagerScreen(
                                     .onGloballyPositioned { rowBounds[item.id] = it.boundsInWindow() }
                                     .entrance(index = index, playKey = item.id)
                                     .animateItem(
-                                        fadeInSpec = PetalSpring.fadeIn(),
-                                        fadeOutSpec = PetalSpring.fadeOut(),
-                                        placementSpec = PetalSpring.spatial()
+                                        fadeInSpec = PetalSpring.calm(),
+                                        fadeOutSpec = PetalSpring.calm(),
+                                        placementSpec = PetalSpring.calm()
                                     ),
                                 shape = petalGroupShape(rowPosition),
                                 enabled = !isSelectionMode,
@@ -1069,8 +1071,8 @@ fun PetalDownloadManagerScreen(
             AnimatedContent(
                 targetState = isSettingsOpen,
                 transitionSpec = {
-                    (fadeIn(animationSpec = PetalSpring.fadeIn()) + scaleIn(initialScale = 0.94f, animationSpec = PetalSpring.containerMorph())) togetherWith
-                        (fadeOut(animationSpec = PetalSpring.fadeOut()) + scaleOut(targetScale = 0.94f, animationSpec = PetalSpring.containerMorph()))
+                    (fadeIn(animationSpec = PetalSpring.calm()) + scaleIn(initialScale = 0.94f, animationSpec = PetalSpring.calm())) togetherWith
+                        (fadeOut(animationSpec = PetalSpring.calm()) + scaleOut(targetScale = 0.94f, animationSpec = PetalSpring.calm()))
                 },
                 label = "downloadSettingsTransition"
             ) { settingsOpen ->
@@ -1137,7 +1139,7 @@ private fun DownloadedImagePreviewStrip(
                                     openDownloadedFile(context, item)
                                 }
                             },
-                            onLongClick = { menuItem = item }
+                            onLongClick = { com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context); menuItem = item }
                         )) {
                         if (bitmap != null) Image(bitmap!!.asImageBitmap(), contentDescription = item.fileName, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                         else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Image, null) }
@@ -1423,7 +1425,7 @@ private fun DownloadRowItem(
         trailing = {
                 val menuRotation by animateFloatAsState(
                     targetValue = if (menuExpanded) 180f else 0f,
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                    animationSpec = PetalSpring.calm(),
                     label = "dl_item_menu_rot"
                 )
                 Box {
@@ -1490,7 +1492,7 @@ private fun ActiveDownloadsSummary(items: List<DownloadItem>, modifier: Modifier
     val eta = if (totalSpeed > 0L && sizedTotal > sizedDone) (sizedTotal - sizedDone) / totalSpeed else 0L
     val animated by animateFloatAsState(
         targetValue = overall ?: 0f,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = PetalSpring.calm(),
         label = "dl_summary_progress"
     )
 

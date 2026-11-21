@@ -240,9 +240,9 @@ fun PetalPermissionDialog(
     ) {
         AnimatedVisibility(
             visibleState = enter,
-            enter = fadeIn(PetalSpring.fadeIn()) + scaleIn(PetalSpring.dialog(), initialScale = 0.9f),
-            exit = androidx.compose.animation.fadeOut(PetalSpring.fadeOut()) +
-                androidx.compose.animation.scaleOut(PetalSpring.exit(), targetScale = 0.94f)
+            enter = fadeIn(PetalSpring.calm()) + scaleIn(PetalSpring.calm(), initialScale = 0.9f),
+            exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) +
+                androidx.compose.animation.scaleOut(PetalSpring.calm(), targetScale = 0.94f)
         ) {
             Surface(
                 modifier = Modifier
@@ -353,7 +353,7 @@ fun PetalPermissionDialog(
                                 value = rememberDecision,
                                 role = Role.Switch,
                                 onValueChange = {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                     rememberDecision = it
                                 }
                             )
@@ -403,7 +403,6 @@ fun PetalPermissionDialog(
                     ) {
                         Button(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                 onDeny(rememberDecision)
                             },
                             shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp),
@@ -426,7 +425,6 @@ fun PetalPermissionDialog(
 
                         Button(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.8f)
                                 onAllow(rememberDecision)
                             },
                             shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
@@ -467,7 +465,7 @@ internal fun PermissionActionButton(
     val pressed by interaction.collectIsPressedAsState()
     val corner by animateDpAsState(
         targetValue = if (pressed) 16.dp else 28.dp,
-        animationSpec = PetalSpring.press(),
+        animationSpec = PetalSpring.quick(),
         label = "perm_btn_corner"
     )
     val shape = RoundedCornerShape(corner)

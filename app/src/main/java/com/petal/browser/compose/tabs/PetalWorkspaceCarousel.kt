@@ -1,5 +1,7 @@
 package com.petal.browser.compose.tabs
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -123,23 +125,23 @@ fun PetalWorkspaceCarousel(
                 } else {
                     scheme.surfaceContainerHigh.copy(alpha = if (isGlass) 0.45f else 1f)
                 },
-                animationSpec = spring(),
+                animationSpec = PetalSpring.calm(),
                 label = "ws_container_color"
             )
             val contentColor by animateColorAsState(
                 targetValue = if (isActive) roleOnContainer else scheme.onSurfaceVariant,
-                animationSpec = spring(),
+                animationSpec = PetalSpring.calm(),
                 label = "ws_content_color"
             )
             val iconTint by animateColorAsState(
                 targetValue = if (isActive) roleOnContainer else roleAccent,
-                animationSpec = spring(),
+                animationSpec = PetalSpring.calm(),
                 label = "ws_icon_tint"
             )
             // Selected = full pill, unselected = squarer 14dp (expressive shape morph).
             val corner by animateDpAsState(
                 targetValue = if (isActive) 21.dp else 14.dp,
-                animationSpec = spring(),
+                animationSpec = PetalSpring.quick(),
                 label = "ws_corner"
             )
             val shape = RoundedCornerShape(corner)

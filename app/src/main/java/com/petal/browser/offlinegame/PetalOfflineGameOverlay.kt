@@ -1,5 +1,7 @@
 package com.petal.browser.offlinegame
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.content.Context
 import android.content.ContextWrapper
 import android.net.ConnectivityManager
@@ -255,8 +257,8 @@ private fun PetalOfflineGameScreen(
         AnimatedVisibility(
             visible = shown,
             enter = fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()) +
-                scaleIn(MaterialTheme.motionScheme.defaultSpatialSpec(), initialScale = 0.94f)
-        ) {
+                scaleIn(MaterialTheme.motionScheme.defaultSpatialSpec(), initialScale = 0.94f), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())
+) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -376,8 +378,8 @@ private fun GameCard(
                 visible = started,
                 modifier = Modifier.align(Alignment.TopCenter),
                 enter = fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()) +
-                    slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { -it }
-            ) {
+                    slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { -it }, exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())
+) {
                 ScoreRow(state)
             }
 
@@ -439,7 +441,7 @@ private fun ScoreRow(state: PetalHopState) {
     LaunchedEffect(state.milestoneToken) {
         if (state.milestoneToken > 0) {
             bump.snapTo(1.28f)
-            bump.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessMediumLow))
+            bump.animateTo(1f, PetalSpring.bouncy())
         }
     }
     Row(

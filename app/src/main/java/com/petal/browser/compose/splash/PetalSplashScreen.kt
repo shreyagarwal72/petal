@@ -14,6 +14,8 @@
  */
 package com.petal.browser.compose.splash
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -188,17 +190,17 @@ private fun PetalSplashContent(
     LaunchedEffect(Unit) { entered = true }
     val contentScale by animateFloatAsState(
         targetValue = if (entered) 1f else 0.78f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        animationSpec = PetalSpring.calm(),
         label = "splash_scale"
     )
     val titleAlpha by animateFloatAsState(
         targetValue = if (entered) 1f else 0f,
-        animationSpec = tween(durationMillis = 420, delayMillis = 120, easing = LinearOutSlowInEasing),
+        animationSpec = PetalSpring.calm(),
         label = "splash_title_alpha"
     )
     val ambientAlpha by animateFloatAsState(
         targetValue = if (entered) 1f else 0f,
-        animationSpec = tween(durationMillis = 520, easing = LinearOutSlowInEasing),
+        animationSpec = PetalSpring.calm(),
         label = "splash_ambient_alpha"
     )
 

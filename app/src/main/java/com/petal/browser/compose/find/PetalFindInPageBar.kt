@@ -1,5 +1,7 @@
 package com.petal.browser.compose.find
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -101,8 +103,8 @@ fun PetalFindInPageBar(
 
     AnimatedVisibility(
         visible = visible,
-        enter = slideInVertically(initialOffsetY = { if (isBottom) it else -it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { if (isBottom) it else -it }) + fadeOut(),
+        enter = slideInVertically(initialOffsetY = { if (isBottom) it else -it }) + fadeIn(animationSpec = PetalSpring.calm()),
+        exit = slideOutVertically(targetOffsetY = { if (isBottom) it else -it }) + fadeOut(animationSpec = PetalSpring.calm()),
         modifier = modifier
     ) {
         Surface(

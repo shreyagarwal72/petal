@@ -146,7 +146,7 @@ fun PetalBottomNavBar(
     // Whole-bar entrance: slides up and fades in with a soft spring when first shown
     val entrance = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        entrance.animateTo(1f, PetalSpring.enter())
+        entrance.animateTo(1f, PetalSpring.calm())
     }
     val entranceOffsetPx = with(LocalDensity.current) { 32.dp.toPx() }
 
@@ -172,7 +172,7 @@ fun PetalBottomNavBar(
         if (barShown && searchLaunch.value > 0f) {
             searchLaunch.snapTo(0f)
             entrance.snapTo(0f)
-            entrance.animateTo(1f, PetalSpring.enter())
+            entrance.animateTo(1f, PetalSpring.calm())
         }
     }
     // Bounds of the tapped search control (separate glass button, else the whole nav bar), so the
@@ -185,12 +185,12 @@ fun PetalBottomNavBar(
         if (searchLaunch.value == 0f) {
             PetalOmniboxOrigin.mark(searchButtonBounds[0] ?: navBarBounds[0], -1f)
             scope.launch {
-                searchLaunch.animateTo(1f, PetalSpring.exit())
+                searchLaunch.animateTo(1f, PetalSpring.calm())
                 onSearchClick()
                 // If the host did not hide the bar, do not leave it faded out.
                 delay(700L)
                 if (hostView.isShown && searchLaunch.value > 0f) {
-                    searchLaunch.animateTo(0f, PetalSpring.enter())
+                    searchLaunch.animateTo(0f, PetalSpring.calm())
                 }
             }
         }
@@ -201,7 +201,7 @@ fun PetalBottomNavBar(
         badgeScale.snapTo(1.35f)
         badgeScale.animateTo(
             1f,
-            PetalSpring.press()
+            PetalSpring.quick()
         )
     }
 
@@ -390,12 +390,12 @@ fun PetalBottomNavBar(
                         icon = { isSelected, tint ->
                             val iconScale by animateFloatAsState(
                                 targetValue = if (isSelected) 1.18f else 1.0f,
-                                animationSpec = PetalSpring.spatial(),
+                                animationSpec = PetalSpring.calm(),
                                 label = "home_expressive_scale"
                             )
                             Crossfade(
                                 targetState = isSelected,
-                                animationSpec = PetalSpring.crossfade(),
+                                animationSpec = PetalSpring.calm(),
                                 label = "home_icon_crossfade",
                                 modifier = Modifier.graphicsLayer {
                                     scaleX = iconScale
@@ -414,7 +414,6 @@ fun PetalBottomNavBar(
                         },
                         onClick = onHomeClick,
                         onLongClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
                             onHistoryClick()
                         }
                     )
@@ -430,12 +429,12 @@ fun PetalBottomNavBar(
                         icon = { isSelected, tint ->
                             val rotationAngle by animateFloatAsState(
                                 targetValue = if (isSelected) 90f else 0f,
-                                animationSpec = PetalSpring.spatial(),
+                                animationSpec = PetalSpring.calm(),
                                 label = "add_expressive_rotation"
                             )
                             val iconScale by animateFloatAsState(
                                 targetValue = if (isSelected) 1.18f else 1.0f,
-                                animationSpec = PetalSpring.spatial(),
+                                animationSpec = PetalSpring.calm(),
                                 label = "add_expressive_scale"
                             )
                             Icon(
@@ -496,7 +495,7 @@ fun PetalBottomNavBar(
                         icon = { isSelected, tint ->
                             val iconScale by animateFloatAsState(
                                 targetValue = if (isSelected) 1.05f else 1.0f,
-                                animationSpec = PetalSpring.spatial(),
+                                animationSpec = PetalSpring.calm(),
                                 label = "tabs_expressive_scale"
                             )
                             TabCountBadge(
@@ -515,7 +514,6 @@ fun PetalBottomNavBar(
                             val bounds = tabsButtonBounds[0] ?: navBarBounds[0]
                             val rad = if (bounds != null) bounds.height / 2f else 24f
                             PetalNewTabOrigin.mark(bounds, rad)
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
                             onNewTabClick()
                         }
                     )
@@ -529,12 +527,12 @@ fun PetalBottomNavBar(
                         icon = { isSelected, tint ->
                             val rotationAngle by animateFloatAsState(
                                 targetValue = if (isSelected) 180f else 0f,
-                                animationSpec = PetalSpring.spatial(),
+                                animationSpec = PetalSpring.calm(),
                                 label = "menu_expressive_rotation"
                             )
                             val iconScale by animateFloatAsState(
                                 targetValue = if (isSelected) 1.18f else 1.0f,
-                                animationSpec = PetalSpring.spatial(),
+                                animationSpec = PetalSpring.calm(),
                                 label = "menu_expressive_scale"
                             )
                             Icon(
@@ -552,7 +550,6 @@ fun PetalBottomNavBar(
                         },
                         onClick = onMenuClick,
                         onLongClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
                             onBookmarksClick()
                         }
                     )
@@ -578,20 +575,20 @@ private fun FloatingNavTabItem(
     // Bouncy touch feedback press scale
     val pressScale by animateFloatAsState(
         targetValue = if (isPressed) 0.90f else 1.0f,
-        animationSpec = PetalSpring.press(),
+        animationSpec = PetalSpring.quick(),
         label = "press_scale_$index"
     )
 
     val labelWidth by animateDpAsState(
         targetValue = if (selected) 72.dp else 0.dp,
-        animationSpec = PetalSpring.spatial(),
+        animationSpec = PetalSpring.calm(),
         label = "nav_label_$index"
     )
 
     // Label fades/slides in slightly after the pill starts expanding
     val labelAlpha by animateFloatAsState(
         targetValue = if (selected) 1f else 0f,
-        animationSpec = if (selected) PetalSpring.fadeIn() else PetalSpring.fadeOut(),
+        animationSpec = if (selected) PetalSpring.calm() else PetalSpring.calm(),
         label = "nav_label_alpha_$index"
     )
 
@@ -599,7 +596,7 @@ private fun FloatingNavTabItem(
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         delay(index * 55L)
-        enter.animateTo(1f, PetalSpring.enter())
+        enter.animateTo(1f, PetalSpring.calm())
     }
 
     val activeContainerColor = MaterialTheme.colorScheme.primaryContainer
@@ -608,13 +605,13 @@ private fun FloatingNavTabItem(
 
     val currentContentColor by animateColorAsState(
         targetValue = if (selected) activeContentColor else inactiveContentColor,
-        animationSpec = PetalSpring.spatial(),
+        animationSpec = PetalSpring.calm(),
         label = "nav_color_$index"
     )
 
     val currentBgColor by animateColorAsState(
         targetValue = if (selected) activeContainerColor else Color.Transparent,
-        animationSpec = PetalSpring.spatial(),
+        animationSpec = PetalSpring.calm(),
         label = "nav_bg_$index"
     )
 
@@ -693,9 +690,9 @@ internal fun TabCountBadge(color: Color, count: Int, scale: Float = 1f) {
             targetState = count,
             transitionSpec = {
                 val up = targetState > initialState
-                (slideInVertically(PetalSpring.spatial()) { if (up) it else -it } + fadeIn(PetalSpring.fadeIn()))
+                (slideInVertically(PetalSpring.calm()) { if (up) it else -it } + fadeIn(PetalSpring.calm()))
                     .togetherWith(
-                        slideOutVertically(PetalSpring.spatial()) { if (up) -it else it } + fadeOut(PetalSpring.fadeOut())
+                        slideOutVertically(PetalSpring.calm()) { if (up) -it else it } + fadeOut(PetalSpring.calm())
                     )
                     .using(SizeTransform(clip = true))
             },
@@ -741,26 +738,26 @@ private fun ExpressiveNavTabItem(
     // Tactile squash-and-stretch micro-interaction when pressed
     val pressScaleX by animateFloatAsState(
         targetValue = if (isPressed) 0.92f else 1.0f,
-        animationSpec = PetalSpring.press(),
+        animationSpec = PetalSpring.quick(),
         label = "expressive_press_scale_x_$index"
     )
     val pressScaleY by animateFloatAsState(
         targetValue = if (isPressed) 0.90f else 1.0f,
-        animationSpec = PetalSpring.press(),
+        animationSpec = PetalSpring.quick(),
         label = "expressive_press_scale_y_$index"
     )
 
     // Active pill background color & indicator lift
     val activeLiftY by animateDpAsState(
         targetValue = if (selected) (-1).dp else 0.dp,
-        animationSpec = PetalSpring.spatial(),
+        animationSpec = PetalSpring.calm(),
         label = "expressive_lift_$index"
     )
 
     // Fluid indicator pill geometry: expands from 40dp to 58dp on selection
     val activeIndicatorWidth by animateDpAsState(
         targetValue = if (selected) 58.dp else 40.dp,
-        animationSpec = PetalSpring.spatial(),
+        animationSpec = PetalSpring.calm(),
         label = "expressive_indicator_width_$index"
     )
 
@@ -773,19 +770,19 @@ private fun ExpressiveNavTabItem(
     }
     val indicatorBgColor by animateColorAsState(
         targetValue = if (selected) activeIndicatorColor else Color.Transparent,
-        animationSpec = PetalSpring.spatial(),
+        animationSpec = PetalSpring.calm(),
         label = "expressive_indicator_bg_$index"
     )
 
     val contentTint by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = PetalSpring.spatial(),
+        animationSpec = PetalSpring.calm(),
         label = "expressive_content_tint_$index"
     )
 
     val labelColor by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = PetalSpring.spatial(),
+        animationSpec = PetalSpring.calm(),
         label = "expressive_label_color_$index"
     )
 
@@ -795,7 +792,7 @@ private fun ExpressiveNavTabItem(
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         delay(index * 55L)
-        enter.animateTo(1f, PetalSpring.enter())
+        enter.animateTo(1f, PetalSpring.calm())
     }
 
     val indicatorShape = RoundedCornerShape(14.dp)

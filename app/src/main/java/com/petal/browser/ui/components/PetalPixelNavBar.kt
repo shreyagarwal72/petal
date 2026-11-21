@@ -70,7 +70,7 @@ private val PixelNavOrder = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalN
  * Material 3 Expressive floating nav pill in PixelMusic's style (used when liquid glass is off).
  *
  * One filled capsule slides between the tabs and the selected tab's label opens, both driven by the
- * same spring ([TabWeights]) as the glass bar, so the capsule, the label and the icon colours move as one.
+ * same PetalSpring.quick() as the glass bar, so the capsule, the label and the icon colours move as one.
  * Every colour comes from [MaterialTheme.colorScheme], so light, dark and dynamic themes all work.
  * Holds no one-shot intro animation, so it can be swapped in and out of the glass bar without replaying.
  */
@@ -95,7 +95,7 @@ internal fun PetalPixelNavPill(
     val maxDragPx = with(LocalDensity.current) { 28.dp.toPx() }
     val dragOffsetPx by animateFloatAsState(
         targetValue = if (isDragging) (dragAccumulator * 0.35f).coerceIn(-maxDragPx, maxDragPx) else 0f,
-        animationSpec = if (isDragging) snap() else PetalSpring.sheetDragSettle(),
+        animationSpec = if (isDragging) snap() else PetalSpring.calm(),
         label = "pixel_nav_rubber_band"
     )
 
@@ -288,7 +288,7 @@ internal fun PetalGhostSearchButton(
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         delay(140L)
-        enter.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 320f))
+        enter.animateTo(1f, PetalSpring.quick())
     }
 
     Surface(

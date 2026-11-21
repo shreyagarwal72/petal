@@ -238,7 +238,6 @@ fun PetalWallpaperCropSheet(
                 ) {
                     IconButton(onClick = {
                         rotationAngle = (rotationAngle + 90f) % 360f
-                        PetalHapticEngine.getInstance(context).playTick(context)
                     }) {
                         Icon(Icons.Rounded.RotateRight, contentDescription = stringResource(R.string.ui_rotate))
                     }
@@ -247,7 +246,6 @@ fun PetalWallpaperCropSheet(
                         scale = 1f
                         offset = Offset.Zero
                         rotationAngle = 0f
-                        PetalHapticEngine.getInstance(context).playTick(context)
                     }) {
                         Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.ui_reset))
                     }
@@ -281,7 +279,6 @@ fun PetalWallpaperCropSheet(
                                 out.flush()
                                 runCatching { out.fd.sync() }
                             }
-                            PetalHapticEngine.getInstance(context).playClick(context)
                             onWallpaperCropped(Uri.fromFile(targetFile))
                         } catch (e: Exception) {
                             e.printStackTrace()

@@ -118,14 +118,13 @@ class PetalPredictiveBackPill(context: Context) : FrameLayout(context) {
         if (clampedProgress >= 0.35f && !hasTriggeredHaptic) {
             hasTriggeredHaptic = true
             try {
-                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.75f, 100L)
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
             } catch (_: Throwable) {}
         }
     }
 
     fun playCommitHaptic() {
         try {
-            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f, 50L)
         } catch (_: Throwable) {}
     }
 

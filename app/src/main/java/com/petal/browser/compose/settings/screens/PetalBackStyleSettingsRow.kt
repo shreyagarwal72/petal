@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -90,7 +92,6 @@ fun PetalBackStyleSettingsRow(
     fun choose(target: PetalBackStyle) {
         if (target == shownStyle) return
         sliderValue = target.index.toFloat()
-        PetalHapticEngine.getInstance(context).playClick(context)
         onStyleChange(target)
     }
 
@@ -187,8 +188,8 @@ fun PetalBackStyleSettingsRow(
 
             AnimatedVisibility(
                 visible = shownStyle == PetalBackStyle.Scale,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut(),
+                enter = expandVertically(animationSpec = PetalSpring.calm()) + fadeIn(animationSpec = PetalSpring.calm()),
+                exit = shrinkVertically(animationSpec = PetalSpring.calm()) + fadeOut(animationSpec = PetalSpring.calm()),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(

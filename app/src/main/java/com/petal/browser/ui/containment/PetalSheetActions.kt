@@ -1,5 +1,7 @@
 package com.petal.browser.ui.containment
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -237,11 +239,11 @@ fun PetalSheetIconPill(
 ) {
     val container by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primary else tone.container(),
-        animationSpec = tween(300), label = "sheet_icon_pill_container"
+        animationSpec = PetalSpring.calm(), label = "sheet_icon_pill_container"
     )
     val content by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else tone.content(),
-        animationSpec = tween(300), label = "sheet_icon_pill_content"
+        animationSpec = PetalSpring.calm(), label = "sheet_icon_pill_content"
     )
     Box(
         modifier = modifier
@@ -319,12 +321,12 @@ fun PetalSheetSegmentedBar(
             val bg by animateColorAsState(
                 if (selected) MaterialTheme.colorScheme.primaryContainer
                 else MaterialTheme.colorScheme.surfaceContainerLowest,
-                tween(250), label = "segment_bg"
+                PetalSpring.calm(), label = "segment_bg"
             )
             val fg by animateColorAsState(
                 if (selected) MaterialTheme.colorScheme.onPrimaryContainer
                 else MaterialTheme.colorScheme.onSurface,
-                tween(250), label = "segment_fg"
+                PetalSpring.calm(), label = "segment_fg"
             )
             Row(
                 modifier = Modifier
@@ -389,11 +391,11 @@ fun PetalSheetChoicePill(
 ) {
     val container by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
-        animationSpec = tween(300), label = "sheet_choice_container"
+        animationSpec = PetalSpring.calm(), label = "sheet_choice_container"
     )
     val content by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = tween(300), label = "sheet_choice_content"
+        animationSpec = PetalSpring.calm(), label = "sheet_choice_content"
     )
     Box(
         modifier = modifier

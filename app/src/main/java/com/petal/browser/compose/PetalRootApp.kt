@@ -34,7 +34,6 @@ import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.BarCollapseState
 import com.petal.browser.ui.components.PetalSpring
-import com.petal.browser.ui.components.PetalOmniboxCommand
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -233,7 +232,7 @@ fun PetalRootApp(
             switcherAlpha.snapTo(1f)
         } else if (switcherMounted) {
             kotlinx.coroutines.delay(60)
-            switcherAlpha.animateTo(0f, androidx.compose.animation.core.tween(140))
+            switcherAlpha.animateTo(0f, PetalSpring.calm())
             switcherMounted = false
             switcherHold.snapshot = null
         }
@@ -554,7 +553,7 @@ fun PetalRootApp(
                         if (currentStyle.usesSpringCommit) {
                             overlayBackProgress.animateTo(
                                 1f,
-                                spring(stiffness = Spring.StiffnessMedium, dampingRatio = Spring.DampingRatioNoBouncy)
+                                PetalSpring.quick()
                             )
                         } else {
                             overlayBackProgress.animateTo(
@@ -577,10 +576,10 @@ fun PetalRootApp(
                     overlayCommitting = false
                     overlayBackProgress.snapTo(0f)
                 } else {
-                    progressAnim.animateTo(0f, PetalSpring.containerMorph())
+                    progressAnim.animateTo(0f, PetalSpring.calm())
                 }
             } else if (webGoBack()) {
-                progressAnim.animateTo(0f, PetalSpring.containerMorph())
+                progressAnim.animateTo(0f, PetalSpring.calm())
             } else {
                 // "Double Back to Exit" (sp_double_back_exit): first back shows a hint,
                 // a second back within 2s exits. Read live so the toggle applies instantly.
@@ -594,7 +593,7 @@ fun PetalRootApp(
                         context,
                         com.petal.browser.R.string.ui_press_back_twice_quickly_to
                     )
-                    progressAnim.animateTo(0f, PetalSpring.containerMorph())
+                    progressAnim.animateTo(0f, PetalSpring.calm())
                 } else {
                     isCommitting = true
                     if (!junctionPredictiveEnabled || !poseEnabledState.value) {
@@ -602,10 +601,7 @@ fun PetalRootApp(
                     } else if (currentStyle.usesSpringCommit) {
                         progressAnim.animateTo(
                             targetValue = 1f,
-                            animationSpec = spring(
-                                stiffness = Spring.StiffnessMedium,
-                                dampingRatio = Spring.DampingRatioNoBouncy
-                            )
+                            animationSpec = PetalSpring.quick()
                         )
                     } else {
                         progressAnim.animateTo(
@@ -627,9 +623,9 @@ fun PetalRootApp(
             if (overlayMode) {
                 val presented = (activity as? MainActivity)?.presentedScreens?.lastOrNull()
                 presented?.animate()?.scaleX(1f)?.scaleY(1f)?.translationX(0f)?.translationY(0f)?.alpha(1f)?.setDuration(200L)?.start()
-                overlayBackProgress.animateTo(0f, PetalSpring.containerMorph())
+                overlayBackProgress.animateTo(0f, PetalSpring.calm())
             } else {
-                progressAnim.animateTo(0f, PetalSpring.containerMorph())
+                progressAnim.animateTo(0f, PetalSpring.calm())
             }
         } finally {
             if (!exiting) {
@@ -881,19 +877,15 @@ fun PetalRootApp(
                                     },
                                     onAddressClick = { viewModel.openOmnibox() },
                                     onHomeClick = {
-                                        haptic.playClick(context)
                                         viewModel.goHome(isIncognito = isIncognito)
                                     },
                                     onNewTabClick = {
-                                        haptic.playClick(context)
                                         viewModel.openNewTab(selectTab = true, private = isIncognito)
                                     },
                                     onTabsClick = {
-                                        haptic.playClick(context)
                                         viewModel.toggleTabSwitcher()
                                     },
                                     onMenuClick = {
-                                        haptic.playClick(context)
                                         viewModel.toggleMenu()
                                     },
                                     onSearchClick = { viewModel.openOmnibox() },
@@ -969,19 +961,15 @@ fun PetalRootApp(
                             },
                             onAddressClick = { viewModel.openOmnibox() },
                             onHomeClick = {
-                                haptic.playClick(context)
                                 viewModel.goHome(isIncognito = isIncognito)
                             },
                             onNewTabClick = {
-                                haptic.playClick(context)
                                 viewModel.openNewTab(selectTab = true, private = isIncognito)
                             },
                             onTabsClick = {
-                                haptic.playClick(context)
                                 viewModel.toggleTabSwitcher()
                             },
                             onMenuClick = {
-                                haptic.playClick(context)
                                 viewModel.toggleMenu()
                             },
                             onSearchClick = { viewModel.openOmnibox() },
@@ -1059,10 +1047,10 @@ fun PetalRootApp(
         // ── Persistent Bottom Navigation Bar ────────────────────────────
         androidx.compose.animation.AnimatedVisibility(
             visible = isBottomBarVisible,
-            enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
-                    androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 2 },
-            exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
-                   androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 2 },
+            enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
+                    androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 2 },
+            exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
+                   androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 2 },
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
@@ -1076,39 +1064,30 @@ fun PetalRootApp(
                 isBottomAddressBar = isBottomAddressBar,
                 glassSource = if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content)),
                 onHomeClick = {
-                    haptic.playClick(context)
                     viewModel.goHome(isIncognito = isIncognito)
                 },
                 onNewTabClick = {
-                    haptic.playClick(context)
                     viewModel.openNewTab(selectTab = true, private = isIncognito)
                 },
                 onTabsClick = {
-                    haptic.playClick(context)
                     viewModel.toggleTabSwitcher()
                 },
                 onMenuClick = {
-                    haptic.playClick(context)
                     viewModel.toggleMenu()
                 },
                 onSearchClick = {
-                    haptic.playClick(context)
                     viewModel.openOmnibox()
                 },
                 onHistoryClick = {
-                    haptic.playClick(context)
                     viewModel.openHistory()
                 },
                 onBookmarksClick = {
-                    haptic.playClick(context)
                     viewModel.openBookmarks()
                 },
                 onSwipeTabLeft = {
-                    haptic.play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                     viewModel.switchToPreviousTab()
                 },
                 onSwipeTabRight = {
-                    haptic.play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                     viewModel.switchToNextTab()
                 },
                 showSearch = true,
@@ -1148,15 +1127,15 @@ fun PetalRootApp(
             if (isOmniboxOpen && activity != null) {
                 androidx.compose.animation.AnimatedVisibility(
                     visible = isOmniboxOpen,
-                    enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
+                    enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
                             androidx.compose.animation.scaleIn(
                                 initialScale = 0.94f,
-                                animationSpec = PetalSpring.enter()
+                                animationSpec = PetalSpring.calm()
                             ),
-                    exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
+                    exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
                            androidx.compose.animation.scaleOut(
                                targetScale = 0.94f,
-                               animationSpec = PetalSpring.exit()
+                               animationSpec = PetalSpring.calm()
                            ),
                     modifier = Modifier.fillMaxSize().zIndex(10f)
                         .overlayBackPose(overlayPose)
@@ -1612,10 +1591,10 @@ fun PetalRootApp(
             // Bookmarks Screen
             androidx.compose.animation.AnimatedVisibility(
                 visible = isBookmarksOpen,
-                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
-                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalBookmarksScreen(
@@ -1633,10 +1612,10 @@ fun PetalRootApp(
             // History Screen
             androidx.compose.animation.AnimatedVisibility(
                 visible = isHistoryOpen,
-                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
-                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalHistoryScreen(
@@ -1661,10 +1640,10 @@ fun PetalRootApp(
             // Downloads Screen
             androidx.compose.animation.AnimatedVisibility(
                 visible = isDownloadsOpen,
-                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
-                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalDownloadManagerScreen(
@@ -1676,10 +1655,10 @@ fun PetalRootApp(
             // Settings Screen
             androidx.compose.animation.AnimatedVisibility(
                 visible = isSettingsOpen,
-                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
-                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalSettingsScreen(
@@ -1701,10 +1680,10 @@ fun PetalRootApp(
             // Extensions Screen
             androidx.compose.animation.AnimatedVisibility(
                 visible = isExtensionsOpen,
-                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
-                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalExtensionsScreen(
@@ -1716,10 +1695,10 @@ fun PetalRootApp(
             // Account & Sync Screen
             androidx.compose.animation.AnimatedVisibility(
                 visible = isAccountSyncOpen,
-                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
-                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalAccountScreen(
@@ -1731,10 +1710,10 @@ fun PetalRootApp(
             // Delete Browsing Data Screen Overlay
             androidx.compose.animation.AnimatedVisibility(
                 visible = isDeleteOpen,
-                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
-                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalDeleteScreen(
@@ -1746,10 +1725,10 @@ fun PetalRootApp(
             // Biometric Safe Locker Screen Overlay
             androidx.compose.animation.AnimatedVisibility(
                 visible = isSafeLockerOpen,
-                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
-                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 10 },
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
+                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 SafeLockerScreen(
@@ -1798,10 +1777,10 @@ fun PetalRootApp(
             // AI Search Result Bottom Sheet Overlay
             androidx.compose.animation.AnimatedVisibility(
                 visible = isAiSheetOpen,
-                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.fadeIn()) +
-                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.enter()) { it / 2 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.fadeOut()) +
-                        androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.exit()) { it / 2 },
+                enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
+                        androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 2 },
+                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
+                        androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 2 },
                 modifier = Modifier.fillMaxSize().zIndex(9f)
                     .overlayBackPose(overlayPose, 0.5f, 1f)
             ) {

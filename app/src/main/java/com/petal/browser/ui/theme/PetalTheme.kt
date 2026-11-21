@@ -402,11 +402,12 @@ fun PetalExpressiveTheme(
 }
 
 private class PetalHapticFeedback(private val context: Context) : androidx.compose.ui.hapticfeedback.HapticFeedback {
+    // Only a long-press (a threshold event) vibrates. Text-handle drags, typing and every other
+    // framework haptic are silenced; components call PetalHapticEngine.selectionChanged /
+    // thresholdCrossed directly for real state changes.
     override fun performHapticFeedback(hapticFeedbackType: androidx.compose.ui.hapticfeedback.HapticFeedbackType) {
-        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playIfEnabled(
-            context,
-            com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
-            0.85f
-        )
+        if (hapticFeedbackType == androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress) {
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
+        }
     }
 }

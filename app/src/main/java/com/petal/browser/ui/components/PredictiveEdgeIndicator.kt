@@ -114,7 +114,7 @@ fun PredictiveEdgeIndicator(
     val density = LocalDensity.current
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
-        animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
+        animationSpec = PetalSpring.calm(),
         label = "edge_indicator_progress"
     )
 
@@ -128,8 +128,8 @@ fun PredictiveEdgeIndicator(
 
     AnimatedVisibility(
         visible = isVisible && progress > 0.05f,
-        enter = fadeIn(tween(120)) + scaleIn(spring(dampingRatio = 0.75f, stiffness = 500f)),
-        exit = fadeOut(tween(160)) + scaleOut(tween(160, easing = FastOutSlowInEasing))
+        enter = fadeIn(PetalSpring.calm()) + scaleIn(PetalSpring.calm()),
+        exit = fadeOut(PetalSpring.calm()) + scaleOut(PetalSpring.calm())
     ) {
         Surface(
             modifier = modifier

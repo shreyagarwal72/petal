@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.icons.imagetoolbox.AutoAwesome
 import com.petal.browser.ui.icons.imagetoolbox.HyperOS
@@ -617,8 +619,8 @@ fun AppearanceSettingsScreenContent(
 
                     AnimatedVisibility(
                         visible = mixEnabled,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
+                        enter = expandVertically(animationSpec = PetalSpring.calm()) + fadeIn(animationSpec = PetalSpring.calm()),
+                        exit = shrinkVertically(animationSpec = PetalSpring.calm()) + fadeOut(animationSpec = PetalSpring.calm())
                     ) {
                         Column(
                             modifier = Modifier
@@ -849,7 +851,7 @@ fun AppearanceSettingsScreenContent(
                     )
 
                     // Petal Signature Typography Customization (Zenith GS Flex Engine)
-                    AnimatedVisibility(visible = appFont == AppFont.PETAL) {
+                    AnimatedVisibility(visible = appFont == AppFont.PETAL, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             // Live Preview Card
                             val previewTypography = remember(gsFlexSettings) {
@@ -959,7 +961,7 @@ fun AppearanceSettingsScreenContent(
                             )
 
                             // Custom Variable Fine-Tuning Section
-                            AnimatedVisibility(visible = gsFlexSettings.preset == GSFlexPreset.CUSTOM) {
+                            AnimatedVisibility(visible = gsFlexSettings.preset == GSFlexPreset.CUSTOM, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                                     Button(
                                         onClick = {
@@ -1078,7 +1080,7 @@ fun AppearanceSettingsScreenContent(
                     }
 
                     // Nunito Typography Preview (Zenith Rounded Variable)
-                    AnimatedVisibility(visible = appFont == AppFont.NUNITO) {
+                    AnimatedVisibility(visible = appFont == AppFont.NUNITO, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1119,7 +1121,7 @@ fun AppearanceSettingsScreenContent(
                     }
 
                     // System Typography Preview (Device Platform Default)
-                    AnimatedVisibility(visible = appFont == AppFont.SYSTEM) {
+                    AnimatedVisibility(visible = appFont == AppFont.SYSTEM, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1160,7 +1162,7 @@ fun AppearanceSettingsScreenContent(
                     }
 
                     // Custom Font File Picker UI (Containment Surface & Icon Badge)
-                    AnimatedVisibility(visible = appFont == AppFont.CUSTOM) {
+                    AnimatedVisibility(visible = appFont == AppFont.CUSTOM, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                         Surface(
                             shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.SINGLE),
                             color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
@@ -1692,8 +1694,8 @@ fun AppearanceSettingsScreenContent(
 
                     AnimatedVisibility(
                         visible = expressiveBgShapes,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
+                        enter = fadeIn(animationSpec = PetalSpring.calm()) + expandVertically(animationSpec = PetalSpring.calm()),
+                        exit = fadeOut(animationSpec = PetalSpring.calm()) + shrinkVertically(animationSpec = PetalSpring.calm())
                     ) {
                         com.petal.browser.ui.containment.PetalHeroCard {
                             Column(
@@ -1877,8 +1879,8 @@ fun AppearanceSettingsScreenContent(
 
                     AnimatedVisibility(
                         visible = motionBlurEnabled,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
+                        enter = fadeIn(animationSpec = PetalSpring.calm()) + expandVertically(animationSpec = PetalSpring.calm()),
+                        exit = fadeOut(animationSpec = PetalSpring.calm()) + shrinkVertically(animationSpec = PetalSpring.calm())
                     ) {
                         com.petal.browser.ui.containment.PetalHeroCard {
                             Column(
@@ -2353,15 +2355,15 @@ private fun PaletteSwatchSquare(
     BoxWithConstraints(modifier = modifier.aspectRatio(1f)) {
         val circleRadius = maxWidth / 2
         val innerCorner by animateDpAsState(
-            targetValue = if (selected) 12.dp else circleRadius,
+            targetValue = if (selected) 12.dp else circleRadius, animationSpec = PetalSpring.quick(),
             label = "paletteInnerCorner"
         )
         val outerCorner by animateDpAsState(
-            targetValue = if (selected) 16.dp else circleRadius,
+            targetValue = if (selected) 16.dp else circleRadius, animationSpec = PetalSpring.quick(),
             label = "paletteOuterCorner"
         )
         val outlinePadding by animateDpAsState(
-            targetValue = if (selected) 3.dp else 0.dp,
+            targetValue = if (selected) 3.dp else 0.dp, animationSpec = PetalSpring.quick(),
             label = "paletteOutlinePadding"
         )
 

@@ -1,5 +1,7 @@
 package com.petal.browser.ui.components.pullrefresh
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -59,7 +61,6 @@ fun MorphLadderIndicator(timeline: PullRefreshTimeline) {
         snapshotFlow { rungFor(timeline) }.collect { rung ->
             if (rung < 0 || rung == lastRung) return@collect
             if (rung > lastRung && timeline.phase == PullPhase.PULLING) {
-                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             }
             lastRung = rung
             // If a step is still in flight, continue from whichever end is visually closer.
@@ -74,7 +75,7 @@ fun MorphLadderIndicator(timeline: PullRefreshTimeline) {
                 progress.snapTo(0f)
                 progress.animateTo(
                     1f,
-                    spring(Spring.DampingRatioMediumBouncy, scaledStiffness(Spring.StiffnessMedium))
+                    PetalSpring.bouncy()
                 )
             }
         }

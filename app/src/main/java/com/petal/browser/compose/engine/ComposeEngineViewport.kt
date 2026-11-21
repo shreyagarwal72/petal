@@ -97,22 +97,12 @@ fun ComposeEngineViewport(
     val density = LocalDensity.current
     val act = (context as? MainActivity) ?: (context as? ContextWrapper)?.baseContext as? MainActivity
 
-    val nestedScrollConnection = remember(act) {
-        object : NestedScrollConnection {
-            override fun onPreScroll(
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                if (source == NestedScrollSource.UserInput && act != null) {
-                    if (available.y < -12f) {
-                        act.animateAddressBarCollapse(true)
-                    } else if (available.y > 12f) {
-                        act.animateAddressBarCollapse(false)
-                    }
-                }
-                return Offset.Zero
-            }
-        }
+    // Scroll-driven bar collapse is decided in ONE place: the Gecko ScrollDelegate below, through
+    // BarCollapseState.scrollDecider. A nested-scroll connection used to fire act.animateAddressBarCollapse
+    // from single events, a second unguarded trigger that fought the delegate and made slow scrolls flip.
+    DisposableEffect(Unit) {
+        BarCollapseState.composeViewportOwnsScroll = true
+        onDispose { BarCollapseState.composeViewportOwnsScroll = false }
     }
     // Pull-to-refresh uses Mozilla's own stack (same as Firefox for Android): a vertical-only
     // SwipeRefreshLayout + android-components' SwipeRefreshFeature, which asks Gecko
@@ -218,6 +208,20 @@ fun ComposeEngineViewport(
                 try {
                     GeckoGlassBackend.applyBackend(gv, context)
                 } catch (_: Throwable) {}
+                // Finger state for BarScrollDecider. Returns false: GeckoView still handles every event.
+                BarCollapseState.scrollDecider.touchTrackingAvailable = true
+                gv.setOnTouchListener { _, ev ->
+                    when (ev.actionMasked) {
+                        android.view.MotionEvent.ACTION_DOWN -> BarCollapseState.scrollDecider.onTouch(true)
+                        android.view.MotionEvent.ACTION_UP,
+                        android.view.MotionEvent.ACTION_CANCEL -> BarCollapseState.scrollDecider.onTouch(false)
+                    }
+                    false
+                }
+                // Tells the settle logic the viewport resize really reached the view.
+                gv.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                    if ((bottom - top) != (oldBottom - oldTop) || (right - left) != (oldRight - oldLeft)) BarCollapseState.onViewportLayoutApplied()
+                }
             }
         }
     }
@@ -243,6 +247,7 @@ fun ComposeEngineViewport(
                 val bottom = if (collapsedLayout) minBottomPx else fullBottomPx
                 val v = engineView.asView()
                 if (v.paddingTop != top || v.paddingBottom != bottom) v.setPadding(0, top, 0, bottom)
+                else BarCollapseState.onViewportLayoutApplied()
                 val shift = if (collapsedLayout) (fullTopPx - minTopPx).coerceAtLeast(0) * (1f - f) else 0f
                 if (swipeLayout.translationY != shift) swipeLayout.translationY = shift
             }
@@ -260,6 +265,7 @@ fun ComposeEngineViewport(
     // Bind current active tab session and attach delegates
     LaunchedEffect(tab?.id, tab?.engineState?.engineSession) {
         if (tab == null) return@LaunchedEffect
+        BarCollapseState.scrollDecider.reset()
         var session = tab.engineState.engineSession
         if (session == null) {
             try {
@@ -345,7 +351,6 @@ fun ComposeEngineViewport(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .nestedScroll(nestedScrollConnection)
             .background(MaterialTheme.colorScheme.background)
     ) {
         // The bars reserve a strip above/below the page. It used to show the bare theme
@@ -569,54 +574,45 @@ private fun attachSessionDelegates(
         )
     }
 
-    // 5. Scroll Delegate for Address Bar collapse and tactile scroll gestures
-    val currentScroll = session.scrollDelegate
-    session.scrollDelegate = object : GeckoSession.ScrollDelegate {
-        private var lastScrollY: Int = 0
-        private var scrollRun: Int = 0
-
-        override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
-            try { currentScroll?.onScrollChanged(session, scrollX, scrollY) } catch (_: Throwable) {}
-            val act = actSupplier() ?: return
-            val density = context.resources.displayMetrics.density
-            val hideAfterPx = 28f * density
-            val showAfterPx = 16f * density
-
-            val deltaY = scrollY - lastScrollY
-            lastScrollY = scrollY
-
-            // Resizing the viewport (bars collapsing/expanding) shifts Gecko's scroll offset by
-            // the freed height. That is not a user scroll: ignore it, and restart the run, or the
-            // shift immediately re-triggers the opposite bar state (flicker / page jump).
-            if (com.petal.browser.ui.components.BarCollapseState.isViewportSettling()) {
-                scrollRun = 0
-                PageEdgeColors.requestResample()
-                return
-            }
-            PageEdgeColors.requestResample()
-
-            act.runOnUiThread {
-                if (scrollY <= (4f * density).toInt()) {
-                    scrollRun = 0
-                    act.animateAddressBarCollapse(false)
-                } else if (deltaY != 0) {
-                    if ((deltaY > 0) != (scrollRun > 0)) scrollRun = 0
-                    scrollRun += deltaY
-                    if (scrollRun > hideAfterPx) {
-                        scrollRun = 0
-                        act.animateAddressBarCollapse(true)
-                    } else if (scrollRun < -showAfterPx) {
-                        scrollRun = 0
-                        act.animateAddressBarCollapse(false)
-                    }
-                }
-            }
-        }
+    // 5. Scroll Delegate for Address Bar collapse. Installed once per session: re-attaching only
+    // refreshes the supplier, so repeated attachSessionDelegates calls cannot stack decision makers.
+    val existingScroll = session.scrollDelegate
+    if (existingScroll is PetalBarScrollDelegate) {
+        existingScroll.actSupplier = actSupplier
+    } else {
+        session.scrollDelegate = PetalBarScrollDelegate(existingScroll, actSupplier, context)
     }
 
     // 6. Extensions
     PetalExtensionManager.attachSession(session)
     PetalExtensionManager.setActiveBrowserSession(null, session)
+}
+
+/**
+ * Feeds Gecko scroll offsets to [BarCollapseState.scrollDecider], the only thing that decides bar
+ * collapse. Mozilla's own delegate is kept in [chained] so the BrowserStore still gets scroll events.
+ */
+private class PetalBarScrollDelegate(
+    private val chained: GeckoSession.ScrollDelegate?,
+    var actSupplier: () -> MainActivity?,
+    private val context: Context,
+) : GeckoSession.ScrollDelegate {
+    override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+        try { chained?.onScrollChanged(session, scrollX, scrollY) } catch (_: Throwable) {}
+        val act = actSupplier() ?: return
+        PageEdgeColors.requestResample()
+        val enabled = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            .getBoolean("sp_hide_bars_on_scroll", true)
+        val decider = BarCollapseState.scrollDecider
+        if (!enabled) {
+            // Preference off: bars stay open. animateAddressBarCollapse(false) re-opens them if needed.
+            decider.reset()
+            if (act.isAddressBarCollapsed()) act.runOnUiThread { act.animateAddressBarCollapse(false) }
+            return
+        }
+        val decision = decider.onScroll(scrollY, context.resources.displayMetrics.density, act.isAddressBarCollapsed())
+        if (decision != 0) act.runOnUiThread { act.animateAddressBarCollapse(decision > 0) }
+    }
 }
 
 private fun findGeckoView(root: View?): GeckoView? {

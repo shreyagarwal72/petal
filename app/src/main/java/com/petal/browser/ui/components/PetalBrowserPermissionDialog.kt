@@ -459,7 +459,7 @@ private fun BrowserPermissionSheet(
             val readyCount = permissionItems.count { it.isGranted }
             val animatedProgress by androidx.compose.animation.core.animateFloatAsState(
                 targetValue = if (permissionItems.isEmpty()) 0f else readyCount.toFloat() / permissionItems.size,
-                animationSpec = PetalSpring.progressFade(),
+                animationSpec = PetalSpring.calm(),
                 label = "perm_sheet_progress"
             )
             Column(

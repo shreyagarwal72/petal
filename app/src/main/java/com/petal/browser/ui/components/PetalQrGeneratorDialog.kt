@@ -138,7 +138,6 @@ fun PetalQrGeneratorDialog(
 
                     IconButton(
                         onClick = {
-                            PetalHapticEngine.getInstance(context).playTick(context)
                             onDismissRequest()
                         }
                     ) {
@@ -218,7 +217,6 @@ fun PetalQrGeneratorDialog(
                 ) {
                     FilledTonalButton(
                         onClick = {
-                            PetalHapticEngine.getInstance(context).playClick(context)
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             clipboard.setPrimaryClip(ClipData.newPlainText("URL", url))
                             PetalToast.show(context, "Link copied to clipboard")
@@ -240,7 +238,6 @@ fun PetalQrGeneratorDialog(
 
                     FilledTonalButton(
                         onClick = {
-                            PetalHapticEngine.getInstance(context).playClick(context)
                             if (qrBitmap != null) {
                                 shareQrImage(context, qrBitmap, title.ifEmpty { "Petal QR" })
                             } else {
@@ -264,7 +261,6 @@ fun PetalQrGeneratorDialog(
 
                     Button(
                         onClick = {
-                            PetalHapticEngine.getInstance(context).playClick(context)
                             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
                                 putExtra(Intent.EXTRA_SUBJECT, title)

@@ -236,7 +236,6 @@ fun PetalFloatingTtsPlayerBar(
             ) {
                 PetalLiquidIconButton(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                         engine.skipPrevious()
                     },
                     size = 40.dp,
@@ -247,7 +246,6 @@ fun PetalFloatingTtsPlayerBar(
 
                 PetalLiquidIconButton(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
                         if (engine.isSpeaking) engine.pause() else engine.play()
                     },
                     size = 48.dp,
@@ -263,7 +261,6 @@ fun PetalFloatingTtsPlayerBar(
 
                 PetalLiquidIconButton(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                         engine.skipNext()
                     },
                     size = 40.dp,

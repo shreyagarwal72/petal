@@ -1,5 +1,7 @@
 package com.petal.browser.ui.components;
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.Spring;
 import androidx.compose.animation.core.animateFloatAsState;
 import androidx.compose.animation.core.spring;
@@ -22,7 +24,7 @@ fun ExpressiveReadingProgressPill(
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progressFraction.coerceIn(0f, 1f),
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        animationSpec = PetalSpring.calm(),
         label = "readingProgress"
     )
 

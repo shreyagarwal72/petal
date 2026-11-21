@@ -14,6 +14,8 @@
 
 package com.petal.browser.media.lyrics
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -322,13 +324,13 @@ fun PetalLyricsSheet(
                             }
                             val animatedColor by animateColorAsState(
                                 targetValue = targetColor,
-                                animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
+                                animationSpec = PetalSpring.calm(),
                                 label = "lyricColor"
                             )
 
                             val scale by animateFloatAsState(
                                 targetValue = if (isActive) 1.05f else 1.0f,
-                                animationSpec = tween(durationMillis = 240),
+                                animationSpec = PetalSpring.calm(),
                                 label = "lyricScale"
                             )
 
@@ -347,7 +349,6 @@ fun PetalLyricsSheet(
                                     }
                                     .clip(RoundedCornerShape(12.dp))
                                     .clickable {
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                         onSeekTo(line.timeMs)
                                     }
                                     .padding(vertical = 4.dp, horizontal = 6.dp)
@@ -487,7 +488,6 @@ fun PetalLyricsSheet(
                     ) {
                         IconButton(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.3f)
                                 onPrevious()
                             },
                             modifier = Modifier.size(36.dp)
@@ -498,7 +498,6 @@ fun PetalLyricsSheet(
                         FilledTonalIconButton(
                             shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                             onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                 onPlayPauseToggle()
                             },
                             colors = IconButtonDefaults.filledTonalIconButtonColors(
@@ -516,7 +515,6 @@ fun PetalLyricsSheet(
 
                         IconButton(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.3f)
                                 onNext()
                             },
                             modifier = Modifier.size(36.dp)

@@ -99,7 +99,7 @@ fun PetalNewsSourceSheet(
             PetalGroupListRow(
                 position = PetalGroupPosition.SINGLE,
                 onClick = {
-                    haptic.playClick(context)
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                     val next = !isEnabled
                     isEnabled = next
                     PetalNewsManager.setNewsEnabled(context, next)
@@ -131,7 +131,7 @@ fun PetalNewsSourceSheet(
                         checked = isEnabled,
                         icon = Icons.Rounded.Check,
                         onCheckedChange = { checked ->
-                            haptic.playClick(context)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                             isEnabled = checked
                             PetalNewsManager.setNewsEnabled(context, checked)
                             onSourcesChanged()
@@ -169,7 +169,7 @@ fun PetalNewsSourceSheet(
                     PetalGroupListRow(
                         position = petalGroupPositionFor(index, sources.size),
                         onClick = {
-                            haptic.playTick(context)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                             val nextChecked = !isChecked
                             val nextSet = selectedIds.toMutableSet()
                             if (nextChecked) nextSet.add(source.id) else nextSet.remove(source.id)
@@ -203,7 +203,7 @@ fun PetalNewsSourceSheet(
                                 checked = isChecked,
                                 icon = Icons.Rounded.Check,
                                 onCheckedChange = { checked ->
-                                    haptic.playTick(context)
+                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                     val nextSet = selectedIds.toMutableSet()
                                     if (checked) nextSet.add(source.id) else nextSet.remove(source.id)
                                     selectedIds = nextSet

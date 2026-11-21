@@ -489,11 +489,17 @@ fun PetalHistoryScreen(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    if (rawHistory == null) {
-                        ContainedLoadingIndicator(
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
+                    com.petal.browser.ui.components.PetalSkeletonSwitcher(
+                        isLoading = rawHistory == null,
+                        modifier = Modifier.fillMaxSize(),
+                        skeleton = {
+                            com.petal.browser.ui.components.PetalSkeletonList(
+                                modifier = Modifier.fillMaxSize(),
+                                rows = 9,
+                                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = topInset + 8.dp)
+                            )
+                        }
+                    ) {
                         val historyListState = androidx.compose.foundation.lazy.rememberLazyListState()
                         val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                         LazyColumn(
@@ -572,6 +578,7 @@ fun PetalHistoryScreen(
                                                             } catch (e: Exception) {
                                                                 e.printStackTrace()
                                                             }
+                                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
                                                             coroutineScope.launch {
                                                                 val displayTitle = deletedRecord.title?.takeIf { it.isNotBlank() } ?: deletedRecord.url ?: "History item"
                                                                 val result = snackbarHostState.showSnackbar(
@@ -602,9 +609,9 @@ fun PetalHistoryScreen(
                                             val swipeDeleteLabel = stringResource(R.string.ui_delete)
                                             PetalSwipeActionRow(
                                                 modifier = Modifier.animateItem(
-                                                    fadeInSpec = PetalSpring.fadeIn(),
-                                                    fadeOutSpec = PetalSpring.fadeOut(),
-                                                    placementSpec = PetalSpring.spatial()
+                                                    fadeInSpec = PetalSpring.calm(),
+                                                    fadeOutSpec = PetalSpring.calm(),
+                                                    placementSpec = PetalSpring.calm()
                                                 ).entrance(index = listItem.indexInGroup, playKey = "${record.url}_${record.time}"),
                                                 // One direction only: the right edge belongs to the fast-scroll bar.
                                                 startActions = listOf(

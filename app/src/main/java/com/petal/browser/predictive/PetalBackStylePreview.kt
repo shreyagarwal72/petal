@@ -5,6 +5,8 @@
 
 package com.petal.browser.predictive
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.activity.BackEventCompat
 import androidx.compose.animation.core.Animatable
@@ -87,7 +89,7 @@ fun PetalBackStylePreview(
 
             // Finger drags in from the edge.
             val drag = Animatable(0f)
-            drag.animateTo(0.62f, tween(950, easing = FastOutSlowInEasing)) {
+            drag.animateTo(0.62f, PetalSpring.calm()) {
                 progress = value
                 touchYFraction = 0.5f + yDirection * 0.18f * (value / 0.62f)
             }
@@ -100,7 +102,7 @@ fun PetalBackStylePreview(
                 committing = true
                 if (style.usesSpringCommit) {
                     val settle = Animatable(from)
-                    settle.animateTo(1f, spring(Spring.DampingRatioNoBouncy, Spring.StiffnessMedium)) {
+                    settle.animateTo(1f, PetalSpring.calm()) {
                         progress = value
                         settleTime = ((value - from) / (1f - from).coerceAtLeast(0.01f)).coerceIn(0f, 1f)
                     }
@@ -118,8 +120,8 @@ fun PetalBackStylePreview(
                 val settle = Animatable(progress)
                 settle.animateTo(
                     0f,
-                    if (style.usesSpringCommit) spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium)
-                    else spring(Spring.DampingRatioNoBouncy, 1500f),
+                    if (style.usesSpringCommit) PetalSpring.bouncy()
+                    else PetalSpring.calm(),
                 ) {
                     progress = value
                     touchYFraction = 0.5f + (touchYFraction - 0.5f) * 0.96f

@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.LayerDrawable
@@ -181,7 +183,7 @@ private fun IconChoice(icon: PetalAppIcon, selected: Boolean, onClick: () -> Uni
     val scheme = MaterialTheme.colorScheme
     val scale by animateFloatAsState(
         targetValue = if (selected) 1f else 0.92f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+        animationSpec = PetalSpring.calm(),
         label = "app_icon_choice_scale"
     )
     val shape = RoundedCornerShape(24.dp)

@@ -16,6 +16,8 @@
 
 package com.petal.browser.media
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -171,7 +173,7 @@ fun WavySliderExpressive(
 
     val thumbInteractionFraction by animateFloatAsState(
         targetValue = if (isInteracting) 1f else 0f,
-        animationSpec = tween(250, easing = FastOutSlowInEasing),
+        animationSpec = PetalSpring.calm(),
         label = "ThumbInteractionAnim",
     )
     val animatedAmplitude by animateFloatAsState(
@@ -428,10 +430,10 @@ fun PetalSeekbarWithTimers(
         ) {
             androidx.compose.animation.AnimatedVisibility(
                 visible = isUserInteracting,
-                enter = androidx.compose.animation.fadeIn(spring(stiffness = Spring.StiffnessMedium)) +
-                        androidx.compose.animation.scaleIn(initialScale = 0.8f, animationSpec = spring(stiffness = Spring.StiffnessMedium)),
-                exit = androidx.compose.animation.fadeOut(tween(120)) +
-                        androidx.compose.animation.scaleOut(targetScale = 0.8f, animationSpec = tween(120)),
+                enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) +
+                        androidx.compose.animation.scaleIn(initialScale = 0.8f, animationSpec = PetalSpring.calm()),
+                exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) +
+                        androidx.compose.animation.scaleOut(targetScale = 0.8f, animationSpec = PetalSpring.calm()),
                 modifier = Modifier.offset {
                     val thumbPx = (scrubProgress * barWidthPx).toInt()
                     IntOffset(x = thumbPx.coerceIn(0, (barWidthPx - 160f).toInt().coerceAtLeast(0)), y = 0)
@@ -479,7 +481,6 @@ fun PetalSeekbarWithTimers(
                         val quantized = (if (durationSeconds > 0) (newSec / durationSeconds) * 20f else 0f).toInt()
                         if (quantized != lastHapticStep[0]) {
                             lastHapticStep[0] = quantized
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         }
                     },
                     onValueCommit = { finalSec ->
@@ -541,7 +542,6 @@ fun PetalSeekbarWithTimers(
                             val quantized = (if (durationSeconds > 0) (newSec / durationSeconds) * 20f else 0f).toInt()
                             if (quantized != lastHapticStep[0]) {
                                 lastHapticStep[0] = quantized
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             }
                         },
                         onValueCommit = { finalSec ->

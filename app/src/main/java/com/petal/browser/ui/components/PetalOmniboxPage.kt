@@ -504,8 +504,6 @@ fun PetalOmniboxPage(
     fun runSlashCommand(command: PetalOmniboxCommand) {
         val handler = onCommand ?: return
         try { keyboardController?.hide() } catch (_: Throwable) {}
-        com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-            .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
         if (command == PetalOmniboxCommand.NEW_INCOGNITO_TAB) {
             // Same gate the tab switcher uses before it opens private tabs.
             val lockOn = sp.getBoolean("sp_biometric_incognito_tab_lock", false)
@@ -1164,10 +1162,6 @@ fun PetalOmniboxPage(
                                 Surface(
                                     onClick = {
                                         try {
-                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                                com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
-                                                0.55f
-                                            )
                                         } catch (_: Throwable) {}
                                         submitSearch(clip, saveToHistory = !isClipboardUrl)
                                     },
@@ -1339,10 +1333,10 @@ fun PetalOmniboxPage(
                         // Slash commands sit above the suggestions and only appear for a leading "/".
                         AnimatedVisibility(
                             visible = slashMatches.isNotEmpty(),
-                            enter = fadeIn(animationSpec = PetalSpring.fadeIn()) +
-                                slideInVertically(animationSpec = PetalSpring.spatial()) { -it / 5 },
-                            exit = fadeOut(animationSpec = PetalSpring.fadeOut()) +
-                                slideOutVertically(animationSpec = PetalSpring.spatial()) { -it / 5 },
+                            enter = fadeIn(animationSpec = PetalSpring.calm()) +
+                                slideInVertically(animationSpec = PetalSpring.calm()) { -it / 5 },
+                            exit = fadeOut(animationSpec = PetalSpring.calm()) +
+                                slideOutVertically(animationSpec = PetalSpring.calm()) { -it / 5 },
                         ) {
                             SlashCommandCard(
                                 specs = slashMatches,
@@ -1419,9 +1413,9 @@ fun PetalOmniboxPage(
                                                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
                                                         modifier = Modifier
                                                             .animateItem(
-                                                                fadeInSpec = PetalSpring.fadeIn(),
-                                                                fadeOutSpec = PetalSpring.fadeOut(),
-                                                                placementSpec = PetalSpring.listReorder()
+                                                                fadeInSpec = PetalSpring.calm(),
+                                                                fadeOutSpec = PetalSpring.calm(),
+                                                                placementSpec = PetalSpring.calm()
                                                             )
                                                             .padding(
                                                                 start = 16.dp,
@@ -1489,16 +1483,16 @@ fun PetalOmniboxPage(
                                                         },
                                                         onLongClick = {
                                                             try {
-                                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
+                                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
                                                             } catch (ignored: Exception) {}
                                                             suggestionToRemove = payload
                                                         },
                                                         modifier = Modifier
                                                             .fillMaxWidth()
                                                             .animateItem(
-                                                                fadeInSpec = PetalSpring.fadeIn(),
-                                                                fadeOutSpec = PetalSpring.fadeOut(),
-                                                                placementSpec = PetalSpring.listReorder()
+                                                                fadeInSpec = PetalSpring.calm(),
+                                                                fadeOutSpec = PetalSpring.calm(),
+                                                                placementSpec = PetalSpring.calm()
                                                             ),
                                                         leading = {
                                                             com.petal.browser.ui.containment.PetalGroupIconBadge(

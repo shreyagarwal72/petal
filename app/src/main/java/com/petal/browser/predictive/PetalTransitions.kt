@@ -23,6 +23,8 @@
 
 package com.petal.browser.predictive
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.CubicBezierEasing
@@ -57,41 +59,38 @@ const val PETAL_POP_EXIT_MAX_SCALE_DELTA = 0.15f
 fun aospSharedAxisEnter(): EnterTransition {
     return slideInHorizontally(
         initialOffsetX = { it / 3 },
-        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+        animationSpec = PetalSpring.calm()
     ) + fadeIn(
-        animationSpec = tween(durationMillis = 220, delayMillis = 70, easing = LinearOutSlowInEasing)
+        animationSpec = PetalSpring.calm()
     )
 }
 
 fun aospSharedAxisExit(): ExitTransition {
     return slideOutHorizontally(
         targetOffsetX = { -it / 3 },
-        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+        animationSpec = PetalSpring.calm()
     ) + scaleOut(
         targetScale = 0.92f,
-        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+        animationSpec = PetalSpring.calm()
     )
 }
 
 fun aospSharedAxisPopEnter(): EnterTransition {
     return slideInHorizontally(
         initialOffsetX = { -it / 3 },
-        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+        animationSpec = PetalSpring.calm()
     ) + fadeIn(
-        animationSpec = tween(durationMillis = 220, delayMillis = 70, easing = LinearOutSlowInEasing)
+        animationSpec = PetalSpring.calm()
     )
 }
 
 fun aospSharedAxisPopExit(): ExitTransition {
     return slideOutHorizontally(
         targetOffsetX = { it },
-        animationSpec = tween(
-            durationMillis = PETAL_TRANSITION_DURATION,
-            easing = PetalPopExitSlideEasing
-        )
+        animationSpec = PetalSpring.calm()
     ) + scaleOut(
         targetScale = 0.85f,
-        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+        animationSpec = PetalSpring.calm()
     )
 }
 
@@ -102,42 +101,42 @@ private val EmphasizedAccelerateEasing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f
 const val PETAL_EXPRESSIVE_TRANSITION_DURATION = 450
 
 fun enterTransition() = slideInHorizontally(
-    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedDecelerateEasing),
+    animationSpec = PetalSpring.calm(),
     initialOffsetX = { (it * 0.5f).toInt() }
 ) + scaleIn(
-    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedDecelerateEasing),
+    animationSpec = PetalSpring.calm(),
     initialScale = 0.92f,
     transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.5f)
 ) + fadeIn(
-    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION / 2, easing = LinearOutSlowInEasing)
+    animationSpec = PetalSpring.calm()
 )
 
 fun exitTransition() = slideOutHorizontally(
-    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedAccelerateEasing),
+    animationSpec = PetalSpring.calm(),
     targetOffsetX = { -(it * 0.25f).toInt() }
 ) + fadeOut(
-    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION / 2, easing = EmphasizedAccelerateEasing)
+    animationSpec = PetalSpring.calm()
 )
 
 fun popEnterTransition() = slideInHorizontally(
-    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedDecelerateEasing),
+    animationSpec = PetalSpring.calm(),
     initialOffsetX = { -(it * 0.25f).toInt() }
 ) + scaleIn(
-    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedDecelerateEasing),
+    animationSpec = PetalSpring.calm(),
     initialScale = 0.95f
 ) + fadeIn(
-    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION / 2, easing = EmphasizedDecelerateEasing)
+    animationSpec = PetalSpring.calm()
 )
 
 fun popExitTransition() = slideOutHorizontally(
-    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedAccelerateEasing),
+    animationSpec = PetalSpring.calm(),
     targetOffsetX = { (it * 0.5f).toInt() }
 ) + scaleOut(
-    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedAccelerateEasing),
+    animationSpec = PetalSpring.calm(),
     targetScale = 0.92f,
     transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.5f)
 ) + fadeOut(
-    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION / 2, easing = EmphasizedAccelerateEasing)
+    animationSpec = PetalSpring.calm()
 )
 
 enum class PetalMainRootDirection {
@@ -146,13 +145,13 @@ enum class PetalMainRootDirection {
 }
 
 private val MAIN_ROOT_TRANSITION_SPEC =
-    tween<androidx.compose.ui.unit.IntOffset>(durationMillis = 400, easing = PetalM3EmphasizedEasing)
+    PetalSpring.calm<androidx.compose.ui.unit.IntOffset>()
 
 private val MAIN_ROOT_FADE_SPEC =
-    tween<Float>(durationMillis = 220, delayMillis = 80, easing = LinearOutSlowInEasing)
+    PetalSpring.calm<Float>()
 
 private val MAIN_ROOT_FADE_OUT_SPEC =
-    tween<Float>(durationMillis = 140, easing = FastOutLinearInEasing)
+    PetalSpring.calm<Float>()
 
 fun mainRootDirection(fromIndex: Int, toIndex: Int): PetalMainRootDirection? {
     if (fromIndex == toIndex) return null

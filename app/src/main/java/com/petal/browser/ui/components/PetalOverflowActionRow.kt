@@ -133,7 +133,7 @@ private fun OverflowRowButton(
     val roleColors = petalRoleColors(action.role)
     val container by animateColorAsState(
         targetValue = if (glass) petalGroupSurfaceColor() else roleColors.container,
-        animationSpec = PetalSpring.crossfade(),
+        animationSpec = PetalSpring.calm(),
         label = "OverflowBtnContainer",
     )
     val content = if (glass) MaterialTheme.colorScheme.onSurface else roleColors.onContainer
@@ -145,8 +145,8 @@ private fun OverflowRowButton(
         pressedIndex >= 0 && kotlin.math.abs(pressedIndex - index) == 1 -> slot - 6.dp
         else -> slot
     }
-    val width by animateDpAsState(target, PetalSpring.spatial(), label = "OverflowBtnWidth")
-    val corner by animateDpAsState(if (pressed && !simplify) 12.dp else 24.dp, PetalSpring.spatial(), label = "OverflowBtnCorner")
+    val width by animateDpAsState(target, PetalSpring.calm(), label = "OverflowBtnWidth")
+    val corner by animateDpAsState(if (pressed && !simplify) 12.dp else 24.dp, PetalSpring.calm(), label = "OverflowBtnCorner")
 
     Box(
         modifier = Modifier
@@ -161,8 +161,6 @@ private fun OverflowRowButton(
                 role = Role.Button,
                 onClickLabel = action.label,
             ) {
-                PetalHapticEngine.getInstance(context)
-                    .playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.5f)
                 action.onClick()
             },
         contentAlignment = Alignment.Center,

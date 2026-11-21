@@ -224,7 +224,7 @@ private fun ExpressiveClearOptionRow(
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.98f else 1f,
-        animationSpec = PetalSpring.press(),
+        animationSpec = PetalSpring.quick(),
         label = "ClearOptionRowScale"
     )
 

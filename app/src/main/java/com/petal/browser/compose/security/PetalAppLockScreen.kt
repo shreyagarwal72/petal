@@ -7,6 +7,8 @@
 
 package com.petal.browser.compose.security
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
@@ -85,7 +87,6 @@ fun PetalAppLockScreen(
         if (savedPasscode.isNotBlank() && enteredPasscode.trim() == savedPasscode.trim()) {
             errorMessage = null
             isUnlockedSuccess = true
-            PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
             val activity = context as? android.app.Activity
             val decor = activity?.window?.decorView
             if (decor != null) {
@@ -94,7 +95,6 @@ fun PetalAppLockScreen(
             onUnlocked()
         } else {
             errorMessage = "Incorrect app password. Please try again."
-            PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
         }
     }
 
@@ -108,7 +108,6 @@ fun PetalAppLockScreen(
                 Runnable {
                     errorMessage = null
                     isUnlockedSuccess = true
-                    PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
                     val decor = activity.window?.decorView
                     if (decor != null) {
                         com.petal.browser.ui.layout.LiquidRippleEffect.trigger(decor)
@@ -117,7 +116,6 @@ fun PetalAppLockScreen(
                 },
                 java.util.function.Consumer { error ->
                     errorMessage = "Fingerprint error: $error"
-                    PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
                 }
             )
         }
@@ -174,10 +172,7 @@ fun PetalAppLockScreen(
                     LaunchedEffect(isUnlockedSuccess) {
                         avatarScale.animateTo(
                             1f,
-                            animationSpec = androidx.compose.animation.core.spring(
-                                dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-                                stiffness = androidx.compose.animation.core.Spring.StiffnessLow
-                            )
+                            animationSpec = PetalSpring.calm()
                         )
                     }
 
@@ -289,8 +284,8 @@ fun PetalAppLockScreen(
 
                     AnimatedVisibility(
                         visible = errorMessage != null,
-                        enter = fadeIn(),
-                        exit = fadeOut()
+                        enter = fadeIn(animationSpec = PetalSpring.calm()),
+                        exit = fadeOut(animationSpec = PetalSpring.calm())
                     ) {
                         if (errorMessage != null) {
                             Text(
@@ -374,7 +369,6 @@ fun PetalAppLockScreen(
             onConfirm = {
                 showForgotPasswordDialog = false
                 com.petal.browser.unit.PetalBrowserUtils.eraseAllAppData(context)
-                PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar(
                         message = "All app data has been erased. Please do not forget your password again!",

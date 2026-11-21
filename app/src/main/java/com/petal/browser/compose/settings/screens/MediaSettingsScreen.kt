@@ -178,7 +178,7 @@ fun MediaSettingsScreen(
                         onCheckedChange = { checked ->
                             nativeVideoPlayer = checked
                             sp.edit().putBoolean("sp_native_video_player", checked).apply()
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                         }
                     )
 
@@ -194,7 +194,7 @@ fun MediaSettingsScreen(
                             val newStyle = if (checked) "LIQUID_GLASS" else "EXPRESSIVE"
                             playerStyle = newStyle
                             sp.edit().putString("sp_native_player_style", newStyle).apply()
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                         }
                     )
 
@@ -208,7 +208,7 @@ fun MediaSettingsScreen(
                         onCheckedChange = { checked ->
                             detectBackground = checked
                             sp.edit().putBoolean("sp_media_detect_background", checked).apply()
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                         }
                     )
 
@@ -222,7 +222,7 @@ fun MediaSettingsScreen(
                         onCheckedChange = { checked ->
                             showMediaButton = checked
                             sp.edit().putBoolean("sp_media_button_address_bar", checked).apply()
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                         }
                     )
 
@@ -236,7 +236,7 @@ fun MediaSettingsScreen(
                         onCheckedChange = { checked ->
                             autoOpenPanel = checked
                             sp.edit().putBoolean("sp_media_auto_open_panel", checked).apply()
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                         }
                     )
 
@@ -250,7 +250,7 @@ fun MediaSettingsScreen(
                         onCheckedChange = { checked ->
                             validateStreams = checked
                             sp.edit().putBoolean("sp_media_validate_streams", checked).apply()
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                         }
                     )
 
@@ -264,7 +264,7 @@ fun MediaSettingsScreen(
                         onCheckedChange = { checked ->
                             backgroundPlay = checked
                             sp.edit().putBoolean("sp_background_play", checked).apply()
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                         }
                     )
 
@@ -278,7 +278,7 @@ fun MediaSettingsScreen(
                         onCheckedChange = { checked ->
                             autoPip = checked
                             sp.edit().putBoolean("sp_auto_pip", checked).apply()
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                         }
                     )
                 }
@@ -322,7 +322,6 @@ fun MediaSettingsScreen(
                                     liveUpdates = false
                                     sp.edit().putBoolean(IslandSettings.KEY_LIVE_UPDATES, false).apply()
                                 }
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                             }
                         )
                     }
@@ -367,7 +366,6 @@ fun MediaSettingsScreen(
                                         overlayEnabled = false
                                         sp.edit().putBoolean(IslandSettings.KEY_OVERLAY, false).apply()
                                     }
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                 }
                             )
                         }
@@ -418,7 +416,6 @@ fun MediaSettingsScreen(
                                 onClick = {
                                     alignmentMode = key
                                     sp.edit().putString(IslandSettings.KEY_ALIGNMENT, key).apply()
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                 },
                                 trailing = {
                                     RadioButton(
@@ -426,7 +423,7 @@ fun MediaSettingsScreen(
                                         onClick = {
                                             alignmentMode = key
                                             sp.edit().putString(IslandSettings.KEY_ALIGNMENT, key).apply()
-                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                         }
                                     )
                                 }
@@ -446,7 +443,7 @@ fun MediaSettingsScreen(
                                 onCheckedChange = { checked ->
                                     isNotch = checked
                                     sp.edit().putBoolean(IslandSettings.KEY_IS_NOTCH, checked).apply()
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                 }
                             )
                         }
@@ -560,7 +557,6 @@ fun MediaSettingsScreen(
                                 onClick = {
                                     animStyle = key
                                     sp.edit().putString(IslandSettings.KEY_STYLE, key).apply()
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                 },
                                 trailing = {
                                     RadioButton(
@@ -568,7 +564,7 @@ fun MediaSettingsScreen(
                                         onClick = {
                                             animStyle = key
                                             sp.edit().putString(IslandSettings.KEY_STYLE, key).apply()
-                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                         }
                                     )
                                 }
@@ -589,7 +585,6 @@ fun MediaSettingsScreen(
                                         val nextIdx = (speeds.indexOf(animSpeed.uppercase(Locale.US)).coerceAtLeast(0) + 1) % speeds.size
                                         animSpeed = speeds[nextIdx]
                                         sp.edit().putString(IslandSettings.KEY_SPEED, animSpeed).apply()
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                     },
                                     trailing = {
                                         AssistChip(
@@ -597,7 +592,6 @@ fun MediaSettingsScreen(
                                                 val nextIdx = (speeds.indexOf(animSpeed.uppercase(Locale.US)).coerceAtLeast(0) + 1) % speeds.size
                                                 animSpeed = speeds[nextIdx]
                                                 sp.edit().putString(IslandSettings.KEY_SPEED, animSpeed).apply()
-                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                             },
                                             label = { Text(animSpeed) },
                                             shape = RoundedCornerShape(12.dp),
@@ -619,7 +613,6 @@ fun MediaSettingsScreen(
                                         val nextIdx = (bounces.indexOf(animBounce.uppercase(Locale.US)).coerceAtLeast(0) + 1) % bounces.size
                                         animBounce = bounces[nextIdx]
                                         sp.edit().putString(IslandSettings.KEY_BOUNCE, animBounce).apply()
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                     },
                                     trailing = {
                                         AssistChip(
@@ -627,7 +620,6 @@ fun MediaSettingsScreen(
                                                 val nextIdx = (bounces.indexOf(animBounce.uppercase(Locale.US)).coerceAtLeast(0) + 1) % bounces.size
                                                 animBounce = bounces[nextIdx]
                                                 sp.edit().putString(IslandSettings.KEY_BOUNCE, animBounce).apply()
-                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                             },
                                             label = { Text(animBounce) },
                                             shape = RoundedCornerShape(12.dp),
@@ -655,7 +647,7 @@ fun MediaSettingsScreen(
                                 onCheckedChange = { checked ->
                                     wavyProgress = checked
                                     sp.edit().putBoolean(IslandSettings.KEY_WAVY, checked).apply()
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                 }
                             )
                         }

@@ -458,11 +458,6 @@ private fun BetaRole.content(): Color = when (this) {
     BetaRole.Neutral -> MaterialTheme.colorScheme.onSurface
 }
 
-private fun betaHaptic(context: android.content.Context) {
-    PetalHapticEngine.getInstance(context)
-        .playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.75f)
-}
-
 /** Tracks finger-down without consuming, so it can sit next to any clickable. */
 private fun Modifier.betaPressTracker(onPressedChange: (Boolean) -> Unit): Modifier =
     pointerInput(Unit) {
@@ -498,7 +493,7 @@ private fun BetaNavButton(
     val startTarget = if (first) BetaOuterCorner else BetaInnerCorner
     val endTarget = if (last) BetaOuterCorner else BetaInnerCorner
     // Pressed: every corner rounds up. Saved bookmark: settles into a softer, rounder shape.
-    val cornerSpec = PetalSpring.container<Dp>().orSnap(reduceMotion)
+    val cornerSpec = PetalSpring.calm<Dp>().orSnap(reduceMotion)
     val startCorner by animateDpAsState(
         targetValue = when {
             pressed && enabled -> BetaOuterCorner
@@ -527,7 +522,7 @@ private fun BetaNavButton(
     val container by animateColorAsState(
         targetValue = if (active) MaterialTheme.colorScheme.primaryContainer
         else MaterialTheme.colorScheme.surfaceContainerHighest,
-        animationSpec = PetalSpring.crossfade(),
+        animationSpec = PetalSpring.calm(),
         label = "BetaNavContainer"
     )
     val baseTint = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
@@ -535,12 +530,12 @@ private fun BetaNavButton(
 
     val pressScale by animateFloatAsState(
         targetValue = if (pressed && enabled) PetalSpring.PRESS_SCALE_CARD else 1f,
-        animationSpec = PetalSpring.press<Float>().orSnap(reduceMotion),
+        animationSpec = PetalSpring.quick<Float>().orSnap(reduceMotion),
         label = "BetaNavPress"
     )
     val iconScale by animateFloatAsState(
         targetValue = if (active) 1.12f else 1f,
-        animationSpec = PetalSpring.enter<Float>().orSnap(reduceMotion),
+        animationSpec = PetalSpring.calm<Float>().orSnap(reduceMotion),
         label = "BetaNavIconScale"
     )
 
@@ -557,7 +552,6 @@ private fun BetaNavButton(
                 color = container,
                 onClick = if (enabled) {
                     {
-                        betaHaptic(context)
                         onClick()
                     }
                 } else null,
@@ -567,7 +561,7 @@ private fun BetaNavButton(
     ) {
         Crossfade(
             targetState = icon,
-            animationSpec = PetalSpring.crossfade(),
+            animationSpec = PetalSpring.calm(),
             label = "BetaNavIcon"
         ) { shown ->
             Icon(
@@ -605,7 +599,6 @@ private fun BetaTile(
                 shape = shape,
                 color = role.container(),
                 onClick = {
-                    betaHaptic(context)
                     onClick()
                 },
                 sheen = 0.35f
@@ -677,22 +670,22 @@ private fun BetaToggleTile(
 
     val container by animateColorAsState(
         targetValue = if (checked) role.container() else MaterialTheme.colorScheme.surfaceContainerHighest,
-        animationSpec = PetalSpring.crossfade(),
+        animationSpec = PetalSpring.calm(),
         label = "BetaToggleContainer"
     )
     val content by animateColorAsState(
         targetValue = if (checked) role.content() else MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = PetalSpring.crossfade(),
+        animationSpec = PetalSpring.calm(),
         label = "BetaToggleContent"
     )
     val corner by animateDpAsState(
         targetValue = if (checked) 28.dp else 16.dp,
-        animationSpec = PetalSpring.container<Dp>().orSnap(reduceMotion),
+        animationSpec = PetalSpring.calm<Dp>().orSnap(reduceMotion),
         label = "BetaToggleCorner"
     )
     val iconScale by animateFloatAsState(
         targetValue = if (checked) 1.1f else 1f,
-        animationSpec = PetalSpring.enter<Float>().orSnap(reduceMotion),
+        animationSpec = PetalSpring.calm<Float>().orSnap(reduceMotion),
         label = "BetaToggleIconScale"
     )
     val shape = RoundedCornerShape(corner.coerceAtLeast(0.dp))
@@ -708,12 +701,11 @@ private fun BetaToggleTile(
                 onLongClickLabel = longClickLabel,
                 onLongClick = onLongClick?.let {
                     {
-                        betaHaptic(context)
                         it()
                     }
                 },
                 onClick = {
-                    betaHaptic(context)
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                     onToggle(!checked)
                 }
             )
@@ -723,7 +715,7 @@ private fun BetaToggleTile(
     ) {
         Crossfade(
             targetState = checked,
-            animationSpec = PetalSpring.crossfade(),
+            animationSpec = PetalSpring.calm(),
             label = "BetaToggleIcon"
         ) { on ->
             Icon(
@@ -840,7 +832,6 @@ private fun BetaActionsGroup(
             subtitle = row.subtitle,
             position = petalGroupPositionFor(index, total),
             onClick = {
-                betaHaptic(context)
                 row.onClick()
             },
             trailing = row.trailing,
@@ -853,8 +844,8 @@ private fun BetaActionsGroup(
         ActionRow(moreToolsRow, mainRows.size)
         AnimatedVisibility(
             visible = isMoreToolsExpanded,
-            enter = expandVertically(animationSpec = PetalSpring.spatial()),
-            exit = shrinkVertically(animationSpec = PetalSpring.spatial())
+            enter = expandVertically(animationSpec = PetalSpring.calm()),
+            exit = shrinkVertically(animationSpec = PetalSpring.calm())
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 subRows.forEachIndexed { i, row -> ActionRow(row, mainRows.size + 1 + i) }
@@ -879,7 +870,6 @@ private fun BetaFooter(
     ) {
         FilledTonalButton(
             onClick = {
-                betaHaptic(context)
                 onDeleteBrowsingData()
             },
             modifier = Modifier
@@ -902,7 +892,6 @@ private fun BetaFooter(
         }
         FilledTonalButton(
             onClick = {
-                betaHaptic(context)
                 onOpenSettings()
             },
             modifier = Modifier

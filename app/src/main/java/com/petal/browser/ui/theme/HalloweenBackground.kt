@@ -5,6 +5,8 @@
 
 package com.petal.browser.ui.theme
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -341,19 +343,13 @@ fun rememberHalloweenParallaxState(
                 launch {
                     smoothTiltX.animateTo(
                         targetValue = target.x,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        )
+                        animationSpec = PetalSpring.calm()
                     )
                 }
                 launch {
                     smoothTiltY.animateTo(
                         targetValue = target.y,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        )
+                        animationSpec = PetalSpring.calm()
                     )
                 }
             }

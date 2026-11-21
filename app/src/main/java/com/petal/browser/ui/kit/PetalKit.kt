@@ -111,7 +111,7 @@ private fun morphingShape(
     val pressedPercent = (restPercent * pressedFactor).toInt().coerceIn(6, restPercent)
     val percent by animateIntAsState(
         targetValue = if (pressed) pressedPercent else restPercent,
-        animationSpec = PetalSpring.press(),
+        animationSpec = PetalSpring.quick(),
         label = "PetalKitShapeMorph",
     )
     return if (type == PetalShapeType.ROUNDED) {

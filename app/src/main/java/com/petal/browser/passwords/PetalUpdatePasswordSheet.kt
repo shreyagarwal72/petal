@@ -145,40 +145,40 @@ private fun UpdatePasswordSheetContent(
     // Scrim fade animation
     val scrimAlpha by animateFloatAsState(
         targetValue = if (isMorphing || isClosing) 0f else 0.52f,
-        animationSpec = PetalSpring.fadeIn(),
+        animationSpec = PetalSpring.calm(),
         label = "scrimAlpha"
     )
 
     // Morph animations towards Petal NowBar coordinates
     val scale by animateFloatAsState(
         targetValue = if (isMorphing) 0.16f else if (isClosing) 0.92f else 1f,
-        animationSpec = PetalSpring.containerMorph(),
+        animationSpec = PetalSpring.calm(),
         label = "scale"
     )
 
     val targetTranslationY = with(density) { (-screenHeightDp + 52.dp).toPx() }
     val translationY by animateFloatAsState(
         targetValue = if (isMorphing) targetTranslationY else if (isClosing) with(density) { 320.dp.toPx() } else 0f,
-        animationSpec = PetalSpring.containerMorph(),
+        animationSpec = PetalSpring.calm(),
         label = "transY"
     )
 
     val targetTranslationX = with(density) { cutoutOffsetXDp.dp.toPx() }
     val translationX by animateFloatAsState(
         targetValue = if (isMorphing) targetTranslationX else 0f,
-        animationSpec = PetalSpring.containerMorph(),
+        animationSpec = PetalSpring.calm(),
         label = "transX"
     )
 
     val alpha by animateFloatAsState(
         targetValue = if (isMorphing) 0f else if (isClosing) 0f else 1f,
-        animationSpec = PetalSpring.fadeOut(),
+        animationSpec = PetalSpring.calm(),
         label = "alpha"
     )
 
     val cornerRadius by animateDpAsState(
         targetValue = if (isMorphing) 50.dp else 32.dp,
-        animationSpec = PetalSpring.containerMorph(),
+        animationSpec = PetalSpring.calm(),
         label = "corner"
     )
 
@@ -367,7 +367,6 @@ private fun UpdatePasswordSheetContent(
                         com.petal.browser.ui.kit.FilledTonalButton(
                             onClick = {
                                 if (!isMorphing && !isClosing) {
-                                    haptic.playClick(context)
                                     isClosing = true
                                     onDismiss()
                                 }
@@ -388,7 +387,6 @@ private fun UpdatePasswordSheetContent(
                         Button(
                             onClick = {
                                 if (!isMorphing && !isClosing) {
-                                    haptic.playHeavyClick(context)
                                     // Fluid spatial handoff: dispatch live event directly to Petal NowBar
                                     PetalLiveActionBus.postCredentialSaved(
                                         domain = cleanDomain,

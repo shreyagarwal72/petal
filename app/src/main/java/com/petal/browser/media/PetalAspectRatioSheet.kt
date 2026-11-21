@@ -134,7 +134,6 @@ fun PetalAspectRatioSheet(
                                 CircleShape,
                                 cardBg,
                                 {
-                                    PetalHapticEngine.getInstance(context).playClick(context)
                                     onSelectMode(option)
                                 }
                             )

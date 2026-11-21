@@ -154,14 +154,8 @@ fun PetalFloatingStatusCard(
     }
 
     // Spring animation specs matching Petal's motion system
-    val enterSpringSpec = spring<androidx.compose.ui.unit.IntOffset>(
-        dampingRatio = Spring.DampingRatioLowBouncy,
-        stiffness = Spring.StiffnessMediumLow
-    )
-    val exitSpringSpec = spring<androidx.compose.ui.unit.IntOffset>(
-        dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = Spring.StiffnessMedium
-    )
+    val enterSpringSpec = PetalSpring.calm<androidx.compose.ui.unit.IntOffset>()
+    val exitSpringSpec = PetalSpring.quick<androidx.compose.ui.unit.IntOffset>()
 
     AnimatedVisibility(
         visible = visible,
@@ -169,31 +163,19 @@ fun PetalFloatingStatusCard(
             initialOffsetY = { it * 2 },
             animationSpec = enterSpringSpec
         ) + fadeIn(
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMedium
-            )
+            animationSpec = PetalSpring.calm()
         ) + scaleIn(
             initialScale = 0.92f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
+            animationSpec = PetalSpring.calm()
         ),
         exit = slideOutVertically(
             targetOffsetY = { it * 2 },
             animationSpec = exitSpringSpec
         ) + fadeOut(
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMedium
-            )
+            animationSpec = PetalSpring.calm()
         ) + scaleOut(
             targetScale = 0.92f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMedium
-            )
+            animationSpec = PetalSpring.calm()
         ),
         modifier = modifier
     ) {
@@ -383,10 +365,7 @@ fun PetalFloatingStatusCard(
                         } else if (data.progress != null) {
                             val animatedProgress by animateFloatAsState(
                                 targetValue = data.progress.coerceIn(0f, 1f),
-                                animationSpec = spring(
-                                    dampingRatio = Spring.DampingRatioNoBouncy,
-                                    stiffness = Spring.StiffnessMediumLow
-                                ),
+                                animationSpec = PetalSpring.calm(),
                                 label = "floatingCardProgress"
                             )
                             LinearWavyProgressIndicator(
@@ -409,10 +388,7 @@ fun PetalFloatingStatusCard(
                         } else if (data.progress != null) {
                             val animatedProgress by animateFloatAsState(
                                 targetValue = data.progress.coerceIn(0f, 1f),
-                                animationSpec = spring(
-                                    dampingRatio = Spring.DampingRatioNoBouncy,
-                                    stiffness = Spring.StiffnessMediumLow
-                                ),
+                                animationSpec = PetalSpring.calm(),
                                 label = "floatingCardProgress"
                             )
                             LinearProgressIndicator(

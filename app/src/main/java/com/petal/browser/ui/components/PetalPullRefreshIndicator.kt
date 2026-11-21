@@ -113,14 +113,14 @@ fun rememberPullRefreshTimeline(
                 if (isRefreshing) {
                     phaseState.value = PullPhase.REFRESHING
                     val spec: AnimationSpec<Float> = if (animActive) {
-                        spring(Spring.DampingRatioMediumBouncy, scaledStiffness(Spring.StiffnessLow))
+                        PetalSpring.bouncy()
                     } else snap()
                     shown.animateTo(1f, spec)
                 } else {
                     if (shown.value > 0.001f) {
                         phaseState.value = PullPhase.EXITING
                         val spec: AnimationSpec<Float> = if (animActive) {
-                            spring(Spring.DampingRatioNoBouncy, scaledStiffness(Spring.StiffnessMediumLow))
+                            PetalSpring.calm()
                         } else snap()
                         shown.animateTo(0f, spec)
                     }
@@ -134,7 +134,7 @@ fun rememberPullRefreshTimeline(
     val popState = animateFloatAsState(
         targetValue = if (readyState.value) 1.14f else 1f,
         animationSpec = if (animActive) {
-            spring(Spring.DampingRatioMediumBouncy, scaledStiffness(Spring.StiffnessMediumLow))
+            PetalSpring.bouncy()
         } else snap(),
         label = "PullRefreshPop"
     )

@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
@@ -653,12 +655,12 @@ private fun ChoiceCard(
 
     val container by animateColorAsState(
         targetValue = if (selected) scheme.secondaryContainer.copy(alpha = if (isGlass) 0.55f else 1f) else surface,
-        animationSpec = tween(220),
+        animationSpec = PetalSpring.calm(),
         label = "choiceContainer"
     )
     val outline by animateColorAsState(
         targetValue = if (selected) scheme.onSecondaryContainer.copy(alpha = 0.45f) else Color.Transparent,
-        animationSpec = tween(220),
+        animationSpec = PetalSpring.calm(),
         label = "choiceOutline"
     )
 
@@ -702,7 +704,7 @@ private fun ChoiceCard(
                     trailingPreview()
                 }
                 Spacer(Modifier.width(8.dp))
-                Crossfade(targetState = selected, label = "choiceRadio") { on ->
+                Crossfade(targetState = selected, animationSpec = PetalSpring.quick(), label = "choiceRadio") { on ->
                     Icon(
                         imageVector = if (on) ImageToolboxIcons.Rounded.RadioButtonChecked
                         else ImageToolboxIcons.Rounded.RadioButtonUnchecked,

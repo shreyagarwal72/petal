@@ -1,5 +1,7 @@
 package com.petal.browser.compose.menu
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.containment.liquidGlassChrome
 import android.graphics.Color as AndroidColor
 import androidx.activity.ComponentActivity
@@ -480,7 +482,6 @@ fun PetalLinkContextMenuSheet(
     fun choose(action: MenuAction) {
         if (selectedId != null) return
         selectedId = action.id
-        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.75f)
         scope.launch {
             delay(120)
             onDismiss()
@@ -520,13 +521,13 @@ fun PetalLinkContextMenuSheet(
     var sheetHeightPx by remember { mutableIntStateOf(0) }
     var closing by remember { mutableStateOf(false) }
     LaunchedEffect(sheetHeightPx > 0) {
-        if (sheetHeightPx > 0) enter.animateTo(1f, com.petal.browser.ui.components.PetalSpring.enter())
+        if (sheetHeightPx > 0) enter.animateTo(1f, com.petal.browser.ui.components.PetalSpring.calm())
     }
     fun closeAnimated() {
         if (closing) return
         closing = true
         scope.launch {
-            enter.animateTo(0f, com.petal.browser.ui.components.PetalSpring.exit())
+            enter.animateTo(0f, com.petal.browser.ui.components.PetalSpring.calm())
             onDismiss()
         }
     }
@@ -586,7 +587,7 @@ fun PetalLinkContextMenuSheet(
                                 androidx.compose.animation.core.animate(
                                     initialValue = dragPx,
                                     targetValue = 0f,
-                                    animationSpec = com.petal.browser.ui.components.PetalSpring.spatial(),
+                                    animationSpec = com.petal.browser.ui.components.PetalSpring.calm(),
                                 ) { value, _ -> dragPx = value }
                             }
                         },

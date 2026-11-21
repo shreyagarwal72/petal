@@ -138,15 +138,10 @@ fun PetalConfirmSheetContent(
         com.petal.browser.ui.containment.PetalActionRow(
             confirmText = confirmText,
             onConfirm = {
-                PetalHapticEngine.getInstance(context).play(
-                    if (isDestructive) PetalHapticEngine.Pattern.HEAVY_CLICK else PetalHapticEngine.Pattern.CLICK,
-                    0.8f
-                )
                 onConfirm()
             },
             dismissText = cancelText,
             onDismiss = {
-                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.4f)
                 onCancel()
             },
             destructive = isDestructive

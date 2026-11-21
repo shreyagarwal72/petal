@@ -22,6 +22,8 @@
 
 package com.petal.browser.compose.pdf
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.petalContainerEnter
 import android.content.Context
@@ -371,19 +373,19 @@ private fun PetalPdfViewerScreenImpl(
     val zoomBy: (Float) -> Unit = { factor ->
         coroutineScope.launch {
             val targetScale = (scaleAnim.value * factor).coerceIn(0.5f, 6.0f)
-            scaleAnim.animateTo(targetScale, spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium))
+            scaleAnim.animateTo(targetScale, PetalSpring.bouncy())
             if (targetScale <= 1f) {
-                offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
-                offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
+                offsetXAnim.animateTo(0f, PetalSpring.bouncy())
+                offsetYAnim.animateTo(0f, PetalSpring.bouncy())
             }
         }
     }
 
     val resetZoom: () -> Unit = {
         coroutineScope.launch {
-            scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy))
-            offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
-            offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
+            scaleAnim.animateTo(1f, PetalSpring.bouncy())
+            offsetXAnim.animateTo(0f, PetalSpring.bouncy())
+            offsetYAnim.animateTo(0f, PetalSpring.bouncy())
         }
     }
 
@@ -812,21 +814,21 @@ private fun PetalPdfViewerScreenImpl(
                                     onDoubleTap = { tapOffset ->
                                         coroutineScope.launch {
                                             if (scaleAnim.value > 1.2f) {
-                                                scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
-                                                offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
-                                                offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
+                                                scaleAnim.animateTo(1f, PetalSpring.bouncy())
+                                                offsetXAnim.animateTo(0f, PetalSpring.bouncy())
+                                                offsetYAnim.animateTo(0f, PetalSpring.bouncy())
                                             } else {
                                                 val targetScale = 2.4f
                                                 val centreX = size.width / 2f
                                                 val centreY = size.height / 2f
-                                                scaleAnim.animateTo(targetScale, spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium))
+                                                scaleAnim.animateTo(targetScale, PetalSpring.bouncy())
                                                 offsetXAnim.animateTo(
                                                     ((centreX - tapOffset.x) * (targetScale - 1f)).coerceIn(-centreX, centreX),
-                                                    spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium)
+                                                    PetalSpring.bouncy()
                                                 )
                                                 offsetYAnim.animateTo(
                                                     ((centreY - tapOffset.y) * (targetScale - 1f)).coerceIn(-centreY, centreY),
-                                                    spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium)
+                                                    PetalSpring.bouncy()
                                                 )
                                             }
                                         }
@@ -843,9 +845,9 @@ private fun PetalPdfViewerScreenImpl(
                                         offsetXAnim.snapTo(if (newScale > 1f) (offsetXAnim.value + pan.x).coerceIn(-maxX, maxX) else 0f)
                                         offsetYAnim.snapTo(if (newScale > 1f) (offsetYAnim.value + pan.y).coerceIn(-maxY, maxY) else 0f)
                                         if (newScale < 1f) {
-                                            scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy))
-                                            offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
-                                            offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
+                                            scaleAnim.animateTo(1f, PetalSpring.bouncy())
+                                            offsetXAnim.animateTo(0f, PetalSpring.bouncy())
+                                            offsetYAnim.animateTo(0f, PetalSpring.bouncy())
                                         }
                                     }
                                 }
@@ -1828,7 +1830,7 @@ private fun PdfViewerTopBar(
             Spacer(Modifier.width(4.dp))
             val menuRotation by animateFloatAsState(
                 targetValue = if (menuExpanded) 180f else 0f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                animationSpec = PetalSpring.bouncy(),
                 label = "pdf_menu_rot"
             )
             Box {

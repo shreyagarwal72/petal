@@ -1,5 +1,7 @@
 package com.petal.browser.compose.composable
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
@@ -102,7 +104,7 @@ fun PetalLoadingIndicator(
 ) {
     val indicatorColor by animateColorAsState(
         targetValue = color,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        animationSpec = PetalSpring.calm(),
         label = "PetalLoadingIndicatorColor"
     )
 
@@ -144,12 +146,12 @@ private fun ContainedRefreshLoadingIndicator(
 ) {
     val containerColor by animateColorAsState(
         targetValue = MaterialTheme.colorScheme.primary,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        animationSpec = PetalSpring.calm(),
         label = "RefreshBarContainerColor"
     )
     val indicatorColor by animateColorAsState(
         targetValue = MaterialTheme.colorScheme.onPrimary,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        animationSpec = PetalSpring.calm(),
         label = "RefreshBarIndicatorColor"
     )
 
@@ -222,9 +224,9 @@ fun RefreshBarLoadingIndicatorLazy(
                     shown.animateTo(
                         targetValue = if (isRefreshing) 1f else 0f,
                         animationSpec = if (isRefreshing) {
-                            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+                            PetalSpring.calm()
                         } else {
-                            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+                            PetalSpring.calm()
                         }
                     )
                 }
@@ -234,7 +236,7 @@ fun RefreshBarLoadingIndicatorLazy(
     // Small "release to refresh" pop when the pull reaches the commit distance.
     val pop by animateFloatAsState(
         targetValue = if (ready) 1.14f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+        animationSpec = PetalSpring.calm(),
         label = "LoadingIndicatorPop"
     )
 

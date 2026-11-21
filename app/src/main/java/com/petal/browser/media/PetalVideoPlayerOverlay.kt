@@ -1,5 +1,7 @@
 package com.petal.browser.media
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.media.AudioManager
@@ -182,15 +184,12 @@ fun PetalVideoPlayerOverlay(
                                 onRewind()
                                 doubleTapIsForward = false
                                 doubleTapSeekText = "-10s"
-                                PetalHapticEngine.getInstance(context).playClick(context)
                             } else if (offset.x > width * 0.6f) {
                                 onFastForward()
                                 doubleTapIsForward = true
                                 doubleTapSeekText = "+10s"
-                                PetalHapticEngine.getInstance(context).playClick(context)
                             } else {
                                 onPlayPauseToggle()
-                                PetalHapticEngine.getInstance(context).playClick(context)
                             }
                         },
                         onLongPress = {
@@ -198,7 +197,7 @@ fun PetalVideoPlayerOverlay(
                                 speedBeforeBoost = currentSpeed
                                 isLongPressBoostActive = true
                                 onSpeedChange(2.0f)
-                                PetalHapticEngine.getInstance(context).playHeavyClick(context)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
                             }
                         },
                         onPress = {
@@ -440,7 +439,6 @@ fun PetalVideoPlayerOverlay(
                     onUnlock = {
                         isControlsLocked = false
                         areControlsVisible = true
-                        PetalHapticEngine.getInstance(context).playClick(context)
                     },
                 )
             }
@@ -569,7 +567,6 @@ fun PetalVideoPlayerOverlay(
                                 PetalLiquidIconButton(
                                     onClick = {
                                         isControlsLocked = true
-                                        PetalHapticEngine.getInstance(context).playClick(context)
                                     },
                                     size = 48.dp,
                                     contentDescription = stringResource(R.string.ui_player_locked),
@@ -615,7 +612,7 @@ fun PetalVideoPlayerOverlay(
                         }
 
                     // Horizontal Speed Quick Selector Bar
-                    AnimatedVisibility(visible = showSpeedSelector) {
+                    AnimatedVisibility(visible = showSpeedSelector, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                         val speeds = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f, 2.5f, 3.0f)
                         val selectorShape = ExpressiveButtonShape
                         val selectorModifier = if (isLiquidGlass) {

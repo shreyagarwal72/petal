@@ -48,16 +48,13 @@ fun ExpressiveFabWheel(
 
     val rotation by animateFloatAsState(
         targetValue = if (isExpanded) 135f else 0f,
-        animationSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
+        animationSpec = PetalSpring.calm(),
         label = "FabWheelRotation"
     )
 
     val scaleProgress by animateFloatAsState(
         targetValue = if (isExpanded) 1f else 0f,
-        animationSpec = spring(
-            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
-            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy
-        ),
+        animationSpec = PetalSpring.bouncy(),
         label = "FabWheelExpansion"
     )
 

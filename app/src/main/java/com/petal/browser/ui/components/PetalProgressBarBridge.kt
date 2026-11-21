@@ -149,17 +149,17 @@ fun Material3ExpressiveProgressIndicator(
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
         animationSpec = if (progress >= 1f) {
-            tween(durationMillis = 180, easing = LinearOutSlowInEasing)
+            PetalSpring.calm()
         } else {
-            tween(durationMillis = 300, easing = FastOutSlowInEasing)
+            PetalSpring.calm()
         },
         label = "m3eProgress"
     )
 
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(animationSpec = PetalSpring.progressFade()),
-        exit = fadeOut(animationSpec = PetalSpring.progressFade()),
+        enter = fadeIn(animationSpec = PetalSpring.calm()),
+        exit = fadeOut(animationSpec = PetalSpring.calm()),
     ) {
         Canvas(
             modifier = modifier

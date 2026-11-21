@@ -1,5 +1,7 @@
 package com.petal.browser.lens
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.Manifest
 import android.content.Context
@@ -104,7 +106,6 @@ fun PetalQrScannerScreen(
                 (context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)
                     ?.vibrate(VibrationEffect.createOneShot(70, VibrationEffect.DEFAULT_AMPLITUDE))
             } else {
-                PetalHapticEngine.getInstance(context).playClick(context)
             }
         } catch (_: Exception) {}
     }
@@ -402,7 +403,6 @@ fun PetalQrScannerScreen(
                         .size(44.dp)
                         .then(if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true) else Modifier)
                         .bouncyClickable {
-                            PetalHapticEngine.getInstance(context).playClick(context)
                             onDismiss()
                         }
                 ) {
@@ -438,7 +438,6 @@ fun PetalQrScannerScreen(
                         .size(44.dp)
                         .then(if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true) else Modifier)
                         .bouncyClickable(enabled = !isDecodingGallery) {
-                            PetalHapticEngine.getInstance(context).playClick(context)
                             launchSafePhotoPicker()
                         }
                 ) {
@@ -553,7 +552,6 @@ fun PetalQrScannerScreen(
                             .size(54.dp)
                             .then(if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true) else Modifier)
                             .bouncyClickable {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
                                     CameraSelector.LENS_FACING_FRONT
                                 } else {
@@ -581,7 +579,6 @@ fun PetalQrScannerScreen(
                             .clip(ExpressiveButtonShape)
                             .then(if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true) else Modifier)
                             .bouncyClickable(enabled = !isCapturing) {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 val capture = imageCapture
                                 if (capture == null) {
                                     PetalToast.show(context, "Camera initializing...", PetalToast.LENGTH_SHORT)
@@ -649,7 +646,6 @@ fun PetalQrScannerScreen(
                             .size(54.dp)
                             .then(if (isLiquidGlass) Modifier.liquidGlassChrome(ExpressiveButtonShape, enabled = true) else Modifier)
                             .bouncyClickable {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 torchEnabled = !torchEnabled
                                 cameraControl?.enableTorch(torchEnabled)
                             }
@@ -670,8 +666,8 @@ fun PetalQrScannerScreen(
         // ── Result Dialog ────────────────────────────────────────────────────
         AnimatedVisibility(
             visible = detectedValue != null,
-            enter = fadeIn() + scaleIn(initialScale = 0.9f),
-            exit = fadeOut() + scaleOut(targetScale = 0.9f),
+            enter = fadeIn(animationSpec = PetalSpring.calm()) + scaleIn(initialScale = 0.9f),
+            exit = fadeOut(animationSpec = PetalSpring.calm()) + scaleOut(targetScale = 0.9f),
             modifier = Modifier.align(Alignment.Center)
         ) {
             val dialogShape = MaterialTheme.shapes.extraLarge
@@ -829,7 +825,6 @@ fun PetalQrScannerScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .bouncyClickable {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 if (rememberChoice) {
                                     PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.GOOGLE_LENS)
                                 }
@@ -881,7 +876,6 @@ fun PetalQrScannerScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .bouncyClickable {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 if (rememberChoice) {
                                     PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.PETAL_SCANNER)
                                 }
@@ -931,7 +925,7 @@ fun PetalQrScannerScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                PetalHapticEngine.getInstance(context).playClick(context)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                 rememberChoice = !rememberChoice
                             }
                             .padding(vertical = 4.dp),

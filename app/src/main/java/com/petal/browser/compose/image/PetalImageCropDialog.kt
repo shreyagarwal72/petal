@@ -162,7 +162,6 @@ fun PetalImageCropDialog(
 
                                     withContext(Dispatchers.Main) {
                                         isSaving = false
-                                        PetalHapticEngine.getInstance(context).playHeavyClick(context)
                                         Toast.makeText(context, "Image saved", Toast.LENGTH_SHORT).show()
                                         onImageSaved(outputFile)
                                     }
@@ -224,7 +223,6 @@ fun PetalImageCropDialog(
                     FilledTonalButton(
                         onClick = {
                             rotationAngle = (rotationAngle + 90f) % 360f
-                            PetalHapticEngine.getInstance(context).playClick(context)
                         },
                         shape = ExpressiveButtonShape,
                         colors = ButtonDefaults.filledTonalButtonColors(

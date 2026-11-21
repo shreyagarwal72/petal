@@ -1,5 +1,7 @@
 package com.petal.browser.ui.selection
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.compose.animation.core.Animatable
@@ -320,7 +322,7 @@ fun PetalSelectionToolbar(
     if (actions.isEmpty()) return
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        enter.animateTo(1f, spring(dampingRatio = 0.62f, stiffness = 420f))
+        enter.animateTo(1f, PetalSpring.bouncy())
     }
     val shape = RoundedCornerShape(28.dp)
     val animated = modifier.graphicsLayer {
@@ -447,7 +449,7 @@ private fun ActionsRow(
 }
 
 @Composable
-private fun ActionButton(
+private fun RowScope.ActionButton(
     action: PetalSelectionAction,
     contentColor: Color,
     pressedContainer: Color,
@@ -459,12 +461,12 @@ private fun ActionButton(
     // Expressive shape morph: a pressed button squares off, then springs back to a pill.
     val corner: Dp by animateDpAsState(
         targetValue = if (pressed) 10.dp else 22.dp,
-        animationSpec = spring(dampingRatio = 0.55f, stiffness = 520f),
+        animationSpec = PetalSpring.quick(),
         label = "selActionCorner"
     )
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.94f else 1f,
-        animationSpec = spring(dampingRatio = 0.6f, stiffness = 600f),
+        animationSpec = PetalSpring.quick(),
         label = "selActionScale"
     )
     val tint = if (pressed) pressedContent else contentColor
@@ -477,7 +479,6 @@ private fun ActionButton(
             .clip(RoundedCornerShape(corner))
             .background(if (pressed) pressedContainer else Color.Transparent)
             .clickable(interactionSource = interaction, indication = null) {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 action.onClick()
             }
             .defaultMinSize(minWidth = 60.dp)

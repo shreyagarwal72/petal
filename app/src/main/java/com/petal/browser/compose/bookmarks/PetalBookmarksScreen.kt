@@ -7,6 +7,8 @@
  */
 
 package com.petal.browser.compose.bookmarks
+
+import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
@@ -323,7 +325,7 @@ fun PetalBookmarksScreen(
                         if (!rawBookmarks.isNullOrEmpty()) {
                             val menuRotation by animateFloatAsState(
                                 targetValue = if (overflowMenuExpanded) 180f else 0f,
-                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                                animationSpec = PetalSpring.calm(),
                                 label = "bookmark_menu_rot"
                             )
                             Box {
@@ -408,14 +410,18 @@ fun PetalBookmarksScreen(
 
                 Spacer(Modifier.height(4.dp))
 
-                if (rawBookmarks == null) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 48.dp)
+                com.petal.browser.ui.components.PetalSkeletonSwitcher(
+                    isLoading = rawBookmarks == null,
+                    modifier = Modifier.fillMaxSize(),
+                    skeleton = {
+                        com.petal.browser.ui.components.PetalSkeletonList(
+                            modifier = Modifier.fillMaxSize(),
+                            rows = 9,
+                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = topInset + 8.dp)
+                        )
                     }
-                } else if (filteredBookmarks.isEmpty()) {
+                ) {
+                if (filteredBookmarks.isEmpty()) {
                     com.petal.browser.ui.components.EmptyStateBlob(
                         illustrationType = com.petal.browser.ui.components.EmptyStateIllustrationType.BOOKMARKS,
                         title = if (searchQuery.isEmpty()) {
@@ -450,6 +456,7 @@ fun PetalBookmarksScreen(
                                                 } catch (_: Exception) {}
                                                 reloadBookmarks()
 
+                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
                                                 coroutineScope.launch {
                                                     val displayTitle = deletedRecord.title?.takeIf { it.isNotBlank() } ?: deletedRecord.url ?: "Bookmark"
                                                     val result = snackbarHostState.showSnackbar(
@@ -560,6 +567,7 @@ fun PetalBookmarksScreen(
                     )
                 }
             }
+                }
                 }
             }
 

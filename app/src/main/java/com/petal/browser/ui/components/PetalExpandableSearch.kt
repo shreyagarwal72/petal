@@ -155,8 +155,8 @@ fun PetalSearchOverlay(
 ) {
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(PetalSpring.fadeIn()) + scaleIn(PetalSpring.spatial(), initialScale = 0.94f),
-        exit = fadeOut(PetalSpring.fadeOut()) + scaleOut(PetalSpring.spatial(), targetScale = 0.94f),
+        enter = fadeIn(PetalSpring.calm()) + scaleIn(PetalSpring.calm(), initialScale = 0.94f),
+        exit = fadeOut(PetalSpring.calm()) + scaleOut(PetalSpring.calm(), targetScale = 0.94f),
         modifier = modifier,
     ) {
         val focus = remember { FocusRequester() }

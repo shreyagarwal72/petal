@@ -11,6 +11,8 @@
 
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Intent
 import android.net.Uri
@@ -18,6 +20,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -238,10 +241,7 @@ fun PetalFeaturedCarousel(
     val spacing = 4.dp
 
     val carouselAnimationSpec = remember {
-        spring<Float>(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessLow
-        )
+        PetalSpring.calm<Float>()
     }
 
     val autoScrollProgress = remember { Animatable(0f) }
@@ -275,10 +275,7 @@ fun PetalFeaturedCarousel(
 
     val interactionSources = remember(itemsCount) { List(itemsCount) { MutableInteractionSource() } }
 
-    val expressiveSpring = spring<Float>(
-        dampingRatio = Spring.DampingRatioLowBouncy,
-        stiffness = Spring.StiffnessLow
-    )
+    val expressiveSpring = PetalSpring.quick<Float>()
 
     val visualProgress by remember {
         derivedStateOf { pagerState.currentPage + pagerState.currentPageOffsetFraction }
@@ -413,20 +410,17 @@ fun PetalFeaturedCarousel(
 private fun CarouselIndicator(
     isActive: Boolean,
     progress: Float,
-    motionSpec: SpringSpec<Float>
+    motionSpec: FiniteAnimationSpec<Float>
 ) {
     val width = if (isActive) 32.dp else 8.dp
     val animatedWidth by animateDpAsState(
         targetValue = width,
-        animationSpec = spring(
-            dampingRatio = motionSpec.dampingRatio,
-            stiffness = motionSpec.stiffness
-        ),
+        animationSpec = PetalSpring.calm(),
         label = "IndicatorWidth"
     )
     val color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest
     val animatedColor by animateColorAsState(
-        targetValue = color,
+        targetValue = color, animationSpec = PetalSpring.calm(),
         label = "IndicatorColor"
     )
 
@@ -457,7 +451,7 @@ private fun RowScope.FeaturedStepCard(
     containerColor: Color,
     cornerRadius: Dp,
     modifier: Modifier = Modifier,
-    motionSpec: SpringSpec<Float>
+    motionSpec: FiniteAnimationSpec<Float>
 ) {
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val isFocused = dist < 0.6f
@@ -481,10 +475,7 @@ private fun RowScope.FeaturedStepCard(
         AnimatedContent(
             targetState = isFocused,
             transitionSpec = {
-                val springSpec = spring<IntOffset>(
-                    stiffness = motionSpec.stiffness,
-                    dampingRatio = motionSpec.dampingRatio
-                )
+                val springSpec = PetalSpring.calm<IntOffset>()
 
                 val slideIn = if (targetState) {
                     slideInHorizontally(animationSpec = springSpec) { if (isToTheLeft) -it else it }
@@ -498,11 +489,11 @@ private fun RowScope.FeaturedStepCard(
                     slideOutHorizontally(animationSpec = springSpec) { if (isToTheLeft) -it else it }
                 }
 
-                (fadeIn(animationSpec = spring(stiffness = motionSpec.stiffness, dampingRatio = motionSpec.dampingRatio)) + slideIn +
-                 scaleIn(initialScale = 0.92f, animationSpec = spring(stiffness = motionSpec.stiffness, dampingRatio = motionSpec.dampingRatio)))
+                (fadeIn(animationSpec = PetalSpring.calm()) + slideIn +
+                 scaleIn(initialScale = 0.92f, animationSpec = PetalSpring.calm()))
                     .togetherWith(
-                        fadeOut(animationSpec = spring(stiffness = motionSpec.stiffness, dampingRatio = motionSpec.dampingRatio)) + slideOut +
-                        scaleOut(targetScale = 0.92f, animationSpec = spring(stiffness = motionSpec.stiffness, dampingRatio = motionSpec.dampingRatio))
+                        fadeOut(animationSpec = PetalSpring.calm()) + slideOut +
+                        scaleOut(targetScale = 0.92f, animationSpec = PetalSpring.calm())
                     )
             },
             label = "CardContentTransition",

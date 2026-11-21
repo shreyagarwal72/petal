@@ -123,12 +123,12 @@ fun PetalPopupMenu(
 
     val menuScale by animateFloatAsState(
         targetValue = if (expanded) 1f else 0.82f,
-        animationSpec = if (expanded) PetalSpring.menuScale() else PetalSpring.menuCloseScale(),
+        animationSpec = if (expanded) PetalSpring.quick() else PetalSpring.quick(),
         label = "menu_scale"
     )
     val itemAlpha by animateFloatAsState(
         targetValue = if (expanded) 1f else 0f,
-        animationSpec = if (expanded) PetalSpring.menuItemFade() else PetalSpring.menuCloseFade(),
+        animationSpec = if (expanded) PetalSpring.quick() else PetalSpring.quick(),
         label = "menu_item_alpha"
     )
 
@@ -502,12 +502,12 @@ fun PetalDialog(
         LaunchedEffect(Unit) { isEntering = true }
         val dialogScale by animateFloatAsState(
             targetValue = if (isEntering) 1f else 0.85f,
-            animationSpec = if (isEntering) PetalSpring.dialogScaleIn() else PetalSpring.dialogScaleOut(),
+            animationSpec = if (isEntering) PetalSpring.calm() else PetalSpring.calm(),
             label = "dialog_scale"
         )
         val dialogAlpha by animateFloatAsState(
             targetValue = if (isEntering) 1f else 0f,
-            animationSpec = if (isEntering) PetalSpring.dialogFadeIn() else PetalSpring.dialogFadeOut(),
+            animationSpec = if (isEntering) PetalSpring.calm() else PetalSpring.calm(),
             label = "dialog_alpha"
         )
 
@@ -786,7 +786,7 @@ fun PetalSheet(
     var sheetDragOffset by remember { mutableStateOf(0f) }
     val animatedDragOffset by animateFloatAsState(
         targetValue = sheetDragOffset,
-        animationSpec = PetalSpring.sheetDragSettle(),
+        animationSpec = PetalSpring.calm(),
         label = "sheet_drag_settle"
     )
 
@@ -841,7 +841,7 @@ fun PetalSheet(
                     // ready a frame or two after the sheet appears, and a hard swap read as a flash.
                     val standInAlpha by androidx.compose.animation.core.animateFloatAsState(
                         targetValue = if (ready) 0f else 1f,
-                        animationSpec = androidx.compose.animation.core.tween(if (ready) 180 else 0),
+                        animationSpec = PetalSpring.calm(),
                         label = "sheet_glass_standin"
                     )
                     Box(

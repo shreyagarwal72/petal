@@ -17,6 +17,8 @@
 
 package com.petal.browser.ui.components.expressive.sliders
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.MaterialTheme
@@ -80,7 +82,7 @@ fun HyperOSSlider(
                             shape = shape,
                             autoShadowElevation = animateDpAsState(
                                 if (settingsState.drawSliderShadows) 1.dp else 0.dp
-                            ).value,
+                            , animationSpec = PetalSpring.calm()).value,
                             resultPadding = 0.dp,
                             borderColor = MaterialTheme.colorScheme.outlineVariant(
                                 luminance = 0.1f,
@@ -152,7 +154,7 @@ fun HyperOSRangeSlider(
                             shape = shape,
                             autoShadowElevation = animateDpAsState(
                                 if (settingsState.drawSliderShadows) 1.dp else 0.dp
-                            ).value,
+                            , animationSpec = PetalSpring.calm()).value,
                             resultPadding = 0.dp,
                             borderColor = MaterialTheme.colorScheme.outlineVariant(
                                 luminance = 0.1f,

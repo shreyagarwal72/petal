@@ -137,7 +137,7 @@ fun <T> PetalChoiceButtonGroup(
                     isActive -> 1.15f
                     else -> 0.88f
                 },
-                animationSpec = PetalSpring.segment(),
+                animationSpec = PetalSpring.quick(),
                 label = "ChoiceButtonWeight"
             )
 
@@ -154,12 +154,12 @@ fun <T> PetalChoiceButtonGroup(
 
             val animatedContainer by animateColorAsState(
                 targetValue = if (isChecked) selectedContainer else unselectedContainer,
-                animationSpec = PetalSpring.crossfade(),
+                animationSpec = PetalSpring.calm(),
                 label = "ChoiceButtonContainer"
             )
             val animatedContent by animateColorAsState(
                 targetValue = if (isChecked) selectedContent else unselectedContent,
-                animationSpec = PetalSpring.crossfade(),
+                animationSpec = PetalSpring.calm(),
                 label = "ChoiceButtonContent"
             )
             val showLabel = !collapse || isChecked
@@ -177,11 +177,7 @@ fun <T> PetalChoiceButtonGroup(
 
             Surface(
                 onClick = {
-                    try {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.4f)
-                    } catch (_: Exception) {
-                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    }
+                    if (!isChecked) com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                     onSelect(option.value)
                 },
                 modifier = buttonModifier,

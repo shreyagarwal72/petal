@@ -215,25 +215,15 @@ fun PetalSnackbarHost(
             visible = snackbarData != null,
             enter = slideInVertically(
                 initialOffsetY = { it },
-                animationSpec = spring(
-                    dampingRatio = 0.85f,
-                    stiffness = Spring.StiffnessMediumLow
-                )
+                animationSpec = PetalSpring.calm()
             ) + fadeIn(
-                animationSpec = spring(
-                    stiffness = Spring.StiffnessMediumLow
-                )
+                animationSpec = PetalSpring.calm()
             ),
             exit = slideOutVertically(
                 targetOffsetY = { it },
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMedium
-                )
+                animationSpec = PetalSpring.calm()
             ) + fadeOut(
-                animationSpec = spring(
-                    stiffness = Spring.StiffnessMedium
-                )
+                animationSpec = PetalSpring.calm()
             )
         ) {
             snackbarData?.let { data ->
@@ -246,7 +236,6 @@ fun PetalSnackbarHost(
                 PetalSnackbar(
                     data = data,
                     onDismiss = {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.3f)
                         PetalSnackbarDispatcher.dismiss()
                     },
                     modifier = adaptiveModifier

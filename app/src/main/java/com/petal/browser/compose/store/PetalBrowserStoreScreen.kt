@@ -1,5 +1,7 @@
 package com.petal.browser.compose.store
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
@@ -254,7 +256,7 @@ fun PetalBrowserStoreScreen(
                             AnimatedContent(
                                 targetState = selectedTabIndex,
                                 transitionSpec = {
-                                    fadeIn() togetherWith fadeOut()
+                                    fadeIn(animationSpec = PetalSpring.calm()) togetherWith fadeOut(animationSpec = PetalSpring.calm())
                                 },
                                 label = "StoreTabContentTransition"
                             ) { tabIndex ->
@@ -266,7 +268,6 @@ fun PetalBrowserStoreScreen(
                                         installedExtensions = installedExtensions,
                                         isBusy = isExtensionBusy,
                                         onInstall = { addon ->
-                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
                                             PetalExtensionManager.install(addon.downloadUrl) { success, message ->
                                                 coroutineScope.launch {
                                                     snackbarHostState.showSnackbar(
@@ -285,7 +286,7 @@ fun PetalBrowserStoreScreen(
                                         searchQuery = searchQuery,
                                         installedScriptIds = installedScriptIds,
                                         onToggleScript = { script, install ->
-                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                             PetalStoreCatalog.setScriptInstalled(context, script.id, install)
                                             installedScriptIds = PetalStoreCatalog.getInstalledScriptIds(context)
                                             coroutineScope.launch {
@@ -299,7 +300,7 @@ fun PetalBrowserStoreScreen(
                                         searchQuery = searchQuery,
                                         subscribedFilterIds = subscribedFilterIds,
                                         onToggleFilterList = { filter, subscribe ->
-                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                             coroutineScope.launch {
                                                 val result = PetalStoreCatalog.setFilterListSubscribed(context, filter.id, subscribe)
                                                 subscribedFilterIds = PetalStoreCatalog.getSubscribedFilterListIds(context)

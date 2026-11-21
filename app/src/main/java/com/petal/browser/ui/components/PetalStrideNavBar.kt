@@ -74,7 +74,7 @@ private val NAV_FIXED_WIDTH_COMPACT5 = (4 * 38 + 24 + 16 + 4 * 2 + 12 + 6).dp
 /**
  * Stride's floating nav bar, in Petal: a glass pill whose selected item opens its label
  * while a clear glass slab slides under it and magnifies it. The labels, the bar's width
- * and the slab are all driven by one spring ([TabWeights]), so they move as one.
+ * and the slab are all driven by one PetalSpring.calm(), so they move as one.
  *
  * [glassSource] is the View the bar floats over; its picture is what the glass bends.
  */
@@ -116,7 +116,7 @@ internal fun PetalStrideNavBar(
     val maxDragPx = with(LocalDensity.current) { 28.dp.toPx() }
     val dragOffsetPx by animateFloatAsState(
         targetValue = if (isDragging) (dragAccumulator * 0.35f).coerceIn(-maxDragPx, maxDragPx) else 0f,
-        animationSpec = if (isDragging) snap() else PetalSpring.sheetDragSettle(),
+        animationSpec = if (isDragging) snap() else PetalSpring.calm(),
         label = "swipe_rubber_band"
     )
 

@@ -1,5 +1,7 @@
 package com.petal.browser.compose.tabs
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
@@ -125,7 +127,7 @@ fun PetalPinnedTabsShelf(
                         } else {
                             MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f)
                         },
-                        animationSpec = spring(),
+                        animationSpec = PetalSpring.calm(),
                         label = "pinned_tile_bg"
                     )
 
@@ -135,7 +137,7 @@ fun PetalPinnedTabsShelf(
                         } else {
                             Color.Transparent
                         },
-                        animationSpec = spring(),
+                        animationSpec = PetalSpring.calm(),
                         label = "pinned_tile_border"
                     )
 

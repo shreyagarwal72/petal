@@ -219,10 +219,10 @@ fun AddressPill(
                     onDragEnd = {
                         val threshold = 90.dp.toPx()
                         if (dragAccumulator > threshold) {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.75f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
                             onSwipePrevTab()
                         } else if (dragAccumulator < -threshold) {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.75f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
                             onSwipeNextTab()
                         }
                         dragAccumulator = 0f
@@ -237,7 +237,7 @@ fun AddressPill(
                 onClick = { markOrigin(); onAddressClick() },
                 onLongClick = {
                     if (isQuickActionsEnabled && !isBlankOrSearch) {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
+                        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
                         showQuickActionsMenu = true
                     } else {
                         markOrigin()
@@ -266,10 +266,6 @@ fun AddressPill(
                             val act = context as? ComponentActivity
                             if (!isBlankOrSearch && act != null) {
                                 try {
-                                    PetalHapticEngine.getInstance(context).play(
-                                        PetalHapticEngine.Pattern.HEAVY_CLICK,
-                                        0.65f
-                                    )
                                 } catch (_: Throwable) {}
                                 PetalPrivacyShieldSheet.show(act, url) {}
                             } else {
@@ -281,7 +277,7 @@ fun AddressPill(
                 AnimatedContent(
                     targetState = (favicon != null && !isBlankOrSearch && !isIncognito) to favicon,
                     transitionSpec = {
-                        fadeIn(PetalSpring.faviconFade()) togetherWith fadeOut(PetalSpring.faviconFade())
+                        fadeIn(PetalSpring.calm()) togetherWith fadeOut(PetalSpring.calm())
                     },
                     label = "FaviconCrossfade"
                 ) { (hasFavicon, fav) ->
@@ -411,8 +407,8 @@ fun AddressPill(
                 if (showMediaButton) {
                     AnimatedVisibility(
                         visible = true,
-                        enter = fadeIn() + scaleIn(initialScale = 0.8f),
-                        exit = fadeOut() + scaleOut(targetScale = 0.8f)
+                        enter = fadeIn(animationSpec = PetalSpring.calm()) + scaleIn(initialScale = 0.8f),
+                        exit = fadeOut(animationSpec = PetalSpring.calm()) + scaleOut(targetScale = 0.8f)
                     ) {
                         val hasVideo = capturedMedia.any { it.kind == com.petal.browser.media.sniffer.capture.MediaKind.VIDEO } || hasPlayableMedia
                         val hasAudio = capturedMedia.any { it.kind == com.petal.browser.media.sniffer.capture.MediaKind.AUDIO }
@@ -427,7 +423,6 @@ fun AddressPill(
                             modifier = Modifier
                                 .padding(end = 4.dp)
                                 .clickable {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                                     onMediaClick()
                                 }
                         ) {
@@ -688,7 +683,6 @@ fun AddressPill(
                                 .clip(shape)
                                 .clickable {
                                     try {
-                                        haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.75f)
                                     } catch (_: Exception) {}
                                     item.onClick()
                                 }

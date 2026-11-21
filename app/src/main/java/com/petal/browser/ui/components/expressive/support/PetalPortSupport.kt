@@ -1,5 +1,7 @@
 package com.petal.browser.ui.components.expressive.support
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -123,7 +125,7 @@ inline fun takeColorFromScheme(
 ): Color = animateColorAsState(
     MaterialTheme.colorScheme.run {
         action(MaterialTheme.colorScheme.background.luminance() < 0.5f)
-    },
+    }, animationSpec = PetalSpring.calm(),
     label = "takeColorFromScheme"
 ).value
 
@@ -147,7 +149,7 @@ val FastInvokeEasing = CubicBezierEasing(0f, 0f, 0f, 1f)
 @Composable
 fun animateFloatingRangeAsState(
     range: ClosedFloatingPointRange<Float>,
-    animationSpec: AnimationSpec<Float> = spring()
+    animationSpec: AnimationSpec<Float> = PetalSpring.calm()
 ): State<ClosedFloatingPointRange<Float>> {
     val start = animateFloatAsState(targetValue = range.start, animationSpec = animationSpec, label = "rangeStart")
     val end = animateFloatAsState(targetValue = range.endInclusive, animationSpec = animationSpec, label = "rangeEnd")
@@ -163,7 +165,7 @@ fun Modifier.hapticsClickable(
     enableHaptics: Boolean = true,
     onClick: () -> Unit
 ): Modifier = composed {
-    val haptics = LocalHapticFeedback.current
+    val hapticContext = androidx.compose.ui.platform.LocalContext.current
     Modifier.clickable(
         interactionSource = interactionSource,
         indication = indication,
@@ -171,7 +173,7 @@ fun Modifier.hapticsClickable(
         onClickLabel = onClickLabel,
         role = role,
         onClick = {
-            if (enableHaptics) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            if (enableHaptics) com.petal.browser.haptics.PetalHapticEngine.getInstance(hapticContext).selectionChanged(hapticContext)
             onClick()
         }
     )
@@ -204,7 +206,7 @@ fun Modifier.materialShadow(
     color: Color = Color.Black
 ): Modifier = materialShadow(
     shape = shape,
-    elevation = animateDpAsState(if (enabled) elevation else 0.dp, label = "materialShadow"),
+    elevation = animateDpAsState(if (enabled) elevation else 0.dp, animationSpec = PetalSpring.calm(), label = "materialShadow"),
     isClipped = isClipped,
     color = color
 )

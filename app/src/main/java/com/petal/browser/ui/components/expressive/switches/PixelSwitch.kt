@@ -17,6 +17,8 @@
 
 package com.petal.browser.ui.components.expressive.switches
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -66,19 +68,19 @@ fun PixelSwitch(
     }
     val trackColor by animateColorAsState(
         targetValue = trackColor(enabled, checked, colors),
-        animationSpec = tween(Duration, easing = PointToPointEasing)
+        animationSpec = PetalSpring.calm()
     )
     val thumbColor by animateColorAsState(
         targetValue = thumbColor(enabled, checked, colors),
-        animationSpec = tween(Duration, easing = PointToPointEasing)
+        animationSpec = PetalSpring.calm()
     )
     val borderColor by animateColorAsState(
         targetValue = borderColor(enabled, checked, colors),
-        animationSpec = tween(Duration, easing = PointToPointEasing)
+        animationSpec = PetalSpring.calm()
     )
     val thumbSize by animateDpAsState(
         targetValue = if (checked) SelectedHandleSize else UnselectedHandleSize,
-        animationSpec = tween(Duration, easing = PointToPointEasing)
+        animationSpec = PetalSpring.calm()
     )
 
     val density = LocalDensity.current
@@ -102,7 +104,7 @@ fun PixelSwitch(
 
     val thumbOffset by animateFloatAsState(
         targetValue = offsetAnimated,
-        animationSpec = tween(Duration, easing = PointToPointEasing)
+        animationSpec = PetalSpring.calm()
     )
 
     Box(

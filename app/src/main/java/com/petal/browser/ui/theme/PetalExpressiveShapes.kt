@@ -1,5 +1,7 @@
 package com.petal.browser.ui.theme
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -258,12 +260,12 @@ fun ExpressiveShapeButton(
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
         if (pressed) 0.86f else 1f,
-        spring(dampingRatio = 0.45f, stiffness = 600f),
+        PetalSpring.quick(),
         label = "expressiveButtonScale",
     )
     val rot by animateFloatAsState(
         if (pressed) 25f else 0f,
-        spring(dampingRatio = 0.6f, stiffness = 300f),
+        PetalSpring.quick(),
         label = "expressiveButtonRotation",
     )
     val shapePreset = preset ?: PetalShapeState.effectivePreset

@@ -1,5 +1,7 @@
 package com.petal.browser.compose.incognito
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
@@ -151,7 +153,6 @@ fun PetalIncognitoHomeScreen(
                             actions = {
                                 IconButton(
                                     onClick = {
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.75f)
                                         onCloseIncognito()
                                     },
                                     modifier = Modifier.size(40.dp)
@@ -275,7 +276,6 @@ fun PetalIncognitoHomeScreen(
                                 statusActive = true,
                                 actionLabel = stringResource(R.string.ui_learn_more),
                                 onActionClick = {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                     showLearnMoreDialog = true
                                 },
                                 modifier = Modifier.entrance(index = 4)
@@ -296,7 +296,6 @@ fun PetalIncognitoHomeScreen(
                                         val nextVal = !blockThirdPartyCookies
                                         blockThirdPartyCookies = nextVal
                                         sp.edit().putBoolean("sp_incognito_block_3p_cookies", nextVal).apply()
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                                     },
                                     leading = {
                                         PetalGroupIconBadge(
@@ -335,7 +334,7 @@ fun PetalIncognitoHomeScreen(
                                             onCheckedChange = { checked ->
                                                 blockThirdPartyCookies = checked
                                                 sp.edit().putBoolean("sp_incognito_block_3p_cookies", checked).apply()
-                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                             }
                                         )
                                     }
@@ -348,7 +347,6 @@ fun PetalIncognitoHomeScreen(
                                         val nextVal = !biometricLockEnabled
                                         biometricLockEnabled = nextVal
                                         sp.edit().putBoolean("sp_biometric_incognito_tab_lock", nextVal).apply()
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                                     },
                                     leading = {
                                         PetalGroupIconBadge(
@@ -387,7 +385,7 @@ fun PetalIncognitoHomeScreen(
                                             onCheckedChange = { checked ->
                                                 biometricLockEnabled = checked
                                                 sp.edit().putBoolean("sp_biometric_incognito_tab_lock", checked).apply()
-                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                             }
                                         )
                                     }
@@ -400,7 +398,6 @@ fun PetalIncognitoHomeScreen(
                                         val nextVal = !httpsOnlyEnabled
                                         httpsOnlyEnabled = nextVal
                                         sp.edit().putBoolean("sp_https_only", nextVal).apply()
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                                     },
                                     leading = {
                                         PetalGroupIconBadge(
@@ -439,7 +436,7 @@ fun PetalIncognitoHomeScreen(
                                             onCheckedChange = { checked ->
                                                 httpsOnlyEnabled = checked
                                                 sp.edit().putBoolean("sp_https_only", checked).apply()
-                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                             }
                                         )
                                     }
@@ -519,7 +516,6 @@ fun PetalIncognitoHomeScreen(
                             // ── 7. Close All Private Tabs Action Card ──
                             PetalActionCard(
                                 onClick = {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.75f)
                                     onCloseIncognito()
                                 },
                                 shape = petalGroupShape(PetalGroupPosition.SINGLE),
@@ -580,7 +576,6 @@ fun PetalIncognitoHomeScreen(
                         icon = Icons.Rounded.Security,
                         confirmText = stringResource(R.string.ui_got_it),
                         onConfirm = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                             showLearnMoreDialog = false
                         },
                         dismissText = null,
@@ -625,7 +620,7 @@ private fun IncognitoDecoySearchBar(
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.98f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        animationSpec = PetalSpring.quick(),
         label = "incognito_search_scale"
     )
     val pillBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }

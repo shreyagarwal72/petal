@@ -17,6 +17,8 @@
 
 package com.petal.browser.ui.components.expressive.switches
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -80,7 +82,7 @@ fun OneUISwitch(
 
     val actualColors = colors.forConfig(enabled, checked)
 
-    val spec = tween<Color>(animDuration)
+    val spec = PetalSpring.calm<Color>()
     val thumbColor by animateColorAsState(
         targetValue = actualColors.thumb,
         label = "Switch thumb color",
@@ -99,12 +101,12 @@ fun OneUISwitch(
     val rippleAlphaFactor by animateFloatAsState(
         targetValue = if (isAnimating) 1F else 0F,
         label = "Switch ripple alpha",
-        animationSpec = tween(animDuration)
+        animationSpec = PetalSpring.calm()
     )
     val rippleRadius by animateDpAsState(
         targetValue = if (isAnimating) rippleRadius else 0.dp,
         label = "Switch ripple radius",
-        animationSpec = tween(animDuration)
+        animationSpec = PetalSpring.calm()
     )
 
     val ripple = MaterialTheme.colorScheme.outline.copy(0.1f)
@@ -113,7 +115,7 @@ fun OneUISwitch(
     val progress by animateFloatAsState(
         targetValue = dragProgress ?: if (checked) 1f else 0f,
         label = "Switch progress",
-        animationSpec = tween(animDuration)
+        animationSpec = PetalSpring.calm()
     )
 
     val shape = ShapeDefaults.circle

@@ -17,6 +17,8 @@
 
 package com.petal.browser.ui.components.expressive.switches
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import androidx.compose.animation.core.Animatable
@@ -297,15 +299,15 @@ private class DampedDragAnimation(
 ) {
 
     private val valueAnimationSpec =
-        spring(1f, 1000f, visibilityThreshold)
+        PetalSpring.calm()
     private val velocityAnimationSpec =
-        spring(0.5f, 300f, visibilityThreshold * 10f)
+        PetalSpring.quick()
     private val pressProgressAnimationSpec =
-        spring(1f, 1000f, 0.001f)
+        PetalSpring.quick()
     private val scaleXAnimationSpec =
-        spring(0.6f, 250f, 0.001f)
+        PetalSpring.quick()
     private val scaleYAnimationSpec =
-        spring(0.7f, 250f, 0.001f)
+        PetalSpring.quick()
 
     private val valueAnimation =
         Animatable(initialValue, visibilityThreshold)

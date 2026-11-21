@@ -300,7 +300,6 @@ fun PetalLensBottomSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 if (rememberChoice) {
                                     PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.GOOGLE_LENS)
                                 }
@@ -353,7 +352,6 @@ fun PetalLensBottomSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 if (rememberChoice) {
                                     PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.PETAL_SCANNER)
                                 }
@@ -404,7 +402,7 @@ fun PetalLensBottomSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                PetalHapticEngine.getInstance(context).playClick(context)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                 rememberChoice = !rememberChoice
                             }
                             .padding(vertical = 4.dp),
@@ -544,7 +542,6 @@ fun PetalLensBottomSheet(
 
                 IconButton(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         onDismissRequest()
                     },
                     modifier = Modifier.size(36.dp)
@@ -565,7 +562,6 @@ fun PetalLensBottomSheet(
                 // Snap Photo Card
                 com.petal.browser.ui.containment.PetalActionCard(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         beginSnap()
                     },
                     shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
@@ -610,7 +606,6 @@ fun PetalLensBottomSheet(
                 // Gallery File Picker Card
                 com.petal.browser.ui.containment.PetalActionCard(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         launchSafeGalleryPicker()
                     },
                     shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
@@ -655,7 +650,6 @@ fun PetalLensBottomSheet(
 
             FilledTonalButton(
                 onClick = {
-                    PetalHapticEngine.getInstance(context).playClick(context)
                     try { galleryChooserLauncher.launch("image/*") }
                     catch (_: Exception) { PetalLensManager.launchGoogleLensApp(context); onDismissRequest() }
                 },
@@ -709,7 +703,6 @@ fun PetalLensBottomSheet(
                         )
                         Button(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 permissionLauncher.launch(PetalMediaPickerManager.getRequiredMediaPermissions())
                             },
                             shape = RoundedCornerShape(12.dp),
@@ -762,7 +755,6 @@ fun PetalLensBottomSheet(
                         )
                         Button(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 launchSafeGalleryPicker()
                             },
                             shape = RoundedCornerShape(12.dp),
@@ -800,7 +792,6 @@ fun PetalLensBottomSheet(
                                 .aspectRatio(1f)
                                 .clip(RoundedCornerShape(14.dp))
                                 .clickable {
-                                    PetalHapticEngine.getInstance(context).playClick(context)
                                     runCatching { openImageWithSelectedScanner(item.uri) }
                                         .onFailure { PetalLensManager.launchGoogleLensApp(context) }
                                 }

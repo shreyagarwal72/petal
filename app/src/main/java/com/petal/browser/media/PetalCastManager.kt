@@ -487,7 +487,6 @@ fun PetalCastDeviceSheet(
                 }
                 IconButton(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         scanDevices()
                     },
                     enabled = !isScanning,
@@ -500,7 +499,6 @@ fun PetalCastDeviceSheet(
                 }
                 IconButton(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         onDismiss()
                     },
                 ) {
@@ -569,7 +567,6 @@ fun PetalCastDeviceSheet(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(14.dp))
                                 .clickable {
-                                    PetalHapticEngine.getInstance(context).playClick(context)
                                     castingDeviceName = device.friendlyName
                                     scope.launch {
                                         val success = PetalCastManager.playOnDevice(device, videoUrl, videoTitle)
@@ -636,7 +633,6 @@ fun PetalCastDeviceSheet(
             // Open with external apps button
             FilledTonalButton(
                 onClick = {
-                    PetalHapticEngine.getInstance(context).playClick(context)
                     onOpenExternal()
                 },
                 shape = RoundedCornerShape(12.dp),

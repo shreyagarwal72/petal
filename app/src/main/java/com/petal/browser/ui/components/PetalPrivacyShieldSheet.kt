@@ -388,7 +388,6 @@ object PetalPrivacyShieldSheet {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(
                             onClick = {
-                                PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                 onReloadRequested()
                             }
                         ) {
@@ -539,7 +538,7 @@ object PetalPrivacyShieldSheet {
                             checked = isHttpsBypassed,
                             onCheckedChange = { checked ->
                                 isHttpsBypassed = checked
-                                PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(activity).selectionChanged(activity)
                                 if (checked) {
                                     PetalHttpsOnlyWhitelist.addBypass(activity, cleanHost)
                                 } else {
@@ -564,7 +563,7 @@ object PetalPrivacyShieldSheet {
                             checked = isWhitelisted,
                             onCheckedChange = { checked ->
                                 isWhitelisted = checked
-                                PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(activity).selectionChanged(activity)
                                 if (checked) {
                                     PetalAdBlockEngine.addDomainToWhitelist(activity, cleanHost)
                                 } else {
@@ -581,7 +580,7 @@ object PetalPrivacyShieldSheet {
                             checked = globalAdBlock,
                             onCheckedChange = { checked ->
                                 globalAdBlock = checked
-                                PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.75f)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(activity).selectionChanged(activity)
                                 sp.edit()
                                     .putBoolean("sp_ad_block", checked)
                                     .putBoolean("profileStandard_adBlock", checked)
@@ -699,7 +698,7 @@ object PetalPrivacyShieldSheet {
                             checked = blockCookies,
                             onCheckedChange = { checked ->
                                 blockCookies = checked
-                                PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(activity).selectionChanged(activity)
                                 sp.edit()
                                     .putBoolean("sp_block_third_party_cookies", checked)
                                     .putBoolean("profileStandard_cookiesThirdParty", !checked)
@@ -716,7 +715,7 @@ object PetalPrivacyShieldSheet {
                             checked = fingerprintProtection,
                             onCheckedChange = { checked ->
                                 fingerprintProtection = checked
-                                PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(activity).selectionChanged(activity)
                                 sp.edit()
                                     .putBoolean("sp_fingerprint_protection", checked)
                                     .putBoolean("profileStandard_fingerPrintProtection", checked)
@@ -733,7 +732,7 @@ object PetalPrivacyShieldSheet {
                             checked = webrtcProtection,
                             onCheckedChange = { checked ->
                                 webrtcProtection = checked
-                                PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(activity).selectionChanged(activity)
                                 sp.edit()
                                     .putBoolean("sp_webrtc_protection", checked)
                                     .putBoolean("profileStandard_webrtcProtection", checked)
@@ -750,7 +749,7 @@ object PetalPrivacyShieldSheet {
                             checked = dntGpc,
                             onCheckedChange = { checked ->
                                 dntGpc = checked
-                                PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(activity).selectionChanged(activity)
                                 sp.edit()
                                     .putBoolean("sp_dnt_gpc", checked)
                                     .putBoolean("profileStandard_dnt", checked)
@@ -767,7 +766,7 @@ object PetalPrivacyShieldSheet {
                             checked = httpsOnly,
                             onCheckedChange = { checked ->
                                 httpsOnly = checked
-                                PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(activity).selectionChanged(activity)
                                 sp.edit()
                                     .putBoolean("sp_https_only", checked)
                                     .putBoolean("profileStandard_httpsOnly", checked)

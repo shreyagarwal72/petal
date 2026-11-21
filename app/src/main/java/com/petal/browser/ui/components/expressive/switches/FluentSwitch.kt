@@ -17,6 +17,8 @@
 
 package com.petal.browser.ui.components.expressive.switches
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -77,7 +79,7 @@ fun FluentSwitch(
             pressed || dragged -> 14.dp
             else -> 12.dp
         },
-        tween(Duration, easing = FastInvokeEasing)
+        PetalSpring.calm()
     )
 
     val width by animateDpAsState(
@@ -85,7 +87,7 @@ fun FluentSwitch(
             pressed || dragged -> 17.dp
             else -> 12.dp
         },
-        tween(Duration, easing = FastInvokeEasing)
+        PetalSpring.calm()
     )
 
     val maxValue = 32.dp - (width / 2)
@@ -112,7 +114,7 @@ fun FluentSwitch(
 
     val offset by animateFloatAsState(
         targetValue = offsetAnimated,
-        animationSpec = tween(Duration, easing = PointToPointEasing)
+        animationSpec = PetalSpring.calm()
     )
 
     Row(
@@ -148,15 +150,15 @@ fun FluentSwitch(
     ) {
         val trackColor by animateColorAsState(
             targetValue = trackColor(enabled, checked, colors),
-            animationSpec = tween(Duration, easing = PointToPointEasing)
+            animationSpec = PetalSpring.calm()
         )
         val thumbColor by animateColorAsState(
             targetValue = thumbColor(enabled, checked, colors),
-            animationSpec = tween(Duration, easing = PointToPointEasing)
+            animationSpec = PetalSpring.calm()
         )
         val borderColor by animateColorAsState(
             targetValue = borderColor(enabled, checked, colors),
-            animationSpec = tween(Duration, easing = PointToPointEasing)
+            animationSpec = PetalSpring.calm()
         )
 
         Box(

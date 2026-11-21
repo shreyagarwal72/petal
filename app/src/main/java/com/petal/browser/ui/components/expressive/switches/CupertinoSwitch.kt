@@ -19,6 +19,8 @@
 
 package com.petal.browser.ui.components.expressive.switches
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.os.Build
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -167,7 +169,7 @@ fun CupertinoSwitch(
                         if (enabled && LocalSettingsState.current.drawSwitchShadows) {
                             CupertinoSwitchDefaults.EnabledThumbElevation
                         } else 0.dp
-                    ).value,
+                    , animationSpec = PetalSpring.quick()).value,
                     borderColor = Color.Transparent,
                     isShadowClip = true,
                     isStandaloneContainer = false,
@@ -311,7 +313,7 @@ private fun FallbackLiquidGlassSwitch(
                         if (enabled && LocalSettingsState.current.drawSwitchShadows) {
                             CupertinoSwitchDefaults.EnabledThumbElevation
                         } else 0.dp
-                    ).value,
+                    , animationSpec = PetalSpring.quick()).value,
                     borderColor = Color.Transparent,
                     isShadowClip = true,
                     isStandaloneContainer = false,
@@ -493,6 +495,6 @@ object CupertinoSwitchDefaults {
     )
 }
 
-private val AspectRationAnimationSpec = tween<Float>(durationMillis = 300)
-private val ColorAnimationSpec = tween<Color>(durationMillis = 300)
+private val AspectRationAnimationSpec = PetalSpring.calm<Float>()
+private val ColorAnimationSpec = PetalSpring.calm<Color>()
 private val AlignmentAnimationSpec = AspectRationAnimationSpec

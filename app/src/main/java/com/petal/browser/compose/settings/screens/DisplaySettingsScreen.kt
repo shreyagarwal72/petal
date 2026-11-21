@@ -522,7 +522,7 @@ fun DisplaySettingsScreenContent(
                                     onCheckedChange = { newValue ->
                                         onTouchHapticsChange(newValue)
                                         if (newValue) {
-                                            PetalHapticEngine.getInstance(context).playClick(context)
+                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                         }
                                     }
                                 )
@@ -538,7 +538,7 @@ fun DisplaySettingsScreenContent(
                                     onCheckedChange = { newValue ->
                                         onScrollHapticsChange(newValue)
                                         if (newValue && touchHaptics) {
-                                            PetalHapticEngine.getInstance(context).playClick(context)
+                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                         }
                                     }
                                 )

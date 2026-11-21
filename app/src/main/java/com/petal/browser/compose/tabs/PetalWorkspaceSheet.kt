@@ -1,5 +1,7 @@
 package com.petal.browser.compose.tabs
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.containment.PetalSheetPill
 import com.petal.browser.ui.containment.PetalSheetActionRow
 import com.petal.browser.ui.containment.PetalSheetTone
@@ -188,7 +190,7 @@ fun PetalWorkspaceSheet(
 
                         val scale by animateFloatAsState(
                             targetValue = if (isSelected) 1.15f else 1.0f,
-                            animationSpec = spring(),
+                            animationSpec = PetalSpring.calm(),
                             label = "color_scale"
                         )
 
@@ -255,7 +257,7 @@ fun PetalWorkspaceSheet(
                             } else {
                                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.50f)
                             },
-                            animationSpec = spring(),
+                            animationSpec = PetalSpring.calm(),
                             label = "icon_bg"
                         )
 
@@ -265,7 +267,7 @@ fun PetalWorkspaceSheet(
                             } else {
                                 Color.Transparent
                             },
-                            animationSpec = spring(),
+                            animationSpec = PetalSpring.calm(),
                             label = "icon_border"
                         )
 

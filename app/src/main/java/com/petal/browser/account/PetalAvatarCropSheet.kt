@@ -189,7 +189,6 @@ fun PetalAvatarCropSheet(
                 ) {
                     IconButton(onClick = {
                         rotationAngle = (rotationAngle + 90f) % 360f
-                        PetalHapticEngine.getInstance(context).playTick(context)
                     }) {
                         Icon(Icons.Rounded.RotateRight, contentDescription = stringResource(R.string.ui_rotate))
                     }
@@ -198,7 +197,6 @@ fun PetalAvatarCropSheet(
                         scale = 1f
                         offset = Offset.Zero
                         rotationAngle = 0f
-                        PetalHapticEngine.getInstance(context).playTick(context)
                     }) {
                         Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.ui_reset))
                     }
@@ -227,7 +225,6 @@ fun PetalAvatarCropSheet(
                         } else {
                             PetalUserProfileManager.saveCroppedAvatar(context, cropped)
                         }
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         onAvatarCropped()
                     },
                     modifier = Modifier

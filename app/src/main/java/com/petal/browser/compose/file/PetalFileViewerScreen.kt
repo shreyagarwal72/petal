@@ -1607,7 +1607,6 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         Spacer(Modifier.height(24.dp))
         PetalLiquidButton(
             onClick = {
-                PetalHapticEngine.getInstance(context).playClick(context)
                 openExternal(context, fileUri)
             },
             variant = PetalButtonVariant.Tonal,

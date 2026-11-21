@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spoken by screen readers while a list is loading (PetalSkeleton). -->
+    <string name="petal_skeleton_loading">Loading</string>
+</resources>

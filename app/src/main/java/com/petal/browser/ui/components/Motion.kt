@@ -68,7 +68,7 @@ fun Modifier.homeLaunchEntrance(index: Int = 0): Modifier {
             if (index > 0) {
                 kotlinx.coroutines.delay((index * PetalSpring.STAGGER_STEP_MS).coerceAtMost(280L))
             }
-            animProgress.animateTo(1f, PetalSpring.enter())
+            animProgress.animateTo(1f, PetalSpring.calm())
         } else if (animProgress.value < 1f) {
             animProgress.snapTo(1f)
         }
@@ -112,7 +112,7 @@ fun Modifier.entrance(index: Int = 0, playKey: Any? = null): Modifier {
         if (staggerIndex > 0) {
             kotlinx.coroutines.delay(staggerIndex * PetalSpring.STAGGER_STEP_MS)
         }
-        animProgress.animateTo(1f, PetalSpring.enter())
+        animProgress.animateTo(1f, PetalSpring.calm())
         registryKey?.let { PetalEntranceRegistry.markPlayed(it) }
     }
 
@@ -139,7 +139,7 @@ fun Modifier.petalTouchFeedback(
     val pressedState = remember { mutableStateOf(false) }
     val scale = animateFloatAsState(
         targetValue = if (enabled && pressedState.value) scaleDown.coerceIn(0.80f, 1f) else 1f,
-        animationSpec = PetalSpring.press<Float>().orSnap(reduceMotion),
+        animationSpec = PetalSpring.quick<Float>().orSnap(reduceMotion),
         label = "petalTouchScale",
     )
 
@@ -183,14 +183,12 @@ fun Modifier.bouncyClickable(
 
     LaunchedEffect(pressed) {
         if (pressed && enabled) {
-            PetalHapticEngine.getInstance(context)
-                .playIfEnabled(context, PetalHapticEngine.Pattern.TICK, 0.45f)
         }
     }
 
     val scale = animateFloatAsState(
         targetValue = if (pressed && enabled) scaleDown else 1f,
-        animationSpec = PetalSpring.press<Float>().orSnap(reduceMotion),
+        animationSpec = PetalSpring.quick<Float>().orSnap(reduceMotion),
         label = "bouncyPress",
     )
     val base = graphicsLayer {
@@ -240,7 +238,7 @@ fun Modifier.slideInSpring(fromRight: Boolean = false, index: Int = 0): Modifier
         if (animProgress.value >= 1f) return@LaunchedEffect
         val staggerIndex = index.coerceAtMost(PetalSpring.STAGGER_MAX_ITEMS)
         if (staggerIndex > 0) kotlinx.coroutines.delay(staggerIndex * PetalSpring.STAGGER_STEP_MS)
-        animProgress.animateTo(1f, PetalSpring.spatial())
+        animProgress.animateTo(1f, PetalSpring.calm())
     }
     val startX = if (fromRight) 30.dp else (-30).dp
     return graphicsLayer {
@@ -258,7 +256,7 @@ fun Modifier.popIn(index: Int = 0): Modifier {
         if (animProgress.value >= 1f) return@LaunchedEffect
         val staggerIndex = index.coerceAtMost(PetalSpring.STAGGER_MAX_ITEMS)
         if (staggerIndex > 0) kotlinx.coroutines.delay(staggerIndex * PetalSpring.STAGGER_STEP_MS)
-        animProgress.animateTo(1f, PetalSpring.playful())
+        animProgress.animateTo(1f, PetalSpring.bouncy())
     }
     return graphicsLayer {
         val p = animProgress.value
@@ -277,7 +275,7 @@ fun Modifier.springReveal(index: Int = 0): Modifier {
         if (animProgress.value >= 1f) return@LaunchedEffect
         val staggerIndex = index.coerceAtMost(PetalSpring.STAGGER_MAX_ITEMS)
         if (staggerIndex > 0) kotlinx.coroutines.delay(staggerIndex * PetalSpring.STAGGER_STEP_MS)
-        animProgress.animateTo(1f, PetalSpring.spatial())
+        animProgress.animateTo(1f, PetalSpring.calm())
     }
     return graphicsLayer {
         val p = animProgress.value
@@ -296,7 +294,7 @@ fun Modifier.fadeThrough(visible: Boolean, durationMs: Int = 180): Modifier {
         animationSpec = if (reduceMotion) {
             androidx.compose.animation.core.snap()
         } else {
-            tween(durationMs, easing = LinearOutSlowInEasing)
+            PetalSpring.calm()
         },
         label = "fadeThrough",
     )
@@ -309,7 +307,7 @@ fun Modifier.surfacePopIn(visible: Boolean = true): Modifier {
     val reduceMotion = rememberReduceMotion()
     val scale = animateFloatAsState(
         targetValue = if (visible) 1f else 0.96f,
-        animationSpec = PetalSpring.spatial<Float>().orSnap(reduceMotion),
+        animationSpec = PetalSpring.calm<Float>().orSnap(reduceMotion),
         label = "surfacePopIn",
     )
     return graphicsLayer {
@@ -359,12 +357,12 @@ fun Modifier.modalScaleIn(visible: Boolean = true): Modifier {
     val reduceMotion = rememberReduceMotion()
     val scale = animateFloatAsState(
         targetValue = if (visible) 1f else 0.92f,
-        animationSpec = PetalSpring.enter<Float>().orSnap(reduceMotion),
+        animationSpec = PetalSpring.calm<Float>().orSnap(reduceMotion),
         label = "modalScale",
     )
     val alpha = animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = PetalSpring.fadeIn<Float>().orSnap(reduceMotion),
+        animationSpec = PetalSpring.calm<Float>().orSnap(reduceMotion),
         label = "modalAlpha",
     )
     return graphicsLayer {

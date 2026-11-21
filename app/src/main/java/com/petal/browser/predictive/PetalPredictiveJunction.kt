@@ -23,6 +23,8 @@
 
 package com.petal.browser.predictive
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import android.content.SharedPreferences
@@ -323,10 +325,7 @@ fun PetalPredictiveBackSurface(
                         progressAnim.snapTo(release)
                         progressAnim.animateTo(
                             targetValue = 1f,
-                            animationSpec = spring(
-                                stiffness = Spring.StiffnessMedium,
-                                dampingRatio = Spring.DampingRatioNoBouncy
-                            )
+                            animationSpec = PetalSpring.quick()
                         ) {
                             val settle = ((value - release) / (1f - release).coerceAtLeast(0.01f)).coerceIn(0f, 1f)
                             backState = backState.copy(progress = value, settleTime = settle)
@@ -367,12 +366,9 @@ fun PetalPredictiveBackSurface(
                     progressAnim.animateTo(
                         targetValue = 0f,
                         animationSpec = if (style.usesSpringCommit) {
-                            spring(
-                                stiffness = Spring.StiffnessMedium,
-                                dampingRatio = Spring.DampingRatioLowBouncy
-                            )
+                            PetalSpring.bouncy()
                         } else {
-                            spring(stiffness = 1500f, dampingRatio = Spring.DampingRatioNoBouncy)
+                            PetalSpring.quick()
                         }
                     ) {
                         backState = backState.copy(isActive = true, progress = value)
@@ -502,7 +498,7 @@ fun PetalScreenWrapper(
 
     val transitionCornerRadius = if (transition != null) {
         val animatedValue by transition.animateFloat(
-            transitionSpec = { tween(durationMillis = 350, easing = FastOutSlowInEasing) },
+            transitionSpec = { PetalSpring.calm() },
             label = "cornerRadius"
         ) { state ->
             if (state == EnterExitState.PostExit || state == EnterExitState.PreEnter) 32f else 0f
@@ -512,7 +508,7 @@ fun PetalScreenWrapper(
 
     val transitionDimAlpha = if (transition != null) {
         val animatedValue by transition.animateFloat(
-            transitionSpec = { tween(durationMillis = 350, easing = CubicBezierEasing(0.5f, 0f, 0.8f, 0.2f)) },
+            transitionSpec = { PetalSpring.calm() },
             label = "dimAlpha"
         ) { state ->
             if (isBehindTopScreen && (state == EnterExitState.PostExit || state == EnterExitState.PreEnter)) {
@@ -524,7 +520,7 @@ fun PetalScreenWrapper(
 
     val transitionBlurRadiusDp = if (transition != null) {
         val animatedValue by transition.animateDp(
-            transitionSpec = { tween(durationMillis = 350, easing = CubicBezierEasing(0.5f, 0f, 0.8f, 0.2f)) },
+            transitionSpec = { PetalSpring.calm() },
             label = "blurRadius"
         ) { state ->
             if (isBehindTopScreen && blurEnabled && (state == EnterExitState.PostExit || state == EnterExitState.PreEnter)) {
@@ -795,7 +791,7 @@ fun PetalSubPageHost(
     val outerState = LocalPredictiveBackState.current
     val fraction by androidx.compose.animation.core.animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(if (reduceMotion) 0 else 300, easing = FastOutSlowInEasing),
+        animationSpec = PetalSpring.calm(),
         label = "subPageBehindFraction",
     )
     PetalPredictiveBackSurface(
@@ -817,8 +813,8 @@ fun PetalSubPageHost(
             androidx.compose.animation.AnimatedVisibility(
                 visible = visible,
                 enter = if (reduceMotion) androidx.compose.animation.EnterTransition.None
-                else androidx.compose.animation.fadeIn(tween(200)) +
-                    androidx.compose.animation.slideInHorizontally(tween(300, easing = FastOutSlowInEasing)) { it / 5 },
+                else androidx.compose.animation.fadeIn(PetalSpring.calm()) +
+                    androidx.compose.animation.slideInHorizontally(PetalSpring.calm()) { it / 5 },
                 exit = androidx.compose.animation.ExitTransition.None,
                 modifier = Modifier.fillMaxSize(),
             ) {

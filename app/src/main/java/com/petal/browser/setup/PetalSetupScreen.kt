@@ -1,5 +1,7 @@
 package com.petal.browser.setup
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -263,11 +265,11 @@ private fun SetupScaffold(
                         transitionSpec = {
                             val forward = targetState > initialState
                             val dir = if (forward) 1 else -1
-                            (slideInHorizontally(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessMediumLow)) { dir * it / 3 } +
-                                fadeIn(tween(260)) + scaleIn(initialScale = 0.96f, animationSpec = tween(260)))
+                            (slideInHorizontally(PetalSpring.calm()) { dir * it / 3 } +
+                                fadeIn(PetalSpring.calm()) + scaleIn(initialScale = 0.96f, animationSpec = PetalSpring.calm()))
                                 .togetherWith(
-                                    slideOutHorizontally(tween(220)) { -dir * it / 4 } +
-                                        fadeOut(tween(160)) + scaleOut(targetScale = 0.96f, animationSpec = tween(220))
+                                    slideOutHorizontally(PetalSpring.calm()) { -dir * it / 4 } +
+                                        fadeOut(PetalSpring.calm()) + scaleOut(targetScale = 0.96f, animationSpec = PetalSpring.calm())
                                 )
                         },
                         label = "petalSetupPage"

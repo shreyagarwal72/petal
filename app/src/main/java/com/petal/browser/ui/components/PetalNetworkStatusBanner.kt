@@ -188,15 +188,12 @@ fun PetalNetworkStatusBanner(
             visible = visible,
             enter = slideInHorizontally(
                 initialOffsetX = { -it },
-                animationSpec = spring(
-                    stiffness = Spring.StiffnessMediumLow,
-                    dampingRatio = Spring.DampingRatioLowBouncy
-                )
-            ) + fadeIn(animationSpec = tween(300)),
+                animationSpec = PetalSpring.calm()
+            ) + fadeIn(animationSpec = PetalSpring.calm()),
             exit = slideOutHorizontally(
                 targetOffsetX = { it },
-                animationSpec = tween(300)
-            ) + fadeOut(animationSpec = tween(250))
+                animationSpec = PetalSpring.calm()
+            ) + fadeOut(animationSpec = PetalSpring.calm())
         ) {
             val isOffline = state == NetworkAlertState.OFFLINE
             val containerColor = if (isOffline) {

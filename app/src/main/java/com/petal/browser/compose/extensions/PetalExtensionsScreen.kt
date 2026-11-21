@@ -196,7 +196,6 @@ fun PetalExtensionsScreen(
         extensions.filter { !PetalBuiltInExtensionManager.isBuiltIn(it.id) }
     }
     val pendingPrompt by PetalExtensionManager.pendingPrompt.collectAsStateWithLifecycle()
-    val pendingPopup by PetalExtensionManager.pendingPopup.collectAsStateWithLifecycle()
     val busy by PetalExtensionManager.busy.collectAsStateWithLifecycle()
     val lastError by PetalExtensionManager.lastError.collectAsStateWithLifecycle()
 
@@ -510,14 +509,9 @@ fun PetalExtensionsScreen(
         InstallPermissionDialog(prompt = prompt)
     }
 
-    pendingPopup?.let { popup ->
-        PetalExtensionPopupScreen(
-            popup = popup,
-            onDismiss = {
-                PetalExtensionManager.dismissPopup()
-            }
-        )
-    }
+    // The extension popup is hosted exactly once, by PetalRootApp (zIndex 12f). It used to be
+    // composed here as well, which attached two GeckoViews to the same popup GeckoSession whenever
+    // the Extensions screen was open.
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1895,10 +1889,46 @@ fun PetalExtensionPopupScreen(
     }
     val context = LocalContext.current
     val hostActivity = context as? ComponentActivity
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    // Live glass over a GeckoView makes the UI thread redraw every frame. When effects are being
+    // simplified (animation in flight, low-end device) the sheet is a plain solid surface.
+    val simplifyFx = com.petal.browser.motion.MotionGate.shouldSimplifyEffects()
+    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments") && !simplifyFx
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
 
+    // Back-to-front lifecycle: leaving the app tears the popup down instead of leaving a live
+    // GeckoSession and a window-sized scrim behind.
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val latestOnDismiss by rememberUpdatedState(onDismiss)
+    DisposableEffect(popup.session, lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) latestOnDismiss()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     key(popup.session) {
+        // 0 = loading, 1 = loaded, 2 = failed or timed out. Never an endless spinner.
+        var loadState by remember { mutableIntStateOf(0) }
+        var retryNonce by remember { mutableIntStateOf(0) }
+        LaunchedEffect(popup.session, retryNonce) {
+            kotlinx.coroutines.delay(6_000L)
+            if (loadState == 0) loadState = 2
+        }
+        val geckoRef = remember(popup.session) { arrayOfNulls<GeckoView>(1) }
+        DisposableEffect(popup.session) {
+            onDispose {
+                try { geckoRef[0]?.releaseSession() } catch (_: Throwable) {}
+                geckoRef[0] = null
+                try {
+                    popup.session.contentDelegate = null
+                    popup.session.promptDelegate = null
+                    popup.session.navigationDelegate = null
+                    popup.session.progressDelegate = null
+                } catch (_: Throwable) {}
+            }
+        }
+
         var pendingTextPrompt by remember { mutableStateOf<GeckoSession.PromptDelegate.TextPrompt?>(null) }
         var textPromptInput by remember { mutableStateOf("") }
         var textPromptIsPassword by remember { mutableStateOf(false) }
@@ -2003,8 +2033,14 @@ fun PetalExtensionPopupScreen(
                         AndroidView(
                             factory = { ctx ->
                                 GeckoView(ctx).apply {
+                                    geckoRef[0] = this
+                                    // The page behind is a GeckoView SurfaceView. A second SurfaceView in the
+                                    // same window is z-ordered by the window compositor, not by Compose, and on
+                                    // some GPUs/Android versions the popup draws behind the page while still
+                                    // eating touches. A TextureView is composited in the view tree, so it always
+                                    // sits where Compose put it. Must be set before setSession().
                                     try {
-                                        com.petal.browser.ui.glass.GeckoGlassBackend.applyBackend(this, ctx)
+                                        com.petal.browser.ui.glass.GeckoGlassBackend.useTextureView(this)
                                     } catch (_: Throwable) {}
                                     layoutParams = ViewGroup.LayoutParams(
                                         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -2118,11 +2154,53 @@ fun PetalExtensionPopupScreen(
                                         }
                                     }
 
+                                    // Keep the manager's responsive-fix delegate and add load tracking on top.
+                                    val managerProgress = popup.session.progressDelegate
+                                    popup.session.progressDelegate = object : GeckoSession.ProgressDelegate {
+                                        override fun onPageStart(session: GeckoSession, url: String) {
+                                            managerProgress?.onPageStart(session, url)
+                                        }
+                                        override fun onPageStop(session: GeckoSession, success: Boolean) {
+                                            managerProgress?.onPageStop(session, success)
+                                            loadState = if (success) 1 else 2
+                                        }
+                                    }
+
                                     setSession(popup.session)
                                 }
                             },
                             modifier = Modifier.fillMaxSize()
                         )
+
+                        if (loadState == 0) {
+                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center).size(36.dp))
+                        }
+                        if (loadState == 2) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                    .padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "This popup didn't load",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                Button(onClick = {
+                                    val url = PetalExtensionManager.findInstalledExtension(popup.extensionId)
+                                        ?.raw?.let { PetalExtensionManager.resolveExtensionPopupUrl(it) }
+                                    try {
+                                        if (url != null) popup.session.loadUri(url) else popup.session.reload()
+                                    } catch (_: Throwable) {}
+                                    loadState = 0
+                                    retryNonce++
+                                }) { Text("Retry") }
+                            }
+                        }
                     }
                 }
             }

@@ -65,12 +65,12 @@ fun PetalCollapsingTopAppBar(
     val collapsedFraction = scrollBehavior.state.collapsedFraction
     val titleStartPadding = animateDpAsState(
         targetValue = if (collapsedFraction > 0.5f) 8.dp else 0.dp,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        animationSpec = PetalSpring.calm(),
         label = "petalHeaderTitleStartPadding",
     )
     val buttonScale by animateFloatAsState(
         targetValue = if (collapsedFraction > 0.5f) 1.0f else 0.94f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        animationSpec = PetalSpring.calm(),
         label = "petalHeaderBackButtonScale"
     )
 
@@ -104,19 +104,16 @@ fun PetalCollapsingTopAppBar(
             AnimatedContent(
                 targetState = title,
                 transitionSpec = {
-                    (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                    (fadeIn(animationSpec = PetalSpring.calm()) +
                             scaleIn(
                                 initialScale = 0.92f,
-                                animationSpec = spring(
-                                    dampingRatio = Spring.DampingRatioLowBouncy,
-                                    stiffness = Spring.StiffnessLow
-                                )
+                                animationSpec = PetalSpring.calm()
                             ))
                         .togetherWith(
-                            fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                            fadeOut(animationSpec = PetalSpring.calm()) +
                                     scaleOut(
                                         targetScale = 0.92f,
-                                        animationSpec = spring(stiffness = Spring.StiffnessLow)
+                                        animationSpec = PetalSpring.calm()
                                     )
                         )
                 },
@@ -133,7 +130,7 @@ fun PetalCollapsingTopAppBar(
         navigationIcon = {
             Crossfade(
                 targetState = collapsedFraction > 0.5f,
-                animationSpec = PetalSpring.crossfade(),
+                animationSpec = PetalSpring.calm(),
                 label = "petalHeaderBackButtonMorph",
             ) { scrolled ->
                 val btnModifier = Modifier.graphicsLayer {

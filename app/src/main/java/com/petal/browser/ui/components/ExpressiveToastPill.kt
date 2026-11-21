@@ -40,11 +40,11 @@ fun ExpressiveToastPill(
         visible = isVisible,
         enter = slideInVertically(
             initialOffsetY = { height -> height },
-            animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioMediumBouncy)
+            animationSpec = PetalSpring.calm()
         ),
         exit = slideOutVertically(
             targetOffsetY = { height -> height },
-            animationSpec = spring(stiffness = Spring.StiffnessLow)
+            animationSpec = PetalSpring.calm()
         ),
         modifier = modifier
     ) {

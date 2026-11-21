@@ -17,6 +17,8 @@
 
 package com.petal.browser.ui.components.expressive.sliders
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.padding
@@ -66,7 +68,7 @@ fun M2Slider(
                                 if (settingsState.drawSliderShadows) {
                                     1.dp
                                 } else 0.dp
-                            ).value,
+                            , animationSpec = PetalSpring.calm()).value,
                             resultPadding = 0.dp,
                             borderColor = MaterialTheme.colorScheme
                                 .outlineVariant(
@@ -147,7 +149,7 @@ fun M2RangeSlider(
                                 if (settingsState.drawSliderShadows) {
                                     1.dp
                                 } else 0.dp
-                            ).value,
+                            , animationSpec = PetalSpring.calm()).value,
                             resultPadding = 0.dp,
                             borderColor = MaterialTheme.colorScheme
                                 .outlineVariant(

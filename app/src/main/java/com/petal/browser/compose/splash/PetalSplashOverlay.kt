@@ -1,5 +1,7 @@
 package com.petal.browser.compose.splash
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.app.Activity
 import android.os.Handler
 import android.os.Looper
@@ -94,8 +96,8 @@ object PetalSplashOverlay {
                     ) {
                         AnimatedVisibility(
                             visible = visible,
-                            enter = fadeIn(animationSpec = tween(200)),
-                            exit = fadeOut(animationSpec = tween(220)) + scaleOut(targetScale = 1.05f, animationSpec = tween(220))
+                            enter = fadeIn(animationSpec = PetalSpring.calm()),
+                            exit = fadeOut(animationSpec = PetalSpring.calm()) + scaleOut(targetScale = 1.05f, animationSpec = PetalSpring.calm())
                         ) {
                             PetalSplashScreen(
                                 onSplashComplete = {

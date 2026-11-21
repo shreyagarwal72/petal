@@ -15,8 +15,10 @@ import androidx.compose.ui.semantics.Role
 /**
  * Performs custom haptic feedback using PetalHapticEngine, mapped from RvSystem-Monitor.
  */
+@Suppress("UNUSED_PARAMETER")
 private fun performRvHapticFeedback(context: Context, intensity: VibrationIntensity) {
-    PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.85f)
+    // Plain taps and value ticks are silent by design (state-change haptics only). Use
+    // PetalHapticEngine.selectionChanged / thresholdCrossed at real state changes instead.
 }
 
 /**

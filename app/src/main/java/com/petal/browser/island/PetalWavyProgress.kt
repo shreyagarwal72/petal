@@ -1,5 +1,7 @@
 package com.petal.browser.island
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,7 +41,7 @@ fun PetalWavyProgressBar(
     val maxAmplitude = 4.dp
     val amplitude by animateDpAsState(
         targetValue = if (isWavy) maxAmplitude else 0.dp,
-        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+        animationSpec = PetalSpring.calm(),
         label = "waveAmplitude",
     )
 

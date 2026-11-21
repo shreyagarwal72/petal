@@ -610,8 +610,8 @@ fun PetalOverflowMenuSheet(
 
                 AnimatedVisibility(
                     visible = isMoreToolsExpanded,
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
+                    enter = expandVertically(animationSpec = PetalSpring.calm()),
+                    exit = shrinkVertically(animationSpec = PetalSpring.calm())
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         MenuRowItem(
@@ -725,9 +725,9 @@ internal fun PetalOverflowMenuShell(
     val scale by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0.12f,
         animationSpec = if (isVisible) {
-            PetalSpring.menuPop()
+            PetalSpring.quick()
         } else {
-            PetalSpring.exit()
+            PetalSpring.calm()
         },
         label = "MenuExpandScale"
     )
@@ -735,9 +735,9 @@ internal fun PetalOverflowMenuShell(
     val translationY by animateFloatAsState(
         targetValue = if (isVisible) 0f else 32f,
         animationSpec = if (isVisible) {
-            PetalSpring.menuPop()
+            PetalSpring.quick()
         } else {
-            PetalSpring.exit()
+            PetalSpring.calm()
         },
         label = "MenuSlideY"
     )
@@ -745,16 +745,16 @@ internal fun PetalOverflowMenuShell(
     val translationX by animateFloatAsState(
         targetValue = if (isVisible) 0f else 8f,
         animationSpec = if (isVisible) {
-            PetalSpring.menuPop()
+            PetalSpring.quick()
         } else {
-            PetalSpring.exit()
+            PetalSpring.calm()
         },
         label = "MenuSlideX"
     )
 
     val alpha by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
-        animationSpec = if (isVisible) PetalSpring.fadeIn() else PetalSpring.fadeOut(),
+        animationSpec = if (isVisible) PetalSpring.calm() else PetalSpring.calm(),
         label = "MenuExpandAlpha"
     )
 
@@ -921,8 +921,6 @@ private fun CircularIconButton(
                 color = MaterialTheme.colorScheme.surfaceContainerHighest,
                 onClick = if (enabled) {
                     {
-                        com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                            .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
                         onClick()
                     }
                 } else null,
@@ -955,8 +953,6 @@ private fun MenuRowItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = {
-                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
                 onClick()
             })
             .padding(
@@ -1047,8 +1043,6 @@ private fun ExtensionMenuRowItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = {
-                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
                 onClick()
             })
             .padding(start = 28.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
@@ -1087,8 +1081,6 @@ private fun ExtensionMenuRowItem(
         )
         IconButton(
             onClick = {
-                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
                 onSettingsClick()
             },
             modifier = Modifier.size(36.dp)

@@ -1,5 +1,7 @@
 package com.petal.browser.setup
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -55,12 +57,12 @@ internal fun SetupProgressBar(stage: Int, count: Int, modifier: Modifier = Modif
         for (i in 0 until count) {
             val weight by animateFloatAsState(
                 targetValue = if (i == stage) 2.6f else 1f,
-                animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMediumLow),
+                animationSpec = PetalSpring.calm(),
                 label = "setupSegmentWeight"
             )
             val color by animateColorAsState(
                 targetValue = if (i <= stage) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
+                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f), animationSpec = PetalSpring.calm(),
                 label = "setupSegmentColor"
             )
             Box(
@@ -136,7 +138,7 @@ internal fun PaletteSwatch(
     val shape: Shape = if (selected) PetalMaterialShapes.Cookie9Sided.toShape() else CircleShape
     val scale by animateFloatAsState(
         targetValue = if (selected) 1.08f else 1f,
-        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium),
+        animationSpec = PetalSpring.calm(),
         label = "paletteSwatchScale"
     )
     Column(
@@ -205,12 +207,12 @@ internal fun MiniBrowserPreview(
     val cs = MaterialTheme.colorScheme
     val dockInset by animateDpAsState(
         targetValue = if (floatingTabs) 14.dp else 0.dp,
-        animationSpec = spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMediumLow),
+        animationSpec = PetalSpring.calm(),
         label = "miniDockInset"
     )
     val dockCorner by animateDpAsState(
         targetValue = if (floatingTabs) 22.dp else 10.dp,
-        animationSpec = spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMediumLow),
+        animationSpec = PetalSpring.calm(),
         label = "miniDockCorner"
     )
 

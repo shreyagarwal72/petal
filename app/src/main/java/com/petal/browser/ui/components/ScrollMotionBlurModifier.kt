@@ -135,10 +135,10 @@ fun Modifier.scrollMotionBlur(
                         }
                         animatedVelocity.snapTo(newVelocityToSnap)
                     }
-                    animatedVelocity.animateTo(0f, animationSpec = tween(60))
+                    animatedVelocity.animateTo(0f, animationSpec = PetalSpring.quick())
                 } else {
                     if (animatedVelocity.value != 0f) {
-                        animatedVelocity.animateTo(0f, animationSpec = tween(60))
+                        animatedVelocity.animateTo(0f, animationSpec = PetalSpring.quick())
                     }
                 }
             }
@@ -204,7 +204,7 @@ fun Modifier.scrollMotionBlur(
 
     LaunchedEffect(lazyListState.isScrollInProgress) {
         if (!lazyListState.isScrollInProgress) {
-            animatedVelocity.animateTo(0f, animationSpec = tween(60))
+            animatedVelocity.animateTo(0f, animationSpec = PetalSpring.quick())
         }
     }
 
@@ -267,7 +267,7 @@ fun Modifier.scrollMotionBlur(
 
     LaunchedEffect(gridState.isScrollInProgress) {
         if (!gridState.isScrollInProgress) {
-            animatedVelocity.animateTo(0f, animationSpec = tween(60))
+            animatedVelocity.animateTo(0f, animationSpec = PetalSpring.quick())
         }
     }
 
@@ -330,7 +330,7 @@ fun Modifier.scrollMotionBlur(
 
     LaunchedEffect(pagerState.isScrollInProgress) {
         if (!pagerState.isScrollInProgress) {
-            animatedVelocity.animateTo(0f, animationSpec = tween(60))
+            animatedVelocity.animateTo(0f, animationSpec = PetalSpring.quick())
         }
     }
 

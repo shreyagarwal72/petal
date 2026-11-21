@@ -1,4 +1,6 @@
 package com.petal.browser.compose.settings.screens
+
+import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.components.scrollMotionBlur
 
 import android.net.Uri
@@ -732,7 +734,7 @@ private fun BackupOptionRow(
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.98f else 1f,
-        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        animationSpec = PetalSpring.quick(),
         label = "BackupOptionRowScale"
     )
 

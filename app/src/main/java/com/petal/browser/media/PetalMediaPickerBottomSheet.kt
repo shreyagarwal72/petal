@@ -1,5 +1,7 @@
 package com.petal.browser.media
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.view.PetalToast;
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -249,7 +251,6 @@ fun PetalMediaPickerBottomSheet(
 
                 IconButton(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         onDismissRequest()
                     },
                     modifier = Modifier.size(36.dp)
@@ -272,7 +273,6 @@ fun PetalMediaPickerBottomSheet(
                 // Snap Photo Button
                 Surface(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         val hasCam = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
                         if (hasCam) {
                             val uri = PetalMediaPickerManager.createTempCaptureUri(context, false)
@@ -316,7 +316,6 @@ fun PetalMediaPickerBottomSheet(
                 // System Photo Picker Button
                 Surface(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         val mediaType = when (selectedFilter) {
                             MediaFilterType.PHOTOS -> ActivityResultContracts.PickVisualMedia.ImageOnly
                             MediaFilterType.VIDEOS -> ActivityResultContracts.PickVisualMedia.VideoOnly
@@ -357,7 +356,6 @@ fun PetalMediaPickerBottomSheet(
                 // Browse System Files Button
                 Surface(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         onBrowseSystemFiles()
                     },
                     shape = RoundedCornerShape(14.dp),
@@ -398,7 +396,7 @@ fun PetalMediaPickerBottomSheet(
                         FilterChip(
                             selected = selectedFilter == filter,
                             onClick = {
-                                PetalHapticEngine.getInstance(context).playClick(context)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                 selectedFilter = filter
                             },
                             label = { Text(filter.label) },
@@ -461,7 +459,6 @@ fun PetalMediaPickerBottomSheet(
 
                         Button(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 permissionLauncher.launch(PetalMediaPickerManager.getRequiredMediaPermissions(selectedFilter))
                             },
                             shape = RoundedCornerShape(12.dp),
@@ -474,7 +471,6 @@ fun PetalMediaPickerBottomSheet(
 
                         FilledTonalButton(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 val mediaType = when (selectedFilter) {
                                     MediaFilterType.PHOTOS -> ActivityResultContracts.PickVisualMedia.ImageOnly
                                     MediaFilterType.VIDEOS -> ActivityResultContracts.PickVisualMedia.VideoOnly
@@ -554,7 +550,6 @@ fun PetalMediaPickerBottomSheet(
 
                         Button(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 val mediaType = when (selectedFilter) {
                                     MediaFilterType.PHOTOS -> ActivityResultContracts.PickVisualMedia.ImageOnly
                                     MediaFilterType.VIDEOS -> ActivityResultContracts.PickVisualMedia.VideoOnly
@@ -598,7 +593,6 @@ fun PetalMediaPickerBottomSheet(
                                 .aspectRatio(1f)
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable {
-                                    PetalHapticEngine.getInstance(context).playClick(context)
                                     if (allowMultiple) {
                                         if (isSelected) {
                                             selectedUris.remove(item.uri)
@@ -683,8 +677,8 @@ fun PetalMediaPickerBottomSheet(
             // Multi-selection Confirmation Bar
             AnimatedVisibility(
                 visible = allowMultiple && selectedUris.isNotEmpty(),
-                enter = slideInVertically { it } + fadeIn(),
-                exit = slideOutVertically { it } + fadeOut()
+                enter = slideInVertically { it } + fadeIn(animationSpec = PetalSpring.calm()),
+                exit = slideOutVertically { it } + fadeOut(animationSpec = PetalSpring.calm())
             ) {
                 Surface(
                     shape = RoundedCornerShape(18.dp),
@@ -708,7 +702,6 @@ fun PetalMediaPickerBottomSheet(
 
                         Button(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 onMediaSelected(selectedUris.toList())
                                 onDismissRequest()
                             },

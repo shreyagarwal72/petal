@@ -28,6 +28,9 @@ class PetalHapticEngine private constructor(context: Context) {
     companion object {
         private const val INTENSITY_BUCKETS = 16
         private const val MIN_AUDIBLE_INTENSITY = 0.02f
+        private const val SELECTION_INTENSITY = 0.5f
+        private const val THRESHOLD_INTENSITY = 0.9f
+        private const val STATE_DEDUPE_MS = 120L
 
         @Volatile
         private var sInstance: PetalHapticEngine? = null
@@ -178,21 +181,43 @@ class PetalHapticEngine private constructor(context: Context) {
         } catch (_: Throwable) {}
     }
 
-    fun playStrong(pattern: Pattern) {
-        play(pattern, 1.0f, 0L)
+    // ─────────────────────────────────────────────────────────────────────────
+    // State-change haptics: the ONLY haptics Petal plays.
+    //
+    // Plain taps, scrolling, typing and navigation are silent. Haptics mark real state
+    // changes: a toggle or switch flipping, a selection added/removed, a segmented or button
+    // group changing option, a swipe/drag/pull crossing its threshold, a long-press that opens a
+    // menu or enters selection mode, and a successful destructive action that offers undo.
+    //
+    //  - [selectionChanged]  one light pattern for selection-style changes
+    //  - [thresholdCrossed]  one stronger pattern for threshold and destructive events
+    //
+    // Both honor the "Touch haptics" setting, scale with the caller's intensity, and share a
+    // short dedupe window so one user action can never fire two haptics.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Volatile
+    private var lastStateHapticMs = 0L
+
+    private fun playState(context: Context, pattern: Pattern, intensity: Float): Boolean {
+        if (!isHapticsEnabled(context)) return false
+        val now = android.os.SystemClock.uptimeMillis()
+        synchronized(this) {
+            if (now - lastStateHapticMs < STATE_DEDUPE_MS) return false
+            lastStateHapticMs = now
+        }
+        return play(pattern, intensity, 0L)
     }
 
-    fun playClick(context: Context) {
-        playIfEnabled(context, Pattern.CLICK, 0.85f, 0L)
-    }
+    /** Light haptic for a selection-style change (toggle, chip/segment select, selection add/remove). */
+    @JvmOverloads
+    fun selectionChanged(context: Context, intensity: Float = SELECTION_INTENSITY): Boolean =
+        playState(context, Pattern.TICK, intensity)
 
-    fun playHeavyClick(context: Context) {
-        playIfEnabled(context, Pattern.HEAVY_CLICK, 1.0f, 0L)
-    }
-
-    fun playTick(context: Context) {
-        playIfEnabled(context, Pattern.CLICK, 0.65f, 0L)
-    }
+    /** Stronger haptic for a threshold crossing, long-press, or successful destructive action with undo. */
+    @JvmOverloads
+    fun thresholdCrossed(context: Context, intensity: Float = THRESHOLD_INTENSITY): Boolean =
+        playState(context, Pattern.HEAVY_CLICK, intensity)
 
     private fun effectFor(pattern: Pattern, intensity: Float): VibrationEffect? {
         val bucket = Math.max(0, Math.min(INTENSITY_BUCKETS - 1, ((intensity * (INTENSITY_BUCKETS - 1)) + 0.5f).toInt()))

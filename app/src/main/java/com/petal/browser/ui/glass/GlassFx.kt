@@ -1,5 +1,7 @@
 package com.petal.browser.ui.glass
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.os.Build
 import android.os.SystemClock
 import androidx.annotation.RequiresApi
@@ -180,8 +182,8 @@ class InteractiveHighlight(
     private val animationScope: CoroutineScope,
     val position: (size: Size, offset: Offset) -> Offset = { _, offset -> offset }
 ) {
-    private val pressSpec = spring<Float>(0.5f, 300f, 0.001f)
-    private val positionSpec = spring<Offset>(0.5f, 300f, Offset.VisibilityThreshold)
+    private val pressSpec = PetalSpring.quick<Float>()
+    private val positionSpec = PetalSpring.quick<Offset>()
 
     private val pressProgressAnimation = Animatable(0f, 0.001f)
     private val positionAnimation = Animatable(Offset.Zero, Offset.VectorConverter, Offset.VisibilityThreshold)
@@ -277,11 +279,11 @@ class DampedDragAnimation(
     val onDragStopped: DampedDragAnimation.() -> Unit,
     val onDrag: DampedDragAnimation.(size: IntSize, dragAmount: Offset) -> Unit
 ) {
-    private val valueSpec = spring<Float>(1f, 1000f, visibilityThreshold)
-    private val velocitySpec = spring<Float>(0.5f, 300f, visibilityThreshold * 10f)
-    private val pressSpec = spring<Float>(1f, 1000f, 0.001f)
-    private val scaleXSpec = spring<Float>(0.6f, 250f, 0.001f)
-    private val scaleYSpec = spring<Float>(0.7f, 250f, 0.001f)
+    private val valueSpec = PetalSpring.calm<Float>()
+    private val velocitySpec = PetalSpring.quick<Float>()
+    private val pressSpec = PetalSpring.quick<Float>()
+    private val scaleXSpec = PetalSpring.quick<Float>()
+    private val scaleYSpec = PetalSpring.quick<Float>()
 
     private val valueAnimation = Animatable(initialValue, visibilityThreshold)
     private val velocityAnimation = Animatable(0f, 5f)

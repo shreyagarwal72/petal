@@ -1,4 +1,6 @@
 package com.petal.browser.compose.settings.screens
+
+import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import com.petal.browser.ui.components.scrollMotionBlur
@@ -104,8 +106,8 @@ fun SettingsHubScreen(
         val headerExtrasX: @Composable () -> Unit = {
             AnimatedVisibility(
                 visible = effectiveSearchOpen,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+                enter = expandVertically(animationSpec = PetalSpring.calm()) + fadeIn(animationSpec = PetalSpring.calm()),
+                exit = shrinkVertically(animationSpec = PetalSpring.calm()) + fadeOut(animationSpec = PetalSpring.calm())
             ) {
                 val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                 val searchShape = RoundedCornerShape(16.dp)

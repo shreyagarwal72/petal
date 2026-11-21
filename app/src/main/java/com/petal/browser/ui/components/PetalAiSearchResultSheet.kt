@@ -420,8 +420,8 @@ fun PetalAiSearchResultSheet(
 
                     AnimatedVisibility(
                         visible = searchQuery.isNotBlank(),
-                        enter = fadeIn() + scaleIn(),
-                        exit = fadeOut() + scaleOut()
+                        enter = fadeIn(animationSpec = PetalSpring.calm()) + scaleIn(animationSpec = PetalSpring.calm()),
+                        exit = fadeOut(animationSpec = PetalSpring.calm()) + scaleOut(animationSpec = PetalSpring.calm())
                     ) {
                         IconButton(
                             onClick = { searchQuery = "" },
@@ -539,8 +539,8 @@ fun PetalAiSearchResultSheet(
             AnimatedContent(
                 targetState = Triple(isLoading, errorMessage, responseResult),
                 transitionSpec = {
-                    fadeIn(animationSpec = PetalSpring.fadeThroughIn()) togetherWith
-                            fadeOut(animationSpec = PetalSpring.fadeThroughOut())
+                    fadeIn(animationSpec = PetalSpring.calm()) togetherWith
+                            fadeOut(animationSpec = PetalSpring.calm())
                 },
                 label = "AiContentState"
             ) { (loading, error, result) ->

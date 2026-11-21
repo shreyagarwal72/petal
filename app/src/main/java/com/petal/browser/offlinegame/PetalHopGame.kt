@@ -83,17 +83,12 @@ class PetalHopState(private val context: Context) : PetalHopEngine.Events {
         score = 0
     }
 
-    private fun haptic(pattern: PetalHapticEngine.Pattern, intensity: Float, throttleMs: Long = 0L) {
-        PetalHapticEngine.getInstance(appContext).playIfEnabled(appContext, pattern, intensity, throttleMs)
-    }
-
-    override fun onJump() = haptic(PetalHapticEngine.Pattern.TICK, 0.4f, 40L)
+    override fun onJump() = Unit
 
     override fun onLand() = Unit
 
     override fun onMilestone(score: Int) {
         milestoneToken++
-        haptic(PetalHapticEngine.Pattern.DOUBLE_TICK, 0.75f)
     }
 
     override fun onGameOver(newBest: Boolean) {
@@ -102,7 +97,6 @@ class PetalHopState(private val context: Context) : PetalHopEngine.Events {
             best = engine.best
             prefs.edit().putInt(PetalOfflineGameOverlay.PREF_BEST, engine.best).apply()
         }
-        PetalHapticEngine.getInstance(appContext).playHeavyClick(appContext)
     }
 }
 

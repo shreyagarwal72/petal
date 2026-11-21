@@ -1,5 +1,7 @@
 package com.petal.browser.compose.tabs
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -185,7 +187,7 @@ fun PetalTabGlanceSheet(
                         )
                     }
 
-                    AnimatedVisibility(visible = showWorkspacePicker) {
+                    AnimatedVisibility(visible = showWorkspacePicker, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                         GlancePickerCard(title = "Move to workspace") {
                             availableWorkspaces.forEach { ws ->
                                 val isCurrent = (tab.workspaceId == ws.id) || (tab.workspaceId == null && ws.isDefault)
@@ -217,7 +219,7 @@ fun PetalTabGlanceSheet(
                         }
                     }
 
-                    AnimatedVisibility(visible = showGroupPicker) {
+                    AnimatedVisibility(visible = showGroupPicker, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                         GlancePickerCard(title = "Assign tab group") {
                             if (tab.groupId != null) {
                                 GlancePickerRow(selected = false, onClick = {

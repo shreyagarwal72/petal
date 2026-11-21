@@ -1,5 +1,7 @@
 package com.petal.browser.compose.tabs
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
@@ -48,7 +50,7 @@ fun PetalTabFolderHeader(
 
     val rotation by animateFloatAsState(
         targetValue = if (isCollapsed) -90f else 0f,
-        animationSpec = spring(),
+        animationSpec = PetalSpring.calm(),
         label = "folder_chevron_rot"
     )
 

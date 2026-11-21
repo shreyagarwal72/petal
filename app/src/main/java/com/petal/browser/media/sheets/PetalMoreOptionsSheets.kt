@@ -225,7 +225,6 @@ fun PetalSleepTimerSheet(
                         }
                         FilledTonalButton(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                 onCancelTimer()
                             }
                         ) {
@@ -258,7 +257,6 @@ fun PetalSleepTimerSheet(
                     FilterChip(
                         selected = false,
                         onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                             onStartTimer(min, endOfSong)
                             onDismiss()
                         },
@@ -279,7 +277,6 @@ fun PetalSleepTimerSheet(
                     FilterChip(
                         selected = false,
                         onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                             onStartTimer(min, endOfSong)
                             onDismiss()
                         },
@@ -594,7 +591,7 @@ fun PetalSpeedSelectorSheet(
                     FilterChip(
                         selected = isSelected,
                         onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                             onSpeedSelected(speed)
                             onDismiss()
                         },
@@ -616,7 +613,7 @@ fun PetalSpeedSelectorSheet(
                     FilterChip(
                         selected = isSelected,
                         onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                             onSpeedSelected(speed)
                             onDismiss()
                         },

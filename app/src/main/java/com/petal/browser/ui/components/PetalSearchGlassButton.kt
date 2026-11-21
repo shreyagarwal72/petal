@@ -59,7 +59,7 @@ internal fun PetalSearchGlassButton(
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         delay(140L)
-        enter.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 320f))
+        enter.animateTo(1f, PetalSpring.bouncy())
     }
 
     Box(

@@ -246,7 +246,7 @@ fun PetalSettingsScreen(
                     kotlinx.coroutines.delay(16)
                 }
                 MotionGate.withMotionSuspend("settings_category_push") {
-                    push.animateTo(1f, PetalSpring.containerMorph())
+                    push.animateTo(1f, PetalSpring.calm())
                 }
             }
         }
@@ -257,7 +257,7 @@ fun PetalSettingsScreen(
         activeHeaderCategory = null
         scope.launch {
             MotionGate.withMotionSuspend("settings_category_pop") {
-                push.animateTo(0f, PetalSpring.containerMorph())
+                push.animateTo(0f, PetalSpring.calm())
             }
             pageCategory = null
             currentHighlightId = null
@@ -459,8 +459,8 @@ private fun PetalSettingsAnimatedContent(
         targetState = targetKey,
         modifier = Modifier.fillMaxSize(),
         transitionSpec = {
-            (fadeIn(animationSpec = tween(220)) togetherWith
-                fadeOut(animationSpec = tween(160)))
+            (fadeIn(animationSpec = PetalSpring.calm()) togetherWith
+                fadeOut(animationSpec = PetalSpring.calm()))
         },
         label = "petalSettingsContentTransition"
     ) { category ->

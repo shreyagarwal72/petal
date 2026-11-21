@@ -1,8 +1,11 @@
 package com.petal.browser.ui.containment
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -35,21 +38,21 @@ object PetalMotion {
     const val Standard = 300
     const val Emphasized = 440
 
-    fun <T> spatialFast() = spring<T>(dampingRatio = 0.5f, stiffness = st(Spring.StiffnessMediumLow))
-    fun <T> spatialDefault() = spring<T>(dampingRatio = 0.65f, stiffness = st(Spring.StiffnessLow))
-    fun <T> spatialSlow() = spring<T>(dampingRatio = 0.7f, stiffness = st(Spring.StiffnessVeryLow))
-    fun <T> effectsFast() = spring<T>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = st(Spring.StiffnessMedium))
-    fun <T> effectsDefault() = spring<T>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = st(Spring.StiffnessLow))
-    fun <T> effectsSlow() = spring<T>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = st(Spring.StiffnessVeryLow))
+    fun <T> spatialFast(): FiniteAnimationSpec<T> = PetalSpring.quick()
+    fun <T> spatialDefault(): FiniteAnimationSpec<T> = PetalSpring.calm()
+    fun <T> spatialSlow(): FiniteAnimationSpec<T> = PetalSpring.calm()
+    fun <T> effectsFast(): FiniteAnimationSpec<T> = PetalSpring.calm()
+    fun <T> effectsDefault(): FiniteAnimationSpec<T> = PetalSpring.calm()
+    fun <T> effectsSlow(): FiniteAnimationSpec<T> = PetalSpring.calm()
 
     fun forwardEnter(): EnterTransition = fadeIn(effectsDefault()) + slideInHorizontally(spatialDefault()) { it / 10 } + scaleIn(spatialFast(), initialScale = 0.96f)
     fun forwardExit(): ExitTransition = fadeOut(effectsFast()) + scaleOut(effectsDefault(), targetScale = 0.985f)
     fun backEnter(): EnterTransition = fadeIn(effectsDefault()) + slideInHorizontally(spatialDefault()) { -it / 12 } + scaleIn(spatialFast(), initialScale = 0.96f)
     fun backExit(): ExitTransition = fadeOut(effectsFast()) + slideOutHorizontally(spatialDefault()) { it / 12 } + scaleOut(effectsDefault(), targetScale = 0.985f)
 
-    fun quickTween() = tween<Float>((Quick * s).toInt(), easing = FastOutSlowInEasing)
-    fun standardTween() = tween<Float>((Standard * s).toInt(), easing = FastOutSlowInEasing)
-    fun emphasizedTween() = tween<Float>((Emphasized * s).toInt(), easing = FastOutSlowInEasing)
+    fun quickTween(): FiniteAnimationSpec<Float> = PetalSpring.quick()
+    fun standardTween(): FiniteAnimationSpec<Float> = PetalSpring.calm()
+    fun emphasizedTween(): FiniteAnimationSpec<Float> = PetalSpring.calm()
 }
 
 @Composable

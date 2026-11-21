@@ -1,5 +1,7 @@
 package com.petal.browser.ui.containment
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.animation.core.animateFloatAsState
@@ -93,7 +95,7 @@ private fun rememberBackdropLuminance(backdrop: PetalBackdrop, fallback: Float):
             }
         }
     }
-    val eased by animateFloatAsState(sampled, label = "backdropLuminance")
+    val eased by animateFloatAsState(sampled, animationSpec = PetalSpring.calm(), label = "backdropLuminance")
     return eased
 }
 

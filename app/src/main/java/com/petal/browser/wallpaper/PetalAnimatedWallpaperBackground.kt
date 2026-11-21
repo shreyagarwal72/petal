@@ -10,6 +10,8 @@
 
 package com.petal.browser.wallpaper
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.net.Uri
 import android.os.Build
 import android.view.LayoutInflater
@@ -99,7 +101,7 @@ fun PetalAnimatedWallpaperBackground(
 
     val videoEntranceAlpha by animateFloatAsState(
         targetValue = if (isFirstFrameRendered) 1f else 0f,
-        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+        animationSpec = PetalSpring.calm(),
         label = "LiveWallpaperEntranceAlpha"
     )
 
@@ -305,8 +307,8 @@ fun PetalAnimatedWallpaperBackground(
             // Buffering feedback using ContainedLoadingIndicator with smooth fade-out
             AnimatedVisibility(
                 visible = videoBuffering && !isFirstFrameRendered,
-                enter = fadeIn(tween(200)),
-                exit = fadeOut(tween(300)),
+                enter = fadeIn(PetalSpring.calm()),
+                exit = fadeOut(PetalSpring.calm()),
                 modifier = Modifier.align(Alignment.Center)
             ) {
                 PetalContainedLoadingIndicator(size = 44.dp)

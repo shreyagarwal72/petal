@@ -274,13 +274,13 @@ fun PetalExpressiveScrollBar(
 
     val animatedWidth by animateDpAsState(
         targetValue = if (isInteracting) expandedIndicatorWidth else thickness,
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = PetalSpring.calm(),
         label = "WidthAnimation"
     )
 
     val iconAlpha by animateFloatAsState(
         targetValue = if (isInteracting) 1f else 0f,
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = PetalSpring.calm(),
         label = "IconAlpha"
     )
 
@@ -507,10 +507,7 @@ fun PetalExpressiveScrollBar(
                         if (shouldSmoothJump) {
                             displayedProgress.animateTo(
                                 targetValue = targetProgress,
-                                animationSpec = tween(
-                                    durationMillis = 70,
-                                    easing = FastOutSlowInEasing
-                                )
+                                animationSpec = PetalSpring.quick()
                             )
                         } else {
                             displayedProgress.snapTo(targetProgress)
@@ -543,7 +540,6 @@ fun PetalExpressiveScrollBar(
         LaunchedEffect(activeDragLabel) {
             if (!activeDragLabel.isNullOrBlank()) {
                 if (retainedDragLabel != null && retainedDragLabel != activeDragLabel) {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 }
                 retainedDragLabel = activeDragLabel
             }
@@ -551,17 +547,17 @@ fun PetalExpressiveScrollBar(
 
         val dragLabelAlpha by animateFloatAsState(
             targetValue = if (showDragLabel) 1f else 0f,
-            animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+            animationSpec = PetalSpring.calm(),
             label = "DragLabelAlpha"
         )
         val dragLabelScale by animateFloatAsState(
             targetValue = if (showDragLabel) 1f else 0.82f,
-            animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+            animationSpec = PetalSpring.calm(),
             label = "DragLabelScale"
         )
         val dragLabelSlide by animateDpAsState(
             targetValue = if (showDragLabel) 0.dp else 8.dp,
-            animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+            animationSpec = PetalSpring.calm(),
             label = "DragLabelSlide"
         )
 
@@ -588,7 +584,6 @@ fun PetalExpressiveScrollBar(
                     detectDragGestures(
                         onDragStart = { offset ->
                             isDragging = true
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
 
                             val stats = getScrollStats()
                             val scrollableHeight = stats.scrollableHeight

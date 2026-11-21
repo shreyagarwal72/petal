@@ -75,7 +75,7 @@ fun ExpressiveButtonGroup(
 
     val resolvedMinHeight = height.coerceAtLeast(48.dp)
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-    val haptics = LocalHapticFeedback.current
+    val hapticContext = androidx.compose.ui.platform.LocalContext.current
     val hasSelection = items.any { it.id == selectedId }
 
     Row(
@@ -91,7 +91,7 @@ fun ExpressiveButtonGroup(
             val baseShape = expressiveButtonShape(index, count)
             val pillCorner by animateDpAsState(
                 targetValue = if (isSelected && count > 1) 50.dp else 0.dp,
-                animationSpec = PetalSpring.segment(),
+                animationSpec = PetalSpring.quick(),
                 label = "ExpressiveSegmentPill"
             )
             val shape: Shape = if (isSelected && count > 1) RoundedCornerShape(pillCorner.coerceAtLeast(6.dp)) else baseShape
@@ -101,7 +101,7 @@ fun ExpressiveButtonGroup(
 
             val animatedWeight by animateFloatAsState(
                 targetValue = if (!hasSelection && !isPressed) 1f else if (isActive) 1.15f else 0.88f,
-                animationSpec = PetalSpring.segment(),
+                animationSpec = PetalSpring.bouncy(),
                 label = "ExpressiveSegmentWeight"
             )
 
@@ -137,7 +137,7 @@ fun ExpressiveButtonGroup(
 
             Surface(
                 onClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    if (!isSelected) com.petal.browser.haptics.PetalHapticEngine.getInstance(hapticContext).selectionChanged(hapticContext)
                     onItemSelected(item.id)
                 },
                 modifier = buttonModifier,

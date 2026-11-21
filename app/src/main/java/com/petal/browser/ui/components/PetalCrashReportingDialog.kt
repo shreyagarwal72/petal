@@ -226,7 +226,6 @@ fun PetalCrashRecoveryHost(
                 // Primary Action: Full Width Report on GitHub Button
                 Button(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                         PetalAppLogger.openGitHubCrashIssue(context, crashReport)
                         handleDismiss()
                     },
@@ -264,7 +263,6 @@ fun PetalCrashRecoveryHost(
                 ) {
                     Button(
                         onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.4f)
                             showFullTraceDialog = true
                         },
                         modifier = Modifier
@@ -539,7 +537,7 @@ fun PetalCrashReportingPicker(
                     val segmentShape = com.petal.browser.ui.containment.petalConnectedShape(index, options.size)
                     Button(
                         onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                             onModeSelected(option)
                         },
                         modifier = Modifier

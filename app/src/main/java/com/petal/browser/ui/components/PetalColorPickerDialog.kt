@@ -104,7 +104,7 @@ fun PetalColorPickerDialog(
         sat = hsv[1]; value = hsv[2]
     }
 
-    val animatedColor by animateColorAsState(color, label = "pickerPreview")
+    val animatedColor by animateColorAsState(color, animationSpec = PetalSpring.calm(), label = "pickerPreview")
     val onPreview = if (animatedColor.luminance() > 0.5f) Color.Black else Color.White
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
@@ -227,10 +227,10 @@ private fun TabPills(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier 
     ) {
         PickerTab.entries.forEachIndexed { i, t ->
             val bg by animateColorAsState(
-                if (i == selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent, label = "tabBg"
+                if (i == selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent, animationSpec = PetalSpring.quick(), label = "tabBg"
             )
             val fg by animateColorAsState(
-                if (i == selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, label = "tabFg"
+                if (i == selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, animationSpec = PetalSpring.quick(), label = "tabFg"
             )
             Box(
                 Modifier.weight(1f).height(44.dp).clip(ExpressiveButtonShape).background(bg).clickable { onSelect(i) },

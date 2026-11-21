@@ -1,5 +1,7 @@
 package com.petal.browser.customtabs
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -556,7 +558,7 @@ private fun CustomTabTopBar(
                     // ── Overflow Action Menu ────────────────────────────────
                     val menuRotation by animateFloatAsState(
                         targetValue = if (menuExpanded) 180f else 0f,
-                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                        animationSpec = PetalSpring.calm(),
                         label = "cct_menu_rot"
                     )
 
@@ -659,14 +661,14 @@ private fun CustomTabTopBar(
                 // ── Integrated Browser-style Smooth Loading Bar ────────────
                 val animatedProgress by animateFloatAsState(
                     targetValue = (progress.coerceIn(0, 100)) / 100f,
-                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                    animationSpec = PetalSpring.calm(),
                     label = "cctProgress"
                 )
 
                 AnimatedVisibility(
                     visible = progress in 1..99,
-                    enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
-                    exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                    enter = fadeIn(animationSpec = PetalSpring.calm()),
+                    exit = fadeOut(animationSpec = PetalSpring.calm())
                 ) {
                     LinearProgressIndicator(
                         progress = { animatedProgress },

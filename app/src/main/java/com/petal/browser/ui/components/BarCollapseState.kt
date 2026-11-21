@@ -30,26 +30,73 @@ object BarCollapseState {
     var viewportCollapsed by mutableStateOf(false)
         private set
 
+    /** The one decision-maker for scroll-driven collapse / expand. See [BarScrollDecider]. */
+    @JvmField
+    val scrollDecider = BarScrollDecider()
+
+    /**
+     * True while the Compose viewport owns scroll-driven bar changes, so the legacy
+     * PetalTabViewController scroll dispatcher must not make a second, competing decision.
+     */
+    @Volatile
+    @JvmField
+    var composeViewportOwnsScroll: Boolean = false
+
     /**
      * Uptime (ms) of the last time the page viewport was resized by a bar collapse/expand.
-     * Gecko reports a scroll offset change when its viewport is resized; that is a layout
-     * shift, not the user scrolling, so the scroll handlers ignore events for a short window
-     * after this (see [isViewportSettling]). Without it a collapse re-triggered an expand
-     * and the bars flickered / the page jumped.
+     * Kept for diagnostics only; suppression is driven by the settle state below, not by this.
      */
     @Volatile
     var lastViewportFlipUptimeMs: Long = 0L
         private set
 
+    // ── Gecko viewport settle ────────────────────────────────────────────────
+    // Resizing the viewport makes Gecko reflow and shift its scroll offset, which comes back as
+    // scroll callbacks that look like user input. Instead of a fixed clock, input stays suppressed
+    // until (1) the view reported its new layout and (2) Gecko has been quiet for SETTLE_QUIET_MS
+    // after its last layout or scroll callback. SETTLE_HARD_CAP_MS only stops a lost callback from
+    // suppressing scrolling forever.
+    private const val SETTLE_QUIET_MS = 220L
+    private const val SETTLE_HARD_CAP_MS = 1500L
+    @Volatile private var settleActive = false
+    @Volatile private var settleStartMs = 0L
+    @Volatile private var settleLastActivityMs = 0L
+    @Volatile private var settleSawLayout = false
+
     private fun markViewportFlip(newValue: Boolean) {
         if (newValue != viewportCollapsed) {
-            lastViewportFlipUptimeMs = android.os.SystemClock.uptimeMillis()
+            val now = android.os.SystemClock.uptimeMillis()
+            lastViewportFlipUptimeMs = now
+            settleStartMs = now
+            settleLastActivityMs = now
+            settleSawLayout = false
+            settleActive = true
         }
     }
 
+    /** The page view finished a layout pass (or no layout change was needed) after a viewport flip. */
     @JvmStatic
-    fun isViewportSettling(windowMs: Long = 500L): Boolean =
-        android.os.SystemClock.uptimeMillis() - lastViewportFlipUptimeMs < windowMs
+    fun onViewportLayoutApplied() {
+        if (!settleActive) return
+        settleSawLayout = true
+        settleLastActivityMs = android.os.SystemClock.uptimeMillis()
+    }
+
+    /** Gecko reported a scroll offset while settling: it is still reacting to the resize. */
+    @JvmStatic
+    fun onGeckoScrollWhileSettling() {
+        if (settleActive) settleLastActivityMs = android.os.SystemClock.uptimeMillis()
+    }
+
+    @JvmStatic
+    fun isViewportSettling(): Boolean {
+        if (!settleActive) return false
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - settleStartMs >= SETTLE_HARD_CAP_MS) { settleActive = false; return false }
+        if (!settleSawLayout) return true
+        if (now - settleLastActivityMs >= SETTLE_QUIET_MS) { settleActive = false; return false }
+        return true
+    }
 
     /** Extracted domain of the active web page (e.g. "google.com", "wikipedia.org"). */
     var currentDomain by mutableStateOf("")

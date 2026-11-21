@@ -1,5 +1,7 @@
 package com.petal.browser.ui.components.pullrefresh
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -71,7 +73,7 @@ fun OvercastMorphIndicator(timeline: PullRefreshTimeline) {
         while (true) {
             stepProgress.animateTo(
                 1f,
-                spring(Spring.DampingRatioMediumBouncy, scaledStiffness(Spring.StiffnessLow))
+                PetalSpring.bouncy()
             )
             kotlinx.coroutines.delay(scaledMs(260).toLong())
             step += 1

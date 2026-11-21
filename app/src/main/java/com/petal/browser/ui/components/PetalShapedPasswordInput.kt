@@ -181,10 +181,7 @@ fun PetalShapedPasswordInput(
                             LaunchedEffect(index, value.length) {
                                 scaleAnim.animateTo(
                                     targetValue = 1f,
-                                    animationSpec = androidx.compose.animation.core.spring(
-                                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-                                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
-                                    )
+                                    animationSpec = PetalSpring.calm()
                                 )
                             }
 

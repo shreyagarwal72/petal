@@ -86,7 +86,6 @@ object PetalLensManager {
      */
     @JvmStatic
     fun launchGoogleLensAppOnly(context: Context): Boolean {
-        PetalHapticEngine.getInstance(context).playClick(context)
 
         // 1. Standalone Google Lens app launcher activities
         for (comp in LENS_STANDALONE_COMPONENTS) {
@@ -182,7 +181,6 @@ object PetalLensManager {
      */
     @JvmStatic
     fun launchLensForImageUri(context: Context, imageUri: Uri) {
-        PetalHapticEngine.getInstance(context).playClick(context)
 
         // Ensure URI is hosted from our FileProvider with proper external access
         val sharableUri = prepareSharableImageUri(context, imageUri)
@@ -313,7 +311,6 @@ object PetalLensManager {
     @JvmStatic
     fun searchImageWithGoogleLens(context: Context, imageUrl: String) {
         if (imageUrl.isBlank()) return
-        PetalHapticEngine.getInstance(context).playClick(context)
 
         // If it's already a local/content URI, search directly
         if (imageUrl.startsWith("content://") || imageUrl.startsWith("file://")) {

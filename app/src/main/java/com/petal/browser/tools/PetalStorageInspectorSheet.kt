@@ -172,7 +172,6 @@ fun PetalStorageInspectorSheet(
 
                 FilledTonalButton(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                         refreshData()
                     },
                     shape = RoundedCornerShape(12.dp)
@@ -254,7 +253,6 @@ fun PetalStorageInspectorSheet(
                             position = petalGroupPositionFor(index, filteredList.size),
                             onClick = {
                                 clipboardManager.setText(AnnotatedString("${item.key}=${item.value}"))
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                             },
                             leading = {
                                 Box(
@@ -277,7 +275,6 @@ fun PetalStorageInspectorSheet(
                                 IconButton(
                                     onClick = {
                                         // Purge item
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                         when (selectedType) {
                                             StorageType.COOKIES -> {
                                                 onExecuteJavascript("document.cookie = '${item.key}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';") {
@@ -310,7 +307,6 @@ fun PetalStorageInspectorSheet(
             // Purge All For Site Button
             Button(
                 onClick = {
-                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
                     onExecuteJavascript("""
                         (function() {
                             localStorage.clear();

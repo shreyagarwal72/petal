@@ -17,6 +17,8 @@
 
 package com.petal.browser.ui.components.expressive.sliders
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -87,7 +89,7 @@ fun FancySlider(
 ) {
     val thumbColor by animateColorAsState(
         if (enabled) colors.thumbColor else colors.disabledThumbColor
-    )
+    , animationSpec = PetalSpring.quick())
     val settingsState = LocalSettingsState.current
 
     val thumb: @Composable (CustomSliderState) -> Unit = { sliderState ->
@@ -133,7 +135,7 @@ fun FancySlider(
                                     if (settingsState.drawSliderShadows) {
                                         1.dp
                                     } else 0.dp
-                                ).value,
+                                , animationSpec = PetalSpring.calm()).value,
                                 resultPadding = 0.dp,
                                 borderColor = MaterialTheme.colorScheme
                                     .outlineVariant(
@@ -185,7 +187,7 @@ fun FancyRangeSlider(
 ) {
     val thumbColor by animateColorAsState(
         if (enabled) colors.thumbColor else colors.disabledThumbColor
-    )
+    , animationSpec = PetalSpring.quick())
 
 
     val settingsState = LocalSettingsState.current
@@ -204,7 +206,7 @@ fun FancyRangeSlider(
                                     if (settingsState.drawSliderShadows) {
                                         1.dp
                                     } else 0.dp
-                                ).value,
+                                , animationSpec = PetalSpring.calm()).value,
                                 resultPadding = 0.dp,
                                 borderColor = MaterialTheme.colorScheme
                                     .outlineVariant(

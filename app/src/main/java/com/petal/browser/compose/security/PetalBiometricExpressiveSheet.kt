@@ -11,6 +11,8 @@
 
 package com.petal.browser.compose.security
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.app.Activity
 import android.os.Build
@@ -109,11 +111,6 @@ fun PetalBiometricExpressiveSheet(
                 onSuccess = {
                     isSuccess = true
                     errorMessage = null
-                    PetalHapticEngine.getInstance(context).playIfEnabled(
-                        context,
-                        PetalHapticEngine.Pattern.DOUBLE_CLICK,
-                        0.9f
-                    )
                     val decor = appCompatActivity.window?.decorView
                     if (decor != null) {
                         LiquidRippleEffect.trigger(decor)
@@ -122,11 +119,6 @@ fun PetalBiometricExpressiveSheet(
                 },
                 onError = { err ->
                     errorMessage = err
-                    PetalHapticEngine.getInstance(context).playIfEnabled(
-                        context,
-                        PetalHapticEngine.Pattern.HEAVY_CLICK,
-                        1.0f
-                    )
                 }
             )
         }
@@ -238,8 +230,8 @@ fun PetalBiometricExpressiveSheet(
 
                 AnimatedVisibility(
                     visible = errorMessage != null,
-                    enter = fadeIn(),
-                    exit = fadeOut()
+                    enter = fadeIn(animationSpec = PetalSpring.calm()),
+                    exit = fadeOut(animationSpec = PetalSpring.calm())
                 ) {
                     if (errorMessage != null) {
                         Surface(

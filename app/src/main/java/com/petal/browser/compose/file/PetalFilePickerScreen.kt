@@ -16,6 +16,8 @@
  */
 
 package com.petal.browser.compose.file
+
+import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.PetalButtonGroupItem
@@ -206,7 +208,6 @@ fun PetalFilePickerScreen(
     }
 
     fun requestPermissions() {
-        haptics.playClick(context)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             try {
                 val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
@@ -408,7 +409,6 @@ private fun FilePickerBrowserContent(
     val hasSubOverlay = showSortMenu || isSearching || searchQuery.isNotEmpty() || selectedFiles.isNotEmpty() || canNavigateUp
 
     androidx.activity.compose.BackHandler(enabled = hasSubOverlay) {
-        haptics.playClick(context)
         when {
             showSortMenu -> showSortMenu = false
             selectedFiles.isNotEmpty() -> selectedFiles.clear()
@@ -424,7 +424,7 @@ private fun FilePickerBrowserContent(
     val headerGlassPaneF = com.petal.browser.ui.components.rememberHeaderGlassActive()
     // Search Bar Input
     val headerExtrasF: @Composable () -> Unit = {
-        AnimatedVisibility(visible = isSearching) {
+        AnimatedVisibility(visible = isSearching, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
             val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
             val pickerSearchShape = RoundedCornerShape(16.dp)
             Surface(
@@ -483,7 +483,6 @@ private fun FilePickerBrowserContent(
                     // Not a volume root (we're inside a subfolder) -> nothing selected, all segments neutral.
                     selected = currentDir.absolutePath.takeIf { it in volumePaths } ?: "",
                     onSelect = { path ->
-                        haptics.playClick(context)
                         currentDir = File(path)
                     }
                 )
@@ -491,7 +490,6 @@ private fun FilePickerBrowserContent(
             PickerBreadcrumbs(
                 crumbs = breadcrumbs,
                 onNavigate = { dir ->
-                    haptics.playClick(context)
                     currentDir = dir
                 }
             )
@@ -507,7 +505,6 @@ private fun FilePickerBrowserContent(
             title = if (allowFolderSelection) stringResource(R.string.file_picker_select_folder_title) else stringResource(R.string.file_picker_title),
             subtitle = currentDir.name.ifEmpty { currentDir.absolutePath },
             onBack = {
-                haptics.playClick(context)
                 if (showSortMenu) {
                     showSortMenu = false
                 } else if (selectedFiles.isNotEmpty()) {
@@ -528,7 +525,6 @@ private fun FilePickerBrowserContent(
                     icon = if (isSearching) Icons.Rounded.Close else Icons.Rounded.Search,
                     contentDescription = stringResource(R.string.ui_search),
                     onClick = {
-                        haptics.playClick(context)
                         isSearching = !isSearching
                         if (!isSearching) searchQuery = ""
                     },
@@ -540,7 +536,6 @@ private fun FilePickerBrowserContent(
                         icon = Icons.AutoMirrored.Rounded.Sort,
                         contentDescription = stringResource(R.string.ui_sort),
                         onClick = {
-                            haptics.playClick(context)
                             showSortMenu = true
                         },
                         emphasized = showSortMenu
@@ -636,7 +631,6 @@ private fun FilePickerBrowserContent(
                             PetalGroupListRow(
                                 position = PetalGroupPosition.SINGLE,
                                 onClick = {
-                                    haptics.playClick(context)
                                     currentDir = currentDir.parentFile!!
                                 },
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.5.dp),
@@ -669,7 +663,6 @@ private fun FilePickerBrowserContent(
                             allowMultiple = allowMultiple,
                             position = position,
                             onClick = {
-                                haptics.playClick(context)
                                 if (isDir) {
                                     currentDir = file
                                 } else {
@@ -681,7 +674,6 @@ private fun FilePickerBrowserContent(
                                 }
                             },
                             onPreview = {
-                                haptics.playClick(context)
                                 onPreviewFile?.invoke(file)
                             }
                         )
@@ -726,7 +718,6 @@ private fun FilePickerBrowserContent(
                         }
                         Button(
                             onClick = {
-                                haptics.playClick(context)
                                 onFileSelected(currentDir)
                             },
                             modifier = Modifier.heightIn(min = 48.dp)
@@ -743,7 +734,6 @@ private fun FilePickerBrowserContent(
                         )
                         Button(
                             onClick = {
-                                haptics.playClick(context)
                                 onMultipleFilesSelected?.invoke(selectedFiles.toList())
                             },
                             modifier = Modifier.heightIn(min = 48.dp)

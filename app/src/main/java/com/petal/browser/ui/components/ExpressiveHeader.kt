@@ -249,18 +249,18 @@ fun ExpressiveHeader(
                     androidx.compose.animation.AnimatedVisibility(
                         visible = onBack != null,
                         enter = if (isZenithTransition) {
-                            fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
-                                scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)) +
-                                slideInHorizontally(initialOffsetX = { -it / 2 }, animationSpec = spring(stiffness = Spring.StiffnessLow))
+                            fadeIn(animationSpec = PetalSpring.calm()) +
+                                scaleIn(initialScale = 0.92f, animationSpec = PetalSpring.calm()) +
+                                slideInHorizontally(initialOffsetX = { -it / 2 }, animationSpec = PetalSpring.calm())
                         } else {
                             fadeIn(animationSpec = motion.defaultEffectsSpec()) +
                                 scaleIn(initialScale = 0.92f, animationSpec = motion.defaultSpatialSpec()) +
                                 slideInHorizontally(initialOffsetX = { -it / 2 }, animationSpec = motion.defaultSpatialSpec())
                         },
                         exit = if (isZenithTransition) {
-                            fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
-                                scaleOut(targetScale = 0.92f, animationSpec = spring(stiffness = Spring.StiffnessLow)) +
-                                slideOutHorizontally(targetOffsetX = { -it / 2 }, animationSpec = spring(stiffness = Spring.StiffnessLow))
+                            fadeOut(animationSpec = PetalSpring.calm()) +
+                                scaleOut(targetScale = 0.92f, animationSpec = PetalSpring.calm()) +
+                                slideOutHorizontally(targetOffsetX = { -it / 2 }, animationSpec = PetalSpring.calm())
                         } else {
                             fadeOut(animationSpec = motion.fastEffectsSpec()) +
                                 scaleOut(targetScale = 0.92f) +
@@ -354,13 +354,13 @@ fun ExpressiveHeader(
                             targetState = title to (subtitle ?: ""),
                             transitionSpec = {
                                 if (isZenithTransition) {
-                                    (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
-                                     slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) { it / 4 } +
-                                     scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)))
+                                    (fadeIn(animationSpec = PetalSpring.calm()) +
+                                     slideInVertically(animationSpec = PetalSpring.calm()) { it / 4 } +
+                                     scaleIn(initialScale = 0.92f, animationSpec = PetalSpring.calm()))
                                         .togetherWith(
-                                            fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
-                                            slideOutVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) { -it / 4 } +
-                                            scaleOut(targetScale = 0.92f, animationSpec = spring(stiffness = Spring.StiffnessLow))
+                                            fadeOut(animationSpec = PetalSpring.calm()) +
+                                            slideOutVertically(animationSpec = PetalSpring.calm()) { -it / 4 } +
+                                            scaleOut(targetScale = 0.92f, animationSpec = PetalSpring.calm())
                                         )
                                 } else {
                                     (fadeIn(animationSpec = motion.defaultEffectsSpec()) +
@@ -389,19 +389,19 @@ fun ExpressiveHeader(
                     androidx.compose.animation.AnimatedVisibility(
                         visible = true,
                         enter = if (isZenithTransition) {
-                            fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                                scaleIn(initialScale = 0.7f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)) +
-                                slideInHorizontally(initialOffsetX = { it / 2 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                                expandHorizontally(expandFrom = Alignment.End, animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                            fadeIn(animationSpec = PetalSpring.calm()) +
+                                scaleIn(initialScale = 0.7f, animationSpec = PetalSpring.calm()) +
+                                slideInHorizontally(initialOffsetX = { it / 2 }, animationSpec = PetalSpring.calm()) +
+                                expandHorizontally(expandFrom = Alignment.End, animationSpec = PetalSpring.calm())
                         } else {
                             fadeIn(animationSpec = motion.defaultEffectsSpec()) +
                                 scaleIn(initialScale = 0.92f, animationSpec = motion.defaultSpatialSpec())
                         },
                         exit = if (isZenithTransition) {
-                            fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                                scaleOut(targetScale = 0.7f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                                slideOutHorizontally(targetOffsetX = { it / 2 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                                shrinkHorizontally(shrinkTowards = Alignment.End, animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                            fadeOut(animationSpec = PetalSpring.calm()) +
+                                scaleOut(targetScale = 0.7f, animationSpec = PetalSpring.calm()) +
+                                slideOutHorizontally(targetOffsetX = { it / 2 }, animationSpec = PetalSpring.calm()) +
+                                shrinkHorizontally(shrinkTowards = Alignment.End, animationSpec = PetalSpring.calm())
                         } else {
                             fadeOut(animationSpec = motion.fastEffectsSpec()) +
                                 scaleOut(targetScale = 0.92f)

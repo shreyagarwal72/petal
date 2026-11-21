@@ -106,8 +106,7 @@ fun PetalSwipeActionRow(
     val stage = stageOf(offsetPx, activeActions)
     LaunchedEffect(stage) {
         if (stage > 0) {
-            PetalHapticEngine.getInstance(context)
-                .playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.6f)
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
         }
     }
 
@@ -115,7 +114,7 @@ fun PetalSwipeActionRow(
         animate(
             initialValue = offsetPx,
             targetValue = 0f,
-            animationSpec = PetalSpring.spatial(),
+            animationSpec = PetalSpring.calm(),
         ) { value, _ -> offsetPx = value }
     }
 
@@ -143,7 +142,7 @@ fun PetalSwipeActionRow(
                         animate(
                             initialValue = offsetPx,
                             targetValue = target,
-                            animationSpec = PetalSpring.spatial(),
+                            animationSpec = PetalSpring.calm(),
                         ) { value, _ -> offsetPx = value }
                         action.onTrigger()
                         delay(450)
@@ -176,13 +175,13 @@ fun PetalSwipeActionRow(
                 val role = petalRoleColors(shown.role)
                 val container by animateColorAsState(
                     targetValue = if (shown.destructive) scheme.errorContainer else role.container,
-                    animationSpec = PetalSpring.crossfade(),
+                    animationSpec = PetalSpring.calm(),
                     label = "SwipeRevealContainer",
                 )
                 val onContainer = if (shown.destructive) scheme.onErrorContainer else role.onContainer
                 val iconScale by animateFloatAsState(
                     targetValue = if (stage > 0) 1.15f else 0.85f,
-                    animationSpec = PetalSpring.spatial(),
+                    animationSpec = PetalSpring.calm(),
                     label = "SwipeRevealIconScale",
                 )
                 val fromStart = offsetPx >= 0f

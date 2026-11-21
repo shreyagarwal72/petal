@@ -111,7 +111,6 @@ fun PetalSubtitleConfigSheet(
                 if (hasActiveSubtitles) {
                     TextButton(onClick = {
                         onClearSubtitles()
-                        PetalHapticEngine.getInstance(context).playClick(context)
                     }) {
                         Text("Remove", color = MaterialTheme.colorScheme.error)
                     }

@@ -161,7 +161,6 @@ fun PetalFuelTheCodeSheet(
     fun handleAdComplete() {
         val success = PetalProgressStore.onAdCompleted(ctx)
         if (success) {
-            haptic?.playHeavyClick(ctx)
             viewState = "success"
         } else {
             integrityReason = PetalProgressStore.adBlockReason(ctx) ?: "Please try again later."
@@ -171,7 +170,6 @@ fun PetalFuelTheCodeSheet(
 
     fun handleAdFailed(reason: String) {
         integrityReason = reason
-        haptic?.playHeavyClick(ctx)
         viewState = "noad"
     }
 
@@ -183,7 +181,6 @@ fun PetalFuelTheCodeSheet(
         }
 
         viewState = "loading"
-        haptic?.playClick(ctx)
 
         provider.show(
             activity = act,
@@ -207,7 +204,7 @@ fun PetalFuelTheCodeSheet(
     ) {
         AnimatedContent(
             targetState = viewState,
-            transitionSpec = { fadeIn(PetalSpring.fadeThroughIn()) togetherWith fadeOut(PetalSpring.fadeThroughOut()) },
+            transitionSpec = { fadeIn(PetalSpring.calm()) togetherWith fadeOut(PetalSpring.calm()) },
             label = "quest_content"
         ) { state ->
             Column(
@@ -643,7 +640,7 @@ fun PetalFuelTheCodeSheet(
                         )
                         AnimatedContent(
                             targetState = loadingIndex,
-                            transitionSpec = { fadeIn(PetalSpring.fadeThroughIn()) togetherWith fadeOut(PetalSpring.fadeThroughOut()) },
+                            transitionSpec = { fadeIn(PetalSpring.calm()) togetherWith fadeOut(PetalSpring.calm()) },
                             label = "loading_step"
                         ) { idx ->
                             Text(

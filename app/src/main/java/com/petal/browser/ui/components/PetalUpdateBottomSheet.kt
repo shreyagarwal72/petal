@@ -462,7 +462,6 @@ fun PetalUpdateSheetContent(
 
                 IconButton(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                         onDismiss()
                     },
                     modifier = Modifier
@@ -681,7 +680,6 @@ fun PetalUpdateSheetContent(
                             ) {
                                 Button(
                                     onClick = {
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                         PetalUpdateManager.pauseUpdateDownload(context)
                                     },
                                     modifier = Modifier.weight(1f).heightIn(min = 48.dp),
@@ -697,7 +695,6 @@ fun PetalUpdateSheetContent(
                                 }
                                 Button(
                                     onClick = {
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                         onDismiss()
                                         PetalToast.show(context, "Update downloading in background. You can keep browsing.")
                                     },
@@ -767,12 +764,10 @@ fun PetalUpdateSheetContent(
                             com.petal.browser.ui.containment.PetalActionRow(
                                 confirmText = "Resume",
                                 onConfirm = {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                                     PetalUpdateManager.resumeUpdateDownload(context)
                                 },
                                 dismissText = "Cancel",
                                 onDismiss = {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                     PetalUpdateManager.cancelUpdateDownload(context)
                                 }
                             )
@@ -827,7 +822,6 @@ fun PetalUpdateSheetContent(
 
                             Button(
                                 onClick = {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
                                     PetalUpdateManager.installActiveUpdate(context)
                                 },
                                 shape = RoundedCornerShape(18.dp),
@@ -846,7 +840,6 @@ fun PetalUpdateSheetContent(
                     if (updateInfo.isUpdateAvailable && updateInfo.downloadUrl.isNotBlank()) {
                         Button(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
                                 PetalUpdateManager.startUpdateDownload(
                                     context = context,
                                     downloadUrl = updateInfo.downloadUrl,
@@ -950,7 +943,6 @@ fun PetalUpdateSheetContent(
             if (updateInfo.releaseUrl.isNotBlank()) {
                 FilledTonalButton(
                     onClick = {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                         try {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
                             context.startActivity(intent)
@@ -1160,7 +1152,6 @@ fun PetalChangelogHistorySheetContent(
                                         FilledTonalIconButton(
                                             shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                                             onClick = {
-                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                                 try {
                                                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(rel.releaseUrl))
                                                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

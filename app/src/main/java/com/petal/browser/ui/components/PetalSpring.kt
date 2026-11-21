@@ -76,6 +76,15 @@ object PetalSpring {
         stiffness = scaledStiffness(Spring.StiffnessMediumLow),
     )
 
+    /** Calm: layout moves, reorders, sheets, size changes. Critically damped, no bounce. */
+    fun <T> calm(): FiniteAnimationSpec<T> = spatial()
+
+    /** Quick: fast transitions, press states, snappy actions. */
+    fun <T> quick(): FiniteAnimationSpec<T> = press()
+
+    /** Bouncy: playful, expressive bouncy spatial spring. */
+    fun <T> bouncy(): FiniteAnimationSpec<T> = expressiveBouncySpatial()
+
     /** Element entering the screen. A hint of life, but not wobbly. */
     fun <T> enter(): FiniteAnimationSpec<T> = spring(
         dampingRatio = 0.85f,

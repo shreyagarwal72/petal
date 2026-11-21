@@ -8,6 +8,8 @@
  */
 package com.petal.browser.media.island
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.R
 import androidx.compose.ui.res.stringResource
 
@@ -90,11 +92,11 @@ fun PetalGlassIslandPlayer(
         AnimatedContent(
             targetState = isExpanded,
             transitionSpec = {
-                (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                        scaleIn(initialScale = 0.92f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)))
+                (fadeIn(animationSpec = PetalSpring.calm()) +
+                        scaleIn(initialScale = 0.92f, animationSpec = PetalSpring.calm()))
                     .togetherWith(
-                        fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                                scaleOut(targetScale = 0.92f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                        fadeOut(animationSpec = PetalSpring.calm()) +
+                                scaleOut(targetScale = 0.92f, animationSpec = PetalSpring.calm())
                     )
             },
             label = "GlassIslandExpansion"

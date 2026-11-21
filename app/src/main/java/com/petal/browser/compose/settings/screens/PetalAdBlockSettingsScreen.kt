@@ -12,6 +12,8 @@
 
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.content.Context
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -400,8 +402,8 @@ fun PetalAdBlockSettingsScreen(
                 // ── 3. Protection Mode Selector (When Shield is Active) ──
                 AnimatedVisibility(
                     visible = isShieldEnabled,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
+                    enter = fadeIn(animationSpec = PetalSpring.calm()) + expandVertically(animationSpec = PetalSpring.calm()),
+                    exit = fadeOut(animationSpec = PetalSpring.calm()) + shrinkVertically(animationSpec = PetalSpring.calm())
                 ) {
                     PetalSettingsSection(
                         title = "Protection Level",
@@ -627,8 +629,8 @@ fun PetalAdBlockSettingsScreen(
                 // Expanded Detailed Subscriptions (Only visible when user toggles it open)
                 AnimatedVisibility(
                     visible = showAdvancedLists,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
+                    enter = fadeIn(animationSpec = PetalSpring.calm()) + expandVertically(animationSpec = PetalSpring.calm()),
+                    exit = fadeOut(animationSpec = PetalSpring.calm()) + shrinkVertically(animationSpec = PetalSpring.calm())
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         subscriptions.forEachIndexed { index, sub ->

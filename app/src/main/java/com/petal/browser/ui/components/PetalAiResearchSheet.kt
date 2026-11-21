@@ -533,8 +533,8 @@ fun PetalAiResearchSheet(
                         )
                         AnimatedVisibility(
                             visible = customPromptText.isNotBlank(),
-                            enter = fadeIn() + scaleIn(),
-                            exit = fadeOut() + scaleOut()
+                            enter = fadeIn(animationSpec = PetalSpring.calm()) + scaleIn(animationSpec = PetalSpring.calm()),
+                            exit = fadeOut(animationSpec = PetalSpring.calm()) + scaleOut(animationSpec = PetalSpring.calm())
                         ) {
                             IconButton(onClick = { customPromptText = "" }) {
                                 Icon(
@@ -637,8 +637,8 @@ fun PetalAiResearchSheet(
             // ── Error ──
             AnimatedVisibility(
                 visible = errorMessage != null,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
+                enter = fadeIn(animationSpec = PetalSpring.calm()) + expandVertically(animationSpec = PetalSpring.calm()),
+                exit = fadeOut(animationSpec = PetalSpring.calm()) + shrinkVertically(animationSpec = PetalSpring.calm())
             ) {
                 errorMessage?.let { err ->
                     PetalHeroCard(containerColor = MaterialTheme.colorScheme.errorContainer) {
@@ -681,7 +681,7 @@ fun PetalAiResearchSheet(
             AnimatedVisibility(
                 visible = responseResult != null,
                 enter = fadeIn(animationSpec = androidx.compose.material3.MaterialTheme.motionScheme.defaultEffectsSpec()) + expandVertically(animationSpec = androidx.compose.material3.MaterialTheme.motionScheme.defaultSpatialSpec()),
-                exit = fadeOut() + shrinkVertically()
+                exit = fadeOut(animationSpec = PetalSpring.calm()) + shrinkVertically(animationSpec = PetalSpring.calm())
             ) {
                 responseResult?.let { response ->
                     PetalHeroCard {

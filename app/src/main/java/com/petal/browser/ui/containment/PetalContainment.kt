@@ -1,5 +1,7 @@
 package com.petal.browser.ui.containment
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContent
@@ -323,7 +325,7 @@ fun petalGroupSurfaceColor(): Color {
         isGlass -> baseGlassColor
         else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
-    val color by animateColorAsState(target, label = "petalGroupSurface")
+    val color by animateColorAsState(target, animationSpec = PetalSpring.calm(), label = "petalGroupSurface")
     return color
 }
 
@@ -432,10 +434,7 @@ fun rememberPetalGroupPressScale(
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed) pressedScale else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMediumLow,
-        ),
+        animationSpec = PetalSpring.quick(),
         label = "petalGroupPressScale",
     )
     return scale
@@ -1009,6 +1008,7 @@ fun PetalConnectedButtonGroup(
     modifier: Modifier = Modifier
 ) {
     val haptics = LocalHapticFeedback.current
+    val hapticContext = androidx.compose.ui.platform.LocalContext.current
     var pressedIndex by remember { mutableStateOf<Int?>(null) }
     var clickedIndex by remember { mutableStateOf<Int?>(null) }
 
@@ -1048,14 +1048,14 @@ fun PetalConnectedButtonGroup(
 
             val animatedWeight by animateFloatAsState(
                 targetValue = targetWeight,
-                animationSpec = com.petal.browser.ui.components.PetalSpring.segment(),
+                animationSpec = com.petal.browser.ui.components.PetalSpring.quick(),
                 label = "connectedButtonWeight"
             )
 
             Surface(
                 onClick = {
                     clickedIndex = index
-                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    if (!selected) com.petal.browser.haptics.PetalHapticEngine.getInstance(hapticContext).selectionChanged(hapticContext)
                     onSelect(index)
                 },
                 modifier = Modifier
@@ -1189,7 +1189,7 @@ fun PetalFilterChip(
             selected = selected,
             onClick = {
                 try {
-                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.35f)
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                 } catch (_: Exception) {}
                 onClick()
             },
@@ -1250,7 +1250,6 @@ fun PetalAssistChip(
         AssistChip(
             onClick = {
                 try {
-                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.35f)
                 } catch (_: Exception) {}
                 onClick()
             },
@@ -1300,7 +1299,6 @@ fun PetalSuggestionChip(
         SuggestionChip(
             onClick = {
                 try {
-                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.35f)
                 } catch (_: Exception) {}
                 onClick()
             },
@@ -1353,7 +1351,7 @@ fun PetalInputChip(
             selected = selected,
             onClick = {
                 try {
-                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.35f)
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                 } catch (_: Exception) {}
                 onClick()
             },
@@ -1401,7 +1399,7 @@ fun PetalSelectableOptionCard(title: String, selected: Boolean, onClick: () -> U
     val source = remember { MutableInteractionSource() }
     val scale = rememberPetalGroupPressScale(source)
     val defaultContainer = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh
-    val container by animateColorAsState(if (selected) MaterialTheme.colorScheme.primaryContainer else defaultContainer, label = "petalOptionContainer")
+    val container by animateColorAsState(if (selected) MaterialTheme.colorScheme.primaryContainer else defaultContainer, animationSpec = PetalSpring.quick(), label = "petalOptionContainer")
     val border = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
     Surface(
         onClick = onClick,

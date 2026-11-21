@@ -256,6 +256,14 @@ class PetalTabViewController private constructor(
         pendingScrollUpdate.set(false)
         android.os.Trace.beginSection("PetalTab:handleScrollChanged")
         try {
+            // The Compose viewport decides bar collapse (BarScrollDecider). A second decision maker
+            // here made the bars flip against it.
+            if (com.petal.browser.ui.components.BarCollapseState.composeViewportOwnsScroll) {
+                lastProcessedScrollY = currentScrollY
+                accumulatedScrollY = 0
+                consecutiveDirectionSteps = 0
+                return@Runnable
+            }
             val act = resolveActivity(context) as? com.petal.browser.activity.MainActivity ?: return@Runnable
             val now = android.os.SystemClock.uptimeMillis()
 

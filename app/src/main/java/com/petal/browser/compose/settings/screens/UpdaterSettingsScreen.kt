@@ -314,7 +314,6 @@ fun UpdaterSettingsScreenContent(
                                                 ) {
                                                     FilledTonalButton(
                                                         onClick = {
-                                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                                             PetalUpdateManager.pauseUpdateDownload(context)
                                                         },
                                                         shape = RoundedCornerShape(50.dp),
@@ -365,7 +364,6 @@ fun UpdaterSettingsScreenContent(
                                                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                         Button(
                                                             onClick = {
-                                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                                                 PetalUpdateManager.resumeUpdateDownload(context)
                                                             },
                                                             shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 6.dp, bottomEnd = 6.dp)
@@ -376,7 +374,6 @@ fun UpdaterSettingsScreenContent(
                                                         }
                                                         FilledTonalButton(
                                                             onClick = {
-                                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                                                 PetalUpdateManager.cancelUpdateDownload(context)
                                                             },
                                                             shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
@@ -444,7 +441,6 @@ fun UpdaterSettingsScreenContent(
                                                 }
                                                 Button(
                                                     onClick = {
-                                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
                                                         PetalUpdateManager.installActiveUpdate(context)
                                                     },
                                                     shape = RoundedCornerShape(12.dp)
@@ -476,7 +472,6 @@ fun UpdaterSettingsScreenContent(
                                 } else {
                                     Button(
                                         onClick = {
-                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                             isCheckingUpdate = true
                                             var act: Activity? = null
                                             var ctx = context
@@ -508,7 +503,6 @@ fun UpdaterSettingsScreenContent(
 
                                     FilledTonalButton(
                                         onClick = {
-                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                                             var act: Activity? = null
                                             var ctx = context
                                             while (ctx is ContextWrapper) {
@@ -559,7 +553,6 @@ fun UpdaterSettingsScreenContent(
                         title = stringResource(R.string.ui_export_logs_zip),
                         position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                         onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
                             PetalAppLogger.shareLogsZip(context)
                         }
                     )

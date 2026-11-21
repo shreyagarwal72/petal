@@ -1,5 +1,7 @@
 package com.petal.browser.account
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.net.Uri
 import android.text.format.DateUtils
 import androidx.activity.compose.BackHandler
@@ -405,8 +407,8 @@ fun PetalAccountScreen(
                                     )
                                     AnimatedVisibility(
                                         visible = syncExpanded,
-                                        enter = fadeIn() + expandVertically(),
-                                        exit = fadeOut() + shrinkVertically()
+                                        enter = fadeIn(animationSpec = PetalSpring.calm()) + expandVertically(animationSpec = PetalSpring.calm()),
+                                        exit = fadeOut(animationSpec = PetalSpring.calm()) + shrinkVertically(animationSpec = PetalSpring.calm())
                                     ) {
                                         Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

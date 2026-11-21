@@ -214,7 +214,6 @@ fun AddressBarSettingsScreen(
                         ),
                         selected = if (isMerge) BarPrefs.STYLE_MERGE else BarPrefs.STYLE_CLASSIC,
                         onSelect = { selectedStyle ->
-                            haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                             viewModel.setStyle(selectedStyle)
                             (context as? MainActivity)?.let { act ->
                                 act.applyAddressBarPosition()
@@ -241,7 +240,6 @@ fun AddressBarSettingsScreen(
                         ),
                         selected = if (position.equals("TOP", ignoreCase = true)) "TOP" else "BOTTOM",
                         onSelect = { selectedPos ->
-                            haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                             viewModel.setPosition(selectedPos)
                             (context as? MainActivity)?.applyAddressBarPosition()
                             (context as? MainActivity)?.window?.decorView?.post { (context as? MainActivity)?.applyAddressBarPosition() }
@@ -269,7 +267,6 @@ fun AddressBarSettingsScreen(
                             ),
                             selected = if (BarPrefs.LAYOUT_STACKED.equals(mergeLayout, ignoreCase = true)) BarPrefs.LAYOUT_STACKED else BarPrefs.LAYOUT_SINGLE,
                             onSelect = { selectedLayout ->
-                                haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                 viewModel.setMergeLayout(selectedLayout)
                                 (context as? MainActivity)?.applyAddressBarPosition()
                             }
@@ -329,7 +326,6 @@ fun AddressBarSettingsScreen(
                             val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
                             FilledTonalButton(
                                 onClick = {
-                                    haptics.play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                     showAddActionSheetForLeading = true
                                 },
                                 enabled = totalButtons < BarPrefs.MAX_MERGE_ACTIONS_TOTAL,
@@ -395,7 +391,6 @@ fun AddressBarSettingsScreen(
                             val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
                             TextButton(
                                 onClick = {
-                                    haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                     viewModel.setMergeLeading(BarPrefs.DEFAULT_MERGE_LEADING)
                                     viewModel.setMergeTrailing(BarPrefs.DEFAULT_MERGE_TRAILING)
                                     Toast.makeText(context, "Reset toolbar buttons to defaults", Toast.LENGTH_SHORT).show()
@@ -409,7 +404,6 @@ fun AddressBarSettingsScreen(
 
                             FilledTonalButton(
                                 onClick = {
-                                    haptics.play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                     showAddActionSheetForLeading = false
                                 },
                                 enabled = totalButtons < BarPrefs.MAX_MERGE_ACTIONS_TOTAL,
@@ -508,7 +502,6 @@ fun AddressBarSettingsScreen(
                             ),
                             selected = if (BarPrefs.COLLAPSE_HIDE.equals(collapseStyle, ignoreCase = true)) BarPrefs.COLLAPSE_HIDE else BarPrefs.COLLAPSE_PILL,
                             onSelect = { selectedStyle ->
-                                haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                 viewModel.setCollapseStyle(selectedStyle)
                                 (context as? MainActivity)?.applyAddressBarPosition()
                             }
@@ -647,7 +640,6 @@ fun AddressBarSettingsScreen(
                                         ) else Modifier
                                     )
                                     .clickable {
-                                        haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                                         showAddActionSheetForLeading = null
                                         if (forLeading) {
                                             val list = leadingActions.toMutableList()

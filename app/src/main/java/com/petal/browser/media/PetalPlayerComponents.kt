@@ -1,5 +1,7 @@
 package com.petal.browser.media
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
@@ -146,12 +148,12 @@ fun PetalDoubleTapSeekTriangles(
     LaunchedEffect(isForward) {
         while (true) {
             val step = (duration / 4).toInt()
-            a1.animateTo(1f, animationSpec = tween(step))
-            a2.animateTo(1f, animationSpec = tween(step))
-            a3.animateTo(1f, animationSpec = tween(step))
-            a1.animateTo(0f, animationSpec = tween(step))
-            a2.animateTo(0f, animationSpec = tween(step))
-            a3.animateTo(0f, animationSpec = tween(step))
+            a1.animateTo(1f, animationSpec = PetalSpring.calm())
+            a2.animateTo(1f, animationSpec = PetalSpring.calm())
+            a3.animateTo(1f, animationSpec = PetalSpring.calm())
+            a1.animateTo(0f, animationSpec = PetalSpring.calm())
+            a2.animateTo(0f, animationSpec = PetalSpring.calm())
+            a3.animateTo(0f, animationSpec = PetalSpring.calm())
         }
     }
 
@@ -200,19 +202,13 @@ fun PetalVerticalSlider(
         if (isActive) {
             trackWidthAnim.animateTo(
                 32f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMedium,
-                ),
+                animationSpec = PetalSpring.quick(),
             )
         } else {
             delay(150)
             trackWidthAnim.animateTo(
                 22f,
-                animationSpec = spring(
-                    dampingRatio = 0.45f,
-                    stiffness = Spring.StiffnessLow,
-                ),
+                animationSpec = PetalSpring.calm(),
             )
         }
     }
@@ -244,7 +240,7 @@ fun PetalVerticalSlider(
         ) {
             val animatedFraction by animateFloatAsState(
                 targetValue = percentage,
-                animationSpec = tween(120),
+                animationSpec = PetalSpring.quick(),
                 label = "petal_slider_fraction",
             )
             Box(
@@ -445,12 +441,12 @@ fun PetalSlideToUnlock(
                                 onUnlock()
                             } else {
                                 coroutineScope.launch {
-                                    offsetX.animateTo(0f, tween(250))
+                                    offsetX.animateTo(0f, PetalSpring.calm())
                                 }
                             }
                         },
                         onDragCancel = {
-                            coroutineScope.launch { offsetX.animateTo(0f, tween(250)) }
+                            coroutineScope.launch { offsetX.animateTo(0f, PetalSpring.calm()) }
                         },
                         onHorizontalDrag = { _, dragAmount ->
                             coroutineScope.launch {
@@ -515,13 +511,13 @@ fun PetalSpeedCapsule(
             AnimatedContent(
                 targetState = speedText,
                 transitionSpec = {
-                    (fadeIn(tween(100)) +
-                        scaleIn(initialScale = 0.85f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)) +
-                        slideInVertically(initialOffsetY = { it / 3 }, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                    (fadeIn(PetalSpring.calm()) +
+                        scaleIn(initialScale = 0.85f, animationSpec = PetalSpring.calm()) +
+                        slideInVertically(initialOffsetY = { it / 3 }, animationSpec = PetalSpring.calm())
                     ).togetherWith(
-                        fadeOut(tween(100)) +
-                        scaleOut(targetScale = 1.1f, animationSpec = tween(100)) +
-                        slideOutVertically(targetOffsetY = { -it / 3 }, animationSpec = tween(100))
+                        fadeOut(PetalSpring.calm()) +
+                        scaleOut(targetScale = 1.1f, animationSpec = PetalSpring.calm()) +
+                        slideOutVertically(targetOffsetY = { -it / 3 }, animationSpec = PetalSpring.calm())
                     ).using(SizeTransform(clip = false))
                 },
                 label = "SpeedCapsuleSpring",
@@ -683,8 +679,6 @@ fun PetalAnimatedPlaybackControls(
                     .clickable {
                         lastClicked = PetalPlaybackButtonType.PREVIOUS
                         clickTrigger++
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         coroutineScope.launch {
                             delay(140)
                             onPrevious()
@@ -728,8 +722,6 @@ fun PetalAnimatedPlaybackControls(
                     .clickable {
                         lastClicked = PetalPlaybackButtonType.PLAY_PAUSE
                         clickTrigger++
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         onPlayPause()
                     },
                 contentAlignment = Alignment.Center,
@@ -776,8 +768,6 @@ fun PetalAnimatedPlaybackControls(
                     .clickable {
                         lastClicked = PetalPlaybackButtonType.NEXT
                         clickTrigger++
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         coroutineScope.launch {
                             delay(140)
                             onNext()
@@ -835,8 +825,6 @@ fun PetalPixelPlayPauseButton(
             .clip(shape)
             .then(btnModifier)
             .clickable {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                PetalHapticEngine.getInstance(context).playClick(context)
                 onClick()
             },
         contentAlignment = Alignment.Center,
@@ -887,8 +875,6 @@ fun PetalPixelControlButton(
             .clip(shape)
             .then(btnModifier)
             .clickable {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                PetalHapticEngine.getInstance(context).playClick(context)
                 onClick()
             },
         contentAlignment = Alignment.Center,
@@ -959,12 +945,12 @@ fun PetalToggleSegmentButton(
     val targetBgColor = if (active) activeColor else inactiveColor
     val bgColor by animateColorAsState(
         targetValue = if (enabled) targetBgColor else targetBgColor.copy(alpha = 0.5f),
-        animationSpec = tween(durationMillis = 240),
+        animationSpec = PetalSpring.calm(),
         label = "segmentBg"
     )
     val cornerRadius by animateDpAsState(
         targetValue = if (active) activeCornerRadius else inactiveCornerRadius,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        animationSpec = PetalSpring.calm(),
         label = "segmentCorner"
     )
 
@@ -1025,7 +1011,7 @@ fun PetalBottomToggleRow(
     var favClickTrigger by remember { mutableIntStateOf(0) }
     val favScale by animateFloatAsState(
         targetValue = if (favClickTrigger % 2 == 1) 1.25f else 1.0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        animationSpec = PetalSpring.calm(),
         label = "favScale"
     )
 
@@ -1062,8 +1048,7 @@ fun PetalBottomToggleRow(
                 inactiveContentColor = inactiveContentColor,
                 activeCornerRadius = rowCorners,
                 onClick = {
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    PetalHapticEngine.getInstance(context).playClick(context)
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                     onShuffleToggle()
                 }
             ) {
@@ -1087,8 +1072,7 @@ fun PetalBottomToggleRow(
                 inactiveContentColor = inactiveContentColor,
                 activeCornerRadius = rowCorners,
                 onClick = {
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    PetalHapticEngine.getInstance(context).playClick(context)
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                     onRepeatToggle()
                 }
             ) {
@@ -1111,8 +1095,7 @@ fun PetalBottomToggleRow(
                 activeCornerRadius = rowCorners,
                 onClick = {
                     favClickTrigger++
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    PetalHapticEngine.getInstance(context).playClick(context)
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                     onFavoriteToggle()
                 }
             ) {
@@ -1186,8 +1169,6 @@ fun PetalPlayerHeaderTopBar(
                         else Modifier
                     )
                     .clickable {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         onCollapse()
                     },
                 contentAlignment = Alignment.Center
@@ -1213,8 +1194,6 @@ fun PetalPlayerHeaderTopBar(
                             else Modifier
                         )
                         .clickable {
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            PetalHapticEngine.getInstance(context).playClick(context)
                             onPipClick?.invoke()
                         },
                     contentAlignment = Alignment.Center
@@ -1260,7 +1239,7 @@ fun PetalPlayerHeaderTopBar(
             Box(
                 modifier = Modifier
                     .height(42.dp)
-                    .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessLow))
+                    .animateContentSize(animationSpec = PetalSpring.calm())
                     .clip(routeShape)
                     .background(pillBg)
                     .then(
@@ -1268,8 +1247,6 @@ fun PetalPlayerHeaderTopBar(
                         else Modifier
                     )
                     .clickable {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         onAudioRouteClick()
                     }
                     .padding(horizontal = 12.dp),
@@ -1314,8 +1291,6 @@ fun PetalPlayerHeaderTopBar(
                         else Modifier
                     )
                     .clickable {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        PetalHapticEngine.getInstance(context).playClick(context)
                         onQueueClick()
                     },
                 contentAlignment = Alignment.Center

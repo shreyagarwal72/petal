@@ -215,7 +215,7 @@ fun PetalMediaGrabberSheet(
                                     minHeight = 52.dp,
                                     modifier = Modifier.weight(1f),
                                     onClick = {
-                                        haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                         selectedId = opt.id
                                     }
                                 )
@@ -240,7 +240,6 @@ fun PetalMediaGrabberSheet(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             val opt = selected ?: return@PetalSheetPill
-                            haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                             PetalYtDlpEngine.download(
                                 context = context,
                                 info = l.info,
@@ -285,7 +284,6 @@ fun PetalMediaGrabberSheet(
                         onClick = {
                             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                             cm?.setPrimaryClip(ClipData.newPlainText("Page URL", pageUrl))
-                            haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.5f)
                             PetalToast.show(context, "Link copied")
                         }
                     )

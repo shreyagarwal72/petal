@@ -285,7 +285,6 @@ fun PetalMediaGrabberPopupDialog(
                                             ) {
                                                 Button(
                                                     onClick = {
-                                                        haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                                                         if (onPlayMedia != null) {
                                                             onPlayMedia(item.toPlaybackRequest())
                                                         } else {
@@ -308,7 +307,6 @@ fun PetalMediaGrabberPopupDialog(
 
                                                 FilledTonalIconButton(
                                                     onClick = {
-                                                        haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                                                         PetalVideoPlayerOverlayBridge.launchPreviewPlayer(
                                                             context = context,
                                                             mediaUrl = item.url,
@@ -324,7 +322,6 @@ fun PetalMediaGrabberPopupDialog(
 
                                                 FilledTonalButton(
                                                     onClick = {
-                                                        haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                                                         PetalMediaSniffer.download(context, item, onEnqueued = { onDismiss() })
                                                     },
                                                     modifier = Modifier.weight(1f),
@@ -340,7 +337,6 @@ fun PetalMediaGrabberPopupDialog(
                                                     onClick = {
                                                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                                                         clipboard?.setPrimaryClip(ClipData.newPlainText("Media URL", item.url))
-                                                        haptics.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.5f)
                                                         PetalToast.show(context, "Media link copied")
                                                     },
                                                     shape = RoundedCornerShape(12.dp),

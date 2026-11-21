@@ -17,6 +17,8 @@
 
 package com.petal.browser.ui.components.expressive.switches
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -88,10 +90,7 @@ fun HyperOSSwitch(
     val isHovered by interactionSource.collectIsHoveredAsState()
 
     val springSpec = remember {
-        spring<Dp>(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMedium
-        )
+        PetalSpring.quick<Dp>()
     }
 
     var dragOffset by remember { mutableFloatStateOf(0f) }
@@ -101,7 +100,7 @@ fun HyperOSSwitch(
         } else {
             if (!enabled) 4.dp else if (isPressed || isDragged || isHovered) 3.dp else 4.dp
         } + dragOffset.dp,
-        animationSpec = tween(600, easing = PointToPointEasing)
+        animationSpec = PetalSpring.calm()
     )
 
     val thumbSize by animateDpAsState(
@@ -111,11 +110,11 @@ fun HyperOSSwitch(
 
     val thumbColor by animateColorAsState(
         if (checked) colors.checkedThumbColor(enabled) else colors.uncheckedThumbColor(enabled)
-    )
+    , animationSpec = PetalSpring.quick())
 
     val backgroundColor by animateColorAsState(
         if (checked) colors.checkedTrackColor(enabled) else colors.uncheckedTrackColor(enabled),
-        animationSpec = tween(durationMillis = 200)
+        animationSpec = PetalSpring.calm()
     )
 
     val toggleableModifier = if (onCheckedChange != null) {

@@ -77,20 +77,20 @@ fun ExpressiveSplitButton(
     // Morphing corner radius animation
     val animatedMenuInnerCorner by animateDpAsState(
         targetValue = if (isMenuExpanded) pillRadius else innerRadius,
-        animationSpec = PetalSpring.spatial(),
+        animationSpec = PetalSpring.calm(),
         label = "SplitButtonMenuCorner"
     )
 
     val animatedPrimaryInnerCorner by animateDpAsState(
         targetValue = if (isMenuExpanded) pillRadius else innerRadius,
-        animationSpec = PetalSpring.spatial(),
+        animationSpec = PetalSpring.calm(),
         label = "SplitButtonPrimaryCorner"
     )
 
     // Smooth drop-down arrow rotation
     val arrowRotation by animateFloatAsState(
         targetValue = if (isMenuExpanded) 180f else 0f,
-        animationSpec = PetalSpring.spatial(),
+        animationSpec = PetalSpring.calm(),
         label = "SplitButtonArrowRotation"
     )
 
@@ -132,13 +132,13 @@ fun ExpressiveSplitButton(
 
     val primaryScale by animateFloatAsState(
         targetValue = if (isPrimaryPressed) 0.95f else 1f,
-        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        animationSpec = PetalSpring.quick(),
         label = "SplitButtonPrimaryScale"
     )
 
     val menuScale by animateFloatAsState(
         targetValue = if (isMenuPressed) 0.95f else 1f,
-        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        animationSpec = PetalSpring.quick(),
         label = "SplitButtonMenuScale"
     )
 
@@ -157,12 +157,12 @@ fun ExpressiveSplitButton(
     val menuExpandedActive = isMenuExpanded && expandedColors != null
     val menuContainer by animateColorAsState(
         targetValue = if (menuExpandedActive) expandedColors!!.solid else effectiveContainer,
-        animationSpec = PetalSpring.crossfade(),
+        animationSpec = PetalSpring.calm(),
         label = "SplitButtonMenuContainer"
     )
     val menuContent by animateColorAsState(
         targetValue = if (menuExpandedActive) expandedColors!!.onSolid else contentColor,
-        animationSpec = PetalSpring.crossfade(),
+        animationSpec = PetalSpring.calm(),
         label = "SplitButtonMenuContent"
     )
 

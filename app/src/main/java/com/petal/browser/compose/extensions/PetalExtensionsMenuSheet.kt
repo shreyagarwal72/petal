@@ -239,7 +239,6 @@ private fun ExtensionsMenuSheetContent(
                         modifier = Modifier.size(48.dp),
                         minHeight = 48.dp,
                         onClick = {
-                            haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                             closeThen()
                         }
                     )
@@ -264,7 +263,6 @@ private fun ExtensionsMenuSheetContent(
                         tone = PetalSheetTone.Primary,
                         trailing = { Icon(Icons.Rounded.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                         onClick = {
-                            haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.75f)
                             closeThen { onOpenManager() }
                         }
                     )
@@ -281,7 +279,6 @@ private fun ExtensionsMenuSheetContent(
                             extension = ext,
                             actionState = activeTabActions[ext.id],
                             onActionClick = {
-                                haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.8f)
                                 closeThen {
                                     activity.window.decorView.post {
                                         PetalExtensionManager.triggerBrowserAction(ext.id, activity)
@@ -289,7 +286,6 @@ private fun ExtensionsMenuSheetContent(
                                 }
                             },
                             onSettingsClick = {
-                                haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                                 closeThen {
                                     activity.window.decorView.post {
                                         PetalExtensionManager.openOptionsPage(ext.id, activity)
@@ -314,7 +310,6 @@ private fun ExtensionsMenuSheetContent(
                     tone = PetalSheetTone.Primary,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                         closeThen { onOpenManager() }
                     }
                 )
@@ -324,7 +319,6 @@ private fun ExtensionsMenuSheetContent(
                     tone = PetalSheetTone.Secondary,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                         closeThen {
                             if (activity is com.petal.browser.activity.MainActivity) {
                                 activity.addAlbum("Firefox Add-ons", PetalExtensionManager.amoAndroidBrowseUrl, true)

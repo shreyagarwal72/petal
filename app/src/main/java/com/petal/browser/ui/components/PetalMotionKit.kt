@@ -94,21 +94,10 @@ object PetalInstantMotionScheme : MotionScheme {
 }
 
 /** Material 3 Expressive bouncy spring spec for interactive scaling and spatial settling. */
-val ExpressiveBouncySpring: FiniteAnimationSpec<Float> = spring(
-    dampingRatio = Spring.DampingRatioLowBouncy,
-    stiffness = Spring.StiffnessMediumLow,
-)
+val ExpressiveBouncySpring: FiniteAnimationSpec<Float> get() = PetalSpring.bouncy()
 
 /** Returns an expressive bouncy spring spec for arbitrary types. */
-fun <T> expressiveBouncySpring(): FiniteAnimationSpec<T> = spring(
-    dampingRatio = Spring.DampingRatioLowBouncy,
-    stiffness = Spring.StiffnessMediumLow,
-)
-
-private fun hapticTick(context: android.content.Context, amplitude: Float = 0.45f) {
-    PetalHapticEngine.getInstance(context)
-        .playIfEnabled(context, PetalHapticEngine.Pattern.TICK, amplitude)
-}
+fun <T> expressiveBouncySpring(): FiniteAnimationSpec<T> = PetalSpring.bouncy()
 
 /**
  * The one press modifier: squashes on press with the fast spatial spring, ripple clipped to [shape],
@@ -144,7 +133,6 @@ fun Modifier.petalSpringClick(
             enabled = enabled,
             onLongClick = onLongClick,
             onClick = {
-                hapticTick(context)
                 currentClick()
             },
         )
@@ -189,7 +177,7 @@ fun PetalSwipeRow(
     val shown = remember { MutableTransitionState(true) }
     var fired by remember { mutableStateOf<PetalSwipeAction?>(null) }
 
-    val spring: AnimationSpec<Float> = MaterialTheme.motionScheme.defaultSpatialSpec()
+    val spring: AnimationSpec<Float> = PetalSpring.bouncy()
     val fx = MaterialTheme.motionScheme.fastEffectsSpec<Color>()
     val foldSpatial = MaterialTheme.motionScheme.defaultSpatialSpec<androidx.compose.ui.unit.IntSize>()
     val foldFade = MaterialTheme.motionScheme.fastEffectsSpec<Float>()
@@ -204,7 +192,7 @@ fun PetalSwipeRow(
 
     val dir by remember { derivedStateOf { sign(x) } }
     val armed by remember { derivedStateOf { abs(x) >= trip } }
-    LaunchedEffect(armed) { if (armed) hapticTick(context, 0.6f) }
+    LaunchedEffect(armed) { if (armed) com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context) }
     LaunchedEffect(shown.isIdle, shown.currentState) {
         if (shown.isIdle && !shown.currentState) fired?.onTrigger?.invoke()
     }
@@ -222,8 +210,8 @@ fun PetalSwipeRow(
     AnimatedVisibility(
         visibleState = shown,
         modifier = modifier,
-        exit = shrinkVertically(foldSpatial) + fadeOut(foldFade),
-    ) {
+        exit = shrinkVertically(foldSpatial) + fadeOut(foldFade), enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm())
+) {
         val action = if (dir > 0f) startToEnd else if (dir < 0f) endToStart else null
         val bg by animateColorAsState(
             if (armed && action != null) action.container else cs.surfaceContainerHighest,
@@ -250,14 +238,12 @@ fun PetalSwipeRow(
                         when {
                             act == null || !(abs(x) >= trip || flung) -> settleTo(0f, spring)
                             act.removes -> {
-                                hapticTick(context, 0.8f)
-                                settleTo(sign(x) * width, tween(160, easing = FastOutLinearInEasing)) {
+                                settleTo(sign(x) * width, PetalSpring.calm()) {
                                     fired = act
                                     shown.targetState = false
                                 }
                             }
                             else -> {
-                                hapticTick(context, 0.8f)
                                 act.onTrigger()
                                 settleTo(0f, spring)
                             }

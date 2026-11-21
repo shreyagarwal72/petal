@@ -1,5 +1,7 @@
 package com.petal.browser.setup
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
@@ -649,7 +651,7 @@ internal fun AccessPage(activity: ComponentActivity, sp: SharedPreferences, item
                     modifier = Modifier.fillMaxWidth().height(8.dp),
                     trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
                 )
-                AnimatedVisibility(visible = recommended.isNotEmpty()) {
+                AnimatedVisibility(visible = recommended.isNotEmpty(), enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                     Button(onClick = { request(*recommended.toTypedArray()) }, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Rounded.DoneAll, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
@@ -791,7 +793,7 @@ internal fun SearchPage(
                 position = position
             )
         }
-        AnimatedVisibility(visible = aiOn) {
+        AnimatedVisibility(visible = aiOn, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
             TextField(
                 value = aiKey,
                 onValueChange = {

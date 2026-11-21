@@ -72,12 +72,12 @@ class TabHeroState(startVisible: Boolean) {
 
     companion object {
         /**
-         * Critically damped spring (no bounce, settles in ~360ms). Unlike a fixed tween it is
+         * Critically damped PetalSpring.calm(). Unlike a fixed tween it is
          * interruptible: re-targeting mid-flight (tap during open, back-gesture cancel, quick
          * re-open) keeps the current velocity, so the morph never jerks or restarts.
          */
         fun spec(): AnimationSpec<Float> =
-            PetalSpring.containerMorph()
+            PetalSpring.calm()
     }
 }
 

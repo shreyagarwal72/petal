@@ -412,8 +412,6 @@ fun PetalExpressiveChoiceDialog(
                                         .heightIn(min = 52.dp)
                                         .clickable(enabled = !opt.disabled) {
                                             try {
-                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                                                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.7f)
                                             } catch (_: Exception) {}
 
                                             if (multiple) {

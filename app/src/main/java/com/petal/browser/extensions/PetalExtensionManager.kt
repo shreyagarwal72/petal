@@ -492,6 +492,93 @@ object PetalExtensionManager {
     private val _pendingPopup = MutableStateFlow<PendingPopup?>(null)
     val pendingPopup: StateFlow<PendingPopup?> = _pendingPopup.asStateFlow()
 
+    // ── Popup lifecycle helpers ──────────────────────────────────────────────
+    private val popupLock = Any()
+    @Volatile private var lastPopupOpenUptimeMs = 0L
+    private const val POPUP_REOPEN_DEBOUNCE_MS = 450L
+
+    /** Atomically takes the pending popup (if any) and clears it, so a close can never run twice. */
+    private fun takePendingPopup(): PendingPopup? = synchronized(popupLock) {
+        val current = _pendingPopup.value
+        _pendingPopup.value = null
+        current
+    }
+
+    /** Same extension tapped again within the debounce window: reuse the popup that is already up. */
+    private fun recentPopupFor(extensionId: String): PendingPopup? {
+        val current = _pendingPopup.value ?: return null
+        val age = android.os.SystemClock.uptimeMillis() - lastPopupOpenUptimeMs
+        return if (current.extensionId == extensionId && age in 0 until POPUP_REOPEN_DEBOUNCE_MS) current else null
+    }
+
+    /**
+     * Closes a popup session and hands the page back to the source tab. The source session is never
+     * deactivated while a popup is up, so this only has to make sure it is active again. Every step is
+     * guarded, so calling it for an already-closed session is harmless.
+     */
+    private fun releasePopup(popup: PendingPopup) {
+        stopPopupWatchdog()
+        try {
+            val session = popup.session
+            if (session.isOpen) {
+                session.setActive(false)
+                session.close()
+            }
+        } catch (t: Throwable) {
+            Log.d(TAG, "Popup session close failed", t)
+        }
+        val source = popup.sourceSession ?: return
+        try {
+            val ctx = appContext
+            val visible = if (ctx != null) currentBrowserSession(ctx) else null
+            if (source.isOpen && (visible == null || visible === source)) source.setActive(true)
+        } catch (t: Throwable) {
+            Log.d(TAG, "Failed to reactivate browser session after popup", t)
+        }
+    }
+
+    // ── TEMPORARY diagnostics: main-thread watchdog while a popup is up ──────
+    // Logs the main thread's stack if it stops answering for more than 1.5 s. Remove once the
+    // popup hang is confirmed fixed on the affected phone. Filter logcat with tag "PetalExtensionManager".
+    private val watchdogMain = Handler(Looper.getMainLooper())
+    @Volatile private var watchdogBeat = 0L
+    @Volatile private var watchdogRunning = false
+    private var watchdogThread: Thread? = null
+    private val watchdogBeater = object : Runnable {
+        override fun run() {
+            watchdogBeat = android.os.SystemClock.uptimeMillis()
+            if (watchdogRunning) watchdogMain.postDelayed(this, 250L)
+        }
+    }
+
+    private fun startPopupWatchdog() {
+        stopPopupWatchdog()
+        watchdogRunning = true
+        watchdogBeat = android.os.SystemClock.uptimeMillis()
+        watchdogMain.post(watchdogBeater)
+        watchdogThread = Thread({
+            var reported = false
+            while (watchdogRunning) {
+                try { Thread.sleep(500L) } catch (_: InterruptedException) { return@Thread }
+                val stall = android.os.SystemClock.uptimeMillis() - watchdogBeat
+                if (stall > 1500L && !reported) {
+                    reported = true
+                    Log.w(TAG, "PopupWatchdog: main thread stalled ${stall}ms\n" +
+                        Looper.getMainLooper().thread.stackTrace.joinToString("\n") { "    at $it" })
+                } else if (stall < 500L) {
+                    reported = false
+                }
+            }
+        }, "petal-popup-watchdog").apply { isDaemon = true; start() }
+    }
+
+    private fun stopPopupWatchdog() {
+        watchdogRunning = false
+        watchdogThread?.interrupt()
+        watchdogThread = null
+        watchdogMain.removeCallbacks(watchdogBeater)
+    }
+
     fun interface PopupRequestListener {
         fun onPopupRequest(popup: PendingPopup)
     }
@@ -1186,17 +1273,11 @@ object PetalExtensionManager {
     }
 
     private fun createPopupSession(extension: WebExtension, sourceSession: GeckoSession? = null): GeckoResult<GeckoSession>? {
-        val previousPopup = _pendingPopup.value
-        _pendingPopup.value = null
-        previousPopup?.sourceSession?.let { source ->
-            try { if (source.isOpen) source.setActive(true) } catch (_: Throwable) {}
-        }
-        previousPopup?.session?.let { existing ->
-            try {
-                existing.setActive(false)
-                existing.close()
-            } catch (ignored: Exception) {}
-        }
+        // Rapid repeated taps: hand back the popup that is already up instead of tearing it down
+        // and rebuilding it on every tap.
+        recentPopupFor(extension.id)?.let { return GeckoResult.fromValue(it.session) }
+        val tStart = android.os.SystemClock.uptimeMillis()
+        takePendingPopup()?.let { releasePopup(it) }
         // GeckoView accepts a normal GeckoSession here. Open it before returning so the
         // extension popup can begin loading immediately; delaying open until Compose
         // composition can leave Gecko waiting for the popup host and make the browser
@@ -1252,7 +1333,10 @@ object PetalExtensionManager {
             session = popupSession,
             sourceSession = sourceSession
         )
+        lastPopupOpenUptimeMs = android.os.SystemClock.uptimeMillis()
         _pendingPopup.value = popup
+        startPopupWatchdog()
+        Log.d(TAG, "createPopupSession(${extension.id}) took ${lastPopupOpenUptimeMs - tStart}ms on ${Thread.currentThread().name}")
         notifyPopupRequested(popup)
         return GeckoResult.fromValue(popupSession)
     }
@@ -1297,23 +1381,10 @@ object PetalExtensionManager {
 
     @JvmStatic
     fun dismissPopup() {
-        val popup = _pendingPopup.value ?: return
-        _pendingPopup.value = null
-        popup.session.let { session ->
-            try {
-                session.setActive(false)
-                session.close()
-            } catch (ignored: Exception) {}
-        }
-        popup.sourceSession?.let { source ->
-            try {
-                if (source.isOpen) {
-                    source.setActive(true)
-                }
-            } catch (t: Throwable) {
-                Log.d(TAG, "Failed to reactivate browser session after popup", t)
-            }
-        }
+        // Idempotent: the popup is taken atomically, so a second call (double tap, back plus
+        // window.close(), activity stop) finds nothing and returns.
+        val popup = takePendingPopup() ?: return
+        releasePopup(popup)
     }
 
     /**
@@ -1418,17 +1489,8 @@ object PetalExtensionManager {
     }
 
     private fun openDirectPopup(extension: WebExtension, popupUrl: String, activityContext: Context) {
-        val previousPopup = _pendingPopup.value
-        _pendingPopup.value = null
-        previousPopup?.sourceSession?.let { source ->
-            try { if (source.isOpen) source.setActive(true) } catch (_: Throwable) {}
-        }
-        previousPopup?.session?.let { existing ->
-            try {
-                existing.setActive(false)
-                existing.close()
-            } catch (ignored: Exception) {}
-        }
+        if (recentPopupFor(extension.id) != null) return
+        takePendingPopup()?.let { releasePopup(it) }
         val isPrivateTab = currentBrowserSession(activityContext)?.settings?.usePrivateMode ?: false
         val popupSettings = com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(
             activityContext, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
@@ -1461,9 +1523,12 @@ object PetalExtensionManager {
         val popup = PendingPopup(
             extensionId = extension.id,
             extensionName = extension.metaData.name ?: extension.id,
-            session = popupSession
+            session = popupSession,
+            sourceSession = currentBrowserSession(activityContext)
         )
+        lastPopupOpenUptimeMs = android.os.SystemClock.uptimeMillis()
         _pendingPopup.value = popup
+        startPopupWatchdog()
         notifyPopupRequested(popup)
     }
 
@@ -1543,7 +1608,17 @@ object PetalExtensionManager {
         return null
     }
 
+    // Manifest reads are a zip open on the calling thread, and popup taps reach them on the main
+    // thread. Parse each extension file once; the cache is keyed by location so updates re-read.
+    private val manifestCache = java.util.concurrent.ConcurrentHashMap<String, JSONObject>()
+
     fun getManifest(extension: WebExtension): JSONObject? {
+        val key = extension.location ?: return null
+        manifestCache[key]?.let { return it }
+        return readManifest(extension)?.also { manifestCache[key] = it }
+    }
+
+    private fun readManifest(extension: WebExtension): JSONObject? {
         return try {
             val loc = extension.location ?: return null
             val rawPath = when {

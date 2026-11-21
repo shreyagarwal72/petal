@@ -95,7 +95,6 @@ fun PetalPopupBlockedSheet(
     fun choose(id: String, action: () -> Unit) {
         if (selectedId != null) return
         selectedId = id
-        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.75f)
         scope.launch {
             delay(120)
             onDismiss()

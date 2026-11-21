@@ -17,6 +17,8 @@
 
 package com.petal.browser.ui.components.expressive.switches
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.annotation.SuppressLint
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
@@ -81,16 +83,16 @@ fun ComposeSwitch(
 
     val trackColor by animateColorAsState(
         targetValue = trackColor(enabled, checked, colors)
-    )
+    , animationSpec = PetalSpring.quick())
     val thumbColor by animateColorAsState(
         targetValue = thumbColor(enabled, checked, colors)
-    )
+    , animationSpec = PetalSpring.quick())
     val borderColor by animateColorAsState(
         targetValue = borderColor(enabled, checked, colors)
-    )
+    , animationSpec = PetalSpring.quick())
     val iconColor by animateColorAsState(
         targetValue = iconColor(enabled, checked, colors)
-    )
+    , animationSpec = PetalSpring.quick())
 
     val thumbSize by animateDpAsState(
         targetValue = when {
@@ -98,7 +100,7 @@ fun ComposeSwitch(
             thumbContent != null || checked -> ThumbSize
             else -> UncheckedThumbSize
         }
-    )
+    , animationSpec = PetalSpring.quick())
     val thumbOffset by animateDpAsState(
         targetValue = when {
             pressed && checked -> CheckedThumbOffset - TrackOutlineWidth

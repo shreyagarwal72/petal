@@ -133,7 +133,7 @@ fun PetalResourceSnifferSheet(
                     if (filteredResources.isNotEmpty()) {
                         TextButton(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                 if (selectedIds.size == filteredResources.size) {
                                     selectedIds.clear()
                                 } else {
@@ -300,8 +300,8 @@ fun PetalResourceSnifferSheet(
             // Bottom Batch Action floating bar (Download selected / Copy selected)
             AnimatedVisibility(
                 visible = selectedIds.isNotEmpty(),
-                enter = fadeIn() + expandVertically() + slideInVertically { it / 2 },
-                exit = fadeOut() + shrinkVertically() + slideOutVertically { it / 2 }
+                enter = fadeIn(animationSpec = PetalSpring.calm()) + expandVertically(animationSpec = PetalSpring.calm()) + slideInVertically { it / 2 },
+                exit = fadeOut(animationSpec = PetalSpring.calm()) + shrinkVertically(animationSpec = PetalSpring.calm()) + slideOutVertically { it / 2 }
             ) {
                 val dockShape = RoundedCornerShape(24.dp)
                 Surface(
@@ -364,7 +364,6 @@ fun PetalResourceSnifferSheet(
                                     val urls = filteredResources.filter { selectedIds.contains(it.id) }.joinToString("\n") { it.url }
                                     val cb = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     cb.setPrimaryClip(ClipData.newPlainText("URLs", urls))
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                     PetalToast.show(context, "Copied ${selectedIds.size} links")
                                 }
                             )
@@ -376,7 +375,6 @@ fun PetalResourceSnifferSheet(
                                 onClick = {
                                     val toDownload = filteredResources.filter { selectedIds.contains(it.id) }
                                     PetalNativeSnifferEngine.downloadBatch(context, toDownload)
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                     PetalToast.show(context, "Downloading ${toDownload.size} items")
                                     selectedIds.clear()
                                     onDismiss()
@@ -415,7 +413,7 @@ private fun SniffedResourceRow(
     val itemShape = RoundedCornerShape(30.dp)
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 0.98f else 1.0f,
-        animationSpec = PetalSpring.spatial(),
+        animationSpec = PetalSpring.calm(),
         label = "item_scale"
     )
 

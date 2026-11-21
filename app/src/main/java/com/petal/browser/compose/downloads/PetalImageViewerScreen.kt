@@ -24,6 +24,8 @@
 
 package com.petal.browser.compose.downloads
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
 import android.content.Intent
@@ -363,6 +365,7 @@ fun PetalImageViewerScreen(
     val performDeleteCurrent: () -> Unit = {
         val item = currentEntry?.downloadItem
         if (item != null) {
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
             coroutineScope.launch {
                 val result = snackbarHostState.showSnackbar(
                     message     = "Deleted ${item.fileName}",
@@ -535,11 +538,10 @@ fun PetalImageViewerScreen(
                             isComicMode   = isComicMode,
                             onToggleComic = {
                                 isComicMode = !isComicMode
-                                PetalHapticEngine.getInstance(context).playClick(context)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                             },
                             onCrop        = {
                                 showCropDialog = true
-                                PetalHapticEngine.getInstance(context).playClick(context)
                             },
                             onRotate      = { rotateCurrentEntry() },
                             onDelete      = { performDeleteCurrent() },
@@ -607,7 +609,7 @@ private fun ZoomableImagePage(
     // Rotation animation
     val animatedRotation by animateFloatAsState(
         targetValue   = rotationDeg,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioMediumBouncy),
+        animationSpec = PetalSpring.bouncy(),
         label = "rotation",
     )
 
@@ -621,9 +623,9 @@ private fun ZoomableImagePage(
     val isZoomed = scaleAnim.value > 1.05f
     androidx.activity.compose.BackHandler(enabled = isZoomed) {
         scope.launch {
-            scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
-            offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
-            offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
+            scaleAnim.animateTo(1f, PetalSpring.bouncy())
+            offsetXAnim.animateTo(0f, PetalSpring.bouncy())
+            offsetYAnim.animateTo(0f, PetalSpring.bouncy())
         }
     }
 
@@ -637,16 +639,16 @@ private fun ZoomableImagePage(
                 onDoubleTap = { tapOffset ->
                     scope.launch {
                         if (scaleAnim.value > 1.2f) {
-                            scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
-                            offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
-                            offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
+                            scaleAnim.animateTo(1f, PetalSpring.bouncy())
+                            offsetXAnim.animateTo(0f, PetalSpring.bouncy())
+                            offsetYAnim.animateTo(0f, PetalSpring.bouncy())
                         } else {
                             val targetScale = 2.5f
                             val centreX = size.width / 2f
                             val centreY = size.height / 2f
-                            scaleAnim.animateTo(targetScale, spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium))
-                            offsetXAnim.animateTo(((centreX - tapOffset.x) * (targetScale - 1f)).coerceIn(-centreX, centreX), spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium))
-                            offsetYAnim.animateTo(((centreY - tapOffset.y) * (targetScale - 1f)).coerceIn(-centreY, centreY), spring(Spring.DampingRatioLowBouncy, Spring.StiffnessMedium))
+                            scaleAnim.animateTo(targetScale, PetalSpring.bouncy())
+                            offsetXAnim.animateTo(((centreX - tapOffset.x) * (targetScale - 1f)).coerceIn(-centreX, centreX), PetalSpring.bouncy())
+                            offsetYAnim.animateTo(((centreY - tapOffset.y) * (targetScale - 1f)).coerceIn(-centreY, centreY), PetalSpring.bouncy())
                         }
                     }
                 },
@@ -669,9 +671,9 @@ private fun ZoomableImagePage(
                         offsetYAnim.snapTo(0f)
                     }
                     if (newScale < 1f) {
-                        scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy))
-                        offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
-                        offsetYAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
+                        scaleAnim.animateTo(1f, PetalSpring.bouncy())
+                        offsetXAnim.animateTo(0f, PetalSpring.bouncy())
+                        offsetYAnim.animateTo(0f, PetalSpring.bouncy())
                     }
                 }
             }
@@ -805,7 +807,6 @@ private fun ImageViewerTopBar(
                         .clip(ExpressiveButtonShape)
                         .background(buttonBg)
                         .clickable {
-                            PetalHapticEngine.getInstance(context).playClick(context)
                             onBack()
                         },
                     contentAlignment = Alignment.Center
@@ -866,7 +867,6 @@ private fun ImageViewerTopBar(
                             .clip(ExpressiveButtonShape)
                             .background(buttonBg)
                             .clickable {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 onScanOcr()
                             },
                         contentAlignment = Alignment.Center
@@ -886,7 +886,6 @@ private fun ImageViewerTopBar(
                             .clip(ExpressiveButtonShape)
                             .background(buttonBg)
                             .clickable {
-                                PetalHapticEngine.getInstance(context).playClick(context)
                                 onShare()
                             },
                         contentAlignment = Alignment.Center
@@ -902,7 +901,7 @@ private fun ImageViewerTopBar(
                     // More Menu
                     val menuRotation by animateFloatAsState(
                         targetValue = if (moreMenuExpanded) 180f else 0f,
-                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                        animationSpec = PetalSpring.bouncy(),
                         label = "img_menu_rot"
                     )
                     Box {
@@ -913,7 +912,6 @@ private fun ImageViewerTopBar(
                                 .background(buttonBg)
                                 .graphicsLayer { rotationZ = menuRotation }
                                 .clickable {
-                                    PetalHapticEngine.getInstance(context).playClick(context)
                                     moreMenuExpanded = true
                                 },
                             contentAlignment = Alignment.Center
@@ -1083,7 +1081,6 @@ private fun ExpressivePillActionChip(
             .clip(shape)
             .background(containerColor)
             .clickable {
-                PetalHapticEngine.getInstance(context).playClick(context)
                 onClick()
             }
             .padding(horizontal = 12.dp),
@@ -1123,12 +1120,12 @@ private fun PageIndicatorDots(count: Int, current: Int) {
             val isActive = index == current
             val size by animateFloatAsState(
                 targetValue   = if (isActive) 8f else 5f,
-                animationSpec = spring(stiffness = Spring.StiffnessMedium),
+                animationSpec = PetalSpring.quick(),
                 label = "dotSize",
             )
             val alpha by animateFloatAsState(
                 targetValue   = if (isActive) 1f else 0.45f,
-                animationSpec = tween(180),
+                animationSpec = PetalSpring.calm(),
                 label = "dotAlpha",
             )
             Box(

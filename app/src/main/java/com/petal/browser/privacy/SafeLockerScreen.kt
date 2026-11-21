@@ -11,6 +11,8 @@
 
 package com.petal.browser.privacy
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
@@ -328,7 +330,7 @@ fun SafeLockerScreen(
                         }
 
                         // Search Bar (Animated visibility)
-                        AnimatedVisibility(visible = isSearchActive && isUnlocked) {
+                        AnimatedVisibility(visible = isSearchActive && isUnlocked, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                             val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
                             val lockerSearchShape = RoundedCornerShape(20.dp)
                             TextField(

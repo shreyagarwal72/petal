@@ -1,5 +1,7 @@
 package com.petal.browser.ui.components;
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.AnimatedContent;
 import androidx.compose.animation.ContentTransform;
 import androidx.compose.animation.ExperimentalAnimationApi;
@@ -28,11 +30,11 @@ fun AnimatedCounterBadge(
         targetState = count,
         transitionSpec = {
             if (targetState > initialState) {
-                slideInVertically { height -> height } + fadeIn() with
-                slideOutVertically { height -> -height } + fadeOut()
+                slideInVertically { height -> height } + fadeIn(animationSpec = PetalSpring.calm()) with
+                slideOutVertically { height -> -height } + fadeOut(animationSpec = PetalSpring.calm())
             } else {
-                slideInVertically { height -> -height } + fadeIn() with
-                slideOutVertically { height -> height } + fadeOut()
+                slideInVertically { height -> -height } + fadeIn(animationSpec = PetalSpring.calm()) with
+                slideOutVertically { height -> height } + fadeOut(animationSpec = PetalSpring.calm())
             }
         },
         label = "animatedBadgeCounter"

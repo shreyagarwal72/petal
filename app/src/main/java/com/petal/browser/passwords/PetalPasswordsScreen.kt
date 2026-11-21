@@ -1,5 +1,7 @@
 package com.petal.browser.passwords
 
+import com.petal.browser.ui.components.PetalSpring
+
 import android.app.KeyguardManager
 import android.content.ClipData
 import android.content.ClipDescription
@@ -109,6 +111,9 @@ fun PetalPasswordsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     var credentials by remember { mutableStateOf(emptyList<PetalCredential>()) }
+    // False until the vault's first load completes; drives the loading skeleton.
+    var credentialsLoaded by remember { mutableStateOf(false) }
+    val showCredentialSkeleton = com.petal.browser.ui.components.rememberSkeletonVisible(!credentialsLoaded)
     var neverSaveDomains by remember { mutableStateOf(emptySet<String>()) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedSortMode by remember { mutableIntStateOf(0) } // 0: Domain, 1: Recently Updated, 2: Favorites
@@ -137,6 +142,7 @@ fun PetalPasswordsScreen(
 
     fun reloadData() {
         credentials = PetalCredentialVault.getAll()
+        credentialsLoaded = true
         neverSaveDomains = PetalCredentialVault.getNeverSaveDomains(context)
         isWriteBlocked = PetalCredentialVault.isWriteBlocked()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -160,6 +166,7 @@ fun PetalPasswordsScreen(
         PetalCredentialVault.init(context)
         if (PetalPasswordTermsManager.shouldShow(context)) {
             showTermsDialog = true
+            credentialsLoaded = true
         } else {
             reloadData()
         }
@@ -237,7 +244,6 @@ fun PetalPasswordsScreen(
                 reloadData()
                 isAddingNew = false
                 showAddEditDialog = null
-                haptic.playClick(context)
                 PetalToast.show(context, "Password saved")
             }
         )
@@ -257,7 +263,6 @@ fun PetalPasswordsScreen(
                 PetalCredentialVault.delete(cred.id)
                 reloadData()
                 selectedCredentialForDetails = null
-                haptic.playClick(context)
                 PetalToast.show(context, "Password deleted")
             }
         )
@@ -343,7 +348,6 @@ fun PetalPasswordsScreen(
                                                 statusActive = !isWriteBlocked,
                                                 actionLabel = if (isAutofillEnabled) "Autofill Enabled" else "Set up Autofill",
                                                 onActionClick = {
-                                                    haptic.playClick(context)
                                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                                         try {
                                                             val intent = Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE).apply {
@@ -373,7 +377,6 @@ fun PetalPasswordsScreen(
                                                 options = mainTabs,
                                                 selected = selectedMainTab,
                                                 onSelect = { tab ->
-                                                    haptic.playClick(context)
                                                     selectedMainTab = tab
                                                 },
                                                 modifier = Modifier.fillMaxWidth()
@@ -429,7 +432,6 @@ fun PetalPasswordsScreen(
                                                                 iconContainer = MaterialTheme.colorScheme.primaryContainer,
                                                                 iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
                                                                 onClick = {
-                                                                    haptic.playClick(context)
                                                                     isAddingNew = true
                                                                 }
                                                             )
@@ -441,7 +443,6 @@ fun PetalPasswordsScreen(
                                                                 iconContainer = MaterialTheme.colorScheme.secondaryContainer,
                                                                 iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
                                                                 onClick = {
-                                                                    haptic.playClick(context)
                                                                     showImportSheet = true
                                                                 }
                                                             )
@@ -453,7 +454,6 @@ fun PetalPasswordsScreen(
                                                                 iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
                                                                 iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
                                                                 onClick = {
-                                                                    haptic.playClick(context)
                                                                     showExportDialog = true
                                                                 }
                                                             )
@@ -485,7 +485,18 @@ fun PetalPasswordsScreen(
                                                 }
                                             }
 
-                                            if (groupedLogins.isEmpty()) {
+                                            if (showCredentialSkeleton) {
+                                                item(key = "credential_skeleton") {
+                                                    com.petal.browser.ui.components.PetalSkeletonList(
+                                                        modifier = Modifier.animateItem(
+                                                            fadeInSpec = null,
+                                                            placementSpec = null,
+                                                            fadeOutSpec = com.petal.browser.ui.components.PetalSpring.calm()
+                                                        ),
+                                                        rows = 6
+                                                    )
+                                                }
+                                            } else if (groupedLogins.isEmpty()) {
                                                 item {
                                                     PetalHeroCard(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
                                                         Column(
@@ -535,7 +546,7 @@ fun PetalPasswordsScreen(
                                                             onToggleFavorite = { cred ->
                                                                 PetalCredentialVault.toggleFavorite(cred.id)
                                                                 reloadData()
-                                                                haptic.playClick(context)
+                                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                                             }
                                                         )
                                                     }
@@ -586,7 +597,6 @@ fun PetalPasswordsScreen(
                                                                     IconButton(onClick = {
                                                                         PetalCredentialVault.removeNeverSaveDomain(context, domainItem)
                                                                         reloadData()
-                                                                        haptic.playClick(context)
                                                                         coroutineScope.launch {
                                                                             val res = snackbarHostState.showSnackbar(
                                                                                 message = "Removed $domainItem from ignored list",
@@ -665,7 +675,6 @@ fun PetalPasswordsScreen(
                                                 label = "Add Login",
                                                 icon = Icons.Rounded.Add,
                                                 onPrimaryClick = {
-                                                    haptic.playClick(context)
                                                     addMenuExpanded = false
                                                     isAddingNew = true
                                                 },
@@ -781,7 +790,6 @@ private fun VaultSecurityAuditSection(
 
                     FilledTonalButton(
                         onClick = {
-                            haptic.playClick(context)
                             isAuditing = true
                             var checked = 0
                             val total = credentials.size
@@ -940,13 +948,11 @@ private fun PasswordGeneratorSection(
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = {
-                            haptic.playClick(context)
                             onRegenerate()
                         }) {
                             Icon(Icons.Rounded.Refresh, contentDescription = "Regenerate")
                         }
                         IconButton(onClick = {
-                            haptic.playClick(context)
                             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                             val clip = ClipData.newPlainText("Password", generatedPassword).apply {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -973,7 +979,7 @@ private fun PasswordGeneratorSection(
                         FilterChip(
                             selected = genPreset == preset,
                             onClick = {
-                                haptic.playClick(context)
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                 onPresetChange(preset)
                             },
                             label = { Text(preset.displayName.split(" ")[0]) },
@@ -1250,7 +1256,6 @@ private fun PasswordDetailsSheet(
                         onClick = {
                             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             cm.setPrimaryClip(ClipData.newPlainText("Username", credential.username))
-                            haptic.playClick(context)
                             PetalToast.show(context, "Username copied")
                         }
                     ) {
@@ -1282,7 +1287,6 @@ private fun PasswordDetailsSheet(
                     }
                     Row {
                         IconButton(onClick = {
-                            haptic.playClick(context)
                             if (!isPasswordVisible) {
                                 requestAuth("reveal password") {
                                     isPasswordVisible = true
@@ -1300,7 +1304,6 @@ private fun PasswordDetailsSheet(
                         IconButton(
                             onClick = {
                                 requestAuth("copy password") {
-                                    haptic.playClick(context)
                                     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     val clip = ClipData.newPlainText("Password", credential.password).apply {
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -1352,7 +1355,6 @@ private fun PasswordDetailsSheet(
             val checkBtnShape = RoundedCornerShape(50.dp)
             FilledTonalButton(
                 onClick = {
-                    haptic.playClick(context)
                     breachState = BreachState.Checking
                     PasswordBreachAuditManager.checkPassword(credential.password) { isPwned, count ->
                         Handler(Looper.getMainLooper()).post {
@@ -1565,7 +1567,6 @@ private fun PasswordEditSheet(
             ) {
                 FilledTonalButton(
                     onClick = {
-                        haptic.playClick(context)
                         password = if (selectedPreset == PetalPasswordGenerator.Preset.CUSTOM) {
                             PetalPasswordGenerator.generate(
                                 length = customLength.toInt(),
@@ -1591,7 +1592,7 @@ private fun PasswordEditSheet(
                 }
             }
 
-            AnimatedVisibility(visible = showGeneratorOptions) {
+            AnimatedVisibility(visible = showGeneratorOptions, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1611,7 +1612,7 @@ private fun PasswordEditSheet(
                                 selected = selectedPreset == preset,
                                 onClick = {
                                     selectedPreset = preset
-                                    haptic.playClick(context)
+                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                 },
                                 label = { Text(preset.name.lowercase().replaceFirstChar { it.uppercaseChar() }, fontSize = 11.sp) },
                                 border = null

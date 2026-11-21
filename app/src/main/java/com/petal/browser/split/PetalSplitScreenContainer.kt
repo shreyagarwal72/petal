@@ -1,5 +1,7 @@
 package com.petal.browser.split
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
 import androidx.compose.animation.core.animateFloatAsState
@@ -65,7 +67,7 @@ fun PetalSplitScreenContainer(
     }
 
     var splitRatio by remember { mutableFloatStateOf(0.5f) }
-    val animatedSplitRatio by animateFloatAsState(targetValue = splitRatio, label = "splitRatio")
+    val animatedSplitRatio by animateFloatAsState(targetValue = splitRatio, animationSpec = PetalSpring.calm(), label = "splitRatio")
 
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         val totalWidth = maxWidth
@@ -111,7 +113,6 @@ fun PetalSplitScreenContainer(
                         }
                     },
                     onReset = {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                         splitRatio = 0.5f
                     }
                 )
@@ -174,7 +175,6 @@ fun PetalSplitScreenContainer(
                         }
                     },
                     onReset = {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                         splitRatio = 0.5f
                     }
                 )

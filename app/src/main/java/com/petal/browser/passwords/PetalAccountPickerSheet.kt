@@ -230,7 +230,6 @@ private fun AccountPickerSheetContent(
                                     .fillMaxWidth()
                                     .clip(itemShape)
                                     .clickable {
-                                        haptic.playClick(context)
                                         onSelect(cred)
                                     }
                             ) {
@@ -294,7 +293,6 @@ private fun AccountPickerSheetContent(
                 ) {
                     FilledTonalButton(
                         onClick = {
-                            haptic.playClick(context)
                             onSuggest()
                         },
                         shape = RoundedCornerShape(16.dp),
@@ -317,7 +315,6 @@ private fun AccountPickerSheetContent(
 
                     FilledTonalButton(
                         onClick = {
-                            haptic.playClick(context)
                             onManage()
                         },
                         shape = RoundedCornerShape(16.dp),

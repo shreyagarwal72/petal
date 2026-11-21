@@ -15,6 +15,8 @@
 
 package com.petal.browser.island
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.live.PetalLiveActionBus
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.text.format.Formatter
@@ -310,7 +312,6 @@ fun PetalLiveIsland(
                         onClickLabel = if (expanded) "Collapse live update" else "Expand live update",
                         role = Role.Button
                     ) {
-                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         playBoop()
                         touches++
                         if (expanded) { expanded = false; focusSecondary = false } else expanded = true
@@ -363,7 +364,6 @@ fun PetalLiveIsland(
                         item = secondary,
                         palette = palette,
                         onClick = {
-                            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             focusSecondary = true
                             expanded = true
                         }
@@ -766,7 +766,7 @@ private fun ExpandedCard(
 
                     // Shape morph: round while playing, squircle while paused.
                     val playCorner by animateDpAsState(
-                        targetValue = if (item.isPlaying) 28.dp else 16.dp,
+                        targetValue = if (item.isPlaying) 28.dp else 16.dp, animationSpec = PetalSpring.calm(),
                         label = "playCorner"
                     )
                     FilledIconButton(
@@ -1095,7 +1095,7 @@ internal fun ProgressBadge(
 ) {
     val animated by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = tween(350),
+        animationSpec = PetalSpring.calm(),
         label = "badgeProgress"
     )
     Box(modifier = Modifier.size(size.dp), contentAlignment = Alignment.Center) {
@@ -1115,7 +1115,7 @@ internal fun ProgressBadge(
                 trackColor = palette.track
             )
         }
-        androidx.compose.animation.Crossfade(targetState = icon, animationSpec = tween(220), label = "badgeIcon") { ic ->
+        androidx.compose.animation.Crossfade(targetState = icon, animationSpec = PetalSpring.calm(), label = "badgeIcon") { ic ->
             Icon(
                 imageVector = ic,
                 contentDescription = null,

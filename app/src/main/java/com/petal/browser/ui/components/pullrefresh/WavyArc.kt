@@ -1,5 +1,7 @@
 package com.petal.browser.ui.components.pullrefresh
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -68,7 +70,7 @@ fun WavyArcIndicator(timeline: PullRefreshTimeline) {
     LaunchedEffect(refreshing) {
         gap.animateTo(
             if (refreshing) 70f else 0f,
-            spring(Spring.DampingRatioLowBouncy, scaledStiffness(Spring.StiffnessLow))
+            PetalSpring.bouncy()
         )
     }
 

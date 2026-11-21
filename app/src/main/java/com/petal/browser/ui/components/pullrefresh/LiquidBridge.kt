@@ -1,5 +1,7 @@
 package com.petal.browser.ui.components.pullrefresh
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -59,7 +61,7 @@ fun LiquidBridgeIndicator(timeline: PullRefreshTimeline) {
         if (timeline.animationsActive) {
             detach.animateTo(
                 target,
-                spring(Spring.DampingRatioLowBouncy, scaledStiffness(Spring.StiffnessMediumLow))
+                PetalSpring.bouncy()
             )
         } else {
             detach.snapTo(target)

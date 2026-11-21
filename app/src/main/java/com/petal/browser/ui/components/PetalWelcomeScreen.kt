@@ -207,11 +207,11 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                         val isSelected = pagerState.currentPage == index
                         val width by animateDpAsState(
                             targetValue = if (isSelected) 24.dp else 6.dp,
-                            animationSpec = spring(),
+                            animationSpec = PetalSpring.calm(),
                             label = "indicatorWidth"
                         )
                         val color by animateColorAsState(
-                            targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                            targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), animationSpec = PetalSpring.quick(),
                             label = "indicatorColor"
                         )
                         Box(
@@ -295,15 +295,15 @@ private fun SetupBottomBar(
         else -> listOf(18f, 50f, 18f, 50f)
     }
 
-    val animTopStart by animateFloatAsState(targetShapeValues[0], tween(500, easing = FastOutSlowInEasing), label = "TopStart")
-    val animTopEnd by animateFloatAsState(targetShapeValues[1], tween(500, easing = FastOutSlowInEasing), label = "TopEnd")
-    val animBottomStart by animateFloatAsState(targetShapeValues[2], tween(500, easing = FastOutSlowInEasing), label = "BottomStart")
-    val animBottomEnd by animateFloatAsState(targetShapeValues[3], tween(500, easing = FastOutSlowInEasing), label = "BottomEnd")
+    val animTopStart by animateFloatAsState(targetShapeValues[0], PetalSpring.calm(), label = "TopStart")
+    val animTopEnd by animateFloatAsState(targetShapeValues[1], PetalSpring.calm(), label = "TopEnd")
+    val animBottomStart by animateFloatAsState(targetShapeValues[2], PetalSpring.calm(), label = "BottomStart")
+    val animBottomEnd by animateFloatAsState(targetShapeValues[3], PetalSpring.calm(), label = "BottomEnd")
 
     // Rotation Animation
     val animatedRotation by animateFloatAsState(
         targetValue = pagerState.currentPage * 360f,
-        animationSpec = tween(750, easing = FastOutSlowInEasing),
+        animationSpec = PetalSpring.calm(),
         label = "FabRotation"
     )
 
@@ -328,9 +328,9 @@ private fun SetupBottomBar(
                     .padding(end = 12.dp),
                 transitionSpec = {
                     if (targetState > initialState) {
-                        (slideInVertically { height -> height } + fadeIn()).togetherWith(slideOutVertically { height -> -height } + fadeOut())
+                        (slideInVertically { height -> height } + fadeIn(animationSpec = PetalSpring.calm())).togetherWith(slideOutVertically { height -> -height } + fadeOut(animationSpec = PetalSpring.calm()))
                     } else {
-                        (slideInVertically { height -> -height } + fadeIn()).togetherWith(slideOutVertically { height -> height } + fadeOut())
+                        (slideInVertically { height -> -height } + fadeIn(animationSpec = PetalSpring.calm())).togetherWith(slideOutVertically { height -> height } + fadeOut(animationSpec = PetalSpring.calm()))
                     }.using(SizeTransform(clip = false))
                 },
                 label = "StepTextAnim"
@@ -370,7 +370,7 @@ private fun SetupBottomBar(
                     AnimatedContent(
                         targetState = isLastPage,
                         transitionSpec = {
-                            (fadeIn(tween(200)) + scaleIn(initialScale = 0.8f)).togetherWith(fadeOut(tween(150)) + scaleOut(targetScale = 0.8f))
+                            (fadeIn(PetalSpring.calm()) + scaleIn(initialScale = 0.8f)).togetherWith(fadeOut(PetalSpring.calm()) + scaleOut(targetScale = 0.8f))
                         },
                         label = "FabIconAnim"
                     ) { lastPage ->

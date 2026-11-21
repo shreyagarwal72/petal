@@ -385,7 +385,7 @@ fun PetalTabGridSwitcher(
                     val resistance = 0.6f * Math.pow((1f - progress).toDouble(), 1.5).toFloat()
                     val newOffset = (pullToRevealLockOffset + available.y * resistance).coerceAtMost(maxPullCap)
                     if (newOffset >= maxRevealThreshold && pullToRevealLockOffset < maxRevealThreshold) {
-                        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
+                        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
                     }
                     pullToRevealLockOffset = newOffset
                     return Offset(0f, available.y)
@@ -407,7 +407,7 @@ fun PetalTabGridSwitcher(
 
     val animatedLockPullOffset by animateFloatAsState(
         targetValue = pullToRevealLockOffset,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        animationSpec = PetalSpring.calm(),
         label = "lockPullOffset"
     )
 
@@ -426,7 +426,7 @@ fun PetalTabGridSwitcher(
     val coroutineScope = rememberCoroutineScope()
     val newTabExitProgress by animateFloatAsState(
         targetValue = if (newTabLaunchKey == 0L) 0f else 1f,
-        animationSpec = tween(durationMillis = 180),
+        animationSpec = PetalSpring.calm(),
         label = "tabManagerNewTabExit",
     )
 
@@ -445,6 +445,7 @@ fun PetalTabGridSwitcher(
         undoStack.add(ClosedTabEntry(tab = tab, originalIndex = originalIndex))
         undoBannerKey = System.currentTimeMillis()
         isUndoBannerVisible = true
+        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
         onTabClose(tab)
     }
 
@@ -453,7 +454,6 @@ fun PetalTabGridSwitcher(
             val topEntry = undoStack.removeAt(undoStack.lastIndex)
             pendingRemovalIds.remove(topEntry.tab.id)
             onRestoreTab?.invoke(topEntry.tab)
-            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playClick(context)
             if (undoStack.isNotEmpty()) {
                 undoBannerKey = System.currentTimeMillis()
                 isUndoBannerVisible = true
@@ -474,7 +474,6 @@ fun PetalTabGridSwitcher(
                 isUndoBannerVisible = false
                 pendingRemovalIds.remove(restoredTab.id)
                 onRestoreTab?.invoke(restoredTab)
-                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playClick(context)
             }
         }
     }
@@ -833,7 +832,7 @@ fun PetalTabGridSwitcher(
 
                         val headerMenuRotation by animateFloatAsState(
                             targetValue = if (isOverflowMenuExpanded) 180f else 0f,
-                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                            animationSpec = PetalSpring.calm(),
                             label = "tab_grid_header_menu_rot"
                         )
                         Box {
@@ -1126,18 +1125,18 @@ fun PetalTabGridSwitcher(
                         categoryTransition.AnimatedContent(
                             transitionSpec = {
                                 if (reduceMotion || isLowEnd) {
-                                    fadeIn(animationSpec = PetalSpring.fadeThroughIn()) togetherWith
-                                        fadeOut(animationSpec = PetalSpring.fadeThroughOut())
+                                    fadeIn(animationSpec = PetalSpring.calm()) togetherWith
+                                        fadeOut(animationSpec = PetalSpring.calm())
                                 } else {
                                     val direction = if (targetState.ordinal > initialState.ordinal) 1 else -1
                                     (slideInHorizontally(
-                                        animationSpec = PetalSpring.spatial(),
+                                        animationSpec = PetalSpring.calm(),
                                         initialOffsetX = { fullWidth -> direction * (fullWidth / 3) }
-                                    ) + fadeIn(animationSpec = PetalSpring.fadeThroughIn())) togetherWith
+                                    ) + fadeIn(animationSpec = PetalSpring.calm())) togetherWith
                                     (slideOutHorizontally(
-                                        animationSpec = PetalSpring.spatial(),
+                                        animationSpec = PetalSpring.calm(),
                                         targetOffsetX = { fullWidth -> -direction * (fullWidth / 3) }
-                                    ) + fadeOut(animationSpec = PetalSpring.fadeThroughOut()))
+                                    ) + fadeOut(animationSpec = PetalSpring.calm()))
                                 }
                             },
                             modifier = Modifier.fillMaxSize()
@@ -1325,9 +1324,9 @@ fun PetalTabGridSwitcher(
                                         Box(
                                             modifier = Modifier
                                                 .animateItem(
-                                                    fadeInSpec = PetalSpring.fadeIn(),
-                                                    fadeOutSpec = PetalSpring.fadeOut(),
-                                                    placementSpec = PetalSpring.listReorder()
+                                                    fadeInSpec = PetalSpring.calm(),
+                                                    fadeOutSpec = PetalSpring.calm(),
+                                                    placementSpec = PetalSpring.calm()
                                                 )
                                                 .graphicsLayer {
                                                     val presence = cardPresence.value
@@ -1489,9 +1488,9 @@ fun PetalTabGridSwitcher(
                                         Box(
                                             modifier = Modifier
                                                 .animateItem(
-                                                    fadeInSpec = PetalSpring.fadeIn(),
-                                                    fadeOutSpec = PetalSpring.fadeOut(),
-                                                    placementSpec = PetalSpring.listReorder()
+                                                    fadeInSpec = PetalSpring.calm(),
+                                                    fadeOutSpec = PetalSpring.calm(),
+                                                    placementSpec = PetalSpring.calm()
                                                 )
                                                 .graphicsLayer {
                                                     val presence = cardPresence.value
@@ -1616,8 +1615,8 @@ fun PetalTabGridSwitcher(
             // New tab split button: tap = new tab in the current category, arrow = the other kind.
             AnimatedVisibility(
                 visible = !selectionMode,
-                enter = slideInVertically(initialOffsetY = { it * 2 }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { it * 2 }) + fadeOut(),
+                enter = slideInVertically(initialOffsetY = { it * 2 }) + fadeIn(animationSpec = PetalSpring.calm()),
+                exit = slideOutVertically(targetOffsetY = { it * 2 }) + fadeOut(animationSpec = PetalSpring.calm()),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(end = 16.dp, bottom = 16.dp)
@@ -1676,8 +1675,8 @@ fun PetalTabGridSwitcher(
             // Multi-Select Floating Action Bar (Firefox Parity)
             AnimatedVisibility(
                 visible = selectionMode && selectedTabIds.isNotEmpty(),
-                enter = slideInVertically(initialOffsetY = { it * 2 }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { it * 2 }) + fadeOut(),
+                enter = slideInVertically(initialOffsetY = { it * 2 }) + fadeIn(animationSpec = PetalSpring.calm()),
+                exit = slideOutVertically(targetOffsetY = { it * 2 }) + fadeOut(animationSpec = PetalSpring.calm()),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
@@ -2246,8 +2245,7 @@ private const val TAB_CARD_MIN_SCALE = 0.84f
 private fun tabCloseDurationMs(): Int = (TAB_CLOSE_BASE_MS * PetalSpring.timeScale).toInt().coerceAtLeast(1)
 
 /**
- * 1f = card fully present, 0f = gone. Closing runs a short accelerating tween (Chrome/Brave's
- * "shrink + fade"); a card that shows up after the manager opened springs in from 0f after a
+ * 1f = card fully present, 0f = gone. Closing runs a short accelerating PetalSpring.calm(); a card that shows up after the manager opened springs in from 0f after a
  * short beat, so a replacement home tab appears just after the closed card has left.
  */
 @Composable
@@ -2260,12 +2258,12 @@ private fun rememberTabCardPresence(isClosing: Boolean, popIn: Boolean): State<F
                 if (reduceMotion) presence.snapTo(0f)
                 else presence.animateTo(
                     0f,
-                    tween(durationMillis = tabCloseDurationMs(), easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                    PetalSpring.calm()
                 )
             }
             presence.value < 1f -> {
                 if (presence.value == 0f) kotlinx.coroutines.delay(80L)
-                presence.animateTo(1f, PetalSpring.enter())
+                presence.animateTo(1f, PetalSpring.calm())
             }
         }
     }
@@ -2345,12 +2343,7 @@ private fun PetalTabCard(
             isSelecting -> 1.05f
             else -> 1.0f
         },
-        animationSpec = spring(
-            // Keep tab switching responsive without the large overshoot that made
-            // the grid feel jumpy on lower-refresh-rate devices.
-            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
-            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
-        ),
+        animationSpec = PetalSpring.calm(),
         finishedListener = {
             if (isSelecting) {
                 onTabSelect()
@@ -2433,7 +2426,7 @@ private fun PetalTabCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    AnimatedVisibility(visible = isPinned) {
+                    AnimatedVisibility(visible = isPinned, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                         Icon(
                             Icons.Rounded.PushPin,
                             contentDescription = stringResource(R.string.ui_pinned),
@@ -2449,7 +2442,7 @@ private fun PetalTabCard(
                             modifier = Modifier.size(15.dp)
                         )
                     }
-                    AnimatedVisibility(visible = isSelectionMode && isSelectedForSelection) {
+                    AnimatedVisibility(visible = isSelectionMode && isSelectedForSelection, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                         Surface(
                             shape = ExpressiveButtonShape,
                             color = accentColor,
@@ -2497,7 +2490,7 @@ private fun PetalTabCard(
                     .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center
             ) {
-                Crossfade(targetState = cachedPreview?.takeUnless { it.isRecycled }, label = "tabPreviewLoad") { preview ->
+                Crossfade(targetState = cachedPreview?.takeUnless { it.isRecycled }, animationSpec = PetalSpring.calm(), label = "tabPreviewLoad") { preview ->
                     if (preview != null) {
                         Image(
                             bitmap = preview.asImageBitmap(),
@@ -2743,7 +2736,7 @@ private fun PetalTabListItem(
             .entrance(),
         selected = isSelectedForSelection || tab.isSelected || isDragging || isHoveredForMerge,
         leading = {
-                    Crossfade(targetState = cachedPreview?.takeUnless { it.isRecycled }, label = "tabListThumbnail") { preview ->
+                    Crossfade(targetState = cachedPreview?.takeUnless { it.isRecycled }, animationSpec = PetalSpring.quick(), label = "tabListThumbnail") { preview ->
                         if (preview != null) {
                             Image(
                                 bitmap = preview.asImageBitmap(),
@@ -2781,10 +2774,10 @@ private fun PetalTabListItem(
         },
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                AnimatedVisibility(visible = isPinned) {
+                AnimatedVisibility(visible = isPinned, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                     Icon(Icons.Rounded.PushPin, contentDescription = stringResource(R.string.ui_pinned), tint = accentColor, modifier = Modifier.size(16.dp))
                 }
-                AnimatedVisibility(visible = isSelectionMode && isSelectedForSelection) {
+                AnimatedVisibility(visible = isSelectionMode && isSelectedForSelection, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                     Surface(shape = ExpressiveButtonShape, color = accentColor, modifier = Modifier.size(20.dp)) {
                         Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.ui_selected), tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
                     }
@@ -3240,14 +3233,14 @@ fun ExpressiveTabUndoBanner(
     var dragOffsetX by remember { mutableFloatStateOf(0f) }
     val animatedOffsetX by animateFloatAsState(
         targetValue = dragOffsetX,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        animationSpec = PetalSpring.calm(),
         label = "undoBannerOffsetX"
     )
 
     AnimatedVisibility(
         visible = visible && closedTab != null,
-        enter = slideInVertically(initialOffsetY = { it * 2 }) + fadeIn() + scaleIn(initialScale = 0.92f),
-        exit = slideOutVertically(targetOffsetY = { it * 2 }) + fadeOut() + scaleOut(targetScale = 0.92f),
+        enter = slideInVertically(initialOffsetY = { it * 2 }) + fadeIn(animationSpec = PetalSpring.calm()) + scaleIn(initialScale = 0.92f),
+        exit = slideOutVertically(targetOffsetY = { it * 2 }) + fadeOut(animationSpec = PetalSpring.calm()) + scaleOut(targetScale = 0.92f),
         modifier = modifier
     ) {
         val tabTitle = closedTab?.title.orEmpty().ifBlank { "Tab" }
@@ -3282,8 +3275,8 @@ fun ExpressiveTabUndoBanner(
                 AnimatedContent(
                     targetState = closedTab?.id.orEmpty(),
                     transitionSpec = {
-                        (slideInVertically { height -> -height } + fadeIn())
-                            .togetherWith(slideOutVertically { height -> height } + fadeOut())
+                        (slideInVertically { height -> -height } + fadeIn(animationSpec = PetalSpring.calm()))
+                            .togetherWith(slideOutVertically { height -> height } + fadeOut(animationSpec = PetalSpring.calm()))
                     },
                     label = "tabUndoTextAnimation"
                 ) { _ ->

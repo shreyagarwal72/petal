@@ -1,5 +1,7 @@
 package com.petal.browser.compose.pdf
 
+import com.petal.browser.ui.components.PetalSpring
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
@@ -133,7 +135,7 @@ internal fun PdfReadingOptionsSheet(
 
             AnimatedContent(
                 targetState = page,
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                transitionSpec = { fadeIn(animationSpec = PetalSpring.calm()) togetherWith fadeOut(animationSpec = PetalSpring.calm()) },
                 label = "pdf_reading_page",
                 modifier = Modifier.animateContentSize(),
             ) { current ->

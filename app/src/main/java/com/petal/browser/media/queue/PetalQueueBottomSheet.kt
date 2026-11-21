@@ -204,7 +204,6 @@ fun PetalQueueBottomSheet(
                         FilledTonalIconButton(
                             shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                             onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                 queueManager.clear()
                             },
                             colors = IconButtonDefaults.filledTonalIconButtonColors(
@@ -255,7 +254,6 @@ fun PetalQueueBottomSheet(
                             .padding(vertical = 4.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .clickable {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                 queueManager.currentIndex = index
                                 onTrackSelected(item)
                             },
@@ -326,7 +324,6 @@ fun PetalQueueBottomSheet(
                                 FilledTonalIconButton(
                                     shape = com.petal.browser.ui.theme.ExpressiveButtonShape,
                                     onClick = {
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.3f)
                                         queueManager.removeItem(index)
                                     },
                                     colors = IconButtonDefaults.filledTonalIconButtonColors(

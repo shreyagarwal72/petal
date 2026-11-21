@@ -70,7 +70,7 @@ fun PetalSwitch(
     val isGlass = glassOverride ?: isLiquidGlassEnabled("sp_liquid_glass_containments")
     val type = typeOverride ?: settings.switchType
     val scheme = MaterialTheme.colorScheme
-    val haptics = LocalHapticFeedback.current
+    val hapticContext = androidx.compose.ui.platform.LocalContext.current
     val focus = LocalFocusManager.current
 
     val switchColors = colors ?: SwitchDefaults.colors(
@@ -80,7 +80,7 @@ fun PetalSwitch(
     )
 
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
-        val shadow by animateDpAsState(if (settings.drawSwitchShadows) 1.dp else 0.dp, label = "switchShadow")
+        val shadow by animateDpAsState(if (settings.drawSwitchShadows) 1.dp else 0.dp, animationSpec = PetalSpring.quick(), label = "switchShadow")
         val switchModifier = modifier
             .minimumInteractiveComponentSize()
             .container(
@@ -96,7 +96,7 @@ fun PetalSwitch(
         val onChange: ((Boolean) -> Unit)? = onCheckedChange?.let {
             { value ->
                 it(value)
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(hapticContext).selectionChanged(hapticContext)
                 focus.clearFocus()
             }
         }
@@ -116,7 +116,7 @@ fun PetalSwitch(
         // One key drives the cross-fade: glass wins over the chosen type while Liquid Glass is on.
         AnimatedContent(
             targetState = if (isGlass) null else type,
-            transitionSpec = { fadeIn() togetherWith fadeOut() using SizeTransform(false) },
+            transitionSpec = { fadeIn(animationSpec = PetalSpring.calm()) togetherWith fadeOut(animationSpec = PetalSpring.calm()) using SizeTransform(false) },
             label = "switchType"
         ) { target ->
             when (target) {

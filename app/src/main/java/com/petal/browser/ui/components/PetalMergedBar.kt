@@ -221,7 +221,7 @@ fun PetalMergedBar(
                     .combinedClickable(
                         onClick = {},
                         onLongClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
                             onCustomizeClick()
                         }
                     )
@@ -512,7 +512,6 @@ private fun BarActionButton(
     // Real bounds of this button, so a SEARCH action grows the omnibox out of the tapped icon.
     val buttonBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
     val clickHandler: () -> Unit = {
-        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
         if (action == BarAction.SEARCH) PetalOmniboxOrigin.mark(buttonBounds[0], -1f)
         when (action) {
             BarAction.TABS -> onTabsClick()
@@ -535,7 +534,6 @@ private fun BarActionButton(
 
     val longClickHandler: (() -> Unit)? = if (action.supportsLongPress) {
         {
-            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
             when (action) {
                 BarAction.BACK -> onHistoryClick()
                 BarAction.BOOKMARK -> onBookmarksManagerClick()
@@ -558,10 +556,7 @@ private fun BarActionButton(
     val isPressed by interactionSource.collectIsPressedAsState()
     val pressScale by animateFloatAsState(
         targetValue = if (isPressed) 0.88f else 1.0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
+        animationSpec = PetalSpring.quick(),
         label = "merge_btn_press_scale"
     )
 

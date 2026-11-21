@@ -166,7 +166,6 @@ fun PetalProfileSwitchSheet(
                                 .fillMaxWidth()
                                 .then(if (isGlass) Modifier.liquidGlassChrome(profileShape, enabled = true) else Modifier)
                                 .clickable {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                     onDismissRequest()
                                     onSelectProfile(profile.id)
                                 }
@@ -238,7 +237,6 @@ fun PetalProfileSwitchSheet(
                                 } else if (!profile.isDefault) {
                                     IconButton(
                                         onClick = {
-                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                             PetalProfileManager.deleteProfile(context, profile.id)
                                         },
                                         modifier = Modifier.size(32.dp)
@@ -289,7 +287,6 @@ fun PetalProfileSwitchSheet(
                                 .clip(ExpressiveButtonShape)
                                 .background(Color(android.graphics.Color.parseColor(selectedColorHex)).copy(alpha = 0.2f))
                                 .clickable {
-                                    PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                     avatarPickerLauncher.launch(
                                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                                     )

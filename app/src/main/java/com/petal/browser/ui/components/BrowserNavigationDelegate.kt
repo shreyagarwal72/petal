@@ -164,7 +164,6 @@ object BrowserNavigationDelegate {
                         val clipboard = activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
                         val clip = android.content.ClipData.newPlainText("Clean URL", cleanUrl)
                         clipboard?.setPrimaryClip(clip)
-                        com.petal.browser.haptics.PetalHapticEngine.getInstance(activity).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.7f)
                         PetalToast.show(activity, activity.getString(R.string.ui_clean_url_copied))
                     }
                 }

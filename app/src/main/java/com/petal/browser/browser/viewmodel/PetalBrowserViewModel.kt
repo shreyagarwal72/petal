@@ -844,6 +844,14 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun openSettings(category: SettingsCategory = SettingsCategory.OVERVIEW) {
+        // Settings is composed at zIndex 8f. The tab switcher and AI sheet (9f), the omnibox (10f)
+        // and the dev console (11f) sit above it, so any of them left open would hide Settings
+        // behind itself. Close them through the normal state path (the switcher keeps its own
+        // fade-out hold), then open Settings. Back from Settings therefore lands on the page.
+        if (_isTabSwitcherOpen.value) setTabSwitcherOpen(false)
+        if (_isOmniboxOpen.value) setOmniboxOpen(false)
+        if (_isAiSheetOpen.value) _isAiSheetOpen.value = false
+        if (_isDevConsoleOpen.value) _isDevConsoleOpen.value = false
         _settingsCategory.value = category
         _isMenuOpen.value = false
         _isSettingsOpen.value = true

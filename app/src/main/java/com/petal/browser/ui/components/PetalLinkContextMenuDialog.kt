@@ -85,10 +85,10 @@ fun PetalLinkContextMenuDialog(
         ) {
             AnimatedVisibility(
                 visible = isVisible,
-                enter = fadeIn(PetalSpring.fadeIn()) +
-                        scaleIn(initialScale = 0.85f, animationSpec = PetalSpring.dialog()),
-                exit = fadeOut(PetalSpring.fadeOut()) +
-                        scaleOut(targetScale = 0.9f, animationSpec = PetalSpring.exit())
+                enter = fadeIn(PetalSpring.calm()) +
+                        scaleIn(initialScale = 0.85f, animationSpec = PetalSpring.calm()),
+                exit = fadeOut(PetalSpring.calm()) +
+                        scaleOut(targetScale = 0.9f, animationSpec = PetalSpring.calm())
             ) {
                 com.petal.browser.ui.containment.PetalHeroCard(
                     shape = com.petal.browser.ui.containment.PetalContainmentShapes.Hero,
@@ -201,8 +201,6 @@ private fun DialogContextRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = {
-                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
                 onClick()
             })
             .padding(horizontal = 18.dp, vertical = 10.dp)

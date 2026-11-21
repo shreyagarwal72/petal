@@ -1,5 +1,7 @@
 package com.petal.browser.compose.tabs
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.ui.graphics.asImageBitmap
 import com.petal.browser.predictive.PetalPredictiveBackSurface
@@ -117,7 +119,6 @@ fun PetalRecentlyClosedVault(
                     subtitle = "Verify your identity to access recently closed tabs",
                     onSuccess = {
                         isUnlocked = true
-                        PetalHapticEngine.getInstance(context).playClick(context)
                     },
                     onError = {
                         // Keep locked on error/cancel
@@ -188,8 +189,8 @@ fun PetalRecentlyClosedVault(
                         else -> VaultPage.LOCKED
                     },
                     transitionSpec = {
-                        fadeIn(animationSpec = tween(300)) + scaleIn(initialScale = 0.96f) togetherWith
-                            fadeOut(animationSpec = tween(200))
+                        fadeIn(animationSpec = PetalSpring.calm()) + scaleIn(initialScale = 0.96f) togetherWith
+                            fadeOut(animationSpec = PetalSpring.calm())
                     },
                     label = "VaultContent",
                     modifier = Modifier.weight(1f).fillMaxWidth()
@@ -205,10 +206,8 @@ fun PetalRecentlyClosedVault(
                             },
                             onUnlockAttempt = {
                                 if (PetalRecentlyClosedManager.verifyPassword(context, passwordInput)) {
-                                    PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
                                     isUnlocked = true
                                 } else {
-                                    PetalHapticEngine.getInstance(context).playTick(context)
                                     passwordError = true
                                 }
                             },
@@ -221,7 +220,6 @@ fun PetalRecentlyClosedVault(
                                         subtitle = "Verify your identity to access recently closed tabs",
                                         onSuccess = {
                                             isUnlocked = true
-                                            PetalHapticEngine.getInstance(context).playClick(context)
                                         },
                                         onError = {}
                                     )
@@ -323,7 +321,6 @@ fun PetalRecentlyClosedVault(
                 passwordInput = ""
                 passwordError = false
                 refreshRecords()
-                PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
             },
         )
     }
@@ -769,8 +766,8 @@ private fun VaultSettingsPage(
 
                 AnimatedVisibility(
                     visible = selectedLockType == "password",
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
+                    enter = expandVertically(animationSpec = PetalSpring.calm()) + fadeIn(animationSpec = PetalSpring.calm()),
+                    exit = shrinkVertically(animationSpec = PetalSpring.calm()) + fadeOut(animationSpec = PetalSpring.calm())
                 ) {
                     Surface(
                         shape = petalGroupShape(PetalGroupPosition.SINGLE),

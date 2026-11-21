@@ -96,7 +96,6 @@ fun PetalLiquidButton(
 
     val handleClick = {
         if (enabled) {
-            try { hapticEngine?.play(PetalHapticEngine.Pattern.TICK, 0.35f) } catch (_: Exception) {}
             onClick()
         }
     }
@@ -248,7 +247,6 @@ fun PetalLiquidIconButton(
 
     val handleClick = {
         if (enabled) {
-            try { hapticEngine?.play(PetalHapticEngine.Pattern.TICK, 0.35f) } catch (_: Exception) {}
             onClick()
         }
     }

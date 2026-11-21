@@ -17,6 +17,8 @@
 
 package com.petal.browser.media
 
+import com.petal.browser.ui.components.PetalSpring
+
 import com.petal.browser.ui.containment.PetalSheetPill
 import com.petal.browser.ui.containment.PetalSheetActionRow
 import com.petal.browser.ui.containment.PetalSheetTone
@@ -481,7 +483,7 @@ fun PetalAudioPlayerScreen(
     // Album art pause squish animation (1.0f playing ↔ 0.95f paused)
     val albumArtScale by animateFloatAsState(
         targetValue = if (isPlaying) 1.0f else 0.95f,
-        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+        animationSpec = PetalSpring.calm(),
         label = "albumArtScale"
     )
 
@@ -603,11 +605,9 @@ fun PetalAudioPlayerScreen(
                     PetalPlayerHeaderTopBar(
                         onCollapse = onClose,
                         onQueueClick = {
-                            PetalHapticEngine.getInstance(context).playClick(context)
                             showQueueSheet = true
                         },
                         onAudioRouteClick = {
-                            PetalHapticEngine.getInstance(context).playClick(context)
                             showAudioRouteSheet = true
                         },
                         title = stringResource(R.string.ui_now_playing),
@@ -635,7 +635,6 @@ fun PetalAudioPlayerScreen(
                                 .clip(artShape)
                                 .clickable {
                                     isVinylMode = true
-                                    PetalHapticEngine.getInstance(context).playClick(context)
                                 }
                                 .then(
                                     if (isGlass) Modifier.liquidGlassChrome(artShape, enabled = true, sheenIntensity = 0.85f)
@@ -683,7 +682,6 @@ fun PetalAudioPlayerScreen(
                                 .background(Color(0xFF161618))
                                 .clickable {
                                     isVinylMode = false
-                                    PetalHapticEngine.getInstance(context).playClick(context)
                                 },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -790,7 +788,6 @@ fun PetalAudioPlayerScreen(
                                         else Modifier
                                     )
                                     .clickable {
-                                        PetalHapticEngine.getInstance(context).playClick(context)
                                         showLyricsSheet = true
                                     },
                                 contentAlignment = Alignment.Center
@@ -814,7 +811,6 @@ fun PetalAudioPlayerScreen(
                                         else Modifier
                                     )
                                     .clickable {
-                                        PetalHapticEngine.getInstance(context).playClick(context)
                                         showMoreBottomSheet = true
                                     },
                                 contentAlignment = Alignment.Center
@@ -1025,7 +1021,6 @@ fun PetalAudioPlayerScreen(
                                                 {
                                                     playbackSpeed = speed
                                                     exoPlayer.playbackParameters = PlaybackParameters(speed)
-                                                    PetalHapticEngine.getInstance(context).playClick(context)
                                                 }
                                             )
                                             .padding(horizontal = 18.dp, vertical = 12.dp),
@@ -1050,7 +1045,6 @@ fun PetalAudioPlayerScreen(
                                     modifier = Modifier.weight(0.5f),
                                     onClick = {
                                         showMoreBottomSheet = false
-                                        PetalHapticEngine.getInstance(context).playClick(context)
                                         showSongInfoSheet = true
                                     }
                                 )
@@ -1061,7 +1055,6 @@ fun PetalAudioPlayerScreen(
                                     modifier = Modifier.weight(0.5f),
                                     onClick = {
                                         showMoreBottomSheet = false
-                                        PetalHapticEngine.getInstance(context).playClick(context)
                                         showSleepTimerSheet = true
                                     }
                                 )
@@ -1076,7 +1069,6 @@ fun PetalAudioPlayerScreen(
                                     modifier = Modifier.weight(0.5f),
                                     onClick = {
                                         showMoreBottomSheet = false
-                                        PetalHapticEngine.getInstance(context).playClick(context)
                                         try {
                                             val eqIntent = Intent(android.media.audiofx.AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL).apply {
                                                 putExtra(android.media.audiofx.AudioEffect.EXTRA_AUDIO_SESSION, exoPlayer.audioSessionId)
@@ -1097,7 +1089,6 @@ fun PetalAudioPlayerScreen(
                                     onClick = {
                                         isVinylMode = !isVinylMode
                                         showMoreBottomSheet = false
-                                        PetalHapticEngine.getInstance(context).playClick(context)
                                     }
                                 )
                             }

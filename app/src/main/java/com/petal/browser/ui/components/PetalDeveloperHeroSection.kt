@@ -133,11 +133,9 @@ fun PetalDeveloperHeroSection(
                     .background(MaterialTheme.colorScheme.primaryContainer)
                     .combinedClickable(
                         onClick = {
-                            haptics.playClick(context)
                             onOpenUrl("https://github.com/shreyagarwal72")
                         },
                         onLongClick = {
-                            haptics.playHeavyClick(context)
                             Toast.makeText(context, "Vanshu Agarwal • @shreyagarwal72", Toast.LENGTH_SHORT).show()
                         }
                     ),
@@ -187,7 +185,6 @@ fun PetalDeveloperHeroSection(
                     )
                     Button(
                         onClick = {
-                            haptics.playClick(context)
                             when (i) {
                                 0 -> onOpenUrl("https://my-petal-browser.vercel.app/")
                                 1 -> {
@@ -241,7 +238,6 @@ fun PetalDeveloperHeroSection(
             ) {
                 HeroGlassButton(
                     onClick = {
-                        haptics.playClick(context)
                         onOpenUrl(com.petal.browser.util.PetalWebLinks.SUPPORT)
                     },
                     isGlass = isGlass,
@@ -256,7 +252,6 @@ fun PetalDeveloperHeroSection(
 
                 HeroGlassButton(
                     onClick = {
-                        haptics.playClick(context)
                         isOtherAppsExpanded = !isOtherAppsExpanded
                     },
                     isGlass = isGlass,
@@ -279,8 +274,8 @@ fun PetalDeveloperHeroSection(
             // Projects drawer: one connected list group (outer 22dp, inner 6dp corners)
             AnimatedVisibility(
                 visible = isOtherAppsExpanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+                enter = expandVertically(animationSpec = PetalSpring.calm()) + fadeIn(animationSpec = PetalSpring.calm()),
+                exit = shrinkVertically(animationSpec = PetalSpring.calm()) + fadeOut(animationSpec = PetalSpring.calm())
             ) {
                 val projects = listOf(
                     HeroLink(Icons.Rounded.Public, "Petal Browser", "Official website", PetalBadgeVariant.PRIMARY, com.petal.browser.util.PetalWebLinks.WEBSITE),
@@ -293,7 +288,7 @@ fun PetalDeveloperHeroSection(
                             link = link,
                             shape = heroGroupShape(i, projects.size),
                             isGlass = isGlass,
-                            onClick = { haptics.playClick(context); onOpenUrl(link.url) }
+                            onClick = { onOpenUrl(link.url) }
                         )
                     }
                 }
@@ -310,7 +305,7 @@ fun PetalDeveloperHeroSection(
                         link = link,
                         shape = heroGroupShape(i, links.size),
                         isGlass = isGlass,
-                        onClick = { haptics.playClick(context); onOpenUrl(link.url) }
+                        onClick = { onOpenUrl(link.url) }
                     )
                 }
             }

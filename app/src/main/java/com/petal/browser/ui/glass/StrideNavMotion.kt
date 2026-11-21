@@ -39,7 +39,7 @@ fun Modifier.bouncyClickable(
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed) scaleDown else 1f,
-        animationSpec = PetalSpring.press(),
+        animationSpec = PetalSpring.quick(),
         label = "bouncyPress"
     )
     return graphicsLayer {
@@ -73,20 +73,20 @@ fun Modifier.navIconMotion(selected: Boolean): Modifier {
             if (selected) {
                 launch {
                     scale.snapTo(0.55f)
-                    scale.animateTo(1f, PetalSpring.spatial())
+                    scale.animateTo(1f, PetalSpring.calm())
                 }
                 launch {
                     tilt.snapTo(-18f)
-                    tilt.animateTo(0f, PetalSpring.spatial())
+                    tilt.animateTo(0f, PetalSpring.calm())
                 }
                 launch {
                     hop.snapTo(-8f)
-                    hop.animateTo(0f, PetalSpring.spatial())
+                    hop.animateTo(0f, PetalSpring.calm())
                 }
             } else {
                 launch {
                     scale.snapTo(0.82f)
-                    scale.animateTo(1f, PetalSpring.spatial())
+                    scale.animateTo(1f, PetalSpring.calm())
                 }
             }
         }

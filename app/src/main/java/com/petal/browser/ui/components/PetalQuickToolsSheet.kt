@@ -194,7 +194,6 @@ fun PetalQuickToolsSheet(
                     ) {
                         Button(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                 toolsList = QuickToolId.values().toList()
                                 saveOrder(toolsList)
                             },
@@ -210,7 +209,6 @@ fun PetalQuickToolsSheet(
 
                         Button(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                 isReorderMode = false
                                 saveOrder(toolsList)
                             },
@@ -245,7 +243,6 @@ fun PetalQuickToolsSheet(
                             canMoveRight = index < toolsList.size - 1,
                         onMoveLeft = {
                             if (index > 0) {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                 val updated = toolsList.toMutableList()
                                 val temp = updated[index]
                                 updated[index] = updated[index - 1]
@@ -256,7 +253,6 @@ fun PetalQuickToolsSheet(
                         },
                         onMoveRight = {
                             if (index < toolsList.size - 1) {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.4f)
                                 val updated = toolsList.toMutableList()
                                 val temp = updated[index]
                                 updated[index] = updated[index + 1]
@@ -266,12 +262,11 @@ fun PetalQuickToolsSheet(
                             }
                         },
                         onLongClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.8f)
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
                             isReorderMode = true
                         },
                         onClick = {
                             if (!isReorderMode) {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
                                 onToolClicked(tool)
                             }
                         }
@@ -297,7 +292,7 @@ private fun ExpressiveQuickToolItem(
 ) {
     val scaleAnim by animateFloatAsState(
         targetValue = if (isReorderMode) 0.95f else 1f,
-        animationSpec = PetalSpring.listReorder(),
+        animationSpec = PetalSpring.calm(),
         label = "toolScale"
     )
 
@@ -365,8 +360,8 @@ private fun ExpressiveQuickToolItem(
         // Reorder Arrows Row
         AnimatedVisibility(
             visible = isReorderMode,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
+            enter = fadeIn(animationSpec = PetalSpring.calm()) + expandVertically(animationSpec = PetalSpring.calm()),
+            exit = fadeOut(animationSpec = PetalSpring.calm()) + shrinkVertically(animationSpec = PetalSpring.calm())
         ) {
             Row(
                 modifier = Modifier
