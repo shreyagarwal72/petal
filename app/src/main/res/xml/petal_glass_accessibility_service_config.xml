@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Petal Liquid Glass helper.
+  - flagReportViewIds + flagIncludeNotImportantViews: lets the service find Petal's own widget
+    views inside the launcher window (without these, the glass background image was invisible to
+    the scan, so the glass was baked from a guessed screen position).
+  - canTakeScreenshot: lets Petal capture the launcher behind a widget (with the widget briefly
+    cleared) so the glass refracts what is REALLY behind it (live wallpapers, scrolling
+    wallpapers, icons, folders). The screenshot is cropped to the widget area and the rest is
+    discarded immediately. Nothing is stored except that small clean crop, nothing is sent anywhere.
+-->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/accessibility_service_description"
-    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged|typeViewScrolled"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged|typeViewScrolled|typeWindowContentChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:notificationTimeout="200"
-    android:accessibilityFlags="flagRetrieveInteractiveWindows"
-    android:canRetrieveWindowContent="true" />
+    android:notificationTimeout="100"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows|flagReportViewIds|flagIncludeNotImportantViews"
+    android:canRetrieveWindowContent="true"
+    android:canTakeScreenshot="true" />

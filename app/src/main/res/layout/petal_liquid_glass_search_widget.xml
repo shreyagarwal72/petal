@@ -1,27 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Petal Search (Liquid Glass).
+     The root has NO padding on purpose: the baked glass bitmap must cover exactly the widget's
+     on-screen rectangle, otherwise the refraction no longer lines up with the wallpaper behind
+     it. Only the foreground row is padded. Colours of text/icons are set at runtime
+     (auto light/dark contrast) by PetalLiquidGlassWidgetBinder. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/petal_liquid_glass_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="4dp">
+    android:layout_height="match_parent">
 
-    <!-- The baked liquid glass refraction & blur image with instant frosted glass placeholder -->
+    <!-- Baked liquid glass. src = instant frosted placeholder until the first bake lands. -->
     <ImageView
         android:id="@+id/widget_glass_bg"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="fitXY"
-        android:background="@drawable/petal_liquid_glass_placeholder_bg"
-        android:contentDescription="@null" />
+        android:src="@drawable/petal_liquid_glass_placeholder_bg" />
 
-    <!-- Interactive Search Bar Foreground -->
     <LinearLayout
         android:id="@+id/widget_glass_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingHorizontal="12dp">
+        android:paddingStart="14dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
 
         <ImageView
             android:id="@+id/btn_petal_logo"
@@ -51,7 +56,6 @@
             android:layout_height="36dp"
             android:padding="8dp"
             android:src="@drawable/widget_ic_mic"
-            android:tint="#FFFFFF"
             android:contentDescription="@string/widget_voice_search" />
 
         <ImageView
@@ -60,7 +64,6 @@
             android:layout_height="36dp"
             android:padding="8dp"
             android:src="@drawable/widget_ic_lens_camera"
-            android:tint="#FFFFFF"
             android:contentDescription="@string/ui_google_lens" />
 
         <ImageView
@@ -69,7 +72,6 @@
             android:layout_height="36dp"
             android:padding="8dp"
             android:src="@drawable/widget_ic_incognito"
-            android:tint="#FFFFFF"
             android:contentDescription="@string/ui_new_incognito_tab" />
 
     </LinearLayout>

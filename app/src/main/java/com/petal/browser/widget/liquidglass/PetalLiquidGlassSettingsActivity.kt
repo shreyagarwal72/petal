@@ -238,13 +238,21 @@ private fun LiquidGlassSettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Turn on the Accessibility Service once so Petal can detect where widgets sit on your home screen and align the glass reflection automatically.",
+                        text = "Turn on Petal's Accessibility Service once. It finds your widgets on the home screen and photographs the real wallpaper behind them, so the glass always matches (live wallpapers too). If you updated Petal, turn it off and on once. Only the small widget area is kept, nothing leaves your phone.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(10.dp))
-                    Button(onClick = onOpenAccessibility) {
-                        Text("Enable Position Detection")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = onOpenAccessibility) {
+                            Text("Enable Position Detection")
+                        }
+                        OutlinedButton(onClick = {
+                            PetalWallpaperBlurHelper.invalidateCaptures(context)
+                            Toast.makeText(context, "Refreshing glass... go to your home screen", Toast.LENGTH_SHORT).show()
+                        }) {
+                            Text("Refresh Glass")
+                        }
                     }
                 }
             }

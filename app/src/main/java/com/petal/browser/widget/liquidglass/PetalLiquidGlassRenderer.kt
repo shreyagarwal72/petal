@@ -166,7 +166,7 @@ object PetalLiquidGlassRenderer {
         val cornerPx = min(cornerRadiusDp * density, min(width, height) / 2f)
         val refractionHeightPx = config.refractionHeight * density
         val refractionOffsetPx = -config.refractionOffset * density
-        val blurRadiusPx = max(0.01f, config.blurRadius * density)
+        val blurRadiusPx = max(0f, config.blurRadius)
 
         // Set AGSL uniforms
         runtimeShader.setFloatUniform("size", width.toFloat(), height.toFloat())
@@ -225,7 +225,17 @@ object PetalLiquidGlassRenderer {
             }
             hardwareRenderer.createRenderRequest().syncAndDraw()
 
-            image = imageReader.acquireLatestImage() ?: return null
+            // The frame is not always ready right after syncAndDraw(). Returning null here made the
+            // caller fall back to a plain blur, i.e. a flat widget with NO refraction.
+            var tries = 0
+            while (image == null && tries < 40) {
+                image = imageReader.acquireLatestImage()
+                if (image == null) {
+                    try { Thread.sleep(8) } catch (_: InterruptedException) {}
+                    tries++
+                }
+            }
+            if (image == null) return null
             val hardwareBuffer = image.hardwareBuffer ?: return null
             val hwBitmap = Bitmap.wrapHardwareBuffer(hardwareBuffer, null) ?: return null
             val copy = hwBitmap.copy(Bitmap.Config.ARGB_8888, true)
