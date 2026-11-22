@@ -54,6 +54,7 @@ class PetalTabViewController private constructor(
     private var active = false
     private var engineScrollDelegate: org.mozilla.geckoview.GeckoSession.ScrollDelegate? = null
     private var engineHistoryDelegate: org.mozilla.geckoview.GeckoSession.HistoryDelegate? = null
+    private var engineTranslationsDelegate: org.mozilla.geckoview.TranslationsController.SessionTranslation.Delegate? = null
     private var engineContentBlockingDelegate: org.mozilla.geckoview.ContentBlocking.Delegate? = null
     private var previewRevision = 0L
     @Volatile
@@ -826,6 +827,7 @@ class PetalTabViewController private constructor(
                     previewRevision++
                     previewRetryCount = 0
                     pageUrl = newUrl
+                    tab?.let { com.petal.browser.engine.gecko.PetalTranslationsManager.reset(it.id) }
                     applyPageSettings(newUrl)
                     tab?.let { browserStore.dispatch(ContentAction.UpdateUrlAction(it.id, newUrl)) }
                     publishState()
@@ -981,6 +983,21 @@ class PetalTabViewController private constructor(
                 }
             }
 
+            // On-device Firefox Translations: chain Mozilla's own translations delegate (so the
+            // BrowserStore keeps its state) and mirror detected language / progress into Petal's UI.
+            // A delegate that is already ours (session outlived a previous view) is left in place.
+            try {
+                val existingTranslations = gs.translationsSessionDelegate
+                if (existingTranslations !is PetalOwnedDelegate) {
+                    engineTranslationsDelegate = existingTranslations
+                    gs.setTranslationsSessionDelegate(
+                        com.petal.browser.engine.gecko.PetalTranslationsManager.createDelegate(tab.id, existingTranslations)
+                    )
+                }
+            } catch (t: Throwable) {
+                android.util.Log.w("PetalTabViewController", "Translations delegate unavailable: ${t.message}")
+            }
+
             // Official Mozilla Firefox ContentBlocking Delegate (Enhanced Tracking Protection & AdBlock telemetry)
             gs.contentBlockingDelegate = object : org.mozilla.geckoview.ContentBlocking.Delegate, PetalOwnedDelegate {
                 override fun onContentBlocked(
@@ -1001,6 +1018,10 @@ class PetalTabViewController private constructor(
                     historyList: org.mozilla.geckoview.GeckoSession.HistoryDelegate.HistoryList
                 ) {
                     try { engineHistoryDelegate?.onHistoryStateChange(session, historyList) } catch (_: Throwable) {}
+                    // Publish this tab's back/forward list for the history popup (long-press Back).
+                    tab?.id?.let { id ->
+                        try { PetalTabHistoryState.update(id, historyList) } catch (_: Throwable) {}
+                    }
                     val currentIndex = historyList.currentIndex
                     val size = historyList.size
                     backAvailable = currentIndex > 0
@@ -1376,6 +1397,44 @@ class PetalTabViewController private constructor(
         applyTrackingProtectionMode(effectiveMode)
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(preferences)
         com.petal.browser.accessibility.PetalAccessibilityEngine.applyAccessibilitySettings(this)
+        applySiteColorScheme(url)
+    }
+
+    /**
+     * Applies this site's color-scheme override (sp_force_dark_$domain) while this tab is the active one.
+     * Gecko has only a runtime-wide preferredColorScheme, so the override is applied on tab select and
+     * released on tab leave; the global sp_force_dark_mode key is never written.
+     */
+    private fun applySiteColorScheme(url: String?) {
+        val id = boundTabId ?: return
+        if (!active) return
+        val domain = com.petal.browser.unit.PetalAndroidUtils.domain(url.orEmpty())
+        val value = com.petal.browser.engine.gecko.PetalSiteColorScheme.get(preferences, domain)
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.setSiteColorScheme(
+            id,
+            com.petal.browser.engine.gecko.PetalSiteColorScheme.toGecko(value),
+            preferences
+        )
+    }
+
+    private fun releaseSiteColorScheme() {
+        val id = boundTabId ?: return
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.setSiteColorScheme(id, null, preferences)
+    }
+
+    /** Called by the site sheet after sp_force_dark_$domain changed: re-apply, then reload the page. */
+    fun onSiteColorSchemeChanged() {
+        applySiteColorScheme(pageUrl)
+        reload()
+    }
+
+    /** Jumps to [index] in this tab's Gecko back/forward list (see [PetalTabHistoryState]). */
+    fun gotoHistoryIndex(index: Int) {
+        try {
+            getGeckoSession()?.gotoHistoryIndex(index)
+        } catch (t: Throwable) {
+            android.util.Log.w("PetalTabViewController", "gotoHistoryIndex($index) failed: ${t.message}")
+        }
     }
 
     fun applyTrackingProtectionMode(mode: com.petal.browser.browser.PetalAdBlockMode) {
@@ -2195,6 +2254,7 @@ class PetalTabViewController private constructor(
     @MainThread
     override fun activate() {
         active = true
+        applySiteColorScheme(pageUrl)
         tab?.let { PetalEngineStore.selectTab(appContext, it.id) }
         // SelectTabAction above is what tells WebExtensionSupport this is the active tab.
         // Same as SessionFeature.start() in Fenix: make sure the session is on screen.
@@ -2280,6 +2340,7 @@ class PetalTabViewController private constructor(
         stopThumbnails()
         stopContextMenuObserver()
         active = false
+        releaseSiteColorScheme()
         refreshFeature?.stop()
         fullScreenFeature?.stop()
         isRefreshing = false
@@ -2309,6 +2370,8 @@ class PetalTabViewController private constructor(
         }
         val removedTabId = tab?.id
         if (removedTabId != null) {
+            PetalTabHistoryState.clear(removedTabId)
+            com.petal.browser.engine.gecko.PetalTranslationsManager.remove(removedTabId)
             // BrowserStore is the single source of truth: removing the tab there also
             // deletes its thumbnail through PetalThumbnailsMiddleware. The direct calls below
             // cover a tab that is already gone from the store.
@@ -2329,6 +2392,7 @@ class PetalTabViewController private constructor(
         stopThumbnails()
         stopContextMenuObserver()
         active = false
+        releaseSiteColorScheme()
         refreshFeature?.stop()
         refreshFeature = null
         removeCallbacks(refreshWatchdog)

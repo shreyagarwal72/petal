@@ -169,11 +169,8 @@ object PetalEngineStore {
                         Log.w(TAG, "Offline game hook failed", t)
                     }
                     return try {
-                        val errorPageUri = mozilla.components.browser.errorpages.ErrorPages.createUrlEncodedErrorPage(
-                            appContext,
-                            errorType,
-                            uri
-                        )
+                        // Mozilla's page recolored with the live Petal theme (see PetalErrorPageTheme).
+                        val errorPageUri = PetalErrorPageTheme.createErrorPageUri(appContext, errorType, uri)
                         RequestInterceptor.ErrorResponse(errorPageUri)
                     } catch (t: Throwable) {
                         Log.e(TAG, "Failed to create url-encoded error page", t)

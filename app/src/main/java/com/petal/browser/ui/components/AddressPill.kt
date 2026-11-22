@@ -388,6 +388,11 @@ fun AddressPill(
                     }
                 }
 
+                // On-device translation chip (only when the page is translatable) and
+                // the active tab's extension action chips (max two + overflow).
+                PetalTranslateChip()
+                PetalExtensionActionChips(pageUrl = url)
+
                 // Dynamic Reader Mode Button
                 if (isReaderEligible) {
                     IconButton(

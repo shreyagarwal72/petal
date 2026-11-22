@@ -2,6 +2,7 @@ package com.petal.browser.ui.components
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
@@ -197,6 +198,19 @@ fun PetalAddressBar(
                         val leftContentDesc = if (isLoading) "Stop Loading" else "Back"
                         val isLeftEnabled = isLoading || canGoBack
 
+                        // Long-press Back opens this tab's back/forward history popup.
+                        Box(
+                            modifier = Modifier.pointerInput(isLoading, canGoBack) {
+                                androidx.compose.foundation.gestures.detectTapGestures(
+                                    onLongPress = {
+                                        if (!isLoading && canGoBack) {
+                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
+                                            com.petal.browser.browser.PetalTabHistoryState.requestOpen()
+                                        }
+                                    }
+                                )
+                            }
+                        ) {
                         IconButton(
                             onClick = onBackClick,
                             enabled = isLeftEnabled,
@@ -215,6 +229,7 @@ fun PetalAddressBar(
                                 tint = if (isLeftEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                                 modifier = Modifier.size(24.dp)
                             )
+                        }
                         }
 
                         Spacer(modifier = Modifier.width(if (resolvedIsBottom) 4.dp else 2.dp))

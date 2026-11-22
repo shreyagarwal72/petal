@@ -128,6 +128,18 @@ object PetalViewThemeBridge {
         }
     }
 
+    /**
+     * ARGB value of one Material token (e.g. "surface", "onSurface", "primary") of the live scheme
+     * (dark, AMOLED, dynamic color all included), or null before any scheme was published.
+     * Lets non-Compose code such as the engine's error pages follow the app theme.
+     */
+    @JvmStatic
+    fun tokenColor(context: Context, name: String): Int? {
+        val colors = load(context) ?: return null
+        val i = tokenNames.indexOf(name)
+        return if (i in colors.indices) colors[i] else null
+    }
+
     /** True once a scheme has been published or restored from disk. */
     @JvmStatic
     fun hasScheme(context: Context): Boolean = load(context) != null

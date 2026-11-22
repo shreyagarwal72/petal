@@ -259,13 +259,16 @@ object PetalQuickToolsBridge {
             }
 
             QuickToolId.TRANSLATOR -> {
-                if (currentUrl.isNotEmpty() && !currentUrl.startsWith("about:")) {
-                    evaluateJavascript(controller, "document.dispatchEvent(new CustomEvent('petal-translate-start'));") {
-                        try {
-                            val translateUrl = "https://translate.google.com/translate?sl=auto&tl=en&u=${URLEncoder.encode(currentUrl, "UTF-8")}"
-                            loadUrlInTab(controller, translateUrl)
-                        } catch (_: Exception) {}
-                    }
+                // On-device Firefox Translations (GeckoView). Page text and URLs never leave the device.
+                val tabId = com.petal.browser.engine.gecko.PetalEngineStore.getStore(activity).state.selectedTabId
+                val state = tabId?.let { com.petal.browser.engine.gecko.PetalTranslationsManager.states.value[it] }
+                val session = (controller as? com.petal.browser.browser.PetalTabViewController)?.getGeckoSession()
+                if (tabId != null && state != null && session != null && state.isTranslated) {
+                    com.petal.browser.engine.gecko.PetalTranslationsManager.restoreOriginal(tabId, session)
+                } else if (tabId != null && state != null && session != null && state.isTranslatable && !state.pageLanguage.isNullOrBlank()) {
+                    com.petal.browser.engine.gecko.PetalTranslationsManager.translate(
+                        tabId, session, state.pageLanguage, state.targetLanguage
+                    )
                 } else {
                     PetalToast.show(activity, activity.getString(R.string.ui_navigate_to_translate))
                 }

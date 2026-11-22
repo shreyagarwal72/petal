@@ -959,19 +959,87 @@ class PetalBrowserViewModel @Inject constructor(
         _findInPageQuery.value = query
     }
 
+    /** Live find-in-page result: "current of total" (1-based current), from Gecko's FinderResult. */
+    data class FindUiState(val current: Int = 0, val total: Int = 0, val searched: Boolean = false)
+
+    private val _findState = MutableStateFlow(FindUiState())
+    val findState: StateFlow<FindUiState> = _findState.asStateFlow()
+    private val _findMatchCase = MutableStateFlow(false)
+    val findMatchCase: StateFlow<Boolean> = _findMatchCase.asStateFlow()
+    private val _findWholeWord = MutableStateFlow(false)
+    val findWholeWord: StateFlow<Boolean> = _findWholeWord.asStateFlow()
+
+    private var findSeq = 0
+    /** Session the current search ran on, so finder.clear() hits it even after a tab switch. */
+    private var findSessionRef: org.mozilla.geckoview.GeckoSession? = null
+
+    private fun finderFlags(backwards: Boolean): Int {
+        var flags = 0
+        if (backwards) flags = flags or org.mozilla.geckoview.GeckoSession.FINDER_FIND_BACKWARDS
+        if (_findMatchCase.value) flags = flags or org.mozilla.geckoview.GeckoSession.FINDER_FIND_MATCH_CASE
+        if (_findWholeWord.value) flags = flags or org.mozilla.geckoview.GeckoSession.FINDER_FIND_WHOLE_WORD
+        return flags
+    }
+
+    /** Runs finder.find(text, flags); text == null continues the previous search (next/previous). */
+    private fun runFind(text: String?, backwards: Boolean) {
+        val gs = findSessionRef?.takeIf { text == null }
+            ?: com.petal.browser.engine.gecko.PetalEngineBridge.getEngineGeckoSession(
+                activeTab.value?.engineState?.engineSession
+            ) ?: return
+        findSessionRef = gs
+        val finder = gs.finder
+        finder.displayFlags = org.mozilla.geckoview.GeckoSession.FINDER_DISPLAY_HIGHLIGHT_ALL
+        val seq = ++findSeq
+        finder.find(text, finderFlags(backwards)).accept(
+            { result ->
+                if (seq == findSeq && result != null) {
+                    _findState.value = FindUiState(
+                        current = result.current.coerceAtLeast(0),
+                        total = result.total.coerceAtLeast(0),
+                        searched = true
+                    )
+                }
+            },
+            { }
+        )
+    }
+
     fun findAll(query: String) {
         _findInPageQuery.value = query
-        activeTab.value?.engineState?.engineSession?.findAll(query)
+        if (query.isEmpty()) {
+            findSeq++
+            _findState.value = FindUiState()
+            findSessionRef?.finder?.clear()
+            return
+        }
+        runFind(query, backwards = false)
     }
 
     fun findNext(forward: Boolean) {
-        activeTab.value?.engineState?.engineSession?.findNext(forward)
+        if (_findInPageQuery.value.isEmpty()) return
+        runFind(null, backwards = !forward)
+    }
+
+    fun setFindMatchCase(enabled: Boolean) {
+        _findMatchCase.value = enabled
+        val q = _findInPageQuery.value
+        if (q.isNotEmpty()) runFind(q, backwards = false)
+    }
+
+    fun setFindWholeWord(enabled: Boolean) {
+        _findWholeWord.value = enabled
+        val q = _findInPageQuery.value
+        if (q.isNotEmpty()) runFind(q, backwards = false)
     }
 
     fun clearFindMatches() {
+        findSeq++
         _findInPageQuery.value = ""
         _isFindInPageOpen.value = false
-        activeTab.value?.engineState?.engineSession?.clearFindMatches()
+        _findState.value = FindUiState()
+        try { findSessionRef?.finder?.clear() } catch (_: Throwable) {}
+        findSessionRef = null
     }
 
     private val _omniboxInitialQuery = MutableStateFlow<String?>(null)
@@ -999,7 +1067,7 @@ class PetalBrowserViewModel @Inject constructor(
         if (_isSafeLockerOpen.value) { _isSafeLockerOpen.value = false; return true }
         if (_isDeleteOpen.value) { _isDeleteOpen.value = false; return true }
         if (_isAccountSyncOpen.value) { _isAccountSyncOpen.value = false; return true }
-        if (_isFindInPageOpen.value) { _isFindInPageOpen.value = false; return true }
+        if (_isFindInPageOpen.value) { clearFindMatches(); return true }
         if (_isDownloadsOpen.value) { _isDownloadsOpen.value = false; return true }
         if (_isHistoryOpen.value) { _isHistoryOpen.value = false; return true }
         if (_isBookmarksOpen.value) { _isBookmarksOpen.value = false; return true }

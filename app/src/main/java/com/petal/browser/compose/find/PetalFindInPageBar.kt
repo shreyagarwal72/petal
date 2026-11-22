@@ -63,7 +63,13 @@ fun PetalFindInPageBar(
     onFindNext: () -> Unit,
     onFindPrevious: () -> Unit,
     onClose: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    searched: Boolean = false,
+    matchCase: Boolean = false,
+    wholeWord: Boolean = false,
+    onMatchCaseChange: (Boolean) -> Unit = {},
+    onWholeWordChange: (Boolean) -> Unit = {},
+    onClear: () -> Unit = {}
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -120,6 +126,7 @@ fun PetalFindInPageBar(
             tonalElevation = if (isGlass) 0.dp else if (isBottom) 2.dp else 4.dp,
             shadowElevation = if (isGlass) 0.dp else if (isBottom) 2.dp else 4.dp
         ) {
+            Column {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -178,16 +185,34 @@ fun PetalFindInPageBar(
                     }
 
                     if (query.isNotEmpty()) {
+                        val hasMatches = totalMatches > 0
+                        val noResults = !hasMatches && searched
                         Spacer(Modifier.width(6.dp))
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = if (totalMatches > 0) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
-                            contentColor = if (totalMatches > 0) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onErrorContainer
+                            color = if (noResults) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = if (noResults) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
                         ) {
                             Text(
-                                text = "$currentMatch/$totalMatches",
+                                text = when {
+                                    hasMatches -> "$currentMatch of $totalMatches"
+                                    noResults -> "No results"
+                                    else -> "…"
+                                },
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                                 modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                            )
+                        }
+                        // Clear the query (keeps the bar open)
+                        IconButton(
+                            onClick = onClear,
+                            modifier = Modifier.size(36.dp).clip(CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Clear search",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -235,6 +260,24 @@ fun PetalFindInPageBar(
                         modifier = Modifier.size(20.dp)
                     )
                 }
+            }
+            Row(
+                modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = matchCase,
+                    onClick = { onMatchCaseChange(!matchCase) },
+                    label = { Text("Match case") },
+                    border = null
+                )
+                FilterChip(
+                    selected = wholeWord,
+                    onClick = { onWholeWordChange(!wholeWord) },
+                    label = { Text("Whole word") },
+                    border = null
+                )
+            }
             }
         }
     }

@@ -452,8 +452,9 @@ fun AddressBarSettingsScreen(
                 ) {
                     val barsSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
                     var hideBarsOnScroll by remember { mutableStateOf(barsSp.getBoolean(BarPrefs.KEY_HIDE_BARS_ON_SCROLL, true)) }
+                    var extensionChips by remember { mutableStateOf(barsSp.getBoolean("sp_address_bar_extension_chips", true)) }
 
-                    PetalGroup(rowCount = 3) { index, groupPos ->
+                    PetalGroup(rowCount = 4) { index, groupPos ->
                         when (index) {
                             0 -> PetalSettingsToggleRow(
                                 title = stringResource(R.string.ui_address_bar_horizontal_swipe_to),
@@ -481,6 +482,17 @@ fun AddressBarSettingsScreen(
                                     hideBarsOnScroll = on
                                     barsSp.edit().putBoolean(BarPrefs.KEY_HIDE_BARS_ON_SCROLL, on).apply()
                                     if (!on) (context as? MainActivity)?.animateAddressBarCollapse(false)
+                                }
+                            )
+                            3 -> PetalSettingsToggleRow(
+                                title = "Extension buttons in address bar",
+                                subtitle = "Show up to two extension actions for the current page next to the address.",
+                                icon = Icons.Rounded.Extension,
+                                checked = extensionChips,
+                                position = groupPos,
+                                onCheckedChange = { on ->
+                                    extensionChips = on
+                                    barsSp.edit().putBoolean("sp_address_bar_extension_chips", on).apply()
                                 }
                             )
                         }

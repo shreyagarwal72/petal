@@ -44,6 +44,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.petal.browser.browser.PetalTabHistoryState
+import com.petal.browser.ui.components.PetalTabHistorySheet
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
@@ -166,6 +168,13 @@ fun PetalRootApp(
     val isDeleteOpen by viewModel.isDeleteOpen.collectAsStateWithLifecycle()
     val isSafeLockerOpen by viewModel.isSafeLockerOpen.collectAsStateWithLifecycle()
     val isFindInPageOpen by viewModel.isFindInPageOpen.collectAsStateWithLifecycle()
+    // Find bar closes (and finder.clear() runs) on tab switch and navigation.
+    LaunchedEffect(activeTab?.id, activeUrl) {
+        if (viewModel.isFindInPageOpen.value) viewModel.clearFindMatches()
+    }
+    // History popup belongs to one tab.
+    LaunchedEffect(activeTab?.id) { PetalTabHistoryState.dismiss() }
+
     val findInPageQuery by viewModel.findInPageQuery.collectAsStateWithLifecycle()
     val isAiSheetOpen by viewModel.isAiSheetOpen.collectAsStateWithLifecycle()
     val aiSheetQuery by viewModel.aiSheetQuery.collectAsStateWithLifecycle()
@@ -1751,15 +1760,33 @@ fun PetalRootApp(
                 }
             }
 
+            // Tab back/forward history popup (long-press Back)
+            val historyPopupOpen by PetalTabHistoryState.popupOpen.collectAsStateWithLifecycle()
+            if (historyPopupOpen && activeTab != null) {
+                PetalTabHistorySheet(
+                    tabId = activeTab!!.id,
+                    isPrivate = activeTab!!.content.private,
+                    onNavigate = { index -> liveTabController?.gotoHistoryIndex(index) },
+                    onDismiss = { PetalTabHistoryState.dismiss() }
+                )
+            }
+
             // Find In Page Bar Overlay
             if (isFindInPageOpen) {
-                val currentMatch = activeTab?.content?.findResults?.lastOrNull()?.activeMatchOrdinal ?: 0
-                val totalMatches = activeTab?.content?.findResults?.lastOrNull()?.numberOfMatches ?: 0
+                val findState by viewModel.findState.collectAsStateWithLifecycle()
+                val findMatchCase by viewModel.findMatchCase.collectAsStateWithLifecycle()
+                val findWholeWord by viewModel.findWholeWord.collectAsStateWithLifecycle()
                 PetalFindInPageBar(
                     visible = isFindInPageOpen,
                     query = findInPageQuery,
-                    currentMatch = currentMatch,
-                    totalMatches = totalMatches,
+                    currentMatch = findState.current,
+                    totalMatches = findState.total,
+                    searched = findState.searched,
+                    matchCase = findMatchCase,
+                    wholeWord = findWholeWord,
+                    onMatchCaseChange = { viewModel.setFindMatchCase(it) },
+                    onWholeWordChange = { viewModel.setFindWholeWord(it) },
+                    onClear = { viewModel.findAll("") },
                     onQueryChange = { query ->
                         viewModel.findAll(query)
                     },

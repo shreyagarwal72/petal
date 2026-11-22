@@ -492,6 +492,28 @@ object PetalGeckoRuntime {
         m.invoke(rt.settings, enabled)
     }
 
+    @Volatile private var siteSchemeOverride: Int? = null
+    @Volatile private var siteSchemeOwner: String? = null
+
+    /**
+     * Applies (or, with [scheme] == null, releases) a per-site color scheme for [ownerTabId].
+     * Gecko only has a runtime-wide preferredColorScheme, so the selected tab owns the override
+     * while it is active. Releasing only has an effect for the tab that currently owns it, so a tab
+     * being left can never clobber the override of the tab being entered.
+     */
+    @JvmStatic
+    fun setSiteColorScheme(ownerTabId: String, scheme: Int?, sp: SharedPreferences) {
+        if (scheme == null) {
+            if (siteSchemeOwner != ownerTabId) return
+            siteSchemeOverride = null
+            siteSchemeOwner = null
+        } else {
+            siteSchemeOverride = scheme
+            siteSchemeOwner = ownerTabId
+        }
+        syncTheme(sp)
+    }
+
     /**
      * Synchronizes the runtime-wide preferred color scheme with user theme settings.
      * New rule: LIGHT gives light, DARK gives dark, and FOLLOW_SYSTEM gives COLOR_SCHEME_SYSTEM.
@@ -502,7 +524,10 @@ object PetalGeckoRuntime {
         runtime?.let { rt ->
             val themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
             val forceDark = sp.getBoolean("sp_force_dark_mode", false)
-            val targetColorScheme = if (forceDark) {
+            val targetColorScheme = if (siteSchemeOverride != null) {
+                // The active tab's per-site override wins over the global setting (never persisted globally).
+                siteSchemeOverride!!
+            } else if (forceDark) {
                 GeckoRuntimeSettings.COLOR_SCHEME_DARK
             } else {
                 when (themeConfig.uppercase()) {

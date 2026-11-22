@@ -340,6 +340,44 @@ fun PetalSiteInfoBottomSheet(
                             }
                         )
 
+                        // Dark mode for this site: follow global / force dark / force light.
+                        // Stored as sp_force_dark_$domain; the global sp_force_dark_mode is never touched.
+                        if (domain.isNotEmpty()) {
+                            var siteScheme by remember(domain) {
+                                mutableStateOf(com.petal.browser.engine.gecko.PetalSiteColorScheme.get(sp, domain))
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Dark mode for this site",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                            )
+                            val schemeValues = listOf(
+                                com.petal.browser.engine.gecko.PetalSiteColorScheme.FOLLOW,
+                                com.petal.browser.engine.gecko.PetalSiteColorScheme.DARK,
+                                com.petal.browser.engine.gecko.PetalSiteColorScheme.LIGHT
+                            )
+                            com.petal.browser.ui.containment.PetalSheetSegmentedBar(
+                                segments = listOf(
+                                    com.petal.browser.ui.containment.PetalSheetSegment("Follow", Icons.Rounded.BrightnessAuto),
+                                    com.petal.browser.ui.containment.PetalSheetSegment("Dark", Icons.Rounded.DarkMode),
+                                    com.petal.browser.ui.containment.PetalSheetSegment("Light", Icons.Rounded.LightMode)
+                                ),
+                                selectedIndex = schemeValues.indexOf(siteScheme).coerceAtLeast(0),
+                                onSelect = { index ->
+                                    val next = schemeValues[index]
+                                    if (next != siteScheme) {
+                                        siteScheme = next
+                                        com.petal.browser.engine.gecko.PetalSiteColorScheme.set(sp, domain, next)
+                                        // Re-applies the override for this tab and reloads the page.
+                                        tabViewController?.onSiteColorSchemeChanged()
+                                    }
+                                }
+                            )
+                        }
+
                         Spacer(Modifier.height(8.dp))
                         com.petal.browser.ui.containment.PetalSheetPill(
                             text = "Zap Element",

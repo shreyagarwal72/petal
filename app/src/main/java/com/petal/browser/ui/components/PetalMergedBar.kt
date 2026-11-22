@@ -535,7 +535,12 @@ private fun BarActionButton(
     val longClickHandler: (() -> Unit)? = if (action.supportsLongPress) {
         {
             when (action) {
-                BarAction.BACK -> onHistoryClick()
+                // Long-press Back: this tab's back/forward popup (falls back to full history).
+                BarAction.BACK -> if (canGoBack && !isLoading) {
+                    com.petal.browser.browser.PetalTabHistoryState.requestOpen()
+                } else {
+                    onHistoryClick()
+                }
                 BarAction.BOOKMARK -> onBookmarksManagerClick()
                 BarAction.RELOAD -> onHardRefresh()
                 BarAction.TABS -> onNewTabClick()
