@@ -133,24 +133,23 @@ private fun customTone(color: Int): PetalTone = toneOf(color, if (ColorUtils.cal
 internal fun buildPalette(context: Context, cfg: PetalWidgetConfig): PetalWidgetPalette {
     val scheme = resolveWidgetScheme(context, cfg)
     val isDark = isWidgetDark(context)
-    val glass = PetalGlassWidgets.isLiquidGlassEnabled(context)
 
     val barSolid = opaque(scheme.surfaceContainer.toArgb())
     val onSurface = scheme.onSurface.toArgb()
     val onSurfaceVariant = scheme.onSurfaceVariant.toArgb()
 
-    // The bar itself: the Transparency slider, unless liquid glass is on (then the glass tile is the bar).
-    val barAlpha = if (glass) 1f else 1f - cfg.transparency / 100f
+    // The bar itself: the Transparency slider.
+    val barAlpha = 1f - cfg.transparency / 100f
     val bar = withAlpha(barSolid, barAlpha)
 
     // A field/pill tone derived from the bar rather than read from the scheme: with "expressive colors" every
     // surface container is the same white, which made the nested search field vanish into the bar.
     val fieldSolid = ColorUtils.blendARGB(barSolid, onSurface, if (isDark) 0.11f else 0.07f)
-    val field = if (glass) (if (isDark) 0x3D000000 else 0x59FFFFFF) else withAlpha(fieldSolid, barAlpha.coerceAtLeast(0.55f))
+    val field = withAlpha(fieldSolid, barAlpha.coerceAtLeast(0.55f))
 
     // The text must stay legible however see-through the bar is, so it is checked against the opaque tones and
     // pulled to the stronger on-surface color once the bar goes translucent.
-    val translucent = barAlpha < 0.7f && !glass
+    val translucent = barAlpha < 0.7f
     val onBar = readable(onSurface, barSolid)
     val onBarMuted = readable(if (translucent) onSurface else onSurfaceVariant, barSolid)
     val onField = readable(onSurface, fieldSolid)

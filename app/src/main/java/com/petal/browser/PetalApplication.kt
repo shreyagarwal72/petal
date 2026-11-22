@@ -40,7 +40,7 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
     private val wallpaperChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             // Not just a redraw: the cached wallpaper slice and glass tiles must be rebuilt from the new wallpaper.
-            com.petal.browser.widget.glance.PetalGlassWidgets.onSystemWallpaperChanged(this@PetalApplication)
+            try { com.petal.browser.widget.liquidglass.PetalWallpaperBlurHelper.rebakeAllFromWallpaper(this@PetalApplication) } catch (_: Throwable) {}
         }
     }
 
@@ -166,15 +166,11 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
         // If Liquid Glass widgets are enabled but the wallpaper copy is missing (fresh install, or the
         // file was cleared), extract the current system wallpaper now so placed widgets can render
         // their glass on first compose, without requiring the user to open the aligner first.
-        if (com.petal.browser.widget.glance.PetalGlassWidgets.isLiquidGlassEnabled(this) &&
-            !com.petal.browser.widget.glance.PetalGlassWidgets.copyFile(this).exists()) {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    com.petal.browser.widget.glance.PetalGlassWidgets.tryExtractSystemWallpaper(this@PetalApplication)
-                    com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(this@PetalApplication)
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Glass wallpaper cold-start extraction failed; will retry on next widget render", t)
-                }
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                com.petal.browser.widget.liquidglass.PetalWallpaperBlurHelper.rebakeAllFromWallpaper(this@PetalApplication)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Liquid glass cold-start rebake skipped", t)
             }
         }
 

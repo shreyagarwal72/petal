@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/petal_liquid_glass_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="4dp">
+
+    <!-- The baked liquid glass refraction & blur image -->
+    <ImageView
+        android:id="@+id/widget_glass_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:contentDescription="@null" />
+
+    <!-- Interactive Search Bar Foreground -->
+    <LinearLayout
+        android:id="@+id/widget_glass_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp">
+
+        <ImageView
+            android:id="@+id/btn_petal_logo"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="4dp"
+            android:src="@drawable/widget_ic_search_sparkle"
+            android:contentDescription="@string/ui_petal" />
+
+        <TextView
+            android:id="@+id/btn_search_bar"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:text="@string/widget_search_hint"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-medium"
+            android:singleLine="true" />
+
+        <ImageView
+            android:id="@+id/btn_voice_search"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="8dp"
+            android:src="@drawable/widget_ic_mic"
+            android:tint="#FFFFFF"
+            android:contentDescription="@string/widget_voice_search" />
+
+        <ImageView
+            android:id="@+id/btn_lens_camera"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="8dp"
+            android:src="@drawable/widget_ic_lens_camera"
+            android:tint="#FFFFFF"
+            android:contentDescription="@string/ui_google_lens" />
+
+        <ImageView
+            android:id="@+id/btn_incognito"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="8dp"
+            android:src="@drawable/widget_ic_incognito"
+            android:tint="#FFFFFF"
+            android:contentDescription="@string/ui_new_incognito_tab" />
+
+    </LinearLayout>
+
+</FrameLayout>

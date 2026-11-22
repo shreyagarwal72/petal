@@ -15,6 +15,6 @@ import android.content.Intent
 class PetalWallpaperChangedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_WALLPAPER_CHANGED) return
-        PetalGlassWidgets.onSystemWallpaperChanged(context.applicationContext)
+        try { com.petal.browser.widget.liquidglass.PetalWallpaperBlurHelper.rebakeAllFromWallpaper(context.applicationContext) } catch (_: Throwable) {}
     }
 }

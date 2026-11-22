@@ -168,6 +168,14 @@
     <string name="widget_search_petal2_desc">Material 3 Expressive search field with an island of cookie action buttons. Fully customizable.</string>
     <string name="widget_search_petal3_name">Petal #3</string>
     <string name="widget_search_petal3_desc">Material 3 Expressive pill with a large cookie badge, an open search prompt and cookie buttons. Fully customizable.</string>
+    <string name="widget_liquid_glass_search_name">Petal Search (Liquid Glass)</string>
+    <string name="widget_liquid_glass_search_desc">Realistic refractive liquid glass search bar with specular highlights and instant launcher alignment.</string>
+    <string name="widget_liquid_glass_pill_name">Petal Pill (Liquid Glass)</string>
+    <string name="widget_liquid_glass_pill_desc">Compact refractive liquid glass search pill with voice search and camera lens.</string>
+    <string name="widget_liquid_glass_settings_title">Liquid Glass Tuning</string>
+    <string name="petal_glass_wallpaper_label">Petal Liquid Glass Live Wallpaper</string>
+    <string name="petal_glass_wallpaper_desc">Interactive live wallpaper providing 60/120 Hz real-time glass refraction and touch ripples under Petal widgets.</string>
+    <string name="accessibility_service_description">Used strictly to detect the pixel coordinates of Petal\'s liquid glass widgets on your home screen for automatic glass refraction alignment.</string>
     <string name="widget_glass_align_title">Align Liquid Glass</string>
     <string name="widget_glass_align_hint">Drag or tap the frame to match where this widget sits on your home screen, then save.</string>
     <string name="widget_glass_pick_wallpaper">Select Wallpaper</string>

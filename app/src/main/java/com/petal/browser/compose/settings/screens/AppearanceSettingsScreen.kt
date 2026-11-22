@@ -1320,7 +1320,7 @@ fun AppearanceSettingsScreenContent(
                                             sp.edit().putFloat("sp_liquid_glass_blur", it).apply()
                                         },
                                         onValueChangeFinished = {
-                                            com.petal.browser.widget.glance.PetalGlassWidgets.onTuningChanged(context)
+                                            try { com.petal.browser.widget.liquidglass.PetalWallpaperBlurHelper.rebakeAllFromWallpaper(context) } catch (_: Throwable) {}
                                         },
                                         valueRange = 0f..32f,
                                         modifier = Modifier.fillMaxWidth()
@@ -1443,7 +1443,7 @@ fun AppearanceSettingsScreenContent(
                                         onLiquidGlassSheenChange(0.60f)
                                         onLiquidGlassRefractionChange(1f)
                                         onLiquidGlassRefractionWidthChange(1f)
-                                        com.petal.browser.widget.glance.PetalGlassWidgets.onTuningChanged(context)
+                                        try { com.petal.browser.widget.liquidglass.PetalWallpaperBlurHelper.rebakeAllFromWallpaper(context) } catch (_: Throwable) {}
                                     },
                                     modifier = Modifier.align(Alignment.End)
                                 ) { Text("Reset glass tuning") }

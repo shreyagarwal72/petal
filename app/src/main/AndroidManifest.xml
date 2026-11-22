@@ -701,15 +701,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Liquid Glass alignment. No longer the widgets' configure activity (it used to open on every widget
-             add, even with Liquid Glass off); reached from the widget's align badge and from the settings screen. -->
-        <activity
-            android:name="com.petal.browser.widget.glance.PetalWidgetGlassActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
-            android:taskAffinity="com.petal.browser.widgetglass"
-            android:excludeFromRecents="true"
-            android:noHistory="true"
-            android:exported="false" />
+
 
         <receiver
             android:name="com.petal.browser.widget.glance.PetalWallpaperChangedReceiver"
@@ -754,6 +746,67 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/petal_search_petal3_widget_info" />
         </receiver>
+
+        <!-- Dedicated Liquid Glass Widgets -->
+        <receiver
+            android:name="com.petal.browser.widget.liquidglass.PetalLiquidGlassSearchWidgetReceiver"
+            android:label="@string/widget_liquid_glass_search_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/petal_liquid_glass_search_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.petal.browser.widget.liquidglass.PetalLiquidGlassPillWidgetReceiver"
+            android:label="@string/widget_liquid_glass_pill_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/petal_liquid_glass_pill_widget_info" />
+        </receiver>
+
+        <activity
+            android:name="com.petal.browser.widget.liquidglass.PetalLiquidGlassSettingsActivity"
+            android:label="@string/widget_liquid_glass_settings_title"
+            android:theme="@style/AppTheme"
+            android:excludeFromRecents="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name="com.petal.browser.widget.liquidglass.PetalGlassAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/petal_glass_accessibility_service_config" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.widget.liquidglass.PetalGlassWallpaperService"
+            android:label="@string/petal_glass_wallpaper_label"
+            android:permission="android.permission.BIND_WALLPAPER"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.wallpaper.WallpaperService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.wallpaper"
+                android:resource="@xml/petal_glass_wallpaper_config" />
+        </service>
 
         <provider
             android:name="androidx.core.content.FileProvider"

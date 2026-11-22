@@ -330,7 +330,6 @@ private fun StyleTab(cfg: PetalWidgetConfig, onChange: (PetalWidgetConfig) -> Un
 
 @Composable
 private fun ColorsTab(cfg: PetalWidgetConfig, onChange: (PetalWidgetConfig) -> Unit) {
-    val glass = PetalGlassWidgets.isLiquidGlassEnabled(LocalContext.current)
     var picking by remember { mutableStateOf<((Int) -> Unit)?>(null) }
     var pickingInitial by remember { mutableStateOf(0) }
 
@@ -480,34 +479,13 @@ private fun ShapeTab(cfg: PetalWidgetConfig, appWidgetId: Int, onChange: (PetalW
             steps = PETAL_MAX_OUTLINE - 1
         ) { onChange(cfg.copy(outline = it.toInt().coerceIn(0, PETAL_MAX_OUTLINE))) }
     }
-    if (PetalGlassWidgets.isLiquidGlassEnabled(context)) {
-        SectionCard(stringResource(R.string.pw_glass_align), stringResource(R.string.pw_glass_hint)) {
-            if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
-                FilledTonalButton(onClick = { context.startActivity(PetalWidgetGlassActivity.intent(context, appWidgetId)) }, glass = false) {
-                    Text(stringResource(R.string.pw_glass_align))
-                }
-            } else {
-                Text(
-                    text = stringResource(R.string.widget_glass_align_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
+
 }
 
 // ───────────────────────────── preview ─────────────────────────────
 
 @Composable
 private fun PreviewBackdrop(width: Float, height: Float, content: @Composable () -> Unit) {
-    val context = LocalContext.current
-    val isGlass = PetalGlassWidgets.isLiquidGlassEnabled(context)
-    val wallpaperBmp = remember(isGlass) {
-        if (isGlass) runCatching { PetalGlassWidgets.getWallpaper(context)?.asImageBitmap() }.getOrNull() else null
-    }
-
-    // Real wallpaper when glass is enabled, otherwise a gradient background so transparency is visible.
     Box(
         modifier = Modifier
             .size(width.dp, height.dp)
@@ -519,14 +497,6 @@ private fun PreviewBackdrop(width: Float, height: Float, content: @Composable ()
             ),
         contentAlignment = Alignment.Center
     ) {
-        if (wallpaperBmp != null) {
-            Image(
-                bitmap = wallpaperBmp,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-        }
         content()
     }
 }
@@ -579,19 +549,14 @@ private fun WidgetPreview(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, width
     val fieldRadius = if (plan.fieldRadius >= PETAL_RADIUS_FULL) 999f else plan.fieldRadius.toFloat()
     val fieldShape = RoundedCornerShape(fieldRadius.dp)
 
-    val isGlass = PetalGlassWidgets.isLiquidGlassEnabled(LocalContext.current)
-    val barColor = if (isGlass) {
-        Color(if (pal.isDark) 0xB3262A36.toInt() else 0xB3F4F6FC.toInt())
-    } else {
-        Color(pal.bar)
-    }
+    val barColor = Color(pal.bar)
 
     Box(
         modifier = Modifier
             .size(widthDp.dp, heightDp.dp)
             .clip(barShape)
             .background(barColor)
-            .then(if (cfg.outline > 0 && !isGlass) Modifier.border(cfg.outline.dp, Color(pal.ring), barShape) else Modifier)
+            .then(if (cfg.outline > 0) Modifier.border(cfg.outline.dp, Color(pal.ring), barShape) else Modifier)
     ) {
         when (cfg.kind) {
             PetalWidgetKind.PETAL1 -> if (plan.expanded) {
