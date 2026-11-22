@@ -1,7 +1,6 @@
 package com.petal.browser.extensions
 
 import android.content.Context
-import com.petal.browser.engine.gecko.PetalEngineStore
 import android.net.Uri
 import android.graphics.Bitmap
 import android.provider.OpenableColumns
@@ -9,50 +8,47 @@ import android.util.Log
 import java.io.File
 import java.util.zip.ZipFile
 import org.json.JSONObject
-import androidx.preference.PreferenceManager
-import com.petal.browser.engine.gecko.PetalGeckoRuntime
 import android.os.Handler
 import android.os.Looper
+import com.petal.browser.engine.gecko.PetalEngineStore
 import com.petal.browser.view.PetalToast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.mozilla.geckoview.AllowOrDeny
-import org.mozilla.geckoview.GeckoResult
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
+import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.concept.engine.EngineSession
+import mozilla.components.concept.engine.webextension.InstallationMethod
+import mozilla.components.feature.addons.Addon
+import mozilla.components.lib.state.ext.flow
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.WebExtension
-import org.mozilla.geckoview.WebExtensionController
-import com.petal.browser.browser.AlbumController
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import com.petal.browser.activity.MainActivity
 
 /**
  * PetalExtensionManager
  * ─────────────────────────────────────────────────────────────────────────
- * Real Firefox add-on support for Petal.
+ * Thin, app-facing adapter over Mozilla Android Components' add-on stack.
  *
- * Petal's rendering engine is Mozilla GeckoView (see [PetalGeckoRuntime]) - the exact same
- * engine that powers Firefox for Android. GeckoView exposes [WebExtensionController], the
- * very same WebExtension engine used by Firefox, so standard signed `.xpi` WebExtensions can
- * be installed directly instead of being converted into a Petal-specific format. Gecko owns
- * manifest parsing, signatures, permissions, content scripts, background pages/service workers,
- * storage, tabs, scripting, networking, and the supported WebExtension APIs.
- *
- * Petal deliberately does not bypass Gecko's compatibility checks or Mozilla blocklist: an
- * extension that depends on a desktop-only API or unsupported Gecko feature can still be rejected.
- * This is the same boundary Firefox for Android has, while allowing Petal to install arbitrary
- * compatible signed Firefox WebExtensions rather than maintaining a small hard-coded allowlist.
- *
- * This object is a thin, app-facing wrapper around that controller:
- *  - install/uninstall/enable/disable, backed by GeckoView's own persistent extension store
- *    (extensions survive app restarts automatically - GeckoView owns that storage, Petal
- *    does not duplicate it)
- *  - a reactive [extensions] list for Compose UI
- *  - an install/permission confirmation flow surfaced as [pendingPrompt] so the UI can render
- *    a Material 3 dialog instead of Gecko's own native prompt
- *  - toolbar action (browser/page action) plumbing so extensions with a popup UI (uBlock
- *    Origin, Bitwarden, etc.) can present that popup
+ *  - Install / uninstall / enable / disable / private-browsing / update all go through
+ *    [PetalEngineStore.getAddonManager] (`AddonManager` + `AMOAddonsProvider` on
+ *    `PetalOkHttpFetchClient` + `DefaultAddonUpdater`).
+ *  - Gecko's runtime delegates (install and update permission prompts, tabs, browser/page
+ *    actions, popups) are owned by `WebExtensionSupport` (see [PetalEngineStore.getStore]) and
+ *    reach Petal through [PetalWebExtensionDelegate]; this object no longer installs any raw
+ *    `WebExtensionController` delegate of its own.
+ *  - Per-tab action state (badge / title / enabled / icon) is read from
+ *    `BrowserState.extensions` and `TabSessionState.extensionState` and published as
+ *    [activeTabActionStates].
+ *  - [pendingPrompt] / [pendingPopup] stay the state the Compose UI renders (install and update
+ *    permission dialogs, extension popup host), so no caller has to change.
  */
 object PetalExtensionManager {
 
@@ -60,7 +56,8 @@ object PetalExtensionManager {
 
     /** A permission confirmation the UI must resolve before install/update proceeds. */
     data class PendingPrompt(
-        val extension: WebExtension,
+        val extensionId: String,
+        val displayName: String,
         val permissions: List<String>,
         val origins: List<String>,
         val isUpdate: Boolean,
@@ -73,7 +70,9 @@ object PetalExtensionManager {
         val extensionName: String,
         val session: GeckoSession,
         /** The real browsing tab that opened this popup, when Gecko supplied one. */
-        val sourceSession: GeckoSession? = null
+        val sourceSession: GeckoSession? = null,
+        /** The Android Components session that owns [session]; handed back to Gecko as the popup target. */
+        val engineSession: EngineSession? = null
     )
 
     /** State of an extension's browser or page action for the active tab (badge, icon, enabled). */
@@ -99,7 +98,9 @@ object PetalExtensionManager {
         val optionsPageUrl: String?,
         val supportsPopup: Boolean,
         val icon: Bitmap?,
-        val raw: WebExtension
+        val raw: WebExtension,
+        /** Mozilla [Addon] for this extension when the AMO listing has been resolved (may be null offline). */
+        val addon: Addon? = null
     )
 
     /** Small curated set of well-known, Android-compatible extensions from addons.mozilla.org. */
@@ -483,14 +484,40 @@ object PetalExtensionManager {
         /** AMO's Android extensions catalog - opened by "Find more extensions". */
     const val amoAndroidBrowseUrl = "https://addons.mozilla.org/en-US/android/"
 
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
     private val _extensions = MutableStateFlow<List<InstalledExtension>>(emptyList())
     val extensions: StateFlow<List<InstalledExtension>> = _extensions.asStateFlow()
+
+    /** Installed and available [Addon]s from `AddonManager.getAddons` (AMO featured list merged with installed). */
+    private val _addons = MutableStateFlow<List<Addon>>(emptyList())
+    val addons: StateFlow<List<Addon>> = _addons.asStateFlow()
 
     private val _pendingPrompt = MutableStateFlow<PendingPrompt?>(null)
     val pendingPrompt: StateFlow<PendingPrompt?> = _pendingPrompt.asStateFlow()
 
     private val _pendingPopup = MutableStateFlow<PendingPopup?>(null)
     val pendingPopup: StateFlow<PendingPopup?> = _pendingPopup.asStateFlow()
+
+    private val _busy = MutableStateFlow(false)
+    val busy: StateFlow<Boolean> = _busy.asStateFlow()
+
+    private val _lastError = MutableStateFlow<String?>(null)
+    val lastError: StateFlow<String?> = _lastError.asStateFlow()
+
+    private val _activeTabActionStates = MutableStateFlow<Map<String, ExtensionActionState>>(emptyMap())
+    /** Reactive map of extension ID -> [ExtensionActionState] for the selected tab, read from the BrowserStore. */
+    val activeTabActionStates: StateFlow<Map<String, ExtensionActionState>> = _activeTabActionStates.asStateFlow()
+
+    @Volatile private var attached = false
+    @Volatile private var appContext: Context? = null
+
+    /** Tracks pending installs marked for auto-confirmation (e.g. 1-tap connects like AdGuard). */
+    private val autoConfirmInstallUris = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
+
+    /** Extension ids already registered with DefaultAddonUpdater's periodic work. */
+    private val updateRegistered = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
 
     // ── Popup lifecycle helpers ──────────────────────────────────────────────
     private val popupLock = Any()
@@ -512,9 +539,8 @@ object PetalExtensionManager {
     }
 
     /**
-     * Closes a popup session and hands the page back to the source tab. The source session is never
-     * deactivated while a popup is up, so this only has to make sure it is active again. Every step is
-     * guarded, so calling it for an already-closed session is harmless.
+     * Closes a popup session. The source tab is never deactivated while a popup is up, so this only
+     * has to make sure it is active again. Every step is guarded, so calling it twice is harmless.
      */
     private fun releasePopup(popup: PendingPopup) {
         stopPopupWatchdog()
@@ -522,8 +548,9 @@ object PetalExtensionManager {
             val session = popup.session
             if (session.isOpen) {
                 session.setActive(false)
-                session.close()
             }
+            popup.engineSession?.close()
+            if (session.isOpen) session.close()
         } catch (t: Throwable) {
             Log.d(TAG, "Popup session close failed", t)
         }
@@ -597,169 +624,74 @@ object PetalExtensionManager {
         }
     }
 
-    /** Latest default browser/page action for each installed extension. */
-    private val actionByExtensionId = mutableMapOf<String, WebExtension.Action>()
-    /** Per-tab actions are important for extensions such as uBlock that expose different
-     * state/badges depending on the current website. */
-    private val sessionActionByExtensionId = java.util.concurrent.ConcurrentHashMap<GeckoSession, MutableMap<String, WebExtension.Action>>()
 
-    /** All currently active/opened tab GeckoSessions registered with the extension manager. */
-    private val openSessions = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<GeckoSession, Boolean>())
+    // ── Per-tab action state, read from the BrowserStore ─────────────────────
+    // WebExtensionSupport mirrors every extension's default browser/page action into
+    // BrowserState.extensions and every per-tab override into TabSessionState.extensionState, so
+    // no GeckoSession bookkeeping is needed here.
 
-    @Volatile
-    private var currentActiveSession: GeckoSession? = null
+    private data class ActionSnapshot(
+        val extensions: Map<String, mozilla.components.browser.state.state.WebExtensionState>,
+        val tabExtensionState: Map<String, mozilla.components.browser.state.state.WebExtensionState>?
+    )
 
-    /** Tracks pending installs marked for auto-confirmation (e.g. 1-tap connects like AdGuard). */
-    private val autoConfirmInstallUris = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
-
-    private val _activeTabActionStates = MutableStateFlow<Map<String, ExtensionActionState>>(emptyMap())
-    /** Reactive map of extension ID -> [ExtensionActionState] for the currently active tab session. */
-    val activeTabActionStates: StateFlow<Map<String, ExtensionActionState>> = _activeTabActionStates.asStateFlow()
-
-    private fun extractActionState(
-        action: WebExtension.Action,
-        onIconLoaded: ((Bitmap) -> Unit)? = null
-    ): ExtensionActionState {
-        val title = action.title?.takeIf { it.isNotBlank() }
-        val badgeText = action.badgeText?.takeIf { it.isNotBlank() }
-        val badgeBg = action.badgeBackgroundColor
-        val badgeFg = action.badgeTextColor
-        val enabled = action.enabled ?: true
-        if (onIconLoaded != null) {
-            try {
-                action.icon?.getBitmap(48)?.accept({ bmp ->
-                    if (bmp != null) onIconLoaded(bmp)
-                }, { /* icon optional */ })
-            } catch (ignored: Throwable) {}
-        }
-        return ExtensionActionState(
-            title = title,
-            badgeText = badgeText,
-            badgeBackgroundColor = badgeBg,
-            badgeTextColor = badgeFg,
-            enabled = enabled
-        )
-    }
-
-    /**
-     * GeckoView delivers tab-specific actions as *partial overrides* (only the fields the extension
-     * changed for that tab). Firefox rebuilds the full action with [WebExtension.Action.withDefault];
-     * using the raw override gives blank titles/icons and a dead click target.
-     */
-    private fun effectiveAction(extId: String, session: GeckoSession?): WebExtension.Action? {
-        val default = synchronized(actionByExtensionId) { actionByExtensionId[extId] }
-        val override = session?.let { sessionActionByExtensionId[it]?.get(extId) }
-        return when {
-            override != null && default != null -> try {
-                override.withDefault(default)
-            } catch (_: IllegalArgumentException) {
-                // GeckoView refuses to merge a page action with a browser action ("defaultValue must be
-                // of the same type"). Browser and page actions share one slot per extension here, so a
-                // mismatch is possible; keep the tab's own action instead of crashing the result thread.
-                override
-            }
-            override != null -> override
-            else -> default
-        }
-    }
-
-    private fun rememberAction(extension: WebExtension, session: GeckoSession?, action: WebExtension.Action) {
-        if (session != null) {
-            sessionActionByExtensionId
-                .computeIfAbsent(session) { java.util.concurrent.ConcurrentHashMap() }[extension.id] = action
-        } else {
-            synchronized(actionByExtensionId) { actionByExtensionId[extension.id] = action }
-        }
-
-        val active = currentActiveSession
-        // Updates for background tabs are stored but must not touch the visible state.
-        if (session != null && session !== active) return
-
-        val merged = effectiveAction(extension.id, active) ?: action
-        val extId = extension.id
-        val state = extractActionState(merged) { bmp ->
-            Handler(Looper.getMainLooper()).post {
-                val current = _activeTabActionStates.value.toMutableMap()
-                current[extId]?.let { prev ->
-                    current[extId] = prev.copy(icon = bmp)
-                    _activeTabActionStates.value = current
+    private fun observeStore(store: mozilla.components.browser.state.store.BrowserStore) {
+        scope.launch {
+            store.flow()
+                .map { state: BrowserState ->
+                    ActionSnapshot(state.extensions, state.selectedTab?.extensionState)
                 }
-            }
-        }
-        Handler(Looper.getMainLooper()).post {
-            val current = _activeTabActionStates.value.toMutableMap()
-            // Keep the previous icon until the new one decodes so badges never flicker.
-            current[extId] = state.copy(icon = state.icon ?: current[extId]?.icon)
-            _activeTabActionStates.value = current
+                .distinctUntilChanged()
+                .collect { snap -> publishActionStates(snap) }
         }
     }
 
-    private fun updateActiveTabActionStates(session: GeckoSession?) {
-        val map = mutableMapOf<String, ExtensionActionState>()
-        val allExtIds = _extensions.value.map { it.id }.toSet()
-
-        for (extId in allExtIds) {
-            val action = effectiveAction(extId, session)
-            if (action != null) {
-                map[extId] = extractActionState(action) { bmp ->
-                    Handler(Looper.getMainLooper()).post {
-                        val current = _activeTabActionStates.value.toMutableMap()
-                        val prev = current[extId]
-                        if (prev != null) {
-                            current[extId] = prev.copy(icon = bmp)
-                            _activeTabActionStates.value = current
+    private fun publishActionStates(snap: ActionSnapshot) {
+        val previous = _activeTabActionStates.value
+        val result = LinkedHashMap<String, ExtensionActionState>()
+        for ((id, ext) in snap.extensions) {
+            if (!ext.enabled) continue
+            val base = ext.browserAction ?: ext.pageAction ?: continue
+            val tabState = snap.tabExtensionState?.get(id)
+            val override = tabState?.browserAction ?: tabState?.pageAction
+            // Firefox rebuilds the full action by merging the tab's partial override over the default.
+            val merged = if (override != null) {
+                try { base.copyWithOverride(override) } catch (_: Throwable) { override }
+            } else base
+            result[id] = ExtensionActionState(
+                title = merged.title?.takeIf { it.isNotBlank() },
+                badgeText = merged.badgeText?.takeIf { it.isNotBlank() },
+                badgeBackgroundColor = merged.badgeBackgroundColor,
+                badgeTextColor = merged.badgeTextColor,
+                enabled = merged.enabled ?: true,
+                // Keep the previous icon until the new one decodes so badges never flicker.
+                icon = previous[id]?.icon
+            )
+            val loader = merged.loadIcon
+            if (loader != null) {
+                scope.launch(Dispatchers.IO) {
+                    val bmp = try { loader(48) } catch (_: Throwable) { null }
+                    if (bmp != null) {
+                        withContext(Dispatchers.Main) {
+                            val current = _activeTabActionStates.value
+                            val prev = current[id] ?: return@withContext
+                            _activeTabActionStates.value = current + (id to prev.copy(icon = bmp))
                         }
                     }
                 }
             }
         }
-        Handler(Looper.getMainLooper()).post {
-            _activeTabActionStates.value = map
-        }
+        _activeTabActionStates.value = result
     }
 
-    /**
-     * Keeps GeckoView's WebExtension tab dispatcher in sync with Petal's foreground tab.
-     * This is required for Action.click()/tabs APIs to target the same tab the user sees.
-     */
-    @JvmStatic
-    fun setActiveBrowserSession(oldSession: GeckoSession?, newSession: GeckoSession?) {
-        val previousSession = oldSession ?: if (currentActiveSession !== newSession) currentActiveSession else null
-        currentActiveSession = newSession
-        updateActiveTabActionStates(newSession)
-
-        val ctx = appContext ?: return
-        val controller = try {
-            PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
-        } catch (t: Throwable) {
-            Log.w(TAG, "Unable to access WebExtensionController while changing active tab", t)
-            return
-        }
-
-        if (previousSession != null && previousSession !== newSession && previousSession.isOpen) {
-            try { controller.setTabActive(previousSession, false) }
-            catch (t: Throwable) { Log.d(TAG, "Failed to deactivate extension tab session", t) }
-        }
-        if (newSession != null && newSession.isOpen) {
-            try {
-                // Make sure delegates exist even when the tab was created before the
-                // extension list finished loading during a cold start.
-                attachSession(newSession)
-                controller.setTabActive(newSession, true)
-            } catch (t: Throwable) {
-                Log.d(TAG, "Failed to activate extension tab session", t)
-            }
-        }
+    /** The merged action of [extensionId] for the selected tab, or null when it has none. */
+    private fun currentAction(ctx: Context, extensionId: String): mozilla.components.concept.engine.webextension.Action? {
+        val state = PetalEngineStore.getStore(ctx).state
+        val base = state.extensions[extensionId]?.let { it.browserAction ?: it.pageAction } ?: return null
+        val tabState = state.selectedTab?.extensionState?.get(extensionId)
+        val override = tabState?.browserAction ?: tabState?.pageAction ?: return base
+        return try { base.copyWithOverride(override) } catch (_: Throwable) { override }
     }
-
-    private val _busy = MutableStateFlow(false)
-    val busy: StateFlow<Boolean> = _busy.asStateFlow()
-
-    private val _lastError = MutableStateFlow<String?>(null)
-    val lastError: StateFlow<String?> = _lastError.asStateFlow()
-
-    @Volatile private var attached = false
-    @Volatile private var appContext: Context? = null
 
     // ── User-intent gate ───────────────────────────────────────────────────────────────────
     // Firefox only lets an extension open its popup / options page / own pages in response to a
@@ -809,547 +741,243 @@ object PetalExtensionManager {
     private fun allowExtensionInitiatedOpen(extensionId: String): Boolean =
         hasRecentUserIntent() || hasRecentInstall(extensionId) || userIsInsideExtensionUi(extensionId)
 
+
     /** Idempotent - safe to call from every Activity#onCreate. */
     @JvmStatic
     @Synchronized
     fun attach(context: Context) {
-        appContext = context.applicationContext
+        val app = context.applicationContext
+        appContext = app
         if (attached) {
             refresh()
             return
         }
         attached = true
-
-        val runtime = PetalGeckoRuntime.getOrCreate(context.applicationContext)
-        val controller = runtime.webExtensionController
-
-        controller.setPromptDelegate(object : WebExtensionController.PromptDelegate {
-            override fun onInstallPromptRequest(
-                extension: WebExtension,
-                permissions: Array<out String>,
-                origins: Array<out String>,
-                dataCollectionPermissions: Array<out String>
-            ): GeckoResult<WebExtension.PermissionPromptResponse>? {
-                val isAdGuard = extension.id.contains("adguard", ignoreCase = true) ||
-                    extension.metaData?.name?.contains("AdGuard", ignoreCase = true) == true
-                val shouldAutoConfirm = isAdGuard || autoConfirmInstallUris.isNotEmpty()
-                if (shouldAutoConfirm) {
-                    Log.i(TAG, "Auto-granting permissions for 1-tap/curated extension install ${extension.id}")
-                    return GeckoResult.fromValue(
-                        WebExtension.PermissionPromptResponse(true, true, true)
-                    )
-                }
-                val result = GeckoResult<WebExtension.PermissionPromptResponse>()
-                _pendingPrompt.value = PendingPrompt(
-                    extension = extension,
-                    permissions = permissions.toList(),
-                    origins = origins.toList(),
-                    isUpdate = false
-                ) { granted ->
-                    _pendingPrompt.value = null
-                    result.complete(
-                        WebExtension.PermissionPromptResponse(
-                            granted, granted, granted
-                        )
-                    )
-                }
-                return result
-            }
-
-            override fun onUpdatePrompt(
-                extension: WebExtension,
-                newPermissions: Array<out String>,
-                newOrigins: Array<out String>,
-                newDataCollectionPermissions: Array<out String>
-            ): GeckoResult<AllowOrDeny>? {
-                val result = GeckoResult<AllowOrDeny>()
-                _pendingPrompt.value = PendingPrompt(
-                    extension = extension,
-                    permissions = newPermissions.toList(),
-                    origins = newOrigins.toList(),
-                    isUpdate = true
-                ) { granted ->
-                    _pendingPrompt.value = null
-                    result.complete(if (granted) AllowOrDeny.ALLOW else AllowOrDeny.DENY)
-                }
-                return result
-            }
-
-            override fun onOptionalPrompt(
-                extension: WebExtension,
-                permissions: Array<out String>,
-                origins: Array<out String>,
-                dataCollectionPermissions: Array<out String>
-            ): GeckoResult<AllowOrDeny>? {
-                // Firefox WebExtensions can request optional permissions at runtime.
-                // Route these through the same user-facing permission flow as install/update
-                // instead of silently granting them. This keeps arbitrary Firefox extensions
-                // working without weakening the permission model.
-                val result = GeckoResult<AllowOrDeny>()
-                _pendingPrompt.value = PendingPrompt(
-                    extension = extension,
-                    permissions = permissions.toList(),
-                    origins = origins.toList(),
-                    isUpdate = false
-                ) { granted ->
-                    _pendingPrompt.value = null
-                    result.complete(if (granted) AllowOrDeny.ALLOW else AllowOrDeny.DENY)
-                }
-                return result
-            }
-        })
-
-        controller.setAddonManagerDelegate(object : WebExtensionController.AddonManagerDelegate {
-            override fun onInstalled(extension: WebExtension) {
-                // Auto-grant private browsing permission for AdGuard and top content blockers
-                // so users enjoy 100% full ad and tracker blocking potential in both normal and incognito modes.
-                if (extension.id.contains("adguard", ignoreCase = true) ||
-                    extension.metaData?.name?.contains("AdGuard", ignoreCase = true) == true ||
-                    extension.id.contains("ublock", ignoreCase = true)
-                ) {
-                    try {
-                        controller.setAllowedInPrivateBrowsing(extension, true)
-                        Log.i(TAG, "Auto-enabled private browsing support for content blocker ${extension.id}")
-                    } catch (t: Throwable) {
-                        Log.w(TAG, "Failed to auto-enable private browsing for ${extension.id}", t)
-                    }
-                }
-                attachActionDelegate(extension)
-                attachExtensionToOpenSessions(extension)
-                refresh()
-                com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.EXTENSION_INSTALLED, "ext_${extension.id}", "Extension installed", extension.metaData?.name ?: extension.id)
-            }
-
-            override fun onInstallationFailed(
-                extension: WebExtension?,
-                installException: WebExtension.InstallException
-            ) {
-                _busy.value = false
-                _lastError.value = describeInstallError(installException)
-                Log.w(TAG, "Extension installation failed: ${installException.code}")
-                com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.EXTENSION_ERROR, "ext_failed", "Extension install failed", describeInstallError(installException).take(80))
-            }
-
-            override fun onUninstalled(extension: WebExtension) {
-                refresh()
-                com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.EXTENSION_REMOVED, "ext_${extension.id}", "Extension removed", extension.metaData?.name ?: extension.id)
-            }
-
-            override fun onEnabling(extension: WebExtension) { refresh() }
-            override fun onEnabled(extension: WebExtension) {
-                attachActionDelegate(extension)
-                attachExtensionToOpenSessions(extension)
-                refresh()
-            }
-            override fun onDisabling(extension: WebExtension) { refresh() }
-            override fun onDisabled(extension: WebExtension) { refresh() }
-            override fun onReady(extension: WebExtension) {
-                attachActionDelegate(extension)
-                attachExtensionToOpenSessions(extension)
-                refresh()
-            }
-        })
-
+        // getStore() initialises WebExtensionSupport, which owns every runtime-level delegate.
+        observeStore(PetalEngineStore.getStore(app))
         refresh()
     }
 
-    private fun describeInstallError(e: WebExtension.InstallException): String {
-        return when (e.code) {
-            WebExtension.InstallException.ErrorCodes.ERROR_NETWORK_FAILURE ->
-                "Couldn't download the extension - check your connection and try again."
-            WebExtension.InstallException.ErrorCodes.ERROR_INCORRECT_HASH ->
-                "The downloaded file didn't match its expected signature."
-            WebExtension.InstallException.ErrorCodes.ERROR_CORRUPT_FILE ->
-                "That extension package is corrupt or not a valid .xpi file."
-            WebExtension.InstallException.ErrorCodes.ERROR_FILE_ACCESS ->
-                "Petal couldn't access that file."
-            WebExtension.InstallException.ErrorCodes.ERROR_SIGNEDSTATE_REQUIRED ->
-                "That extension isn't signed by Mozilla, so it can't be installed."
-            WebExtension.InstallException.ErrorCodes.ERROR_UNEXPECTED_ADDON_TYPE,
-            WebExtension.InstallException.ErrorCodes.ERROR_UNSUPPORTED_ADDON_TYPE ->
-                "This package is not a supported WebExtension for GeckoView. Firefox desktop-only add-on types cannot run in an Android browser."
-            WebExtension.InstallException.ErrorCodes.ERROR_BLOCKLISTED ->
-                "This extension has been blocklisted by Mozilla for safety reasons."
-            WebExtension.InstallException.ErrorCodes.ERROR_INCOMPATIBLE ->
-                "This extension isn't compatible with Petal's engine version."
-            WebExtension.InstallException.ErrorCodes.ERROR_USER_CANCELED ->
-                "Installation was canceled."
-            else -> "Couldn't install that extension (error ${e.code})."
-        }
-    }
-
-    /** Creates the global WebExtension.TabDelegate handling browser.tabs.create() from add-ons. */
-    private fun createWebExtensionTabDelegate(context: Context): WebExtension.TabDelegate {
-        return object : WebExtension.TabDelegate {
-            // runtime.openOptionsPage(): Firefox for Android opens the options page in a new tab.
-            override fun onOpenOptionsPage(source: WebExtension) {
-                if (!allowExtensionInitiatedOpen(source.id)) {
-                    Log.i(TAG, "Suppressed non-user runtime.openOptionsPage() from ${source.id}")
-                    return
-                }
-                Handler(Looper.getMainLooper()).post {
-                    try { openOptionsPage(source.id, context) }
-                    catch (t: Throwable) { Log.w(TAG, "openOptionsPage failed for ${source.id}", t) }
-                }
-            }
-
-            override fun onNewTab(
-                source: WebExtension,
-                createDetails: WebExtension.CreateTabDetails
-            ): GeckoResult<GeckoSession>? {
-                val targetUrl = createDetails.url?.takeIf { it.isNotBlank() } ?: "about:blank"
-                // An extension opening one of its OWN pages (options, welcome, settings) with no user
-                // gesture is the "settings pop up on every website" bug: refuse it.
-                if (targetUrl.startsWith("moz-extension://") && !allowExtensionInitiatedOpen(source.id)) {
-                    Log.i(TAG, "Suppressed non-user tabs.create(${targetUrl.take(60)}) from ${source.id}")
-                    return GeckoResult.fromValue(null)
-                }
-                val currentSession = currentBrowserSession(context)
-                val isPrivate = (currentSession?.settings?.usePrivateMode ?: false) && source.metaData.allowedInPrivateBrowsing
-                val shouldActivate = createDetails.active ?: true
-
-                val act = findMainActivity(context)
-                if (act != null) {
-                    val result = GeckoResult<GeckoSession>()
-                    act.runOnUiThread {
-                        try {
-                            val newSession = GeckoSession(
-                                com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(context, isPrivate)
-                            )
-                            // Attach SessionTabDelegate immediately so browser.tabs.query()/update()/remove()
-                            // work correctly as soon as Gecko registers this session as a tab.
-                            attachTabDelegateToSession(newSession, context)
-                            act.adoptPopupGeckoSession(newSession, targetUrl, isPrivate, shouldActivate)
-                            result.complete(newSession)
-                        } catch (t: Throwable) {
-                            Log.e(TAG, "Failed to handle onNewTab from extension ${source.id}", t)
-                            result.complete(null)
-                        }
-                    }
-                    return result
-                } else {
-                    // Option B: create tab directly in BrowserStore
-                    val result = GeckoResult<GeckoSession>()
-                    try {
-                        val tabId = "tab_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode())
-                        val pair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
-                            context = context,
-                            tabId = tabId,
-                            url = targetUrl,
-                            title = "",
-                            isIncognito = isPrivate,
-                            select = shouldActivate
-                        )
-                        val gs = com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(pair.second)
-                        if (gs != null) {
-                            attachTabDelegateToSession(gs, context)
-                            result.complete(gs)
-                        } else {
-                            result.complete(null)
-                        }
-                    } catch (t: Throwable) {
-                        Log.e(TAG, "Failed to handle Option B onNewTab from extension ${source.id}", t)
-                        result.complete(null)
-                    }
-                    return result
-                }
-            }
-        }
-    }
-
-    /** Attaches the popup/action bridge to a given extension so its toolbar button works. */
-    private fun attachActionDelegate(extension: WebExtension) {
-        try {
-            appContext?.let { ctx ->
-                extension.setTabDelegate(createWebExtensionTabDelegate(ctx))
-            }
-        } catch (e: Exception) {
-            Log.d(TAG, "Failed to attach tab delegate to ${extension.id}", e)
-        }
-        try {
-            extension.setActionDelegate(object : WebExtension.ActionDelegate {
-                override fun onBrowserAction(
-                    ext: WebExtension,
-                    session: GeckoSession?,
-                    action: WebExtension.Action
-                ) {
-                    rememberAction(ext, session, action)
-                }
-
-                override fun onPageAction(
-                    ext: WebExtension,
-                    session: GeckoSession?,
-                    action: WebExtension.Action
-                ) {
-                    rememberAction(ext, session, action)
-                }
-
-                override fun onOpenPopup(
-                    ext: WebExtension,
-                    action: WebExtension.Action
-                ): GeckoResult<GeckoSession>? =
-                    if (allowExtensionInitiatedOpen(ext.id)) createPopupSession(ext) else null
-
-                override fun onTogglePopup(
-                    ext: WebExtension,
-                    action: WebExtension.Action
-                ): GeckoResult<GeckoSession>? =
-                    if (hasRecentUserIntent()) createPopupSession(ext) else null
-            })
-        } catch (e: Exception) {
-            Log.d(TAG, "Failed to attach action delegate to ${extension.id}", e)
-        }
-    }
-
-    /**
-     * Attaches action delegates for all active extensions to a given tab's GeckoSession,
-     * connecting tab-specific extension actions and badges to the active browsing context.
-     *
-     * AddonManagerDelegate callbacks can fire on a background Gecko thread.
-     * BrowserContainer is not thread-safe, so all access is dispatched to the main thread.
-     */
-    private fun attachExtensionToOpenSessions(extension: WebExtension) {
+    /** Re-reads the installed extensions from the engine and republishes [extensions]. */
+    fun refresh() {
         val ctx = appContext ?: return
-        Handler(Looper.getMainLooper()).post {
-            try {
-                val allSessions = mutableSetOf<GeckoSession>()
-                openSessions.filter { it.isOpen }.forEach { allSessions.add(it) }
-                openSessions.retainAll { it.isOpen }
-                PetalEngineStore.getStore(ctx).state.tabs.forEach { tab ->
-                    val session = geckoSessionFor(tab)
-                    if (session != null && session.isOpen) allSessions.add(session)
-                }
-                allSessions.forEach { session ->
-                    try {
-                        session.webExtensionController.setActionDelegate(extension, object : WebExtension.ActionDelegate {
-                            override fun onBrowserAction(ext: WebExtension, eventSession: GeckoSession?, action: WebExtension.Action) {
-                                rememberAction(ext, eventSession ?: session, action)
-                            }
-                            override fun onPageAction(ext: WebExtension, eventSession: GeckoSession?, action: WebExtension.Action) {
-                                rememberAction(ext, eventSession ?: session, action)
-                            }
-                            override fun onOpenPopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? =
-                                if (allowExtensionInitiatedOpen(ext.id)) createPopupSession(ext, session) else null
-                            override fun onTogglePopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? =
-                                if (hasRecentUserIntent()) createPopupSession(ext, session) else null
-                        })
-                        session.webExtensionController.setTabDelegate(extension, createSessionTabDelegate(ctx))
-                    } catch (t: Throwable) {
-                        Log.d(TAG, "Failed to attach newly-installed extension ${extension.id} to tab", t)
-                    }
-                }
-            } catch (t: Throwable) {
-                Log.w(TAG, "attachExtensionToOpenSessions: error iterating sessions for ${extension.id}", t)
-            }
-        }
-    }
-
-    /**
-     * Gecko's SessionTabDelegate is the missing piece between a WebExtension popup and
-     * Petal's real tab model. Without it, APIs such as browser.tabs.update/remove can
-     * execute in Gecko but have no effect on the visible Petal tab.
-     */
-    private fun createSessionTabDelegate(context: Context): WebExtension.SessionTabDelegate {
-        return object : WebExtension.SessionTabDelegate {
-            override fun onCloseTab(extension: WebExtension?, session: GeckoSession): GeckoResult<AllowOrDeny> {
-                Handler(Looper.getMainLooper()).post {
-                    try {
-                        val activity = findMainActivity(context) ?: return@post
-                        val tab = PetalEngineStore.getStore(context).state.tabs.firstOrNull {
-                            geckoSessionFor(it) === session
-                        }
-                        if (tab != null) PetalEngineStore.getStore(context).dispatch(
-                            mozilla.components.browser.state.action.TabListAction.RemoveTabAction(tab.id)
-                        )
-                    } catch (t: Throwable) {
-                        Log.w(TAG, "Extension tab close request failed", t)
-                    }
-                }
-                return GeckoResult.fromValue(AllowOrDeny.ALLOW)
-            }
-
-            override fun onUpdateTab(
-                extension: WebExtension,
-                session: GeckoSession,
-                details: WebExtension.UpdateTabDetails
-            ): GeckoResult<AllowOrDeny> {
-                Handler(Looper.getMainLooper()).post {
-                    try {
-                        val activity = findMainActivity(context) ?: return@post
-                        val store = PetalEngineStore.getStore(context)
-                        val tab = store.state.tabs.firstOrNull { geckoSessionFor(it) === session }
-                        if (tab != null) {
-                            details.url?.takeIf { it.isNotBlank() }?.let { url ->
-                                tab.engineState.engineSession?.loadUrl(url)
-                            }
-                            if (details.active == true) {
-                                store.dispatch(mozilla.components.browser.state.action.TabListAction.SelectTabAction(tab.id))
-                            }
-                        }
-                    } catch (t: Throwable) {
-                        Log.w(TAG, "Extension tab update request failed", t)
-                    }
-                }
-                return GeckoResult.fromValue(AllowOrDeny.ALLOW)
-            }
-        }
-    }
-
-    private fun attachTabDelegate(session: GeckoSession, context: Context) {
-        for (extItem in _extensions.value) {
-            try {
-                session.webExtensionController.setTabDelegate(extItem.raw, createSessionTabDelegate(context))
-            } catch (t: Throwable) {
-                Log.d(TAG, "Failed to attach tab delegate for ${extItem.id}", t)
-            }
-        }
-    }
-
-    /**
-     * Attaches the SessionTabDelegate for all installed extensions to a newly-created GeckoSession
-     * immediately at session creation time — before Gecko registers the session as a tab.
-     * This ensures browser.tabs.query({active:true}) and browser.tabs.update/remove() work
-     * correctly from the moment the tab exists, matching Firefox's own tab registration sequence.
-     */
-    private fun attachTabDelegateToSession(session: GeckoSession, context: Context) {
-        for (extItem in _extensions.value) {
-            try {
-                session.webExtensionController.setTabDelegate(extItem.raw, createSessionTabDelegate(context))
-            } catch (t: Throwable) {
-                Log.d(TAG, "Failed to pre-attach tab delegate for ${extItem.id}", t)
-            }
-        }
-    }
-
-    @JvmStatic
-    fun attachSession(session: GeckoSession?) {
-        if (session == null) return
-        if (session.isOpen) {
-            openSessions.add(session)
-        }
-        val ctx = appContext ?: return
-        for (extItem in _extensions.value) {
-            val ext = extItem.raw
-            try {
-                session.webExtensionController.setActionDelegate(ext, object : WebExtension.ActionDelegate {
-                    override fun onBrowserAction(ext: WebExtension, geckoSession: GeckoSession?, action: WebExtension.Action) {
-                        rememberAction(ext, geckoSession ?: session, action)
-                    }
-                    override fun onPageAction(ext: WebExtension, geckoSession: GeckoSession?, action: WebExtension.Action) {
-                        rememberAction(ext, geckoSession ?: session, action)
-                    }
-                    override fun onOpenPopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? =
-                                if (allowExtensionInitiatedOpen(ext.id)) createPopupSession(ext, session) else null
-                    override fun onTogglePopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? =
-                                if (hasRecentUserIntent()) createPopupSession(ext, session) else null
-                })
-                session.webExtensionController.setTabDelegate(ext, createSessionTabDelegate(ctx))
-            } catch (e: Exception) {
-                Log.d(TAG, "Failed to attach extension delegates for ${ext.id}", e)
-            }
-        }
-    }
-
-    /**
-     * Unregisters a closed or suspended GeckoSession from the extension manager.
-     * Prevents strong-reference memory leaks in [sessionActionByExtensionId] and [openSessions].
-     */
-    @JvmStatic
-    fun detachSession(session: GeckoSession?) {
-        if (session == null) return
         try {
-            if (currentActiveSession === session) {
-                currentActiveSession = null
-                _activeTabActionStates.value = emptyMap()
-            }
-            openSessions.remove(session)
-            sessionActionByExtensionId.remove(session)
-            // Periodic hygiene cleanup of closed sessions
-            openSessions.retainAll { it.isOpen }
-            sessionActionByExtensionId.keys.retainAll { it.isOpen }
+            PetalEngineStore.getEngine(ctx).listInstalledWebExtensions(
+                onSuccess = { list -> scope.launch { applyInstalled(ctx, list) } },
+                onError = { Log.w(TAG, "Failed to list extensions", it) }
+            )
         } catch (t: Throwable) {
-            Log.d(TAG, "detachSession cleanup error", t)
+            Log.w(TAG, "refresh failed", t)
         }
     }
 
-    private fun createPopupSession(extension: WebExtension, sourceSession: GeckoSession? = null): GeckoResult<GeckoSession>? {
-        // Rapid repeated taps: hand back the popup that is already up instead of tearing it down
-        // and rebuilding it on every tap.
-        recentPopupFor(extension.id)?.let { return GeckoResult.fromValue(it.session) }
-        val tStart = android.os.SystemClock.uptimeMillis()
-        takePendingPopup()?.let { releasePopup(it) }
-        // GeckoView accepts a normal GeckoSession here. Open it before returning so the
-        // extension popup can begin loading immediately; delaying open until Compose
-        // composition can leave Gecko waiting for the popup host and make the browser
-        // appear stuck on tap. GeckoSession.open() is asynchronous, so this does not
-        // block the UI thread while Gecko initializes the popup document.
-        val ctx = appContext ?: return null
-        val isPrivateTab = sourceSession?.settings?.usePrivateMode
-            ?: (currentBrowserSession(ctx)?.settings?.usePrivateMode ?: false)
-        val popupSettings = com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(
-            ctx, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
-        )
-        val popupSession = GeckoSession(popupSettings)
+    private fun applyInstalled(
+        ctx: Context,
+        list: List<mozilla.components.concept.engine.webextension.WebExtension>
+    ) {
+        try {
+            val previous = _extensions.value.associateBy { it.id }
+            val natives = list.mapNotNull { (it as? GeckoWebExtension)?.nativeExtension }
+            val items = natives.mapNotNull { toInstalled(it) }.map { item ->
+                val prev = previous[item.id]
+                item.copy(icon = prev?.icon, addon = prev?.addon)
+            }
+            _extensions.value = items
 
-        // Firefox Android installs a prompt delegate on extension popup sessions.
-        // Password managers commonly use alert/confirm prompts during unlock or
-        // autofill setup; leaving these callbacks unhandled can make the popup
-        // appear blank or stall while uBlock still works normally.
-        popupSession.promptDelegate = object : GeckoSession.PromptDelegate {
-            override fun onAlertPrompt(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.AlertPrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-                GeckoResult.fromValue(prompt.dismiss())
+            // Periodic update checks: DefaultAddonUpdater schedules one WorkManager job per extension.
+            val updater = PetalEngineStore.getAddonUpdater(ctx)
+            items.forEach { if (updateRegistered.add(it.id)) runCatching { updater.registerForFutureUpdates(it.id) } }
+            updateRegistered.retainAll(items.map { it.id }.toSet())
 
-            override fun onButtonPrompt(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.ButtonPrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-                GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE))
+            // Icons arrive asynchronously (best-effort, 96px) and are patched in once ready.
+            natives.forEach { ext ->
+                try {
+                    ext.metaData?.icon?.getBitmap(96)?.accept({ bmp ->
+                        if (bmp != null) {
+                            _extensions.value = _extensions.value.map {
+                                if (it.id == ext.id) it.copy(icon = bmp) else it
+                            }
+                        }
+                    }, { /* icon optional */ })
+                } catch (_: Throwable) {}
+            }
+            enrichAddons(ctx, force = false)
+        } catch (t: Throwable) {
+            Log.w(TAG, "applyInstalled failed", t)
         }
+    }
 
-        // Inject mobile-responsive CSS when the extension popup page finishes loading.
-        // Without this, many extension popups (uBlock Origin, Bitwarden, AdGuard, etc.)
-        // render at their desktop fixed width and overflow the phone screen.
-        popupSession.progressDelegate = object : GeckoSession.ProgressDelegate {
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                injectExtensionPopupResponsiveFix(session)
+    @Volatile private var lastEnrichUptimeMs = 0L
+
+    /** Resolves the Mozilla [Addon] listing for installed extensions (network, throttled, offline-safe). */
+    private fun enrichAddons(ctx: Context, force: Boolean) {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (!force && now - lastEnrichUptimeMs < 60_000L) return
+        lastEnrichUptimeMs = now
+        scope.launch {
+            try {
+                val all = withContext(Dispatchers.IO) {
+                    PetalEngineStore.getAddonManager(ctx).getAddons(waitForPendingActions = false)
+                }
+                _addons.value = all
+                val byId = all.filter { it.isInstalled() }.associateBy { it.id }
+                _extensions.value = _extensions.value.map { it.copy(addon = byId[it.id] ?: it.addon) }
+            } catch (t: Throwable) {
+                Log.d(TAG, "Addon listing unavailable (offline?): ${t.message}")
             }
         }
+    }
 
-        // Open only after all popup delegates are installed. GeckoSession.open() is
-        // asynchronous, so this starts loading without blocking the browser UI.
+    /** AMO browse: featured/available add-ons merged with the installed ones, via AddonManager. */
+    suspend fun browseAddons(forceRefresh: Boolean = false): List<Addon> {
+        val ctx = appContext ?: return emptyList()
+        return try {
+            val all = withContext(Dispatchers.IO) {
+                PetalEngineStore.getAddonManager(ctx).getAddons(waitForPendingActions = false, allowCache = !forceRefresh)
+            }
+            _addons.value = all
+            all
+        } catch (t: Throwable) {
+            Log.w(TAG, "browseAddons failed", t)
+            emptyList()
+        }
+    }
+
+    /** Minimal [Addon] handle for AddonManager operations that address an add-on by id. */
+    private fun addonFor(id: String): Addon =
+        _extensions.value.firstOrNull { it.id == id }?.addon ?: Addon(id = id)
+
+    private fun displayName(ctx: Context, addon: Addon): String =
+        try { addon.translateName(ctx) } catch (_: Throwable) { addon.id }
+
+    // ── Hooks called by PetalWebExtensionDelegate ────────────────────────────
+
+    /** Install prompts are auto-confirmed for AdGuard and for 1-tap installs started from Petal itself. */
+    internal fun shouldAutoConfirm(extensionId: String, name: String?): Boolean =
+        extensionId.contains("adguard", ignoreCase = true) ||
+            name?.contains("AdGuard", ignoreCase = true) == true ||
+            autoConfirmInstallUris.isNotEmpty()
+
+    /** Surfaces a permission/install prompt to the Compose dialog and reports the answer back. */
+    internal fun showPrompt(
+        extensionId: String,
+        name: String?,
+        permissions: List<String>,
+        origins: List<String>,
+        isUpdate: Boolean,
+        respond: (granted: Boolean) -> Unit
+    ) {
+        _pendingPrompt.value = PendingPrompt(
+            extensionId = extensionId,
+            displayName = name ?: extensionId,
+            permissions = permissions,
+            origins = origins,
+            isUpdate = isUpdate
+        ) { granted ->
+            _pendingPrompt.value = null
+            respond(granted)
+        }
+    }
+
+    internal fun onExtensionInstalled(extensionId: String, name: String?) {
+        val ctx = appContext
+        // Content blockers get full private-browsing coverage by default.
+        if (ctx != null && (extensionId.contains("adguard", ignoreCase = true) ||
+                name?.contains("AdGuard", ignoreCase = true) == true ||
+                extensionId.contains("ublock", ignoreCase = true))
+        ) {
+            runCatching {
+                PetalEngineStore.getAddonManager(ctx).setAddonAllowedInPrivateBrowsing(
+                    addonFor(extensionId), true, onSuccess = { refresh() }, onError = { }
+                )
+            }
+        }
+        com.petal.browser.live.PetalLiveActionBus.postSimple(
+            com.petal.browser.live.LiveEventKind.EXTENSION_INSTALLED, "ext_$extensionId", "Extension installed", name ?: extensionId
+        )
+        if (ctx != null) enrichAddons(ctx, force = true)
+        refresh()
+    }
+
+    internal fun onExtensionUninstalled(extensionId: String, name: String?) {
+        com.petal.browser.live.PetalLiveActionBus.postSimple(
+            com.petal.browser.live.LiveEventKind.EXTENSION_REMOVED, "ext_$extensionId", "Extension removed", name ?: extensionId
+        )
+        refresh()
+    }
+
+    /**
+     * Creates the popup [EngineSession] Gecko loads an extension's `moz-extension://` popup page
+     * into, and publishes it as [pendingPopup] for the Compose popup host. Returns null when the
+     * open was not user initiated (same gate as before) or the engine refused.
+     */
+    internal fun createPopupEngineSession(extensionId: String, extensionName: String?, allowedInPrivate: Boolean): EngineSession? {
+        if (!allowExtensionInitiatedOpen(extensionId)) {
+            Log.i(TAG, "Suppressed non-user popup from $extensionId")
+            return null
+        }
+        recentPopupFor(extensionId)?.engineSession?.let { return it }
+        val ctx = appContext ?: return null
+        takePendingPopup()?.let { releasePopup(it) }
+        val sourceTab = PetalEngineStore.getStore(ctx).state.selectedTab
+        val isPrivate = (sourceTab?.content?.private ?: false) && allowedInPrivate
+        val engineSession = try {
+            PetalEngineStore.getEngine(ctx).createSession(private = isPrivate)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to create extension popup session", t)
+            return null
+        }
+        // Extension pages need JavaScript regardless of the user's per-site setting.
+        try { engineSession.settings.javascriptEnabled = true } catch (_: Throwable) {}
+        val popupGecko = com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(engineSession)
+        if (popupGecko == null) {
+            Log.e(TAG, "Popup EngineSession exposes no GeckoSession")
+            return null
+        }
+        // Open before handing the session back so the popup page starts loading immediately.
         try {
-            popupSession.open(PetalGeckoRuntime.getOrCreate(ctx))
+            if (!popupGecko.isOpen) popupGecko.open(com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(ctx))
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to open extension popup session", t)
             return null
         }
-
+        // Many popups (uBlock Origin, Bitwarden, AdGuard) render at desktop width unless fixed on load.
+        popupGecko.progressDelegate = object : GeckoSession.ProgressDelegate {
+            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                injectExtensionPopupResponsiveFix(session)
+            }
+        }
+        popupGecko.promptDelegate = popupPromptDelegate()
         val popup = PendingPopup(
-            extensionId = extension.id,
-            extensionName = extension.metaData.name ?: extension.id,
-            session = popupSession,
-            sourceSession = sourceSession
+            extensionId = extensionId,
+            extensionName = extensionName ?: extensionId,
+            session = popupGecko,
+            sourceSession = currentBrowserSession(ctx),
+            engineSession = engineSession
         )
         lastPopupOpenUptimeMs = android.os.SystemClock.uptimeMillis()
         _pendingPopup.value = popup
         startPopupWatchdog()
-        Log.d(TAG, "createPopupSession(${extension.id}) took ${lastPopupOpenUptimeMs - tStart}ms on ${Thread.currentThread().name}")
         notifyPopupRequested(popup)
-        return GeckoResult.fromValue(popupSession)
+        return engineSession
     }
 
-    /** Injects a mobile-responsive CSS + viewport fix into extension popup sessions.
-     *  Matches omni's injectExtensionPopupResponsiveFix so all extension popups look
-     *  correct on phone-sized screens instead of overflowing at their desktop widths.
-     *
-     *  NOTE: Uses GeckoSession.evaluateJS() instead of loadUri("javascript:...").
-     *  Extension pages run under their own moz-extension:// CSP which blocks javascript:
-     *  URI navigation — evaluateJS() executes from the native side and bypasses content CSP,
-     *  matching Firefox's own approach for injecting chrome-privileged scripts into
-     *  extension documents. */
+    /** Password managers use alert/confirm during unlock; unhandled prompts leave the popup blank. */
+    private fun popupPromptDelegate() = object : GeckoSession.PromptDelegate {
+        override fun onAlertPrompt(
+            session: GeckoSession,
+            prompt: GeckoSession.PromptDelegate.AlertPrompt
+        ): org.mozilla.geckoview.GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
+            org.mozilla.geckoview.GeckoResult.fromValue(prompt.dismiss())
+
+        override fun onButtonPrompt(
+            session: GeckoSession,
+            prompt: GeckoSession.PromptDelegate.ButtonPrompt
+        ): org.mozilla.geckoview.GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
+            org.mozilla.geckoview.GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE))
+    }
+
+    /** Injects a mobile-responsive viewport + CSS fix into extension popup pages. */
     private fun injectExtensionPopupResponsiveFix(session: GeckoSession) {
         val js = """
             (function() {
@@ -1366,18 +994,14 @@ object PetalExtensionManager {
                     if (document.getElementById('petal-ext-popup-responsive')) return;
                     var style = document.createElement('style');
                     style.id = 'petal-ext-popup-responsive';
-                    style.innerHTML = [
-                        'html, body { max-width: 100vw !important; overflow-x: hidden !important; }'
-                    ].join(' ');
+                    style.innerHTML = 'html, body { max-width: 100vw !important; overflow-x: hidden !important; }';
                     (document.head || document.documentElement).appendChild(style);
                 } catch(e) {}
             })();
         """.trimIndent().replace("\n", " ")
-        try {
-            PetalBuiltInExtensionManager.evaluateJavascript(session, js)
-        } catch (ignored: Exception) {}
+        // evaluateJS from the native side bypasses the extension page's CSP (javascript: URLs would not).
+        try { PetalBuiltInExtensionManager.evaluateJavascript(session, js) } catch (_: Exception) {}
     }
-
 
     @JvmStatic
     fun dismissPopup() {
@@ -1417,13 +1041,15 @@ object PetalExtensionManager {
     fun isAdGuardEnabled(): Boolean =
         getAdGuardExtension()?.enabled == true
 
+
+
     /**
      * Manually triggers the browser-action (toolbar popup) for an installed extension from the UI.
      *
-     * In Firefox/Fennec, clicking an extension triggers its Action.click(), opening the
-     * real interactive popup (e.g. AdGuard toggle, uBlock Origin power button).
-     * If the action delegate isn't dispatched yet, this seamlessly falls back to resolving
-     * the extension's default_popup URL from manifest.json via its baseUrl.
+     * Same as tapping the toolbar button in Firefox: the action recorded in the BrowserStore is
+     * clicked, and Gecko answers with a popup through [PetalWebExtensionDelegate.onToggleActionPopup]
+     * (or runs the extension's background handler when it has no popup). When no action is known
+     * yet, the extension's own default_popup URL is opened directly.
      */
     @JvmOverloads
     fun triggerBrowserAction(extensionId: String, context: Context? = null) {
@@ -1436,106 +1062,60 @@ object PetalExtensionManager {
         val rawExt = extItem.raw
         val ctx = context ?: appContext ?: return
 
-        val actionExtId = extItem.id
-        // 1. Try action.click() if an action was captured and registered
-        val activeSession = currentBrowserSession(ctx)
-        // Same resolution Firefox uses: the visible tab's override merged over the default action.
-        // Most extensions never set per-tab overrides, so the default action must be used as-is.
-        val action = effectiveAction(actionExtId, activeSession)
+        val action = currentAction(ctx, extItem.id)
         if (action != null) {
             try {
-                action.click()
-                // If extension declared a popup in manifest, allow an asynchronous fallback if the action
-                // callback did not arrive. Extensions without popups simply handle action.click() in their background script.
+                action.onClick()
+                // Extensions that declare a popup get a fallback if Gecko's popup callback never arrives.
                 if (extensionHasPopup(rawExt)) {
                     Handler(Looper.getMainLooper()).postDelayed({
                         if (_pendingPopup.value == null) {
                             try {
-                                val stillActive = currentBrowserSession(ctx)
-                                if (stillActive === activeSession) {
-                                    val directUrl = resolveExtensionPopupUrl(rawExt)
-                                    if (!directUrl.isNullOrBlank()) openDirectPopup(rawExt, directUrl, ctx)
-                                }
+                                val directUrl = resolveExtensionPopupUrl(rawExt)
+                                if (!directUrl.isNullOrBlank()) openDirectPopup(extItem, directUrl, ctx)
                             } catch (t: Throwable) {
-                                Log.d(TAG, "Delayed extension popup fallback failed for $actionExtId", t)
+                                Log.d(TAG, "Delayed extension popup fallback failed for ${extItem.id}", t)
                             }
                         }
                     }, 700L)
                 }
                 return
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to click extension action for $actionExtId, falling back to direct popup load", e)
+                Log.w(TAG, "Failed to click extension action for ${extItem.id}, falling back to direct popup load", e)
             }
         }
 
-        // 2. Direct popup resolution: load the real extension popup directly in a GeckoSession!
         val popupUrl = resolveExtensionPopupUrl(rawExt)
-        if (popupUrl != null && ctx != null) {
-            openDirectPopup(rawExt, popupUrl, ctx)
+        if (popupUrl != null) {
+            openDirectPopup(extItem, popupUrl, ctx)
             return
         }
 
-        // 3. Fallback: If extension truly does not have an action popup, open options page if present
         val optionsUrl = extItem.optionsPageUrl ?: resolveExtensionOptionsUrl(rawExt)
-        if (optionsUrl != null && ctx != null) {
+        if (optionsUrl != null) {
             openOptionsPage(extensionId, ctx)
         } else {
             val msg = "${extItem.name} does not have a popup interface."
             _lastError.value = msg
-            if (ctx != null) {
-                PetalToast.show(ctx, msg, PetalToast.LENGTH_SHORT)
-            }
+            PetalToast.show(ctx, msg, PetalToast.LENGTH_SHORT)
         }
     }
 
-    private fun openDirectPopup(extension: WebExtension, popupUrl: String, activityContext: Context) {
+    /** Loads [popupUrl] (the extension's own moz-extension:// page) into a fresh popup EngineSession. */
+    private fun openDirectPopup(extension: InstalledExtension, popupUrl: String, ctx: Context) {
         if (recentPopupFor(extension.id) != null) return
-        takePendingPopup()?.let { releasePopup(it) }
-        val isPrivateTab = currentBrowserSession(activityContext)?.settings?.usePrivateMode ?: false
-        val popupSettings = com.petal.browser.engine.gecko.PetalEngineBridge.createSessionSettings(
-            activityContext, isPrivateTab && extension.metaData.allowedInPrivateBrowsing, isExtensionPopup = true
-        )
-        val popupSession = GeckoSession(popupSettings)
-        popupSession.promptDelegate = object : GeckoSession.PromptDelegate {
-            override fun onAlertPrompt(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.AlertPrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-                GeckoResult.fromValue(prompt.dismiss())
-
-            override fun onButtonPrompt(
-                session: GeckoSession,
-                prompt: GeckoSession.PromptDelegate.ButtonPrompt
-            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
-                GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE))
+        val session = createPopupEngineSession(extension.id, extension.name, extension.allowedInPrivateBrowsing) ?: return
+        try {
+            session.loadUrl(popupUrl)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to load popup page for ${extension.id}", t)
+            dismissPopup()
         }
-        val runtime = PetalGeckoRuntime.getOrCreate(activityContext.applicationContext)
-        if (!popupSession.isOpen) {
-            popupSession.open(runtime)
-        }
-        popupSession.progressDelegate = object : GeckoSession.ProgressDelegate {
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                injectExtensionPopupResponsiveFix(session)
-            }
-        }
-        popupSession.loadUri(popupUrl)
-
-        val popup = PendingPopup(
-            extensionId = extension.id,
-            extensionName = extension.metaData.name ?: extension.id,
-            session = popupSession,
-            sourceSession = currentBrowserSession(activityContext)
-        )
-        lastPopupOpenUptimeMs = android.os.SystemClock.uptimeMillis()
-        _pendingPopup.value = popup
-        startPopupWatchdog()
-        notifyPopupRequested(popup)
     }
 
     /**
-     * Opens the options/settings page of an extension in a real foreground browser tab,
-     * matching Firefox for Android (Fennec) tabHandler.onNewTab() behavior.
-     * If no separate settings page exists, gracefully falls back to opening its popup.
+     * Opens the options/settings page of an extension in a real foreground browser tab, matching
+     * Firefox for Android. Falls back to the popup when there is no separate settings page.
      */
     fun openOptionsPage(extensionId: String, context: Context) {
         noteUserIntent()
@@ -1564,7 +1144,7 @@ object PetalExtensionManager {
         } else {
             try {
                 val tabId = "tab_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode())
-                com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+                PetalEngineStore.createTabSession(
                     context = context,
                     tabId = tabId,
                     url = optionsUrl,
@@ -1574,30 +1154,21 @@ object PetalExtensionManager {
                 )
             } catch (t: Throwable) {
                 Log.e(TAG, "Failed to open options page in new tab: ${t.message}", t)
-                openDirectPopup(extItem.raw, optionsUrl, context)
+                openDirectPopup(extItem, optionsUrl, context)
             }
         }
     }
 
     private fun currentBrowserSession(context: Context): GeckoSession? {
-        // Option B: Retrieve active tab from BrowserStore
-        try {
-            val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context)
+        return try {
+            val store = PetalEngineStore.getStore(context)
             val selectedTab = store.state.selectedTabId?.let { id -> store.state.tabs.firstOrNull { it.id == id } }
                 ?: store.state.tabs.firstOrNull()
-            val engineSession = selectedTab?.engineState?.engineSession
-            if (engineSession != null) {
-                val gs = com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(engineSession)
-                if (gs != null) return gs
-            }
-        } catch (_: Throwable) {}
-
-        // BrowserStore is the single source of truth; there is no controller registry to fall back to.
-        return null
+            com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(selectedTab?.engineState?.engineSession)
+        } catch (_: Throwable) {
+            null
+        }
     }
-
-    private fun geckoSessionFor(tab: mozilla.components.browser.state.state.TabSessionState): GeckoSession? =
-        com.petal.browser.engine.gecko.PetalEngineBridge.getEngineGeckoSession(tab.engineState.engineSession)
 
     private fun findMainActivity(context: Context): com.petal.browser.activity.MainActivity? {
         var ctx: Context? = context
@@ -1675,15 +1246,15 @@ object PetalExtensionManager {
     }
 
 
+
+    // ── Install / uninstall / enable / update, all through AddonManager ───────
+
     /**
-     * Installs a `.xpi` file the user opened from *outside* the browser - tapped in Downloads,
-     * a file manager, shared from another app, etc. The incoming [uri] is almost always a
-     * `content://` Uri whose read permission is only granted for the lifetime of the original
-     * VIEW/SEND intent; GeckoView's native (Necko) downloader has no access to that grant and
-     * can't resolve arbitrary content providers, so the bytes are copied into the app's own
-     * cache directory first and a plain `file://` path (which GeckoView can always read) is
-     * installed instead. This is what makes `.xpi` files "just work" natively from anywhere on
-     * the device, not only from https:// download links followed inside Petal itself.
+     * Installs a `.xpi` file the user opened from *outside* the browser - tapped in Downloads, a
+     * file manager, shared from another app. The incoming [uri] is usually a `content://` Uri whose
+     * read grant only lasts for the original intent, and Gecko's installer cannot resolve content
+     * providers, so the bytes are copied into the app cache first and the plain `file://` path is
+     * installed through `AddonManager.installAddon(... FROM_FILE)`.
      */
     @JvmStatic
     @JvmOverloads
@@ -1735,14 +1306,13 @@ object PetalExtensionManager {
             }
             try { destFile.setReadable(true, false) } catch (_: Exception) {}
 
-            // Validate package format: A valid WebExtension XPI is a ZIP archive containing manifest.json.
-            // Also accept if name, URI path, or mime-type explicitly declared xpi.
+            // A valid WebExtension XPI is a ZIP archive containing manifest.json. Also accept a name,
+            // path or mime type that explicitly declares xpi.
             val isKnownXpiZip = try {
-                java.util.zip.ZipFile(destFile).use { zip -> zip.getEntry("manifest.json") != null }
+                ZipFile(destFile).use { zip -> zip.getEntry("manifest.json") != null }
             } catch (_: Exception) {
                 false
             }
-
             val isXpi = isKnownXpiZip ||
                 displayName.endsWith(".xpi", ignoreCase = true) ||
                 uri.path?.endsWith(".xpi", ignoreCase = true) == true ||
@@ -1758,15 +1328,8 @@ object PetalExtensionManager {
                 return
             }
 
-            // GeckoView explicitly distinguishes local-file installation from an add-on
-            // manager/remote installation. Use the correct method so imported .xpi files
-            // follow the native local-package path.
             val fileUri = Uri.fromFile(destFile.canonicalFile).toString()
-            install(
-                fileUri,
-                WebExtensionController.INSTALLATION_METHOD_FROM_FILE,
-                autoConfirm = false
-            ) { success, message ->
+            install(fileUri, InstallationMethod.FROM_FILE, autoConfirm = false) { success, message ->
                 try { destFile.delete() } catch (ignored: Exception) {}
                 onResult(success, message)
             }
@@ -1786,164 +1349,148 @@ object PetalExtensionManager {
         autoConfirm: Boolean = false,
         onResult: (success: Boolean, message: String?) -> Unit = { _, _ -> }
     ) {
-        install(uri, WebExtensionController.INSTALLATION_METHOD_MANAGER, autoConfirm, onResult)
+        install(uri, null, autoConfirm, onResult)
     }
 
     private fun install(
         uri: String,
-        installationMethod: String,
-        autoConfirm: Boolean = false,
-        onResult: (success: Boolean, message: String?) -> Unit = { _, _ -> }
+        installationMethod: InstallationMethod?,
+        autoConfirm: Boolean,
+        onResult: (success: Boolean, message: String?) -> Unit
     ) {
-        val appCtx = appContext
         val installUri = normalizeInstallUri(uri)
         if (installUri == null) {
             val message = "Use a secure Firefox .xpi download link, an addons.mozilla.org add-on page, or import an .xpi file."
+            _busy.value = false
             _lastError.value = message
             onResult(false, message)
             return
         }
-        val isAdGuard = uri.contains("adguard", ignoreCase = true) || installUri.contains("adguard", ignoreCase = true)
-        if (autoConfirm || isAdGuard) {
-            autoConfirmInstallUris.add(installUri)
-        }
         val ctx = appContext ?: return
         attach(ctx)
-        val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
+        val isAdGuard = uri.contains("adguard", ignoreCase = true) || installUri.contains("adguard", ignoreCase = true)
+        if (autoConfirm || isAdGuard) autoConfirmInstallUris.add(installUri)
         _busy.value = true
         _lastError.value = null
-        controller.install(installUri, installationMethod)
-            .accept({ extension ->
+        PetalEngineStore.getAddonManager(ctx).installAddon(
+            url = installUri,
+            installationMethod = installationMethod,
+            onSuccess = { addon ->
                 autoConfirmInstallUris.remove(installUri)
                 _busy.value = false
-                if (extension != null) {
-                    noteInstallIntent(extension.id)
-                    if (isAdGuard || autoConfirm || extension.id.contains("adguard", ignoreCase = true)) {
-                        try {
-                            controller.setAllowedInPrivateBrowsing(extension, true)
-                        } catch (t: Throwable) {
-                            Log.w(TAG, "Failed to enable private browsing for ${extension.id}", t)
-                        }
+                noteInstallIntent(addon.id)
+                if (isAdGuard || autoConfirm || addon.id.contains("adguard", ignoreCase = true)) {
+                    runCatching {
+                        PetalEngineStore.getAddonManager(ctx).setAddonAllowedInPrivateBrowsing(
+                            addon, true, onSuccess = { refresh() }, onError = { }
+                        )
                     }
-                    attachActionDelegate(extension)
                 }
                 refresh()
-                onResult(true, extension?.metaData?.name ?: "Extension installed")
-            }, { throwable ->
-                // If installation with INSTALLATION_METHOD_FROM_FILE failed on GeckoView,
-                // retry once with INSTALLATION_METHOD_MANAGER as fallback for local package compatibility
-                if (installationMethod == WebExtensionController.INSTALLATION_METHOD_FROM_FILE &&
-                    (throwable !is WebExtension.InstallException ||
-                     throwable.code == WebExtension.InstallException.ErrorCodes.ERROR_FILE_ACCESS)
-                ) {
-                    Log.i(TAG, "Retrying local XPI install with INSTALLATION_METHOD_MANAGER fallback")
-                    controller.install(installUri, WebExtensionController.INSTALLATION_METHOD_MANAGER)
-                        .accept({ extension ->
-                            autoConfirmInstallUris.remove(installUri)
-                            _busy.value = false
-                            if (extension != null) {
-                                if (isAdGuard || autoConfirm || extension.id.contains("adguard", ignoreCase = true)) {
-                                    try { controller.setAllowedInPrivateBrowsing(extension, true) } catch (_: Throwable) {}
-                                }
-                                attachActionDelegate(extension)
-                            }
-                            refresh()
-                            onResult(true, extension?.metaData?.name ?: "Extension installed")
-                        }, { retryThrowable ->
-                            autoConfirmInstallUris.remove(installUri)
-                            _busy.value = false
-                            val message = if (retryThrowable is WebExtension.InstallException) {
-                                describeInstallError(retryThrowable)
-                            } else {
-                                retryThrowable?.message ?: "Installation failed."
-                            }
-                            _lastError.value = message
-                            onResult(false, message)
-                        })
-                    return@accept
-                }
+                onResult(true, displayName(ctx, addon))
+            },
+            onError = { throwable ->
                 autoConfirmInstallUris.remove(installUri)
                 _busy.value = false
-                val message = if (throwable is WebExtension.InstallException) {
-                    describeInstallError(throwable)
-                } else {
-                    throwable?.message ?: "Installation failed."
-                }
+                val message = describeInstallError(throwable)
                 _lastError.value = message
+                Log.w(TAG, "Extension installation failed: ${throwable.message}")
+                com.petal.browser.live.PetalLiveActionBus.postSimple(
+                    com.petal.browser.live.LiveEventKind.EXTENSION_ERROR, "ext_failed", "Extension install failed", message.take(80)
+                )
                 onResult(false, message)
-            })
+            }
+        )
+    }
+
+    /**
+     * Maps whatever the engine reports (Mozilla's WebExtensionInstallException family, or a raw
+     * GeckoView InstallException as its cause) to a user-readable sentence.
+     */
+    private fun describeInstallError(error: Throwable): String {
+        val chain = generateSequence(error) { it.cause }.take(4).toList()
+        chain.firstNotNullOfOrNull { it as? WebExtension.InstallException }?.let { e ->
+            return when (e.code) {
+                WebExtension.InstallException.ErrorCodes.ERROR_NETWORK_FAILURE ->
+                    "Couldn't download the extension - check your connection and try again."
+                WebExtension.InstallException.ErrorCodes.ERROR_INCORRECT_HASH ->
+                    "The downloaded file didn't match its expected signature."
+                WebExtension.InstallException.ErrorCodes.ERROR_CORRUPT_FILE ->
+                    "That extension package is corrupt or not a valid .xpi file."
+                WebExtension.InstallException.ErrorCodes.ERROR_FILE_ACCESS ->
+                    "Petal couldn't access that file."
+                WebExtension.InstallException.ErrorCodes.ERROR_SIGNEDSTATE_REQUIRED ->
+                    "That extension isn't signed by Mozilla, so it can't be installed."
+                WebExtension.InstallException.ErrorCodes.ERROR_UNEXPECTED_ADDON_TYPE,
+                WebExtension.InstallException.ErrorCodes.ERROR_UNSUPPORTED_ADDON_TYPE ->
+                    "This package is not a supported WebExtension for GeckoView. Firefox desktop-only add-on types cannot run in an Android browser."
+                WebExtension.InstallException.ErrorCodes.ERROR_BLOCKLISTED ->
+                    "This extension has been blocklisted by Mozilla for safety reasons."
+                WebExtension.InstallException.ErrorCodes.ERROR_INCOMPATIBLE ->
+                    "This extension isn't compatible with Petal's engine version."
+                WebExtension.InstallException.ErrorCodes.ERROR_USER_CANCELED ->
+                    "Installation was canceled."
+                else -> "Couldn't install that extension (error ${e.code})."
+            }
+        }
+        // Mozilla's own exception classes: matched by name so every release's subtype set is covered.
+        val names = chain.joinToString(" ") { it.javaClass.simpleName }
+        return when {
+            names.contains("UserCancelled", true) || names.contains("Cancel", true) -> "Installation was canceled."
+            names.contains("Blocklist", true) -> "This extension has been blocklisted by Mozilla for safety reasons."
+            names.contains("NetworkFailure", true) -> "Couldn't download the extension - check your connection and try again."
+            names.contains("Corrupt", true) -> "That extension package is corrupt or not a valid .xpi file."
+            names.contains("Incompatible", true) -> "This extension isn't compatible with Petal's engine version."
+            names.contains("Unsupported", true) || names.contains("UnexpectedAddonType", true) ->
+                "This package is not a supported WebExtension for GeckoView. Firefox desktop-only add-on types cannot run in an Android browser."
+            names.contains("SignedState", true) -> "That extension isn't signed by Mozilla, so it can't be installed."
+            else -> error.message ?: "Installation failed."
+        }
     }
 
     fun uninstall(extension: WebExtension, onResult: (Boolean) -> Unit = {}) {
         val ctx = appContext ?: return
-        val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
-        controller.uninstall(extension)
-            .accept({
+        PetalEngineStore.getAddonManager(ctx).uninstallAddon(
+            addonFor(extension.id),
+            onSuccess = {
                 refresh()
                 onResult(true)
-            }, {
-                onResult(false)
-            })
+            },
+            onError = { _, _ -> onResult(false) }
+        )
     }
 
     fun setEnabled(extension: WebExtension, enabled: Boolean) {
         val ctx = appContext ?: return
-        val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
-        val op = if (enabled) {
-            controller.enable(extension, WebExtensionController.EnableSource.USER)
+        val manager = PetalEngineStore.getAddonManager(ctx)
+        val addon = addonFor(extension.id)
+        if (enabled) {
+            manager.enableAddon(addon, onSuccess = { refresh() }, onError = { refresh() })
         } else {
-            controller.disable(extension, WebExtensionController.EnableSource.USER)
+            manager.disableAddon(addon, onSuccess = { refresh() }, onError = { refresh() })
         }
-        op.accept({ refresh() }, { refresh() })
     }
 
     fun setAllowedInPrivateBrowsing(extension: WebExtension, allowed: Boolean) {
         val ctx = appContext ?: return
-        val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
-        controller.setAllowedInPrivateBrowsing(extension, allowed)
-            .accept({ refresh() }, { refresh() })
+        PetalEngineStore.getAddonManager(ctx).setAddonAllowedInPrivateBrowsing(
+            addonFor(extension.id), allowed, onSuccess = { refresh() }, onError = { refresh() }
+        )
     }
 
-    fun refresh() {
+    /** Checks one extension for an update (AMO via AddonManager); a permission change prompts like an install. */
+    @JvmOverloads
+    fun updateExtension(extensionId: String, onResult: (String) -> Unit = {}) {
         val ctx = appContext ?: return
-        val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
-        controller.list().accept({ list ->
-          try {
-            list?.filterNotNull()?.forEach { ext ->
-                try { attachActionDelegate(ext) } catch (t: Throwable) { Log.w(TAG, "attachActionDelegate failed", t) }
-            }
-            val items = (list ?: emptyList()).mapNotNull { ext -> toInstalled(ext) }
-            _extensions.value = items
-            synchronized(actionByExtensionId) {
-                actionByExtensionId.keys.retainAll(items.map { it.id }.toSet())
-            }
-            updateActiveTabActionStates(currentActiveSession)
-            // Re-bind all open sessions on main thread so tabs created during cold start
-            // (before the asynchronous extension list finished loading) get delegates attached.
-            Handler(Looper.getMainLooper()).post {
-                val sessionsToAttach = openSessions.filter { it.isOpen }.toSet()
-                for (s in sessionsToAttach) {
-                    attachSession(s)
-                }
-            }
-            // Load icons asynchronously and patch them in once ready (best-effort, 96px).
-            list?.forEach { ext ->
-                try {
-                    ext?.metaData?.icon?.getBitmap(96)?.accept({ bmp ->
-                        if (bmp != null) {
-                            _extensions.value = _extensions.value.map {
-                                if (it.id == ext.id) it.copy(icon = bmp) else it
-                            }
-                        }
-                    }, { /* icon optional */ })
-                } catch (ignored: Throwable) {}
-            }
-          } catch (t: Throwable) {
-            Log.w(TAG, "refresh failed", t)
-          }
-        }, {
-            Log.w(TAG, "Failed to list extensions", it)
-        })
+        PetalEngineStore.getAddonManager(ctx).updateAddon(extensionId) { status ->
+            refresh()
+            onResult(status.toString())
+        }
+    }
+
+    /** Runs [updateExtension] for every installed extension (the periodic worker does the same in the background). */
+    fun checkForUpdates() {
+        _extensions.value.forEach { updateExtension(it.id) }
     }
 
     private fun extensionHasPopup(extension: WebExtension): Boolean {
@@ -1952,6 +1499,40 @@ object PetalExtensionManager {
             ?: manifest.optJSONObject("action")?.optString("default_popup")?.takeIf { it.isNotBlank() }
             ?: manifest.optJSONObject("page_action")?.optString("default_popup")?.takeIf { it.isNotBlank() }
         return popup != null
+    }
+
+    private fun toInstalled(ext: WebExtension?): InstalledExtension? {
+        if (ext == null) return null
+        return try {
+            // Gecko hands back Java platform types: any of these can be null at runtime.
+            val extId: String = (ext.id as String?) ?: return null
+            val meta = ext.metaData
+            val metaName: String? = meta?.name
+            val metaDesc: String? = meta?.description
+            val metaVersion: String? = meta?.version
+            val optionsUrl = try { resolveExtensionOptionsUrl(ext) } catch (t: Throwable) { null }
+            val hasPopup = try {
+                resolveExtensionPopupUrl(ext) != null || extensionHasPopup(ext)
+            } catch (t: Throwable) { false }
+            InstalledExtension(
+                id = extId,
+                name = metaName ?: extId,
+                description = metaDesc ?: "",
+                version = metaVersion ?: "",
+                enabled = meta?.enabled ?: true,
+                temporary = meta?.temporary ?: false,
+                allowedInPrivateBrowsing = meta?.allowedInPrivateBrowsing ?: false,
+                homepageUrl = meta?.homepageUrl,
+                amoListingUrl = meta?.amoListingUrl,
+                optionsPageUrl = optionsUrl,
+                supportsPopup = hasPopup,
+                icon = null,
+                raw = ext
+            )
+        } catch (t: Throwable) {
+            Log.w(TAG, "Skipping extension that failed to map", t)
+            null
+        }
     }
 
     /**
@@ -2051,39 +1632,5 @@ object PetalExtensionManager {
         return if (addonIndex >= 0 && slug != null) {
             "https://addons.mozilla.org/firefox/downloads/latest/$slug/latest.xpi"
         } else null
-    }
-
-    private fun toInstalled(ext: WebExtension?): InstalledExtension? {
-        if (ext == null) return null
-        return try {
-            // Gecko hands back Java platform types: any of these can be null at runtime.
-            val extId: String = (ext.id as String?) ?: return null
-            val meta = ext.metaData
-            val metaName: String? = meta?.name
-            val metaDesc: String? = meta?.description
-            val metaVersion: String? = meta?.version
-            val optionsUrl = try { resolveExtensionOptionsUrl(ext) } catch (t: Throwable) { null }
-            val hasPopup = try {
-                resolveExtensionPopupUrl(ext) != null || extensionHasPopup(ext)
-            } catch (t: Throwable) { false }
-            InstalledExtension(
-                id = extId,
-                name = metaName ?: extId,
-                description = metaDesc ?: "",
-                version = metaVersion ?: "",
-                enabled = meta?.enabled ?: true,
-                temporary = meta?.temporary ?: false,
-                allowedInPrivateBrowsing = meta?.allowedInPrivateBrowsing ?: false,
-                homepageUrl = meta?.homepageUrl,
-                amoListingUrl = meta?.amoListingUrl,
-                optionsPageUrl = optionsUrl,
-                supportsPopup = hasPopup,
-                icon = null,
-                raw = ext
-            )
-        } catch (t: Throwable) {
-            Log.w(TAG, "Skipping extension that failed to map", t)
-            null
-        }
     }
 }

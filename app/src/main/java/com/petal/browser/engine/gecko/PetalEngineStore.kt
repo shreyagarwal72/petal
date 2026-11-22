@@ -36,6 +36,41 @@ import mozilla.components.support.base.android.NotificationsDelegate
 import androidx.core.app.NotificationManagerCompat
 import mozilla.components.feature.webnotifications.WebNotificationFeature
 
+/*
+ * ── Mozilla Android Components 161.0b3: wiring audit (read this before adding a feature) ──────────
+ * Audited against app/build.gradle (feature-* / support-*) and a repo-wide grep for instantiation.
+ *
+ *  WIRED
+ *   feature-session ...... SessionUseCases / TabsUseCases / HistoryDelegate (PetalBrowserViewModel, PetalTabViewController)
+ *   feature-prompts ...... PromptFeature (PetalBrowserFeatures) + PromptMiddleware; file picker via PetalFileUploadMiddleware
+ *   feature-downloads .... DownloadMiddleware + AbstractFetchDownloadService (PetalMozillaDownloadService), the only downloader
+ *   feature-recentlyclosed  intentionally NOT used: PetalRecentlyClosedManager is the single recently-closed store
+ *   feature-search ....... SearchUseCases (getSearchUseCases)
+ *   feature-top-sites .... PinnedSiteStorage + DefaultTopSitesStorage (getPinnedSiteStorage / getDefaultTopSitesStorage)
+ *   feature-app-links .... AppLinksUseCases inside PetalAppLinksBridge (no AppLinksFeature: Petal's Compose prompt decides)
+ *   feature-webcompat .... WebCompatFeature.install(engine) via PetalBuiltInExtensions
+ *   feature-media ........ MediaSessionFullscreenFeature (PetalBrowserFeatures); media state mirrored into the store below
+ *   feature-readerview ... ReaderViewMiddleware (store) ; UI is PetalReaderBridge / PetalReaderScreen
+ *   feature-addons ....... AddonManager + AMOAddonsProvider(PetalOkHttpFetchClient) + DefaultAddonUpdater (getAddonManager /
+ *                          getAddonUpdater), driven by PetalExtensionManager
+ *   support-webextensions  WebExtensionSupport.initialize through PetalWebExtensionWiring -> PetalWebExtensionDelegate
+ *                          (this replaces the WebExtensionPopupFeature role: popups open via onToggleActionPopup)
+ *   feature-contextmenu .. out of scope, untouched
+ *
+ *  DECLARED BUT NEVER INSTANTIATED (and why)
+ *   SitePermissionsFeature . covered by PetalSitePermissionsBridge (OnDiskSitePermissionsStorage + SitePermissionsRules behind
+ *                            Petal's own GeckoSession PermissionDelegate and Compose prompt). Adding the feature would be a
+ *                            second prompter on the same requests.
+ *   WebNotificationFeature . covered by PetalWebNotificationDelegate (set on the GeckoRuntime); the field below is unused.
+ *   MediaSessionFeature .... GAP: web media state reaches the store (updateMedia*), but no AbstractMediaSessionService
+ *                            subclass exists to post the notification. Needs a service + manifest entry; not added blind.
+ *   WebAppFeature / PWA .... covered by PetalPwaManager + PetalPwaActivity; only ManifestStorage comes from feature-pwa.
+ *   ReaderViewFeature ...... covered by PetalReaderBridge; only the middleware is used.
+ *   AppLinksFeature ........ see above (use cases only).
+ *
+ * Tab events: tabs are created, selected and removed only through the store (createTabSession / materializeTabSession /
+ * adoptPreparedSession / selectTab / removeTab), so WebExtensionSupport sees every tab natively.
+ */
 /**
  * PetalEngineStore
  * ─────────────────────────────────────────────────────────────────────────
@@ -93,6 +128,9 @@ object PetalEngineStore {
 
     @Volatile
     private var addonManager: mozilla.components.feature.addons.AddonManager? = null
+
+    @Volatile
+    private var addonUpdater: mozilla.components.feature.addons.update.DefaultAddonUpdater? = null
 
     @Volatile
     private var autoSaveStarted = false
@@ -232,10 +270,10 @@ object PetalEngineStore {
         )
         store = newStore
         try {
-            mozilla.components.support.webextensions.WebExtensionSupport.initialize(
-                runtime = currentEngine,
-                store = newStore
-            )
+            // WebExtensionSupport owns the runtime delegate; PetalWebExtensionWiring puts
+            // PetalWebExtensionDelegate behind it (prompts, popups, tab requests) and routes the
+            // onNewTab/onCloseTab/onSelectTab/onExtensionsLoaded overrides to Petal.
+            PetalWebExtensionWiring.initialize(appContext, currentEngine, newStore)
             Log.i(TAG, "Initialized Mozilla WebExtensionSupport")
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to initialize WebExtensionSupport: ${t.message}")
@@ -574,6 +612,23 @@ object PetalEngineStore {
         return storage
     }
 
+    /**
+     * The single DefaultAddonUpdater (periodic WorkManager update checks, one job per extension).
+     * PetalExtensionManager registers every installed extension with it.
+     */
+    @JvmStatic
+    @Synchronized
+    fun getAddonUpdater(context: Context): mozilla.components.feature.addons.update.DefaultAddonUpdater {
+        addonUpdater?.let { return it }
+        val appContext = context.applicationContext
+        val updater = mozilla.components.feature.addons.update.DefaultAddonUpdater(
+            applicationContext = appContext,
+            store = getStore(appContext)
+        )
+        addonUpdater = updater
+        return updater
+    }
+
     @JvmStatic
     @Synchronized
     fun getAddonManager(context: Context): mozilla.components.feature.addons.AddonManager {
@@ -586,10 +641,7 @@ object PetalEngineStore {
             context = appContext,
             client = client
         )
-        val updater = mozilla.components.feature.addons.update.DefaultAddonUpdater(
-            applicationContext = appContext,
-            store = currentStore
-        )
+        val updater = getAddonUpdater(appContext)
         val manager = mozilla.components.feature.addons.AddonManager(
             store = currentStore,
             runtime = currentEngine,

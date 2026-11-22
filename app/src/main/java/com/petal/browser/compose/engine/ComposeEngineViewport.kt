@@ -54,7 +54,6 @@ import com.petal.browser.compose.menu.BrowserContextMenuManager
 import com.petal.browser.engine.gecko.PetalContentDelegateWrapper
 import com.petal.browser.engine.gecko.PetalEngineBridge
 import com.petal.browser.engine.gecko.PetalEngineStore
-import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.glass.GeckoGlassBackend
 import com.petal.browser.ui.selection.PetalPageSelectionToolbar
 import com.petal.browser.unit.PetalBrowserUtils
@@ -472,9 +471,6 @@ private fun attachSessionDelegates(
             try {
                 android.util.Log.i("ComposeEngineViewport", "Recovering terminated GeckoSession for tab ${tab.id}")
                 try {
-                    com.petal.browser.extensions.PetalExtensionManager.detachSession(session)
-                } catch (_: Throwable) {}
-                try {
                     engineView.release()
                 } catch (_: Throwable) {}
                 try {
@@ -583,9 +579,8 @@ private fun attachSessionDelegates(
         session.scrollDelegate = PetalBarScrollDelegate(existingScroll, actSupplier, context)
     }
 
-    // 6. Extensions
-    PetalExtensionManager.attachSession(session)
-    PetalExtensionManager.setActiveBrowserSession(null, session)
+    // 6. Extensions: bound by WebExtensionSupport from the BrowserStore (the tab's engine session is
+    //    linked and selected through the store), so nothing is attached here.
 }
 
 /**

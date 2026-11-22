@@ -1834,8 +1834,7 @@ private fun AddExtensionSheet(
 
 @Composable
 internal fun InstallPermissionDialog(prompt: PetalExtensionManager.PendingPrompt) {
-    val meta = prompt.extension.metaData
-    val displayName = meta?.name ?: prompt.extension.id
+    val displayName = prompt.displayName
     PetalMaterialAlertDialog(
         onDismissRequest = { prompt.respond(false) },
         icon = { Icon(Icons.Rounded.Extension, contentDescription = null) },

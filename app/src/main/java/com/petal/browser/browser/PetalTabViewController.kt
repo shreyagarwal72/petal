@@ -752,7 +752,8 @@ class PetalTabViewController private constructor(
         session.register(observer)
         com.petal.browser.offlinegame.PetalOfflineGameRegistry.register(session, this)
         val geckoSession = getGeckoSession()
-        com.petal.browser.extensions.PetalExtensionManager.attachSession(geckoSession)
+        // Extensions: no manual attach. WebExtensionSupport observes the BrowserStore and binds this session
+        // as soon as it is linked (LinkEngineSessionAction in materializeTabSession / createTabSession).
         geckoSession?.let { gs ->
             // Prompt Delegate: Petal takes sole ownership (GeckoEngineSession never installs one).
             // Use PetalPromptDelegateWrapper so the activityProvider / incognitoProvider lambdas
@@ -1958,7 +1959,6 @@ class PetalTabViewController private constructor(
             // 1. Release and close the dead GeckoSession
             val gs = getGeckoSession()
             try {
-                com.petal.browser.extensions.PetalExtensionManager.detachSession(gs)
                 observedSession?.unregister(observer)
                 engineView.release()
             } catch (_: Throwable) {}
@@ -2196,7 +2196,7 @@ class PetalTabViewController private constructor(
     override fun activate() {
         active = true
         tab?.let { PetalEngineStore.selectTab(appContext, it.id) }
-        com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(null, getGeckoSession())
+        // SelectTabAction above is what tells WebExtensionSupport this is the active tab.
         // Same as SessionFeature.start() in Fenix: make sure the session is on screen.
         ensureSessionRendered()
         refreshFeature?.start()
@@ -2280,7 +2280,6 @@ class PetalTabViewController private constructor(
         stopThumbnails()
         stopContextMenuObserver()
         active = false
-        com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(getGeckoSession(), null)
         refreshFeature?.stop()
         fullScreenFeature?.stop()
         isRefreshing = false
@@ -2330,9 +2329,6 @@ class PetalTabViewController private constructor(
         stopThumbnails()
         stopContextMenuObserver()
         active = false
-        val gs = getGeckoSession()
-        com.petal.browser.extensions.PetalExtensionManager.setActiveBrowserSession(gs, null)
-        com.petal.browser.extensions.PetalExtensionManager.detachSession(gs)
         refreshFeature?.stop()
         refreshFeature = null
         removeCallbacks(refreshWatchdog)
