@@ -369,16 +369,8 @@ private fun ColorsTab(cfg: PetalWidgetConfig, onChange: (PetalWidgetConfig) -> U
             valueText = "${cfg.transparency}%",
             value = cfg.transparency.toFloat(),
             range = 0f..PETAL_MAX_TRANSPARENCY.toFloat(),
-            steps = PETAL_MAX_TRANSPARENCY / 5 - 1,
-            enabled = !glass
+            steps = PETAL_MAX_TRANSPARENCY / 5 - 1
         ) { onChange(cfg.copy(transparency = ((it / 5f).toInt() * 5).coerceIn(0, PETAL_MAX_TRANSPARENCY))) }
-        if (glass) {
-            Text(
-                stringResource(R.string.pw_transparency_glass),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
     }
 
     SectionCard(stringResource(R.string.pw_element_colors)) {
