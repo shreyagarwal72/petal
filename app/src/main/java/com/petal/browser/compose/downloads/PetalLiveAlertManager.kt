@@ -1,5 +1,6 @@
 package com.petal.browser.compose.downloads
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -70,15 +71,7 @@ object PetalLiveAlertManager {
                                     val lastTime = lastNotifTimeMap[item.id] ?: 0L
                                     if (now - lastTime >= 400L || lastTime == 0L) {
                                         lastNotifTimeMap[item.id] = now
-                                        showLiveNotification(
-                                            context,
-                                            downloadId = item.id,
-                                            fileName = item.fileName,
-                                            soFar = item.bytesDownloaded,
-                                            total = item.totalSize,
-                                            speedBytesPerSec = item.speedBytesPerSec,
-                                            etaSeconds = item.etaSeconds
-                                        )
+                                        showLiveNotification(context, item)
                                     }
                                 }
                                 DownloadStatus.STATUS_PAUSED -> {
@@ -124,7 +117,7 @@ object PetalLiveAlertManager {
         lastNotifTimeMap.remove(downloadId)
         handledTerminalStatusMap.remove(downloadId)
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-        nm?.cancel(downloadId.toInt())
+        nm?.cancel(LiveUpdateNotificationManager.NOTIF_TAG, downloadId.toInt())
     }
 
     private fun ensureNotificationChannel(context: Context) {
@@ -213,126 +206,69 @@ object PetalLiveAlertManager {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
         if (canRetry) builder.addAction(R.drawable.icon_refresh, "Retry Download", retryPendingIntent)
 
-        nm.notify(downloadId.toInt(), builder.build())
+        nm.notify(LiveUpdateNotificationManager.NOTIF_TAG, downloadId.toInt(), builder.build())
     }
 
     private fun showPausedNotification(context: Context, downloadId: Long) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-
-        val openAppIntent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra("open_downloads", true)
-        }
-        val openAppPendingIntent = PendingIntent.getActivity(
-            context,
-            downloadId.toInt(),
-            openAppIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val resumeIntent = Intent(context, PetalDownloadCancelReceiver::class.java).apply {
-            action = PetalDownloadCancelReceiver.ACTION_RESUME_DOWNLOAD
-            putExtra(PetalDownloadCancelReceiver.EXTRA_DOWNLOAD_ID, downloadId)
-        }
-        val resumePendingIntent = PendingIntent.getBroadcast(
-            context,
-            downloadId.toInt() + 30000,
-            resumeIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val cancelIntent = Intent(context, PetalDownloadCancelReceiver::class.java).apply {
-            action = PetalDownloadCancelReceiver.ACTION_CANCEL_DOWNLOAD
-            putExtra(PetalDownloadCancelReceiver.EXTRA_DOWNLOAD_ID, downloadId)
-        }
-        val cancelPendingIntent = PendingIntent.getBroadcast(
-            context,
-            downloadId.toInt(),
-            cancelIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val item = PetalFetchDownloadBridge.downloadItems.value.firstOrNull { it.id == downloadId }
-        val titleText = if (item != null && item.fileName.isNotBlank()) "Paused: ${item.fileName}" else "Download Paused"
-
-        val builderNotif = LiveUpdateNotificationManager.buildLiveNotification(
-            context,
-            downloadId,
-            titleText,
-            "Tap to resume downloading",
-            0,
-            false,
-            true,
-            "Paused",
-            openAppPendingIntent,
-            cancelPendingIntent,
-            resumePendingIntent
-        )
-
-        nm.notify(downloadId.toInt(), builderNotif)
+        val item = PetalFetchDownloadBridge.downloadItems.value.firstOrNull { it.id == downloadId } ?: return
+        nm.notify(LiveUpdateNotificationManager.NOTIF_TAG, downloadId.toInt(), buildActiveNotification(context, item.copy(status = DownloadStatus.STATUS_PAUSED)))
     }
 
-    private fun showLiveNotification(
-        context: Context,
-        downloadId: Long,
-        fileName: String,
-        soFar: Long,
-        total: Long,
-        speedBytesPerSec: Long,
-        etaSeconds: Long
-    ) {
+    private fun showLiveNotification(context: Context, item: DownloadItem) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-        val progressPercent = if (total > 0) ((soFar * 100L) / total).toInt().coerceIn(0, 100) else 0
-        val isIndeterminate = total <= 0
+        nm.notify(LiveUpdateNotificationManager.NOTIF_TAG, item.id.toInt(), buildActiveNotification(context, item))
+    }
 
-        val speedText = formatSpeed(speedBytesPerSec)
-        val etaText = formatEta(etaSeconds)
-        val soFarText = formatBytes(soFar)
-        val totalText = if (total > 0) formatBytes(total) else "Unknown"
+    /**
+     * Builds the live notification for a running / pending / paused row. Used both for rows Petal
+     * posts itself (yt-dlp, streams, page data) and for Mozilla-owned rows, whose own notification
+     * is swapped for this one by [com.petal.browser.download.PetalMozillaNotificationSwapper] so
+     * the user only ever sees ONE notification per download.
+     */
+    @JvmStatic
+    fun buildActiveNotification(context: Context, item: DownloadItem, groupKey: String? = null): Notification {
+        val id = item.id
+        val isPaused = item.status == DownloadStatus.STATUS_PAUSED
+        val total = item.totalSize
+        val percent = if (total > 0) ((item.bytesDownloaded * 100L) / total).toInt().coerceIn(0, 100) else 0
+        val indeterminate = total <= 0 && !isPaused
 
-        // Open Downloads manager intent
-        val openAppIntent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra("open_downloads", true)
+        val title = if (isPaused) "Paused: ${item.fileName}" else "Downloading ${item.fileName}"
+        val content = when {
+            isPaused -> "Tap Resume to continue"
+            total > 0 -> "${formatBytes(item.bytesDownloaded)} / ${formatBytes(total)} • ${formatEta(item.etaSeconds)} left"
+            else -> "${formatBytes(item.bytesDownloaded)} downloaded"
         }
-        val openAppPendingIntent = PendingIntent.getActivity(
-            context,
-            downloadId.toInt(),
-            openAppIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val detail = if (isPaused) "Paused • $percent%" else "${formatSpeed(item.speedBytesPerSec)} • $percent%"
+
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val openApp = PendingIntent.getActivity(
+            context, id.toInt(),
+            Intent(context, MainActivity::class.java).apply {
+                this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("open_downloads", true)
+            },
+            flags
         )
-
-        // Cancel action intent
-        val cancelIntent = Intent(context, PetalDownloadCancelReceiver::class.java).apply {
-            action = PetalDownloadCancelReceiver.ACTION_CANCEL_DOWNLOAD
-            putExtra(PetalDownloadCancelReceiver.EXTRA_DOWNLOAD_ID, downloadId)
-        }
-        val cancelPendingIntent = PendingIntent.getBroadcast(
-            context,
-            downloadId.toInt(),
-            cancelIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        fun receiverIntent(action: String, requestCode: Int) = PendingIntent.getBroadcast(
+            context, requestCode,
+            Intent(context, PetalDownloadCancelReceiver::class.java).apply {
+                this.action = action
+                putExtra(PetalDownloadCancelReceiver.EXTRA_DOWNLOAD_ID, id)
+            },
+            flags
         )
+        val cancel = receiverIntent(PetalDownloadCancelReceiver.ACTION_CANCEL_DOWNLOAD, id.toInt())
+        // Only Mozilla-owned rows can be paused; yt-dlp / page-data rows get no toggle.
+        val toggle = if (item.source.isMozillaOwned) {
+            if (isPaused) receiverIntent(PetalDownloadCancelReceiver.ACTION_RESUME_DOWNLOAD, id.toInt() + 30000)
+            else receiverIntent(PetalDownloadCancelReceiver.ACTION_PAUSE_DOWNLOAD, id.toInt() + 50000)
+        } else null
 
-        val liveAlertChip = "$speedText • $progressPercent%"
-        val contentText = "$soFarText / $totalText • $etaText left"
-
-        val builderNotif = LiveUpdateNotificationManager.buildLiveNotification(
-            context,
-            downloadId,
-            "Downloading $fileName",
-            contentText,
-            progressPercent,
-            isIndeterminate,
-            false,
-            liveAlertChip,
-            openAppPendingIntent,
-            cancelPendingIntent,
-            // Rows rendered here (yt-dlp, page data) cannot be paused, so no toggle action.
-            null
+        return LiveUpdateNotificationManager.buildLiveNotification(
+            context, title, content, percent, indeterminate, isPaused, detail, openApp, cancel, toggle, groupKey
         )
-
-        nm.notify(downloadId.toInt(), builderNotif)
     }
 
     private fun showCompletionNotification(
@@ -390,7 +326,7 @@ object PetalLiveAlertManager {
             .setContentIntent(openFilePendingIntent)
             .addAction(R.drawable.icon_download, "Open File", openFilePendingIntent)
 
-        nm.notify(downloadId.toInt(), builder.build())
+        nm.notify(LiveUpdateNotificationManager.NOTIF_TAG, downloadId.toInt(), builder.build())
     }
 
 

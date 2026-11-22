@@ -423,20 +423,11 @@ class PetalMediaSessionService : Service() {
         builder.addAction(R.drawable.icon_close, String.format(Locale.US, "%.2fx", currentSpeed), speedIntent)
         builder.addAction(R.drawable.icon_close, if (isMuted) "Unmute" else "Mute", muteIntent)
 
-        // Status bar chip styling & Live Update extras for Android 16+ Promoted Ongoing
-        val chipText = if (isPlaying) "Playing" else "Paused"
-        val extras = Bundle().apply {
-            putString("android.liveAlertText", chipText)
-            putBoolean("android.isLiveAlert", true)
-            putBoolean("android.promotedOngoing", isPlaying)
-            putString("android.shortCriticalText", chipText)
-        }
-        builder.setExtras(extras)
-
-        try {
-            val setShortCriticalText = builder.javaClass.getMethod("setShortCriticalText", CharSequence::class.java)
-            setShortCriticalText.invoke(builder, chipText)
-        } catch (_: Exception) {}
+        // MediaStyle notifications are not eligible for Android 16 promotion (only standard,
+        // BigText, Call and Progress styles are), so none of the Live Update flags/extras are set
+        // here. The earlier code set made-up extras and a wrong flag value (0x200 is actually
+        // FLAG_GROUP_SUMMARY). Media gets the system media controls plus Petal's accent colour.
+        builder.setColor(LiveUpdateNotificationManager.getLiveThemeAccentColor(this))
 
         // Enable live progress updates & live activity / notification bar compatibility
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -444,11 +435,6 @@ class PetalMediaSessionService : Service() {
         }
 
         val notification = builder.build()
-        if (isPlaying && LiveUpdateNotificationManager.canPostPromotedNotifications(this)) {
-            try {
-                notification.flags = notification.flags or 0x00000200 // FLAG_PROMOTED_ONGOING in Android 16+
-            } catch (_: Throwable) {}
-        }
         return notification
     }
 

@@ -93,6 +93,7 @@ class PetalMozillaDownloadService : AbstractFetchDownloadService() {
     override fun onCreate() {
         super.onCreate()
         PetalDownloadServiceState.setRunning(true)
+        PetalMozillaNotificationSwapper.init(applicationContext)
         PetalNotificationChannelOptimizer.install()
     }
 

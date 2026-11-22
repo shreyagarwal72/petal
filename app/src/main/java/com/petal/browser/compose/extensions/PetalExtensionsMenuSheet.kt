@@ -97,6 +97,8 @@ import kotlinx.coroutines.launch
  */
 object PetalExtensionsMenuSheet {
 
+    private const val HOST_TAG = "petal_extensions_menu_sheet"
+
     @JvmStatic
     @JvmOverloads
     fun show(
@@ -114,16 +116,31 @@ object PetalExtensionsMenuSheet {
             try {
                 val decorView = activity.window.decorView as? ViewGroup ?: return@runOnUiThread
                 val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: decorView
+                // Only one Extensions sheet at a time: a second tap must not stack another
+                // touch-blocking sheet window on top of the first.
+                if (decorView.findViewWithTag<android.view.View>(HOST_TAG) != null) return@runOnUiThread
                 lateinit var composeView: ComposeView
+                var removed = false
                 val remove: () -> Unit = {
-                    if (composeView.parent != null) decorView.removeView(composeView)
+                    if (!removed) {
+                        removed = true
+                        // Post: this can be called from inside the sheet's own dismiss callback.
+                        composeView.post {
+                            // Dispose FIRST so the sheet window, background blur and the motion
+                            // lock are released. Removing the view alone left them alive, which
+                            // froze every tap in the browser after the sheet closed.
+                            try { composeView.disposeComposition() } catch (_: Throwable) {}
+                            if (composeView.parent != null) decorView.removeView(composeView)
+                        }
+                    }
                 }
 
                 composeView = ComposeView(activity).apply {
+                    tag = HOST_TAG
                     setViewTreeLifecycleOwner(activity)
                     setViewTreeViewModelStoreOwner(activity)
                     setViewTreeSavedStateRegistryOwner(activity)
-                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                     setContent {
                         val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
                         val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()

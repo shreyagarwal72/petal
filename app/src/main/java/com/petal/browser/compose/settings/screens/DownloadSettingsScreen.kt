@@ -203,6 +203,37 @@ fun DownloadSettingsScreenContent(
                     var showPermissionDialog by remember { mutableStateOf(false) }
                     var showPromotedSettingsDialog by remember { mutableStateOf(false) }
 
+                    if (showPromotedSettingsDialog) {
+                        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+                            onDismissRequest = { showPromotedSettingsDialog = false },
+                            icon = { Icon(Icons.Rounded.NotificationsActive, contentDescription = null) },
+                            title = { Text(text = stringResource(R.string.ui_promoted_live_updates)) },
+                            text = { Text(text = stringResource(R.string.ui_your_device_supports_promoted_status)) },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        showPromotedSettingsDialog = false
+                                        try {
+                                            context.startActivity(LiveUpdateNotificationManager.getLiveNotificationSettingsIntent(context))
+                                        } catch (_: Exception) {
+                                            context.startActivity(
+                                                android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                                    data = android.net.Uri.parse("package:${context.packageName}")
+                                                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                }
+                                            )
+                                        }
+                                    }
+                                ) { Text(stringResource(R.string.ui_open_settings)) }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showPromotedSettingsDialog = false }) {
+                                    Text(stringResource(R.string.ui_dismiss))
+                                }
+                            }
+                        )
+                    }
+
                     val notifPermissionLauncher = rememberLauncherForActivityResult(
                         contract = ActivityResultContracts.RequestPermission()
                     ) { isGranted ->

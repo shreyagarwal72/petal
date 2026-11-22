@@ -54,6 +54,12 @@ object PetalNotificationChannelOptimizer {
                                 recordChannels(channelsArg)
                                 return result
                             }
+                            if (name == "enqueueNotificationWithTag") {
+                                // One notification per download: swap Mozilla's plain one for Petal's live one.
+                                val swapped = PetalMozillaNotificationSwapper.intercept(args)
+                                if (swapped === PetalMozillaNotificationSwapper.DROP) return null
+                                return method.invoke(originalService, *(swapped ?: emptyArray()))
+                            }
                             return method.invoke(originalService, *(args ?: emptyArray()))
                         }
                     }
