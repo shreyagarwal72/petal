@@ -5,12 +5,13 @@
     android:layout_height="match_parent"
     android:padding="4dp">
 
-    <!-- The baked liquid glass refraction & blur image -->
+    <!-- The baked liquid glass refraction & blur image with instant frosted glass placeholder -->
     <ImageView
         android:id="@+id/widget_glass_bg"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="fitXY"
+        android:background="@drawable/petal_liquid_glass_placeholder_bg"
         android:contentDescription="@null" />
 
     <!-- Interactive Pill Search Foreground -->

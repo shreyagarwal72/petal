@@ -15,6 +15,11 @@ import com.petal.browser.widget.PetalSearchWidgetProvider
  */
 class PetalLiquidGlassPillWidgetReceiver : AppWidgetProvider() {
 
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        PetalWallpaperBlurHelper.rebakeAllFromWallpaper(context.applicationContext)
+    }
+
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
         for (id in appWidgetIds) {
@@ -48,7 +53,18 @@ class PetalLiquidGlassPillWidgetReceiver : AppWidgetProvider() {
             // 2. Action Pending Intents
             val searchIntent = actionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH)
             views.setOnClickPendingIntent(R.id.btn_search_bar, searchIntent)
-            views.setOnClickPendingIntent(R.id.btn_petal_logo, searchIntent)
+
+            val settingsIntent = Intent(context, PetalLiquidGlassSettingsActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            }
+            val settingsPending = PendingIntent.getActivity(
+                context,
+                appWidgetId + 9000,
+                settingsIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.btn_petal_logo, settingsPending)
 
             val voiceIntent = actionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_VOICE)
             views.setOnClickPendingIntent(R.id.btn_voice_search, voiceIntent)

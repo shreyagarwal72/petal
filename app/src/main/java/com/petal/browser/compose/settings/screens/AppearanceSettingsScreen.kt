@@ -1527,6 +1527,16 @@ fun AppearanceSettingsScreenContent(
                                             position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                                             onCheckedChange = onLiquidGlassWidgetsChange
                                         )
+                                        androidx.compose.material3.FilledTonalButton(
+                                            onClick = {
+                                                context.startActivity(Intent(context, com.petal.browser.widget.liquidglass.PetalLiquidGlassSettingsActivity::class.java))
+                                            },
+                                            modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                                        ) {
+                                            Icon(Icons.Rounded.Widgets, contentDescription = null, modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Configure Liquid Glass Widgets")
+                                        }
                                     }
                                 }
 

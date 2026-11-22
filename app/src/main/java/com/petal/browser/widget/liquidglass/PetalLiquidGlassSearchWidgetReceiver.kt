@@ -17,6 +17,11 @@ import com.petal.browser.widget.PetalSearchWidgetProvider
  */
 class PetalLiquidGlassSearchWidgetReceiver : AppWidgetProvider() {
 
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        PetalWallpaperBlurHelper.rebakeAllFromWallpaper(context.applicationContext)
+    }
+
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
         for (id in appWidgetIds) {
@@ -62,8 +67,18 @@ class PetalLiquidGlassSearchWidgetReceiver : AppWidgetProvider() {
             val incognitoIntent = actionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO)
             views.setOnClickPendingIntent(R.id.btn_incognito, incognitoIntent)
 
-            val logoIntent = actionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH)
-            views.setOnClickPendingIntent(R.id.btn_petal_logo, logoIntent)
+            // Petal Sparkle Logo opens Liquid Glass Tuning & Position Setup
+            val settingsIntent = Intent(context, PetalLiquidGlassSettingsActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            }
+            val settingsPending = PendingIntent.getActivity(
+                context,
+                appWidgetId + 9000,
+                settingsIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.btn_petal_logo, settingsPending)
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }

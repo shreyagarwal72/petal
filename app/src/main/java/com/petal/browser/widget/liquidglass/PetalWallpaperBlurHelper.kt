@@ -84,39 +84,100 @@ object PetalWallpaperBlurHelper {
     }
 
     /**
-     * Extracts and center-crops the current system wallpaper to the device's screen size.
+     * Extracts and center-crops wallpaper to screen size.
+     * Checks custom picked photo first, then WallpaperManager, and falls back to an aesthetic
+     * gradient canvas so widgets always have a beautiful background to refract.
      */
     fun renderWallpaperAtScreenSize(context: Context, screenW: Int, screenH: Int): Bitmap? {
-        return try {
-            val wm = WallpaperManager.getInstance(context)
-            val drawable = wm.drawable ?: return null
-            val intrinsicW = drawable.intrinsicWidth
-            val intrinsicH = drawable.intrinsicHeight
-            if (intrinsicW <= 0 || intrinsicH <= 0) return null
+        if (screenW <= 0 || screenH <= 0) return null
 
-            // CenterCrop math
-            val scale: Float
-            var dx = 0f
-            var dy = 0f
-            if (intrinsicW * screenH > screenW * intrinsicH) {
-                scale = screenH.toFloat() / intrinsicH.toFloat()
-                dx = (screenW - intrinsicW * scale) * 0.5f
-            } else {
-                scale = screenW.toFloat() / intrinsicW.toFloat()
-                dy = (screenH - intrinsicH * scale) * 0.5f
+        // 1. Check custom picked wallpaper photo
+        val customPhoto = File(context.filesDir, "glass_wallpaper_photo.jpg")
+        if (customPhoto.exists() && customPhoto.length() > 0) {
+            try {
+                val bmp = BitmapFactory.decodeFile(customPhoto.absolutePath)
+                if (bmp != null) {
+                    val cropped = scaleCenterCrop(bmp, screenW, screenH)
+                    if (cropped != bmp) bmp.recycle()
+                    return cropped
+                }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Custom wallpaper photo decode failed", t)
             }
+        }
 
+        // 2. Try WallpaperManager system wallpaper
+        try {
+            val wm = WallpaperManager.getInstance(context)
+            val drawable = wm.drawable ?: wm.fastDrawable
+            if (drawable != null) {
+                val intrinsicW = drawable.intrinsicWidth
+                val intrinsicH = drawable.intrinsicHeight
+                if (intrinsicW > 0 && intrinsicH > 0) {
+                    val scale: Float
+                    var dx = 0f
+                    var dy = 0f
+                    if (intrinsicW * screenH > screenW * intrinsicH) {
+                        scale = screenH.toFloat() / intrinsicH.toFloat()
+                        dx = (screenW - intrinsicW * scale) * 0.5f
+                    } else {
+                        scale = screenW.toFloat() / intrinsicW.toFloat()
+                        dy = (screenH - intrinsicH * scale) * 0.5f
+                    }
+
+                    val out = Bitmap.createBitmap(screenW, screenH, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(out)
+                    canvas.translate(dx.roundToInt().toFloat(), dy.roundToInt().toFloat())
+                    canvas.scale(scale, scale)
+                    drawable.setBounds(0, 0, intrinsicW, intrinsicH)
+                    drawable.draw(canvas)
+                    return out
+                }
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "WallpaperManager extraction restricted or unavailable", t)
+        }
+
+        // 3. Fallback: Generate an elegant frosted dark glass aesthetic backdrop
+        return try {
             val out = Bitmap.createBitmap(screenW, screenH, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(out)
-            canvas.translate(dx.roundToInt().toFloat(), dy.roundToInt().toFloat())
-            canvas.scale(scale, scale)
-            drawable.setBounds(0, 0, intrinsicW, intrinsicH)
-            drawable.draw(canvas)
+            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+            paint.shader = android.graphics.LinearGradient(
+                0f, 0f, screenW.toFloat(), screenH.toFloat(),
+                intArrayOf(0xFF1E2838.toInt(), 0xFF141A24.toInt(), 0xFF0D1218.toInt()),
+                null,
+                android.graphics.Shader.TileMode.CLAMP
+            )
+            canvas.drawRect(0f, 0f, screenW.toFloat(), screenH.toFloat(), paint)
             out
         } catch (t: Throwable) {
-            Log.e(TAG, "renderWallpaperAtScreenSize failed", t)
+            Log.e(TAG, "Synthetic wallpaper fallback failed", t)
             null
         }
+    }
+
+    private fun scaleCenterCrop(source: Bitmap, targetW: Int, targetH: Int): Bitmap {
+        val srcW = source.width
+        val srcH = source.height
+        if (srcW == targetW && srcH == targetH) return source
+
+        val scale: Float
+        var dx = 0f
+        var dy = 0f
+        if (srcW * targetH > targetW * srcH) {
+            scale = targetH.toFloat() / srcH.toFloat()
+            dx = (targetW - srcW * scale) * 0.5f
+        } else {
+            scale = targetW.toFloat() / srcW.toFloat()
+            dy = (targetH - srcH * scale) * 0.5f
+        }
+        val out = Bitmap.createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(out)
+        canvas.translate(dx.roundToInt().toFloat(), dy.roundToInt().toFloat())
+        canvas.scale(scale, scale)
+        canvas.drawBitmap(source, 0f, 0f, null)
+        return out
     }
 
     /**
@@ -218,14 +279,21 @@ object PetalWallpaperBlurHelper {
 
                 val config = PetalBlurConfig.load(context)
                 val density = context.resources.displayMetrics.density
+                val (screenW, screenH) = getScreenSize(context)
 
                 for (id in allIds) {
-                    val rect = getWidgetRect(context, id)
-                    val crop = if (rect != null) {
-                        getWallpaperCrop(context, rect.left, rect.top, rect.right, rect.bottom)
-                    } else null
+                    val isPill = pillIds.contains(id)
+                    val rect = getWidgetRect(context, id) ?: run {
+                        // Default fallback rect centered on screen before accessibility detects exact bounds
+                        val width = if (isPill) (screenW * 0.72f).toInt() else (screenW * 0.88f).toInt()
+                        val height = if (isPill) (48 * density).toInt() else (56 * density).toInt()
+                        val left = (screenW - width) / 2
+                        val top = (screenH * 0.22f).toInt()
+                        Rect(left, top, left + width, top + height)
+                    }
 
-                    if (crop != null && rect != null) {
+                    val crop = getWallpaperCrop(context, rect.left, rect.top, rect.right, rect.bottom)
+                    if (crop != null) {
                         val baked = PetalLiquidGlassRenderer.render(
                             context = context,
                             wallpaperCrop = crop,

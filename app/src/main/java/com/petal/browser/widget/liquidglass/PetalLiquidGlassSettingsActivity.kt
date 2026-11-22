@@ -1,12 +1,18 @@
 package com.petal.browser.widget.liquidglass
 
+import android.app.WallpaperManager
 import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +57,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.R
+import java.io.File
+import java.io.FileOutputStream
 
 /**
  * Customization and setup activity for Petal's Liquid Glass widgets.
@@ -112,6 +120,25 @@ private fun LiquidGlassSettingsScreen(
 
     val scrollState = rememberScrollState()
 
+    val pickWallpaperLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    val target = File(context.filesDir, "glass_wallpaper_photo.jpg")
+                    FileOutputStream(target).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                PetalWallpaperBlurHelper.rebakeAllFromWallpaper(context)
+                Toast.makeText(context, "Wallpaper photo saved! Rebaking glass...", Toast.LENGTH_SHORT).show()
+            } catch (t: Throwable) {
+                Toast.makeText(context, "Failed saving photo: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -148,6 +175,56 @@ private fun LiquidGlassSettingsScreen(
                 }
             }
 
+            // Wallpaper Source & Live Mode
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Wallpaper Source & Live Mode",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Petal automatically reads your system wallpaper. If your device blocks wallpaper reading, pick a photo or set Petal Live Wallpaper for 60/120 Hz real-time glass.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = { pickWallpaperLauncher.launch("image/*") }
+                        ) {
+                            Text("Pick Wallpaper", maxLines = 1)
+                        }
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                try {
+                                    val liveIntent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
+                                        putExtra(
+                                            WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                                            ComponentName(context, PetalGlassWallpaperService::class.java)
+                                        )
+                                    }
+                                    context.startActivity(liveIntent)
+                                } catch (_: Throwable) {
+                                    Toast.makeText(context, "Could not open Live Wallpaper chooser", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        ) {
+                            Text("Live Wallpaper", maxLines = 1)
+                        }
+                    }
+                }
+            }
+
             // Accessibility helper banner
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -155,19 +232,19 @@ private fun LiquidGlassSettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Automatic Positioning",
+                        text = "Automatic Positioning (Accessibility)",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Petal uses an Accessibility Service to detect widget coordinates on your home screen automatically.",
+                        text = "Turn on the Accessibility Service once so Petal can detect where widgets sit on your home screen and align the glass reflection automatically.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(10.dp))
-                    OutlinedButton(onClick = onOpenAccessibility) {
-                        Text("Enable Widget Position Detection")
+                    Button(onClick = onOpenAccessibility) {
+                        Text("Enable Position Detection")
                     }
                 }
             }
