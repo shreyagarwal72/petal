@@ -2378,20 +2378,24 @@ private fun PaletteSwatchSquare(
             label = "paletteOutlinePadding"
         )
 
+        val safeOutlinePadding = outlinePadding.coerceAtLeast(0.dp)
+        val safeOuterCorner = outerCorner.coerceAtLeast(0.dp)
+        val safeInnerCorner = innerCorner.coerceAtLeast(0.dp)
+
         Surface(
             onClick = onClick,
             color = if (selected) scheme.primaryContainer else scheme.surfaceContainerHighest,
-            shape = RoundedCornerShape(outerCorner),
+            shape = RoundedCornerShape(safeOuterCorner),
             modifier = Modifier.fillMaxSize()
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(outlinePadding)
+                    .padding(safeOutlinePadding)
             ) {
                 Surface(
                     color = scheme.surface,
-                    shape = RoundedCornerShape(innerCorner),
+                    shape = RoundedCornerShape(safeInnerCorner),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
