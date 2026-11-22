@@ -1,6 +1,7 @@
 package com.petal.browser.ui.components
 
 import android.graphics.Bitmap
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -201,7 +202,7 @@ fun PetalAddressBar(
                         // Long-press Back opens this tab's back/forward history popup.
                         Box(
                             modifier = Modifier.pointerInput(isLoading, canGoBack) {
-                                androidx.compose.foundation.gestures.detectTapGestures(
+                                detectTapGestures(
                                     onLongPress = {
                                         if (!isLoading && canGoBack) {
                                             com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)

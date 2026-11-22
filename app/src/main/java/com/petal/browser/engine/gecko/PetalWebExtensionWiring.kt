@@ -33,11 +33,16 @@ internal object PetalWebExtensionWiring {
             runtime = PetalWebExtensionRuntime(engine, delegate),
             store = store,
             // Extension-created tabs, and tabs an extension closes or selects through the tabs API.
-            onNewTabOverride = { extension, engineSession, url ->
-                delegate.openExtensionTab(extension, engineSession, url, active = true, isPrivate = false)
+            onNewTabOverride = { extension, engineSession, url, active, isPrivate ->
+                delegate.openExtensionTab(extension, engineSession, url, active, isPrivate)
             },
             onCloseTabOverride = { _, tabId -> delegate.closeTabById(tabId) },
             onSelectTabOverride = { _, tabId -> delegate.selectInUi(tabId) },
+            onUpdatePermissionRequest = { extension, newPermissions, newOrigins, newDataCollectionPermissions, onPermissionsGranted ->
+                delegate.onUpdatePermissionRequest(
+                    extension, newPermissions, newOrigins, newDataCollectionPermissions, onPermissionsGranted
+                )
+            },
             onExtensionsLoaded = { extensions ->
                 Log.i(TAG, "Extensions loaded: ${extensions.size}")
                 PetalExtensionManager.refresh()
@@ -82,32 +87,33 @@ internal object PetalWebExtensionWiring {
             isPrivate: Boolean
         ) = petal.onNewTab(extension, engineSession, active, url, isPrivate)
 
-        override fun onCloseTab(extension: WebExtension?, engineSession: EngineSession): Boolean =
-            petal.onCloseTab(extension, engineSession)
-
         override fun onInstallPermissionRequest(
             extension: WebExtension,
             permissions: List<String>,
             origins: List<String>,
             dataCollectionPermissions: List<String>,
-            onPermissionsGranted: (PermissionPromptResponse) -> Unit
-        ) = petal.onInstallPermissionRequest(extension, permissions, origins, dataCollectionPermissions, onPermissionsGranted)
+            onConfirm: (PermissionPromptResponse) -> Unit
+        ) = petal.onInstallPermissionRequest(extension, permissions, origins, dataCollectionPermissions, onConfirm)
 
         override fun onUpdatePermissionRequest(
-            current: WebExtension,
-            updated: WebExtension,
+            extension: WebExtension,
             newPermissions: List<String>,
             newOrigins: List<String>,
             newDataCollectionPermissions: List<String>,
             onPermissionsGranted: (Boolean) -> Unit
         ) = petal.onUpdatePermissionRequest(
-            current, updated, newPermissions, newOrigins, newDataCollectionPermissions, onPermissionsGranted
+            extension, newPermissions, newOrigins, newDataCollectionPermissions, onPermissionsGranted
         )
 
-        override fun onToggleActionPopup(extension: WebExtension, action: Action): EngineSession? =
-            petal.onToggleActionPopup(extension, action)
+        override fun onToggleActionPopup(
+            extension: WebExtension,
+            engineSession: EngineSession,
+            action: Action,
+            isPrivate: Boolean
+        ): EngineSession? =
+            petal.onToggleActionPopup(extension, engineSession, action, isPrivate)
 
-        override fun onOptionsPageShown(extension: WebExtension, engineSession: EngineSession?) =
-            petal.onOptionsPageShown(extension, engineSession)
+        override fun onOpenOptionsPage(extension: WebExtension) =
+            petal.onOpenOptionsPage(extension)
     }
 }

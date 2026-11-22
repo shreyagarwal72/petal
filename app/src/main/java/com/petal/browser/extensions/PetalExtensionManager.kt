@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.Looper
 import com.petal.browser.engine.gecko.PetalEngineStore
 import com.petal.browser.view.PetalToast
+import mozilla.components.feature.addons.ui.translateName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -848,7 +849,11 @@ object PetalExtensionManager {
         _extensions.value.firstOrNull { it.id == id }?.addon ?: Addon(id = id)
 
     private fun displayName(ctx: Context, addon: Addon): String =
-        try { addon.translateName(ctx) } catch (_: Throwable) { addon.id }
+        try {
+            addon.translateName(ctx).ifBlank { addon.translatableName.values.firstOrNull() ?: addon.id }
+        } catch (_: Throwable) {
+            addon.translatableName.values.firstOrNull() ?: addon.id
+        }
 
     // ── Hooks called by PetalWebExtensionDelegate ────────────────────────────
 

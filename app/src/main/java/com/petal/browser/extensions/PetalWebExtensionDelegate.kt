@@ -146,7 +146,7 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
     }
 
     /** `browser.tabs.remove`: closes the store tab that owns [engineSession]. */
-    override fun onCloseTab(extension: WebExtension?, engineSession: EngineSession): Boolean {
+    fun onCloseTab(extension: WebExtension?, engineSession: EngineSession): Boolean {
         val store = PetalEngineStore.getStore(context)
         val tab = store.state.tabs.firstOrNull { it.engineState.engineSession === engineSession } ?: return false
         mainHandler.post {
@@ -184,16 +184,15 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
     }
 
     override fun onUpdatePermissionRequest(
-        current: WebExtension,
-        updated: WebExtension,
+        extension: WebExtension,
         newPermissions: List<String>,
         newOrigins: List<String>,
         newDataCollectionPermissions: List<String>,
         onPermissionsGranted: (Boolean) -> Unit
     ) {
         PetalExtensionManager.showPrompt(
-            extensionId = updated.id,
-            name = nameOf(updated) ?: nameOf(current),
+            extensionId = extension.id,
+            name = nameOf(extension),
             permissions = newPermissions + newDataCollectionPermissions,
             origins = newOrigins,
             isUpdate = true,
@@ -216,13 +215,18 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
      * The toolbar button was pressed (or the extension called `action.openPopup`). The returned
      * session is the one Gecko loads the extension's own `moz-extension://` popup page into.
      */
-    override fun onToggleActionPopup(extension: WebExtension, action: Action): EngineSession? {
-        val allowedInPrivate = try { extension.isAllowedInPrivateBrowsing() } catch (_: Throwable) { false }
+    override fun onToggleActionPopup(
+        extension: WebExtension,
+        engineSession: EngineSession,
+        action: Action,
+        isPrivate: Boolean
+    ): EngineSession? {
+        val allowedInPrivate = isPrivate || try { extension.isAllowedInPrivateBrowsing() } catch (_: Throwable) { false }
         return PetalExtensionManager.createPopupEngineSession(extension.id, nameOf(extension), allowedInPrivate)
     }
 
     /** `runtime.openOptionsPage()`: opens the settings page in a browser tab, gated on user intent. */
-    override fun onOptionsPageShown(extension: WebExtension, engineSession: EngineSession?) {
+    override fun onOpenOptionsPage(extension: WebExtension) {
         if (!PetalExtensionManager.isUserInitiatedOpen(extension.id)) {
             Log.i(TAG, "Suppressed non-user runtime.openOptionsPage() from ${extension.id}")
             return

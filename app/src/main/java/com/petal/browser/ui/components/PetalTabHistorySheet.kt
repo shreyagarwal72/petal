@@ -43,7 +43,6 @@ import com.petal.browser.engine.gecko.PetalEngineStore
 import com.petal.browser.ui.containment.PetalSheet
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.await
 import mozilla.components.browser.icons.Icon as MozIcon
 import mozilla.components.browser.icons.IconRequest
 
