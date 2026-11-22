@@ -23,6 +23,7 @@ import com.petal.browser.ui.theme.layout.rememberPetalLayoutSettings
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.preference.PreferenceManager
 import androidx.appcompat.app.AppCompatDelegate
