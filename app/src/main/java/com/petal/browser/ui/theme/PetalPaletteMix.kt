@@ -10,16 +10,12 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.preference.PreferenceManager
 
 /**
- * Palette mixing: primary, secondary and tertiary can each come from a different source at the
- * same time.
+ * Palette mixing, retired as a user feature: secondary and tertiary are always Auto, i.e. they come
+ * from the selected palette and harmony style. The Mix palettes UI is gone and any previously stored
+ * mix preferences are ignored, so nobody keeps a stale override.
  *
- *   primary   -> whatever palette is selected today (preset, Material You, or custom)
- *   secondary -> Auto | Material You | a preset palette | your own colour
- *   tertiary  -> Auto | Material You | a preset palette | your own colour
- *
- * A source supplies its PRIMARY colours (colour, on-colour, container, on-container) to the role it
- * is assigned to, so "secondary = Forest" really looks like Forest's green rather than its muted
- * secondary. Applied after the harmony style and before AMOLED, so those still work on top.
+ * The engine below is kept as a no-op (an Auto config never overrides anything) so the theme
+ * pipeline and the home-screen widget accessors keep working unchanged.
  */
 object PetalPaletteMix {
 
@@ -86,11 +82,9 @@ object PetalPaletteMix {
         else -> Source.Auto
     }
 
-    fun read(sp: SharedPreferences) = Config(
-        enabled = sp.getBoolean(KEY_ENABLED, false),
-        secondary = parse(sp.getString(KEY_SECONDARY, null)),
-        tertiary = parse(sp.getString(KEY_TERTIARY, null))
-    )
+    /** Always Auto: stored mix preferences from older versions are deliberately ignored. */
+    @Suppress("UNUSED_PARAMETER")
+    fun read(sp: SharedPreferences) = Config()
 
     fun config(context: Context): Config = read(PreferenceManager.getDefaultSharedPreferences(context))
 

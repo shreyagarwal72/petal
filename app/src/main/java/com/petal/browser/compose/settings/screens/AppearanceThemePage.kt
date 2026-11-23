@@ -278,34 +278,21 @@ fun AppearanceThemePage(
                     }
                     val activePreviewScheme = styleSchemes[colorStyle] ?: activeBaseScheme
 
-                    val paletteStyleScrollState = rememberScrollState()
-                    ScrollFadeRow(
-                        scrollState = paletteStyleScrollState,
-                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(paletteStyleScrollState)
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            visibleStyles.forEach { style ->
-                                val swatchScheme = styleSchemes[style] ?: activePreviewScheme
-                                PaletteSwatchSquare(
-                                    scheme = swatchScheme,
-                                    selected = colorStyle == style,
-                                    onClick = {
-                                        reveal.reveal {
-                                            onColorStyleChange(style)
-                                            PetalSearchWidgetProvider.updateAllWidgets(context)
-                                        }
-                                    },
-                                    modifier = Modifier.size(64.dp)
-                                )
+                    // Harmony style picker (WiFi Weakspot design, Liquid Glass aware)
+                    PetalColorStylePicker(
+                        styles = visibleStyles,
+                        schemes = styleSchemes,
+                        fallbackScheme = activePreviewScheme,
+                        selected = colorStyle,
+                        dark = isDarkTheme,
+                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        onSelect = { style ->
+                            reveal.reveal {
+                                onColorStyleChange(style)
+                                PetalSearchWidgetProvider.updateAllWidgets(context)
                             }
                         }
-                    }
+                    )
 
                     // Color Style Description Card (Containment Surface)
                     Surface(
@@ -358,10 +345,10 @@ fun AppearanceThemePage(
                         }
                     )
 
-                    // Mix palettes and the custom palette editor live on their own page.
+                    // Custom palette editor lives on its own page.
                     com.petal.browser.ui.containment.PetalGroupNavigationRow(
-                        title = "Advanced colors",
-                        subtitle = "Mix palettes and edit your custom palette",
+                        title = "Custom palette colors",
+                        subtitle = "Customize primary seed and role accents",
                         position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
                         onClick = { showAdvanced = true },
                         leadingIcon = { Icon(Icons.Rounded.Tune, contentDescription = null) }
@@ -417,80 +404,4 @@ internal fun AppearanceCustomColorPickerDialog(
     )
 }
 
-@Composable
-private fun PaletteSwatchSquare(
-    scheme: ColorScheme,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    BoxWithConstraints(modifier = modifier.aspectRatio(1f)) {
-        val circleRadius = maxWidth / 2
-        val innerCorner by animateDpAsState(
-            targetValue = if (selected) 12.dp else circleRadius, animationSpec = PetalSpring.quick(),
-            label = "paletteInnerCorner"
-        )
-        val outerCorner by animateDpAsState(
-            targetValue = if (selected) 16.dp else circleRadius, animationSpec = PetalSpring.quick(),
-            label = "paletteOuterCorner"
-        )
-        val outlinePadding by animateDpAsState(
-            targetValue = if (selected) 3.dp else 0.dp, animationSpec = PetalSpring.quick(),
-            label = "paletteOutlinePadding"
-        )
 
-        val safeOutlinePadding = outlinePadding.coerceAtLeast(0.dp)
-        val safeOuterCorner = outerCorner.coerceAtLeast(0.dp)
-        val safeInnerCorner = innerCorner.coerceAtLeast(0.dp)
-
-        Surface(
-            onClick = onClick,
-            color = if (selected) scheme.primaryContainer else scheme.surfaceContainerHighest,
-            shape = RoundedCornerShape(safeOuterCorner),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(safeOutlinePadding)
-            ) {
-                Surface(
-                    color = scheme.surface,
-                    shape = RoundedCornerShape(safeInnerCorner),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        Row(modifier = Modifier.weight(1f)) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxSize()
-                                    .background(scheme.primary)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxSize()
-                                    .background(scheme.secondary)
-                            )
-                        }
-                        Row(modifier = Modifier.weight(1f)) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxSize()
-                                    .background(scheme.tertiary)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxSize()
-                                    .background(scheme.surfaceContainerHighest)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
