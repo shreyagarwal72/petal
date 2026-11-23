@@ -73,6 +73,13 @@ object PetalAiSearchBridge {
         activity: ComponentActivity,
         query: String
     ) {
+        val mainActivity = activity as? com.petal.browser.activity.MainActivity
+        if (mainActivity != null) {
+            mainActivity.runOnUiThread {
+                mainActivity.viewModel.openAiSheet(query)
+            }
+            return
+        }
         activity.runOnUiThread {
             try {
                 activeComposeView?.let {

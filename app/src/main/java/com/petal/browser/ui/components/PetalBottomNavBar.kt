@@ -57,6 +57,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.FloatingToolbarDefaults
@@ -104,7 +105,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.material3.Icon
 
 enum class PetalNavTab {
-    HOME, NEW_TAB, TABS, MENU, SEARCH
+    HOME, AI, NEW_TAB, TABS, MENU, SEARCH
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -131,6 +132,7 @@ fun PetalBottomNavBar(
     isBottomAddressBar: Boolean = false,
     glassSource: android.view.View? = null,
     onHomeClick: () -> Unit,
+    onAiClick: () -> Unit = {},
     onNewTabClick: () -> Unit,
     onTabsClick: () -> Unit,
     onMenuClick: () -> Unit,
@@ -277,6 +279,7 @@ fun PetalBottomNavBar(
                         tabCount = tabCount,
                         badgeScale = badgeScale.value,
                         onHomeClick = onHomeClick,
+                        onAiClick = onAiClick,
                         onNewTabClick = onNewTabClick,
                         onTabsClick = onTabsClick,
                         onMenuClick = onMenuClick,
@@ -291,6 +294,7 @@ fun PetalBottomNavBar(
                         badgeScale = badgeScale.value,
                         glassSource = resolvedGlassSource,
                         onHomeClick = onHomeClick,
+                        onAiClick = onAiClick,
                         onNewTabClick = onNewTabClick,
                         onTabsClick = onTabsClick,
                         onMenuClick = onMenuClick,
@@ -419,9 +423,36 @@ fun PetalBottomNavBar(
                     )
 
                     ExpressiveNavTabItem(
+                        selected = selectedTab == PetalNavTab.AI,
+                        label = "AI",
+                        index = 1,
+                        isLiquidGlass = isLiquidGlass,
+                        modifier = Modifier.weight(1f),
+                        icon = { isSelected, tint ->
+                            val iconScale by animateFloatAsState(
+                                targetValue = if (isSelected) 1.18f else 1.0f,
+                                animationSpec = PetalSpring.calm(),
+                                label = "ai_expressive_scale"
+                            )
+                            Icon(
+                                imageVector = Icons.Rounded.AutoAwesome,
+                                contentDescription = "Petal AI",
+                                tint = tint,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .graphicsLayer {
+                                        scaleX = iconScale
+                                        scaleY = iconScale
+                                    }
+                            )
+                        },
+                        onClick = onAiClick
+                    )
+
+                    ExpressiveNavTabItem(
                         selected = selectedTab == PetalNavTab.NEW_TAB,
                         label = newTabLabel,
-                        index = 1,
+                        index = 2,
                         isLiquidGlass = isLiquidGlass,
                         modifier = Modifier
                             .weight(1f)
@@ -468,7 +499,7 @@ fun PetalBottomNavBar(
                         ExpressiveNavTabItem(
                             selected = selectedTab == PetalNavTab.SEARCH,
                             label = "Search",
-                            index = 2,
+                            index = 3,
                             isLiquidGlass = isLiquidGlass,
                             modifier = Modifier.weight(1f),
                             icon = { _, _ ->
@@ -487,7 +518,7 @@ fun PetalBottomNavBar(
                         selected = selectedTab == PetalNavTab.TABS,
                         label = "Tabs",
                         badgeText = if (tabCount > 99) "99+" else tabCount.toString(),
-                        index = if (centerSearch) 3 else 2,
+                        index = if (centerSearch) 4 else 3,
                         isLiquidGlass = isLiquidGlass,
                         modifier = Modifier
                             .weight(1f)
@@ -521,7 +552,7 @@ fun PetalBottomNavBar(
                     ExpressiveNavTabItem(
                         selected = selectedTab == PetalNavTab.MENU,
                         label = "Menu",
-                        index = if (centerSearch) 4 else 3,
+                        index = if (centerSearch) 5 else 4,
                         isLiquidGlass = isLiquidGlass,
                         modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->

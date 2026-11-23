@@ -30,6 +30,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.petal.browser.compose.ai.AiProvider
 import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.compose.ai.ResearchMode
+import com.petal.browser.compose.ai.ondevice.PetalOnDeviceConfig
+import com.petal.browser.compose.ai.ondevice.PetalOnDeviceModelManager
+import com.petal.browser.compose.ai.PetalAiUsageTracker
 import com.petal.browser.compose.settings.viewmodel.SearchHomeSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
@@ -74,6 +77,11 @@ fun ApiIntegrationsSettingsScreenContent(
     var testResultMsg by remember { mutableStateOf<String?>(null) }
     var showCustomAiGuide by remember { mutableStateOf(false) }
     var isTestingKey by remember { mutableStateOf(false) }
+    var autoPageContext by remember { mutableStateOf(PetalAiResearchEngine.isAutoPageContextEnabled(context)) }
+    var generateSuggestions by remember { mutableStateOf(PetalAiResearchEngine.isGeneratePageSuggestionsEnabled(context)) }
+    var todayTokens by remember { mutableLongStateOf(PetalAiUsageTracker.getTodayTokens(context)) }
+    var monthTokens by remember { mutableLongStateOf(PetalAiUsageTracker.getMonthTokens(context)) }
+    var showModelManagerDialog by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
@@ -163,11 +171,45 @@ fun ApiIntegrationsSettingsScreenContent(
                             }
 
                     if (selectedProvider == AiProvider.CUSTOM) {
-                        TextButton(onClick = { showCustomAiGuide = true }) {
-                            Icon(Icons.Rounded.Info, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.ui_how_to_connect_a_custom))
+                        Text(
+                            "Local Server Presets:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            com.petal.browser.ui.containment.PetalFilterChip(
+                                selected = customEndpoint == "http://localhost:11434/v1",
+                                onClick = {
+                                    customEndpoint = "http://localhost:11434/v1"
+                                    PetalAiResearchEngine.setCustomEndpoint(context, customEndpoint)
+                                    testResultMsg = null
+                                },
+                                label = { Text(stringResource(R.string.ui_petal_ai_preset_ollama), style = MaterialTheme.typography.labelSmall) }
+                            )
+                            com.petal.browser.ui.containment.PetalFilterChip(
+                                selected = customEndpoint == "http://localhost:1234/v1",
+                                onClick = {
+                                    customEndpoint = "http://localhost:1234/v1"
+                                    PetalAiResearchEngine.setCustomEndpoint(context, customEndpoint)
+                                    testResultMsg = null
+                                },
+                                label = { Text(stringResource(R.string.ui_petal_ai_preset_lmstudio), style = MaterialTheme.typography.labelSmall) }
+                            )
+                            com.petal.browser.ui.containment.PetalFilterChip(
+                                selected = customEndpoint == "http://localhost:8080/v1",
+                                onClick = {
+                                    customEndpoint = "http://localhost:8080/v1"
+                                    PetalAiResearchEngine.setCustomEndpoint(context, customEndpoint)
+                                    testResultMsg = null
+                                },
+                                label = { Text(stringResource(R.string.ui_petal_ai_preset_llamacpp), style = MaterialTheme.typography.labelSmall) }
+                            )
                         }
+
                         Spacer(Modifier.height(4.dp))
                         TextField(
                             value = customEndpoint,
@@ -176,8 +218,8 @@ fun ApiIntegrationsSettingsScreenContent(
                                 PetalAiResearchEngine.setCustomEndpoint(context, newEndpoint)
                                 testResultMsg = null
                             },
-                            label = { Text(stringResource(R.string.ui_custom_endpoint_url)) },
-                            placeholder = { Text(stringResource(R.string.ui_https_api_openai_com_v1)) },
+                            label = { Text("Custom / LAN Endpoint (e.g. http://192.168.1.50:11434/v1)") },
+                            placeholder = { Text("http://localhost:11434/v1") },
                             singleLine = true,
                             leadingIcon = { Icon(Icons.Rounded.CloudQueue, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                             shape = RoundedCornerShape(16.dp),
@@ -189,6 +231,73 @@ fun ApiIntegrationsSettingsScreenContent(
                             ),
                             modifier = Modifier.fillMaxWidth()
                         )
+
+                        // Termux Gemma help card
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f))
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text(
+                                    stringResource(R.string.ui_petal_ai_termux_help_title),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    stringResource(R.string.ui_petal_ai_termux_help_body),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        if (PetalAiResearchEngine.isLocalEndpoint(context)) {
+                            Text(
+                                stringResource(R.string.ui_petal_ai_local_no_key_needed),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    } else if (selectedProvider == AiProvider.LOCAL_ON_DEVICE) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                val memStats = remember { PetalOnDeviceModelManager.getMemoryStats(context) }
+                                val freeMb = memStats.availMemBytes / (1024 * 1024)
+                                val hasModel = remember { PetalOnDeviceModelManager.getModelFile(context) != null }
+
+                                Text(
+                                    stringResource(R.string.ui_petal_ai_ondevice_model_manager),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                if (!memStats.hasSufficientRam) {
+                                    Text(
+                                        stringResource(R.string.ui_petal_ai_ondevice_ram_warning, "$freeMb MB"),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                } else {
+                                    Text(
+                                        stringResource(R.string.ui_petal_ai_ondevice_ram_ok, "$freeMb MB"),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    if (hasModel) "Model loaded: Ready for offline inference" else "No model file found on device.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
 
                     Spacer(Modifier.height(4.dp))
@@ -441,6 +550,124 @@ fun ApiIntegrationsSettingsScreenContent(
                                         } else null
                                     )
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            PetalSettingsSection(title = "Page Context & Intelligence") {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text(
+                                    androidx.compose.ui.res.stringResource(com.petal.browser.R.string.ui_petal_ai_setting_auto_page_context),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    androidx.compose.ui.res.stringResource(com.petal.browser.R.string.ui_petal_ai_setting_auto_page_context_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = autoPageContext,
+                                onCheckedChange = {
+                                    autoPageContext = it
+                                    PetalAiResearchEngine.setAutoPageContextEnabled(context, it)
+                                }
+                            )
+                        }
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text(
+                                    androidx.compose.ui.res.stringResource(com.petal.browser.R.string.ui_petal_ai_setting_generate_suggestions),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    androidx.compose.ui.res.stringResource(com.petal.browser.R.string.ui_petal_ai_setting_generate_suggestions_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = generateSuggestions,
+                                onCheckedChange = {
+                                    generateSuggestions = it
+                                    PetalAiResearchEngine.setGeneratePageSuggestionsEnabled(context, it)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            PetalSettingsSection(title = stringResource(R.string.ui_petal_ai_usage_title)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                stringResource(R.string.ui_petal_ai_usage_today, todayTokens.toString()),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                stringResource(R.string.ui_petal_ai_usage_month, monthTokens.toString()),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            FilledTonalButton(
+                                onClick = {
+                                    PetalAiUsageTracker.resetUsage(context)
+                                    todayTokens = 0L
+                                    monthTokens = 0L
+                                },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Rounded.DeleteSweep, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(stringResource(R.string.ui_petal_ai_usage_reset), style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }

@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -57,9 +58,9 @@ import com.petal.browser.ui.glass.rememberGlassBar
 import kotlin.math.roundToInt
 import androidx.compose.material3.Icon
 
-private val NavOrder4 = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
+private val NavOrder4 = listOf(PetalNavTab.HOME, PetalNavTab.AI, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
 /** With search in the centre. */
-private val NavOrder5 = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.SEARCH, PetalNavTab.TABS, PetalNavTab.MENU)
+private val NavOrder5 = listOf(PetalNavTab.HOME, PetalNavTab.AI, PetalNavTab.NEW_TAB, PetalNavTab.SEARCH, PetalNavTab.TABS, PetalNavTab.MENU)
 
 /**
  * What the bar needs besides the selected label: four icon slots (24 dp icon + 14 dp
@@ -85,6 +86,7 @@ internal fun PetalStrideNavBar(
     badgeScale: Float,
     glassSource: View?,
     onHomeClick: () -> Unit,
+    onAiClick: () -> Unit = {},
     onNewTabClick: () -> Unit,
     onTabsClick: () -> Unit,
     onMenuClick: () -> Unit,
@@ -184,6 +186,7 @@ internal fun PetalStrideNavBar(
                 val weight = { weights[tab].coerceIn(0f, 1f) }
                 val label = when (tab) {
                     PetalNavTab.HOME -> "Home"
+                    PetalNavTab.AI -> "AI"
                     PetalNavTab.NEW_TAB -> "New"
                     PetalNavTab.TABS -> "Tabs"
                     PetalNavTab.MENU -> "Menu"
@@ -191,6 +194,7 @@ internal fun PetalStrideNavBar(
                 }
                 val onClick = when (tab) {
                     PetalNavTab.HOME -> onHomeClick
+                    PetalNavTab.AI -> onAiClick
                     PetalNavTab.NEW_TAB -> onNewTabClick
                     PetalNavTab.TABS -> onTabsClick
                     PetalNavTab.MENU -> onMenuClick
@@ -265,6 +269,7 @@ private fun NavIcon(tab: PetalNavTab, selected: Boolean, tint: Color, tabCount: 
             tint = tint,
             modifier = Modifier.size(24.dp)
         )
+        PetalNavTab.AI -> Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
         PetalNavTab.NEW_TAB -> Icon(Icons.Rounded.Add, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
         PetalNavTab.TABS -> TabCountBadge(color = tint, count = tabCount, scale = badgeScale)
         PetalNavTab.MENU -> Icon(Icons.Rounded.MoreVert, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))

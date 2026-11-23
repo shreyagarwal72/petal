@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -64,7 +65,7 @@ import com.petal.browser.ui.glass.navIconMotion
 import kotlin.math.roundToInt
 import androidx.compose.material3.Icon
 
-private val PixelNavOrder = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
+private val PixelNavOrder = listOf(PetalNavTab.HOME, PetalNavTab.AI, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
 
 /**
  * Material 3 Expressive floating nav pill in PixelMusic's style (used when liquid glass is off).
@@ -80,6 +81,7 @@ internal fun PetalPixelNavPill(
     tabCount: Int,
     badgeScale: Float,
     onHomeClick: () -> Unit,
+    onAiClick: () -> Unit = {},
     onNewTabClick: () -> Unit,
     onTabsClick: () -> Unit,
     onMenuClick: () -> Unit,
@@ -180,12 +182,14 @@ internal fun PetalPixelNavPill(
                     val weight = { weights[tab].coerceIn(0f, 1f) }
                     val label = when (tab) {
                         PetalNavTab.HOME -> "Home"
+                        PetalNavTab.AI -> "AI"
                         PetalNavTab.NEW_TAB -> "New"
                         PetalNavTab.TABS -> "Tabs"
                         else -> "Menu"
                     }
                     val onClick = when (tab) {
                         PetalNavTab.HOME -> onHomeClick
+                        PetalNavTab.AI -> onAiClick
                         PetalNavTab.NEW_TAB -> onNewTabClick
                         PetalNavTab.TABS -> onTabsClick
                         else -> onMenuClick
@@ -220,6 +224,10 @@ internal fun PetalPixelNavPill(
                                         painter = painterResource(if (selected) R.drawable.home_filled else R.drawable.home),
                                         contentDescription = null,
                                         tint = tint,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    PetalNavTab.AI -> Icon(
+                                        Icons.Rounded.AutoAwesome, contentDescription = null, tint = tint,
                                         modifier = Modifier.size(24.dp)
                                     )
                                     PetalNavTab.NEW_TAB -> Icon(

@@ -523,7 +523,7 @@ private fun BarActionButton(
             BarAction.RELOAD -> onReloadClick()
             BarAction.SHARE -> onShareClick()
             BarAction.BOOKMARK -> onBookmarkClick()
-            BarAction.AI_RESEARCH -> onAiResearchClick()
+            BarAction.AI_RESEARCH, BarAction.AI -> onAiResearchClick()
             BarAction.READER -> onReaderClick()
             BarAction.DOWNLOADS -> onDownloadsClick()
             BarAction.FIND_IN_PAGE -> onFindInPageClick()

@@ -978,7 +978,7 @@ class MainActivity : FragmentActivity(), BrowserController {
         if (Intent.ACTION_PROCESS_TEXT == action) {
             val text = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString()
             if (!text.isNullOrBlank()) {
-                viewModel.loadUrl(text)
+                viewModel.openAiSheet(query = "", selectedQuote = text)
             }
             return
         }
@@ -997,7 +997,10 @@ class MainActivity : FragmentActivity(), BrowserController {
                 viewModel.openDownloads()
             }
             com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH -> {
-                viewModel.openAiSheet()
+                val query = intent.getStringExtra("query")
+                    ?: intent.getStringExtra(Intent.EXTRA_TEXT)
+                    ?: ""
+                viewModel.openAiSheet(query)
             }
             // The search bar opens the search page on the current tab (it used to just open a blank new tab).
             com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH -> {

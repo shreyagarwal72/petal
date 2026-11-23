@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Cleartext is permitted at the platform layer for custom AI endpoints on local LAN (e.g. Ollama, LM Studio).
-         All remote web traffic uses HTTPS. -->
-    <base-config cleartextTrafficPermitted="true" />
+    <!-- Public web traffic strictly requires HTTPS.
+         Cleartext HTTP is permitted only for local AI servers running on localhost,
+         the Android emulator loopback, or private-LAN hosts (e.g. Ollama, LM Studio, llama.cpp). -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Cleartext permitted for localhost and local development servers -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">local</domain>
+    </domain-config>
 </network-security-config>

@@ -29,6 +29,7 @@ import com.petal.browser.ui.theme.ColorStyle
 
 interface PetalBottomNavHandler {
     fun onHomeClick()
+    fun onAiClick() {}
     fun onNewTabClick()
     fun onTabsClick()
     fun onMenuClick()
@@ -180,6 +181,7 @@ object PetalBottomNavBridge {
                             isBottomAddressBar = isBottomAddressBar,
                             glassSource = glassSource,
                             onHomeClick = { currentHandler?.onHomeClick() },
+                            onAiClick = { currentHandler?.onAiClick() },
                             onNewTabClick = { currentHandler?.onNewTabClick() },
                             onTabsClick = { currentHandler?.onTabsClick() },
                             onMenuClick = { currentHandler?.onMenuClick() },

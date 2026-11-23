@@ -641,14 +641,7 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onResearchWithPetalAi(text: String) {
-                    PetalAiResearchBridge.showAiResearchSheet(
-                        activity = activity,
-                        pageTitle = "Selected Text Research",
-                        pageUrl = "",
-                        pageContent = text,
-                        initialMode = ResearchMode.DEEP_RESEARCH,
-                        autoStart = true
-                    )
+                    activity.viewModel.openAiSheet(query = "", selectedQuote = text)
                 }
 
                 override fun onTranslateText(text: String) {

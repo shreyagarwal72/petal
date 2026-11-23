@@ -107,8 +107,22 @@ class BarPrefsTest {
     fun testBarPrefsDefaults() {
         val sp = createFakeSharedPreferences(emptyMap())
         val (leading, trailing) = BarPrefs.getSanitizedMergeActions(sp)
-        assertEquals(listOf(BarAction.TABS), leading)
-        assertEquals(listOf(BarAction.NEW_TAB, BarAction.MENU), trailing)
+        assertEquals(listOf(BarAction.HOME, BarAction.AI), leading)
+        assertEquals(listOf(BarAction.NEW_TAB, BarAction.TABS, BarAction.MENU), trailing)
+    }
+
+    @Test
+    fun testBarPrefsAiActionParsing() {
+        val actions = BarAction.parseActionList("HOME,AI,NEW_TAB,TABS,MENU")
+        assertEquals(5, actions.size)
+        assertEquals(BarAction.AI, actions[1])
+    }
+
+    @Test
+    fun testBarPrefsAiResearchAliasParsing() {
+        val actions = BarAction.parseActionList("HOME,AI_RESEARCH,NEW_TAB")
+        assertEquals(3, actions.size)
+        assertEquals(BarAction.AI, actions[1])
     }
 
     @Test

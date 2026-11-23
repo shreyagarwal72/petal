@@ -29,8 +29,10 @@ object BarPrefs {
     const val COLLAPSE_PILL = "PILL"
     const val COLLAPSE_HIDE = "HIDE"
 
-    const val DEFAULT_MERGE_LEADING = "TABS"
-    const val DEFAULT_MERGE_TRAILING = "NEW_TAB,MENU"
+    const val KEY_MERGE_AI_MIGRATED = "sp_merge_ai_migrated_v1"
+
+    const val DEFAULT_MERGE_LEADING = "HOME,AI"
+    const val DEFAULT_MERGE_TRAILING = "NEW_TAB,TABS,MENU"
 
     const val MAX_MERGE_ACTIONS_TOTAL = 5
 
@@ -76,6 +78,34 @@ object BarPrefs {
             if (action.isAvailable && seen.add(action)) {
                 trailing.add(action)
             }
+        }
+
+        val hasCustomLeading = try { sp.contains(KEY_MERGE_LEADING) } catch (_: Exception) { false }
+        val hasCustomTrailing = try { sp.contains(KEY_MERGE_TRAILING) } catch (_: Exception) { false }
+        val aiMigrated = try { sp.getBoolean(KEY_MERGE_AI_MIGRATED, false) } catch (_: Exception) { false }
+
+        if (!aiMigrated && (hasCustomLeading || hasCustomTrailing)) {
+            if (!seen.contains(BarAction.AI) && !seen.contains(BarAction.AI_RESEARCH)) {
+                if (leading.contains(BarAction.HOME)) {
+                    val homeIdx = leading.indexOf(BarAction.HOME)
+                    leading.add(homeIdx + 1, BarAction.AI)
+                } else if (leading.size < 2) {
+                    leading.add(BarAction.AI)
+                } else {
+                    val newTabIdx = trailing.indexOf(BarAction.NEW_TAB)
+                    if (newTabIdx >= 0) {
+                        trailing.add(newTabIdx, BarAction.AI)
+                    } else {
+                        trailing.add(0, BarAction.AI)
+                    }
+                }
+                seen.add(BarAction.AI)
+            }
+            try {
+                sp.edit()?.putString(KEY_MERGE_LEADING, BarAction.serializeActionList(leading))
+                    ?.putString(KEY_MERGE_TRAILING, BarAction.serializeActionList(trailing))
+                    ?.putBoolean(KEY_MERGE_AI_MIGRATED, true)?.apply()
+            } catch (_: Exception) {}
         }
 
         // Rule: MENU must always be present in the toolbar

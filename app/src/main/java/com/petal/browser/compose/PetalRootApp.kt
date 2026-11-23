@@ -91,6 +91,7 @@ import com.petal.browser.ui.components.PetalAddressBar
 import com.petal.browser.ui.components.PetalMergedBar
 import com.petal.browser.ui.components.BarPrefs
 import com.petal.browser.appleduo.appleDuoFoldEffect
+import com.petal.browser.ui.components.PetalAiChatSheet
 import com.petal.browser.ui.components.PetalAiSearchResultSheet
 import com.petal.browser.ui.components.PetalBottomNavBar
 import com.petal.browser.ui.components.PetalNavTab
@@ -451,6 +452,7 @@ fun PetalRootApp(
     }
 
     val selectedTab = when {
+        isAiSheetOpen -> PetalNavTab.AI
         isMenuOpen -> PetalNavTab.MENU
         isHome -> PetalNavTab.HOME
         else -> PetalNavTab.TABS
@@ -1075,6 +1077,9 @@ fun PetalRootApp(
                 glassSource = if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content)),
                 onHomeClick = {
                     viewModel.goHome(isIncognito = isIncognito)
+                },
+                onAiClick = {
+                    viewModel.openAiSheet()
                 },
                 onNewTabClick = {
                     viewModel.openNewTab(selectTab = true, private = isIncognito)
@@ -1803,7 +1808,7 @@ fun PetalRootApp(
                 )
             }
 
-            // AI Search Result Bottom Sheet Overlay
+            // AI Chat Bottom Sheet Overlay
             androidx.compose.animation.AnimatedVisibility(
                 visible = isAiSheetOpen,
                 enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
@@ -1813,8 +1818,12 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(9f)
                     .overlayBackPose(overlayPose, 0.5f, 1f)
             ) {
-                PetalAiSearchResultSheet(
-                    query = aiSheetQuery,
+                PetalAiChatSheet(
+                    viewModel = viewModel,
+                    activeTabId = activeTab?.id.orEmpty(),
+                    activeTitle = activeTitle,
+                    activeUrl = activeUrl,
+                    isPrivate = isIncognito || (activeTab?.content?.private == true),
                     onDismiss = { viewModel.setAiSheetOpen(false) }
                 )
             }

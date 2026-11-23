@@ -235,7 +235,7 @@ private fun buildSections(
             MenuSection(
                 "Search & AI",
                 listOf(
-                    MenuAction("research_ai", "Research with Petal AI", Icons.Rounded.AutoAwesome, MenuTone.SEARCH) { handler.onResearchWithPetalAi(text) },
+                    MenuAction("research_ai", "Ask Petal AI", Icons.Rounded.AutoAwesome, MenuTone.SEARCH) { handler.onResearchWithPetalAi(text) },
                     MenuAction("search_text", "Search the web", Icons.Rounded.Search, MenuTone.SEARCH) { handler.onSearchWebText(text) },
                     MenuAction("search_background", "Search in background tab", Icons.Rounded.OpenInBrowser, MenuTone.SEARCH) { handler.onSearchWebTextInBackground(text) },
                     MenuAction("translate_text", "Translate text", Icons.Rounded.Translate, MenuTone.SEARCH) { handler.onTranslateText(text) },

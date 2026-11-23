@@ -39,6 +39,13 @@ enum class AiProvider(
         "",
         "custom-model",
         listOf("custom-model")
+    ),
+    LOCAL_ON_DEVICE(
+        "local_on_device",
+        "On-Device (Gemma)",
+        "",
+        "gemma-2b-it",
+        listOf("gemma-2b-it", "gemma-2-2b-it")
     );
 
     companion object {
@@ -73,7 +80,7 @@ enum class ResearchMode(val title: String, val promptPrefix: String) {
 
 object PetalAiResearchEngine {
 
-    private val httpClient = OkHttpClient.Builder()
+    internal val httpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
@@ -90,14 +97,92 @@ object PetalAiResearchEngine {
         sp.edit().putString("sp_ai_provider", provider.id).apply()
     }
 
+    const val KEY_AUTO_PAGE_CONTEXT = "sp_ai_auto_page_context"
+    const val KEY_GENERATE_PAGE_SUGGESTIONS = "sp_ai_generate_page_suggestions"
+    const val KEY_CLOUD_CONSENT_ACCEPTED = "sp_ai_cloud_consent_accepted"
+
     fun getApiKey(context: Context, provider: AiProvider): String {
-        val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        return sp.getString("sp_ai_key_${provider.id}", "") ?: ""
+        return PetalAiKeyStorage.getKey(context, provider.id)
     }
 
     fun setApiKey(context: Context, provider: AiProvider, key: String) {
+        PetalAiKeyStorage.setKey(context, provider.id, key)
+    }
+
+    fun isAutoPageContextEnabled(context: Context): Boolean {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        sp.edit().putString("sp_ai_key_${provider.id}", key.trim()).apply()
+        return sp.getBoolean(KEY_AUTO_PAGE_CONTEXT, true)
+    }
+
+    fun setAutoPageContextEnabled(context: Context, enabled: Boolean) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        sp.edit().putBoolean(KEY_AUTO_PAGE_CONTEXT, enabled).apply()
+    }
+
+    fun isGeneratePageSuggestionsEnabled(context: Context): Boolean {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        return sp.getBoolean(KEY_GENERATE_PAGE_SUGGESTIONS, false)
+    }
+
+    fun setGeneratePageSuggestionsEnabled(context: Context, enabled: Boolean) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        sp.edit().putBoolean(KEY_GENERATE_PAGE_SUGGESTIONS, enabled).apply()
+    }
+
+    fun isCloudConsentAccepted(context: Context): Boolean {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        return sp.getBoolean(KEY_CLOUD_CONSENT_ACCEPTED, false)
+    }
+
+    fun setCloudConsentAccepted(context: Context, accepted: Boolean) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        sp.edit().putBoolean(KEY_CLOUD_CONSENT_ACCEPTED, accepted).apply()
+    }
+
+    fun isLocalEndpoint(context: Context): Boolean {
+        val provider = getSelectedProvider(context)
+        if (provider == AiProvider.LOCAL_ON_DEVICE) return true
+        if (provider != AiProvider.CUSTOM) return false
+        val endpoint = getCustomEndpoint(context).lowercase()
+        return endpoint.contains("localhost") ||
+                endpoint.contains("127.0.0.1") ||
+                endpoint.contains("10.") ||
+                endpoint.contains("192.168.") ||
+                endpoint.contains(".local") ||
+                Regex("""^https?://172\.(1[6-9]|2[0-9]|3[0-1])\.""").containsMatchIn(endpoint)
+    }
+
+    fun getFastModel(provider: AiProvider): String {
+        return when (provider) {
+            AiProvider.GEMINI -> "gemini-3.5-flash-lite"
+            AiProvider.GROQ -> "qwen/qwen3.6-27b"
+            AiProvider.CUSTOM -> "llama3.2:3b"
+            AiProvider.LOCAL_ON_DEVICE -> "gemma-2b-it"
+        }
+    }
+
+    fun getStrongerModel(provider: AiProvider): String {
+        return when (provider) {
+            AiProvider.GEMINI -> "gemini-3.6-flash"
+            AiProvider.GROQ -> "openai/gpt-oss-120b"
+            AiProvider.CUSTOM -> "llama3.3:70b"
+            AiProvider.LOCAL_ON_DEVICE -> "gemma-2-2b-it"
+        }
+    }
+
+    fun isVisionSupported(model: String): Boolean {
+        val m = model.lowercase(Locale.ROOT)
+        return m.contains("gemini") || m.contains("gpt-4") || m.contains("vision") ||
+                m.contains("vl") || m.contains("llava") || m.contains("minicpm")
+    }
+
+    fun isVisionSupported(provider: AiProvider, model: String): Boolean {
+        return when (provider) {
+            AiProvider.GEMINI -> true
+            AiProvider.GROQ -> model.contains("vision") || model.contains("vl")
+            AiProvider.CUSTOM -> isVisionSupported(model)
+            AiProvider.LOCAL_ON_DEVICE -> false
+        }
     }
 
     fun getSelectedModel(context: Context, provider: AiProvider): String {
@@ -148,7 +233,7 @@ object PetalAiResearchEngine {
         return isPrivateHost(host)
     }
 
-    private fun isPrivateHost(host: String): Boolean {
+    internal fun isPrivateHost(host: String): Boolean {
         val h = host.trim().lowercase(Locale.ROOT).removeSurrounding("[", "]").removeSuffix(".")
         if (h == "localhost" || h == "::1") return true
         if (h.endsWith(".local") || h.endsWith(".lan")) return true
@@ -318,24 +403,20 @@ object PetalAiResearchEngine {
         val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
         Thread {
             try {
-                val responseText = when (provider) {
-                    AiProvider.GEMINI -> callGeminiApi(apiKey, model, systemPrompt, userPrompt)
-                    AiProvider.GROQ -> {
-                        val extraParams = when (model) {
-                            "openai/gpt-oss-120b" -> mapOf("reasoning_effort" to "medium", "include_reasoning" to false)
-                            "qwen/qwen3.6-27b" -> mapOf("reasoning_effort" to "none")
-                            else -> emptyMap()
-                        }
-                        callOpenAiCompatibleApi("https://api.groq.com/openai/v1/chat/completions", apiKey, model, systemPrompt, userPrompt, extraParams = extraParams)
+                val backend = AiBackendFactory.getBackend(context, provider)
+                val messages = listOf(
+                    AiChatMessage.system(systemPrompt),
+                    AiChatMessage.user(userPrompt)
+                )
+                val responseBuilder = StringBuilder()
+                kotlinx.coroutines.runBlocking {
+                    backend.stream(messages, model).collect { chunk ->
+                        responseBuilder.append(chunk)
                     }
-                    AiProvider.CUSTOM -> {
-                        val rawEndpoint = getCustomEndpoint(context).trim()
-                        if (!validateEndpoint(rawEndpoint)) {
-                            throw IllegalArgumentException("Endpoint must be https:// or an http:// private-LAN address (e.g. localhost, 192.168.x.x)")
-                        }
-                        val endpoint = normalizeOpenAiChatEndpoint(rawEndpoint)
-                        callOpenAiCompatibleApi(endpoint, apiKey, model, systemPrompt, userPrompt)
-                    }
+                }
+                val responseText = responseBuilder.toString()
+                if (responseText.isBlank()) {
+                    throw AiBackendException.EmptyReplyException("The model returned an empty response.")
                 }
                 mainHandler.post { onResult(Result.success(responseText)) }
             } catch (e: Exception) {
@@ -344,129 +425,6 @@ object PetalAiResearchEngine {
         }.start()
     }
 
-    private fun callOpenAiCompatibleApi(
-        endpoint: String,
-        apiKey: String,
-        model: String,
-        systemPrompt: String,
-        userPrompt: String,
-        extraHeaders: Map<String, String> = emptyMap(),
-        extraParams: Map<String, Any> = emptyMap()
-    ): String {
-        val jsonPayload = JSONObject().apply {
-            put("model", model)
-            val messages = JSONArray().apply {
-                put(JSONObject().apply {
-                    put("role", "system")
-                    put("content", systemPrompt)
-                })
-                put(JSONObject().apply {
-                    put("role", "user")
-                    put("content", userPrompt)
-                })
-            }
-            put("messages", messages)
-            extraParams.forEach { (k, v) -> put(k, v) }
-        }
-
-        val requestBuilder = Request.Builder()
-            .url(endpoint)
-            .addHeader("Content-Type", "application/json")
-
-        if (apiKey.isNotBlank()) {
-            requestBuilder.addHeader("Authorization", "Bearer $apiKey")
-        }
-
-        extraHeaders.forEach { (k, v) -> requestBuilder.addHeader(k, v) }
-
-        val request = requestBuilder
-            .post(jsonPayload.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
-        val response = httpClient.newCall(request).execute()
-        val responseBody = response.body?.string() ?: ""
-        response.use {
-            if (!response.isSuccessful) {
-                val errMessage = try {
-                    val errJson = JSONObject(responseBody)
-                    errJson.optJSONObject("error")?.optString("message") ?: responseBody
-                } catch (_: Exception) {
-                    "HTTP ${response.code}: ${response.message}"
-                }
-                throw RuntimeException(errMessage)
-            }
-        }
-        val resJson = JSONObject(responseBody)
-        val choices = resJson.optJSONArray("choices") ?: throw RuntimeException("This endpoint did not return an OpenAI-compatible choices response.")
-        val content = choices.optJSONObject(0)?.optJSONObject("message")?.opt("content")
-        return when (content) {
-            is String -> content.takeIf { it.isNotBlank() } ?: throw RuntimeException("The model returned an empty response.")
-            is JSONArray -> (0 until content.length()).joinToString("") { index -> content.optJSONObject(index)?.optString("text") ?: content.optString(index) }.ifBlank { throw RuntimeException("The model returned an empty response.") }
-            else -> throw RuntimeException("The model response did not contain message content.")
-        }
-    }
-
-    private fun normalizeOpenAiChatEndpoint(value: String): String {
-        val base = value.trim().trimEnd('/')
-        return when {
-            base.endsWith("/chat/completions") -> base
-            base.endsWith("/v1") -> "$base/chat/completions"
-            else -> "$base/v1/chat/completions"
-        }
-    }
-
-    private fun callGeminiApi(
-        apiKey: String,
-        model: String,
-        systemPrompt: String,
-        userPrompt: String,
-        thinkingLevel: String? = null
-    ): String {
-        val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
-
-        val jsonPayload = JSONObject().apply {
-            put("contents", JSONArray().apply {
-                put(JSONObject().apply {
-                    val parts = JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("text", "$systemPrompt\n\n$userPrompt")
-                        })
-                    }
-                    put("parts", parts)
-                })
-            })
-            if (thinkingLevel != null) {
-                put("generationConfig", JSONObject().apply {
-                    put("thinkingConfig", JSONObject().apply {
-                        put("thinkingLevel", thinkingLevel)
-                    })
-                })
-            }
-        }
-
-        val request = Request.Builder()
-            .url(endpoint)
-            .addHeader("Content-Type", "application/json")
-            .post(jsonPayload.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
-        val response = httpClient.newCall(request).execute()
-        val responseBody = response.body?.string() ?: ""
-
-        if (!response.isSuccessful) {
-            val errMessage = try {
-                val errJson = JSONObject(responseBody)
-                errJson.optJSONObject("error")?.optString("message") ?: responseBody
-            } catch (e: Exception) {
-                "HTTP ${response.code}: ${response.message}"
-            }
-            throw RuntimeException("Gemini API Error ($errMessage)")
-        }
-
-        val resJson = JSONObject(responseBody)
-        val candidates = resJson.getJSONArray("candidates")
-        if (candidates.length() == 0) throw RuntimeException("No candidates returned by Gemini API.")
-        val parts = candidates.getJSONObject(0).getJSONObject("content").getJSONArray("parts")
-        return parts.getJSONObject(0).getString("text")
-    }
+    internal fun normalizeOpenAiChatEndpoint(value: String): String =
+        OpenAiCompatibleBackend.normalizeEndpoint(value)
 }

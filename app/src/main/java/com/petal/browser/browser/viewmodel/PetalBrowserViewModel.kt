@@ -14,6 +14,9 @@ import com.petal.browser.compose.incognito.PetalIncognitoSessionManager
 import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.compose.tabs.PetalTabItem
 import com.petal.browser.compose.tabs.PetalWorkspaceManager
+import com.petal.browser.compose.ai.PetalAiConversationManager
+import com.petal.browser.compose.ai.AiBackendFactory
+import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
 import com.petal.browser.engine.gecko.PetalEngineStore
@@ -172,6 +175,14 @@ class PetalBrowserViewModel @Inject constructor(
 
     private val _isAiSheetOpen = MutableStateFlow(false)
     val isAiSheetOpen: StateFlow<Boolean> = _isAiSheetOpen.asStateFlow()
+
+    private val _aiSheetQuery = MutableStateFlow("")
+    val aiSheetQuery: StateFlow<String> = _aiSheetQuery.asStateFlow()
+
+    private val _aiSelectedQuote = MutableStateFlow("")
+    val aiSelectedQuote: StateFlow<String> = _aiSelectedQuote.asStateFlow()
+
+    val aiConversationManager = PetalAiConversationManager()
 
     private val _isExtensionsOpen = MutableStateFlow(false)
     val isExtensionsOpen: StateFlow<Boolean> = _isExtensionsOpen.asStateFlow()
@@ -508,6 +519,7 @@ class PetalBrowserViewModel @Inject constructor(
         }
         tabsUseCases.removeTab(tabId)
         PetalTabMetadataStore.remove(context, tabId)
+        aiConversationManager.dropConversation(tabId)
         if (isPrivate) {
             PetalIncognitoSessionManager.syncIncognitoState(context)
         }
@@ -559,6 +571,7 @@ class PetalBrowserViewModel @Inject constructor(
                 }
             }
             PetalTabMetadataStore.remove(context, id)
+            aiConversationManager.dropConversation(id)
         }
         browserStore.dispatch(TabListAction.RemoveTabsAction(tabIds.toList()))
         if (hadPrivate) {
@@ -881,14 +894,120 @@ class PetalBrowserViewModel @Inject constructor(
         _isDownloadsOpen.value = open
     }
 
-    fun openAiSheet(query: String = "") {
+    fun openAiSheet(query: String = "", selectedQuote: String = "") {
         _isMenuOpen.value = false
         _aiSheetQuery.value = query
+        _aiSelectedQuote.value = selectedQuote
         _isAiSheetOpen.value = true
+
+        val tabId = activeTab.value?.id
+        if (tabId != null && query.isNotBlank()) {
+            val messages = aiConversationManager.getMessages(tabId)
+            if (messages.isEmpty()) {
+                sendAiMessage(tabId, query)
+            }
+        }
+    }
+
+    fun clearSelectedQuote() {
+        _aiSelectedQuote.value = ""
     }
 
     fun setAiSheetOpen(open: Boolean) {
         _isAiSheetOpen.value = open
+    }
+
+    fun sendAiMessage(
+        tabId: String,
+        query: String,
+        systemPrompt: String? = null,
+        imagePart: com.petal.browser.compose.ai.AiMessagePart.Image? = null,
+        thinkHarder: Boolean = false,
+        isPrivate: Boolean = false,
+        pageTitle: String = "",
+        pageUrl: String = ""
+    ) {
+        val provider = PetalAiResearchEngine.getSelectedProvider(context)
+        val model = if (thinkHarder) {
+            PetalAiResearchEngine.getStrongerModel(provider)
+        } else {
+            PetalAiResearchEngine.getSelectedModel(context, provider)
+        }
+
+        val backend: com.petal.browser.compose.ai.AiBackend = if (com.petal.browser.compose.ai.PetalAiProviderFallback.isFallbackEnabled(context)) {
+            object : com.petal.browser.compose.ai.AiBackend {
+                override fun stream(messages: List<com.petal.browser.compose.ai.AiChatMessage>, model: String): kotlinx.coroutines.flow.Flow<String> {
+                    return com.petal.browser.compose.ai.PetalAiProviderFallback.streamWithFallback(
+                        context,
+                        messages,
+                        provider,
+                        model,
+                        thinkHarder
+                    ).map { it.first }
+                }
+            }
+        } else {
+            AiBackendFactory.getBackend(context, provider)
+        }
+
+        aiConversationManager.sendMessage(
+            tabId = tabId,
+            userText = query,
+            backend = backend,
+            model = model,
+            scope = viewModelScope,
+            systemPrompt = systemPrompt,
+            imagePart = imagePart,
+            onComplete = { inTok, outTok ->
+                com.petal.browser.compose.ai.PetalAiUsageTracker.recordUsage(context, inTok, outTok)
+            }
+        )
+    }
+
+    fun stopAiStreaming(tabId: String) {
+        aiConversationManager.stopStreaming(tabId)
+    }
+
+    fun regenerateLastAiMessage(
+        tabId: String,
+        systemPrompt: String? = null,
+        thinkHarder: Boolean = false
+    ) {
+        val provider = PetalAiResearchEngine.getSelectedProvider(context)
+        val model = if (thinkHarder) {
+            PetalAiResearchEngine.getStrongerModel(provider)
+        } else {
+            PetalAiResearchEngine.getSelectedModel(context, provider)
+        }
+        val backend: com.petal.browser.compose.ai.AiBackend = if (com.petal.browser.compose.ai.PetalAiProviderFallback.isFallbackEnabled(context)) {
+            object : com.petal.browser.compose.ai.AiBackend {
+                override fun stream(messages: List<com.petal.browser.compose.ai.AiChatMessage>, model: String): kotlinx.coroutines.flow.Flow<String> {
+                    return com.petal.browser.compose.ai.PetalAiProviderFallback.streamWithFallback(
+                        context,
+                        messages,
+                        provider,
+                        model,
+                        thinkHarder
+                    ).map { it.first }
+                }
+            }
+        } else {
+            AiBackendFactory.getBackend(context, provider)
+        }
+        aiConversationManager.regenerateLastMessage(
+            tabId = tabId,
+            backend = backend,
+            model = model,
+            scope = viewModelScope,
+            systemPrompt = systemPrompt,
+            onComplete = { inTok, outTok ->
+                com.petal.browser.compose.ai.PetalAiUsageTracker.recordUsage(context, inTok, outTok)
+            }
+        )
+    }
+
+    fun clearAiConversation(tabId: String) {
+        aiConversationManager.clearConversation(tabId)
     }
 
     fun openExtensions() {

@@ -90,6 +90,14 @@ enum class BarAction(
         supportsBadge = false,
         supportsLongPress = true
     ),
+    AI(
+        id = "AI",
+        label = "Petal AI",
+        icon = Icons.Rounded.AutoAwesome,
+        isAvailable = true,
+        supportsBadge = false,
+        supportsLongPress = false
+    ),
     AI_RESEARCH(
         id = "AI_RESEARCH",
         label = "AI Research",
@@ -143,6 +151,7 @@ enum class BarAction(
         fun fromId(rawId: String?): BarAction? {
             if (rawId.isNullOrBlank()) return null
             val clean = rawId.trim().uppercase()
+            if (clean == "AI_RESEARCH") return AI
             return entries.firstOrNull { it.id.equals(clean, ignoreCase = true) }
         }
 
