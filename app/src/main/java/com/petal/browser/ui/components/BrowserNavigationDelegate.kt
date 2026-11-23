@@ -84,7 +84,7 @@ object BrowserNavigationDelegate {
                         .putBoolean("${profile}_desktop", enabled)
                         .putBoolean("profileStandard_desktop", enabled)
                         .apply()
-                    activity.viewModel.toggleDesktopSite()
+                    activity.viewModel.toggleDesktopMode(enabled)
                     PetalToast.show(activity, if (enabled) "Desktop site requested" else "Mobile site requested")
                 }
 
