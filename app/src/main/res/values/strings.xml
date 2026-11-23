@@ -1969,5 +1969,35 @@
     <string name="ui_auto_archive_tabs">Auto-archive old tabs</string>
     <string name="ui_auto_archive_off">Off</string>
     <string name="ui_auto_archive_after_days">Untouched tabs move to Recently Closed after %1$d days</string>
+
+    <!-- About & Developer Screen -->
+    <string name="about_developer_title">About &amp; Developer</string>
+    <string name="about_developer_subtitle">App version, licenses, GitHub &amp; developer</string>
+    <string name="about_share_profile">Share Profile</string>
+    <string name="about_share_app">Share Petal Browser</string>
+    <string name="about_share_app_desc">Recommend Petal to friends, communities &amp; teammates</string>
+    <string name="about_rate_app">Rate Petal Browser</string>
+    <string name="about_rate_app_desc">Review on release portal or app market</string>
+    <string name="about_feedback_bug_report">Send Feedback &amp; Bug Report</string>
+    <string name="about_feedback_desc">Prefill device, OS and engine diagnostics</string>
+    <string name="about_build_info">Build &amp; Environment Details</string>
+    <string name="about_build_info_desc">Version, engine, Android OS, and device hardware</string>
+    <string name="about_third_party_notices">Third-Party Notices &amp; Licenses</string>
+    <string name="about_third_party_notices_desc">Open-source libraries and component attributions</string>
+    <string name="about_check_updates">Check for Updates</string>
+    <string name="about_check_updates_desc">Release tracker, auto-updates &amp; diagnostic tools</string>
+    <string name="about_gecko_engine_title">Web Rendering Engine</string>
+    <string name="about_gecko_engine_desc">Mozilla GeckoView Quantum (Full Web Standards &amp; Add-ons)</string>
+    <string name="about_ui_framework_title">UI &amp; Design Architecture</string>
+    <string name="about_ui_framework_desc">Jetpack Compose • Material 3 Expressive • Liquid Glass</string>
+    <string name="about_privacy_title">Privacy Architecture</string>
+    <string name="about_privacy_desc">Zero Telemetry • Isolated Profiles • AdBlock &amp; Tracking Protection</string>
+    <string name="about_developer_focus_title">Focus &amp; Specialization</string>
+    <string name="about_developer_focus_desc">Kotlin • Jetpack Compose • Material 3 Expressive • Android</string>
+    <string name="about_fdroid_releases">Releases &amp; Source Builds</string>
+    <string name="about_fdroid_releases_desc">Download APKs, tags, and signed builds</string>
+    <string name="about_close">Close</string>
+    <string name="about_copy_all">Copy All</string>
+    <string name="about_copied_to_clipboard">Copied %1$s to clipboard</string>
 </resources>
 

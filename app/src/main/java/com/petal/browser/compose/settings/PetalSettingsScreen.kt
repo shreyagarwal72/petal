@@ -346,6 +346,7 @@ fun PetalSettingsScreen(
                                 targetHighlightItemId = currentHighlightId,
                                 onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
                                 onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
+                                onNavigateToUpdater = { openCategory(SettingsCategory.UPDATER, null) },
                                 onNavigateBack = { closeCategory() }
                             )
                         }
@@ -362,6 +363,7 @@ private fun RenderCategoryContent(
     targetHighlightItemId: String? = null,
     onNavigateToAddressBar: () -> Unit = {},
     onNavigateToDownloads: () -> Unit = {},
+    onNavigateToUpdater: () -> Unit = {},
     onNavigateBack: () -> Unit
 ) {
     when (category) {
@@ -439,7 +441,10 @@ private fun RenderCategoryContent(
             UpdaterSettingsScreen(onNavigateBack = onNavigateBack)
         }
         SettingsCategory.ABOUT -> {
-            AboutSettingsScreen(onNavigateBack = onNavigateBack)
+            AboutSettingsScreen(
+                onNavigateBack = onNavigateBack,
+                onNavigateToUpdater = onNavigateToUpdater
+            )
         }
     }
 }
