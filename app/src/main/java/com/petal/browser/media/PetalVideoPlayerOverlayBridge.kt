@@ -237,7 +237,6 @@ class PetalVideoPlayerOverlayBridge(
 
                             // 2. Query DOM for HTML5 <video> src or currentSrc
                             val queryScript = "(function() { var v = document.querySelector('video'); return v ? (v.currentSrc || v.src || '') : ''; })()"
-                            val act = activity as? MainActivity
                             if (act != null) {
                                 act.evaluateJavascriptInActiveTab(queryScript) { domSrc ->
                                     val finalUrl = when {
