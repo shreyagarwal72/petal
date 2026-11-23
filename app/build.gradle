@@ -35,46 +35,10 @@ android {
                 abiFilters 'arm64-v8a'
             }
         }
-    }
-
-    flavorDimensions = ["distribution"]
-    productFlavors {
-        github {
-            dimension "distribution"
-            buildConfigField "boolean", "ENABLE_ACCESSIBILITY_ISLAND", "true"
-            buildConfigField "boolean", "IS_PLAY_STORE_BUILD", "false"
-            buildConfigField "boolean", "IS_FDROID_BUILD", "false"
-            buildConfigField "String", "DISTRIBUTION_CHANNEL", "\"github\""
-        }
-        play {
-            dimension "distribution"
-            buildConfigField "boolean", "ENABLE_ACCESSIBILITY_ISLAND", "false"
-            buildConfigField "boolean", "IS_PLAY_STORE_BUILD", "true"
-            buildConfigField "boolean", "IS_FDROID_BUILD", "false"
-            buildConfigField "String", "DISTRIBUTION_CHANNEL", "\"play\""
-        }
-        fdroid {
-            dimension "distribution"
-            buildConfigField "boolean", "ENABLE_ACCESSIBILITY_ISLAND", "true"
-            buildConfigField "boolean", "IS_PLAY_STORE_BUILD", "false"
-            buildConfigField "boolean", "IS_FDROID_BUILD", "true"
-            buildConfigField "String", "DISTRIBUTION_CHANNEL", "\"fdroid\""
-        }
-    }
-
-    sourceSets {
-        github {
-            java.srcDirs += ['src/ads/java', 'src/noPlay/java']
-            kotlin.srcDirs += ['src/ads/java', 'src/noPlay/java']
-        }
-        play {
-            java.srcDirs += ['src/ads/java', 'src/play/java']
-            kotlin.srcDirs += ['src/ads/java', 'src/play/java']
-        }
-        fdroid {
-            java.srcDirs += ['src/noAds/java', 'src/noPlay/java']
-            kotlin.srcDirs += ['src/noAds/java', 'src/noPlay/java']
-        }
+        buildConfigField "boolean", "ENABLE_ACCESSIBILITY_ISLAND", "false"
+        buildConfigField "boolean", "IS_PLAY_STORE_BUILD", "false"
+        buildConfigField "boolean", "IS_FDROID_BUILD", "false"
+        buildConfigField "String", "DISTRIBUTION_CHANNEL", "\"release\""
     }
 
     def isBundleTask = gradle.startParameter.taskNames.any { it.toLowerCase().contains('bundle') }
@@ -213,8 +177,6 @@ configurations.all {
 dependencies {
     implementation 'com.google.android.material:material:1.14.0'
     implementation 'androidx.preference:preference:1.2.1'
-    githubImplementation 'com.google.android.gms:play-services-ads:25.5.0'
-    playImplementation 'com.google.android.gms:play-services-ads:25.5.0'
     implementation 'androidx.fragment:fragment:1.9.1'
     implementation 'androidx.media:media:1.8.0'
     implementation 'androidx.webkit:webkit:1.18.0'
@@ -302,9 +264,9 @@ dependencies {
     // see https://github.com/android/identity-samples/issues/90) that some devices hit
     // even with fully correct OAuth configuration.
 
-    // Google Play In-App Updates (Play flavor only: FOSS/GitHub builds have zero Play dependencies)
-    playImplementation 'com.google.android.play:app-update:2.1.0'
-    playImplementation 'com.google.android.play:app-update-ktx:2.1.0'
+    // Google Play In-App Updates
+    implementation 'com.google.android.play:app-update:2.1.0'
+    implementation 'com.google.android.play:app-update-ktx:2.1.0'
 
     // AndroidX Biometric for hardware biometric & device credential lock
     implementation 'androidx.biometric:biometric:1.2.0-alpha05'
@@ -373,7 +335,7 @@ dependencies {
 tasks.register('checkGeckoViewVariants') {
     description = 'Verifies that only a single GeckoView engine variant resolves to prevent APK conflicts.'
     doLast {
-        ['githubReleaseRuntimeClasspath', 'playReleaseRuntimeClasspath'].each { configName ->
+        ['releaseRuntimeClasspath'].each { configName ->
             def config = configurations.findByName(configName)
             if (config != null && config.canBeResolved) {
                 def gvVariants = config.resolvedConfiguration.resolvedArtifacts.findAll {

@@ -198,7 +198,7 @@ fun PetalDeveloperHeroSection(
                                         Toast.makeText(context, "No email client installed", Toast.LENGTH_SHORT).show()
                                     }
                                 }
-                                else -> onOpenUrl("https://t.me/hereyourchampion")
+                                else -> onOpenUrl("https://t.me/hereyourchampion?text=I%20want%20to%20support%20Petal%20Browser")
                             }
                         },
                         shape = shape,

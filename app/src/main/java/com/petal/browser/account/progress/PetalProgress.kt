@@ -252,14 +252,14 @@ object PetalProgressStore {
         migrateFeatureLocks(ctx)
         touchDay(ctx)
 
-        // F-Droid build: permanently unlock all features for free (no ads required)
-        if (com.petal.browser.BuildConfig.IS_FDROID_BUILD) {
-            val ed = p.edit()
-            for (u in PetalUnlockable.values()) {
-                ed.putBoolean("pp_unlocked_" + u.id, true)
-            }
-            ed.apply()
+        // Permanently unlock all features for all users (100% unlocked by default)
+        val ed = p.edit()
+        for (u in PetalUnlockable.values()) {
+            ed.putBoolean("pp_unlocked_" + u.id, true)
+            if (u == PetalUnlockable.LIQUID_GLASS) ed.putBoolean("sp_liquid_glass_unlocked", true)
+            ed.putBoolean(u.enabledKey + "_unlocked", true)
         }
+        ed.apply()
     }
 
     /** Call from tab, bookmark, download and blocker code. Cheap to call often. */
@@ -310,18 +310,6 @@ object PetalProgressStore {
         unlockedBadges = unlockedBadges + fresh
         sp(ctx).edit().putString(KEY_BADGES, unlockedBadges.joinToString(",")).apply()
         newlyUnlocked = newlyUnlocked + fresh
-
-        // Broadcast to Petal NowBar for interactive celebratory pill and tap navigation
-        fresh.forEach { badgeId ->
-            val b = PETAL_BADGES.firstOrNull { it.id == badgeId }
-            if (b != null) {
-                com.petal.browser.live.PetalLiveActionBus.postAchievement(
-                    title = "Badge Unlocked: ${b.title}",
-                    subtitle = b.hint,
-                    badgeId = b.id
-                )
-            }
-        }
     }
 
     /** Runs after every XP or counter change, so a level-up unlocks features at once. */
@@ -378,35 +366,14 @@ object PetalProgressStore {
     }
 
     /**
-     * Checks if a cosmetic feature is unlocked:
-     * - Reached target XP level
-     * - OR watched required supporter ads
-     * - OR previously unlocked / restored via encrypted backup
+     * All cosmetic and advanced features are 100% unlocked by default.
      */
     fun isUnlocked(ctx: Context, u: PetalUnlockable): Boolean {
-        if (com.petal.browser.BuildConfig.IS_FDROID_BUILD) return true
-        init(ctx)
-        val p = sp(ctx)
-        if (p.getBoolean("pp_unlocked_" + u.id, false)) return true
-        if (level >= u.levelNeeded) {
-            persistUnlock(ctx, u)
-            return true
-        }
-        val ads = counter(PetalCounter.ADS_WATCHED)
-        if (ads >= u.adsNeeded) {
-            persistUnlock(ctx, u)
-            return true
-        }
-        return false
+        return true
     }
 
     fun getRemainingRequirement(ctx: Context, u: PetalUnlockable): String {
-        init(ctx)
-        val curLevel = level
-        val adsWatched = counter(PetalCounter.ADS_WATCHED)
-        val lvDiff = (u.levelNeeded - curLevel).coerceAtLeast(0)
-        val adDiff = (u.adsNeeded - adsWatched).coerceAtLeast(0)
-        return "Unlock at Level ${u.levelNeeded} ($lvDiff levels to go) or with $adDiff more Fuel the Code support"
+        return "Unlocked"
     }
 
     /** Restores progress, XP, stats, badges, and unlocks from decrypted backup JSON */

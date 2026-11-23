@@ -43,7 +43,7 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
-import com.petal.browser.island.CutoutMetrics
+import com.petal.browser.unit.CutoutMetrics
 import com.petal.browser.live.PetalLiveActionBus
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.glass.*

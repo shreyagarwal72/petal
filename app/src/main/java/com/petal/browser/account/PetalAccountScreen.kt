@@ -139,7 +139,6 @@ fun PetalAccountScreen(
     var showDisconnect by remember { mutableStateOf(false) }
     var showReset by remember { mutableStateOf(false) }
     var showClearData by remember { mutableStateOf(false) }
-    var showXpBackup by remember { mutableStateOf(false) }
     var showRewards by remember { mutableStateOf(false) }
     var pickedFolder by remember { mutableStateOf<Uri?>(null) }
     var cropUri by remember { mutableStateOf<Uri?>(null) }
@@ -178,17 +177,13 @@ fun PetalAccountScreen(
     }
 
     // Sub-overlays that own the back press; everything else is a dialog/sheet that handles its own.
-    val hasSubOverlay = showRewards || showXpBackup
+    val hasSubOverlay = showRewards
     if (hasSubOverlay) {
         BackHandler(enabled = true) {
-            if (showRewards) showRewards = false else if (showXpBackup) showXpBackup = false
+            if (showRewards) showRewards = false
         }
     }
     if (showRewards) com.petal.browser.account.progress.PetalRewardsSheet(onDismiss = { showRewards = false })
-    if (showXpBackup) com.petal.browser.account.progress.PetalXpBackupRestoreDialog(
-        onDismiss = { showXpBackup = false },
-        onMessage = { say(it) }
-    )
 
     com.petal.browser.predictive.PetalPredictiveShell(
         wrap = wrapPredictive,
@@ -274,19 +269,6 @@ fun PetalAccountScreen(
                                         )
                                     }
                                     Spacer(Modifier.height(12.dp))
-                                    val level = PetalProgressStore.level
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = (account.accent ?: MaterialTheme.colorScheme.primary).copy(alpha = 0.18f)
-                                    ) {
-                                        Text(
-                                            "Lv $level · ${PetalXp.title(level)}",
-                                            style = MaterialTheme.typography.labelLarge,
-                                            fontWeight = FontWeight.SemiBold,
-                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                                        )
-                                    }
-                                    Spacer(Modifier.height(16.dp))
                                     if (configured) {
                                         Button(
                                             onClick = { PetalFolderSync.syncNow(context) },
@@ -608,28 +590,21 @@ fun PetalAccountScreen(
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     PetalGroupNavigationRow(
                                         title = "Clear browsing data", subtitle = "Web cache · $cacheSize",
-                                        position = petalGroupPositionFor(0, 4),
+                                        position = petalGroupPositionFor(0, 3),
                                         variant = PetalBadgeVariant.ERROR,
                                         leadingIcon = { Icon(Icons.Rounded.DeleteSweep, null) },
                                         onClick = { showClearData = true }
                                     )
                                     PetalGroupNavigationRow(
-                                        title = "Encrypted backup & recovery", subtitle = "Export and restore XP, levels and stats",
-                                        position = petalGroupPositionFor(1, 4),
-                                        variant = PetalBadgeVariant.SECONDARY,
-                                        leadingIcon = { Icon(Icons.Rounded.EnhancedEncryption, null) },
-                                        onClick = { showXpBackup = true }
-                                    )
-                                    PetalGroupNavigationRow(
                                         title = "Restore from a sync file", subtitle = "Add or replace data from a .psync file",
-                                        position = petalGroupPositionFor(2, 4),
+                                        position = petalGroupPositionFor(1, 3),
                                         variant = PetalBadgeVariant.TERTIARY,
                                         leadingIcon = { Icon(Icons.Rounded.Storage, null) },
                                         onClick = { syncFileLauncher.launch(arrayOf("*/*")) }
                                     )
                                     PetalGroupNavigationRow(
                                         title = "Reset local profile", subtitle = "Remove your name, bio, accent and photo from this device",
-                                        position = petalGroupPositionFor(3, 4),
+                                        position = petalGroupPositionFor(2, 3),
                                         variant = PetalBadgeVariant.ERROR,
                                         leadingIcon = { Icon(Icons.Rounded.Delete, null) },
                                         onClick = { showReset = true }
@@ -637,10 +612,6 @@ fun PetalAccountScreen(
                                 }
                             }
                         }
-
-                        // ── progress & support ──
-                        item { com.petal.browser.account.progress.PetalRewardsCatalogCard(onOpen = { showRewards = true }) }
-                        item { com.petal.browser.account.progress.PetalSupportCard(onMessage = { say(it) }) }
                     }
                 }
             }

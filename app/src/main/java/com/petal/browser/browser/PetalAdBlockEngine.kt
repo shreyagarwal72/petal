@@ -161,25 +161,12 @@ object PetalAdBlockEngine {
 
     fun recordBlock(pageUrl: String?) {
         totalBlockedCount.incrementAndGet()
-        // NowBar: posts a card only at milestones (10, 25, 50, 100...), so it never spams.
-        try { com.petal.browser.island.PetalIslandEventSources.onAdBlocked(pageUrl) } catch (_: Throwable) {}
         if (!pageUrl.isNullOrBlank()) {
             val pageHost = try { Uri.parse(pageUrl).host ?: "" } catch (e: Exception) { "" }
             val cleanHost = pageHost.lowercase(Locale.US).removePrefix("www.")
             if (cleanHost.isNotEmpty()) {
                 domainBlockedCount.computeIfAbsent(cleanHost) { java.util.concurrent.atomic.AtomicInteger(0) }.incrementAndGet()
             }
-        }
-        val app = com.petal.browser.PetalApplication.instance
-        if (app != null) {
-            try {
-                com.petal.browser.account.progress.PetalProgressStore.bump(
-                    app,
-                    com.petal.browser.account.progress.PetalCounter.SITES_BLOCKED,
-                    1L,
-                    xpGain = 1L
-                )
-            } catch (_: Throwable) {}
         }
     }
 

@@ -195,16 +195,16 @@ fun PetalFeaturedCarousel(
     val items = remember(suggestions) {
         val list = mutableListOf<PetalFeaturedItem>()
 
-        // 1. Support Development (Ko-fi / Developer Support)
+        // 1. Support Development (Telegram Developer Support)
         list.add(
             PetalFeaturedItem(
                 title = "Support Development",
-                description = "Fuel our mission with a tip on Ko-fi",
+                description = "Direct payment support via Telegram to @hereyourchampion",
                 icon = Icons.Rounded.Favorite,
                 isTertiary = true,
                 onClick = {
                     try {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/shreyagarwal72"))
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/hereyourchampion?text=I%20want%20to%20support%20Petal%20Browser"))
                         context.startActivity(intent)
                     } catch (_: Exception) {
                         onCategoryClick(SettingsCategory.ABOUT, "about_developer")

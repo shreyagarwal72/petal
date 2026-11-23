@@ -89,9 +89,7 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
         super.onCreate()
         com.petal.browser.download.PetalDownloadResumer.install(this)
         instance = this
-        // Rewarded ads provider. Dispatched via PetalAdInit per build flavor (AdMob on github/play, PetalNoAds on fdroid).
-        com.petal.browser.account.progress.PetalAdInit.init()
-        // Applies feature locks (and the one-time grandfathering) before any screen reads them.
+        // Initializes default user preferences and settings.
         com.petal.browser.account.progress.PetalProgressStore.init(this)
         // GeckoView starts helper processes for GPU, content tabs and crash
         // handling. Android creates our Application in each of them too. A
@@ -178,15 +176,9 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
             override fun onActivityStarted(activity: Activity) {
                 startedActivityCount++
-                com.petal.browser.island.PetalForegroundTracker.onStartedCountChanged(startedActivityCount)
             }
             override fun onActivityResumed(activity: Activity) {
                 com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(activity)
-                // In-app NowBar for every Petal screen (idempotent; steps aside when the
-                // accessibility window is drawing the bar).
-                (activity as? androidx.activity.ComponentActivity)?.let {
-                    try { com.petal.browser.island.PetalNowBarBridge.attachToActivity(it) } catch (_: Throwable) {}
-                }
             }
             override fun onActivityPaused(activity: Activity) {
                 if (com.petal.browser.engine.gecko.PetalGeckoRuntime.getForegroundActivity() === activity) {
@@ -195,7 +187,6 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             }
             override fun onActivityStopped(activity: Activity) {
                 startedActivityCount = maxOf(0, startedActivityCount - 1)
-                com.petal.browser.island.PetalForegroundTracker.onStartedCountChanged(startedActivityCount)
                 if (startedActivityCount == 0 && activity.isFinishing) {
                     com.petal.browser.logger.PetalAppLogger.markCleanExit(this@PetalApplication)
                     val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
@@ -225,20 +216,6 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             com.petal.browser.ui.theme.PetalPaletteMix.install(this)
         } catch (t: Throwable) {
             Log.w(TAG, "Theme prefs init failed", t)
-        }
-
-        // NowBar: event bus (per-category switches + quiet period), app-wide event sources,
-        // and the status-bar / over-other-apps window. All idle until there is something to show.
-        try {
-            com.petal.browser.live.PetalLiveActionBus.init(this)
-            com.petal.browser.island.PetalIslandEventSources.init(this)
-        } catch (t: Throwable) {
-            Log.w(TAG, "NowBar event init failed", t)
-        }
-        try {
-            com.petal.browser.island.PetalLiveOverlayController.init(this)
-        } catch (t: Throwable) {
-            Log.w(TAG, "Live island overlay init failed", t)
         }
 
         try {

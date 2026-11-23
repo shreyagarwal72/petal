@@ -167,13 +167,4 @@
         android:layout_alignParentBottom="true"
         android:elevation="40dp" />
 
-    <!-- Material 3 Expressive Petal NowBar (Android 16 Live Actions & Dynamic Island) -->
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/petal_nowbar_compose"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:elevation="45dp"
-        android:translationZ="45dp" />
-
 </RelativeLayout>

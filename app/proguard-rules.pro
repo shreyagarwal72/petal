@@ -59,14 +59,6 @@
 -dontwarn com.gemalto.jp2.**
 
 
-# ---- Google AdMob --------------------------------------------------------------------------
--keep public class com.google.android.gms.ads.** {
-    public *;
-}
--keep public class com.google.ads.** {
-    public *;
-}
--dontwarn com.google.android.gms.ads.**
 
 # Keep WorkManager components instantiated via reflection (WorkDatabase and workers used by Unity Ads)
 -keep class androidx.work.impl.WorkDatabase_Impl { *; }

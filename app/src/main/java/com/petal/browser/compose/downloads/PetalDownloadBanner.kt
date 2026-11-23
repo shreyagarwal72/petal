@@ -133,16 +133,7 @@ object PetalDownloadBannerBridge {
                 // Collect live download items from PetalFetchDownloadBridge
                 val downloadItems by PetalFetchDownloadBridge.downloadItems.collectAsStateWithLifecycle()
 
-                // When the NowBar is on, it owns live download UI; the old banner stays hidden
-                // so the same download is not shown twice.
-                val nowBarOn = remember {
-                    sp.getBoolean(com.petal.browser.island.IslandSettings.KEY_LIVE_UPDATES, true)
-                }
                 LaunchedEffect(downloadItems) {
-                    if (nowBarOn) {
-                        currentBannerData.value = ActiveBannerData(state = BannerState.IDLE)
-                        return@LaunchedEffect
-                    }
                     val activeItem: DownloadItem? = downloadItems.maxByOrNull { it.timestampMs }
                     if (activeItem != null) {
                         val host = try {
