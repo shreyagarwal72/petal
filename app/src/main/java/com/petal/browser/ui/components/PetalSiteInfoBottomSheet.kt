@@ -54,7 +54,8 @@ fun PetalSiteInfoBottomSheet(
     val favicon: Bitmap? = currentTab?.content?.icon ?: tabViewController?.favicon
 
     // Check GeckoView SecurityInformation if available, plus URL scheme
-    val geckoSecurity = currentTab?.content?.securityInfo ?: tabViewController?.currentSecurityInfo
+    val isSecureConnection = (currentTab?.content?.securityInfo?.isSecure == true) || (tabViewController?.currentSecurityInfo?.isSecure == true)
+    val securityHost = tabViewController?.currentSecurityInfo?.host ?: domain.takeIf { it.isNotBlank() }
     val effectiveUrl = remember(currentUrl) {
         val trimmed = currentUrl.trim()
         if (trimmed.isEmpty()) ""
@@ -69,7 +70,7 @@ fun PetalSiteInfoBottomSheet(
             ""
         }
     }
-    val isHttps = urlScheme == "https" || geckoSecurity?.isSecure == true
+    val isHttps = urlScheme == "https" || isSecureConnection
     val isHttp = urlScheme == "http"
     val isInternalPage = currentUrl.startsWith("petal:") || currentUrl.startsWith("about:")
     val sslCertificate: SslCertificate? = null
@@ -163,8 +164,8 @@ fun PetalSiteInfoBottomSheet(
             val certDetails = when {
                 sslCertificate != null && isHttps ->
                     "Issued to: ${sslCertificate.issuedTo.cName}\nIssued by: ${sslCertificate.issuedBy.oName}"
-                geckoSecurity?.host != null && isHttps ->
-                    "Host: ${geckoSecurity.host}\nYour connection is encrypted and verified."
+                securityHost != null && isHttps ->
+                    "Host: $securityHost\nYour connection is encrypted and verified."
                 isHttps -> "Your information is encrypted when sent to this site."
                 isInternalPage -> "This page is part of Petal Browser and does not send network data."
                 isHttp -> "You should not enter sensitive info on this site (unencrypted HTTP)."

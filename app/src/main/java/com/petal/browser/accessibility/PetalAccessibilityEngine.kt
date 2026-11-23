@@ -32,6 +32,13 @@ object PetalAccessibilityEngine {
 
     private fun evaluateJavascript(controller: PetalTabSurface?, script: String) {
         if (controller == null) return
+        val view = controller.albumView
+        val act = view?.context as? com.petal.browser.activity.MainActivity
+            ?: (view?.context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.MainActivity
+        if (act != null) {
+            act.evaluateJavascriptInActiveTab(script)
+            return
+        }
         if (controller is com.petal.browser.browser.PetalTabViewController) {
             controller.evaluateJavascript(script, null)
         }
@@ -272,30 +279,33 @@ object PetalAccessibilityEngine {
         val enabled = sp.getBoolean("sp_touchpad_swipe_nav", true)
         if (!enabled) return false
 
+        val act = context as? com.petal.browser.activity.MainActivity
+            ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.MainActivity
+
         if (event.actionMasked == MotionEvent.ACTION_SCROLL) {
             val hScroll = event.getAxisValue(MotionEvent.AXIS_HSCROLL)
             val now = System.currentTimeMillis()
             if (now - lastSwipeTime < 600L) return false
 
-            val canBack = when (controller) {
-                is com.petal.browser.browser.PetalTabViewController -> controller.canGoBack()
-                else -> false
-            }
-            val canFwd = when (controller) {
-                is com.petal.browser.browser.PetalTabViewController -> controller.canGoForward()
-                else -> false
-            }
+            val canBack = act?.canBrowserGoBack()
+                ?: ((controller as? com.petal.browser.browser.PetalTabViewController)?.canGoBack() == true)
+            val canFwd = (act?.viewModel?.activeTab?.value?.content?.canGoForward == true)
+                || ((controller as? com.petal.browser.browser.PetalTabViewController)?.canGoForward() == true)
 
             if (hScroll < -0.65f && canBack) {
                 lastSwipeTime = now
-                when (controller) {
-                    is com.petal.browser.browser.PetalTabViewController -> controller.goBack()
+                if (act != null) {
+                    act.performBackNavigation()
+                } else if (controller is com.petal.browser.browser.PetalTabViewController) {
+                    controller.goBack()
                 }
                 return true
             } else if (hScroll > 0.65f && canFwd) {
                 lastSwipeTime = now
-                when (controller) {
-                    is com.petal.browser.browser.PetalTabViewController -> controller.goForward()
+                if (act != null) {
+                    act.viewModel.goForward()
+                } else if (controller is com.petal.browser.browser.PetalTabViewController) {
+                    controller.goForward()
                 }
                 return true
             }

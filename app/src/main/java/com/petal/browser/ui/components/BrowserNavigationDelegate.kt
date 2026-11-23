@@ -55,9 +55,7 @@ object BrowserNavigationDelegate {
             isMediaActive,
             object : PetalOverflowMenuActionHandler {
                 override fun onGoBack() {
-                    if (tabSurface != null && tabSurface.canGoBack()) {
-                        tabSurface.goBack()
-                    }
+                    activity.performBackNavigation()
                 }
 
                 override fun onToggleBookmark() {
@@ -77,7 +75,7 @@ object BrowserNavigationDelegate {
                 }
 
                 override fun onReload() {
-                    tabSurface?.reload()
+                    activity.reloadCurrentBrowserTab()
                 }
 
                 override fun onToggleDesktopSite(enabled: Boolean) {
@@ -86,7 +84,7 @@ object BrowserNavigationDelegate {
                         .putBoolean("${profile}_desktop", enabled)
                         .putBoolean("profileStandard_desktop", enabled)
                         .apply()
-                    tabSurface?.setDesktopMode(enabled)
+                    activity.viewModel.toggleDesktopSite()
                     PetalToast.show(activity, if (enabled) "Desktop site requested" else "Mobile site requested")
                 }
 
@@ -96,7 +94,7 @@ object BrowserNavigationDelegate {
                         .putBoolean("${profile}_adBlock", enabled)
                         .putBoolean("profileStandard_adBlock", enabled)
                         .apply()
-                    tabSurface?.reload()
+                    activity.reloadCurrentBrowserTab()
                     PetalToast.show(activity, if (enabled) "AdBlocker Enabled" else "AdBlocker Disabled")
                 }
 
@@ -178,7 +176,7 @@ object BrowserNavigationDelegate {
                 override fun onViewSource() {
                     if (url.isNotEmpty()) {
                         val sourceUrl = if (url.startsWith("view-source:")) url else "view-source:$url"
-                        tabSurface?.loadUrl(sourceUrl)
+                        activity.viewModel.loadUrl(sourceUrl)
                     }
                 }
 
