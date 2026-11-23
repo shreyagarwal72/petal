@@ -25,7 +25,7 @@ Petal Browser retains non-invasive, open-source privacy values while delivering 
 As evidenced strictly by the current codebase implementation:
 
 ### 3.1 Mozilla GeckoView 161 Standalone Browsing Core
-- **Mozilla GeckoView Beta 161**: Standalone engine core (`161.0.20261113104103`) with Mozilla Android Components `161.0b3` providing modern web standard compliance, independent of system WebView bugs or manufacturer delays.
+- **Mozilla GeckoView Beta 161**: Standalone engine core (`161.0.20261118090429`) with Mozilla Android Components `161.0b5` providing modern web standard compliance, independent of system WebView bugs or manufacturer delays.
 - **Strict Enhanced Tracking Protection (ETP)**: Integrated content blocking configured to reject third-party tracking cookies, cryptominers, and malicious fingerprinting domains.
 - **URL Tracking Parameter Stripping**: Automatic query parameter sanitizer (`utm_*`, `fbclid`, `gclid`, `mc_eid`) stripping trackers before page requests dispatch.
 - **Total Cookie Protection & AMO Extensions**: Isolated cookie jars per site, full support for Firefox WebExtensions (AMO) and native Petal built-in extensions.

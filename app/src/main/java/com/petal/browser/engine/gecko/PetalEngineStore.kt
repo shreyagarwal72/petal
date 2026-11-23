@@ -37,7 +37,7 @@ import androidx.core.app.NotificationManagerCompat
 import mozilla.components.feature.webnotifications.WebNotificationFeature
 
 /*
- * ── Mozilla Android Components 161.0b3: wiring audit (read this before adding a feature) ──────────
+ * ── Mozilla Android Components 161.0b5: wiring audit (read this before adding a feature) ──────────
  * Audited against app/build.gradle (feature-* / support-*) and a repo-wide grep for instantiation.
  *
  *  WIRED

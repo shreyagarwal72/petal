@@ -198,7 +198,7 @@ configurations.all {
     exclude group: 'org.mozilla.geckoview', module: 'geckoview-omni'
     exclude group: 'org.mozilla.geckoview', module: 'geckoview-beta-omni'
     resolutionStrategy {
-        force 'org.mozilla.geckoview:geckoview-beta:161.0.20261113104103'
+        force 'org.mozilla.geckoview:geckoview-beta:161.0.20261118090429'
         force 'org.jetbrains.kotlin:kotlin-stdlib:2.4.21'
         force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.21'
         force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.21'
@@ -312,56 +312,56 @@ dependencies {
 
     // Google ML Kit On-Device Recognition APIs
 
-    // Mozilla GeckoView & Android Components (161.0b3 / GeckoView Beta 161)
-    implementation 'org.mozilla.geckoview:geckoview-beta:161.0.20261113104103'
-    implementation('org.mozilla.components:browser-engine-gecko:161.0b3') {
+    // Mozilla GeckoView & Android Components (161.0b5 / GeckoView Beta 161)
+    implementation 'org.mozilla.geckoview:geckoview-beta:161.0.20261118090429'
+    implementation('org.mozilla.components:browser-engine-gecko:161.0b5') {
         exclude group: 'org.mozilla.geckoview', module: 'geckoview-omni'
         exclude group: 'org.mozilla.geckoview', module: 'geckoview-beta-omni'
     }
-    implementation 'org.mozilla.components:concept-engine:161.0b3'
-    implementation 'org.mozilla.components:concept-toolbar:161.0b3'
-    implementation 'org.mozilla.components:browser-errorpages:161.0b3'
-    implementation 'org.mozilla.components:browser-state:161.0b3'
-    implementation 'org.mozilla.components:browser-session-storage:161.0b3'
-    implementation 'org.mozilla.components:lib-state:161.0b3'
-    implementation 'org.mozilla.components:support-base:161.0b3'
-    implementation 'org.mozilla.components:support-utils:161.0b3'
+    implementation 'org.mozilla.components:concept-engine:161.0b5'
+    implementation 'org.mozilla.components:concept-toolbar:161.0b5'
+    implementation 'org.mozilla.components:browser-errorpages:161.0b5'
+    implementation 'org.mozilla.components:browser-state:161.0b5'
+    implementation 'org.mozilla.components:browser-session-storage:161.0b5'
+    implementation 'org.mozilla.components:lib-state:161.0b5'
+    implementation 'org.mozilla.components:support-base:161.0b5'
+    implementation 'org.mozilla.components:support-utils:161.0b5'
 
-    // Android Components Features (161.0b3)
-    implementation 'org.mozilla.components:feature-session:161.0b3'
+    // Android Components Features (161.0b5)
+    implementation 'org.mozilla.components:feature-session:161.0b5'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.2.0'
-    implementation 'org.mozilla.components:feature-prompts:161.0b3'
-    implementation 'org.mozilla.components:feature-sitepermissions:161.0b3'
-    implementation 'org.mozilla.components:feature-tabs:161.0b3'
-    implementation 'org.mozilla.components:feature-downloads:161.0b3'
-    implementation 'org.mozilla.components:feature-recentlyclosed:161.0b3'
-    implementation 'org.mozilla.components:feature-webcompat:161.0b3'
-    implementation 'org.mozilla.components:feature-media:161.0b3'
-    implementation 'org.mozilla.components:feature-webnotifications:161.0b3'
+    implementation 'org.mozilla.components:feature-prompts:161.0b5'
+    implementation 'org.mozilla.components:feature-sitepermissions:161.0b5'
+    implementation 'org.mozilla.components:feature-tabs:161.0b5'
+    implementation 'org.mozilla.components:feature-downloads:161.0b5'
+    implementation 'org.mozilla.components:feature-recentlyclosed:161.0b5'
+    implementation 'org.mozilla.components:feature-webcompat:161.0b5'
+    implementation 'org.mozilla.components:feature-media:161.0b5'
+    implementation 'org.mozilla.components:feature-webnotifications:161.0b5'
 
-    // Android Components Phase 2: Web Platform Features (161.0b3)
-    implementation 'org.mozilla.components:feature-addons:161.0b3'
-    implementation 'org.mozilla.components:support-webextensions:161.0b3'
-    implementation 'org.mozilla.components:feature-customtabs:161.0b3'
-    implementation 'org.mozilla.components:feature-pwa:161.0b3'
-    implementation 'org.mozilla.components:feature-contextmenu:161.0b3'
-    implementation 'org.mozilla.components:feature-readerview:161.0b3'
+    // Android Components Phase 2: Web Platform Features (161.0b5)
+    implementation 'org.mozilla.components:feature-addons:161.0b5'
+    implementation 'org.mozilla.components:support-webextensions:161.0b5'
+    implementation 'org.mozilla.components:feature-customtabs:161.0b5'
+    implementation 'org.mozilla.components:feature-pwa:161.0b5'
+    implementation 'org.mozilla.components:feature-contextmenu:161.0b5'
+    implementation 'org.mozilla.components:feature-readerview:161.0b5'
 
-    // Android Components Phase 3: Omnibox & Assets (161.0b3)
-    implementation 'org.mozilla.components:feature-search:161.0b3'
-    implementation 'org.mozilla.components:feature-top-sites:161.0b3'
-    implementation 'org.mozilla.components:browser-icons:161.0b3'
-    implementation 'org.mozilla.components:browser-thumbnails:161.0b3'
-    implementation 'org.mozilla.components:lib-publicsuffixlist:161.0b3'
-    implementation 'org.mozilla.components:feature-app-links:161.0b3'
+    // Android Components Phase 3: Omnibox & Assets (161.0b5)
+    implementation 'org.mozilla.components:feature-search:161.0b5'
+    implementation 'org.mozilla.components:feature-top-sites:161.0b5'
+    implementation 'org.mozilla.components:browser-icons:161.0b5'
+    implementation 'org.mozilla.components:browser-thumbnails:161.0b5'
+    implementation 'org.mozilla.components:lib-publicsuffixlist:161.0b5'
+    implementation 'org.mozilla.components:feature-app-links:161.0b5'
 
     // Local storage components (bookmarks/history Places database and the password store).
     // Account sign-in libraries are not used: sync goes through a folder the user owns.
-    implementation 'org.mozilla.components:concept-sync:161.0b3'
-    implementation 'org.mozilla.components:concept-storage:161.0b3'
-    implementation 'org.mozilla.components:browser-storage-sync:161.0b3'
-    implementation 'org.mozilla.components:service-sync-logins:161.0b3'
-    implementation 'org.mozilla.components:lib-dataprotect:161.0b3'
+    implementation 'org.mozilla.components:concept-sync:161.0b5'
+    implementation 'org.mozilla.components:concept-storage:161.0b5'
+    implementation 'org.mozilla.components:browser-storage-sync:161.0b5'
+    implementation 'org.mozilla.components:service-sync-logins:161.0b5'
+    implementation 'org.mozilla.components:lib-dataprotect:161.0b5'
 
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.60.1'

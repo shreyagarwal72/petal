@@ -36,9 +36,9 @@
   - Automated background sync via Android JobService (`PetalSyncJobService`).
   - Encrypted password sync (`PetalSyncPasswords`), device pairing list, and remote open tabs visibility.
   - "Send to device" link dispatch directly from page actions.
-- **Mozilla GeckoView 161 & Android Components 161.0b3**:
-  - Upgraded core browsing engine to Mozilla GeckoView Beta 161 (`161.0.20261113104103`) with refreshed Firefox 161 User-Agent profiles.
-  - Synchronized all 38 Mozilla Android Components to `161.0b3`.
+- **Mozilla GeckoView 161 & Android Components 161.0b5**:
+  - Upgraded core browsing engine to Mozilla GeckoView Beta 161 (`161.0.20261118090429`) with refreshed Firefox 161 User-Agent profiles.
+  - Synchronized all 38 Mozilla Android Components to `161.0b5`.
   - Standalone Viewers with task affinity isolation (`com.petal.browser.viewer.pdf`, `.file`, `.image`, `.media`) and `documentLaunchMode="always"`.
   - Official Mozilla `about:config` page support loaded natively inside tabs.
   - Android 16 Live Updates (promoted ongoing notifications) support.
