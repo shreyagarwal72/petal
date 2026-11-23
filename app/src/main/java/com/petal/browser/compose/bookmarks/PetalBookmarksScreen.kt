@@ -268,11 +268,6 @@ fun PetalBookmarksScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            M3ExpressiveVariableBackground(
-                modifier = Modifier.fillMaxSize(),
-                pageSeed = "bookmarks_page"
-            )
-
             val headerGlassPaneB = com.petal.browser.ui.components.rememberHeaderGlassActive()
             // Search Filter Bar
                 val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
@@ -308,6 +303,7 @@ fun PetalBookmarksScreen(
             }
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
+                pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "bookmarks_page") },
                 header = { headerModifier, headerBackdrop ->
                     ExpressiveHeader(
                         modifier = headerModifier,

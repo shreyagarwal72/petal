@@ -268,12 +268,14 @@ fun SafeLockerScreen(
                 }
             ) { innerPadding ->
                 Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-                    M3ExpressiveVariableBackground(pageSeed = "safe_locker_page")
-
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        // Header
+                    com.petal.browser.ui.components.PetalGlassHeaderLayout(
+                        modifier = Modifier.fillMaxSize(),
+                        pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "safe_locker_page") },
+                        header = { headerModifier, headerBackdrop ->
                         if (isSelectionMode) {
                             ExpressiveHeader(
+                                modifier = headerModifier,
+                                backdrop = headerBackdrop,
                                 title = "${selectedFileIds.size} Selected",
                                 subtitle = "Safe Locker selection",
                                 onBack = { selectedFileIds = emptySet() },
@@ -298,6 +300,8 @@ fun SafeLockerScreen(
                             )
                         } else {
                             ExpressiveHeader(
+                                modifier = headerModifier,
+                                backdrop = headerBackdrop,
                                 title = "Safe Locker",
                                 subtitle = if (isUnlocked) "${lockedFiles.size} encrypted files" else "Biometric Protected",
                                 onBack = { if (isSearchActive) { isSearchActive = false; searchQuery = "" } else onBackPress() },
@@ -328,6 +332,9 @@ fun SafeLockerScreen(
                                 }
                             )
                         }
+                        }
+                    ) { topInset ->
+                    Column(modifier = Modifier.fillMaxSize().padding(top = topInset)) {
 
                         // Search Bar (Animated visibility)
                         AnimatedVisibility(visible = isSearchActive && isUnlocked, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
@@ -589,6 +596,7 @@ fun SafeLockerScreen(
                                 }
                             }
                         }
+                    }
                     }
                 }
             }

@@ -315,10 +315,9 @@ fun PetalAdBlockSettingsScreen(
     // Main UI Layout
     // ─────────────────────────────────────────────────────────────────────────
     Box(modifier = modifier.fillMaxSize()) {
-        M3ExpressiveVariableBackground(pageSeed = "petal_shields_center")
-
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
+            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "petal_shields_center") },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

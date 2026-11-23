@@ -187,13 +187,6 @@ fun PetalAppLockConfigScreen(
 
     val content = @Composable {
         Scaffold(
-            topBar = {
-                ExpressiveHeader(
-                    title = "App & Profile Lock",
-                    subtitle = "Configure protection and authentication",
-                    onBack = handleBack
-                )
-            },
             snackbarHost = { PetalSnackbarHost(snackbarHostState) },
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -203,16 +196,29 @@ fun PetalAppLockConfigScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                M3ExpressiveVariableBackground(
+                com.petal.browser.ui.components.PetalGlassHeaderLayout(
                     modifier = Modifier.fillMaxSize(),
-                    pageSeed = "app_lock_config"
-                )
-
+                    pageBackground = {
+                        M3ExpressiveVariableBackground(
+                            modifier = Modifier.fillMaxSize(),
+                            pageSeed = "app_lock_config"
+                        )
+                    },
+                    header = { headerModifier, headerBackdrop ->
+                        ExpressiveHeader(
+                            modifier = headerModifier,
+                            backdrop = headerBackdrop,
+                            title = "App & Profile Lock",
+                            subtitle = "Configure protection and authentication",
+                            onBack = handleBack
+                        )
+                    }
+                ) { topInset ->
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(start = 16.dp, end = 16.dp, top = topInset + 12.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                         // ── Status hero ──
@@ -416,6 +422,7 @@ fun PetalAppLockConfigScreen(
                             }
                         }
                     }
+                }
                 }
             }
         }

@@ -181,8 +181,6 @@ fun PetalBrowserStoreScreen(
                 }
             ) { innerPadding ->
                 Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-                    M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "petal_browser_store")
-
                     val headerGlassPaneS = com.petal.browser.ui.components.rememberHeaderGlassActive()
                     val headerExtrasS: @Composable () -> Unit = {
                         // Containment Navigation: Connected Button Group
@@ -232,6 +230,7 @@ fun PetalBrowserStoreScreen(
                     }
                     com.petal.browser.ui.components.PetalGlassHeaderLayout(
                         modifier = Modifier.fillMaxSize(),
+                        pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "petal_browser_store") },
                         header = { headerModifier, headerBackdrop ->
                             ExpressiveHeader(
                                 modifier = headerModifier,

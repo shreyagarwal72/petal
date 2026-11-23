@@ -95,10 +95,9 @@ internal fun AppearanceSubPageScaffold(
 ) {
     val motionBlurEnabled by viewModel.motionBlurEnabled.collectAsStateWithLifecycle()
     Box(modifier = modifier.fillMaxSize()) {
-        M3ExpressiveVariableBackground(pageSeed = pageSeed)
-
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
+            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = pageSeed) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

@@ -320,13 +320,9 @@ fun PrivacySettingsScreenContent(
             },
             parent = {
         Box(modifier = Modifier.fillMaxSize()) {
-            M3ExpressiveVariableBackground(
-                pageSeed = "privacy_settings",
-                modifier = Modifier.matchParentSize()
-            )
-
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
+                pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "privacy_settings") },
                 header = { headerModifier, headerBackdrop ->
                     ExpressiveHeader(
                         modifier = headerModifier,

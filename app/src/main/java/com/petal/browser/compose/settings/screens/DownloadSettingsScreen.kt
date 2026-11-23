@@ -134,10 +134,9 @@ fun DownloadSettingsScreenContent(
     val offerClipboard by viewModel.offerClipboardImport.collectAsStateWithLifecycle()
 
     Box(modifier = modifier.fillMaxSize()) {
-        M3ExpressiveVariableBackground(pageSeed = "download_settings")
-
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
+            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "download_settings") },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

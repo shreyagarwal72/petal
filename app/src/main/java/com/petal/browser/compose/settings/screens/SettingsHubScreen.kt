@@ -100,8 +100,6 @@ fun SettingsHubScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        M3ExpressiveVariableBackground(pageSeed = "settings_hub")
-
         val headerGlassPaneX = com.petal.browser.ui.components.rememberHeaderGlassActive()
         val headerExtrasX: @Composable () -> Unit = {
             AnimatedVisibility(
@@ -189,6 +187,7 @@ fun SettingsHubScreen(
         }
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
+            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "settings_hub") },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

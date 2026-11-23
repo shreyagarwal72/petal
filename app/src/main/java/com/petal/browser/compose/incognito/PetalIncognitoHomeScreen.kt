@@ -130,13 +130,9 @@ fun PetalIncognitoHomeScreen(
                     .background(MaterialTheme.colorScheme.background)
             ) {
                 // Background morphing shapes & wallpaper recorder (sibling to content)
-                M3ExpressiveVariableBackground(
-                    modifier = Modifier.fillMaxSize(),
-                    pageSeed = "incognito_firefox_stealth"
-                )
-
                 com.petal.browser.ui.components.PetalGlassHeaderLayout(
                     modifier = Modifier.fillMaxSize(),
+                    pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "incognito_firefox_stealth") },
                     header = { headerModifier, headerBackdrop ->
                         ExpressiveHeader(
                             modifier = headerModifier,

@@ -153,12 +153,13 @@ fun PetalReaderScreen(
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                    ) {
+                    com.petal.browser.ui.components.PetalGlassHeaderLayout(
+                        modifier = Modifier.fillMaxSize(),
+                        pageBackground = { Box(Modifier.fillMaxSize().background(containerBg)) },
+                        header = { headerModifier, headerBackdrop ->
                         ExpressiveHeader(
+                            modifier = headerModifier,
+                            backdrop = headerBackdrop,
                             title = "Reading Mode",
                             subtitle = "${(article.wordCount / 200).coerceAtLeast(1)} min read • ${article.domain}",
                             onBack = onBack,
@@ -189,6 +190,14 @@ fun PetalReaderScreen(
                                 )
                             }
                         )
+                        }
+                    ) { topInset ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Spacer(Modifier.height(topInset))
 
                         Column(
                             modifier = Modifier
@@ -278,6 +287,7 @@ fun PetalReaderScreen(
 
                             Spacer(Modifier.height(96.dp))
                         }
+                    }
                     }
 
                     // Floating TTS Text-to-Speech Player Bar

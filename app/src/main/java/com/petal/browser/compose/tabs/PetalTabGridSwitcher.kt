@@ -773,13 +773,13 @@ fun PetalTabGridSwitcher(
                 }
                 .padding(innerPadding)
         ) {
-            M3ExpressiveVariableBackground(
+            com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
-                pageSeed = "tabs_page"
-            )
-
-            Column(modifier = Modifier.fillMaxSize()) {
+                pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "tabs_page") },
+                header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
+                    modifier = headerModifier,
+                    backdrop = headerBackdrop,
                     title = if (selectionMode) "${selectedTabIds.size} selected" else when (selectedCategory) {
                         TabCategory.INCOGNITO -> "Incognito Tabs"
                         TabCategory.GROUPS -> "Tab Groups"
@@ -919,6 +919,9 @@ fun PetalTabGridSwitcher(
                         }
                     }
                 )
+                }
+            ) { topInset ->
+            Column(modifier = Modifier.fillMaxSize().padding(top = topInset)) {
 
                 Column(modifier = Modifier
                     .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
@@ -1609,6 +1612,7 @@ fun PetalTabGridSwitcher(
                         }
                     }
                 }
+            }
             }
             }
 

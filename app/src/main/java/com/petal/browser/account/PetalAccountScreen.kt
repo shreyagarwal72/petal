@@ -194,22 +194,33 @@ fun PetalAccountScreen(
             Scaffold(
                 modifier = modifier.fillMaxSize(),
                 containerColor = MaterialTheme.colorScheme.background,
-                topBar = {
-                    ExpressiveHeader(
-                        title = "Account",
-                        subtitle = account.subtitle,
-                        onBack = onBack,
-                        maxTitleLines = 1,
-                        maxSubtitleLines = 1
-                    )
-                },
                 snackbarHost = { com.petal.browser.ui.containment.PetalSnackbarHost(hostState = snackbar) }
             ) { pad ->
                 Box(Modifier.fillMaxSize()) {
-                    M3ExpressiveVariableBackground(pageSeed = "account_page")
+                    // Real liquid glass header: the list scrolls UNDER it (same as Settings); with glass
+                    // off the layout falls back to the stacked Material 3 Expressive header.
+                    com.petal.browser.ui.components.PetalGlassHeaderLayout(
+                        modifier = Modifier.fillMaxSize(),
+                        pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "account_page") },
+                        header = { headerModifier, headerBackdrop ->
+                            ExpressiveHeader(
+                                modifier = headerModifier,
+                                backdrop = headerBackdrop,
+                                title = "Account",
+                                subtitle = account.subtitle,
+                                onBack = onBack,
+                                maxTitleLines = 1,
+                                maxSubtitleLines = 1
+                            )
+                        }
+                    ) { topInset ->
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize().padding(pad),
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            start = 16.dp, end = 16.dp,
+                            top = topInset + 12.dp,
+                            bottom = 32.dp + pad.calculateBottomPadding()
+                        ),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         // ── identity hero ──
@@ -612,6 +623,7 @@ fun PetalAccountScreen(
                                 }
                             }
                         }
+                    }
                     }
                 }
             }

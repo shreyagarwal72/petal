@@ -175,22 +175,26 @@ fun PetalDeleteScreen(
     val content = @Composable {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            topBar = {
-                ExpressiveHeader(
-                    title = context.getString(R.string.menu_delete),
-                    subtitle = "Clear Browsing Data & History",
-                    onBack = { if (showConfirmDialog) showConfirmDialog = false else onBackPress() }
-                )
-            }
+            contentWindowInsets = WindowInsets(0, 0, 0, 0)
         ) { innerPadding ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-            M3ExpressiveVariableBackground(pageSeed = "delete_page")
-
+            com.petal.browser.ui.components.PetalGlassHeaderLayout(
+                modifier = Modifier.fillMaxSize(),
+                pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "delete_page") },
+                header = { headerModifier, headerBackdrop ->
+                    ExpressiveHeader(
+                        modifier = headerModifier,
+                        backdrop = headerBackdrop,
+                        title = context.getString(R.string.menu_delete),
+                        subtitle = "Clear Browsing Data & History",
+                        onBack = { if (showConfirmDialog) showConfirmDialog = false else onBackPress() }
+                    )
+                }
+            ) { topInset ->
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -199,7 +203,7 @@ fun PetalDeleteScreen(
                     modifier = Modifier
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(start = 16.dp, end = 16.dp, top = topInset + 8.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     PetalHeroCard {
@@ -383,6 +387,7 @@ fun PetalDeleteScreen(
                         }
                     }
                 }
+            }
             }
         }
     }

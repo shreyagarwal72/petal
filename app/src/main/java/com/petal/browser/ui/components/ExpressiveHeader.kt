@@ -140,12 +140,14 @@ fun ExpressiveHeader(
     val scheme = MaterialTheme.colorScheme
     val isDarkSurface = scheme.background.luminance() < 0.5f
     val sharedWallpaper = com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current?.ready == true
-    val backgroundColor = scheme.background
-    val washBrush = petalHeaderGlassWash()
+    // Glass is independent of the Material scheme: neutral base + neutral wash, so the header never
+    // picks up the palette's primary/tertiary tint. Only the dark/light flag is read from the theme.
+    val backgroundColor = petalHeaderGlassBase(isDarkSurface)
+    val washBrush = petalHeaderGlassWash(isDarkSurface)
 
     // Liquid glass (all wired through the existing prefs: master toggle, opacity, blur, sheen,
     // refraction and the low-end fallback live inside liquidGlassChrome). Ported from LastWave:
-    // a LOCAL sibling backdrop (page colour + themed wash) so the glass always has something to
+    // a LOCAL sibling backdrop (neutral base + neutral wash) so the glass always has something to
     // blur and refract, even on a flat page. A screen can pass its own backdrop instead (see
     // PetalGlassHeaderLayout) so real content scrolls under the glass.
     val localBackdrop: PetalBackdrop? =
@@ -218,6 +220,8 @@ fun ExpressiveHeader(
             val decorColor = MaterialTheme.colorScheme.primary
             val decorAccent = MaterialTheme.colorScheme.tertiary
             val showBottom = useLastWaveGlass && bottomContent != null
+            val glassStyle = if (useLastWaveGlass) HeaderGlassStyle(isDarkSurface) else null
+            androidx.compose.runtime.CompositionLocalProvider(LocalHeaderGlassStyle provides glassStyle) {
             Column(Modifier.fillMaxWidth()) {
             Column(
                 Modifier
@@ -374,7 +378,7 @@ fun ExpressiveHeader(
                                 }
                             },
                             label = "ExpressiveHeaderTransition",
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f).padding(end = 8.dp)
                         ) { (currentTitle, currentSubtitle) ->
                             HeaderTitleBlock(
                                 title = currentTitle,
@@ -424,10 +428,15 @@ fun ExpressiveHeader(
                 }
             }
             if (showBottom) {
-                bottomContent?.invoke(this)
-                Spacer(Modifier.height(10.dp))
+                // Extra side inset + taller bottom gap: the 36dp curved bottom corners used to clip
+                // the outer chips/fields of the row (History sort chips, picker volume group).
+                Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                    bottomContent?.invoke(this)
+                }
+                Spacer(Modifier.height(16.dp))
             }
             }
+            } // LocalHeaderGlassStyle
         }
     }
 }
@@ -441,8 +450,8 @@ private fun GlassBackButton(onClick: () -> Unit, isDark: Boolean) {
     Surface(
         onClick = onClick,
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isDark) 0.12f else 0.07f),
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        color = HeaderGlassStyle(isDark).chip,
+        contentColor = HeaderGlassStyle(isDark).content,
         border = androidx.compose.foundation.BorderStroke(0.75.dp, rim),
         modifier = Modifier.size(40.dp)
     ) {
@@ -482,7 +491,7 @@ private fun HeaderTitleBlock(
                 // Glass title: crisper and tighter, lets the blurred page carry the personality.
                 letterSpacing = if (glass) (-0.4).sp else MaterialTheme.typography.titleLarge.letterSpacing
             ),
-            color = MaterialTheme.colorScheme.onSurface,
+            color = LocalHeaderGlassStyle.current?.content ?: MaterialTheme.colorScheme.onSurface,
             fontWeight = if (glass) FontWeight.Bold else FontWeight.ExtraBold,
             maxLines = 1,
             softWrap = false,
@@ -504,7 +513,7 @@ private fun HeaderTitleBlock(
                     fontSize = subtitleFontSize,
                     lineHeight = (subtitleFontSize.value + 4).sp
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (glass) 0.82f else 1f),
+                color = LocalHeaderGlassStyle.current?.contentMuted ?: MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = maxSubtitleLines,
                 softWrap = maxSubtitleLines > 1,
                 overflow = TextOverflow.Ellipsis,
@@ -527,6 +536,20 @@ fun HeaderActionIcon(
     preset: com.petal.browser.ui.theme.ExpressiveButtonPreset? = null,
     emphasized: Boolean = false,
 ) {
+    // Inside a real-glass header: neutral frosted chip + fixed white/black glyph, no Material colours.
+    val glassStyle = LocalHeaderGlassStyle.current
+    if (glassStyle != null) {
+        com.petal.browser.ui.theme.ExpressiveIconButton(
+            icon = icon,
+            contentDescription = contentDescription,
+            onClick = onClick,
+            size = 44.dp,
+            containerColor = if (emphasized) glassStyle.chipStrong else glassStyle.chip,
+            contentColor = glassStyle.content,
+            preset = preset,
+        )
+        return
+    }
     val container = when {
         enableLiquidGlass -> com.petal.browser.ui.containment.petalGroupSurfaceColor()
         emphasized -> MaterialTheme.colorScheme.tertiaryContainer
@@ -598,15 +621,37 @@ fun rememberHeaderGlassActive(
         com.petal.browser.ui.containment.isLiquidGlassMaster(sp)
 }
 
-/** Theme-tinted wash the glass blurs when no content sits under the header (from LastWave). */
-@Composable
-internal fun petalHeaderGlassWash(): Brush {
-    val scheme = MaterialTheme.colorScheme
+/**
+ * Colours of a real-glass header. Fixed white/black on a neutral frosted chip, so the header looks
+ * the same under every palette / dynamic colour (the Material scheme only decides dark vs light).
+ */
+@androidx.compose.runtime.Immutable
+class HeaderGlassStyle(val isDark: Boolean) {
+    val content: Color = if (isDark) Color.White else Color(0xFF111114)
+    val contentMuted: Color = content.copy(alpha = 0.72f)
+    val chip: Color = if (isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.07f)
+    val chipStrong: Color = if (isDark) Color.White.copy(alpha = 0.22f) else Color.Black.copy(alpha = 0.14f)
+}
+
+/** Non-null while composing inside a header that draws real backdrop glass. */
+val LocalHeaderGlassStyle = androidx.compose.runtime.compositionLocalOf<HeaderGlassStyle?> { null }
+
+/** Neutral page colour the glass blurs when nothing sits under the header (not the Material background). */
+internal fun petalHeaderGlassBase(isDark: Boolean): Color =
+    if (isDark) Color(0xFF17171A) else Color(0xFFF3F3F6)
+
+/**
+ * Neutral wash the glass blurs when no content sits under the header (from LastWave, minus the
+ * palette tint). A soft diagonal light so the pane still has something to refract on a flat page.
+ */
+internal fun petalHeaderGlassWash(isDark: Boolean): Brush {
+    val a = if (isDark) 0.10f else 0.05f
+    val tone = if (isDark) Color.White else Color.Black
     return Brush.horizontalGradient(
         listOf(
-            scheme.primary.copy(alpha = 0.20f),
-            scheme.tertiary.copy(alpha = 0.08f),
-            scheme.secondary.copy(alpha = 0.16f),
+            tone.copy(alpha = a * 1.4f),
+            tone.copy(alpha = a * 0.5f),
+            tone.copy(alpha = a),
         ),
     )
 }
@@ -625,11 +670,18 @@ val LocalGlassHeaderInset = androidx.compose.runtime.compositionLocalOf { 0.dp }
 fun PetalGlassHeaderLayout(
     modifier: Modifier = Modifier,
     enableLiquidGlass: Boolean = com.petal.browser.ui.containment.isLiquidGlassEnabled(),
+    /**
+     * Page background (wallpaper / living M3 background). Drawn INSIDE the backdrop source under the
+     * content, so the glass header blurs and refracts the real page instead of a flat colour. A screen
+     * that passes this must not draw the same background itself outside the layout.
+     */
+    pageBackground: (@Composable () -> Unit)? = null,
     header: @Composable (modifier: Modifier, backdrop: PetalBackdrop?) -> Unit,
     content: @Composable (topInset: Dp) -> Unit,
 ) {
-    val background = MaterialTheme.colorScheme.background
-    val wash = petalHeaderGlassWash()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val background = petalHeaderGlassBase(isDark)
+    val wash = petalHeaderGlassWash(isDark)
     var headerHeightPx by androidx.compose.runtime.remember { mutableIntStateOf(0) }
     val glass = enableLiquidGlass && petalRealGlassSupported
     val backdrop: PetalBackdrop? = if (glass) {
@@ -661,16 +713,24 @@ fun PetalGlassHeaderLayout(
         val top = if (backdrop != null) 0 else h
         val contentHeight = (maxH - top).coerceAtLeast(0)
         val inset = if (backdrop != null) h.toDp() else 0.dp
+        // Glass off: nothing samples the page, so it is drawn full-screen behind header + content
+        // (the header's curved corners must not reveal an empty area).
+        val bgPlaceable = if (backdrop == null && pageBackground != null) {
+            subcompose("page_bg") { Box(Modifier.fillMaxSize()) { pageBackground() } }
+                .firstOrNull()?.measure(androidx.compose.ui.unit.Constraints.fixed(w, maxH))
+        } else null
         val contentPlaceable = subcompose("content") {
             Box(
                 Modifier
                     .fillMaxSize()
                     .then(if (backdrop != null) Modifier.petalBackdropSource(backdrop) else Modifier)
             ) {
+                pageBackground?.invoke()
                 androidx.compose.runtime.CompositionLocalProvider(LocalGlassHeaderInset provides inset) { content(inset) }
             }
         }.first().measure(androidx.compose.ui.unit.Constraints(w, w, contentHeight, contentHeight))
         layout(w, maxH) {
+            bgPlaceable?.place(0, 0)
             contentPlaceable.place(0, top)
             headerPlaceable?.place(0, 0)
         }

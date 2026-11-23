@@ -280,8 +280,6 @@ fun PetalExtensionsScreen(
                     }
                 ) { innerPadding ->
                     Box(modifier = Modifier.fillMaxSize()) {
-                        M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "extensions_page")
-
                         val headerGlassPaneE = com.petal.browser.ui.components.rememberHeaderGlassActive()
                         // 3-Tab Firefox Parity Bar
                         val headerExtrasE: @Composable () -> Unit = {
@@ -323,6 +321,7 @@ fun PetalExtensionsScreen(
                         }
                         com.petal.browser.ui.components.PetalGlassHeaderLayout(
                             modifier = Modifier.fillMaxSize(),
+                            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "extensions_page") },
                             header = { headerModifier, headerBackdrop ->
                                 ExpressiveHeader(
                                     modifier = headerModifier,

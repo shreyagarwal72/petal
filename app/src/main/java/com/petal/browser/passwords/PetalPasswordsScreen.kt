@@ -299,12 +299,6 @@ fun PetalPasswordsScreen(
             CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
                 androidx.compose.material3.MaterialExpressiveTheme {
                     Box(modifier = Modifier.fillMaxSize()) {
-                        M3ExpressiveVariableBackground(
-                            // "_settings" seed = the same clean background as its parent Privacy page.
-                            pageSeed = "passwords_settings",
-                            modifier = Modifier.matchParentSize()
-                        )
-
                         Scaffold(
                             containerColor = Color.Transparent,
                             // The header already pads for the status bar itself; letting Scaffold inset too
@@ -318,6 +312,7 @@ fun PetalPasswordsScreen(
                             // off the layout simply stacks the Material 3 Expressive header above the list.
                             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                                 modifier = Modifier.fillMaxSize(),
+                                pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "passwords_settings") },
                                 header = { headerModifier, headerBackdrop ->
                                     ExpressiveHeader(
                                         modifier = headerModifier,

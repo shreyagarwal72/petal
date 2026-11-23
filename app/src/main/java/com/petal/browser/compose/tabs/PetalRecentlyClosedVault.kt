@@ -144,13 +144,15 @@ fun PetalRecentlyClosedVault(
             onBack = { showSettingsPage = false },
             parent = {
         Box(Modifier.fillMaxSize()) {
-            M3ExpressiveVariableBackground(
+            com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
-                pageSeed = "vault_page"
-            )
-
-            Column(modifier = Modifier.fillMaxSize()) {
+                pageBackground = {
+                    M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "vault_page")
+                },
+                header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
+                    modifier = headerModifier,
+                    backdrop = headerBackdrop,
                     title = when {
                         isUnlocked -> "Closed Tabs Vault"
                         else -> "Locked Vault"
@@ -182,7 +184,9 @@ fun PetalRecentlyClosedVault(
                         }
                     }
                 )
-
+                }
+            ) { topInset ->
+            Column(modifier = Modifier.fillMaxSize().padding(top = topInset)) {
                 AnimatedContent(
                     targetState = when {
                         isUnlocked -> VaultPage.TABS
@@ -258,20 +262,27 @@ fun PetalRecentlyClosedVault(
                     }
                 }
             }
+            }
         }
             },
             subPage = {
         Box(Modifier.fillMaxSize()) {
-            M3ExpressiveVariableBackground(
+            com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
-                pageSeed = "vault_settings"
-            )
-            Column(modifier = Modifier.fillMaxSize()) {
-                ExpressiveHeader(
-                    title = "Vault Settings",
-                    subtitle = "Retention & protection",
-                    onBack = { showSettingsPage = false },
-                )
+                pageBackground = {
+                    M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "vault_settings")
+                },
+                header = { headerModifier, headerBackdrop ->
+                    ExpressiveHeader(
+                        modifier = headerModifier,
+                        backdrop = headerBackdrop,
+                        title = "Vault Settings",
+                        subtitle = "Retention & protection",
+                        onBack = { showSettingsPage = false },
+                    )
+                }
+            ) { topInset ->
+            Column(modifier = Modifier.fillMaxSize().padding(top = topInset)) {
                 VaultSettingsPage(
                     currentRetention = PreferenceManager.getDefaultSharedPreferences(context)
                         .getString(PetalRecentlyClosedManager.PREF_RETENTION_DAYS, "7") ?: "7",
@@ -295,6 +306,7 @@ fun PetalRecentlyClosedVault(
                         showSettingsPage = false
                     }
                         )
+            }
             }
         }
             }

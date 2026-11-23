@@ -622,10 +622,9 @@ fun PetalDownloadManagerScreen(
             }
         ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            M3ExpressiveVariableBackground(pageSeed = "downloads_page")
-
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
+            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "downloads_page") },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

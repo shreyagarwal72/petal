@@ -206,10 +206,9 @@ fun DisplaySettingsScreenContent(
     )
 
     Box(modifier = modifier.fillMaxSize()) {
-        M3ExpressiveVariableBackground(pageSeed = "display_zoom_settings")
-
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
+            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "display_zoom_settings") },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

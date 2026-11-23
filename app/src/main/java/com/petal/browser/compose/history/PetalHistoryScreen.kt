@@ -420,7 +420,6 @@ fun PetalHistoryScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            M3ExpressiveVariableBackground(pageSeed = "history_page")
 
         val headerGlassPaneH = com.petal.browser.ui.components.rememberHeaderGlassActive()
         val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar") || isLiquidGlassEnabled("sp_liquid_glass_containments")
@@ -460,6 +459,7 @@ fun PetalHistoryScreen(
         }
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
+            pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "history_page") },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

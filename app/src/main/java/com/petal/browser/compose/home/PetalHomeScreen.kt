@@ -569,6 +569,10 @@ fun PetalHomeScreen(
             color = if (isGlassEnabled || !effectiveWallpaperUri.isNullOrBlank()) Color.Transparent else MaterialTheme.colorScheme.background
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
+                // Page background (wallpaper / living M3 background). It is handed to the glass header
+                // layout so the header refracts the real page and the wallpaper stays full-screen
+                // behind the scrolling content.
+                val homePageBackground: @Composable () -> Unit = {
                 // ── Layer 0: OmniBrowser Wallpaper engine OR Living M3 background ───────────
 
                 Box(
@@ -605,10 +609,18 @@ fun PetalHomeScreen(
                     }
                 }
 
+                }
+
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
+                    com.petal.browser.ui.components.PetalGlassHeaderLayout(
+                        modifier = Modifier.fillMaxSize(),
+                        pageBackground = homePageBackground,
+                        header = { headerModifier, headerBackdrop ->
                     com.petal.browser.ui.components.ExpressiveHeader(
+                        modifier = headerModifier,
+                        backdrop = headerBackdrop,
                         title = "Petal",
                         subtitle = "Personal Window to the Web",
                         actions = {
@@ -626,13 +638,20 @@ fun PetalHomeScreen(
                                 val currentProfile = com.petal.browser.profile.PetalProfileManager.activeProfile
                                 val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
                                 val profilePillShape = RoundedCornerShape(20.dp)
+                                // Inside the real-glass header the pill is a neutral frosted chip (no Material colours).
+                                val headerGlass = com.petal.browser.ui.components.LocalHeaderGlassStyle.current
                                 Surface(
                                     shape = profilePillShape,
-                                    color = if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
-                                    border = if (isGlass) null else BorderStroke(1.dp, currentProfile.getComposeColor().copy(alpha = 0.5f)),
+                                    color = headerGlass?.chip
+                                        ?: if (isGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
+                                    border = when {
+                                        headerGlass != null -> BorderStroke(0.75.dp, headerGlass.content.copy(alpha = 0.16f))
+                                        isGlass -> null
+                                        else -> BorderStroke(1.dp, currentProfile.getComposeColor().copy(alpha = 0.5f))
+                                    },
                                     modifier = Modifier
                                         .height(34.dp)
-                                        .liquidGlassChrome(shape = profilePillShape, enabled = isGlass)
+                                        .liquidGlassChrome(shape = profilePillShape, enabled = isGlass && headerGlass == null)
                                         .clickable { showProfileSwitchSheet = true }
                                 ) {
                                     Row(
@@ -656,7 +675,7 @@ fun PetalHomeScreen(
                                         Text(
                                             text = currentProfile.name,
                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                            color = MaterialTheme.colorScheme.onSurface,
+                                            color = headerGlass?.content ?: MaterialTheme.colorScheme.onSurface,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                             modifier = Modifier.widthIn(max = 84.dp)
@@ -666,12 +685,13 @@ fun PetalHomeScreen(
                             }
                         )
 
+                        }
+                    ) { topInset ->
                         // Main home scrolling column wrapped with Petal profile switch animation
                         val homeScrollState = rememberScrollState()
                         Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
+                                .fillMaxSize()
                                 .graphicsLayer {
                                     alpha = profileSwitchProgress.value
                                     translationY = (1f - profileSwitchProgress.value) * 14.dp.toPx()
@@ -681,7 +701,7 @@ fun PetalHomeScreen(
                                 }
                                 .scrollMotionBlur(homeScrollState)
                                 .verticalScroll(homeScrollState)
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                                .padding(start = 20.dp, end = 20.dp, top = topInset + 12.dp, bottom = 12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             // Cap the content column width on large screens/tablets so the
@@ -874,6 +894,8 @@ fun PetalHomeScreen(
                                 Spacer(Modifier.height(96.dp))
                             }
                         }
+                    }
+
                     }
 
                     // ── Profile Switcher Modal Sheet ──────────────────────────────────
