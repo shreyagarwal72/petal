@@ -147,6 +147,10 @@ class PetalMediaBridge(private val context: Context, var listener: MediaStateLis
     }
 
     fun evaluateJavascriptOnTab(js: String) {
+        if (context is MainActivity) {
+            context.evaluateJavascriptInActiveTab(js)
+            return
+        }
         if (tabViewController != null) {
             tabViewController?.evaluateJavascript(js, null)
         } else if (context is MainActivity) {

@@ -62,8 +62,8 @@ object PetalQuickToolsBridge {
     ) {
         val act = activeMainActivity
         when {
-            controller is PetalTabViewController -> controller.evaluateJavascript(script, callback)
             act != null -> act.evaluateJavascriptInActiveTab(script) { callback?.invoke(it) }
+            controller is PetalTabViewController -> controller.evaluateJavascript(script, callback)
             else -> callback?.invoke(null)
         }
     }
@@ -97,8 +97,8 @@ object PetalQuickToolsBridge {
     private fun reloadTab(controller: AlbumController?) {
         val act = activeMainActivity
         when {
-            controller is PetalTabViewController -> controller.reload()
             act != null -> act.reloadCurrentBrowserTab()
+            controller is PetalTabViewController -> controller.reload()
             else -> {}
         }
     }
@@ -106,8 +106,8 @@ object PetalQuickToolsBridge {
     private fun loadUrlInTab(controller: AlbumController?, url: String) {
         val act = activeMainActivity
         when {
-            controller is PetalTabViewController -> controller.loadUrl(url)
             act != null -> act.viewModel.loadUrl(url)
+            controller is PetalTabViewController -> controller.loadUrl(url)
             else -> {}
         }
     }

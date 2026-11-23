@@ -84,6 +84,7 @@ object BrowserDialogManager {
             overview.cancel()
         }
         val currentCtrl = activity.currentAlbumController
+        activity.viewModel.stopLoading()
         if (currentCtrl is com.petal.browser.browser.PetalTabViewController) {
             currentCtrl.stopLoading()
         }

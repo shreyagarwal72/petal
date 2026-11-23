@@ -187,13 +187,7 @@ fun PetalAboutDeveloperSheetContent(
             val activity = context as? com.petal.browser.activity.MainActivity
             if (activity != null) {
                 onClose()
-                val ctrl = activity.currentAlbumController
-                if (ctrl is com.petal.browser.browser.PetalTabViewController) {
-                    ctrl.loadUrl(url)
-                    activity.showAlbum(ctrl, url)
-                } else {
-                    activity.addAlbum(null, url, true)
-                }
+                activity.viewModel.loadUrl(url)
             } else {
                 PetalBrowserUtils.intentURL(context, Uri.parse(url))
             }
