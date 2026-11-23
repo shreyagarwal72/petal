@@ -220,7 +220,7 @@ fun PetalAboutDeveloperScreen(
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText(label, text)
             clipboard.setPrimaryClip(clip)
-            haptics.play(PetalHapticEngine.Pattern.CLICK)
+            haptics.play(PetalHapticEngine.Pattern.CLICK, 0.7f)
             coroutineScope.launch {
                 snackbarHostState.showSnackbar(
                     message = context.getString(R.string.about_copied_to_clipboard, label),
