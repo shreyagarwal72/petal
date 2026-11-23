@@ -102,7 +102,7 @@ fun PetalFuelTheCodeSheet(
             val cardShape = RoundedCornerShape(16.dp)
             Surface(
                 shape = cardShape,
-                color = petalGroupSurfaceColor(isGlass),
+                color = petalGroupSurfaceColor(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp)
