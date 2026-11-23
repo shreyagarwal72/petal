@@ -58,6 +58,7 @@ class PetalGlassAccessibilityService : AccessibilityService() {
     private val failures = HashMap<Int, Int>()
     private val queue = ArrayList<Int>()
     private var capturing = false
+    private var editModeSeen = false
     private var captureToken = 0
     private var scanScheduled = false
     private var ignoreEventsUntil = 0L
@@ -146,6 +147,10 @@ class PetalGlassAccessibilityService : AccessibilityService() {
         try {
             val desc = node.contentDescription?.toString()
             val isBg = desc != null && desc.startsWith(PetalLiquidGlassWidgetBinder.MARKER_PREFIX)
+            val vid = node.viewIdResourceName
+            if (vid != null && (vid.endsWith(":id/widget_resize_frame") || vid.endsWith(":id/drop_target_bar"))) {
+                editModeSeen = true
+            }
             if (isBg) {
                 val id = desc!!.substring(PetalLiquidGlassWidgetBinder.MARKER_PREFIX.length).toIntOrNull()
                 val r = Rect()
@@ -173,7 +178,10 @@ class PetalGlassAccessibilityService : AccessibilityService() {
             val ids = managedIds()
             if (ids.isEmpty()) return
             val (sw, sh) = PetalWallpaperBlurHelper.getScreenSize(this)
-            for ((id, rect) in findWidgets(ids)) {
+            editModeSeen = false
+            val seen = findWidgets(ids)
+            if (editModeSeen) { scheduleScan(); return } // resizing/dragging: wait until it ends
+            for ((id, rect) in seen) {
                 if (id !in ids) continue
                 // Ignore widgets that are only partly on screen (mid-scroll / other pages)
                 if (rect.left < -2 || rect.top < -2 || rect.right > sw + 2 || rect.bottom > sh + 2) continue

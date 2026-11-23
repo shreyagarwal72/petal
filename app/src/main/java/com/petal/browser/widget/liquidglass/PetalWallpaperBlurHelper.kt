@@ -298,7 +298,8 @@ object PetalWallpaperBlurHelper {
     // Contrast: pick light or dark text/icons from the luminance behind the widget
     // ---------------------------------------------------------------------------------------
 
-    private fun saveLuma(context: Context, widgetId: Int, bmp: Bitmap) {
+    /** Average brightness 0..1 of a bitmap (sampled). */
+    fun computeLuma(bmp: Bitmap): Float {
         var sum = 0.0
         var n = 0
         val sx = max(1, bmp.width / 24)
@@ -317,17 +318,26 @@ object PetalWallpaperBlurHelper {
             }
             y += sy
         }
-        if (n > 0) getPrefs(context).edit().putFloat("lum_$widgetId", (sum / n).toFloat()).apply()
+        return if (n > 0) (sum / n).toFloat() else 0f
+    }
+
+    private fun saveLuma(context: Context, widgetId: Int, bmp: Bitmap) {
+        getPrefs(context).edit().putFloat("lum_$widgetId", computeLuma(bmp)).apply()
     }
 
     private const val INK_DARK = 0xE6101418.toInt()
     private const val INK_LIGHT = 0xFFFFFFFF.toInt()
 
-    fun getContentColor(context: Context, widgetId: Int, config: PetalBlurConfig): Int {
-        if (isWallpaperOwnsGlass(context)) return INK_LIGHT
+    /** Text/icon colour for a given tint mode and background brightness (also used by the settings preview). */
+    fun inkFor(config: PetalBlurConfig, luma: Float): Int {
         if (config.darkLightMode == PetalBlurConfig.DARK_LIGHT_DARK) return INK_LIGHT
         if (config.darkLightMode == PetalBlurConfig.DARK_LIGHT_LIGHT) return INK_DARK
-        return if (getPrefs(context).getFloat("lum_$widgetId", 0f) > 0.62f) INK_DARK else INK_LIGHT
+        return if (luma > 0.62f) INK_DARK else INK_LIGHT
+    }
+
+    fun getContentColor(context: Context, widgetId: Int, config: PetalBlurConfig): Int {
+        if (isWallpaperOwnsGlass(context)) return INK_LIGHT
+        return inkFor(config, getPrefs(context).getFloat("lum_$widgetId", 0f))
     }
 
     // ---------------------------------------------------------------------------------------
@@ -363,7 +373,7 @@ object PetalWallpaperBlurHelper {
                 heightPx = h,
                 config = config,
                 density = density,
-                cornerRadiusDp = if (isPill) 1000f else -1f // 1000 = clamp to a full pill
+                cornerRadiusDp = if (isPill) 28f else -1f
             )
             if (baked != null) {
                 saveBlurBitmap(context, widgetId, baked)

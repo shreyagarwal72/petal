@@ -164,8 +164,10 @@ object PetalLiquidGlassRenderer {
 
         val runtimeShader = android.graphics.RuntimeShader(shaderSource)
         val cornerPx = min(cornerRadiusDp * density, min(width, height) / 2f)
-        val refractionHeightPx = config.refractionHeight * density
-        val refractionOffsetPx = -config.refractionOffset * density
+        // Scale the lens to the widget: on a resized (tall/large) widget the fixed 20dp/70dp
+        // values bent the wallpaper into big ripples and an oval look.
+        val refractionHeightPx = min(config.refractionHeight * density, min(width, height) * 0.35f)
+        val refractionOffsetPx = -min(config.refractionOffset * density, refractionHeightPx * 1.5f)
         val blurRadiusPx = max(0f, config.blurRadius)
 
         // Set AGSL uniforms

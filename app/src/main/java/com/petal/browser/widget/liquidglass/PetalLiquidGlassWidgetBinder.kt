@@ -55,6 +55,10 @@ object PetalLiquidGlassWidgetBinder {
         val config = PetalBlurConfig.load(context)
 
         views.setContentDescription(R.id.widget_glass_bg, MARKER_PREFIX + id)
+        // The launcher re-applies (not re-inflates) updates, so state set by an earlier update
+        // sticks. Always set visibility + image explicitly, otherwise the foreground stayed
+        // INVISIBLE after a capture.
+        views.setViewVisibility(R.id.widget_glass_content, View.VISIBLE)
 
         if (clearForCapture) {
             views.setImageViewBitmap(R.id.widget_glass_bg, null)
@@ -77,8 +81,10 @@ object PetalLiquidGlassWidgetBinder {
                     lastBakeRequest[id] = now
                     PetalWallpaperBlurHelper.rebakeAllFromWallpaper(context)
                 }
+                views.setImageViewResource(R.id.widget_glass_bg, R.drawable.petal_liquid_glass_placeholder_bg)
+            } else {
+                views.setImageViewResource(R.id.widget_glass_bg, R.drawable.petal_liquid_glass_placeholder_bg)
             }
-            // else: keep the frosted placeholder from the layout until a real capture arrives
         }
 
         val ink = PetalWallpaperBlurHelper.getContentColor(context, id, config)
