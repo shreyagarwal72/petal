@@ -35,10 +35,6 @@ internal class PetalPermissionDelegateWrapper(
         this.isPrivateProvider = newIsPrivateProvider
     }
 
-    private fun inner() = com.petal.browser.ui.components.PetalGeckoPermissionDelegate(
-        context, activitySupplier
-    )
-
     override fun onAndroidPermissionsRequest(
         session: GeckoSession,
         permissions: Array<out String>?,
@@ -46,7 +42,11 @@ internal class PetalPermissionDelegateWrapper(
     ) {
         val act = activitySupplier()
         if (act != null) {
-            inner().onAndroidPermissionsRequest(session, permissions, callback)
+            com.petal.browser.engine.gecko.PetalSitePermissionsBridge.handleAndroidPermissionsRequest(
+                activitySupplier = activitySupplier,
+                permissions = permissions,
+                callback = callback
+            )
         } else if (engine != null) {
             engine.onAndroidPermissionsRequest(session, permissions, callback)
         } else {
@@ -75,7 +75,15 @@ internal class PetalPermissionDelegateWrapper(
             }
         } catch (_: Throwable) {}
         if (act != null) {
-            inner().onMediaPermissionRequest(session, uri, video, audio, callback)
+            com.petal.browser.engine.gecko.PetalSitePermissionsBridge.handleMediaPermissionRequest(
+                context = context,
+                activitySupplier = activitySupplier,
+                isPrivate = isPrivateProvider(),
+                uri = uri,
+                video = video,
+                audio = audio,
+                callback = callback
+            )
         } else if (engine != null) {
             engine.onMediaPermissionRequest(session, uri, video, audio, callback)
         } else {
@@ -89,7 +97,12 @@ internal class PetalPermissionDelegateWrapper(
     ): GeckoResult<Int>? {
         val act = activitySupplier()
         if (act != null) {
-            return inner().onContentPermissionRequest(session, perm)
+            return com.petal.browser.engine.gecko.PetalSitePermissionsBridge.handleContentPermissionRequest(
+                activitySupplier = activitySupplier,
+                perm = perm,
+                context = context,
+                isPrivate = isPrivateProvider()
+            )
         }
         return engine?.onContentPermissionRequest(session, perm)
             ?: GeckoResult.fromValue(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)

@@ -42,9 +42,11 @@ class PetalBrowserPromptBridge(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val handledPromptUids = ConcurrentHashMap.newKeySet<String>()
+    private var collectionJob: kotlinx.coroutines.Job? = null
 
     fun start() {
-        scope.launch {
+        if (collectionJob?.isActive == true) return
+        collectionJob = scope.launch {
             store.stateFlow
                 .map { state -> state.selectedTab?.let { tab -> tab.id to tab.content.promptRequests } }
                 .distinctUntilChanged()
@@ -57,6 +59,12 @@ class PetalBrowserPromptBridge(
                     }
                 }
         }
+    }
+
+    fun stop() {
+        collectionJob?.cancel()
+        collectionJob = null
+        handledPromptUids.clear()
     }
 
     private fun consume(tabId: String, request: PromptRequest) {

@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.browser.PetalPermissionDelegateWrapper
-import com.petal.browser.browser.PetalPromptDelegateWrapper
 import com.petal.browser.browser.PetalVerticalSwipeRefreshLayout
 import com.petal.browser.compose.composable.PetalRefreshBarState
 import com.petal.browser.ui.components.PetalPullRefreshIndicator
@@ -535,24 +534,11 @@ private fun attachSessionDelegates(
         )
     }
 
-    // 3. Prompt Delegate (prompts, alerts, auth, popups)
-    val currentPrompt = session.promptDelegate
-    if (currentPrompt is PetalPromptDelegateWrapper) {
-        currentPrompt.rebind(
-            newIncognitoProvider = { tab.content.private },
-            newActivityProvider = actSupplier
-        )
-    } else {
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-        session.promptDelegate = PetalPromptDelegateWrapper(
-            engine = currentPrompt,
-            session = session,
-            appContext = context.applicationContext,
-            sp = sp,
-            incognitoProvider = { tab.content.private },
-            activityProvider = actSupplier
-        )
-    }
+    // 3. Prompt Delegate:
+    // Retained on Mozilla AC's GeckoPromptDelegate (browser-engine-gecko).
+    // Web content prompt requests are dispatched via PromptMiddleware into BrowserStore
+    // (tab.content.promptRequests) and presented through PetalBrowserPromptBridge
+    // using Petal's Liquid Glass / Material 3 Expressive UI with zero reflection hacks.
 
     // 4. Permission Delegate
     val currentPerm = session.permissionDelegate

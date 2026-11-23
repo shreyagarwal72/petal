@@ -262,7 +262,9 @@ object PetalQuickToolsBridge {
                 // On-device Firefox Translations (GeckoView). Page text and URLs never leave the device.
                 val tabId = com.petal.browser.engine.gecko.PetalEngineStore.getStore(activity).state.selectedTabId
                 val state = tabId?.let { com.petal.browser.engine.gecko.PetalTranslationsManager.states.value[it] }
-                val session = (controller as? com.petal.browser.browser.PetalTabViewController)?.getGeckoSession()
+                val tab = activity.viewModel.activeTab.value
+                val session = tab?.engineState?.engineSession?.let { com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(it) }
+                    ?: (controller as? com.petal.browser.browser.PetalTabViewController)?.getGeckoSession()
                 if (tabId != null && state != null && session != null && state.isTranslated) {
                     com.petal.browser.engine.gecko.PetalTranslationsManager.restoreOriginal(tabId, session)
                 } else if (tabId != null && state != null && session != null && state.isTranslatable && !state.pageLanguage.isNullOrBlank()) {

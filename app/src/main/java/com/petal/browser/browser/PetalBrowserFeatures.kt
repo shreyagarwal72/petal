@@ -32,12 +32,12 @@ class PetalBrowserFeatures(private val activity: FragmentActivity) {
     )
     fun start() {
         mediaFullscreen.start()
-        prompts.start()
+        promptBridge.start()
     }
 
     fun stop() {
         mediaFullscreen.stop()
-        prompts.stop()
+        promptBridge.stop()
     }
 
     fun onPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {

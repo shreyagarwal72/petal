@@ -413,6 +413,26 @@ class MainActivity : FragmentActivity(), BrowserController {
         com.petal.browser.ui.components.PetalQuickToolsBridge.showQuickTools(this)
     }
     fun showReaderMode() {
+        val tab = viewModel.activeTab.value
+        if (tab != null) {
+            val curUrl = tab.content.url
+            val isReader = curUrl.startsWith("about:reader?url=")
+            com.petal.browser.engine.gecko.PetalEngineStore.toggleReaderMode(this, tab.id, !isReader)
+            try {
+                if (!isReader) {
+                    viewModel.loadUrl("about:reader?url=${android.net.Uri.encode(curUrl)}")
+                } else {
+                    val origUrl = android.net.Uri.decode(curUrl.substringAfter("about:reader?url="))
+                    viewModel.loadUrl(origUrl)
+                }
+            } catch (_: Throwable) {}
+            com.petal.browser.live.PetalLiveActionBus.postSimple(
+                com.petal.browser.live.LiveEventKind.READER_MODE,
+                "reader",
+                if (isReader) "Reader mode off" else "Reader mode on"
+            )
+            return
+        }
         val controller = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
         if (controller != null) {
             val isReader = controller.url?.startsWith("about:reader?url=") == true
@@ -651,15 +671,31 @@ class MainActivity : FragmentActivity(), BrowserController {
     }
 
     fun evaluateJavascriptInActiveTab(script: String, callback: ValueCallback<String>?) {
-        val ctrl = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
-        ctrl?.evaluateJavascript(script) { result ->
-            callback?.onReceiveValue(result)
+        val tab = viewModel.activeTab.value
+        val gs = tab?.engineState?.engineSession?.let { com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(it) }
+            ?: (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.getGeckoSession()
+        if (gs != null) {
+            com.petal.browser.extensions.PetalBuiltInExtensionManager.evaluateJavascript(gs, script) { result ->
+                callback?.onReceiveValue(result)
+            }
+        } else {
+            val ctrl = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
+            ctrl?.evaluateJavascript(script) { result ->
+                callback?.onReceiveValue(result)
+            }
         }
     }
 
     fun evaluateJavascriptInActiveTab(script: String, callback: ((String?) -> Unit)? = null) {
-        val ctrl = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
-        ctrl?.evaluateJavascript(script, callback)
+        val tab = viewModel.activeTab.value
+        val gs = tab?.engineState?.engineSession?.let { com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(it) }
+            ?: (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.getGeckoSession()
+        if (gs != null) {
+            com.petal.browser.extensions.PetalBuiltInExtensionManager.evaluateJavascript(gs, script, callback)
+        } else {
+            val ctrl = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
+            ctrl?.evaluateJavascript(script, callback)
+        }
     }
 
     val presentedScreens = java.util.Stack<View>()
@@ -692,7 +728,9 @@ class MainActivity : FragmentActivity(), BrowserController {
             return
         }
         if (canBrowserGoBack()) {
-            (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.goBack() ?: viewModel.goBack()
+            if (!viewModel.goBack()) {
+                (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.goBack()
+            }
         } else {
             onBackPressedDispatcher.onBackPressed()
         }
@@ -701,10 +739,10 @@ class MainActivity : FragmentActivity(), BrowserController {
     fun hideRefreshAndProgressOverlays() { }
     fun onActivePageLoadFinished() { }
     fun reloadCurrentBrowserTab() {
-        (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.reload() ?: viewModel.reload()
+        viewModel.reload()
     }
     fun canBrowserGoBack(): Boolean =
-        (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.canGoBack() ?: viewModel.canGoBack.value
+        viewModel.canGoBack.value || ((currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.canGoBack() == true)
     fun restoreBrowserInputFocus() { }
 
     fun triggerRebirth(ctx: Context) {
