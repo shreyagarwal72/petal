@@ -22,11 +22,12 @@ object BrowserNavigationDelegate {
     @JvmStatic
     fun showOverflowMenu(activity: MainActivity) {
         val currentController = activity.currentAlbumController
-        val tabSurface = currentController as? com.petal.browser.browser.PetalTabViewController ?: activity.getOrCreateTabViewController()
+        val currentTab = activity.viewModel.activeTab.value
+        val tabSurface = currentController as? com.petal.browser.browser.PetalTabSurface
 
-        val isHome = activity.isPetalHomeSurfaceShowing || activity.isCurrentTabHomeOrBlank || PetalBrowserUtils.isHomePage(tabSurface?.url ?: currentController?.url)
-        val title = if (isHome) "Petal Home" else (tabSurface?.title ?: currentController?.title ?: "")
-        val url = if (isHome) "petal://home" else (tabSurface?.url ?: currentController?.url ?: "")
+        val isHome = activity.isPetalHomeSurfaceShowing || activity.isCurrentTabHomeOrBlank || PetalBrowserUtils.isHomePage(currentTab?.content?.url ?: tabSurface?.url ?: currentController?.url)
+        val title = if (isHome) "Petal Home" else (currentTab?.content?.title ?: tabSurface?.title ?: currentController?.title ?: "")
+        val url = if (isHome) "petal://home" else (currentTab?.content?.url ?: tabSurface?.url ?: currentController?.url ?: "")
 
         var isBookmarked = false
         if (!isHome && url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)) {
@@ -36,7 +37,7 @@ object BrowserNavigationDelegate {
             action.close()
         }
 
-        val canGoBack = tabSurface?.canGoBack() ?: false
+        val canGoBack = activity.canBrowserGoBack()
         val profile = com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(activity)
         val prefs = activity.sp ?: PreferenceManager.getDefaultSharedPreferences(activity)
         val isDesktopSite = prefs.getBoolean("sp_desktop_site", false)
@@ -216,7 +217,6 @@ object BrowserNavigationDelegate {
                 }
 
                 override fun onOpenDevConsole() {
-                    val tab = currentController as? com.petal.browser.browser.PetalTabViewController ?: activity.getOrCreateTabViewController()
                     val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
                         setViewTreeLifecycleOwner(activity)
                         setViewTreeViewModelStoreOwner(activity)
@@ -225,8 +225,9 @@ object BrowserNavigationDelegate {
                             com.petal.browser.ui.theme.PetalExpressiveTheme {
                                 com.petal.browser.tools.PetalDevConsoleSheet(
                                     onExecuteScript = { script, callback ->
-                                        tab?.evaluateJavascript(script, callback)
-                                            ?: callback("Error: Web session not active")
+                                        activity.evaluateJavascriptInActiveTab(script) { result ->
+                                            callback(result ?: "undefined")
+                                        }
                                     },
                                     onDismissRequest = {
                                         (parent as? android.view.ViewGroup)?.removeView(this)

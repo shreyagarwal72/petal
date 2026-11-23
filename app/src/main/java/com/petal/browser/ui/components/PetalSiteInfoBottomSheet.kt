@@ -45,14 +45,16 @@ fun PetalSiteInfoBottomSheet(
     onResetSiteData: () -> Unit
 ) {
     val context = LocalContext.current
+    val mainAct = context as? com.petal.browser.activity.MainActivity
+    val currentTab = mainAct?.viewModel?.activeTab?.value
     val tabViewController = albumController as? PetalTabViewController
     
-    val currentUrl = albumController?.url ?: ""
+    val currentUrl = currentTab?.content?.url?.takeIf { it.isNotBlank() } ?: albumController?.url ?: ""
     val domain = remember(currentUrl) { PetalAndroidUtils.domain(currentUrl) }
-    val favicon: Bitmap? = tabViewController?.favicon
+    val favicon: Bitmap? = currentTab?.content?.icon ?: tabViewController?.favicon
 
     // Check GeckoView SecurityInformation if available, plus URL scheme
-    val geckoSecurity = tabViewController?.currentSecurityInfo
+    val geckoSecurity = currentTab?.content?.securityInfo ?: tabViewController?.currentSecurityInfo
     val effectiveUrl = remember(currentUrl) {
         val trimmed = currentUrl.trim()
         if (trimmed.isEmpty()) ""
@@ -386,7 +388,7 @@ fun PetalSiteInfoBottomSheet(
                             modifier = Modifier.fillMaxWidth(),
                             onClick = {
                                 onDismissRequest()
-                                com.petal.browser.privacy.PetalElementZapper.launch(albumController)
+                                com.petal.browser.privacy.PetalElementZapper.launch(mainAct, albumController)
                             }
                         )
 

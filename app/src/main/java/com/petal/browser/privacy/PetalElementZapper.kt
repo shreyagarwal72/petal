@@ -125,11 +125,19 @@ object PetalElementZapper {
         """.trimIndent()
     }
 
-    fun launch(albumController: AlbumController?) {
+    fun launch(activity: com.petal.browser.activity.MainActivity?, albumController: AlbumController? = null) {
         val script = getZapperScript()
+        if (activity != null) {
+            activity.evaluateJavascriptInActiveTab(script)
+            return
+        }
         when (albumController) {
             is PetalTabViewController -> albumController.evaluateJavascript(script)
             else -> {}
         }
+    }
+
+    fun launch(albumController: AlbumController?) {
+        launch(null, albumController)
     }
 }

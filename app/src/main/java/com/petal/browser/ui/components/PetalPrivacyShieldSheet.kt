@@ -598,7 +598,7 @@ object PetalPrivacyShieldSheet {
                             onClick = {
                                 onDismiss()
                                 if (activity is com.petal.browser.activity.MainActivity) {
-                                    PetalElementZapper.launch(activity.currentAlbumController)
+                                    PetalElementZapper.launch(activity, activity.currentAlbumController)
                                 }
                             },
                             modifier = Modifier

@@ -700,13 +700,6 @@ class PetalBrowserViewModel @Inject constructor(
         }
         editor.apply()
         activeTab.value?.engineState?.engineSession?.let { session ->
-            try {
-                val gs = com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(session)
-                gs?.settings?.let { s ->
-                    s.viewportMode = if (newTarget) org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_DESKTOP else org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE
-                    s.userAgentMode = if (newTarget) org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_DESKTOP else org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_MOBILE
-                }
-            } catch (_: Throwable) {}
             session.toggleDesktopMode(newTarget, reload = true)
         }
     }
