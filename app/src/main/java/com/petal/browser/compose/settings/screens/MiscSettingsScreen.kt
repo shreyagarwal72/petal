@@ -23,7 +23,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.compose.settings.viewmodel.MiscSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.lens.PetalLensManager
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.petalGroupShape
@@ -45,22 +44,16 @@ fun MiscSettingsScreen(
     val customTabsEnabled by viewModel.customTabsEnabled.collectAsStateWithLifecycle()
     val customTabsEtp by viewModel.customTabsEtp.collectAsStateWithLifecycle()
     val newMainMenuBeta by viewModel.newMainMenuBeta.collectAsStateWithLifecycle()
-    var snapProvider by remember { mutableStateOf(PetalLensManager.snapProvider(context)) }
 
     MiscSettingsScreenContent(
         autoOpenApps = autoOpenApps,
         customTabsEnabled = customTabsEnabled,
         customTabsEtp = customTabsEtp,
         newMainMenuBeta = newMainMenuBeta,
-        snapProvider = snapProvider,
         onAutoOpenAppsChange = viewModel::setAutoOpenApps,
         onCustomTabsEnabledChange = viewModel::setCustomTabsEnabled,
         onCustomTabsEtpChange = viewModel::setCustomTabsEtp,
         onNewMainMenuBetaChange = viewModel::setNewMainMenuBeta,
-        onSnapProviderChange = {
-            PetalLensManager.setSnapProvider(context, it)
-            snapProvider = it
-        },
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -73,12 +66,10 @@ fun MiscSettingsScreenContent(
     customTabsEnabled: Boolean,
     customTabsEtp: Boolean,
     newMainMenuBeta: Boolean,
-    snapProvider: PetalLensManager.SnapProvider,
     onAutoOpenAppsChange: (Boolean) -> Unit,
     onCustomTabsEnabledChange: (Boolean) -> Unit,
     onCustomTabsEtpChange: (Boolean) -> Unit,
     onNewMainMenuBetaChange: (Boolean) -> Unit,
-    onSnapProviderChange: (PetalLensManager.SnapProvider) -> Unit,
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
@@ -108,81 +99,6 @@ fun MiscSettingsScreenContent(
                     .padding(start = 16.dp, end = 16.dp, top = topInset + 12.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // External Applications & Tools Card: Snap Photo Scanner
-                PetalSettingsSection(
-                    title = stringResource(R.string.ui_snap_photo_scanner),
-                    icon = Icons.Rounded.QrCodeScanner,
-                    cardId = "misc_snap_photo",
-                    targetHighlightId = targetHighlightItemId
-                ) {
-                    Text(
-                        text = stringResource(R.string.ui_choose_which_scanner_receives_photos),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
-                    )
-
-                    val snapOptions = listOf(
-                        Triple(PetalLensManager.SnapProvider.ASK, stringResource(R.string.ui_snap_provider_ask), Icons.Rounded.HelpOutline),
-                        Triple(PetalLensManager.SnapProvider.GOOGLE_LENS, stringResource(R.string.ui_snap_provider_google_lens), Icons.Rounded.Search),
-                        Triple(PetalLensManager.SnapProvider.PETAL_SCANNER, stringResource(R.string.ui_snap_provider_petal_scanner), Icons.Rounded.QrCodeScanner)
-                    )
-
-                    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
-                    val ctx = LocalContext.current
-                    val sp = remember(ctx) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(ctx) }
-                    val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
-
-                    PetalGroup(rowCount = snapOptions.size) { index, position ->
-                        val (provider, label, icon) = snapOptions[index]
-                        val isSelected = snapProvider == provider
-                        val rowShape = petalGroupShape(position)
-                        Card(
-                            onClick = { onSnapProviderChange(provider) },
-                            shape = rowShape,
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (isGlass) 0.55f else 0.45f)
-                                else if (isGlass) petalGroupSurfaceColor()
-                                else MaterialTheme.colorScheme.surfaceContainerHigh
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .liquidGlassChrome(
-                                    shape = rowShape,
-                                    enabled = isGlass,
-                                    sheenIntensity = sheen
-                                ), glass = false
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 60.dp)
-                                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                PetalGroupIconBadge(
-                                    icon = icon,
-                                    container = if (isSelected) MaterialTheme.colorScheme.primaryContainer else if (isGlass) MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                RadioButton(
-                                    selected = isSelected,
-                                    onClick = { onSnapProviderChange(provider) }
-                                )
-                            }
-                        }
-                    }
-                }
-
                 // External Applications & Custom Tabs Card
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_custom_tabs_external_links),

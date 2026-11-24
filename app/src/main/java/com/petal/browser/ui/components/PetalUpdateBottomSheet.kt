@@ -191,7 +191,7 @@ object PetalUpdateSheetBridge {
 * **🖼️ Profile Picture & Interactive Cropper Overhaul**: Circular crop viewport with real-time pinch-to-zoom (1.0x - 4.0x), pan gesture alignment, 90° rotation, and immediate Coil cache updates.
 * **🗂️ Clean Settings Categorization & Miscellaneous Hub**: Intuitive reorganization into Appearance & Theme, Accessibility, Privacy & Security, Experimental, and Miscellaneous.
 * **⚡ Complete Kotlin & Jetpack Compose Modernization (100% Kotlin)**: Pure Material 3 Expressive UI, predictive back navigation with 24dp background depth blur, and adaptive dynamic theming.
-* **🌐 Google Lens & In-App Multi-Volume Media Picker**: Full Google Lens search integration across Omnibox search bar, context menus, and home widgets.
+* **🌐 Visual Search & QR Scanner**: Full QR & Barcode scanner integration across Omnibox search bar, context menus, and home widgets.
 * **🔒 Advanced Privacy, Passkeys & High-Performance Web Engine**: Full WebAuthn & biometric passkey support, AdBlock Trie filtering engine, and 120Hz/144Hz high refresh rate hardware pacing.
                 """.trimIndent(),
                 downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
@@ -211,7 +211,7 @@ object PetalUpdateSheetBridge {
             ),
             PetalUpdateInfo(
                 versionName = "v1.9.4",
-                releaseNotes = "* **Google Lens Integration**: In-app camera capture, photo picker, and context menu search.\n* **Multi-Engine Torrent & Magnet Downloader**: 1DM integration, in-app native streamer, and system downloader.\n* **Dynamic Morphing Background Timer**: Periodic ambient background shape rotation with customizable interval.",
+                releaseNotes = "* **Visual Search & QR Scanner**: In-app camera capture, photo picker, and context menu search.\n* **Multi-Engine Torrent & Magnet Downloader**: 1DM integration, in-app native streamer, and system downloader.\n* **Dynamic Morphing Background Timer**: Periodic ambient background shape rotation with customizable interval.",
                 downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
                 releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.9.4"
             )

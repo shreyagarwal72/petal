@@ -64,7 +64,7 @@
             android:layout_height="36dp"
             android:padding="8dp"
             android:src="@drawable/widget_ic_lens_camera"
-            android:contentDescription="@string/ui_google_lens" />
+            android:contentDescription="@string/quick_tile_scanner_label" />
 
         <ImageView
             android:id="@+id/btn_incognito"

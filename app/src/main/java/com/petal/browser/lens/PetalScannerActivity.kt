@@ -4,32 +4,27 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
-import android.widget.Toast
-import com.petal.browser.R
+import com.petal.browser.scanner.PetalScanActionHandler
+import com.petal.browser.scanner.ScannerHost
+import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.unit.PetalBrowserUtils
 
 class PetalScannerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        com.petal.browser.unit.PetalAndroidUtils.initTheme(this)
+        PetalAndroidUtils.initTheme(this)
         setContent {
             com.petal.browser.ui.theme.PetalExpressiveTheme {
-                PetalQrScannerScreen(
-                    onResult = { value ->
-                        if (value.startsWith("http://") || value.startsWith("https://")) {
+                ScannerHost(
+                    onDismiss = { finish() },
+                    onResultDispatched = { value ->
+                        if (value.startsWith("http://", ignoreCase = true) || value.startsWith("https://", ignoreCase = true)) {
                             PetalBrowserUtils.intentURL(this, Uri.parse(value))
                         } else {
-                            getSystemService(CLIPBOARD_SERVICE)?.let { service ->
-                                (service as android.content.ClipboardManager).setPrimaryClip(
-                                    android.content.ClipData.newPlainText("Scanned barcode", value)
-                                )
-                            }
-                            Toast.makeText(this, R.string.quick_tile_scanner_copied, Toast.LENGTH_SHORT).show()
+                            PetalScanActionHandler.copyToClipboard(this, value)
                         }
                         finish()
-                    },
-                    onDismiss = { finish() }
+                    }
                 )
             }
         }

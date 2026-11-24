@@ -2,41 +2,32 @@ package com.petal.browser.lens
 
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.*
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
-import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.preference.PreferenceManager
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.scanner.PetalScanActionHandler
+import com.petal.browser.scanner.ScannerHost
 import com.petal.browser.ui.glass.LocalPetalGlassSource
-import com.petal.browser.ui.glass.PetalGlassContainer
-import com.petal.browser.ui.containment.isLiquidGlassEnabled
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.unit.PetalBrowserUtils
-import androidx.compose.material3.ModalBottomSheet
 
 object PetalLensBridge {
 
     private var activeDismissAction: (() -> Unit)? = null
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @JvmStatic
     @JvmOverloads
     fun showLensBottomSheet(activity: ComponentActivity, autoSnapCamera: Boolean = false) {
@@ -96,17 +87,17 @@ object PetalLensBridge {
                     }
 
                     val appFont = remember(fontName) {
-                        try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.PETAL }
+                        try { AppFont.valueOf(fontName) } catch (_: Exception) { AppFont.PETAL }
                     }
                     val colorStyle = remember(styleName) {
-                        try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
+                        try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                     }
 
                     val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
                         ?: activity.findViewById(android.R.id.content)
                     CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
                         PetalExpressiveTheme(
-                            darkTheme = androidx.compose.foundation.isSystemInDarkTheme(),
+                            darkTheme = isSystemInDarkTheme(),
                             dynamicColor = dynamicColor,
                             useAmoled = isAmoled,
                             appFont = appFont,
@@ -142,8 +133,7 @@ object PetalLensBridge {
     }
 
     /**
-     * Opens the Petal Material QR scanner directly (without the Lens sheet),
-     * using the same full-screen Dialog and theming as the address bar scanner.
+     * Opens the Petal Camera Scanner directly without the Lens sheet.
      * Used by Quick Tools "QR Scanner" button.
      */
     @JvmStatic
@@ -184,16 +174,8 @@ object PetalLensBridge {
                         try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                     }
 
-                    var showScanner by remember { mutableStateOf(true) }
-
-                    LaunchedEffect(showScanner) {
-                        if (!showScanner) {
-                            dismissAction()
-                        }
-                    }
-
                     PetalExpressiveTheme(
-                        darkTheme = androidx.compose.foundation.isSystemInDarkTheme(),
+                        darkTheme = isSystemInDarkTheme(),
                         dynamicColor = dynamicColor,
                         useAmoled = isAmoled,
                         appFont = appFont,
@@ -203,32 +185,17 @@ object PetalLensBridge {
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
-                        if (showScanner) {
-                            Dialog(
-                                onDismissRequest = { showScanner = false },
-                                properties = DialogProperties(
-                                    usePlatformDefaultWidth = false,
-                                    decorFitsSystemWindows = false
-                                )
-                            ) {
-                                PetalQrScannerScreen(
-                                    onResult = { value ->
-                                        showScanner = false
-                                        if (value.startsWith("http://") || value.startsWith("https://")) {
-                                            PetalBrowserUtils.intentURL(activity, Uri.parse(value))
-                                        } else {
-                                            val clipboard = activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
-                                                    as android.content.ClipboardManager
-                                            clipboard.setPrimaryClip(
-                                                android.content.ClipData.newPlainText("Scanned barcode", value)
-                                            )
-                                            com.petal.browser.view.PetalToast.show(activity, "Barcode copied")
-                                        }
-                                    },
-                                    onDismiss = { showScanner = false }
-                                )
+                        ScannerHost(
+                            onDismiss = dismissAction,
+                            onResultDispatched = { value ->
+                                if (value.startsWith("http://", ignoreCase = true) || value.startsWith("https://", ignoreCase = true)) {
+                                    PetalBrowserUtils.intentURL(activity, Uri.parse(value))
+                                } else {
+                                    PetalScanActionHandler.copyToClipboard(activity, value)
+                                }
+                                dismissAction()
                             }
-                        }
+                        )
                     }
                 }
             }
@@ -243,4 +210,3 @@ object PetalLensBridge {
         }
     }
 }
-

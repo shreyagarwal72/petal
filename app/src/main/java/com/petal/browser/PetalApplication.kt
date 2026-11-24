@@ -91,6 +91,18 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
         instance = this
         // Initializes default user preferences and settings.
         com.petal.browser.account.progress.PetalProgressStore.init(this)
+
+        // One-time migration: purge stale Google Lens / snap photo provider preference
+        try {
+            val petalPrefs = getSharedPreferences("petal_settings", Context.MODE_PRIVATE)
+            if (petalPrefs.contains("sp_snap_photo_provider")) {
+                petalPrefs.edit().remove("sp_snap_photo_provider").apply()
+            }
+            val defaultSp = PreferenceManager.getDefaultSharedPreferences(this)
+            if (defaultSp.contains("sp_snap_photo_provider")) {
+                defaultSp.edit().remove("sp_snap_photo_provider").apply()
+            }
+        } catch (_: Throwable) {}
         // GeckoView starts helper processes for GPU, content tabs and crash
         // handling. Android creates our Application in each of them too. A
         // GeckoRuntime must only ever be created by the browser process: doing

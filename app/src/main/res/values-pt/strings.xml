@@ -264,9 +264,7 @@
     <string name="ui_toggle_torch">Alternar tocha</string>
     <string name="ui_code_detected">Código detectado</string>
     <string name="ui_scan_again">Digitalizar novamente</string>
-    <string name="ui_choose_snap_photo_scanner">Escolha o scanner Snap Photo</string>
     <string name="ui_choose_what_should_process_the">Escolha o que deve processar a foto. Você pode alterar isso posteriormente em Configurações diversas.</string>
-    <string name="ui_google_lens">Lente do Google</string>
     <string name="ui_ask_every_time">Pergunte sempre</string>
     <string name="ui_select_a_photo_or_snap">Selecione uma foto ou tire uma nova para pesquisar</string>
     <string name="ui_close">Fechar</string>
@@ -913,11 +911,6 @@
     <string name="ui_configure_android_system_private_dns">Configurar DNS privado do sistema Android</string>
     <string name="ui_miscellaneous">Variado</string>
     <string name="ui_custom_tabs_external_apps_and">Guias personalizadas, aplicativos externos e ferramentas de câmera</string>
-    <string name="ui_snap_photo_scanner">Scanner de fotos instantâneas</string>
-    <string name="ui_choose_which_scanner_receives_photos">Escolha qual scanner recebe fotos do Snap Photo e de todos os widgets Petal.</string>
-    <string name="ui_snap_provider_ask">Pergunte sempre</string>
-    <string name="ui_snap_provider_google_lens">Lente do Google</string>
-    <string name="ui_snap_provider_petal_scanner">Scanner QR de pétalas</string>
     <string name="ui_choose_again_next_time">Escolha novamente na próxima vez</string>
     <string name="ui_custom_tabs_external_links">Guias personalizadas e links externos</string>
     <string name="ui_petal_custom_tabs">Guias personalizadas de pétalas</string>
@@ -1510,11 +1503,7 @@
     <string name="widget_glass_not_ready_desc">To render real home screen liquid glass, Petal needs your home screen wallpaper image.</string>
     <string name="tab_crash_error_title">This page has crashed</string>
     <string name="tab_crash_error_message">Petal stopped auto-reloading this page because it repeatedly crashed.</string>
-    <string name="ui_choose_scanner_for_image">Choose Scanner for Image</string>
-    <string name="ui_choose_scanner_for_image_desc">Select whether to search this image using Google Lens or scan for QR / barcodes using Petal Scanner.</string>
-    <string name="ui_search_with_google_lens">Search with Google Lens</string>
     <string name="ui_scan_with_petal_qr">Scan QR / Barcode</string>
-    <string name="ui_no_qr_found_lens_prompt">No QR code found. Search with Google Lens?</string>
     <string name="ui_remember_choice">Remember choice</string>
     <string name="ui_show_search_suggestions">Show search suggestions</string>
     <string name="ui_show_search_suggestions_summary">Show search suggestions as you type in the address bar</string>

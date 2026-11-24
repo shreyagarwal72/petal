@@ -264,9 +264,7 @@
     <string name="ui_toggle_torch">روشن کردن مشعل</string>
     <string name="ui_code_detected">کد شناسایی شد</string>
     <string name="ui_scan_again">دوباره اسکن کنید</string>
-    <string name="ui_choose_snap_photo_scanner">Snap Photo scanner را انتخاب کنید</string>
     <string name="ui_choose_what_should_process_the">انتخاب کنید چه چیزی باید عکس را پردازش کند. بعداً می‌توانید این را در تنظیمات متفرقه تغییر دهید.</string>
-    <string name="ui_google_lens">لنز گوگل</string>
     <string name="ui_ask_every_time">هر بار بپرس</string>
     <string name="ui_select_a_photo_or_snap">یک عکس انتخاب کنید یا یک عکس جدید برای جستجو بگیرید</string>
     <string name="ui_close">بستن</string>
@@ -913,11 +911,6 @@
     <string name="ui_configure_android_system_private_dns">DNS خصوصی سیستم اندروید را پیکربندی کنید</string>
     <string name="ui_miscellaneous">متفرقه</string>
     <string name="ui_custom_tabs_external_apps_and">برگه های سفارشی، برنامه های خارجی و ابزار دوربین</string>
-    <string name="ui_snap_photo_scanner">اسنپ ​​عکس اسنپ</string>
-    <string name="ui_choose_which_scanner_receives_photos">انتخاب کنید کدام اسکنر عکس‌ها را از Snap Photo و تمام ویجت‌های Petal دریافت کند.</string>
-    <string name="ui_snap_provider_ask">هر بار بپرس</string>
-    <string name="ui_snap_provider_google_lens">لنز گوگل</string>
-    <string name="ui_snap_provider_petal_scanner">اسکنر QR گلبرگ</string>
     <string name="ui_choose_again_next_time">دفعه بعد دوباره انتخاب کنید</string>
     <string name="ui_custom_tabs_external_links">برگه های سفارشی و پیوندهای خارجی</string>
     <string name="ui_petal_custom_tabs">برگه های سفارشی گلبرگ</string>
@@ -1510,11 +1503,7 @@
     <string name="widget_glass_not_ready_desc">To render real home screen liquid glass, Petal needs your home screen wallpaper image.</string>
     <string name="tab_crash_error_title">This page has crashed</string>
     <string name="tab_crash_error_message">Petal stopped auto-reloading this page because it repeatedly crashed.</string>
-    <string name="ui_choose_scanner_for_image">Choose Scanner for Image</string>
-    <string name="ui_choose_scanner_for_image_desc">Select whether to search this image using Google Lens or scan for QR / barcodes using Petal Scanner.</string>
-    <string name="ui_search_with_google_lens">Search with Google Lens</string>
     <string name="ui_scan_with_petal_qr">Scan QR / Barcode</string>
-    <string name="ui_no_qr_found_lens_prompt">No QR code found. Search with Google Lens?</string>
     <string name="ui_remember_choice">Remember choice</string>
     <string name="ui_show_search_suggestions">Show search suggestions</string>
     <string name="ui_show_search_suggestions_summary">Show search suggestions as you type in the address bar</string>

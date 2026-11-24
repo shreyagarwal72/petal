@@ -1,30 +1,20 @@
 package com.petal.browser.lens
 
-import com.petal.browser.ui.theme.ExpressiveButtonShape
-import com.petal.browser.view.PetalToast;
-import android.Manifest
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import com.petal.browser.ui.kit.IconButton
-import com.petal.browser.ui.kit.TextButton
-import com.petal.browser.ui.kit.FilledTonalButton
-import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -32,9 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -42,21 +32,29 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
-import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.R
+import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
+import com.petal.browser.compose.mlkit.PetalImageScannerBridge
 import com.petal.browser.media.MediaFilterType
 import com.petal.browser.media.MediaItem
 import com.petal.browser.media.PetalMediaPickerManager
-import com.petal.browser.compose.mlkit.PetalImageScannerBridge
+import com.petal.browser.scanner.ScannerHost
+import com.petal.browser.ui.containment.isLiquidGlassEnabled
+import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.glass.rememberGlassSheen
+import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
+import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.view.PetalToast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import androidx.compose.ui.res.stringResource
-import com.petal.browser.R
-import com.petal.browser.ui.containment.liquidGlassChrome
 
 /**
- * Petal Lens Sheet Content & BottomSheet launcher wrapper.
+ * Petal Lens Sheet: allows scanning with camera or selecting images from device gallery
+ * to decode barcodes / QR codes directly using Petal's local scanner.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalLensBottomSheet(
     autoSnapCamera: Boolean = false,
@@ -64,11 +62,9 @@ fun PetalLensBottomSheet(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    var cameraTempUriString by rememberSaveable { mutableStateOf<String?>(null) }
     var mediaItems by remember { mutableStateOf<List<MediaItem>>(emptyList()) }
     var hasPermission by remember { mutableStateOf(PetalMediaPickerManager.hasMediaPermissions(context)) }
     var isLoading by remember { mutableStateOf(false) }
-    var showSnapProviderChooser by rememberSaveable { mutableStateOf(false) }
     var showPetalScanner by rememberSaveable { mutableStateOf(false) }
 
     fun refreshGallery() {
@@ -91,98 +87,36 @@ fun PetalLensBottomSheet(
         refreshGallery()
     }
 
-    var pendingImageUriForProviderChooser by rememberSaveable { mutableStateOf<String?>(null) }
-
-    fun openImageWithSelectedScanner(uri: Uri) {
-        val provider = PetalLensManager.snapProvider(context)
-        when (provider) {
-            PetalLensManager.SnapProvider.PETAL_SCANNER -> {
-                PetalImageScannerBridge.show(context, uri.toString())
-                onDismissRequest()
-            }
-            PetalLensManager.SnapProvider.GOOGLE_LENS -> {
-                PetalLensManager.launchLensForImageUri(context, uri)
-                onDismissRequest()
-            }
-            PetalLensManager.SnapProvider.ASK -> {
-                pendingImageUriForProviderChooser = uri.toString()
-            }
-        }
+    fun openImageWithScanner(uri: Uri) {
+        PetalImageScannerBridge.show(context, uri.toString())
+        onDismissRequest()
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
-            runCatching { openImageWithSelectedScanner(uri) }
-                .onFailure { PetalLensManager.launchGoogleLensApp(context) }
+            openImageWithScanner(uri)
         }
     }
+
     val galleryChooserLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            runCatching { openImageWithSelectedScanner(uri) }
-                .onFailure { PetalLensManager.launchGoogleLensApp(context) }
-        }
-    }
-    val galleryIntentFallbackLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val uri = result.data?.data
-        if (uri != null) {
-            runCatching { openImageWithSelectedScanner(uri) }
-                .onFailure { PetalLensManager.launchGoogleLensApp(context) }
+            openImageWithScanner(uri)
         }
     }
 
     fun launchSafeGalleryPicker() {
         try {
-            galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            galleryLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         } catch (_: Throwable) {
             try {
                 galleryChooserLauncher.launch("image/*")
             } catch (_: Throwable) {
-                try {
-                    val pickIntent = android.content.Intent(
-                        android.content.Intent.ACTION_PICK,
-                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                    ).apply { type = "image/*" }
-                    galleryIntentFallbackLauncher.launch(pickIntent)
-                } catch (_: Throwable) {
-                    PetalLensManager.launchGoogleLensApp(context)
-                    onDismissRequest()
-                }
+                PetalToast.show(context, "Unable to launch photo picker", Toast.LENGTH_SHORT)
             }
-        }
-    }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success: Boolean ->
-        val uri = cameraTempUriString?.let { Uri.parse(it) }
-        if (success && uri != null) {
-            if (PetalLensManager.snapProvider(context) == PetalLensManager.SnapProvider.PETAL_SCANNER) {
-                PetalImageScannerBridge.show(context, uri.toString())
-            } else PetalLensManager.launchLensForImageUri(context, uri)
-            onDismissRequest()
-        }
-    }
-
-    fun launchCameraInternal() {
-        val uri = PetalLensManager.createTempCameraUri(context)
-        if (uri != null) {
-            cameraTempUriString = uri.toString()
-            try {
-                cameraLauncher.launch(uri)
-            } catch (e: Exception) {
-                PetalToast.show(context, "Unable to launch camera app", Toast.LENGTH_SHORT)
-                PetalLensManager.launchGoogleLensApp(context)
-                onDismissRequest()
-            }
-        } else {
-            PetalLensManager.launchGoogleLensApp(context)
-            onDismissRequest()
         }
     }
 
@@ -197,237 +131,13 @@ fun PetalLensBottomSheet(
         }
     }
 
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            launchCameraInternal()
-        } else {
-            PetalToast.show(context, "Camera permission is required to snap a photo", Toast.LENGTH_SHORT)
-        }
-    }
-
-    fun beginSnap() {
-        if (PetalLensManager.snapProvider(context) == PetalLensManager.SnapProvider.ASK) {
-            showSnapProviderChooser = true
-            return
-        }
-        if (PetalLensManager.snapProvider(context) == PetalLensManager.SnapProvider.PETAL_SCANNER) {
-            showPetalScanner = true
-            return
-        }
-        // Google Lens owns its camera experience; launch it directly instead of
-        // opening Petal's system camera and taking an intermediate photo.
-        PetalLensManager.launchGoogleLensApp(context)
-    }
-
-    // Auto-trigger snap camera feature if requested from widget or shortcut:
-    // Tries to redirect directly to the Google Lens app first, falling back to camera capture if unavailable.
+    // Auto-trigger snap camera feature if requested from widget or shortcut
     var didTriggerAutoCamera by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(autoSnapCamera) {
         if (autoSnapCamera && !didTriggerAutoCamera) {
             didTriggerAutoCamera = true
-            beginSnap()
+            showPetalScanner = true
         }
-    }
-
-    if (showSnapProviderChooser) {
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
-            onDismissRequest = { showSnapProviderChooser = false },
-            icon = { Icon(Icons.Rounded.QrCodeScanner, contentDescription = null) },
-            title = { Text(stringResource(R.string.ui_choose_snap_photo_scanner)) },
-            text = { Text(stringResource(R.string.ui_choose_what_should_process_the)) },
-            confirmButton = {
-                Column {
-                    TextButton(onClick = {
-                        PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.GOOGLE_LENS)
-                        showSnapProviderChooser = false
-                        beginSnap()
-                    }) { Text(stringResource(R.string.ui_google_lens)) }
-                    TextButton(onClick = {
-                        PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.PETAL_SCANNER)
-                        showSnapProviderChooser = false
-                        beginSnap()
-                    }) { Text(stringResource(R.string.ui_petal_qr_scanner)) }
-                    TextButton(onClick = {
-                        showSnapProviderChooser = false
-                        beginSnap()
-                    }) { Text(stringResource(R.string.ui_ask_every_time)) }
-                }
-            }
-        )
-    }
-
-    if (pendingImageUriForProviderChooser != null) {
-        val targetUri = remember(pendingImageUriForProviderChooser) { Uri.parse(pendingImageUriForProviderChooser) }
-        var rememberChoice by remember { mutableStateOf(false) }
-
-        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
-            onDismissRequest = { pendingImageUriForProviderChooser = null },
-            shape = MaterialTheme.shapes.extraLarge,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            icon = {
-                Icon(
-                    imageVector = Icons.Rounded.Search,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(28.dp)
-                )
-            },
-            title = {
-                Text(
-                    text = stringResource(R.string.ui_choose_scanner_for_image),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    textAlign = TextAlign.Center
-                )
-            },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = stringResource(R.string.ui_choose_scanner_for_image_desc),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-
-                    // Option 1: Google Lens
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                if (rememberChoice) {
-                                    PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.GOOGLE_LENS)
-                                }
-                                val uriToDispatch = targetUri
-                                pendingImageUriForProviderChooser = null
-                                PetalLensManager.launchLensForImageUri(context, uriToDispatch)
-                                onDismissRequest()
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(ExpressiveButtonShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Search,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.ui_search_with_google_lens),
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = stringResource(R.string.ui_google_lens),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-
-                    // Option 2: Petal QR Scanner
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                if (rememberChoice) {
-                                    PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.PETAL_SCANNER)
-                                }
-                                val uriToDispatch = targetUri
-                                pendingImageUriForProviderChooser = null
-                                PetalImageScannerBridge.show(context, uriToDispatch.toString())
-                                onDismissRequest()
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(ExpressiveButtonShape)
-                                    .background(MaterialTheme.colorScheme.secondaryContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.QrCodeScanner,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.ui_scan_with_petal_qr),
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = stringResource(R.string.ui_petal_qr_scanner),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-
-                    // Remember choice toggle
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
-                                rememberChoice = !rememberChoice
-                            }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Checkbox(
-                            checked = rememberChoice,
-                            onCheckedChange = { rememberChoice = it }
-                        )
-                        Text(
-                            text = stringResource(R.string.ui_remember_choice),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { pendingImageUriForProviderChooser = null }) {
-                    Text(stringResource(R.string.app_cancel))
-                }
-            }
-        )
     }
 
     if (showPetalScanner) {
@@ -438,20 +148,7 @@ fun PetalLensBottomSheet(
             },
             properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
-            PetalQrScannerScreen(
-                onResult = { value ->
-                    showPetalScanner = false
-                    (context as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
-                    if (value.startsWith("http://") || value.startsWith("https://")) {
-                        com.petal.browser.unit.PetalBrowserUtils.intentURL(context, Uri.parse(value))
-                        onDismissRequest()
-                    } else {
-                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Scanned barcode", value))
-                        PetalToast.show(context, "Barcode copied", Toast.LENGTH_SHORT)
-                        onDismissRequest()
-                    }
-                },
+            ScannerHost(
                 onDismiss = {
                     showPetalScanner = false
                     (context as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
@@ -461,12 +158,10 @@ fun PetalLensBottomSheet(
         }
     }
 
-    val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val isLiquidGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheetShape = BottomSheetDefaults.ExpandedShape
-
-    val glassWallpaper = com.petal.browser.ui.glass.rememberPetalGlassWallpaper()
-    val sheetSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val sheetSheen = com.petal.browser.ui.glass.rememberGlassSheen(isLiquidGlass)
+    val glassWallpaper = rememberPetalGlassWallpaper()
+    val sheetSheen = rememberGlassSheen(isLiquidGlass)
     val sheetDark = MaterialTheme.colorScheme.background.luminance() < .5f
 
     Surface(
@@ -478,384 +173,331 @@ fun PetalLensBottomSheet(
             com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides
                 (if (isLiquidGlass) glassWallpaper else com.petal.browser.ui.glass.LocalPetalGlassWallpaper.current)
         ) {
-        Box(Modifier.fillMaxWidth()) {
-        if (isLiquidGlass) {
-            // Live backdrop: records the app window every frame so the whole sheet and every
-            // card inside it frost and refract what is really behind them.
-            com.petal.browser.ui.containment.PetalSheetGlassBackdrop(glassWallpaper, Modifier.matchParentSize())
-            Box(
-                Modifier
-                    .matchParentSize()
-                    .then(
-                        if (!glassWallpaper.ready) Modifier.background(
-                            if (sheetDark) Color(0xE61A1C1E) else Color(0xE6F2F4F7), sheetShape
-                        ) else Modifier
+            Box(Modifier.fillMaxWidth()) {
+                if (isLiquidGlass) {
+                    com.petal.browser.ui.containment.PetalSheetGlassBackdrop(glassWallpaper, Modifier.matchParentSize())
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .then(
+                                if (!glassWallpaper.ready) Modifier.background(
+                                    if (sheetDark) Color(0xE61A1C1E) else Color(0xE6F2F4F7), sheetShape
+                                ) else Modifier
+                            )
+                            .liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = sheetSheen)
                     )
-                    .liquidGlassChrome(sheetShape, enabled = true, sheenIntensity = sheetSheen)
-            )
-        }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Surface(
-                        shape = ExpressiveButtonShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(42.dp)
+                    // Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Surface(
+                                shape = ExpressiveButtonShape,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.size(42.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.CenterFocusWeak,
+                                        contentDescription = stringResource(R.string.ui_petal_qr_scanner),
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.ui_petal_qr_scanner),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = stringResource(R.string.ui_select_a_photo_or_snap),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        IconButton(
+                            onClick = onDismissRequest,
+                            modifier = Modifier.size(36.dp)
+                        ) {
                             Icon(
-                                imageVector = Icons.Rounded.CenterFocusWeak,
-                                contentDescription = stringResource(R.string.ui_petal_qr_scanner),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp)
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = stringResource(R.string.ui_close),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
-                    Column {
-                        Text(
-                            text = stringResource(R.string.ui_petal_qr_scanner),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.ui_select_a_photo_or_snap),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
 
-                IconButton(
-                    onClick = {
-                        onDismissRequest()
-                    },
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = stringResource(R.string.ui_close),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            // Action Buttons Row: Snap Photo & System File Picker
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Snap Photo Card
-                com.petal.browser.ui.containment.PetalActionCard(
-                    onClick = {
-                        beginSnap()
-                    },
-                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                    containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.weight(1f).height(84.dp)
-                ) {
+                    // Action Buttons Row: Snap Photo & System File Picker
                     Row(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(MaterialTheme.colorScheme.primary),
-                            contentAlignment = Alignment.Center
+                        // Snap Photo Card
+                        com.petal.browser.ui.containment.PetalActionCard(
+                            onClick = { showPetalScanner = true },
+                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                            containerColor = if (isLiquidGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            modifier = Modifier.weight(1f).height(84.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.PhotoCamera,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(MaterialTheme.colorScheme.primary),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.PhotoCamera,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.ui_snap_photo),
+                                        maxLines = 2,
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.ui_use_camera),
+                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.ui_snap_photo),
-                                maxLines = 2,
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = stringResource(R.string.ui_use_camera),
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+
+                        // Gallery File Picker Card
+                        com.petal.browser.ui.containment.PetalActionCard(
+                            onClick = { launchSafeGalleryPicker() },
+                            shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
+                            containerColor = if (isLiquidGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            modifier = Modifier.weight(1f).height(84.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(MaterialTheme.colorScheme.secondary),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.FolderOpen,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSecondary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.ui_android_system_picker),
+                                        maxLines = 2,
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.ui_photos_picker),
+                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
                     }
-                }
 
-                // Gallery File Picker Card
-                com.petal.browser.ui.containment.PetalActionCard(
-                    onClick = {
-                        launchSafeGalleryPicker()
-                    },
-                    shape = com.petal.browser.ui.containment.PetalContainmentShapes.HeroInner,
-                    containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.weight(1f).height(84.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    FilledTonalButton(
+                        onClick = {
+                            try {
+                                galleryChooserLauncher.launch("image/*")
+                            } catch (_: Exception) {
+                                PetalToast.show(context, "Cannot open gallery", Toast.LENGTH_SHORT)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().then(
+                            if (isLiquidGlass) Modifier.liquidGlassChrome(RoundedCornerShape(16.dp), enabled = true) else Modifier
+                        ),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = if (isLiquidGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        glass = false
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(MaterialTheme.colorScheme.secondary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.FolderOpen,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSecondary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.ui_android_system_picker),
-                                maxLines = 2,
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = stringResource(R.string.ui_photos_picker),
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.ui_gallery_chooser))
                     }
-                }
-            }
 
-            FilledTonalButton(
-                onClick = {
-                    try { galleryChooserLauncher.launch("image/*") }
-                    catch (_: Exception) { PetalLensManager.launchGoogleLensApp(context); onDismissRequest() }
-                },
-                modifier = Modifier.fillMaxWidth().then(
-                    if (isLiquidGlass) Modifier.liquidGlassChrome(RoundedCornerShape(16.dp), enabled = true) else Modifier
-                ),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest,
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                shape = RoundedCornerShape(16.dp), glass = false
-            ) {
-                Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.ui_gallery_chooser))
-            }
-
-            // Builtin Photos Gallery Grid
-            if (!hasPermission) {
-                val permShape = RoundedCornerShape(20.dp)
-                Surface(
-                    shape = permShape,
-                    color = if (isLiquidGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier.fillMaxWidth().then(
-                        if (isLiquidGlass) Modifier.liquidGlassChrome(permShape, enabled = true) else Modifier
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.PhotoLibrary,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.ui_photo_gallery_access),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.ui_allow_petal_browser_to_display),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        Button(
-                            onClick = {
-                                permissionLauncher.launch(PetalMediaPickerManager.getRequiredMediaPermissions())
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(stringResource(R.string.ui_grant_photo_access), fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            } else if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    com.petal.browser.compose.composable.PetalContainedLoadingIndicator(size = 40.dp)
-                }
-            } else if (mediaItems.isEmpty()) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.PhotoLibrary,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.ui_no_indexed_photos_found_in),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.ui_you_can_browse_your_device),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        Button(
-                            onClick = {
-                                launchSafeGalleryPicker()
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.ui_browse_photos_files), fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            } else {
-                Text(
-                    text = stringResource(R.string.ui_recent_photos),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.align(Alignment.Start)
-                )
-
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(240.dp)
-                ) {
-                    itemsIndexed(mediaItems, key = { index, item -> "${item.uri}_$index" }) { _, item ->
+                    // Builtin Photos Gallery Grid
+                    if (!hasPermission) {
+                        val permShape = RoundedCornerShape(20.dp)
                         Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            shape = permShape,
+                            color = if (isLiquidGlass) petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainer,
+                            modifier = Modifier.fillMaxWidth().then(
+                                if (isLiquidGlass) Modifier.liquidGlassChrome(permShape, enabled = true) else Modifier
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.PhotoLibrary,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                                Text(
+                                    text = stringResource(R.string.ui_photo_gallery_access),
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = stringResource(R.string.ui_allow_petal_browser_to_display),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                                Button(
+                                    onClick = {
+                                        permissionLauncher.launch(PetalMediaPickerManager.getRequiredMediaPermissions())
+                                    },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(stringResource(R.string.ui_grant_photo_access), fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    } else if (isLoading) {
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(14.dp))
-                                .clickable {
-                                    runCatching { openImageWithSelectedScanner(item.uri) }
-                                        .onFailure { PetalLensManager.launchGoogleLensApp(context) }
-                                }
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            AsyncImage(
-                                model = item.uri,
-                                contentDescription = item.displayName,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            PetalContainedLoadingIndicator(size = 40.dp)
+                        }
+                    } else if (mediaItems.isEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.PhotoLibrary,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Text(
+                                    text = stringResource(R.string.ui_no_indexed_photos_found_in),
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = stringResource(R.string.ui_you_can_browse_your_device),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                                Button(
+                                    onClick = { launchSafeGalleryPicker() },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(stringResource(R.string.ui_browse_photos_files), fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    } else {
+                        Text(
+                            text = stringResource(R.string.ui_recent_photos),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.align(Alignment.Start)
+                        )
+
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(3),
+                            contentPadding = PaddingValues(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp)
+                        ) {
+                            itemsIndexed(mediaItems, key = { index, item -> "${item.uri}_$index" }) { _, item ->
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(1f)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .clickable {
+                                            openImageWithScanner(item.uri)
+                                        }
+                                ) {
+                                    AsyncImage(
+                                        model = item.uri,
+                                        contentDescription = item.displayName,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                            }
                         }
                     }
+
+                    Spacer(Modifier.height(16.dp))
                 }
             }
-
-            Spacer(Modifier.height(16.dp))
-        }
-        }
-        }
-    }
-}
-
-@Composable
-private fun LensActionCard(
-    modifier: Modifier = Modifier,
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = modifier
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Surface(
-                shape = ExpressiveButtonShape,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                modifier = Modifier.size(36.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = title,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }

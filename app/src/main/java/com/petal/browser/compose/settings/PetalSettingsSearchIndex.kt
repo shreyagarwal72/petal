@@ -377,11 +377,11 @@ object PetalSettingsSearchIndex {
 
         // ==================== MISCELLANEOUS ====================
         SettingsSearchItem(
-            id = "misc_snap_photo",
-            title = "Snap Photo Scanner",
-            subtitle = "Choose which scanner receives photos from Snap Photo and all Petal widgets (Google Lens, Petal QR Scanner)",
+            id = "scanner_settings",
+            title = "QR & Barcode Scanner",
+            subtitle = "Configure auto-open, haptic feedback, audio beep, and link safety inspection",
             category = SettingsCategory.MISCELLANEOUS,
-            keywords = listOf("lens", "google lens", "snap photo", "qr scanner", "scanner", "barcode", "widget scanner")
+            keywords = listOf("qr scanner", "barcode", "scanner", "camera scan", "link safety", "haptics")
         ),
         SettingsSearchItem(
             id = "misc_custom_tabs",

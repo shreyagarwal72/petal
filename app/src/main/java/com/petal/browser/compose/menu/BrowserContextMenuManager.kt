@@ -223,14 +223,6 @@ object BrowserContextMenuManager {
                     }
                 }
 
-                override fun onSearchWithGoogleLens() {
-                    if (imageURL.isNotBlank()) {
-                        com.petal.browser.lens.PetalLensManager.searchImageWithGoogleLens(activity, imageURL)
-                    } else {
-                        PetalToast.show(activity, "No valid image URL found")
-                    }
-                }
-
                 override fun onShareImage() {
                     if (imageURL.isNotBlank()) {
                         ImageActionHelper.shareImage(activity, imageURL)
@@ -405,12 +397,6 @@ object BrowserContextMenuManager {
                 override fun onScanImage() {
                     if (urlResult.isNotBlank()) {
                         PetalImageScannerBridge.show(activity, urlResult)
-                    }
-                }
-
-                override fun onSearchWithGoogleLens() {
-                    if (urlResult.isNotBlank()) {
-                        com.petal.browser.lens.PetalLensManager.searchImageWithGoogleLens(activity, urlResult)
                     }
                 }
 
@@ -1018,14 +1004,6 @@ object BrowserContextMenuManager {
                             initialMode = ResearchMode.DEEP_RESEARCH,
                             autoStart = true
                         )
-                    } else {
-                        PetalToast.show(activity, "No valid image URL found")
-                    }
-                }
-
-                override fun onSearchWithGoogleLens() {
-                    if (imageUrl.isNotBlank()) {
-                        com.petal.browser.lens.PetalLensManager.searchImageWithGoogleLens(activity, imageUrl)
                     } else {
                         PetalToast.show(activity, "No valid image URL found")
                     }

@@ -124,7 +124,7 @@ fun PetalMediaPickerBottomSheet(
 
     var cameraCaptureUriString by rememberSaveable { mutableStateOf<String?>(null) }
 
-    // System Photo Picker (Requires 0 permissions on Android 11+ and is guaranteed to work for Google Lens / photo search)
+    // System Photo Picker (Requires 0 permissions on Android 11+ and is guaranteed to work for photo search)
     val systemPhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->

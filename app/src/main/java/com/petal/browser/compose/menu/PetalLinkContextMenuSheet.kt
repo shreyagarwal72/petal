@@ -89,7 +89,6 @@ interface PetalLinkContextMenuHandler {
     fun onDownloadImage() {}
     fun onShareImage() {}
     fun onScanImage() {}
-    fun onSearchWithGoogleLens() {}
     fun onAnalyzeWithPetalAi() {}
 
     // Video actions
@@ -224,7 +223,6 @@ private fun buildSections(
                 MenuAction("save_image", "Save image", Icons.Rounded.SaveAlt, MenuTone.SAVE) { handler.onDownloadImage() },
                 MenuAction("share_image", "Share image", Icons.Rounded.Share, MenuTone.SAVE) { handler.onShareImage() },
                 MenuAction("ai_analyze", "Analyze with Petal AI", Icons.Rounded.AutoAwesome, MenuTone.SEARCH) { handler.onAnalyzeWithPetalAi() },
-                MenuAction("lens", "Search with Google Lens", Icons.Rounded.TravelExplore, MenuTone.SEARCH) { handler.onSearchWithGoogleLens() },
                 MenuAction("scan_qr", "Scan QR / Barcode", Icons.Rounded.QrCodeScanner, MenuTone.SEARCH) { handler.onScanImage() },
             ),
         ),
@@ -367,7 +365,6 @@ private fun buildSections(
             "Search & AI",
             listOf(
                 MenuAction("ai_analyze", "Analyze with Petal AI", Icons.Rounded.AutoAwesome, MenuTone.SEARCH) { handler.onAnalyzeWithPetalAi() },
-                MenuAction("lens", "Search with Google Lens", Icons.Rounded.TravelExplore, MenuTone.SEARCH) { handler.onSearchWithGoogleLens() },
                 MenuAction("scan_qr", "Scan QR / Barcode", Icons.Rounded.QrCodeScanner, MenuTone.SEARCH) { handler.onScanImage() },
             ),
         ),

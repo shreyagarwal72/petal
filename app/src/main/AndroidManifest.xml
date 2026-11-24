@@ -76,7 +76,6 @@
         <intent>
             <action android:name="com.samsung.android.sbrowser.contentBlocker.ACTION_UPDATE" />
         </intent>
-        <package android:name="com.google.ar.lens" />
         <package android:name="com.google.android.googlequicksearchbox" />
         <package android:name="com.google.android.apps.photos" />
         <package android:name="idm.internet.download.manager" />
@@ -94,10 +93,6 @@
         <intent>
             <action android:name="android.intent.action.SEND" />
             <data android:mimeType="image/*" />
-        </intent>
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="googlelens" />
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />

@@ -1,155 +1,19 @@
 package com.petal.browser.lens
 
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.core.content.FileProvider
-import com.petal.browser.haptics.PetalHapticEngine
-import com.petal.browser.unit.ImageActionHelper
 import java.io.File
 import java.io.FileOutputStream
 
 /**
  * Petal Lens Manager
- * Full in-app Google Lens flow: Photo capture, gallery selection, and Google Lens app/web launch.
+ * Provides file handling for camera capture and sharable image caching.
  */
 object PetalLensManager {
 
-    enum class SnapProvider { ASK, GOOGLE_LENS, PETAL_SCANNER }
-    private const val SNAP_PROVIDER_KEY = "sp_snap_photo_provider"
-
-    @JvmStatic
-    fun snapProvider(context: Context): SnapProvider = runCatching {
-        SnapProvider.valueOf(
-            context.getSharedPreferences("petal_settings", Context.MODE_PRIVATE)
-                .getString(SNAP_PROVIDER_KEY, SnapProvider.ASK.name) ?: SnapProvider.ASK.name
-        )
-    }.getOrDefault(SnapProvider.ASK)
-
-    @JvmStatic
-    fun setSnapProvider(context: Context, provider: SnapProvider) {
-        context.getSharedPreferences("petal_settings", Context.MODE_PRIVATE)
-            .edit().putString(SNAP_PROVIDER_KEY, provider.name).apply()
-    }
-
-    @JvmStatic
-    fun resetSnapProvider(context: Context) = setSnapProvider(context, SnapProvider.ASK)
-
-    private const val TAG = "PetalLens"
-
-    private val LENS_STANDALONE_COMPONENTS = listOf(
-        ComponentName("com.google.ar.lens", "com.google.vr.apps.ornament.app.lens.LensLauncherActivity"),
-        ComponentName("com.google.ar.lens", "com.google.vr.lens.LensCaptureActivity")
-    )
-
-    private val GOOGLE_APP_LENS_COMPONENTS = listOf(
-        ComponentName("com.google.android.googlequicksearchbox", "com.google.android.apps.search.lens.LensExportedActivity"),
-        ComponentName("com.google.android.googlequicksearchbox", "com.google.android.apps.search.lens.LensActivity")
-    )
-
     /**
-     * Checks whether a native Google Lens application or Google app Lens search activity is installed
-     * and queryable on the system (excluding web fallback).
-     */
-    @JvmStatic
-    fun isGoogleLensAppAvailable(context: Context): Boolean {
-        val pm = context.packageManager
-        // 1. Check standalone Lens app launcher components
-        for (comp in LENS_STANDALONE_COMPONENTS) {
-            val intent = Intent(Intent.ACTION_MAIN).apply {
-                component = comp
-                addCategory(Intent.CATEGORY_LAUNCHER)
-            }
-            if (intent.resolveActivity(pm) != null) return true
-        }
-
-        // 2. Check Google App Lens activities
-        for (comp in GOOGLE_APP_LENS_COMPONENTS) {
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                component = comp
-            }
-            if (intent.resolveActivity(pm) != null) return true
-        }
-
-        // 3. Check generic Lens standalone package launch intent
-        val launchIntent = pm.getLaunchIntentForPackage("com.google.ar.lens")
-        if (launchIntent != null) return true
-
-        return false
-    }
-
-    /**
-     * Attempts to directly launch the native Google Lens app or Google App Lens feature.
-     * Returns true if successfully launched, false otherwise (never falls back to web).
-     */
-    @JvmStatic
-    fun launchGoogleLensAppOnly(context: Context): Boolean {
-
-        // 1. Standalone Google Lens app launcher activities
-        for (comp in LENS_STANDALONE_COMPONENTS) {
-            try {
-                val intent = Intent(Intent.ACTION_MAIN).apply {
-                    component = comp
-                    addCategory(Intent.CATEGORY_LAUNCHER)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-                return true
-            } catch (_: Exception) {}
-        }
-
-        // 2. Google App Lens Search Activity / Action
-        for (comp in GOOGLE_APP_LENS_COMPONENTS) {
-            try {
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    component = comp
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-                return true
-            } catch (_: Exception) {}
-        }
-
-        // 3. Generic standalone Lens launch intent
-        try {
-            val launchIntent = context.packageManager.getLaunchIntentForPackage("com.google.ar.lens")
-            if (launchIntent != null) {
-                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(launchIntent)
-                return true
-            }
-        } catch (_: Exception) {}
-
-        return false
-    }
-
-    /**
-     * Directly launches the native Google Lens app or search intent.
-     * Falls back to Google Lens web URL if no native app is available.
-     */
-    @JvmStatic
-    fun launchGoogleLensApp(context: Context) {
-        if (launchGoogleLensAppOnly(context)) {
-            return
-        }
-
-        // Fallback to Google Lens web URL inside the browser / active activity
-        try {
-            if (context is com.petal.browser.activity.MainActivity) {
-                context.addAlbum("Google Lens", "https://lens.google.com", true)
-            } else {
-                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://lens.google.com")).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(webIntent)
-            }
-        } catch (_: Exception) {}
-    }
-
-    /**
-     * Prepares an image URI so that external apps like Google Lens / Google QuickSearchBox
+     * Prepares an image URI so that external apps or sub-components
      * have guaranteed read access via our FileProvider.
      */
     @JvmStatic
@@ -169,198 +33,9 @@ object PetalLensManager {
                 "${context.packageName}.fileprovider",
                 destFile
             )
-        } catch (e: Exception) {
-            android.util.Log.w(TAG, "Failed to copy image to sharable cache, falling back to sourceUri", e)
+        } catch (_: Exception) {
             sourceUri
         }
-    }
-
-    /**
-     * Launches Google Lens search for a given image URI via Google Search / Lens app intent.
-     * Grants explicit read URI permissions to target packages and resolves the best available viewer.
-     */
-    @JvmStatic
-    fun launchLensForImageUri(context: Context, imageUri: Uri) {
-
-        // Ensure URI is hosted from our FileProvider with proper external access
-        val sharableUri = prepareSharableImageUri(context, imageUri)
-
-        val targetPackages = listOf(
-            "com.google.ar.lens",
-            "com.google.android.googlequicksearchbox",
-            "com.google.android.apps.photos"
-        )
-
-        for (pkg in targetPackages) {
-            try {
-                context.grantUriPermission(
-                    pkg,
-                    sharableUri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (_: Exception) {
-                try {
-                    context.grantUriPermission(
-                        pkg,
-                        sharableUri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                } catch (_: Exception) {}
-            }
-        }
-
-        // Prefer the standalone Google Lens app when an image is supplied. This is
-        // especially important for Snap Photo: the camera result must not fall back
-        // into Petal's Lens web page or a generic camera handler.
-        try {
-            val standaloneIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/*"
-                putExtra(Intent.EXTRA_STREAM, sharableUri)
-                clipData = android.content.ClipData.newRawUri("Lens Image", sharableUri)
-                setPackage("com.google.ar.lens")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(standaloneIntent)
-            return
-        } catch (e: Exception) {
-            android.util.Log.w(TAG, "Standalone Lens app image handoff failed", e)
-        }
-
-        // Google Search's Lens attachment activity is the next best route on
-        // devices that bundle Lens inside the Google app instead of shipping a
-        // separate standalone Lens activity.
-        try {
-            val attachmentIntent = Intent("lens.intent.action.LENS_ATTACHMENT").apply {
-                setPackage("com.google.android.googlequicksearchbox")
-                setDataAndType(sharableUri, "image/*")
-                clipData = android.content.ClipData.newRawUri("Lens Image", sharableUri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(attachmentIntent)
-            return
-        } catch (e: Exception) {
-            android.util.Log.w(TAG, "Google app Lens attachment handoff failed", e)
-        }
-
-        // 3. Try Google QuickSearchBox ACTION_SEND
-        try {
-            val gsbIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/*"
-                putExtra(Intent.EXTRA_STREAM, sharableUri)
-                clipData = android.content.ClipData.newRawUri("Lens Image", sharableUri)
-                setPackage("com.google.android.googlequicksearchbox")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(gsbIntent)
-            return
-        } catch (e: Exception) {
-            android.util.Log.w(TAG, "QuickSearchBox send failed", e)
-        }
-
-        // 4. Try Google Photos ACTION_SEND
-        try {
-            val photosIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/*"
-                putExtra(Intent.EXTRA_STREAM, sharableUri)
-                clipData = android.content.ClipData.newRawUri("Lens Image", sharableUri)
-                setPackage("com.google.android.apps.photos")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(photosIntent)
-            return
-        } catch (e: Exception) {
-            android.util.Log.w(TAG, "Photos send failed", e)
-        }
-
-        // 5. Try system image search / share chooser targeting visual search apps
-        try {
-            val chooserIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/*"
-                putExtra(Intent.EXTRA_STREAM, sharableUri)
-                clipData = android.content.ClipData.newRawUri("Lens Image", sharableUri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            val chooser = Intent.createChooser(chooserIntent, "Search image with Google Lens").apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
-            }
-            context.startActivity(chooser)
-            return
-        } catch (e: Exception) {
-            android.util.Log.w(TAG, "Chooser send failed", e)
-        }
-
-        // 6. Direct app launch fallback
-        launchGoogleLensApp(context)
-    }
-
-    /**
-     * Searches an image with Google Lens from an image URL (e.g. from Context Menu).
-     * Attempts to resolve via Google Search / Google Lens, downloading and caching locally
-     * if necessary to guarantee that local/blob/data or remote images open directly in Google Lens.
-     */
-    @JvmStatic
-    fun searchImageWithGoogleLens(context: Context, imageUrl: String) {
-        if (imageUrl.isBlank()) return
-
-        // If it's already a local/content URI, search directly
-        if (imageUrl.startsWith("content://") || imageUrl.startsWith("file://")) {
-            launchLensForImageUri(context, Uri.parse(imageUrl))
-            return
-        }
-
-        // Asynchronously download/prepare image or fallback to Google Lens web redirect
-        Thread {
-            try {
-                val storageDir = File(context.cacheDir, "lens_photos").apply { mkdirs() }
-                val destFile = File(storageDir, "lens_web_${System.currentTimeMillis()}.jpg")
-
-                val imageBytes = ImageActionHelper.getImageBytes(context, imageUrl)
-                FileOutputStream(destFile).use { fos ->
-                    fos.write(imageBytes)
-                    fos.flush()
-                }
-
-                val contentUri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    destFile
-                )
-
-                if (context is android.app.Activity) {
-                    context.runOnUiThread {
-                        launchLensForImageUri(context, contentUri)
-                    }
-                } else {
-                    launchLensForImageUri(context, contentUri)
-                }
-            } catch (e: Exception) {
-                android.util.Log.w(TAG, "Failed to download image for Lens intent, falling back to Lens web URL", e)
-                if (context is android.app.Activity) {
-                    context.runOnUiThread {
-                        val encodedUrl = Uri.encode(imageUrl)
-                        val lensWebUrl = "https://lens.google.com/uploadbyurl?url=$encodedUrl"
-                        if (context is com.petal.browser.activity.MainActivity) {
-                            context.addAlbum("Google Lens", lensWebUrl, true)
-                        } else {
-                            val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(lensWebUrl)).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            context.startActivity(webIntent)
-                        }
-                    }
-                }
-            }
-        }.start()
     }
 
     /**
@@ -381,8 +56,7 @@ object PetalLensManager {
                 "${context.packageName}.fileprovider",
                 imageFile
             )
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (_: Exception) {
             null
         }
     }

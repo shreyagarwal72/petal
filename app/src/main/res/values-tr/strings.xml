@@ -264,9 +264,7 @@
     <string name="ui_toggle_torch">Meşaleyi Aç / Kapat</string>
     <string name="ui_code_detected">Kod Algılandı</string>
     <string name="ui_scan_again">Tekrar Tara</string>
-    <string name="ui_choose_snap_photo_scanner">Snap Photo tarayıcıyı seçin</string>
     <string name="ui_choose_what_should_process_the">Fotoğrafı neyin işlemesi gerektiğini seçin. Bunu daha sonra Çeşitli ayarlardan değiştirebilirsiniz.</string>
-    <string name="ui_google_lens">Google Lens</string>
     <string name="ui_ask_every_time">Her zaman sor</string>
     <string name="ui_select_a_photo_or_snap">Aramak için bir fotoğraf seçin veya yeni bir fotoğraf çekin</string>
     <string name="ui_close">Kapalı</string>
@@ -913,11 +911,6 @@
     <string name="ui_configure_android_system_private_dns">Android Sistemi Özel DNS\'sini Yapılandırma</string>
     <string name="ui_miscellaneous">Çeşitli</string>
     <string name="ui_custom_tabs_external_apps_and">Özel sekmeler, harici uygulamalar ve kamera araçları</string>
-    <string name="ui_snap_photo_scanner">Fotoğraf Tarayıcı</string>
-    <string name="ui_choose_which_scanner_receives_photos">Hangi tarayıcının Snap Photo\'dan ve tüm Petal widget\'larından fotoğraf alacağını seçin.</string>
-    <string name="ui_snap_provider_ask">Her zaman sor</string>
-    <string name="ui_snap_provider_google_lens">Google Lens</string>
-    <string name="ui_snap_provider_petal_scanner">Petal QR Tarayıcı</string>
     <string name="ui_choose_again_next_time">Bir dahaki sefere tekrar seç</string>
     <string name="ui_custom_tabs_external_links">Özel Sekmeler ve Dış Bağlantılar</string>
     <string name="ui_petal_custom_tabs">Petal Özel Sekmeleri</string>
@@ -1510,11 +1503,7 @@
     <string name="widget_glass_not_ready_desc">To render real home screen liquid glass, Petal needs your home screen wallpaper image.</string>
     <string name="tab_crash_error_title">This page has crashed</string>
     <string name="tab_crash_error_message">Petal stopped auto-reloading this page because it repeatedly crashed.</string>
-    <string name="ui_choose_scanner_for_image">Choose Scanner for Image</string>
-    <string name="ui_choose_scanner_for_image_desc">Select whether to search this image using Google Lens or scan for QR / barcodes using Petal Scanner.</string>
-    <string name="ui_search_with_google_lens">Search with Google Lens</string>
     <string name="ui_scan_with_petal_qr">Scan QR / Barcode</string>
-    <string name="ui_no_qr_found_lens_prompt">No QR code found. Search with Google Lens?</string>
     <string name="ui_remember_choice">Remember choice</string>
     <string name="ui_show_search_suggestions">Show search suggestions</string>
     <string name="ui_show_search_suggestions_summary">Show search suggestions as you type in the address bar</string>
