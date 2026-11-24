@@ -45,6 +45,7 @@ open class HistoryBookmarkRepository(context: Context?) {
         val ctx = context ?: com.petal.browser.PetalApplication.instance
         if (ctx != null) {
             PetalPlacesProvider.addBookmark(ctx, record)
+            com.petal.browser.ui.components.BookmarkChanges.notifyChanged()
             try {
                 com.petal.browser.account.progress.PetalProgressStore.bump(
                     ctx,
@@ -85,6 +86,7 @@ open class HistoryBookmarkRepository(context: Context?) {
         val ctx = context ?: com.petal.browser.PetalApplication.instance
         if (ctx != null && !url.isNullOrBlank()) {
             PetalPlacesProvider.deleteBookmark(ctx, url)
+            com.petal.browser.ui.components.BookmarkChanges.notifyChanged()
         }
     }
 
@@ -262,6 +264,7 @@ open class HistoryBookmarkRepository(context: Context?) {
         val ctx = context ?: com.petal.browser.PetalApplication.instance
         if (table == HistoryBookmarkContract.TABLE_BOOKMARK && ctx != null) {
             PetalPlacesProvider.deleteBookmark(ctx, domain)
+            com.petal.browser.ui.components.BookmarkChanges.notifyChanged()
             return
         }
         if (table == HistoryBookmarkContract.TABLE_HISTORY && ctx != null) {
@@ -291,6 +294,7 @@ open class HistoryBookmarkRepository(context: Context?) {
         val ctx = context ?: com.petal.browser.PetalApplication.instance
         if (table == HistoryBookmarkContract.TABLE_BOOKMARK && ctx != null) {
             PetalPlacesProvider.clearBookmarks(ctx)
+            com.petal.browser.ui.components.BookmarkChanges.notifyChanged()
             return
         }
         if (table == HistoryBookmarkContract.TABLE_HISTORY && ctx != null) {

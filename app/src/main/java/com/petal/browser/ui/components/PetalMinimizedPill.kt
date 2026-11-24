@@ -14,6 +14,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -22,6 +25,7 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -64,9 +68,7 @@ fun PetalMinimizedPill(
     val resolvedGlassBar = glassBar ?: rememberGlassBar(if (isGlass) glassSource else null)
     val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh
 
-    val rawStatusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val isImmersive = rawStatusTop == 0.dp
-    val statusBarTopInset = if (isImmersive) 0.dp else WindowInsets.statusBars.union(WindowInsets.displayCutout)
+    val statusBarTopInset = WindowInsets.statusBars.union(WindowInsets.displayCutout)
         .asPaddingValues().calculateTopPadding()
     val navBarBottomInset = WindowInsets.navigationBars
         .asPaddingValues().calculateBottomPadding()
@@ -77,6 +79,7 @@ fun PetalMinimizedPill(
         else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
+    val currentOnExpand by rememberUpdatedState(onExpand)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val pressScale by animateFloatAsState(
@@ -91,11 +94,42 @@ fun PetalMinimizedPill(
             .padding(
                 start = 16.dp,
                 end = 16.dp,
-                top = if (!isBottom) (if (isImmersive) 10.dp else statusBarTopInset + 6.dp) else 4.dp,
+                top = if (!isBottom) statusBarTopInset + 6.dp else 4.dp,
                 bottom = if (isBottom) navBarBottomInset + 8.dp else 4.dp
             ),
         contentAlignment = Alignment.Center
     ) {
+        // 48dp touch target around the 40dp visual pill.
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .height(48.dp)
+                .wrapContentWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .pointerInput(Unit) {
+                    var dragAccum = 0f
+                    detectVerticalDragGestures(
+                        onDragStart = { dragAccum = 0f },
+                        onDragEnd = {
+                            if (Math.abs(dragAccum) > 10.dp.toPx()) {
+                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
+                                currentOnExpand()
+                            }
+                            dragAccum = 0f
+                        },
+                        onDragCancel = { dragAccum = 0f },
+                        onVerticalDrag = { _, dragAmount ->
+                            dragAccum += dragAmount
+                        }
+                    )
+                }
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = ripple(bounded = true)
+                ) {
+                    currentOnExpand()
+                }
+        ) {
         Surface(
             shape = pillShape,
             color = containerColor,
@@ -114,29 +148,6 @@ fun PetalMinimizedPill(
                     } else Modifier
                 )
                 .clip(pillShape)
-                .pointerInput(Unit) {
-                    var dragAccum = 0f
-                    detectVerticalDragGestures(
-                        onDragStart = { dragAccum = 0f },
-                        onDragEnd = {
-                            if (Math.abs(dragAccum) > 10.dp.toPx()) {
-                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
-                                onExpand()
-                            }
-                            dragAccum = 0f
-                        },
-                        onDragCancel = { dragAccum = 0f },
-                        onVerticalDrag = { _, dragAmount ->
-                            dragAccum += dragAmount
-                        }
-                    )
-                }
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = ripple(bounded = true)
-                ) {
-                    onExpand()
-                }
         ) {
             Row(
                 modifier = Modifier
@@ -145,20 +156,33 @@ fun PetalMinimizedPill(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Security / Incognito Icon
-                Icon(
-                    imageVector = when {
-                        isIncognito -> Icons.Rounded.VisibilityOff
-                        isHttps -> Icons.Rounded.Lock
-                        else -> Icons.Rounded.Lock
-                    },
-                    contentDescription = if (isHttps) "Secure connection" else "Not secure",
-                    tint = if (isHttps && !isIncognito) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(15.dp)
-                )
+                // Lock only for HTTPS. HTTP gets an open lock in the error colour so it is never
+                // mistaken for a secure page.
+                val showSecurity = domain.isNotBlank()
+                if (isIncognito || showSecurity) {
+                    Icon(
+                        imageVector = when {
+                            isIncognito -> Icons.Rounded.VisibilityOff
+                            isHttps -> Icons.Rounded.Lock
+                            else -> Icons.Rounded.LockOpen
+                        },
+                        contentDescription = when {
+                            isIncognito -> null
+                            isHttps -> stringResource(R.string.bar_secure_connection)
+                            else -> stringResource(R.string.bar_not_secure)
+                        },
+                        tint = when {
+                            isIncognito -> MaterialTheme.colorScheme.onSurface
+                            isHttps -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.error
+                        },
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
 
                 // Domain Label
                 Text(
-                    text = domain.ifBlank { "Search or type URL" },
+                    text = domain.ifBlank { stringResource(R.string.bar_search_or_type_url) },
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -177,11 +201,12 @@ fun PetalMinimizedPill(
                 // Expand indicator matching bar position
                 Icon(
                     imageVector = if (isBottom) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = "Expand toolbar",
+                    contentDescription = stringResource(R.string.bar_expand_toolbar),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                     modifier = Modifier.size(16.dp)
                 )
             }
+        }
         }
     }
 }

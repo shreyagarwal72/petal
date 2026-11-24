@@ -3,6 +3,9 @@ package com.petal.browser.ui.components
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.preference.PreferenceManager
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
@@ -15,10 +18,14 @@ import java.util.concurrent.ConcurrentHashMap
 object PetalActiveMediaSensors {
     private val activeSensors = ConcurrentHashMap<String, MutableSet<PetalPermissionType>>()
 
+    /** Bumped on every change so Compose callers of [hasAnyActive] recompose when sensors start/stop. */
+    private var version by mutableIntStateOf(0)
+
     @JvmStatic
     fun setRecording(origin: String, type: PetalPermissionType, isRecording: Boolean) {
         val set = activeSensors.getOrPut(origin) { Collections.newSetFromMap(ConcurrentHashMap()) }
         if (isRecording) set.add(type) else set.remove(type)
+        version++
     }
 
     @JvmStatic
@@ -28,17 +35,20 @@ object PetalActiveMediaSensors {
 
     @JvmStatic
     fun hasAnyActive(origin: String): Boolean {
+        @Suppress("UNUSED_VARIABLE") val observed = version // registers a snapshot read
         return !activeSensors[origin].isNullOrEmpty()
     }
 
     @JvmStatic
     fun clearOrigin(origin: String) {
         activeSensors.remove(origin)
+        version++
     }
 
     @JvmStatic
     fun clearAll() {
         activeSensors.clear()
+        version++
     }
 }
 

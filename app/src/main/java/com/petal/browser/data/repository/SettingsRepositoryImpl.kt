@@ -422,7 +422,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override val addressBarHeight: Flow<String> = preferenceFlow("sp_address_bar_height") {
-        sp.getString("sp_address_bar_height", "COMPACT") ?: "COMPACT"
+        com.petal.browser.ui.components.AddressBarHeight.fromPref(sp.getString("sp_address_bar_height", null)).pref
     }
 
     override val addressBarAction: Flow<String> = preferenceFlow("sp_address_bar_action") {

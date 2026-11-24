@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
@@ -52,6 +53,9 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,7 +69,8 @@ import com.petal.browser.ui.glass.navIconMotion
 import kotlin.math.roundToInt
 import androidx.compose.material3.Icon
 
-private val PixelNavOrder = listOf(PetalNavTab.HOME, PetalNavTab.AI, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
+private val PixelNavOrderWithAi = listOf(PetalNavTab.HOME, PetalNavTab.AI, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
+private val PixelNavOrderNoAi = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
 
 /**
  * Material 3 Expressive floating nav pill in PixelMusic's style (used when liquid glass is off).
@@ -88,8 +93,12 @@ internal fun PetalPixelNavPill(
     onSwipeTabLeft: () -> Unit,
     onSwipeTabRight: () -> Unit,
     modifier: Modifier = Modifier,
+    onHistoryClick: () -> Unit = {},
+    onBookmarksClick: () -> Unit = {},
+    includeAi: Boolean = true,
 ) {
     val scheme = MaterialTheme.colorScheme
+    val PixelNavOrder = if (includeAi) PixelNavOrderWithAi else PixelNavOrderNoAi
 
     // Swiping along the pill switches tabs; the pill follows the finger with resistance.
     var dragAccumulator by remember { mutableFloatStateOf(0f) }
@@ -100,6 +109,10 @@ internal fun PetalPixelNavPill(
         animationSpec = if (isDragging) snap() else PetalSpring.calm(),
         label = "pixel_nav_rubber_band"
     )
+
+    // Read through updated state so the long-lived pointerInput never calls a stale lambda.
+    val currentSwipeLeft by androidx.compose.runtime.rememberUpdatedState(onSwipeTabLeft)
+    val currentSwipeRight by androidx.compose.runtime.rememberUpdatedState(onSwipeTabRight)
 
     Surface(
         shape = RoundedCornerShape(32.dp),
@@ -114,8 +127,10 @@ internal fun PetalPixelNavPill(
                     onDragStart = { isDragging = true },
                     onDragEnd = {
                         isDragging = false
-                        if (dragAccumulator > 70f) onSwipeTabLeft()
-                        else if (dragAccumulator < -70f) onSwipeTabRight()
+                        // 90dp like AddressPill, so the threshold is the same distance on every density.
+                        val threshold = 90.dp.toPx()
+                        if (dragAccumulator > threshold) currentSwipeLeft()
+                        else if (dragAccumulator < -threshold) currentSwipeRight()
                         dragAccumulator = 0f
                     },
                     onDragCancel = {
@@ -137,7 +152,7 @@ internal fun PetalPixelNavPill(
             val labelMaxPx = with(LocalDensity.current) {
                 (maxWidth - minUnselectedWidth - selectedFixedParts).coerceIn(54.dp, 120.dp).roundToPx()
             }
-            val weights = remember { TabWeights(PixelNavOrder, selectedTab) }
+            val weights = remember(PixelNavOrder) { TabWeights(PixelNavOrder, selectedTab) }
             LaunchedEffect(selectedTab) { weights.animateTo(selectedTab) }
             // Item positions in the root, and the row's own origin, so the capsule can be drawn
             // behind the row at the blend of the item positions.
@@ -181,11 +196,18 @@ internal fun PetalPixelNavPill(
                     val selected = selectedTab == tab
                     val weight = { weights[tab].coerceIn(0f, 1f) }
                     val label = when (tab) {
-                        PetalNavTab.HOME -> "Home"
-                        PetalNavTab.AI -> "AI"
-                        PetalNavTab.NEW_TAB -> "New"
-                        PetalNavTab.TABS -> "Tabs"
-                        else -> "Menu"
+                        PetalNavTab.HOME -> stringResource(R.string.bar_home)
+                        PetalNavTab.AI -> stringResource(R.string.bar_ai)
+                        PetalNavTab.NEW_TAB -> stringResource(R.string.bar_new)
+                        PetalNavTab.TABS -> stringResource(R.string.bar_tabs)
+                        else -> stringResource(R.string.bar_menu)
+                    }
+                    val contentLabel = if (tab == PetalNavTab.TABS) stringResource(R.string.bar_tabs_count, tabCount) else label
+                    val onLongClick: (() -> Unit)? = when (tab) {
+                        PetalNavTab.HOME -> onHistoryClick
+                        PetalNavTab.NEW_TAB, PetalNavTab.TABS -> onNewTabClick
+                        PetalNavTab.MENU -> onBookmarksClick
+                        else -> null
                     }
                     val onClick = when (tab) {
                         PetalNavTab.HOME -> onHomeClick
@@ -207,12 +229,25 @@ internal fun PetalPixelNavPill(
                                 val p = it.positionInRoot()
                                 itemBounds[tab] = Rect(p.x, p.y, p.x + it.size.width, p.y + it.size.height)
                             }
-                            .bouncyClickable(scaleDown = 0.90f, onClick = onClick)
+                            .bouncyClickable(
+                                scaleDown = 0.90f,
+                                role = androidx.compose.ui.semantics.Role.Tab,
+                                onLongClick = onLongClick,
+                                onClick = onClick
+                            )
                             .clip(RoundedCornerShape(26.dp))
-                            .semantics { contentDescription = label }
+                            // One announcement per item (label / tab count, selected, Tab role); icons are silent.
+                            .semantics(mergeDescendants = true) {
+                                contentDescription = contentLabel
+                                this.selected = selected
+                                if (tab == PetalNavTab.TABS) liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
+                            }
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = padH, vertical = 12.dp),
+                            modifier = Modifier
+                                .widthIn(min = 48.dp) // 48dp touch target; the capsule visual is unchanged
+                                .padding(horizontal = padH, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
@@ -293,29 +328,18 @@ internal fun PetalGhostSearchButton(
     size: Dp = 64.dp
 ) {
     val scheme = MaterialTheme.colorScheme
-    val enter = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        delay(140L)
-        enter.animateTo(1f, PetalSpring.quick())
-    }
-
+    val searchLabel = stringResource(R.string.bar_search)
     Surface(
         shape = ExpressiveButtonShape,
         color = scheme.primaryContainer,
         contentColor = scheme.onPrimaryContainer,
         shadowElevation = 0.dp,
         modifier = modifier
-            .graphicsLayer {
-                val s = enter.value.coerceAtLeast(0f)
-                scaleX = s
-                scaleY = s
-                alpha = enter.value.coerceIn(0f, 1f)
-            }
             .size(size)
             .shadow(6.dp, ExpressiveButtonShape.shadowShape, clip = false)
             .clip(ExpressiveButtonShape)
-            .bouncyClickable(scaleDown = 0.86f, onClick = onClick)
-            .semantics { contentDescription = "Search" }
+            .bouncyClickable(scaleDown = 0.86f, role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+            .semantics { contentDescription = searchLabel }
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(

@@ -87,8 +87,8 @@ fun PetalFindInPageBar(
     // height, shape, insets and glass (same live glass that samples the page).
     val context = LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val isBottom = "BOTTOM".equals(sp.getString("sp_address_bar_position", "TOP"), ignoreCase = true)
-    val isCompact = "COMPACT".equals(sp.getString("sp_address_bar_height", "COMPACT"), ignoreCase = true)
+    val isBottom = com.petal.browser.ui.components.AddressBarPosition.fromPref(sp.getString("sp_address_bar_position", null)) == com.petal.browser.ui.components.AddressBarPosition.BOTTOM
+    val isCompact = com.petal.browser.ui.components.AddressBarHeight.fromPref(sp.getString("sp_address_bar_height", null)) == com.petal.browser.ui.components.AddressBarHeight.COMPACT
 
     LocalPetalGlassRevision.current
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar")

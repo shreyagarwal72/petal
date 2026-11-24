@@ -65,7 +65,7 @@ fun AddressBarSettingsScreen(
     val haptics = remember { PetalHapticEngine.getInstance(context) }
     var showPositionExplainer by remember { mutableStateOf(false) }
 
-    val isMerge = BarPrefs.STYLE_MERGE.equals(style, ignoreCase = true)
+    val isMerge = style == AddressBarStyle.MERGE
 
     val leadingActions = remember(mergeLeadingRaw) {
         BarAction.parseActionList(mergeLeadingRaw)
@@ -167,7 +167,7 @@ fun AddressBarSettingsScreen(
                                 onSwipeNextTab = {},
                                 onSwipePrevTab = {},
                                 isReaderEligible = true,
-                                isBottom = "BOTTOM".equals(position, ignoreCase = true),
+                                isBottom = position == AddressBarPosition.BOTTOM,
                                 isPreview = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -187,7 +187,7 @@ fun AddressBarSettingsScreen(
                                 onSwipeNextTab = {},
                                 onSwipePrevTab = {},
                                 isReaderEligible = true,
-                                isBottom = "BOTTOM".equals(position, ignoreCase = true),
+                                isBottom = position == AddressBarPosition.BOTTOM,
                                 isPreview = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -209,16 +209,12 @@ fun AddressBarSettingsScreen(
                     Spacer(Modifier.height(6.dp))
                     PetalChoiceButtonGroup(
                         options = listOf(
-                            PetalButtonGroupItem(BarPrefs.STYLE_CLASSIC, "Classic (Split)"),
-                            PetalButtonGroupItem(BarPrefs.STYLE_MERGE, "Merge (Unified)")
+                            PetalButtonGroupItem(AddressBarStyle.CLASSIC.pref, "Classic (Split)"),
+                            PetalButtonGroupItem(AddressBarStyle.MERGE.pref, "Merge (Unified)")
                         ),
-                        selected = if (isMerge) BarPrefs.STYLE_MERGE else BarPrefs.STYLE_CLASSIC,
+                        selected = style.pref,
                         onSelect = { selectedStyle ->
-                            viewModel.setStyle(selectedStyle)
-                            (context as? MainActivity)?.let { act ->
-                                act.applyAddressBarPosition()
-                                act.updatePersistentBottomNav()
-                            }
+                            viewModel.setStyle(AddressBarStyle.fromPref(selectedStyle))
                         }
                     )
                 }
@@ -235,14 +231,12 @@ fun AddressBarSettingsScreen(
                     Spacer(Modifier.height(6.dp))
                     PetalChoiceButtonGroup(
                         options = listOf(
-                            PetalButtonGroupItem("TOP", "Top Bar"),
-                            PetalButtonGroupItem("BOTTOM", "Bottom Bar"),
+                            PetalButtonGroupItem(AddressBarPosition.TOP.pref, "Top Bar"),
+                            PetalButtonGroupItem(AddressBarPosition.BOTTOM.pref, "Bottom Bar"),
                         ),
-                        selected = if (position.equals("TOP", ignoreCase = true)) "TOP" else "BOTTOM",
+                        selected = position.pref,
                         onSelect = { selectedPos ->
-                            viewModel.setPosition(selectedPos)
-                            (context as? MainActivity)?.applyAddressBarPosition()
-                            (context as? MainActivity)?.window?.decorView?.post { (context as? MainActivity)?.applyAddressBarPosition() }
+                            viewModel.setPosition(AddressBarPosition.fromPref(selectedPos))
                         }
                     )
                 }
@@ -262,13 +256,12 @@ fun AddressBarSettingsScreen(
                         Spacer(Modifier.height(6.dp))
                         PetalChoiceButtonGroup(
                             options = listOf(
-                                PetalButtonGroupItem(BarPrefs.LAYOUT_SINGLE, "Single Row"),
-                                PetalButtonGroupItem(BarPrefs.LAYOUT_STACKED, "Stacked (2-Row)")
+                                PetalButtonGroupItem(MergeLayout.SINGLE.pref, "Single Row"),
+                                PetalButtonGroupItem(MergeLayout.STACKED.pref, "Stacked (2-Row)")
                             ),
-                            selected = if (BarPrefs.LAYOUT_STACKED.equals(mergeLayout, ignoreCase = true)) BarPrefs.LAYOUT_STACKED else BarPrefs.LAYOUT_SINGLE,
+                            selected = mergeLayout.pref,
                             onSelect = { selectedLayout ->
-                                viewModel.setMergeLayout(selectedLayout)
-                                (context as? MainActivity)?.applyAddressBarPosition()
+                                viewModel.setMergeLayout(MergeLayout.fromPref(selectedLayout))
                             }
                         )
                     }
@@ -509,13 +502,12 @@ fun AddressBarSettingsScreen(
                         Spacer(Modifier.height(4.dp))
                         PetalChoiceButtonGroup(
                             options = listOf(
-                                PetalButtonGroupItem(BarPrefs.COLLAPSE_PILL, "Pill (Domain Chip)"),
-                                PetalButtonGroupItem(BarPrefs.COLLAPSE_HIDE, "Hide (Full Slide)")
+                                PetalButtonGroupItem(BarCollapseStyle.PILL.pref, "Pill (Domain Chip)"),
+                                PetalButtonGroupItem(BarCollapseStyle.HIDE.pref, "Hide (Full Slide)")
                             ),
-                            selected = if (BarPrefs.COLLAPSE_HIDE.equals(collapseStyle, ignoreCase = true)) BarPrefs.COLLAPSE_HIDE else BarPrefs.COLLAPSE_PILL,
+                            selected = collapseStyle.pref,
                             onSelect = { selectedStyle ->
-                                viewModel.setCollapseStyle(selectedStyle)
-                                (context as? MainActivity)?.applyAddressBarPosition()
+                                viewModel.setCollapseStyle(BarCollapseStyle.fromPref(selectedStyle))
                             }
                         )
                     }
@@ -807,7 +799,7 @@ private fun ActionsEditorList(
                     }
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        text = action.label,
+                        text = action.localizedLabel(),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,

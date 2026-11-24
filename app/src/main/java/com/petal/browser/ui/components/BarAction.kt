@@ -3,6 +3,9 @@ package com.petal.browser.ui.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 
 /**
  * Registry of user-customizable toolbar button actions for the Petal Merge Bar.
@@ -147,6 +150,28 @@ enum class BarAction(
         supportsLongPress = true
     );
 
+    /** Localized label; the English [label] above is only the fallback for non-Compose callers. */
+    @get:androidx.annotation.StringRes
+    val labelRes: Int
+        get() = when (this) {
+            AI -> R.string.bar_ai
+            TABS -> R.string.bar_tabs
+            NEW_TAB -> R.string.bar_new_tab
+            HOME -> R.string.bar_home
+            SEARCH -> R.string.bar_search
+            BACK -> R.string.bar_back
+            FORWARD -> R.string.bar_forward
+            RELOAD -> R.string.bar_reload
+            SHARE -> R.string.bar_share
+            BOOKMARK -> R.string.bar_bookmark
+            AI_RESEARCH -> R.string.bar_ai_research
+            READER -> R.string.bar_reader_view
+            DOWNLOADS -> R.string.bar_downloads
+            FIND_IN_PAGE -> R.string.bar_find_in_page
+            HISTORY -> R.string.bar_history
+            MENU -> R.string.bar_menu
+        }
+
     companion object {
         fun fromId(rawId: String?): BarAction? {
             if (rawId.isNullOrBlank()) return null
@@ -180,3 +205,6 @@ enum class BarAction(
         }
     }
 }
+
+@Composable
+fun BarAction.localizedLabel(): String = stringResource(labelRes)

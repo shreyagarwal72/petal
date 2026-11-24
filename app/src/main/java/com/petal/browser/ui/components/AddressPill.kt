@@ -45,6 +45,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.material3.minimumInteractiveComponentSize
+import kotlinx.coroutines.launch
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -91,6 +95,8 @@ fun AddressPill(
     onMediaClick: () -> Unit = {},
     onSwipeNextTab: () -> Unit = {},
     onSwipePrevTab: () -> Unit = {},
+    /** Swipe up on the bar opens the tab switcher. */
+    onSwipeUp: () -> Unit = {},
     onPasteAndGo: (String) -> Unit = {},
     onHardRefresh: () -> Unit = {},
     isReaderEligible: Boolean = false,
@@ -101,38 +107,15 @@ fun AddressPill(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    var isSwipeTabsEnabled by remember { mutableStateOf(sp.getBoolean("sp_address_bar_swipe_tabs", true)) }
-    var isQuickActionsEnabled by remember { mutableStateOf(sp.getBoolean("sp_address_bar_quick_actions", true)) }
-    var addressBarHeight by remember { mutableStateOf(sp.getString("sp_address_bar_height", "COMPACT") ?: "COMPACT") }
-    var addressBarAction by remember { mutableStateOf(sp.getString("sp_address_bar_action", if (sp.getBoolean("sp_ai_search_address_bar", true)) "AI" else "NONE") ?: "AI") }
-
-    DisposableEffect(sp) {
-        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            when (key) {
-                "sp_address_bar_swipe_tabs" -> isSwipeTabsEnabled = sp.getBoolean("sp_address_bar_swipe_tabs", true)
-                "sp_address_bar_quick_actions" -> isQuickActionsEnabled = sp.getBoolean("sp_address_bar_quick_actions", true)
-                "sp_address_bar_height" -> addressBarHeight = sp.getString("sp_address_bar_height", "COMPACT") ?: "COMPACT"
-                "sp_address_bar_action" -> addressBarAction = sp.getString("sp_address_bar_action", if (sp.getBoolean("sp_ai_search_address_bar", true)) "AI" else "NONE") ?: "AI"
-            }
-        }
-        sp.registerOnSharedPreferenceChangeListener(listener)
-        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
+    val settings = rememberBarSettings()
+    val isSwipeTabsEnabled = settings.swipeTabs
+    val isQuickActionsEnabled = settings.quickActions
+    val addressBarAction = settings.contextAction
 
     var showQuickActionsMenu by remember { mutableStateOf(false) }
 
     // Media sniffer button pref & stream availability
-    var isMediaButtonPrefEnabled by remember { mutableStateOf(sp.getBoolean("sp_media_button_address_bar", true)) }
-    DisposableEffect(sp) {
-        val l = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, k ->
-            if (k == "sp_media_button_address_bar") {
-                isMediaButtonPrefEnabled = prefs.getBoolean("sp_media_button_address_bar", true)
-            }
-        }
-        sp.registerOnSharedPreferenceChangeListener(l)
-        onDispose { sp.unregisterOnSharedPreferenceChangeListener(l) }
-    }
+    val isMediaButtonPrefEnabled = settings.mediaButton
     val hasPlayableMedia by PetalMediaSniffer.interceptor.hasPlayableMedia.collectAsStateWithLifecycle()
     val nativeResources by PetalNativeSnifferEngine.currentTabResources.collectAsStateWithLifecycle()
     val capturedMedia by com.petal.browser.media.sniffer.PetalMediaCaptureStore.currentTabMedia.collectAsStateWithLifecycle()
@@ -141,38 +124,42 @@ fun AddressPill(
     val isBlankOrSearch = url.isEmpty() || url == "about:blank" || url.startsWith("file:///android_asset/")
     val showMediaButton = isMediaButtonPrefEnabled && (totalMediaCount > 0 || hasPlayableMedia || com.petal.browser.media.ytdlp.YtDlpSites.isLikelySupported(url)) && !isBlankOrSearch
 
-    val isHttps = url.startsWith("https://")
-    val isHttp = url.startsWith("http://")
+    val urlParts = remember(url) { if (isBlankOrSearch) null else UrlDisplay.parse(url) }
+    val isHttps = urlParts?.isHttps == true
+    val isHttp = urlParts?.isHttp == true
+    val isPunycode = urlParts?.isPunycode == true
 
-    val formattedUrl: AnnotatedString = if (isBlankOrSearch) {
+    val searchHint = stringResource(R.string.bar_search_or_type_url)
+    val colors = MaterialTheme.colorScheme
+    val formattedUrl: AnnotatedString = if (urlParts == null) {
         buildAnnotatedString {
-            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Normal)) {
-                append("Search or type URL")
+            withStyle(SpanStyle(color = colors.onSurfaceVariant, fontWeight = FontWeight.Normal)) {
+                append(searchHint)
             }
         }
     } else {
-        val cleanUrl = when {
-            isHttps -> url.substring(8)
-            isHttp -> url.substring(7)
-            else -> url
-        }
-        val slashIndex = cleanUrl.indexOf('/')
-        val domain = if (slashIndex != -1) cleanUrl.substring(0, slashIndex) else cleanUrl
-        val path = if (slashIndex != -1) cleanUrl.substring(slashIndex) else ""
-
+        val muted = SpanStyle(color = colors.onSurfaceVariant.copy(alpha = 0.7f), fontWeight = FontWeight.Normal)
         buildAnnotatedString {
-            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)) {
-                append(domain)
-            }
-            if (path.isNotEmpty()) {
-                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), fontWeight = FontWeight.Normal)) {
-                    append(path)
-                }
-            }
+            // Text before an '@' is login info, never the domain: keep it muted.
+            if (urlParts.userInfo.isNotEmpty()) withStyle(muted) { append(urlParts.userInfo) }
+            // Only the real host is bold. Punycode hosts stay in their raw xn-- form and are tinted.
+            withStyle(
+                SpanStyle(
+                    color = if (isPunycode) colors.error else colors.onSurface,
+                    fontWeight = FontWeight.SemiBold
+                )
+            ) { append(urlParts.host) }
+            if (urlParts.rest.isNotEmpty()) withStyle(muted) { append(urlParts.rest) }
         }
     }
 
     var dragAccumulator by remember { mutableFloatStateOf(0f) }
+    // Gesture lambdas are read through updated state so pointerInput never captures a stale one.
+    val currentSwipePrev by rememberUpdatedState(onSwipePrevTab)
+    val currentSwipeNext by rememberUpdatedState(onSwipeNextTab)
+    val currentSwipeUp by rememberUpdatedState(onSwipeUp)
+    var verticalAccumulator by remember { mutableFloatStateOf(0f) }
+    val currentAddressClick by rememberUpdatedState(onAddressClick)
 
     // Where this pill is on screen, so the omnibox page can grow out of it / collapse back into it.
     // Plain array (not state) so layout changes while the bar collapses never trigger recomposition.
@@ -194,24 +181,27 @@ fun AddressPill(
     }
 
     val isDarkLuma = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val glassBorderBrush = if (isLiquidGlass && (inMergedBar || isBottom)) {
-        Brush.verticalGradient(
-            listOf(
-                Color.White.copy(alpha = if (isDarkLuma) 0.35f else 0.55f),
-                Color.White.copy(alpha = if (isDarkLuma) 0.08f else 0.15f)
-            )
-        )
-    } else null
 
     Box(
         modifier = modifier
             .onGloballyPositioned { pillBounds[0] = it.boundsInWindow() }
             .clip(urlBoxShape)
-            .then(
-                if (glassBorderBrush != null) Modifier.border(1.dp, glassBorderBrush, urlBoxShape)
-                else Modifier
-            )
             .background(urlBoxBackground)
+            .pointerInput(Unit) {
+                // Swipe up (at least 48dp, mostly vertical) opens the tab switcher.
+                androidx.compose.foundation.gestures.detectVerticalDragGestures(
+                    onDragStart = { verticalAccumulator = 0f },
+                    onDragEnd = {
+                        if (verticalAccumulator < -48.dp.toPx()) {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
+                            currentSwipeUp()
+                        }
+                        verticalAccumulator = 0f
+                    },
+                    onDragCancel = { verticalAccumulator = 0f },
+                    onVerticalDrag = { _, dragAmount -> verticalAccumulator += dragAmount }
+                )
+            }
             .pointerInput(isSwipeTabsEnabled) {
                 if (!isSwipeTabsEnabled) return@pointerInput
                 detectHorizontalDragGestures(
@@ -220,10 +210,10 @@ fun AddressPill(
                         val threshold = 90.dp.toPx()
                         if (dragAccumulator > threshold) {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
-                            onSwipePrevTab()
+                            currentSwipePrev()
                         } else if (dragAccumulator < -threshold) {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
-                            onSwipeNextTab()
+                            currentSwipeNext()
                         }
                         dragAccumulator = 0f
                     },
@@ -234,14 +224,14 @@ fun AddressPill(
                 )
             }
             .combinedClickable(
-                onClick = { markOrigin(); onAddressClick() },
+                onClick = { markOrigin(); currentAddressClick() },
                 onLongClick = {
                     if (isQuickActionsEnabled && !isBlankOrSearch) {
                         com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
                         showQuickActionsMenu = true
                     } else {
                         markOrigin()
-                        onAddressClick()
+                        currentAddressClick()
                     }
                 }
             )
@@ -253,24 +243,25 @@ fun AddressPill(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Security / Privacy Shield Favicon Button
+                // Favicon button: tap opens the privacy shield. It no longer carries the security
+                // state; that has its own always-visible indicator right after it.
+                val faviconDesc = stringResource(R.string.bar_privacy_shield)
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(48.dp) // 48dp touch target; the icon stays 22dp
                         .clip(ExpressiveButtonShape)
                         .clickable(
                             indication = ripple(bounded = true),
-                            interactionSource = remember { MutableInteractionSource() }
+                            interactionSource = remember { MutableInteractionSource() },
+                            onClickLabel = faviconDesc
                         ) {
                             val act = context as? ComponentActivity
                             if (!isBlankOrSearch && act != null) {
-                                try {
-                                } catch (_: Throwable) {}
                                 PetalPrivacyShieldSheet.show(act, url) {}
                             } else {
                                 markOrigin()
-                                onAddressClick()
+                                currentAddressClick()
                             }
                         }
                 ) {
@@ -284,43 +275,43 @@ fun AddressPill(
                     if (hasFavicon && fav != null) {
                         Image(
                             bitmap = fav.asImageBitmap(),
-                            contentDescription = "Favicon",
+                            contentDescription = stringResource(R.string.bar_site_icon),
                             modifier = Modifier.size(22.dp).clip(ExpressiveButtonShape)
                         )
                     } else {
                         Icon(
-                            imageVector = if (isIncognito) {
-                                Icons.Rounded.VisibilityOff
-                            } else if (isHttps) {
-                                Icons.Rounded.Lock
-                            } else {
-                                Icons.Rounded.Language
-                            },
-                            contentDescription = "Privacy Shield",
-                            tint = if (isHttps && !isIncognito) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            imageVector = if (isIncognito) Icons.Rounded.VisibilityOff else Icons.Rounded.Language,
+                            contentDescription = faviconDesc,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(19.dp)
                         )
                     }
                 }
                 }
 
-                val hasActiveSensors = remember(url) {
-                    try {
-                        val host = Uri.parse(url).host ?: url
-                        val origin = "https://$host"
-                        PetalActiveMediaSensors.hasAnyActive(origin) || PetalActiveMediaSensors.hasAnyActive(url)
-                    } catch (_: Exception) {
-                        false
-                    }
+                // Always-visible security indicator: lock for HTTPS, "Not secure" for HTTP.
+                if (isHttps || isHttp) {
+                    Spacer(modifier = Modifier.width(2.dp))
+                    SecurityIndicator(isHttps = isHttps, isPunycode = isPunycode)
+                }
+
+                // Camera / microphone in use. Reads observable state, so it appears and disappears live.
+                val hasActiveSensors = try {
+                    val host = Uri.parse(url).host ?: url
+                    PetalActiveMediaSensors.hasAnyActive("https://$host") || PetalActiveMediaSensors.hasAnyActive(url)
+                } catch (_: Exception) {
+                    false
                 }
 
                 if (hasActiveSensors) {
                     Spacer(modifier = Modifier.width(3.dp))
+                    val sensorDesc = stringResource(R.string.bar_sensor_active)
                     Box(
                         modifier = Modifier
                             .size(7.dp)
                             .clip(ExpressiveButtonShape)
-                            .background(Color(0xFF00E676))
+                            .background(MaterialTheme.colorScheme.tertiary)
+                            .semantics { contentDescription = sensorDesc }
                     )
                 }
 
@@ -343,37 +334,23 @@ fun AddressPill(
                 }
 
                 if (showRightAction) {
-                    var isBookmarked by remember(url) {
-                        mutableStateOf(
-                            try {
-                                val action = HistoryBookmarkRepository(context)
-                                action.open(false)
-                                val result = action.checkBookmark(url)
-                                action.close()
-                                result
-                            } catch (_: Exception) { false }
-                        )
-                    }
+                    val isBookmarked by rememberIsBookmarked(url)
+                    val bookmarkScope = rememberCoroutineScope()
+                    val petalAiLabel = stringResource(R.string.bar_petal_ai)
                     IconButton(
                         onClick = {
                             if (addressBarAction.equals("AI", true)) {
                                 onAiResearchClick()
                             } else {
-                                try {
-                                    val action = HistoryBookmarkRepository(context)
-                                    action.open(true)
-                                    if (isBookmarked) {
-                                        action.deleteURL(url, HistoryBookmarkContract.TABLE_BOOKMARK)
-                                        isBookmarked = false
-                                        PetalToast.show(context, context.getString(R.string.ui_bookmark_removed))
-                                    } else {
-                                        action.addBookmark(Record(if (title.isNotBlank()) title else url, url, 0L, 0))
-                                        isBookmarked = true
-                                        PetalToast.show(context, context.getString(R.string.ui_saved_to_bookmarks))
+                                bookmarkScope.launch {
+                                    val was = isBookmarked
+                                    val now = BookmarkChanges.toggle(context, url, title, was)
+                                    if (now != null) {
+                                        PetalToast.show(
+                                            context,
+                                            context.getString(if (now) R.string.ui_saved_to_bookmarks else R.string.ui_bookmark_removed)
+                                        )
                                     }
-                                    action.close()
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
                                 }
                             }
                         },
@@ -381,7 +358,7 @@ fun AddressPill(
                     ) {
                         Icon(
                             imageVector = if (addressBarAction.equals("AI", true)) Icons.Rounded.AutoAwesome else if (isBookmarked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
-                            contentDescription = if (addressBarAction.equals("AI", true)) "Petal AI" else if (isBookmarked) stringResource(R.string.ui_remove_from_bookmarks) else stringResource(R.string.ui_bookmark_this_page),
+                            contentDescription = if (addressBarAction.equals("AI", true)) petalAiLabel else if (isBookmarked) stringResource(R.string.ui_remove_from_bookmarks) else stringResource(R.string.ui_bookmark_this_page),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -401,7 +378,7 @@ fun AddressPill(
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.MenuBook,
-                            contentDescription = "Reader View",
+                            contentDescription = stringResource(R.string.bar_reader_view),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -427,6 +404,7 @@ fun AddressPill(
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
                             modifier = Modifier
                                 .padding(end = 4.dp)
+                                .minimumInteractiveComponentSize() // 48dp touch target, same visual
                                 .clickable {
                                     onMediaClick()
                                 }
@@ -437,7 +415,7 @@ fun AddressPill(
                             ) {
                                 Icon(
                                     imageVector = icon,
-                                    contentDescription = "Media Grabber — $totalMediaCount found",
+                                    contentDescription = stringResource(R.string.bar_media_found, totalMediaCount),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -456,9 +434,7 @@ fun AddressPill(
             }
 
             // Material 3 Expressive integrated loading progress line
-            val isStackedMerged = inMergedBar && BarPrefs.isStackedLayout(
-                androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-            )
+            val isStackedMerged = inMergedBar && (settings.mergeLayout == MergeLayout.STACKED)
             if (!isStackedMerged && isLoading && progress > 0f && progress < 1f) {
                 Material3ExpressiveProgressIndicator(
                     progress = progress,
@@ -520,7 +496,7 @@ fun AddressPill(
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = if (title.isNotBlank()) title else "Address Bar Quick Actions",
+                                text = if (title.isNotBlank()) title else stringResource(R.string.bar_quick_actions_title),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -536,17 +512,8 @@ fun AddressPill(
                     }
                 }
 
-                var isBookmarked by remember {
-                    mutableStateOf(
-                        try {
-                            val action = HistoryBookmarkRepository(context)
-                            action.open(false)
-                            val res = action.checkBookmark(url)
-                            action.close()
-                            res
-                        } catch (e: Exception) { false }
-                    )
-                }
+                val isBookmarked by rememberIsBookmarked(url)
+                val sheetScope = rememberCoroutineScope()
 
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 val clipText = clipboard.primaryClip?.let {
@@ -574,7 +541,7 @@ fun AddressPill(
                         onClick = {
                             showQuickActionsMenu = false
                             val cleanUrl = sanitizeTrackingParameters(url)
-                            clipboard.setPrimaryClip(ClipData.newPlainText("Clean URL", cleanUrl))
+                            clipboard.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.bar_search_hint_clean_url), cleanUrl))
                             PetalToast.show(context, context.getString(R.string.ui_clean_url_copied))
                         }
                     )
@@ -604,22 +571,14 @@ fun AddressPill(
                         iconContainerColor = if (isBookmarked) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.tertiaryContainer,
                         iconTint = if (isBookmarked) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer,
                         onClick = {
-                            try {
-                                val action = HistoryBookmarkRepository(context)
-                                action.open(true)
-                                if (isBookmarked) {
-                                    action.deleteURL(url, HistoryBookmarkContract.TABLE_BOOKMARK)
-                                    isBookmarked = false
-                                    PetalToast.show(context, context.getString(R.string.ui_bookmark_removed))
-                                } else {
-                                    val r = Record(if (title.isNotBlank()) title else url, url, 0L, 0)
-                                    action.addBookmark(r)
-                                    isBookmarked = true
-                                    PetalToast.show(context, context.getString(R.string.ui_saved_to_bookmarks))
+                            sheetScope.launch {
+                                val now = BookmarkChanges.toggle(context, url, title, isBookmarked)
+                                if (now != null) {
+                                    PetalToast.show(
+                                        context,
+                                        context.getString(if (now) R.string.ui_saved_to_bookmarks else R.string.ui_bookmark_removed)
+                                    )
                                 }
-                                action.close()
-                            } catch (e: Exception) {
-                                e.printStackTrace()
                             }
                         }
                     )
@@ -628,8 +587,8 @@ fun AddressPill(
                 actions.add(
                     QuickActionItem(
                         icon = Icons.Rounded.Refresh,
-                        title = "Hard Refresh",
-                        subtitle = "Reload page completely bypassing cached resources",
+                        title = context.getString(R.string.bar_hard_refresh),
+                        subtitle = context.getString(R.string.bar_hard_refresh_desc),
                         iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
                         iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
                         onClick = {
@@ -642,8 +601,8 @@ fun AddressPill(
                 actions.add(
                     QuickActionItem(
                         icon = Icons.Rounded.Shield,
-                        title = "Shield HUD & Whitelist",
-                        subtitle = "Inspect blocked trackers, ads, and connection certificate",
+                        title = context.getString(R.string.bar_shield_hud),
+                        subtitle = context.getString(R.string.bar_shield_hud_desc),
                         iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                         iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
                         onClick = {
@@ -659,8 +618,8 @@ fun AddressPill(
                 actions.add(
                     QuickActionItem(
                         icon = Icons.Rounded.AutoAwesome,
-                        title = "Petal AI Assist",
-                        subtitle = "Summarize page, deep analysis, or ask questions with AI",
+                        title = context.getString(R.string.bar_ai_assist),
+                        subtitle = context.getString(R.string.bar_ai_assist_desc),
                         iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                         iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
                         onClick = {
@@ -734,6 +693,47 @@ fun AddressPill(
 
                 Spacer(modifier = Modifier.height(24.dp))
             }
+        }
+    }
+}
+
+/** Small lock (HTTPS) or "Not secure" label (HTTP). Punycode lookalike hosts add a warning glyph. */
+@Composable
+private fun SecurityIndicator(isHttps: Boolean, isPunycode: Boolean) {
+    val secureDesc = stringResource(R.string.bar_secure_connection)
+    val notSecure = stringResource(R.string.bar_not_secure)
+    val lookalike = stringResource(R.string.bar_lookalike_warning)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (isHttps) {
+            Icon(
+                imageVector = Icons.Rounded.Lock,
+                contentDescription = secureDesc,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(14.dp)
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Rounded.LockOpen,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(Modifier.width(3.dp))
+            Text(
+                text = notSecure,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.error,
+                maxLines = 1
+            )
+        }
+        if (isPunycode) {
+            Spacer(Modifier.width(3.dp))
+            Icon(
+                imageVector = Icons.Rounded.Warning,
+                contentDescription = lookalike,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(14.dp)
+            )
         }
     }
 }

@@ -55,27 +55,16 @@ internal fun PetalSearchGlassButton(
     val glassBar = rememberGlassBar(if (glassOn) glassSource else null)
     val glassActive = glassBar != null || themeGlass
 
-    // Pops in just after the pill, so the bar assembles left to right.
-    val enter = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        delay(140L)
-        enter.animateTo(1f, PetalSpring.bouncy())
-    }
+    val searchLabel = androidx.compose.ui.res.stringResource(R.string.bar_search)
 
     Box(
         modifier = modifier
-            .graphicsLayer {
-                val s = enter.value.coerceAtLeast(0f)
-                scaleX = s
-                scaleY = s
-                alpha = enter.value.coerceIn(0f, 1f)
-            }
             .size(size)
             .then(if (!glassActive) Modifier.shadow(12.dp, CircleShape, clip = false) else Modifier)
             .liquidGlass(CircleShape, scheme.surfaceContainerHigh, glassBar)
             .clip(CircleShape)
-            .bouncyClickable(scaleDown = 0.86f, onClick = onClick)
-            .semantics { contentDescription = "Search" },
+            .bouncyClickable(scaleDown = 0.86f, role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+            .semantics { contentDescription = searchLabel },
         contentAlignment = Alignment.Center
     ) {
         Icon(

@@ -19,6 +19,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -60,6 +63,7 @@ fun PetalMergedBar(
     onBackClick: () -> Unit,
     onForwardClick: () -> Unit = {},
     onReloadClick: () -> Unit = {},
+    onStopClick: () -> Unit = {},
     onShareClick: () -> Unit,
     onAddressClick: () -> Unit,
     onHomeClick: () -> Unit = {},
@@ -76,6 +80,7 @@ fun PetalMergedBar(
     onMediaClick: () -> Unit = {},
     onSwipeNextTab: () -> Unit = {},
     onSwipePrevTab: () -> Unit = {},
+    onSwipeUp: () -> Unit = {},
     onPasteAndGo: (String) -> Unit = {},
     onHardRefresh: () -> Unit = {},
     isReaderEligible: Boolean = false,
@@ -87,98 +92,62 @@ fun PetalMergedBar(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-    var mergeLayout by remember { mutableStateOf(sp.getString(BarPrefs.KEY_MERGE_LAYOUT, BarPrefs.LAYOUT_SINGLE) ?: BarPrefs.LAYOUT_SINGLE) }
-    var collapseStyle by remember { mutableStateOf(sp.getString(BarPrefs.KEY_BAR_COLLAPSE_STYLE, BarPrefs.COLLAPSE_PILL) ?: BarPrefs.COLLAPSE_PILL) }
-    var addressBarHeight by remember { mutableStateOf(sp.getString("sp_address_bar_height", "COMPACT") ?: "COMPACT") }
+    val settings = rememberBarSettings()
+    val mergeLayout = settings.mergeLayout
+    val (leadingActions, trailingActions) = settings.mergeActions
 
-    val (leadingActions, trailingActions) = remember(
-        sp.getString(BarPrefs.KEY_MERGE_LEADING, BarPrefs.DEFAULT_MERGE_LEADING),
-        sp.getString(BarPrefs.KEY_MERGE_TRAILING, BarPrefs.DEFAULT_MERGE_TRAILING)
-    ) {
-        BarPrefs.getSanitizedMergeActions(sp)
-    }
-
-    DisposableEffect(sp) {
-        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            when (key) {
-                BarPrefs.KEY_MERGE_LAYOUT -> mergeLayout = sp.getString(BarPrefs.KEY_MERGE_LAYOUT, BarPrefs.LAYOUT_SINGLE) ?: BarPrefs.LAYOUT_SINGLE
-                BarPrefs.KEY_BAR_COLLAPSE_STYLE -> collapseStyle = sp.getString(BarPrefs.KEY_BAR_COLLAPSE_STYLE, BarPrefs.COLLAPSE_PILL) ?: BarPrefs.COLLAPSE_PILL
-                "sp_address_bar_height" -> addressBarHeight = sp.getString("sp_address_bar_height", "COMPACT") ?: "COMPACT"
-            }
+    val chrome = rememberBarChrome(
+        isBottomParam = isBottom,
+        isPreview = isPreview,
+        isIncognito = isIncognito,
+        suppressStatusBarTopInset = suppressStatusBarTopInset,
+        floatingForShape = { bottom -> bottom && settings.floatingNav },
+        floatingForWallpaper = { bottom -> bottom && settings.floatingNav },
+        glassPref = { bottom ->
+            com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") ||
+                (bottom && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav"))
         }
-        sp.registerOnSharedPreferenceChangeListener(listener)
-        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
-
-    val resolvedIsBottom = if (isPreview) isBottom else (isBottom || "BOTTOM".equals(sp.getString("sp_address_bar_position", "TOP"), ignoreCase = true))
-    val isPillCollapse = if (isPreview) false else BarPrefs.COLLAPSE_PILL.equals(collapseStyle, ignoreCase = true)
-    val collapsedFraction = if (isPreview) 0f else BarCollapseState.collapsedFraction
-    val isFullyCollapsed = isPillCollapse && (collapsedFraction >= 0.95f || BarCollapseState.isCollapsed)
-
-    val isFloatingBar = resolvedIsBottom && sp.getBoolean("sp_floating_tab_bar", true)
-
-    val containerShape = if (resolvedIsBottom) {
-        if (isFloatingBar) {
-            RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp)
-        } else {
-            RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
-        }
-    } else {
-        RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp)
-    }
-
-    LocalPetalGlassRevision.current
-    val isGlassEnabledPref = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") ||
-        (resolvedIsBottom && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")) ||
-        (isPreview && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments"))
-    val isLiquidGlass = !isPreview && isGlassEnabledPref
-    val samplesWallpaper = BarInsets.glassSamplesWallpaper(sp, resolvedIsBottom, isFloatingBar, false)
-    val ambientGlassSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
-    val activity = LocalContext.current as? android.app.Activity
-    val glassSource = if (isPreview || samplesWallpaper) null else (ambientGlassSource ?: activity?.findViewById<android.view.View>(com.petal.browser.R.id.main_content))
-    val glassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
-    val pillGlassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
-    val baseGlassColor = if (isIncognito) com.petal.browser.ui.theme.IncognitoSurfaceContainer else MaterialTheme.colorScheme.surfaceContainerHigh
-
-    val containerColor = when {
-        isLiquidGlass -> Color.Transparent
-        isIncognito -> com.petal.browser.ui.theme.IncognitoSurfaceContainer
-        else -> MaterialTheme.colorScheme.surfaceContainerHigh
-    }
-
-    val rawStatusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val isImmersive = rawStatusTop == 0.dp
-    val statusBarTopInset = if (isPreview || isImmersive || suppressStatusBarTopInset) 0.dp else WindowInsets.statusBars.union(WindowInsets.displayCutout)
-        .asPaddingValues().calculateTopPadding()
-    val navBarBottomInset = if (isPreview) 0.dp else WindowInsets.navigationBars
-        .asPaddingValues().calculateBottomPadding()
-
+    )
+    val resolvedIsBottom = chrome.isBottom
+    val isFloatingBar = chrome.isFloating
+    val addressBarHeight = chrome.height
+    val isPillCollapse = chrome.isPillCollapse
+    val collapsedFraction = chrome.collapsedFraction
+    val visuals = chrome.visuals
+    val containerShape = chrome.containerShape
+    val isLiquidGlass = chrome.isLiquidGlass
+    val glassBar = chrome.glassBar
+    val pillGlassBar = chrome.pillGlassBar
+    val baseGlassColor = chrome.baseGlassColor
+    val containerColor = chrome.containerColor
+    val statusBarTopInset = chrome.statusBarTopInset
+    val navBarBottomInset = chrome.navBarBottomInset
+    var barHeightPx by remember { mutableIntStateOf(0) }
     val collapseProgress = if (isPillCollapse) collapsedFraction.coerceIn(0f, 1f) else 0f
-    val fullBarAlpha = if (isPillCollapse) ((0.45f - collapseProgress) / 0.45f).coerceIn(0f, 1f) else 1f
-    val fullBarScaleX = if (isPillCollapse) (0.94f + 0.06f * (1f - collapseProgress)) else 1f
-    val fullBarScaleY = if (isPillCollapse) (0.90f + 0.10f * (1f - collapseProgress)) else 1f
-    val fullBarTranslationY = if (isPillCollapse) ((if (resolvedIsBottom) 10.dp else (-10).dp) * collapseProgress) else 0.dp
-
-    val sideButtonAlpha = if (isPillCollapse) (1f - collapseProgress * 2.2f).coerceIn(0f, 1f) else 1f
-    val sideButtonScale = if (isPillCollapse) (0.80f + 0.20f * sideButtonAlpha) else 1f
-    val leftButtonOffset = if (isPillCollapse) ((-12).dp * collapseProgress) else 0.dp
-    val rightButtonOffset = if (isPillCollapse) (12.dp * collapseProgress) else 0.dp
-
-    val pillAlpha = if (isPillCollapse) ((collapseProgress - 0.40f) / 0.60f).coerceIn(0f, 1f) else 0f
-    val pillScale = if (isPillCollapse) (0.88f + 0.12f * pillAlpha) else 1f
-    val pillTranslationY = if (isPillCollapse) ((if (resolvedIsBottom) (-10).dp else 10.dp) * (1f - pillAlpha)) else 0.dp
-    val outerBgAlpha = if (isPillCollapse) fullBarAlpha else 1f
-
-    val animatedContainerColor = if (isLiquidGlass) Color.Transparent else containerColor.copy(alpha = containerColor.alpha * outerBgAlpha)
-    val animatedElevation = (if (isLiquidGlass) 0.dp else if (resolvedIsBottom) 2.dp else 4.dp) * outerBgAlpha
+    val sideButtonAlpha = visuals.sideButtonAlpha
+    val sideButtonScale = visuals.sideButtonScale
+    val leftButtonOffset = visuals.leftButtonOffsetDp.dp
+    val rightButtonOffset = visuals.rightButtonOffsetDp.dp
+    val fullBarAlpha = visuals.fullBarAlpha
+    val pillAlpha = visuals.pillAlpha
+    val pillScale = visuals.pillScale
+    val pillTranslationY = visuals.pillTranslationDp.dp
+    val outerBgAlpha = visuals.outerBgAlpha
+    val animatedContainerColor = chrome.animatedContainerColor
+    val animatedElevation = chrome.animatedElevation
 
     Box(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .onSizeChanged { barHeightPx = it.height }
+            .graphicsLayer {
+                // HIDE (Full Slide): the whole bar slides off its own edge as the fraction grows.
+                translationY = (if (resolvedIsBottom) 1f else -1f) * barHeightPx * visuals.slideFraction
+            },
         contentAlignment = Alignment.Center
     ) {
-        if (fullBarAlpha > 0.01f) {
+        if (visuals.barVisible) {
             Surface(
                 shape = containerShape,
                 color = animatedContainerColor,
@@ -203,8 +172,8 @@ fun PetalMergedBar(
                                 start = 12.dp,
                                 end = 12.dp,
                                 // The status bar gap sits OUTSIDE the glass, so the glass is just the bar.
-                                top = statusBarTopInset + (if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp),
-                                bottom = if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp
+                                top = statusBarTopInset + addressBarHeight.verticalMarginDp.dp,
+                                bottom = addressBarHeight.verticalMarginDp.dp
                             )
                         }
                     )
@@ -214,9 +183,9 @@ fun PetalMergedBar(
                     )
                     .graphicsLayer {
                         alpha = fullBarAlpha
-                        scaleX = fullBarScaleX
-                        scaleY = fullBarScaleY
-                        translationY = fullBarTranslationY.toPx()
+                        scaleX = visuals.fullBarScaleX
+                        scaleY = visuals.fullBarScaleY
+                        translationY = visuals.fullBarTranslationDp.dp.toPx()
                     }
                     .combinedClickable(
                         onClick = {},
@@ -254,6 +223,7 @@ fun PetalMergedBar(
                             onMediaClick = onMediaClick,
                             onSwipeNextTab = onSwipeNextTab,
                             onSwipePrevTab = onSwipePrevTab,
+                            onSwipeUp = onSwipeUp,
                             onPasteAndGo = onPasteAndGo,
                             onHardRefresh = onHardRefresh,
                             isReaderEligible = isReaderEligible,
@@ -279,7 +249,7 @@ fun PetalMergedBar(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(44.dp)
+                                .height(48.dp)
                                 .then(
                                     if (isLiquidGlass) {
                                         Modifier
@@ -307,6 +277,7 @@ fun PetalMergedBar(
                                     onBackClick = onBackClick,
                                     onForwardClick = onForwardClick,
                                     onReloadClick = onReloadClick,
+                                    onStopClick = onStopClick,
                                     onShareClick = onShareClick,
                                     onHomeClick = onHomeClick,
                                     onNewTabClick = onNewTabClick,
@@ -331,7 +302,7 @@ fun PetalMergedBar(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(if (addressBarHeight.equals("COMPACT", true)) 50.dp else 56.dp)
+                            .height(addressBarHeight.barDp.dp)
                             .padding(horizontal = if (resolvedIsBottom) 4.dp else 2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -356,6 +327,7 @@ fun PetalMergedBar(
                                     onBackClick = onBackClick,
                                     onForwardClick = onForwardClick,
                                     onReloadClick = onReloadClick,
+                                    onStopClick = onStopClick,
                                     onShareClick = onShareClick,
                                     onHomeClick = onHomeClick,
                                     onNewTabClick = onNewTabClick,
@@ -388,6 +360,7 @@ fun PetalMergedBar(
                             onMediaClick = onMediaClick,
                             onSwipeNextTab = onSwipeNextTab,
                             onSwipePrevTab = onSwipePrevTab,
+                            onSwipeUp = onSwipeUp,
                             onPasteAndGo = onPasteAndGo,
                             onHardRefresh = onHardRefresh,
                             isReaderEligible = isReaderEligible,
@@ -419,6 +392,7 @@ fun PetalMergedBar(
                                     onBackClick = onBackClick,
                                     onForwardClick = onForwardClick,
                                     onReloadClick = onReloadClick,
+                                    onStopClick = onStopClick,
                                     onShareClick = onShareClick,
                                     onHomeClick = onHomeClick,
                                     onNewTabClick = onNewTabClick,
@@ -443,7 +417,7 @@ fun PetalMergedBar(
         }
     }
 
-    if (!isPreview && isPillCollapse && pillAlpha > 0.005f) {
+    if (!isPreview && isPillCollapse && visuals.showPill) {
             PetalMinimizedPill(
                 domain = BarCollapseState.currentDomain,
                 isHttps = BarCollapseState.isHttps,
@@ -480,6 +454,7 @@ private fun BarActionButton(
     onBackClick: () -> Unit,
     onForwardClick: () -> Unit,
     onReloadClick: () -> Unit,
+    onStopClick: () -> Unit,
     onShareClick: () -> Unit,
     onHomeClick: () -> Unit,
     onNewTabClick: () -> Unit,
@@ -498,13 +473,13 @@ private fun BarActionButton(
 ) {
     val context = LocalContext.current
     val isEnabled = when (action) {
-        BarAction.BACK -> isLoading || canGoBack
+        BarAction.BACK -> canGoBack
         BarAction.FORWARD -> canGoForward
         else -> true
     }
 
     val icon = when (action) {
-        BarAction.BACK -> if (isLoading) Icons.Rounded.Close else action.icon
+        // Back is always Back; only Reload swaps to Stop while the page loads.
         BarAction.RELOAD -> if (isLoading) Icons.Rounded.Close else action.icon
         else -> action.icon
     }
@@ -520,7 +495,7 @@ private fun BarActionButton(
             BarAction.SEARCH -> onSearchClick()
             BarAction.BACK -> onBackClick()
             BarAction.FORWARD -> onForwardClick()
-            BarAction.RELOAD -> onReloadClick()
+            BarAction.RELOAD -> if (isLoading) onStopClick() else onReloadClick()
             BarAction.SHARE -> onShareClick()
             BarAction.BOOKMARK -> onBookmarkClick()
             BarAction.AI_RESEARCH, BarAction.AI -> onAiResearchClick()
@@ -536,13 +511,13 @@ private fun BarActionButton(
         {
             when (action) {
                 // Long-press Back: this tab's back/forward popup (falls back to full history).
-                BarAction.BACK -> if (canGoBack && !isLoading) {
+                BarAction.BACK -> if (canGoBack) {
                     com.petal.browser.browser.PetalTabHistoryState.requestOpen()
                 } else {
                     onHistoryClick()
                 }
                 BarAction.BOOKMARK -> onBookmarksManagerClick()
-                BarAction.RELOAD -> onHardRefresh()
+                BarAction.RELOAD -> if (!isLoading) onHardRefresh()
                 BarAction.TABS -> onNewTabClick()
                 BarAction.NEW_TAB -> onNewTabClick()
                 BarAction.MENU -> onCustomizeClick()
@@ -569,7 +544,7 @@ private fun BarActionButton(
         shape = ExpressiveButtonShape,
         color = if (isLiquidGlass && isPressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else Color.Transparent,
         modifier = Modifier
-            .size(44.dp)
+            .size(48.dp)
             .onGloballyPositioned { buttonBounds[0] = it.boundsInWindow() }
             .graphicsLayer {
                 scaleX = pressScale
@@ -589,7 +564,7 @@ private fun BarActionButton(
             } else {
                 Icon(
                     imageVector = icon,
-                    contentDescription = action.label,
+                    contentDescription = if (action == BarAction.RELOAD && isLoading) stringResource(R.string.bar_stop_loading) else action.localizedLabel(),
                     tint = tint,
                     modifier = Modifier.size(22.dp)
                 )

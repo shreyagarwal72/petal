@@ -7,17 +7,6 @@
     android:id="@+id/main"
     tools:ignore="ContentDescription">
 
-    <!-- Wallpaper backdrop: sits behind the page. Flat (non-floating) liquid glass bars sample this
-         instead of the page, so they show the set wallpaper / glass background. Hidden unless needed. -->
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/glass_wallpaper_backdrop"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentBottom="true"
-        android:visibility="gone"
-        android:importantForAccessibility="no" />
-
     <!-- Main Web Content Container: fills viewport (top and bottom aligned), and dynamically offset by address bar / bottom bar via paddings and layout rules -->
     <FrameLayout
         android:id="@+id/main_content"
@@ -26,145 +15,11 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentBottom="true"/>
 
-    <!-- Top Address Bar (Material 3 Expressive Compose Address Bar) -->
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/compose_address_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:elevation="0dp" />
-
-    <!-- Desktop-style tab strip (tablets / opt-in). Positioned and sized by MainActivity.updateDesktopTabBar() -->
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/desktop_tab_bar_compose"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:elevation="1dp"
-        android:visibility="gone" />
-
-    <!-- Persistent Bottom Navigation Container with Reserved Height -->
-    <RelativeLayout
-        android:id="@+id/bottom_nav_container"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:background="@android:color/transparent">
-
-        <androidx.compose.ui.platform.ComposeView
-            android:id="@+id/bottom_nav_compose"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-    </RelativeLayout>
-
     <!-- Fancy Rippling Wavy Loading Progress Line: overlay above content and address bar (top/bottom) -->
     <androidx.compose.ui.platform.ComposeView
         android:id="@+id/main_progress_bar_compose"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/compose_address_bar"
         android:elevation="30dp"/>
-
-    <!-- Bottom Floating Download Status Card (Jetpack Compose Material 3 Expressive Persistent Card) -->
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/download_banner_compose"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/bottom_nav_container"
-        android:elevation="20dp" />
-
-
-
-    <!-- Floating Network Status Pill (Offline / Back Online Left-to-Right dialogue) -->
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/network_status_compose"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/compose_address_bar"
-        android:elevation="21dp" />
-
-    <!-- Media Sniffer Expressive overlay: appears only when a playable source is detected. -->
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/media_sniffer_compose"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/compose_address_bar"
-        android:elevation="22dp" />
-
-    <!-- Pull to Refresh Bar (ContainedLoadingIndicator) -->
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/refresh_bar_compose"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:visibility="invisible"
-        android:translationZ="100dp"
-        android:clickable="false"
-        android:focusable="false"
-        android:importantForAccessibility="no" />
-
-    <!-- Floating Action Button for Showing Top Bar -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_showAppBar"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:src="@drawable/icon_up"
-        app:elevation="2dp"
-        style="@style/Widget.Material3.Button.IconButton.Outlined"
-        app:backgroundTint="?attr/colorSurfaceContainerHighest"
-        app:borderWidth="0.5dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        app:maxImageSize="20dp"
-        app:fabCustomSize="42dp"
-        android:visibility="gone"/>
-
-    <!-- Material 3 Expressive Find In Page Bar -->
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/find_in_page_compose"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:visibility="gone" />
-
-
-    <!-- Small Circular Floating Bubble for Collapsed Address Bar (Bottom-Right) -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/fab_bubble"
-        style="@style/Widget.Material3.CardView.Filled"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginBottom="90dp"
-        android:layout_marginEnd="16dp"
-        android:visibility="gone"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="16dp"
-        app:strokeWidth="1dp"
-        app:strokeColor="?attr/colorOutlineVariant"
-        android:backgroundTint="?attr/colorSurfaceContainerHighest">
-
-        <ImageView
-            android:id="@+id/bubble_icon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_bubble_expand_search"
-            app:tint="?attr/colorPrimary"
-            tools:ignore="ContentDescription"/>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Unified Material 3 Expressive PetalSnackbar Compose Container -->
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/petal_snackbar_compose"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:elevation="40dp" />
 
 </RelativeLayout>

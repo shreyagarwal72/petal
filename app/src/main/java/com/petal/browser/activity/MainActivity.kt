@@ -581,7 +581,6 @@ class MainActivity : FragmentActivity(), BrowserController {
         }
         printManager.print(jobName, adapter, android.print.PrintAttributes.Builder().build())
     }
-    fun updatePersistentBottomNav() { }
     fun updateBackCallbackState() { }
     fun updateOmniBox() { }
     fun settlePillFraction(target: Float) {
@@ -722,7 +721,6 @@ class MainActivity : FragmentActivity(), BrowserController {
         return false
     }
 
-    fun applyAddressBarPosition() { }
     fun performBackNavigation() {
         if (dismissTopPresentedScreen()) {
             return

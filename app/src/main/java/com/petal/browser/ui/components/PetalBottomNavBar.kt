@@ -92,7 +92,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import com.petal.browser.haptics.PetalHapticEngine
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.mutableIntStateOf
+import com.petal.browser.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -145,38 +150,12 @@ fun PetalBottomNavBar(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    // Whole-bar entrance: slides up and fades in with a soft spring when first shown
-    val entrance = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        entrance.animateTo(1f, PetalSpring.calm())
-    }
-    val entranceOffsetPx = with(LocalDensity.current) { 32.dp.toPx() }
-
-    // Search launch: the bar leans away while the omnibox opens, so hiding it is not a jump cut.
+    // The bar's entrance is owned by the AnimatedVisibility in PetalRootApp (one entrance, not two).
+    // Search launch: the bar leans away while the omnibox opens, so hiding it is not a jump cut. When
+    // the host removes the bar this state is disposed with it, so it starts clean on the next show.
     val scope = rememberCoroutineScope()
     val searchLaunch = remember { Animatable(0f) }
     val hostView = LocalView.current
-    var barShown by remember { mutableStateOf(hostView.isShown) }
-    DisposableEffect(hostView) {
-        val vto = hostView.viewTreeObserver
-        val listener = android.view.ViewTreeObserver.OnGlobalLayoutListener {
-            val now = hostView.isShown
-            if (now != barShown) barShown = now
-        }
-        vto.addOnGlobalLayoutListener(listener)
-        onDispose {
-            val alive = hostView.viewTreeObserver
-            if (alive.isAlive) alive.removeOnGlobalLayoutListener(listener)
-        }
-    }
-    // Coming back from the omnibox: reset the lean and spring the bar up again.
-    LaunchedEffect(barShown) {
-        if (barShown && searchLaunch.value > 0f) {
-            searchLaunch.snapTo(0f)
-            entrance.snapTo(0f)
-            entrance.animateTo(1f, PetalSpring.calm())
-        }
-    }
     // Bounds of the tapped search control (separate glass button, else the whole nav bar), so the
     // omnibox page grows out of it.
     val searchButtonBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
@@ -198,35 +177,39 @@ fun PetalBottomNavBar(
         }
     }
 
+    // The badge pops when the count CHANGES, never on first draw.
     val badgeScale = remember { Animatable(1f) }
+    var lastTabCount by remember { mutableIntStateOf(tabCount) }
     LaunchedEffect(tabCount) {
-        badgeScale.snapTo(1.35f)
-        badgeScale.animateTo(
-            1f,
-            PetalSpring.quick()
-        )
+        if (tabCount != lastTabCount) {
+            lastTabCount = tabCount
+            badgeScale.snapTo(1.35f)
+            badgeScale.animateTo(1f, PetalSpring.quick())
+        }
     }
 
-    val tabsLabel = "Tabs"
-    val newTabLabel = "New"
+    val newTabLabel = stringResource(R.string.bar_new)
 
     val navCtx = androidx.compose.ui.platform.LocalContext.current
     val isHomeTab = selectedTab == PetalNavTab.HOME
+    // AI lives on the home page only; the Search button is for every other page.
+    val onHomePage = selectedTab == PetalNavTab.HOME || selectedTab == PetalNavTab.AI
+    val searchAllowed = showSearch && !onHomePage
+    val aiShift = if (onHomePage) 1 else 0
     val ambientGlassSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
     val resolvedGlassSource = if (isHomeTab) null else (glassSource ?: ambientGlassSource ?: (navCtx as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main_content))
 
     val effectiveFloating = isFloatingStyle && !isBottomAddressBar
-    val navPrefs = remember(navCtx) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(navCtx) }
     com.petal.browser.ui.glass.LocalPetalGlassRevision.current
     val themeGlassNav = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
     val glassNavOn = themeGlassNav
     // Liquid glass + floating: search is its own glass button on the right.
     // Everything else (Material 3 Expressive floating/docked, glass docked): search sits in the centre.
-    val separateSearch = showSearch && effectiveFloating && glassNavOn
+    val separateSearch = searchAllowed && effectiveFloating && glassNavOn
     // Material 3 Expressive floating (glass off): PixelMusic-style pill + separate ghost-shaped search.
     val pixelStyle = effectiveFloating && !glassNavOn
-    val pixelSearch = showSearch && pixelStyle
-    val centerSearch = showSearch && !separateSearch && !pixelSearch
+    val pixelSearch = searchAllowed && pixelStyle
+    val centerSearch = searchAllowed && !separateSearch && !pixelSearch
     // The docked bar (glass or solid) runs through the gesture-bar area like Brave's, so no
     // gap shows between the bar and the screen edge and no page shows unblurred under it.
     val flatNavInset = if (!effectiveFloating) {
@@ -248,10 +231,10 @@ fun PetalBottomNavBar(
         Row(
             modifier = modifier
                 .graphicsLayer {
-                    translationY = (1f - entrance.value) * entranceOffsetPx + collapseOffsetY.toPx()
+                    translationY = collapseOffsetY.toPx()
                     scaleX = collapseScale
                     scaleY = collapseScale
-                    alpha = entrance.value.coerceIn(0f, 1f) * collapseAlpha
+                    alpha = collapseAlpha
                 }
                 .fillMaxWidth()
                 .navigationBarsPadding()
@@ -285,6 +268,9 @@ fun PetalBottomNavBar(
                         onMenuClick = onMenuClick,
                         onSwipeTabLeft = onSwipeTabLeft,
                         onSwipeTabRight = onSwipeTabRight,
+                        onHistoryClick = onHistoryClick,
+                        onBookmarksClick = onBookmarksClick,
+                        includeAi = onHomePage,
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
@@ -300,8 +286,11 @@ fun PetalBottomNavBar(
                         onMenuClick = onMenuClick,
                         onSwipeTabLeft = onSwipeTabLeft,
                         onSwipeTabRight = onSwipeTabRight,
+                        onHistoryClick = onHistoryClick,
+                        onBookmarksClick = onBookmarksClick,
                         compact = separateSearch,
                         includeSearch = centerSearch,
+                        includeAi = onHomePage,
                         onSearchClick = launchSearch
                     )
                 }
@@ -338,10 +327,10 @@ fun PetalBottomNavBar(
             modifier = modifier
                 .onGloballyPositioned { navBarBounds[0] = it.boundsInWindow() }
                 .graphicsLayer {
-                    translationY = (1f - entrance.value) * entranceOffsetPx + searchLaunch.value * 22.dp.toPx() + collapseOffsetY.toPx()
+                    translationY = searchLaunch.value * 22.dp.toPx() + collapseOffsetY.toPx()
                     scaleX = collapseScale
                     scaleY = collapseScale
-                    alpha = entrance.value.coerceIn(0f, 1f) * (1f - searchLaunch.value) * collapseAlpha
+                    alpha = (1f - searchLaunch.value) * collapseAlpha
                 }
                 .fillMaxWidth(),
             contentAlignment = Alignment.BottomCenter
@@ -387,7 +376,7 @@ fun PetalBottomNavBar(
                 ) {
                     ExpressiveNavTabItem(
                         selected = selectedTab == PetalNavTab.HOME,
-                        label = "Home",
+                        label = stringResource(R.string.bar_home),
                         index = 0,
                         isLiquidGlass = isLiquidGlass,
                         modifier = Modifier.weight(1f),
@@ -410,7 +399,7 @@ fun PetalBottomNavBar(
                                     painter = androidx.compose.ui.res.painterResource(
                                         if (filled) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home
                                     ),
-                                    contentDescription = "Home",
+                                    contentDescription = null,
                                     tint = tint,
                                     modifier = Modifier.size(24.dp)
                                 )
@@ -422,9 +411,10 @@ fun PetalBottomNavBar(
                         }
                     )
 
+                    if (onHomePage) {
                     ExpressiveNavTabItem(
                         selected = selectedTab == PetalNavTab.AI,
-                        label = "AI",
+                        label = stringResource(R.string.bar_ai),
                         index = 1,
                         isLiquidGlass = isLiquidGlass,
                         modifier = Modifier.weight(1f),
@@ -436,7 +426,7 @@ fun PetalBottomNavBar(
                             )
                             Icon(
                                 imageVector = Icons.Rounded.AutoAwesome,
-                                contentDescription = "Petal AI",
+                                contentDescription = null,
                                 tint = tint,
                                 modifier = Modifier
                                     .size(24.dp)
@@ -448,11 +438,12 @@ fun PetalBottomNavBar(
                         },
                         onClick = onAiClick
                     )
+                    }
 
                     ExpressiveNavTabItem(
                         selected = selectedTab == PetalNavTab.NEW_TAB,
                         label = newTabLabel,
-                        index = 2,
+                        index = 1 + aiShift,
                         isLiquidGlass = isLiquidGlass,
                         modifier = Modifier
                             .weight(1f)
@@ -470,7 +461,7 @@ fun PetalBottomNavBar(
                             )
                             Icon(
                                 imageVector = Icons.Rounded.Add,
-                                contentDescription = "New Tab",
+                                contentDescription = null,
                                 tint = tint,
                                 modifier = Modifier
                                     .size(24.dp)
@@ -498,14 +489,14 @@ fun PetalBottomNavBar(
                     if (centerSearch) {
                         ExpressiveNavTabItem(
                             selected = selectedTab == PetalNavTab.SEARCH,
-                            label = "Search",
-                            index = 3,
+                            label = stringResource(R.string.bar_search),
+                            index = 2 + aiShift,
                             isLiquidGlass = isLiquidGlass,
                             modifier = Modifier.weight(1f),
                             icon = { _, _ ->
                                 Icon(
                                     painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.ic_petal_search),
-                                    contentDescription = "Search",
+                                    contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(24.dp)
                                 )
@@ -516,9 +507,11 @@ fun PetalBottomNavBar(
 
                     ExpressiveNavTabItem(
                         selected = selectedTab == PetalNavTab.TABS,
-                        label = "Tabs",
+                        label = stringResource(R.string.bar_tabs),
+                        isTabs = true,
+                        contentLabel = stringResource(R.string.bar_tabs_count, tabCount),
                         badgeText = if (tabCount > 99) "99+" else tabCount.toString(),
-                        index = if (centerSearch) 4 else 3,
+                        index = (if (centerSearch) 4 else 3) - 1 + aiShift,
                         isLiquidGlass = isLiquidGlass,
                         modifier = Modifier
                             .weight(1f)
@@ -551,8 +544,8 @@ fun PetalBottomNavBar(
 
                     ExpressiveNavTabItem(
                         selected = selectedTab == PetalNavTab.MENU,
-                        label = "Menu",
-                        index = if (centerSearch) 5 else 4,
+                        label = stringResource(R.string.bar_menu),
+                        index = (if (centerSearch) 5 else 4) - 1 + aiShift,
                         isLiquidGlass = isLiquidGlass,
                         modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->
@@ -568,7 +561,7 @@ fun PetalBottomNavBar(
                             )
                             Icon(
                                 imageVector = Icons.Rounded.MoreVert,
-                                contentDescription = "Menu",
+                                contentDescription = null,
                                 tint = tint,
                                 modifier = Modifier
                                     .size(24.dp)
@@ -586,112 +579,6 @@ fun PetalBottomNavBar(
                     )
 
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FloatingNavTabItem(
-    selected: Boolean,
-    label: String,
-    index: Int,
-    icon: @Composable (isSelected: Boolean, tint: Color) -> Unit,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-
-    // Bouncy touch feedback press scale
-    val pressScale by animateFloatAsState(
-        targetValue = if (isPressed) 0.90f else 1.0f,
-        animationSpec = PetalSpring.quick(),
-        label = "press_scale_$index"
-    )
-
-    val labelWidth by animateDpAsState(
-        targetValue = if (selected) 72.dp else 0.dp,
-        animationSpec = PetalSpring.calm(),
-        label = "nav_label_$index"
-    )
-
-    // Label fades/slides in slightly after the pill starts expanding
-    val labelAlpha by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
-        animationSpec = if (selected) PetalSpring.calm() else PetalSpring.calm(),
-        label = "nav_label_alpha_$index"
-    )
-
-    // Staggered pop-in on first appearance
-    val enter = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        delay(index * 55L)
-        enter.animateTo(1f, PetalSpring.calm())
-    }
-
-    val activeContainerColor = MaterialTheme.colorScheme.primaryContainer
-    val activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-    val inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-
-    val currentContentColor by animateColorAsState(
-        targetValue = if (selected) activeContentColor else inactiveContentColor,
-        animationSpec = PetalSpring.calm(),
-        label = "nav_color_$index"
-    )
-
-    val currentBgColor by animateColorAsState(
-        targetValue = if (selected) activeContainerColor else Color.Transparent,
-        animationSpec = PetalSpring.calm(),
-        label = "nav_bg_$index"
-    )
-
-    Surface(
-        shape = ExpressiveButtonShape,
-        color = currentBgColor,
-        modifier = modifier
-            .height(48.dp)
-            .width(48.dp + labelWidth)
-            .graphicsLayer {
-                scaleX = pressScale * enter.value.coerceAtLeast(0f)
-                scaleY = pressScale * enter.value.coerceAtLeast(0f)
-                alpha = enter.value.coerceIn(0f, 1f)
-            }
-            .clip(ExpressiveButtonShape)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = ripple(),
-                onClick = onClick
-            )
-            .semantics { contentDescription = label }
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .padding(horizontal = if (selected) 8.dp else 0.dp)
-                .fillMaxHeight()
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                icon(selected, currentContentColor)
-            }
-
-            if (labelWidth > 4.dp) {
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.2.sp
-                    ),
-                    color = currentContentColor,
-                    maxLines = 1,
-                    softWrap = false,
-                    modifier = Modifier.graphicsLayer {
-                        alpha = labelAlpha
-                        translationX = (1f - labelAlpha) * -8.dp.toPx()
-                    }
-                )
             }
         }
     }
@@ -759,6 +646,8 @@ private fun ExpressiveNavTabItem(
     icon: @Composable (isSelected: Boolean, tint: Color) -> Unit,
     onClick: () -> Unit,
     badgeText: String? = null,
+    isTabs: Boolean = false,
+    contentLabel: String = label,
     isLiquidGlass: Boolean = false,
     onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -819,13 +708,6 @@ private fun ExpressiveNavTabItem(
 
     val labelWeight = if (selected) FontWeight.Bold else FontWeight.Medium
 
-    // Staggered pop-in on first appearance
-    val enter = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        delay(index * 55L)
-        enter.animateTo(1f, PetalSpring.calm())
-    }
-
     val indicatorShape = RoundedCornerShape(14.dp)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -833,32 +715,31 @@ private fun ExpressiveNavTabItem(
         modifier = modifier
             .fillMaxHeight()
             .graphicsLayer {
-                scaleX = pressScaleX * enter.value.coerceAtLeast(0f)
-                scaleY = pressScaleY * enter.value.coerceAtLeast(0f)
-                alpha = enter.value.coerceIn(0f, 1f)
+                scaleX = pressScaleX
+                scaleY = pressScaleY
                 translationY = activeLiftY.toPx()
             }
             .clip(RoundedCornerShape(16.dp))
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = ripple(bounded = true, radius = 32.dp),
+                role = androidx.compose.ui.semantics.Role.Tab,
                 onClick = onClick,
                 onLongClick = onLongClick
             )
             .padding(horizontal = 2.dp, vertical = 1.dp)
-            .semantics { contentDescription = label }
+            // One announcement per item: the label (with the open-tab count for Tabs), the selected
+            // state and the Tab role. Icons carry no description of their own, so nothing is read twice.
+            .semantics(mergeDescendants = true) {
+                contentDescription = contentLabel
+                this.selected = selected
+                if (isTabs) liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
+            }
     ) {
         Surface(
             shape = indicatorShape,
             color = indicatorBgColor,
-            border = if (isLiquidGlass && selected) {
-                BorderStroke(
-                    1.dp,
-                    androidx.compose.ui.graphics.Brush.verticalGradient(
-                        listOf(Color.White.copy(alpha = 0.70f), Color.White.copy(alpha = 0.20f))
-                    )
-                )
-            } else null,
+            border = null,
             modifier = Modifier
                 .width(activeIndicatorWidth)
                 .height(activeIndicatorHeight)

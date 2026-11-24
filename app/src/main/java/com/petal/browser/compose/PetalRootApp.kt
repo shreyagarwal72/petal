@@ -60,6 +60,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.coroutines.cancellation.CancellationException
@@ -259,33 +260,11 @@ fun PetalRootApp(
 
     // Preferences for Bottom Nav Bar and Address Bar
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    var floatingTabBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
-    var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
-    var addressBarStyle by remember { mutableStateOf(sp.getString(BarPrefs.KEY_ADDRESS_BAR_STYLE, BarPrefs.STYLE_CLASSIC) ?: BarPrefs.STYLE_CLASSIC) }
-    var addressBarHeight by remember { mutableStateOf(sp.getString("sp_address_bar_height", "STANDARD") ?: "STANDARD") }
-
-    DisposableEffect(sp) {
-        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            when (key) {
-                "sp_floating_tab_bar" -> floatingTabBar = sp.getBoolean("sp_floating_tab_bar", true)
-                "sp_address_bar_position", BarPrefs.KEY_ADDRESS_BAR_POSITION -> {
-                    addressBarPosition = sp.getString("sp_address_bar_position", "TOP") ?: "TOP"
-                }
-                BarPrefs.KEY_ADDRESS_BAR_STYLE -> {
-                    addressBarStyle = sp.getString(BarPrefs.KEY_ADDRESS_BAR_STYLE, BarPrefs.STYLE_CLASSIC) ?: BarPrefs.STYLE_CLASSIC
-                }
-                "sp_address_bar_height" -> {
-                    addressBarHeight = sp.getString("sp_address_bar_height", "STANDARD") ?: "STANDARD"
-                }
-            }
-        }
-        sp.registerOnSharedPreferenceChangeListener(listener)
-        onDispose {
-            sp.unregisterOnSharedPreferenceChangeListener(listener)
-        }
-    }
-    val isBottomAddressBar = "BOTTOM".equals(addressBarPosition, ignoreCase = true)
-    val isMerge = BarPrefs.STYLE_MERGE.equals(addressBarStyle, ignoreCase = true)
+    // One shared, observable source for every bar preference (single listener, COMPACT default).
+    val barSettings = com.petal.browser.ui.components.rememberBarSettings()
+    val floatingTabBar = barSettings.floatingNav
+    val isBottomAddressBar = barSettings.position == com.petal.browser.ui.components.AddressBarPosition.BOTTOM
+    val isMerge = barSettings.style == com.petal.browser.ui.components.AddressBarStyle.MERGE
     val effectiveFloating = floatingTabBar && !isBottomAddressBar
     val haptic = remember(context) { PetalHapticEngine.getInstance(context) }
 
@@ -660,7 +639,11 @@ fun PetalRootApp(
                 .fillMaxSize()
                 .then(
                     if (isHome && !effectiveFloating && isBottomBarVisible) {
-                        Modifier.padding(bottom = 64.dp + navBarBottomInset)
+                        Modifier.padding(
+                            bottom = com.petal.browser.ui.components.BarMetrics.bottomNavPx.let {
+                                if (it > 0) with(density) { it.toDp() } else 64.dp + navBarBottomInset
+                            }
+                        )
                     } else {
                         Modifier
                     }
@@ -767,7 +750,7 @@ fun PetalRootApp(
             } else {
                 val statusBarTopInset = WindowInsets.statusBars.union(WindowInsets.displayCutout)
                     .asPaddingValues().calculateTopPadding()
-                val isCompact = "COMPACT".equals(addressBarHeight, ignoreCase = true)
+                val isCompact = barSettings.height == com.petal.browser.ui.components.AddressBarHeight.COMPACT
                 val barBaseHeight = if (isCompact) 50.dp else 56.dp
 
                 val desktopTabBarMode = sp.getString(
@@ -805,17 +788,26 @@ fun PetalRootApp(
                 val barTotalTopHeight = statusBarTopInset + desktopBarHeight + barBaseHeight + (if (isCompact) 6.dp else 10.dp)
                 val barTotalBottomHeight = navBarBottomInset + barBaseHeight + (if (isCompact) 6.dp else 10.dp)
 
-                val effectiveTopPadding = if (isBottomAddressBar) {
-                    statusBarTopInset + desktopBarHeight
-                } else {
-                    barTotalTopHeight
+                // Page insets come from the bars' REAL measured sizes (BarMetrics); the old constants
+                // are only estimates for the very first frame, before the bars have reported.
+                val navVisibleHere = isBottomBarVisible
+                val navEstimate = if (isBottomAddressBar) 64.dp else 64.dp + navBarBottomInset
+                val pagePad = with(density) {
+                    com.petal.browser.ui.components.BarMetrics.pagePadding(
+                        isBottomAddressBar = isBottomAddressBar,
+                        measuredTop = com.petal.browser.ui.components.BarMetrics.topBarPx,
+                        estimatedTop = barTotalTopHeight.roundToPx(),
+                        measuredBottomAddress = com.petal.browser.ui.components.BarMetrics.bottomAddressPx,
+                        estimatedBottomAddress = barTotalBottomHeight.roundToPx(),
+                        measuredBottomNav = com.petal.browser.ui.components.BarMetrics.bottomNavPx,
+                        estimatedBottomNav = navEstimate.roundToPx(),
+                        navVisible = navVisibleHere,
+                        topOverlayPx = (statusBarTopInset + desktopBarHeight).roundToPx(),
+                        navBarInset = navBarBottomInset.roundToPx()
+                    )
                 }
-
-                val effectiveBottomPadding = if (isBottomAddressBar) {
-                    barTotalBottomHeight + (if (isBottomBarVisible) 64.dp else 0.dp)
-                } else {
-                    if (isBottomBarVisible) 64.dp + navBarBottomInset else navBarBottomInset
-                }
+                val effectiveTopPadding = with(density) { pagePad.top.toDp() }
+                val effectiveBottomPadding = with(density) { pagePad.bottom.toDp() }
 
                 ComposeEngineViewport(
                     tab = activeTab,
@@ -856,6 +848,7 @@ fun PetalRootApp(
                                 .fillMaxWidth()
                                 .align(Alignment.TopCenter)
                                 .zIndex(2f)
+                                .onSizeChanged { com.petal.browser.ui.components.BarMetrics.reportTop(it.height) }
                         ) {
                             Box(
                                 modifier = Modifier
@@ -880,12 +873,13 @@ fun PetalRootApp(
                                     onBackClick = { webGoBack() },
                                     onForwardClick = { viewModel.goForward() },
                                     onReloadClick = { viewModel.reload() },
+                                    onStopClick = { viewModel.stopLoading() },
                                     onShareClick = {
                                         val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                             type = "text/plain"
                                             putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
                                         }
-                                        activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
+                                        activity?.startActivity(android.content.Intent.createChooser(shareIntent, context.getString(R.string.bar_share_link)))
                                     },
                                     onAddressClick = { viewModel.openOmnibox() },
                                     onHomeClick = {
@@ -912,6 +906,7 @@ fun PetalRootApp(
                                     },
                                     onSwipeNextTab = { viewModel.switchToNextTab() },
                                     onSwipePrevTab = { viewModel.switchToPreviousTab() },
+                                    onSwipeUp = { viewModel.toggleTabSwitcher() },
                                     onHardRefresh = { viewModel.reload() },
                                     onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
                                     onCustomizeClick = { viewModel.openSettings(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR) },
@@ -928,12 +923,14 @@ fun PetalRootApp(
                                     isLoading = isLoading,
                                     canGoBack = canGoBack,
                                     onBackClick = { webGoBack() },
+                                    onReloadClick = { viewModel.reload() },
+                                    onStopClick = { viewModel.stopLoading() },
                                     onShareClick = {
                                         val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                             type = "text/plain"
                                             putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
                                         }
-                                        activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
+                                        activity?.startActivity(android.content.Intent.createChooser(shareIntent, context.getString(R.string.bar_share_link)))
                                     },
                                     onAddressClick = { viewModel.openOmnibox() },
                                     onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
@@ -944,6 +941,7 @@ fun PetalRootApp(
                                     onHardRefresh = { viewModel.reload() },
                                     onSwipeNextTab = { viewModel.switchToNextTab() },
                                     onSwipePrevTab = { viewModel.switchToPreviousTab() },
+                                    onSwipeUp = { viewModel.toggleTabSwitcher() },
                                     isBottom = false,
                                     hasBottomNav = isBottomBarVisible,
                                     suppressStatusBarTopInset = true,
@@ -964,12 +962,13 @@ fun PetalRootApp(
                             onBackClick = { webGoBack() },
                             onForwardClick = { viewModel.goForward() },
                             onReloadClick = { viewModel.reload() },
+                            onStopClick = { viewModel.stopLoading() },
                             onShareClick = {
                                 val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                     type = "text/plain"
                                     putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
                                 }
-                                activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
+                                activity?.startActivity(android.content.Intent.createChooser(shareIntent, context.getString(R.string.bar_share_link)))
                             },
                             onAddressClick = { viewModel.openOmnibox() },
                             onHomeClick = {
@@ -996,20 +995,25 @@ fun PetalRootApp(
                             },
                             onSwipeNextTab = { viewModel.switchToNextTab() },
                             onSwipePrevTab = { viewModel.switchToPreviousTab() },
+                            onSwipeUp = { viewModel.toggleTabSwitcher() },
                             onHardRefresh = { viewModel.reload() },
                             onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
                             onCustomizeClick = { viewModel.openSettings(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR) },
                             isBottom = isBottomAddressBar,
                             modifier = if (isBottomAddressBar) {
+                                // Stacked directly above the bottom nav (measured), never overlapping it.
                                 Modifier
                                     .fillMaxWidth()
                                     .align(Alignment.BottomCenter)
+                                    .padding(bottom = with(density) { (if (navVisibleHere) com.petal.browser.ui.components.BarMetrics.bottomNavPx else 0).toDp() })
                                     .zIndex(2f)
+                                    .onSizeChanged { com.petal.browser.ui.components.BarMetrics.reportBottomAddress(it.height) }
                             } else {
                                 Modifier
                                     .fillMaxWidth()
                                     .align(Alignment.TopCenter)
                                     .zIndex(2f)
+                                    .onSizeChanged { com.petal.browser.ui.components.BarMetrics.reportTop(it.height) }
                             }
                         )
                     } else {
@@ -1021,12 +1025,14 @@ fun PetalRootApp(
                             isLoading = isLoading,
                             canGoBack = canGoBack,
                             onBackClick = { webGoBack() },
+                            onReloadClick = { viewModel.reload() },
+                            onStopClick = { viewModel.stopLoading() },
                             onShareClick = {
                                 val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                     type = "text/plain"
                                     putExtra(android.content.Intent.EXTRA_TEXT, activeUrl)
                                 }
-                                activity?.startActivity(android.content.Intent.createChooser(shareIntent, "Share Link"))
+                                activity?.startActivity(android.content.Intent.createChooser(shareIntent, context.getString(R.string.bar_share_link)))
                             },
                             onAddressClick = { viewModel.openOmnibox() },
                             onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
@@ -1037,18 +1043,23 @@ fun PetalRootApp(
                             onHardRefresh = { viewModel.reload() },
                             onSwipeNextTab = { viewModel.switchToNextTab() },
                             onSwipePrevTab = { viewModel.switchToPreviousTab() },
+                            onSwipeUp = { viewModel.toggleTabSwitcher() },
                             isBottom = isBottomAddressBar,
                             hasBottomNav = isBottomBarVisible,
                             modifier = if (isBottomAddressBar) {
+                                // Stacked directly above the bottom nav (measured), never overlapping it.
                                 Modifier
                                     .fillMaxWidth()
                                     .align(Alignment.BottomCenter)
+                                    .padding(bottom = with(density) { (if (navVisibleHere) com.petal.browser.ui.components.BarMetrics.bottomNavPx else 0).toDp() })
                                     .zIndex(2f)
+                                    .onSizeChanged { com.petal.browser.ui.components.BarMetrics.reportBottomAddress(it.height) }
                             } else {
                                 Modifier
                                     .fillMaxWidth()
                                     .align(Alignment.TopCenter)
                                     .zIndex(2f)
+                                    .onSizeChanged { com.petal.browser.ui.components.BarMetrics.reportTop(it.height) }
                             }
                         )
                     }
@@ -1106,8 +1117,13 @@ fun PetalRootApp(
                     viewModel.switchToNextTab()
                 },
                 showSearch = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onSizeChanged { com.petal.browser.ui.components.BarMetrics.reportBottomNav(it.height) }
             )
+        }
+        androidx.compose.runtime.LaunchedEffect(isBottomBarVisible) {
+            if (!isBottomBarVisible) com.petal.browser.ui.components.BarMetrics.clearBottomNav()
         }
 
             // Dim over the live page while an overlay is being dragged away (below every overlay).

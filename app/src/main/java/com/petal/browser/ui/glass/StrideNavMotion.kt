@@ -5,7 +5,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import com.petal.browser.ui.components.PetalSpring
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.Composable
@@ -30,9 +30,12 @@ import kotlin.math.sqrt
  * springs back on release. Replaces the ripple.
  */
 @Composable
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 fun Modifier.bouncyClickable(
     scaleDown: Float = 0.9f,
     enabled: Boolean = true,
+    role: androidx.compose.ui.semantics.Role? = null,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit
 ): Modifier {
     val interaction = remember { MutableInteractionSource() }
@@ -45,10 +48,12 @@ fun Modifier.bouncyClickable(
     return graphicsLayer {
         scaleX = scale
         scaleY = scale
-    }.clickable(
+    }.combinedClickable(
         interactionSource = interaction,
         indication = null,
         enabled = enabled,
+        role = role,
+        onLongClick = onLongClick,
         onClick = onClick
     )
 }

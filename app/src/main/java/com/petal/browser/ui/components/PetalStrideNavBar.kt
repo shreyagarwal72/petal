@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
@@ -41,6 +42,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.res.stringResource
+import com.petal.browser.R
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -59,6 +64,9 @@ import kotlin.math.roundToInt
 import androidx.compose.material3.Icon
 
 private val NavOrder4 = listOf(PetalNavTab.HOME, PetalNavTab.AI, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
+/** Off the home page: no AI tab. */
+private val NavOrder4NoAi = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
+private val NavOrder5NoAi = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.SEARCH, PetalNavTab.TABS, PetalNavTab.MENU)
 /** With search in the centre. */
 private val NavOrder5 = listOf(PetalNavTab.HOME, PetalNavTab.AI, PetalNavTab.NEW_TAB, PetalNavTab.SEARCH, PetalNavTab.TABS, PetalNavTab.MENU)
 
@@ -93,11 +101,19 @@ internal fun PetalStrideNavBar(
     onSwipeTabLeft: () -> Unit,
     onSwipeTabRight: () -> Unit,
     modifier: Modifier = Modifier,
+    onHistoryClick: () -> Unit = {},
+    onBookmarksClick: () -> Unit = {},
     compact: Boolean = false,
     includeSearch: Boolean = false,
+    includeAi: Boolean = true,
     onSearchClick: () -> Unit = {}
 ) {
-    val NavOrder = if (includeSearch) NavOrder5 else NavOrder4
+    val NavOrder = when {
+        includeAi && includeSearch -> NavOrder5
+        includeAi -> NavOrder4
+        includeSearch -> NavOrder5NoAi
+        else -> NavOrder4NoAi
+    }
     val scheme = MaterialTheme.colorScheme
     val pill = CircleShape
     val compactAll = compact || includeSearch
@@ -122,6 +138,10 @@ internal fun PetalStrideNavBar(
         label = "swipe_rubber_band"
     )
 
+    // Read through updated state so the long-lived pointerInput never calls a stale lambda.
+    val currentSwipeLeft by androidx.compose.runtime.rememberUpdatedState(onSwipeTabLeft)
+    val currentSwipeRight by androidx.compose.runtime.rememberUpdatedState(onSwipeTabRight)
+
     val isLiquidGlassActive = glassBar != null || themeGlass
     // Kyant's interaction effects: the bar swells under the finger, a light follows it, and
     // the selection slab deepens its lens and stretches with its motion.
@@ -138,8 +158,10 @@ internal fun PetalStrideNavBar(
                     onDragStart = { isDragging = true },
                     onDragEnd = {
                         isDragging = false
-                        if (dragAccumulator > 70f) onSwipeTabLeft()
-                        else if (dragAccumulator < -70f) onSwipeTabRight()
+                        // 90dp like AddressPill, so the threshold is the same distance on every density.
+                        val threshold = 90.dp.toPx()
+                        if (dragAccumulator > threshold) currentSwipeLeft()
+                        else if (dragAccumulator < -threshold) currentSwipeRight()
                         dragAccumulator = 0f
                     },
                     onDragCancel = {
@@ -158,7 +180,7 @@ internal fun PetalStrideNavBar(
         }
         // Where each item sits, so the glass slab can slide to the selected one.
         val itemBounds = remember { mutableStateMapOf<PetalNavTab, Rect>() }
-        val weights = remember { TabWeights(NavOrder, selectedTab) }
+        val weights = remember(NavOrder) { TabWeights(NavOrder, selectedTab) }
         LaunchedEffect(selectedTab) { weights.animateTo(selectedTab) }
         // The slab sits at the weights' blend of the item positions.
         val slab: () -> Rect? = {
@@ -185,12 +207,19 @@ internal fun PetalStrideNavBar(
                 val selected = selectedTab == tab
                 val weight = { weights[tab].coerceIn(0f, 1f) }
                 val label = when (tab) {
-                    PetalNavTab.HOME -> "Home"
-                    PetalNavTab.AI -> "AI"
-                    PetalNavTab.NEW_TAB -> "New"
-                    PetalNavTab.TABS -> "Tabs"
-                    PetalNavTab.MENU -> "Menu"
-                    PetalNavTab.SEARCH -> "Search"
+                    PetalNavTab.HOME -> stringResource(R.string.bar_home)
+                    PetalNavTab.AI -> stringResource(R.string.bar_ai)
+                    PetalNavTab.NEW_TAB -> stringResource(R.string.bar_new)
+                    PetalNavTab.TABS -> stringResource(R.string.bar_tabs)
+                    PetalNavTab.MENU -> stringResource(R.string.bar_menu)
+                    PetalNavTab.SEARCH -> stringResource(R.string.bar_search)
+                }
+                val contentLabel = if (tab == PetalNavTab.TABS) stringResource(R.string.bar_tabs_count, tabCount) else label
+                val onLongClick: (() -> Unit)? = when (tab) {
+                    PetalNavTab.HOME -> onHistoryClick
+                    PetalNavTab.NEW_TAB, PetalNavTab.TABS -> onNewTabClick
+                    PetalNavTab.MENU -> onBookmarksClick
+                    else -> null
                 }
                 val onClick = when (tab) {
                     PetalNavTab.HOME -> onHomeClick
@@ -205,12 +234,23 @@ internal fun PetalStrideNavBar(
                 Box(
                     modifier = Modifier
                         .onGloballyPositioned { itemBounds[tab] = it.boundsInRoot() }
-                        .bouncyClickable(scaleDown = 0.88f, onClick = onClick)
+                        .bouncyClickable(
+                            scaleDown = 0.88f,
+                            role = androidx.compose.ui.semantics.Role.Tab,
+                            onLongClick = onLongClick,
+                            onClick = onClick
+                        )
                         .clip(pill)
-                        .semantics { contentDescription = label }
+                        // One announcement per item (label / tab count, selected, Tab role); icons are silent.
+                        .semantics(mergeDescendants = true) {
+                            contentDescription = contentLabel
+                            this.selected = selected
+                            if (tab == PetalNavTab.TABS) liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
+                        }
                 ) {
                     Row(
                         modifier = Modifier
+                            .widthIn(min = 48.dp) // 48dp touch target; the visual stays the same
                             .padding(horizontal = itemPadH, vertical = 12.dp)
                             // Magnified under the glass slab, by as much of the slab as is
                             // over this item — so it grows as the slab arrives.
@@ -219,6 +259,7 @@ internal fun PetalStrideNavBar(
                                 scaleX = s
                                 scaleY = s
                             },
+                        horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
