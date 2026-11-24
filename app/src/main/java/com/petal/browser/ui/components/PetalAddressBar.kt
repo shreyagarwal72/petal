@@ -68,6 +68,7 @@ fun PetalAddressBar(
     val settings = rememberBarSettings()
     val floatingTabBar = settings.floatingNav
 
+    val addressBarGlassEnabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar")
     val chrome = rememberBarChrome(
         isBottomParam = isBottom,
         isPreview = isPreview,
@@ -75,7 +76,7 @@ fun PetalAddressBar(
         suppressStatusBarTopInset = suppressStatusBarTopInset,
         floatingForShape = { bottom -> bottom && floatingTabBar },
         floatingForWallpaper = { floatingTabBar },
-        glassPref = { com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") }
+        glassPref = { addressBarGlassEnabled }
     )
     val resolvedIsBottom = chrome.isBottom
     val isFloatingBar = chrome.isFloating
@@ -87,6 +88,7 @@ fun PetalAddressBar(
     val isLiquidGlass = chrome.isLiquidGlass
     val glassBar = chrome.glassBar
     val pillGlassBar = chrome.pillGlassBar
+    val glassSource = chrome.glassSource
     val baseGlassColor = chrome.baseGlassColor
     val containerColor = chrome.containerColor
     val statusBarTopInset = chrome.statusBarTopInset

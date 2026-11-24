@@ -24,6 +24,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -189,7 +190,7 @@ fun AddressPill(
             .background(urlBoxBackground)
             .pointerInput(Unit) {
                 // Swipe up (at least 48dp, mostly vertical) opens the tab switcher.
-                androidx.compose.foundation.gestures.detectVerticalDragGestures(
+                detectVerticalDragGestures(
                     onDragStart = { verticalAccumulator = 0f },
                     onDragEnd = {
                         if (verticalAccumulator < -48.dp.toPx()) {

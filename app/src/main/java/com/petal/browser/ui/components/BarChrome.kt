@@ -42,7 +42,8 @@ class BarChrome(
     val baseGlassColor: Color,
     val containerColor: Color,
     val statusBarTopInset: Dp,
-    val navBarBottomInset: Dp
+    val navBarBottomInset: Dp,
+    val glassSource: android.view.View? = null
 ) {
     val animatedContainerColor: Color
         get() = if (isLiquidGlass) Color.Transparent else containerColor.copy(alpha = containerColor.alpha * visuals.outerBgAlpha)
@@ -117,6 +118,7 @@ fun rememberBarChrome(
         baseGlassColor = surface,
         containerColor = containerColor,
         statusBarTopInset = statusTop,
-        navBarBottomInset = navBottom
+        navBarBottomInset = navBottom,
+        glassSource = glassSource
     )
 }

@@ -97,6 +97,8 @@ fun PetalMergedBar(
     val mergeLayout = settings.mergeLayout
     val (leadingActions, trailingActions) = settings.mergeActions
 
+    val addressBarGlassEnabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar")
+    val bottomNavGlassEnabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
     val chrome = rememberBarChrome(
         isBottomParam = isBottom,
         isPreview = isPreview,
@@ -104,10 +106,7 @@ fun PetalMergedBar(
         suppressStatusBarTopInset = suppressStatusBarTopInset,
         floatingForShape = { bottom -> bottom && settings.floatingNav },
         floatingForWallpaper = { bottom -> bottom && settings.floatingNav },
-        glassPref = { bottom ->
-            com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") ||
-                (bottom && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav"))
-        }
+        glassPref = { bottom -> addressBarGlassEnabled || (bottom && bottomNavGlassEnabled) }
     )
     val resolvedIsBottom = chrome.isBottom
     val isFloatingBar = chrome.isFloating
@@ -119,6 +118,7 @@ fun PetalMergedBar(
     val isLiquidGlass = chrome.isLiquidGlass
     val glassBar = chrome.glassBar
     val pillGlassBar = chrome.pillGlassBar
+    val glassSource = chrome.glassSource
     val baseGlassColor = chrome.baseGlassColor
     val containerColor = chrome.containerColor
     val statusBarTopInset = chrome.statusBarTopInset
@@ -203,7 +203,7 @@ fun PetalMergedBar(
                             bottom = if (resolvedIsBottom && !isFloatingBar && !isPreview) navBarBottomInset + 4.dp else 2.dp
                         )
                 ) {
-                if (BarPrefs.LAYOUT_STACKED.equals(mergeLayout, ignoreCase = true)) {
+                if (mergeLayout == MergeLayout.STACKED) {
                     // STACKED 2-Row Layout: Pill on top, buttons in row below
                     Column(
                         modifier = Modifier
