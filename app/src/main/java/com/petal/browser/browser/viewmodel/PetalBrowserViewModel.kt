@@ -231,9 +231,6 @@ class PetalBrowserViewModel @Inject constructor(
     private val _findInPageQuery = MutableStateFlow("")
     val findInPageQuery: StateFlow<String> = _findInPageQuery.asStateFlow()
 
-    private val _aiSheetQuery = MutableStateFlow("")
-    val aiSheetQuery: StateFlow<String> = _aiSheetQuery.asStateFlow()
-
     private val _isOmniboxOpen = MutableStateFlow(false)
     val isOmniboxOpen: StateFlow<Boolean> = _isOmniboxOpen.asStateFlow()
 
