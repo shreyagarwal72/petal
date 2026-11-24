@@ -370,7 +370,7 @@ private fun ActionButtonsLayout(
                 ) {
                     Icon(Icons.Rounded.OpenInBrowser, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.quick_tile_open_label))
+                    Text(stringResource(R.string.ui_open))
                 }
 
                 Row(

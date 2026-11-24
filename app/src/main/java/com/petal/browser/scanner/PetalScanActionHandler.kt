@@ -53,15 +53,10 @@ object PetalScanActionHandler {
         try {
             val uri = Uri.parse(url)
             if (context is MainActivity) {
-                if (inNewTab) {
+                if (inNewTab || context.currentAlbumController == null) {
                     context.addAlbum("Web Page", url, true)
                 } else {
-                    val controller = context.currentAlbumController
-                    if (controller != null) {
-                        controller.loadUrl(url)
-                    } else {
-                        context.addAlbum("Web Page", url, true)
-                    }
+                    context.showAlbum(context.currentAlbumController, url)
                 }
             } else {
                 PetalBrowserUtils.intentURL(context, uri)
