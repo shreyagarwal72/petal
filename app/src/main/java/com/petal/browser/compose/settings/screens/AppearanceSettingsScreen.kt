@@ -130,6 +130,7 @@ fun AppearanceSettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     targetHighlightItemId: String? = null,
+    onNavigateToAppIcon: () -> Unit = {},
     viewModel: AppearanceSettingsViewModel = hiltViewModel()
 ) {
     val reveal = rememberThemeReveal()
@@ -240,6 +241,15 @@ fun AppearanceSettingsScreen(
                                     onClick = { subPage = page }
                                 )
                             }
+                        }
+                        PetalSettingsSection(title = "App") {
+                            com.petal.browser.ui.containment.PetalGroupNavigationRow(
+                                title = "App Icon & Intro",
+                                subtitle = "Pick your Petal icon and preview its launch animation",
+                                position = com.petal.browser.ui.containment.petalGroupPositionFor(0, 1),
+                                onClick = onNavigateToAppIcon,
+                                leadingIcon = { Icon(Icons.Rounded.Apps, contentDescription = null) }
+                            )
                         }
                         PetalSettingsSection(title = "Behavior & more") {
                             behavior.forEachIndexed { index, page ->

@@ -209,6 +209,9 @@ fun PetalSettingsScreen(
         mutableStateOf<SettingsCategory?>(initialCategory.takeIf { it != SettingsCategory.OVERVIEW })
     }
     var currentHighlightId by remember { mutableStateOf<String?>(null) }
+    // Set when a category is opened from inside another one (App Icon from Appearance, App Lock from
+    // Privacy, ...): back then returns to that page with the content crossfade instead of leaving.
+    var parentCategory by remember { mutableStateOf<SettingsCategory?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var isSearchOpen by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -234,6 +237,7 @@ fun PetalSettingsScreen(
         searchQuery = ""
         currentHighlightId = highlightId
         val wasOpen = pageCategory != null
+        parentCategory = if (wasOpen && pageCategory != category) pageCategory else null
         activeHeaderCategory = category
         pageCategory = category
         if (!wasOpen) {
@@ -253,13 +257,24 @@ fun PetalSettingsScreen(
     }
 
     // Arrow / in-page back: animate the page out, then drop it.
+    fun popToParent(): Boolean {
+        val parent = parentCategory ?: return false
+        parentCategory = null
+        currentHighlightId = null
+        activeHeaderCategory = parent
+        pageCategory = parent
+        return true
+    }
+
     fun closeCategory() {
+        if (popToParent()) return
         activeHeaderCategory = null
         scope.launch {
             MotionGate.withMotionSuspend("settings_category_pop") {
                 push.animateTo(0f, PetalSpring.calm())
             }
             pageCategory = null
+            parentCategory = null
             currentHighlightId = null
             categoryWallpaper.ready = false
             categoryWallpaper.hasRecorded = false
@@ -274,8 +289,14 @@ fun PetalSettingsScreen(
         }
     }
 
+    // A nested category pops back to its parent with the crossfade; the predictive surface (which
+    // slides the whole page away) is only active for a top-level category or the hub.
+    if (parentCategory != null) {
+        androidx.activity.compose.BackHandler(enabled = !hasSearchOverlay) { popToParent() }
+    }
+
     PetalPredictiveBackSurface(
-        enabled = !hasSearchOverlay,
+        enabled = !hasSearchOverlay && parentCategory == null,
         // Popping a category keeps Settings on screen, so only park the pose when leaving Settings,
         // and only let the root animate its live page behind when Settings itself is dismissed.
         holdDismissedPose = pageCategory == null,
@@ -285,6 +306,7 @@ fun PetalSettingsScreen(
                 // The gesture already slid the page away; remove it without a second animation.
                 activeHeaderCategory = null
                 pageCategory = null
+                parentCategory = null
                 currentHighlightId = null
                 categoryWallpaper.ready = false
                 categoryWallpaper.hasRecorded = false
@@ -347,6 +369,8 @@ fun PetalSettingsScreen(
                                 onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
                                 onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
                                 onNavigateToUpdater = { openCategory(SettingsCategory.UPDATER, null) },
+                                onNavigateToAppIcon = { openCategory(SettingsCategory.APP_ICON, null) },
+                                onNavigateToAppLock = { openCategory(SettingsCategory.APP_LOCK, null) },
                                 onNavigateBack = { closeCategory() }
                             )
                         }
@@ -364,6 +388,8 @@ private fun RenderCategoryContent(
     onNavigateToAddressBar: () -> Unit = {},
     onNavigateToDownloads: () -> Unit = {},
     onNavigateToUpdater: () -> Unit = {},
+    onNavigateToAppIcon: () -> Unit = {},
+    onNavigateToAppLock: () -> Unit = {},
     onNavigateBack: () -> Unit
 ) {
     when (category) {
@@ -372,13 +398,13 @@ private fun RenderCategoryContent(
             ApiIntegrationsSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
         }
         SettingsCategory.APPEARANCE -> {
-            AppearanceSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
+            AppearanceSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId, onNavigateToAppIcon = onNavigateToAppIcon)
         }
         SettingsCategory.APP_ICON -> {
             AppIconSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
         }
         SettingsCategory.PRIVACY -> {
-            PrivacySettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
+            PrivacySettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId, onNavigateToAppLock = onNavigateToAppLock)
         }
         SettingsCategory.APP_LOCK -> {
             // Rendered inline: the Settings container already owns the single predictive-back surface.

@@ -61,6 +61,7 @@ fun PrivacySettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     targetHighlightItemId: String? = null,
+    onNavigateToAppLock: () -> Unit = {},
     viewModel: PrivacySettingsViewModel = hiltViewModel()
 ) {
     val adBlockEnabled by viewModel.adBlockEnabled.collectAsStateWithLifecycle()
@@ -132,6 +133,7 @@ fun PrivacySettingsScreen(
         onDrmEnabledChange = viewModel::setDrmEnabled,
         onLoginAutofillEnabledChange = viewModel::setLoginAutofillEnabled,
         onNavigateBack = onNavigateBack,
+        onNavigateToAppLock = onNavigateToAppLock,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
     )
@@ -185,6 +187,7 @@ fun PrivacySettingsScreenContent(
     onDrmEnabledChange: (Boolean) -> Unit = {},
     onLoginAutofillEnabledChange: (Boolean) -> Unit = {},
     onNavigateBack: () -> Unit,
+    onNavigateToAppLock: () -> Unit = {},
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
 ) {
@@ -344,6 +347,16 @@ fun PrivacySettingsScreenContent(
                         .padding(start = 16.dp, end = 16.dp, top = topInset + 12.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    // App Lock lives under Privacy & Security.
+                    PetalSettingsSection(title = "App Lock", icon = Icons.Rounded.Lock) {
+                        com.petal.browser.ui.containment.PetalGroupNavigationRow(
+                            title = "App Lock",
+                            subtitle = "Fingerprint or passcode protection for Petal",
+                            position = com.petal.browser.ui.containment.petalGroupPositionFor(0, 1),
+                            onClick = onNavigateToAppLock,
+                            leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) }
+                        )
+                    }
                     // ── 1. Ad & Tracker Blocking (Master Switch + Hero Counter + Filters + Whitelist) ──
                     PetalSettingsSection(
                         title = "Ad & Tracker Blocking",
