@@ -28,9 +28,6 @@ import androidx.compose.ui.graphics.vector.ImageVector.Builder
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
-val ImageToolboxIcons.Rounded.Cube: ImageVector
-    get() = ImageToolboxIcons.Outlined.Cube
-
 val ImageToolboxIcons.Outlined.Cube: ImageVector by lazy {
     Builder(
         name = "Cube", defaultWidth = 24.0.dp, defaultHeight = 24.0.dp,

@@ -1,11 +1,14 @@
 package com.petal.browser.compose.home
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -53,11 +56,11 @@ object PetalGlassBackdropBridge {
                                 renderVideo = false
                             )
                         } else {
-                            androidx.compose.foundation.layout.Box(
+                            Box(
                                 Modifier
                                     .fillMaxSize()
-                                    .androidx.compose.foundation.background(
-                                        if (isAmoled) androidx.compose.ui.graphics.Color.Black else androidx.compose.material3.MaterialTheme.colorScheme.background
+                                    .background(
+                                        if (isAmoled) Color.Black else MaterialTheme.colorScheme.background
                                     )
                             )
                         }

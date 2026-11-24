@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.compose.settings.iconAccent
 import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -309,7 +310,6 @@ fun SettingsHubScreen(
                                     accent = iconAccent,
                                     shapeKey = category.name
                                 )
-                            },
                             },
                             content = {
                                 Text(

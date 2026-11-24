@@ -1,5 +1,6 @@
 package com.petal.browser.ui.containment
 
+import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.theme.PetalIconAccent
 import com.petal.browser.ui.theme.PetalIconBadge
 
@@ -474,7 +475,7 @@ fun PetalBadgeVariant.colors(): Pair<Color, Color> = toAccent().resolveColors(Ma
 @Composable
 fun PetalGroupIconBadge(
     icon: ImageVector,
-    variant: PetalBadgeVariant = PetalBadgeVariant.PRIMARY,
+    variant: PetalBadgeVariant,
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
@@ -493,7 +494,7 @@ fun PetalGroupIconBadge(
 @Composable
 fun PetalGroupIconBadge(
     painter: Painter,
-    variant: PetalBadgeVariant = PetalBadgeVariant.PRIMARY,
+    variant: PetalBadgeVariant,
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,

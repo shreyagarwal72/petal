@@ -626,7 +626,7 @@ fun AppearanceGlassPage(
                                         .padding(horizontal = 14.dp, vertical = 8.dp)
                                         .fillMaxWidth(0.9f)
                                         .height(64.dp)
-                                        .com.petal.browser.ui.containment.liquidGlassChrome(RoundedCornerShape(16.dp), enabled = true)
+                                        .liquidGlassChrome(RoundedCornerShape(16.dp), enabled = true)
                                 ) {
                                     Row(
                                         modifier = Modifier

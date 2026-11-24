@@ -157,7 +157,7 @@ fun PetalLayoutSettingsSection(
         )
 
         PetalGroupRow(
-            icon = Icons.Rounded.ToggleOn,
+            icon = ImageToolboxIcons.Rounded.ToggleOn,
             title = "Switch Type",
             subtitle = if (isGlass) "Liquid Glass toggle (automatic while glass is on)" else settings.switchType.title,
             position = pos(0),
@@ -298,7 +298,7 @@ fun PetalLayoutSettingsSection(
     if (sheet == SHEET_SWITCH) {
         ChoiceSheet(
             title = "Switch Type",
-            headerIcon = Icons.Rounded.ToggleOff,
+            headerIcon = ImageToolboxIcons.Rounded.ToggleOff,
             items = PetalSwitchType.entries,
             selected = settings.switchType,
             banner = if (isGlass) "Liquid Glass is on, so every switch is the glass toggle automatically. " +

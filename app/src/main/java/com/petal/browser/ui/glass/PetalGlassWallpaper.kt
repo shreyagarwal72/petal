@@ -312,6 +312,7 @@ fun Modifier.petalGlassPanel(
     val glass = rememberGraphicsLayer()
     val dark = MaterialTheme.colorScheme.background.luminance() < .5f
     val primaryColor = MaterialTheme.colorScheme.primary
+    val surfaceTintColor = MaterialTheme.colorScheme.surfaceTint
     val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
     val glowPref = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
     return onGloballyPositioned { place.coords = it; place.origin = it.positionInRoot() }
@@ -341,7 +342,6 @@ fun Modifier.petalGlassPanel(
                 ceil(size.width + 2 * pad).toInt().coerceAtLeast(1),
                 ceil(size.height + 2 * pad).toInt().coerceAtLeast(1)
             )
-            val surfaceTintColor = MaterialTheme.colorScheme.surfaceTint
             // Chromatic dual-angle glowing rim reflecting surfaceTint, primary accent and specular highlight
             val rim = Brush.linearGradient(
                 colors = listOf(

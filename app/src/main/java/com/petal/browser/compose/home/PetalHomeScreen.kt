@@ -587,6 +587,7 @@ fun PetalHomeScreen(
                             glassWallpaper = glassWallpaper
                         )
                     } else {
+                        val isAmoled = homeSp.getBoolean("sp_amoled", false)
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
