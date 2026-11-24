@@ -150,4 +150,35 @@ object PetalYouTubeTranscriptExtractor {
             null
         }
     }
+
+    /**
+     * Standalone HTTP transcript extraction without requiring an active MainActivity tab.
+     */
+    suspend fun extractTranscriptFromUrl(url: String): String? = withContext(Dispatchers.IO) {
+        if (!isYouTubeUrl(url)) return@withContext null
+        val videoId = extractVideoId(url) ?: return@withContext null
+        try {
+            val timedTextUrl = "https://www.youtube.com/api/timedtext?v=$videoId&lang=en"
+            val req = Request.Builder()
+                .url(timedTextUrl)
+                .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .build()
+            val resp = httpClient.newCall(req).execute()
+            val xml = resp.body?.string().orEmpty()
+
+            val matcher = Pattern.compile("<text[^>]*>([^<]+)</text>").matcher(xml)
+            val segments = mutableListOf<String>()
+            while (matcher.find()) {
+                val txt = matcher.group(1)?.let {
+                    android.text.Html.fromHtml(it, android.text.Html.FROM_HTML_MODE_LEGACY).toString().trim()
+                }
+                if (!txt.isNullOrBlank()) {
+                    segments.add(txt)
+                }
+            }
+            if (segments.isNotEmpty()) segments.joinToString(" ") else null
+        } catch (_: Exception) {
+            null
+        }
+    }
 }

@@ -724,6 +724,7 @@ fun AddressBarSettingsScreen(
 }
 
 private fun getActionDescription(action: BarAction): String = when (action) {
+    BarAction.AI -> "Ask Petal AI assistant about this page"
     BarAction.TABS -> "Switch, view and manage open tabs"
     BarAction.NEW_TAB -> "Instantly open a fresh new tab"
     BarAction.HOME -> "Navigate directly to your home start page"

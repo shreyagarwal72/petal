@@ -44,6 +44,25 @@ object PetalAiUsageTracker {
     }
 
     /**
+     * Records token usage from estimated or exact token counts.
+     */
+    fun recordUsage(
+        context: Context,
+        inputTokens: Int,
+        outputTokens: Int
+    ) {
+        val provider = PetalAiResearchEngine.getSelectedProvider(context)
+        recordUsage(
+            context = context,
+            providerId = provider.id,
+            inputChars = inputTokens * 4,
+            outputChars = outputTokens * 4,
+            exactInputTokens = inputTokens,
+            exactOutputTokens = outputTokens
+        )
+    }
+
+    /**
      * Records token usage for a completed chat response.
      */
     @Synchronized

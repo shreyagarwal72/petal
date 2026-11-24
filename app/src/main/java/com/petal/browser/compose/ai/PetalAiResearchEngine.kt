@@ -205,6 +205,7 @@ object PetalAiResearchEngine {
                 }
             }
             AiProvider.CUSTOM -> stored.ifBlank { provider.defaultModel }
+            AiProvider.LOCAL_ON_DEVICE -> stored.ifBlank { provider.defaultModel }
         }
     }
 

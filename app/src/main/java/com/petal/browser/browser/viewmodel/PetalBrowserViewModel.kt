@@ -956,7 +956,14 @@ class PetalBrowserViewModel @Inject constructor(
             systemPrompt = systemPrompt,
             imagePart = imagePart,
             onComplete = { inTok, outTok ->
-                com.petal.browser.compose.ai.PetalAiUsageTracker.recordUsage(context, inTok, outTok)
+                com.petal.browser.compose.ai.PetalAiUsageTracker.recordUsage(
+                    context = context,
+                    providerId = provider.id,
+                    inputChars = inTok * 4,
+                    outputChars = outTok * 4,
+                    exactInputTokens = inTok,
+                    exactOutputTokens = outTok
+                )
             }
         )
     }
@@ -998,7 +1005,14 @@ class PetalBrowserViewModel @Inject constructor(
             scope = viewModelScope,
             systemPrompt = systemPrompt,
             onComplete = { inTok, outTok ->
-                com.petal.browser.compose.ai.PetalAiUsageTracker.recordUsage(context, inTok, outTok)
+                com.petal.browser.compose.ai.PetalAiUsageTracker.recordUsage(
+                    context = context,
+                    providerId = provider.id,
+                    inputChars = inTok * 4,
+                    outputChars = outTok * 4,
+                    exactInputTokens = inTok,
+                    exactOutputTokens = outTok
+                )
             }
         )
     }

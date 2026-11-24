@@ -66,6 +66,9 @@ data class AiChatMessage(
     val textContent: String
         get() = parts.filterIsInstance<AiMessagePart.Text>().joinToString("\n") { it.text }
 
+    val text: String
+        get() = textContent
+
     companion object {
         fun system(text: String): AiChatMessage = AiChatMessage(AiRole.SYSTEM, text)
         fun user(text: String): AiChatMessage = AiChatMessage(AiRole.USER, text)

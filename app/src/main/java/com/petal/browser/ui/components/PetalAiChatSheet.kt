@@ -1479,9 +1479,9 @@ fun PetalAiChatSheet(
 
         // ── Attach Open Tab Dialog ──
         if (showTabPickerDialog) {
-            val allTabs by viewModel.tabs.collectAsStateWithLifecycle()
+            val allTabs by viewModel.tabItems.collectAsStateWithLifecycle()
             val candidateTabs = allTabs.filter { tab ->
-                tab.id != activeTabId && (isPrivate || !tab.isPrivate) && attachedTabs.none { it.tabId == tab.id }
+                tab.id != activeTabId && (isPrivate || !tab.isIncognito) && attachedTabs.none { it.tabId == tab.id }
             }
 
             PetalMaterialAlertDialog(
@@ -1513,7 +1513,8 @@ fun PetalAiChatSheet(
                                                     tabId = t.id,
                                                     url = t.url,
                                                     title = t.title,
-                                                    readableText = t.title
+                                                    text = t.title,
+                                                    isPrivate = t.isIncognito
                                                 )
                                                 attachedTabs = attachedTabs + tabContext
                                             } else {
