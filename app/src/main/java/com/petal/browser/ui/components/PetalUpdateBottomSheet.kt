@@ -477,7 +477,7 @@ fun PetalUpdateSheetContent(
                 }
             }
 
-            // Status-driven Hero styling (Orion-Store Expressive look)
+            // Status-driven Hero styling (Petal Expressive style)
             val (heroTint, heroIcon, eyebrowText) = when (val state = liveUpdateState) {
                 is PetalUpdateManager.UpdateDownloadState.Downloading -> {
                     Triple(MaterialTheme.colorScheme.primary, Icons.Rounded.Downloading, "Update Downloading")
@@ -486,7 +486,7 @@ fun PetalUpdateSheetContent(
                     Triple(MaterialTheme.colorScheme.tertiary, Icons.Rounded.PauseCircle, "Download Paused")
                 }
                 is PetalUpdateManager.UpdateDownloadState.Completed -> {
-                    Triple(Color(0xFF2E7D32), Icons.Rounded.CheckCircle, "Ready to Install")
+                    Triple(MaterialTheme.colorScheme.primary, Icons.Rounded.CheckCircle, "Ready to Install")
                 }
                 is PetalUpdateManager.UpdateDownloadState.Failed -> {
                     Triple(MaterialTheme.colorScheme.error, Icons.Rounded.ErrorOutline, "Download Failed")
@@ -543,7 +543,7 @@ fun PetalUpdateSheetContent(
                     textAlign = TextAlign.Center
                 )
 
-                // Version Transition Pill (Orion-Store style)
+                // Version Transition Pill (Petal Expressive style)
                 if (updateInfo.isUpdateAvailable) {
                     Surface(
                         shape = ExpressiveButtonShape,
@@ -796,13 +796,13 @@ fun PetalUpdateSheetContent(
                                 Box(
                                     modifier = Modifier
                                         .size(36.dp)
-                                        .background(Color(0xFF2E7D32).copy(alpha = 0.15f), ExpressiveButtonShape),
+                                        .background(MaterialTheme.colorScheme.primaryContainer, ExpressiveButtonShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         Icons.Rounded.CheckCircle,
                                         contentDescription = null,
-                                        tint = Color(0xFF2E7D32),
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }

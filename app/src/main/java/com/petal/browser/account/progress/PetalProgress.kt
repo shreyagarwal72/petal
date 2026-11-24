@@ -159,7 +159,7 @@ enum class PetalUnlockable(
 }
 
 /**
- * Botanical & Dev Support Milestones inspired by Orion Store's 'Fuel the Code (Beta)' approach.
+ * Botanical & Dev Support Milestones for Petal's developer quest hub.
  * Transforms third-party ad viewing into an indie developer backing journey.
  */
 data class PetalSupporterMilestone(

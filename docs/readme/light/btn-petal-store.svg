@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="216" height="68" viewBox="0 0 216 68">
+  <defs>
+    <style>
+      .sub { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; fill: #7c687b; }
+      .title { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 19px; font-weight: 700; letter-spacing: -0.2px; fill: #2d162e; }
+    </style>
+  </defs>
+  <path d="M34,1H182A33,33 0 0 1 215,34V34A33,33 0 0 1 182,67H34A33,33 0 0 1 1,34V34A33,33 0 0 1 34,1Z" fill="#f1e5f0" stroke="#d9c6d7" stroke-width="1.5"/>
+  <!-- Petal Store Emblem -->
+  <g transform="translate(24, 18)">
+    <circle cx="16" cy="16" r="16" fill="#8e24aa" />
+    <g transform="translate(4, 4)" fill="#ffffff">
+      <path d="M19.2,4H4.8C3.8,4 3,4.8 3,5.8v2.4c0,0.7 0.5,1.3 1.2,1.4C5.1,9.8 6,9.1 6,8.2V7h2.3v1.2c0,0.9 0.9,1.6 1.8,1.4C10.8,9.4 11.3,8.7 11.3,8V7h1.4v1c0,0.7 0.5,1.4 1.2,1.6 0.9,0.2 1.8,-0.5 1.8,-1.4V7h2.3v1.2c0,0.9 0.9,1.6 1.8,1.4 0.7,-0.1 1.2,-0.7 1.2,-1.4V5.8C21,4.8 20.2,4 19.2,4z"/>
+      <path d="M5,10v7.8C5,19 6,20 7.2,20h9.6c1.2,0 2.2,-1 2.2,-2.2V10H5zm7,7.2c-1.8,0 -3.2,-1.4 -3.2,-3.2s1.4,-3.2 3.2,-3.2 3.2,1.4 3.2,3.2 -1.4,3.2 -3.2,3.2z"/>
+    </g>
+  </g>
+  <text x="74" y="30" class="sub">GET IT ON</text>
+  <text x="74" y="52" class="title">Petal Store</text>
+</svg>

@@ -668,7 +668,7 @@ fun PetalBadgeUnlockHost() {
 
 /**
  * Expressive 'Fuel the Code' Developer Support Card.
- * Replaces commercial-style ad prompts with an indie developer quest hub inspired by Orion Store.
+ * Replaces commercial-style ad prompts with an indie developer quest hub in Petal Expressive style.
  */
 @Composable
 fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier) {

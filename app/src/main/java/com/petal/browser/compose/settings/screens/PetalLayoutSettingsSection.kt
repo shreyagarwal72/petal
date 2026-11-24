@@ -157,7 +157,7 @@ fun PetalLayoutSettingsSection(
         )
 
         PetalGroupRow(
-            icon = ImageToolboxIcons.Outlined.ToggleOn,
+            icon = Icons.Rounded.ToggleOn,
             title = "Switch Type",
             subtitle = if (isGlass) "Liquid Glass toggle (automatic while glass is on)" else settings.switchType.title,
             position = pos(0),
@@ -298,7 +298,7 @@ fun PetalLayoutSettingsSection(
     if (sheet == SHEET_SWITCH) {
         ChoiceSheet(
             title = "Switch Type",
-            headerIcon = ImageToolboxIcons.Outlined.ToggleOff,
+            headerIcon = Icons.Rounded.ToggleOff,
             items = PetalSwitchType.entries,
             selected = settings.switchType,
             banner = if (isGlass) "Liquid Glass is on, so every switch is the glass toggle automatically. " +
@@ -511,20 +511,20 @@ private const val SHEET_BADGE_SHAPE = "badge_shape"
 // ── Icons (ImageToolbox) ─────────────────────────────────────────────────────────────────────
 
 private fun PetalSwitchType.icon(): ImageVector = when (this) {
-    PetalSwitchType.MATERIAL_YOU -> ImageToolboxIcons.Outlined.MaterialDesign
-    PetalSwitchType.COMPOSE -> ImageToolboxIcons.Outlined.Cube
+    PetalSwitchType.MATERIAL_YOU -> ImageToolboxIcons.Rounded.MaterialDesign
+    PetalSwitchType.COMPOSE -> ImageToolboxIcons.Rounded.Cube
     PetalSwitchType.PIXEL -> ImageToolboxIcons.Rounded.Android
     PetalSwitchType.FLUENT -> ImageToolboxIcons.Rounded.Windows
     PetalSwitchType.CUPERTINO -> ImageToolboxIcons.Rounded.IOS
-    PetalSwitchType.HYPEROS -> ImageToolboxIcons.Outlined.HyperOS
-    PetalSwitchType.ONE_UI -> ImageToolboxIcons.Outlined.SamsungLetter
+    PetalSwitchType.HYPEROS -> ImageToolboxIcons.Rounded.HyperOS
+    PetalSwitchType.ONE_UI -> ImageToolboxIcons.Rounded.SamsungLetter
 }
 
 private fun PetalSliderType.icon(): ImageVector = when (this) {
     PetalSliderType.FANCY -> ImageToolboxIcons.Rounded.AutoAwesome
-    PetalSliderType.MATERIAL_YOU -> ImageToolboxIcons.Outlined.MaterialDesign
+    PetalSliderType.MATERIAL_YOU -> ImageToolboxIcons.Rounded.MaterialDesign
     PetalSliderType.MATERIAL -> ImageToolboxIcons.Rounded.Android
-    PetalSliderType.HYPEROS -> ImageToolboxIcons.Outlined.HyperOS
+    PetalSliderType.HYPEROS -> ImageToolboxIcons.Rounded.HyperOS
 }
 
 private fun PetalPullRefreshStyle.icon(): ImageVector = when (this) {

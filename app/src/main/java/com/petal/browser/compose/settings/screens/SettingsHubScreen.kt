@@ -294,12 +294,7 @@ fun SettingsHubScreen(
                     }
 
                     itemsIndexed(filteredCategories, key = { _, category -> category.name }) { index, category ->
-                        val badgeVariant = when (index % 4) {
-                            0 -> PetalBadgeVariant.PRIMARY
-                            1 -> PetalBadgeVariant.SECONDARY
-                            2 -> PetalBadgeVariant.TERTIARY
-                            else -> PetalBadgeVariant.SURFACE_TONAL
-                        }
+                        val iconAccent = category.iconAccent()
                         val tileBounds = androidx.compose.runtime.remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
                         PetalGroupListRow(
                             position = petalGroupPositionFor(index, filteredCategories.size),
@@ -309,10 +304,12 @@ fun SettingsHubScreen(
                                 onCategoryClick(category, null)
                             },
                             leading = {
-                                PetalGroupIconBadge(
+                                com.petal.browser.ui.theme.PetalIconBadge(
                                     painter = painterResource(category.iconRes),
-                                    variant = badgeVariant
+                                    accent = iconAccent,
+                                    shapeKey = category.name
                                 )
+                            },
                             },
                             content = {
                                 Text(

@@ -36,11 +36,11 @@ After that work:
 F-Droid signs the published APK with its own repository key. Do not upload the GitHub
 release APK as though it were an F-Droid build.
 
-## Orion Store
+## Alternative App Stores
 
-No Orion Store developer endpoint, account, or CLI is configured in this workspace.
+No third-party app store developer endpoint, account, or CLI is configured in this workspace.
 Create the developer account first and obtain its documented upload method/API token.
-Then upload the same release APK only if Orion accepts GitHub-sourced APKs and the
+Then upload the same release APK only if the store accepts GitHub-sourced APKs and the
 package/signing identity matches the release. Never commit the token or keystore.
 
 ## GitHub release automation

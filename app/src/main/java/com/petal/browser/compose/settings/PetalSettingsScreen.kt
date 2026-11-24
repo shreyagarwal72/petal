@@ -74,6 +74,37 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     ABOUT("About & Developer", "App version, licenses, GitHub & developer", com.petal.browser.R.drawable.info_filled)
 }
 
+/**
+ * Petal's semantic icon accent mapping per Settings category:
+ * - Primary: Core navigation and browsing infrastructure.
+ * - Secondary: Supporting tools, media, extensions and downloads.
+ * - Tertiary: Expressive customization, privacy shields, AI and security.
+ * - Neutral: General info, updater and diagnostics.
+ */
+fun SettingsCategory.iconAccent(): com.petal.browser.ui.theme.PetalIconAccent = when (this) {
+    SettingsCategory.OVERVIEW,
+    SettingsCategory.SEARCH_HOMEPAGE,
+    SettingsCategory.ADDRESS_BAR,
+    SettingsCategory.TABS,
+    SettingsCategory.ACCOUNT_SYNC -> com.petal.browser.ui.theme.PetalIconAccent.PRIMARY
+
+    SettingsCategory.DOWNLOADS,
+    SettingsCategory.MEDIA,
+    SettingsCategory.EXTENSIONS,
+    SettingsCategory.DATA_STORAGE -> com.petal.browser.ui.theme.PetalIconAccent.SECONDARY
+
+    SettingsCategory.API_INTEGRATIONS,
+    SettingsCategory.APPEARANCE,
+    SettingsCategory.APP_ICON,
+    SettingsCategory.PRIVACY,
+    SettingsCategory.APP_LOCK,
+    SettingsCategory.DISPLAY_ZOOM -> com.petal.browser.ui.theme.PetalIconAccent.TERTIARY
+
+    SettingsCategory.UPDATER,
+    SettingsCategory.ABOUT,
+    SettingsCategory.MISCELLANEOUS -> com.petal.browser.ui.theme.PetalIconAccent.NEUTRAL
+}
+
 object PetalSettingsBridge {
     @JvmStatic
     @JvmOverloads
@@ -392,7 +423,8 @@ private fun RenderCategoryContent(
     onNavigateToAppLock: () -> Unit = {},
     onNavigateBack: () -> Unit
 ) {
-    when (category) {
+    CompositionLocalProvider(com.petal.browser.ui.theme.LocalPetalIconAccent provides category.iconAccent()) {
+        when (category) {
         SettingsCategory.OVERVIEW -> {}
         SettingsCategory.API_INTEGRATIONS -> {
             ApiIntegrationsSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
@@ -472,6 +504,7 @@ private fun RenderCategoryContent(
                 onNavigateToUpdater = onNavigateToUpdater
             )
         }
+    }
     }
 }
 

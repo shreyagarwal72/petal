@@ -58,7 +58,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import com.petal.browser.ui.theme.PetalIconAccent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -306,7 +308,7 @@ fun PetalExtensionsScreen(
                                         selectedTabIndex = 1
                                     },
                                     text = { Text("Explore", fontWeight = FontWeight.SemiBold) },
-                                    icon = { Icon(Icons.Rounded.Storefront, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                                    icon = { Icon(painterResource(R.drawable.ic_petal_store), contentDescription = null, modifier = Modifier.size(18.dp)) }
                                 )
                                 Tab(
                                     selected = selectedTabIndex == 2,
@@ -336,7 +338,7 @@ fun PetalExtensionsScreen(
                                 onBack = { if (hasSubOverlay) handleDismiss() else onDismiss() },
                                 actions = {
                                     FilledTonalIconButton(
-                                        shape = ExpressiveButtonShape,
+                                        shape = petalBadgeShape("header_action_store"),
                                         onClick = {
                                             haptic.playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.7f)
                                             (context as? com.petal.browser.activity.MainActivity)?.addAlbum(
@@ -346,11 +348,11 @@ fun PetalExtensionsScreen(
                                             )
                                         },
                                         colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                                         )
                                     ) {
-                                        Icon(Icons.Rounded.Storefront, contentDescription = stringResource(R.string.ui_find_firefox_extensions))
+                                        Icon(painterResource(R.drawable.ic_petal_store), contentDescription = stringResource(R.string.ui_find_firefox_extensions))
                                     }
                                 },
                                     bottomContent = if (headerGlassPaneE) { { headerExtrasE() } } else null
@@ -585,7 +587,7 @@ private fun InstalledExtensionsTab(
                                 onClick = onExploreClick,
                                 shape = RoundedCornerShape(14.dp)
                             ) {
-                                Icon(Icons.Rounded.Storefront, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Icon(painterResource(R.drawable.ic_petal_store), contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
                                 Text("Explore Recommended Add-ons")
                             }
@@ -1774,7 +1776,7 @@ private fun AddExtensionSheet(
                 shape = btnShape,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Rounded.Storefront, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(painterResource(R.drawable.ic_petal_store), contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Explore Recommended Catalog", fontWeight = FontWeight.Bold)
             }
@@ -2014,6 +2016,7 @@ fun PetalExtensionPopupScreen(
                             icon = Icons.Rounded.Close,
                             description = stringResource(R.string.ui_close),
                             shapeKey = "popup_close",
+                            accent = PetalIconAccent.ERROR,
                             onClick = onDismiss
                         )
                     }
@@ -2281,19 +2284,21 @@ private fun PopupHeaderButton(
     icon: ImageVector,
     description: String,
     shapeKey: String,
+    accent: PetalIconAccent = PetalIconAccent.NEUTRAL,
     onClick: () -> Unit
 ) {
+    val (container, tint) = accent.resolveColors(MaterialTheme.colorScheme)
     Surface(
         onClick = onClick,
         shape = petalBadgeShape(shapeKey),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        color = container,
         modifier = Modifier.size(40.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 icon,
                 contentDescription = description,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = tint,
                 modifier = Modifier.size(20.dp)
             )
         }

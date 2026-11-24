@@ -1,6 +1,7 @@
 package com.petal.browser.ui.containment
 
-import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalIconAccent
+import com.petal.browser.ui.theme.PetalIconBadge
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.animateColorAsState
@@ -402,14 +403,24 @@ fun petalChipShape(): Shape = petalContainmentShape(14.dp)
  */
 val LocalPetalBadgeShapeKey = androidx.compose.runtime.compositionLocalOf<Any?> { null }
 
+fun resolveBadgeShape(
+    badgeShape: com.petal.browser.ui.theme.layout.PetalBadgeShape,
+    type: com.petal.browser.ui.theme.layout.PetalShapeType,
+    cornerMultiplier: Float,
+    key: Any?
+): Shape {
+    val effectiveKey = key ?: "petal_badge_default"
+    val seed = Math.abs(effectiveKey.hashCode())
+    return badgeShape.shape(type, cornerMultiplier, seed)
+}
+
 @androidx.compose.runtime.Composable
 fun petalBadgeShape(key: Any? = null): Shape {
     val state = com.petal.browser.ui.theme.layout.PetalLayoutState
-    // Stable per icon: seeded by the icon's name when known (same icon, same shape on every launch);
-    // otherwise a random seed remembered for as long as this badge stays composed, so it never flickers.
-    val fallback = androidx.compose.runtime.remember { kotlin.random.Random.nextInt() }
-    val seed = (LocalPetalBadgeShapeKey.current ?: key)?.hashCode() ?: fallback
-    return state.settings.badgeShape.shape(state.settings.containmentShapeType, state.containmentCorners, seed)
+    // Deterministic per icon: seeded by the icon's name/key when known; otherwise a stable
+    // default seed so shapes never randomly change or flicker between launches.
+    val effectiveKey = LocalPetalBadgeShapeKey.current ?: key ?: "petal_badge_default"
+    return resolveBadgeShape(state.settings.badgeShape, state.settings.containmentShapeType, state.containmentCorners, effectiveKey)
 }
 
 fun petalGroupPositionFor(index: Int, count: Int): PetalGroupPosition = when {
@@ -446,59 +457,57 @@ enum class PetalBadgeVariant {
     TERTIARY,
     SURFACE_TONAL,
     OUTLINE,
-    ERROR
+    ERROR;
+
+    fun toAccent(): PetalIconAccent = when (this) {
+        PRIMARY -> PetalIconAccent.PRIMARY
+        SECONDARY -> PetalIconAccent.SECONDARY
+        TERTIARY -> PetalIconAccent.TERTIARY
+        SURFACE_TONAL, OUTLINE -> PetalIconAccent.NEUTRAL
+        ERROR -> PetalIconAccent.ERROR
+    }
 }
 
 @Composable
-fun PetalBadgeVariant.colors(): Pair<Color, Color> = when (this) {
-    PetalBadgeVariant.PRIMARY -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-    PetalBadgeVariant.SECONDARY -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
-    PetalBadgeVariant.TERTIARY -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
-    PetalBadgeVariant.SURFACE_TONAL -> MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurfaceVariant
-    PetalBadgeVariant.OUTLINE -> MaterialTheme.colorScheme.surface to MaterialTheme.colorScheme.primary
-    PetalBadgeVariant.ERROR -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
-}
+fun PetalBadgeVariant.colors(): Pair<Color, Color> = toAccent().resolveColors(MaterialTheme.colorScheme)
 
 @Composable
 fun PetalGroupIconBadge(
     icon: ImageVector,
-    variant: PetalBadgeVariant,
+    variant: PetalBadgeVariant = PetalBadgeVariant.PRIMARY,
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
     shape: Shape = petalBadgeShape(icon.name),
 ) {
-    val (container, tint) = variant.colors()
-    Box(
-        modifier = modifier
-            .size(size)
-            .clip(shape)
-            .background(container),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
-    }
+    PetalIconBadge(
+        icon = icon,
+        accent = variant.toAccent(),
+        modifier = modifier,
+        size = size,
+        iconSize = iconSize,
+        shape = shape
+    )
 }
 
 @Composable
 fun PetalGroupIconBadge(
     painter: Painter,
-    variant: PetalBadgeVariant,
+    variant: PetalBadgeVariant = PetalBadgeVariant.PRIMARY,
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
-    shape: Shape = petalBadgeShape(),
+    shape: Shape = petalBadgeShape("painter_badge"),
 ) {
-    val (container, tint) = variant.colors()
-    Box(
-        modifier = modifier
-            .size(size)
-            .clip(shape)
-            .background(container),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(painter, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
-    }
+    PetalIconBadge(
+        painter = painter,
+        accent = variant.toAccent(),
+        shapeKey = "painter_badge",
+        modifier = modifier,
+        size = size,
+        iconSize = iconSize,
+        shape = shape
+    )
 }
 
 @Composable
@@ -524,7 +533,7 @@ fun PetalGroupIconBadge(
     size: Dp = 44.dp,
     iconSize: Dp = 22.dp,
 ) {
-    Box(modifier.size(size).clip(petalBadgeShape()).background(container), contentAlignment = Alignment.Center) {
+    Box(modifier.size(size).clip(petalBadgeShape("painter_badge")).background(container), contentAlignment = Alignment.Center) {
         Icon(painter, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
     }
 }

@@ -24,6 +24,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
+val ImageToolboxIcons.Rounded.Timelapse: ImageVector
+    get() = ImageToolboxIcons.Outlined.Timelapse
+
 val ImageToolboxIcons.Outlined.Timelapse: ImageVector by lazy(LazyThreadSafetyMode.NONE) {
     ImageVector.Builder(
         name = "Outlined.Timelapse",

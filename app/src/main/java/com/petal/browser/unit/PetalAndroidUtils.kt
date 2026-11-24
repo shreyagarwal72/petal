@@ -487,16 +487,23 @@ object PetalAndroidUtils {
     fun setupDialog(context: Context, dialog: Dialog?) {
         try {
             if (dialog == null) return
-            val typedValue = TypedValue()
-            context.theme.resolveAttribute(R.attr.colorPrimary, typedValue, true)
-            val primaryColor = typedValue.data
+            val primaryColor = PetalViewThemeBridge.tokenColor(context, "primary")
+                ?: run {
+                    val typedValue = TypedValue()
+                    context.theme.resolveAttribute(R.attr.colorPrimary, typedValue, true)
+                    typedValue.data
+                }
 
-            val surfaceValue = TypedValue()
-            context.theme.resolveAttribute(R.attr.colorSurfaceContainerHigh, surfaceValue, true)
-            if (surfaceValue.data == 0) {
-                context.theme.resolveAttribute(R.attr.colorSurface, surfaceValue, true)
-            }
-            val surfaceColor = surfaceValue.data
+            val surfaceColor = PetalViewThemeBridge.tokenColor(context, "surfaceContainerHigh")
+                ?: PetalViewThemeBridge.tokenColor(context, "surface")
+                ?: run {
+                    val surfaceValue = TypedValue()
+                    context.theme.resolveAttribute(R.attr.colorSurfaceContainerHigh, surfaceValue, true)
+                    if (surfaceValue.data == 0) {
+                        context.theme.resolveAttribute(R.attr.colorSurface, surfaceValue, true)
+                    }
+                    surfaceValue.data
+                }
 
             val imageView = dialog.findViewById<ImageView>(android.R.id.icon)
             if (imageView != null && primaryColor != 0) {

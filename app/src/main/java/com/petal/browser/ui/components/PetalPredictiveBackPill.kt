@@ -16,6 +16,7 @@ import com.google.android.material.color.MaterialColors
 import com.petal.browser.R
 import com.petal.browser.browser.rules.PetalBackTarget
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.theme.PetalViewThemeBridge
 
 /**
  * Material 3 Expressive contextual back pill indicator for Petal Browser.
@@ -38,21 +39,24 @@ class PetalPredictiveBackPill(context: Context) : FrameLayout(context) {
         visibility = GONE
         elevation = 24 * density
 
-        val surfaceColor = MaterialColors.getColor(
-            this,
-            com.google.android.material.R.attr.colorSurfaceContainerHighest,
-            Color.DKGRAY
-        )
-        val outlineColor = MaterialColors.getColor(
-            this,
-            com.google.android.material.R.attr.colorOutlineVariant,
-            Color.LTGRAY
-        )
-        val primaryColor = MaterialColors.getColor(
-            this,
-            android.R.attr.colorPrimary,
-            Color.WHITE
-        )
+        val surfaceColor = PetalViewThemeBridge.tokenColor(context, "surfaceContainerHighest")
+            ?: MaterialColors.getColor(
+                this,
+                com.google.android.material.R.attr.colorSurfaceContainerHighest,
+                Color.DKGRAY
+            )
+        val outlineColor = PetalViewThemeBridge.tokenColor(context, "outlineVariant")
+            ?: MaterialColors.getColor(
+                this,
+                com.google.android.material.R.attr.colorOutlineVariant,
+                Color.LTGRAY
+            )
+        val primaryColor = PetalViewThemeBridge.tokenColor(context, "primary")
+            ?: MaterialColors.getColor(
+                this,
+                android.R.attr.colorPrimary,
+                Color.WHITE
+            )
 
         val pillDrawable = GradientDrawable().apply {
             shape = GradientDrawable.OVAL
