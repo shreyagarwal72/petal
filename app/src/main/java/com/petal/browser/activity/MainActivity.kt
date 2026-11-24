@@ -1015,11 +1015,10 @@ class MainActivity : FragmentActivity(), BrowserController {
                     if (result.isNotBlank()) viewModel.loadUrl(result.trim())
                 }
             }
-            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_LENS -> {
-                com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(this)
-            }
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_LENS,
             com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SNAP_CAMERA -> {
-                com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(this, autoSnapCamera = true)
+                val scannerIntent = Intent(this, com.petal.browser.lens.PetalScannerActivity::class.java)
+                startActivity(scannerIntent)
             }
             com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_MENU -> {
                 viewModel.setMenuOpen(true)

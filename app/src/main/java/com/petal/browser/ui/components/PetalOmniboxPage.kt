@@ -957,7 +957,7 @@ fun PetalOmniboxPage(
                                             }
                                         } else {
                                             IconButton(onClick = {
-                                                com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(activity)
+                                                com.petal.browser.lens.PetalLensBridge.showPetalScannerDirectly(activity)
                                             }) {
                                                 Icon(
                                                     imageVector = Icons.Rounded.CenterFocusWeak,

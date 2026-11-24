@@ -20,8 +20,7 @@ class PetalSnapCameraTileService : PetalTileBase() {
 
     override fun onClick() {
         super.onClick()
-        val intent = Intent(this, MainActivity::class.java).apply {
-            action = PetalSearchWidgetProvider.ACTION_OPEN_SNAP_CAMERA
+        val intent = Intent(this, com.petal.browser.lens.PetalScannerActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         launchIntent(intent)

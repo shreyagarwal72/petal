@@ -134,79 +134,13 @@ object PetalLensBridge {
 
     /**
      * Opens the Petal Camera Scanner directly without the Lens sheet.
-     * Used by Quick Tools "QR Scanner" button.
+     * Used by Quick Tools, Widgets, and Omnibox "QR Scanner" action.
      */
     @JvmStatic
     fun showPetalScannerDirectly(activity: ComponentActivity) {
-        activity.runOnUiThread {
-            val decorView = activity.window?.decorView as? android.view.ViewGroup ?: return@runOnUiThread
-            lateinit var composeView: ComposeView
-
-            val dismissAction: () -> Unit = {
-                if (composeView.parent != null) {
-                    decorView.removeView(composeView)
-                }
-                composeView.clearFocus()
-                (activity as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
-            }
-
-            composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(activity)
-                setViewTreeViewModelStoreOwner(activity)
-                setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
-
-                setContent {
-                    val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-                    var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
-                    var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
-                    var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
-                    var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
-                    var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
-                    var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
-                    var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
-                    var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
-
-                    val appFont = remember(fontName) {
-                        try { AppFont.valueOf(fontName) } catch (_: Exception) { AppFont.PETAL }
-                    }
-                    val colorStyle = remember(styleName) {
-                        try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
-                    }
-
-                    PetalExpressiveTheme(
-                        darkTheme = isSystemInDarkTheme(),
-                        dynamicColor = dynamicColor,
-                        useAmoled = isAmoled,
-                        appFont = appFont,
-                        fontWidth = fontWidthVal,
-                        fontWeight = fontWeightVal,
-                        fontRoundness = fontRoundnessVal,
-                        colorStyle = colorStyle,
-                        paletteId = paletteId
-                    ) {
-                        ScannerHost(
-                            onDismiss = dismissAction,
-                            onResultDispatched = { value ->
-                                if (value.startsWith("http://", ignoreCase = true) || value.startsWith("https://", ignoreCase = true)) {
-                                    PetalBrowserUtils.intentURL(activity, Uri.parse(value))
-                                } else {
-                                    PetalScanActionHandler.copyToClipboard(activity, value)
-                                }
-                                dismissAction()
-                            }
-                        )
-                    }
-                }
-            }
-
-            decorView.addView(
-                composeView,
-                android.view.ViewGroup.LayoutParams(
-                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
-                )
-            )
+        val intent = android.content.Intent(activity, PetalScannerActivity::class.java).apply {
+            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
+        activity.startActivity(intent)
     }
 }

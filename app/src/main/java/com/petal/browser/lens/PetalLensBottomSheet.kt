@@ -136,25 +136,20 @@ fun PetalLensBottomSheet(
     LaunchedEffect(autoSnapCamera) {
         if (autoSnapCamera && !didTriggerAutoCamera) {
             didTriggerAutoCamera = true
-            showPetalScanner = true
+            (context as? androidx.activity.ComponentActivity)?.let {
+                PetalLensBridge.showPetalScannerDirectly(it)
+                onDismissRequest()
+            }
         }
     }
 
     if (showPetalScanner) {
-        Dialog(
-            onDismissRequest = {
-                showPetalScanner = false
+        LaunchedEffect(Unit) {
+            (context as? androidx.activity.ComponentActivity)?.let {
+                PetalLensBridge.showPetalScannerDirectly(it)
                 onDismissRequest()
-            },
-            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
-        ) {
-            ScannerHost(
-                onDismiss = {
-                    showPetalScanner = false
-                    (context as? com.petal.browser.activity.MainActivity)?.restoreBrowserInputFocus()
-                    onDismissRequest()
-                }
-            )
+            }
+            showPetalScanner = false
         }
     }
 

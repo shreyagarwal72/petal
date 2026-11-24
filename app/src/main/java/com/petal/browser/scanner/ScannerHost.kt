@@ -165,6 +165,7 @@ fun ScannerHost(
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
     var cameraInfo by remember { mutableStateOf<CameraInfo?>(null) }
+    var analyzerUseCaseRef by remember { mutableStateOf<ImageAnalysis?>(null) }
     var previewRef by remember { mutableStateOf<PreviewView?>(null) }
     var cameraReady by remember { mutableStateOf(false) }
 
@@ -203,9 +204,10 @@ fun ScannerHost(
     DisposableEffect(Unit) {
         onDispose {
             try {
+                analyzerUseCaseRef?.clearAnalyzer()
                 cameraProvider?.unbindAll()
                 cameraControl = null
-                executor.shutdownNow()
+                executor.shutdown()
             } catch (_: Exception) {}
         }
     }
@@ -297,15 +299,6 @@ fun ScannerHost(
     // ── Liquid Glass Configuration ─────────────────────────────────────────
     val isLiquidGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val glassWallpaper = rememberPetalGlassWallpaper()
-    val frameTick = remember { mutableLongStateOf(0L) }
-
-    LaunchedEffect(isLiquidGlass, previewRef, cameraReady) {
-        if (isLiquidGlass && previewRef != null && cameraReady) {
-            while (true) {
-                withFrameNanos { frameTick.longValue = it }
-            }
-        }
-    }
 
     // ── Sub-screens (History / Settings) ───────────────────────────────────
     if (showSettingsScreen) {
@@ -363,22 +356,6 @@ fun ScannerHost(
                         }
                     }
             ) {
-                // ── Liquid Glass Live Camera Reflection ────────────────────────
-                if (isLiquidGlass) {
-                    val pv = previewRef
-                    if (pv != null && hasCameraPermission && cameraReady) {
-                        Box(
-                            Modifier
-                                .matchParentSize()
-                                .liveGlassWallpaper(glassWallpaper, pv) { frameTick.longValue }
-                        )
-                    } else {
-                        Box(Modifier.matchParentSize().captureGlassWallpaper(glassWallpaper)) {
-                            com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
-                        }
-                    }
-                }
-
                 // ── Full-Bleed Camera Surface ──────────────────────────────────
                 if (hasCameraPermission && cameraError == CameraErrorState.NONE) {
                     key(lensFacing, bindTrigger) {
@@ -420,6 +397,7 @@ fun ScannerHost(
                                                 .setResolutionSelector(resolutionSelector)
                                                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                                                 .build()
+                                            analyzerUseCaseRef = analyzerUseCase
 
                                             val analyzer = PetalCameraAnalyzer(
                                                 isLocked = analysisLocked,
@@ -703,7 +681,7 @@ fun ScannerHost(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -715,12 +693,14 @@ fun ScannerHost(
                             icon = Icons.Rounded.Close,
                             contentDescription = "Close Scanner",
                             isLiquidGlass = isLiquidGlass,
+                            size = 40.dp,
+                            iconSize = 20.dp,
                             onClick = onDismiss
                         )
 
                         // Mode Chips: Scan, Gallery, History
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             ModeChip(
@@ -753,6 +733,8 @@ fun ScannerHost(
                             icon = Icons.Rounded.Settings,
                             contentDescription = "Scanner Settings",
                             isLiquidGlass = isLiquidGlass,
+                            size = 40.dp,
+                            iconSize = 20.dp,
                             onClick = { showSettingsScreen = true }
                         )
                     }
@@ -830,7 +812,7 @@ fun ScannerHost(
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
                         .navigationBarsPadding()
-                        .padding(bottom = 24.dp, start = 20.dp, end = 20.dp),
+                        .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Zoom Presets Pill Row: 1x, 2x, 5x
@@ -851,7 +833,7 @@ fun ScannerHost(
                                     shape = CircleShape,
                                     color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                                     modifier = Modifier
-                                        .size(36.dp)
+                                        .size(34.dp)
                                         .bouncyClickable {
                                             zoomRatio = preset
                                             cameraControl?.setZoomRatio(preset)
@@ -871,8 +853,8 @@ fun ScannerHost(
 
                     // Rail Actions: Torch, Gallery Photo, Front/Back Camera Switch
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        modifier = Modifier.fillMaxWidth(0.85f),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Torch Button (disabled if no flash unit)
@@ -881,6 +863,8 @@ fun ScannerHost(
                             contentDescription = "Toggle Torch",
                             isLiquidGlass = isLiquidGlass,
                             enabled = hasFlashUnit,
+                            size = 48.dp,
+                            iconSize = 22.dp,
                             tint = if (torchEnabled) Color(0xFFFACC15) else Color.White,
                             onClick = {
                                 val next = !torchEnabled
@@ -894,18 +878,18 @@ fun ScannerHost(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier
-                                .size(56.dp)
+                                .size(52.dp)
                                 .bouncyClickable { launchSafePhotoPicker() }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 if (isDecodingGallery) {
-                                    PetalContainedLoadingIndicator(size = 24.dp)
+                                    PetalContainedLoadingIndicator(size = 22.dp)
                                 } else {
                                     Icon(
                                         imageVector = Icons.Rounded.AddPhotoAlternate,
                                         contentDescription = "Scan from Gallery",
                                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.size(26.dp)
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
                             }
@@ -923,6 +907,8 @@ fun ScannerHost(
                             contentDescription = "Switch Camera",
                             isLiquidGlass = isLiquidGlass,
                             enabled = canSwitchCamera,
+                            size = 48.dp,
+                            iconSize = 22.dp,
                             onClick = {
                                 lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
                                     CameraSelector.LENS_FACING_FRONT
@@ -966,6 +952,8 @@ private fun ControlIconButton(
     contentDescription: String,
     isLiquidGlass: Boolean,
     enabled: Boolean = true,
+    size: Dp = 44.dp,
+    iconSize: Dp = 22.dp,
     tint: Color = Color.White,
     onClick: () -> Unit
 ) {
@@ -973,7 +961,7 @@ private fun ControlIconButton(
         shape = CircleShape,
         color = if (isLiquidGlass) petalGroupSurfaceColor() else Color(0x66000000),
         modifier = Modifier
-            .size(48.dp)
+            .size(size)
             .then(if (isLiquidGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true) else Modifier)
             .bouncyClickable(enabled = enabled) { onClick() }
     ) {
@@ -982,7 +970,7 @@ private fun ControlIconButton(
                 imageVector = icon,
                 contentDescription = contentDescription,
                 tint = if (enabled) tint else Color.White.copy(alpha = 0.35f),
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(iconSize)
             )
         }
     }
@@ -1008,19 +996,19 @@ private fun ModeChip(
             .bouncyClickable { onClick() }
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color.White,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(15.dp)
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(5.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color.White
             )
         }

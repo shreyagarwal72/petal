@@ -657,7 +657,7 @@ private fun IncognitoDecoySearchBar(
         IconButton(
             onClick = {
                 if (activity != null) {
-                    PetalLensBridge.showLensBottomSheet(activity)
+                    PetalLensBridge.showPetalScannerDirectly(activity)
                 } else {
                     onSearch()
                 }
