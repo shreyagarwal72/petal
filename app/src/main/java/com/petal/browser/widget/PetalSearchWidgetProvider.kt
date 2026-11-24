@@ -17,6 +17,7 @@ object PetalSearchWidgetProvider {
     const val ACTION_OPEN_NEW_TAB = "com.petal.browser.action.OPEN_NEW_TAB"
     const val ACTION_OPEN_LENS = "com.petal.browser.action.OPEN_LENS"
     const val ACTION_OPEN_SNAP_CAMERA = "com.petal.browser.action.OPEN_SNAP_CAMERA"
+    const val ACTION_OPEN_MENU = "com.petal.browser.action.OPEN_MENU"
 
     /** Refreshes every placed instance of the widget, e.g. after a theme/palette change. */
     @JvmStatic

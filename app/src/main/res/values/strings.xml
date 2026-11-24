@@ -2138,5 +2138,52 @@
     <string name="bar_find_in_page">Find in page</string>
     <string name="bar_history">History</string>
     <string name="bar_ai">AI</string>
+
+    <!-- Quick Settings Tiles -->
+    <string name="quick_tile_scanner_label">QR &amp; Barcode</string>
+    <string name="quick_tile_scanner_subtitle">Scan code</string>
+    <string name="quick_tile_scanner_copied">Copied to clipboard</string>
+    <string name="quick_tile_new_tab_label">New Tab</string>
+    <string name="quick_tile_new_tab_subtitle">Open tab</string>
+    <string name="quick_tile_incognito_label">Incognito</string>
+    <string name="quick_tile_incognito_subtitle">Private tab</string>
+    <string name="quick_tile_voice_search_label">Voice Search</string>
+    <string name="quick_tile_voice_search_subtitle">Speak query</string>
+    <string name="quick_tile_lens_label">Petal Lens</string>
+    <string name="quick_tile_lens_subtitle">Visual search</string>
+    <string name="quick_tile_snap_camera_label">Snap Camera</string>
+    <string name="quick_tile_snap_camera_subtitle">Photo search</string>
+    <string name="quick_tile_search_label">Search</string>
+    <string name="quick_tile_search_subtitle">Web search</string>
+    <string name="quick_tile_downloads_label">Downloads</string>
+    <string name="quick_tile_downloads_subtitle">View files</string>
+    <string name="quick_tile_bookmarks_label">Bookmarks</string>
+    <string name="quick_tile_bookmarks_subtitle">Saved pages</string>
+    <string name="quick_tile_ai_search_label">Petal AI</string>
+    <string name="quick_tile_ai_search_subtitle">Ask assistant</string>
+    <string name="quick_tile_desktop_site_label">Desktop Site</string>
+    <string name="quick_tile_desktop_site_subtitle">Tab menu</string>
+    <string name="quick_tile_adblock_label">Ad Blocker</string>
+    <string name="quick_tile_adblock_off">Off</string>
+    <string name="quick_tile_adblock_standard">Standard</string>
+    <string name="quick_tile_adblock_aggressive">Aggressive</string>
+    <string name="quick_tile_javascript_label">JavaScript</string>
+    <string name="quick_tile_javascript_on">Allowed</string>
+    <string name="quick_tile_javascript_off">Blocked</string>
+    <string name="quick_tile_force_dark_label">Force Dark</string>
+    <string name="quick_tile_force_dark_on">On</string>
+    <string name="quick_tile_force_dark_off">Off</string>
+    <string name="quick_tile_https_only_label">HTTPS-Only</string>
+    <string name="quick_tile_https_only_on">Strict</string>
+    <string name="quick_tile_https_only_off">Off</string>
+    <string name="quick_tile_close_incognito_label">Close Incognito</string>
+    <string name="quick_tile_close_incognito_none">None open</string>
+    <string name="quick_tile_close_incognito_count">%d open</string>
+    <string name="quick_settings_tiles_title">Quick Settings Tiles</string>
+    <string name="quick_settings_tiles_desc">Add one-tap shortcuts to your notification shade</string>
+    <string name="quick_settings_add_tile_btn">Add tile</string>
+    <string name="quick_settings_dialog_title">Add Quick Settings Tile</string>
+    <string name="quick_settings_dialog_legacy_instructions">Swipe down twice from the top of your screen to open Quick Settings, tap the pencil (Edit) icon, and drag Petal tiles into your active tiles.</string>
+    <string name="quick_settings_tile_added_success">Tile request sent to system</string>
 </resources>
 

@@ -193,7 +193,12 @@ class MainActivity : FragmentActivity(), BrowserController {
             val restored = com.petal.browser.browser.PetalSessionRestoreManager.restoreSession(this)
             val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this)
             if (!restored && store.state.tabs.isEmpty()) {
-                viewModel.openNewTab("about:home", selectTab = true)
+                val action = intent?.action
+                val willOpenTab = action == com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_NEW_TAB ||
+                    action == com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO
+                if (!willOpenTab) {
+                    viewModel.openNewTab("about:home", selectTab = true)
+                }
             }
         }
 
@@ -1015,6 +1020,9 @@ class MainActivity : FragmentActivity(), BrowserController {
             }
             com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SNAP_CAMERA -> {
                 com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(this, autoSnapCamera = true)
+            }
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_MENU -> {
+                viewModel.setMenuOpen(true)
             }
             com.petal.browser.compose.incognito.PetalIncognitoSessionManager.ACTION_CLOSE_INCOGNITO -> {
                 viewModel.closeAllTabs(isIncognitoOnly = true)

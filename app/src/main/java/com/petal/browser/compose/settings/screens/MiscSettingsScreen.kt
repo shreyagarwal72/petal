@@ -287,6 +287,101 @@ fun MiscSettingsScreenContent(
                     )
                 }
 
+                // ── Quick Settings Tiles ────────────────────────────────────────────────
+                var showQsDialog by remember { mutableStateOf(false) }
+                var showLegacyInstructionsDialog by remember { mutableStateOf(false) }
+
+                PetalSettingsSection(
+                    title = stringResource(R.string.quick_settings_tiles_title),
+                    icon = Icons.Rounded.Widgets,
+                    cardId = "misc_quick_settings",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    com.petal.browser.ui.containment.PetalGroupNavigationRow(
+                        title = stringResource(R.string.quick_settings_tiles_title),
+                        subtitle = stringResource(R.string.quick_settings_tiles_desc),
+                        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                        leadingIcon = { Icon(Icons.Rounded.Widgets, contentDescription = null) },
+                        onClick = {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                showQsDialog = true
+                            } else {
+                                showLegacyInstructionsDialog = true
+                            }
+                        }
+                    )
+                }
+
+                if (showLegacyInstructionsDialog) {
+                    com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+                        onDismissRequest = { showLegacyInstructionsDialog = false },
+                        title = { Text(stringResource(R.string.quick_settings_dialog_title)) },
+                        text = { Text(stringResource(R.string.quick_settings_dialog_legacy_instructions)) },
+                        confirmButton = {
+                            com.petal.browser.ui.kit.TextButton(onClick = { showLegacyInstructionsDialog = false }) {
+                                Text(stringResource(R.string.ui_got_it))
+                            }
+                        }
+                    )
+                }
+
+                if (showQsDialog) {
+                    val qsContext = LocalContext.current
+                    com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+                        onDismissRequest = { showQsDialog = false },
+                        title = { Text(stringResource(R.string.quick_settings_dialog_title)) },
+                        text = {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 380.dp)
+                                    .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                com.petal.browser.tiles.PetalQuickSettingsManager.TILES.forEach { tile ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = stringResource(tile.titleRes),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Text(
+                                                text = stringResource(tile.subtitleRes),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        com.petal.browser.ui.kit.FilledTonalButton(
+                                            onClick = {
+                                                com.petal.browser.tiles.PetalQuickSettingsManager.requestAddTile(
+                                                    context = qsContext,
+                                                    tile = tile,
+                                                    onShowLegacyInstructions = {
+                                                        showLegacyInstructionsDialog = true
+                                                    }
+                                                )
+                                            },
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                        ) {
+                                            Text(stringResource(R.string.quick_settings_add_tile_btn), style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            com.petal.browser.ui.kit.TextButton(onClick = { showQsDialog = false }) {
+                                Text(stringResource(R.string.ui_got_it))
+                            }
+                        }
+                    )
+                }
+
                 Spacer(Modifier.height(32.dp))
             }
         }

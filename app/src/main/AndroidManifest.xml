@@ -819,15 +819,250 @@
         </provider>
 
         <activity android:name="com.petal.browser.lens.PetalScannerActivity" android:exported="false" android:screenOrientation="portrait" />
+        <!-- Quick Settings Tiles & Preferences Alias -->
+        <activity-alias
+            android:name="com.petal.browser.tiles.PetalTilePreferencesAlias"
+            android:targetActivity="com.petal.browser.activity.SettingsActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
+        </activity-alias>
+
         <service
             android:name="com.petal.browser.lens.PetalScannerTileService"
-            android:label="Petal Scanner"
-            android:icon="@drawable/ic_lens_scanner"
+            android:label="@string/quick_tile_scanner_label"
+            android:icon="@drawable/ic_tile_scanner"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalNewTabTileService"
+            android:label="@string/quick_tile_new_tab_label"
+            android:icon="@drawable/ic_tile_new_tab"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalIncognitoTileService"
+            android:label="@string/quick_tile_incognito_label"
+            android:icon="@drawable/ic_tile_incognito"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalVoiceSearchTileService"
+            android:label="@string/quick_tile_voice_search_label"
+            android:icon="@drawable/ic_tile_voice"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalLensTileService"
+            android:label="@string/quick_tile_lens_label"
+            android:icon="@drawable/ic_tile_lens"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalSnapCameraTileService"
+            android:label="@string/quick_tile_snap_camera_label"
+            android:icon="@drawable/ic_tile_camera"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalSearchTileService"
+            android:label="@string/quick_tile_search_label"
+            android:icon="@drawable/ic_tile_search"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalDownloadsTileService"
+            android:label="@string/quick_tile_downloads_label"
+            android:icon="@drawable/ic_tile_downloads"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalBookmarksTileService"
+            android:label="@string/quick_tile_bookmarks_label"
+            android:icon="@drawable/ic_tile_bookmarks"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalAiSearchTileService"
+            android:label="@string/quick_tile_ai_search_label"
+            android:icon="@drawable/ic_tile_ai"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalDesktopTileService"
+            android:label="@string/quick_tile_desktop_site_label"
+            android:icon="@drawable/ic_tile_desktop"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalAdBlockTileService"
+            android:label="@string/quick_tile_adblock_label"
+            android:icon="@drawable/ic_tile_adblock"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalJavaScriptTileService"
+            android:label="@string/quick_tile_javascript_label"
+            android:icon="@drawable/ic_tile_javascript"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalForceDarkTileService"
+            android:label="@string/quick_tile_force_dark_label"
+            android:icon="@drawable/ic_tile_dark_mode"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalHttpsOnlyTileService"
+            android:label="@string/quick_tile_https_only_label"
+            android:icon="@drawable/ic_tile_https"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name="com.petal.browser.tiles.PetalCloseIncognitoTileService"
+            android:label="@string/quick_tile_close_incognito_label"
+            android:icon="@drawable/ic_tile_close_incognito"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
         </service>
 
 

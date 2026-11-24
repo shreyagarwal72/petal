@@ -5,6 +5,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
+import android.widget.Toast
+import com.petal.browser.R
 import com.petal.browser.unit.PetalBrowserUtils
 
 class PetalScannerActivity : ComponentActivity() {
@@ -23,6 +25,7 @@ class PetalScannerActivity : ComponentActivity() {
                                     android.content.ClipData.newPlainText("Scanned barcode", value)
                                 )
                             }
+                            Toast.makeText(this, R.string.quick_tile_scanner_copied, Toast.LENGTH_SHORT).show()
                         }
                         finish()
                     },
