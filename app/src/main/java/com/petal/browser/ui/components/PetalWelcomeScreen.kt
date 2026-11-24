@@ -182,15 +182,20 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
     Surface(
-        color = MaterialTheme.colorScheme.background,
+        color = Color.Transparent,
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            PetalPageBackground(
+                pageKey = "welcome_page",
+                modifier = Modifier.fillMaxSize()
+            )
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
             // Header Page Indicators (Pills)
             Row(
                 modifier = Modifier
@@ -275,6 +280,7 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                     onGetStarted()
                 }
             )
+        }
         }
     }
 }

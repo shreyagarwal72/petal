@@ -46,7 +46,6 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.security.BiometricLockManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.LocalPetalBadgeShapeKey
@@ -199,9 +198,9 @@ fun PetalAppLockConfigScreen(
                 com.petal.browser.ui.components.PetalGlassHeaderLayout(
                     modifier = Modifier.fillMaxSize(),
                     pageBackground = {
-                        M3ExpressiveVariableBackground(
+                        com.petal.browser.ui.components.PetalPageBackground(
                             modifier = Modifier.fillMaxSize(),
-                            pageSeed = "app_lock_config"
+                            pageKey = "app_lock_config"
                         )
                     },
                     header = { headerModifier, headerBackdrop ->

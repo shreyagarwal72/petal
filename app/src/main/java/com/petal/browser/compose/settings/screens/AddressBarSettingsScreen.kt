@@ -100,7 +100,7 @@ fun AddressBarSettingsScreen(
     Box(modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "address_bar_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "address_bar_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

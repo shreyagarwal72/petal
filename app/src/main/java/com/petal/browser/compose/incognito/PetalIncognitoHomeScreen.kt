@@ -46,7 +46,6 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.lens.PetalLensBridge
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalVoiceSearchBridge
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.containment.*
@@ -132,7 +131,7 @@ fun PetalIncognitoHomeScreen(
                 // Background morphing shapes & wallpaper recorder (sibling to content)
                 com.petal.browser.ui.components.PetalGlassHeaderLayout(
                     modifier = Modifier.fillMaxSize(),
-                    pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "incognito_firefox_stealth") },
+                    pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "incognito_page", modifier = Modifier.fillMaxSize()) },
                     header = { headerModifier, headerBackdrop ->
                         ExpressiveHeader(
                             modifier = headerModifier,

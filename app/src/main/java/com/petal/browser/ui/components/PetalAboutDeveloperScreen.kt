@@ -339,9 +339,9 @@ fun PetalAboutDeveloperScreen(
                 PetalGlassHeaderLayout(
                     modifier = Modifier.fillMaxSize(),
                     pageBackground = {
-                        M3ExpressiveVariableBackground(
+                        PetalPageBackground(
                             modifier = Modifier.fillMaxSize(),
-                            pageSeed = "about_developer_page"
+                            pageKey = "about_developer_page"
                         )
                     },
                     header = { headerModifier, headerBackdrop ->

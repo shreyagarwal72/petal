@@ -40,7 +40,6 @@ import com.petal.browser.compose.settings.viewmodel.MiscSettingsViewModel
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.logger.PetalAppLogger
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalCrashReportingPicker
 import com.petal.browser.unit.PetalUpdateManager
 import com.petal.browser.unit.PetalUpdateUtils
@@ -131,7 +130,7 @@ fun UpdaterSettingsScreenContent(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "updater_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "updater_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

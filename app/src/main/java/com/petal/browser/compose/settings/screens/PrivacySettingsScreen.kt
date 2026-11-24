@@ -37,7 +37,6 @@ import com.petal.browser.browser.PetalAdBlockEngine
 import com.petal.browser.compose.settings.viewmodel.PrivacySettingsViewModel
 import com.petal.browser.passwords.PetalPasswordsScreen
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.containment.*
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
@@ -325,7 +324,7 @@ fun PrivacySettingsScreenContent(
         Box(modifier = Modifier.fillMaxSize()) {
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
-                pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "privacy_settings") },
+                pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "privacy_settings", modifier = Modifier.fillMaxSize()) },
                 header = { headerModifier, headerBackdrop ->
                     ExpressiveHeader(
                         modifier = headerModifier,

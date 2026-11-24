@@ -97,7 +97,7 @@ internal fun AppearanceSubPageScaffold(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = pageSeed) },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = pageSeed, modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

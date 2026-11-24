@@ -49,7 +49,6 @@ import com.petal.browser.security.BiometricLockManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.ExpressiveTabGroupPill
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.ui.containment.PetalAlertDialog
 import com.petal.browser.ui.containment.PetalGroupIconBadge
@@ -147,7 +146,7 @@ fun PetalRecentlyClosedVault(
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
                 pageBackground = {
-                    M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "vault_page")
+                    com.petal.browser.ui.components.PetalPageBackground(pageKey = "vault_page", modifier = Modifier.fillMaxSize())
                 },
                 header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
@@ -270,7 +269,7 @@ fun PetalRecentlyClosedVault(
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
                 pageBackground = {
-                    M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "vault_settings")
+                    com.petal.browser.ui.components.PetalPageBackground(pageKey = "vault_settings", modifier = Modifier.fillMaxSize())
                 },
                 header = { headerModifier, headerBackdrop ->
                     ExpressiveHeader(

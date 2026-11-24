@@ -43,7 +43,6 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -184,7 +183,7 @@ fun PetalDeleteScreen(
             ) {
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
-                pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "delete_page") },
+                pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "delete_page", modifier = Modifier.fillMaxSize()) },
                 header = { headerModifier, headerBackdrop ->
                     ExpressiveHeader(
                         modifier = headerModifier,

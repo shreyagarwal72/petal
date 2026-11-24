@@ -22,7 +22,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.compose.settings.viewmodel.MiscSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.petalGroupShape
@@ -77,7 +76,7 @@ fun MiscSettingsScreenContent(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "misc_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "misc_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

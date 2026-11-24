@@ -68,7 +68,7 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.account.progress.PetalProgressStore
 import com.petal.browser.browser.PetalAdBlockEngine
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalPageBackground
 import com.petal.browser.ui.components.allSearchEngines
 import com.petal.browser.ui.kit.Button
 import com.petal.browser.ui.kit.FilledTonalButton
@@ -232,7 +232,7 @@ private fun SetupScaffold(
         color = MaterialTheme.colorScheme.background
     ) {
         Box(Modifier.fillMaxSize()) {
-            M3ExpressiveVariableBackground(pageSeed = "petal_setup")
+            com.petal.browser.ui.components.PetalPageBackground(pageKey = "petal_setup")
 
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
                 // ── Top: step label, skip, progress ──

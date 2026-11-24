@@ -201,7 +201,8 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override val liquidGlassBgMode: Flow<String> = preferenceFlow("sp_liquid_glass_bg_mode") {
-        sp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
+        val mode = sp.getString("sp_liquid_glass_bg_mode", "BLOOM_GLASS") ?: "BLOOM_GLASS"
+        if (mode == "STRIDE" || mode == "MORPHING") "BLOOM_GLASS" else mode
     }
 
     override val liquidGlassBgImageUri: Flow<String> = preferenceFlow("sp_liquid_glass_bg_image_uri") {

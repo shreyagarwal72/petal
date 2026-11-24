@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.components.petalTouchFeedback
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.unit.PetalBackupManager
@@ -603,7 +602,7 @@ fun DataBackupSettingsScreen(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "data_storage_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "data_storage_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

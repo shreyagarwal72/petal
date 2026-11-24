@@ -66,7 +66,6 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.containment.PetalBadgeVariant
@@ -270,7 +269,7 @@ fun SafeLockerScreen(
                 Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                     com.petal.browser.ui.components.PetalGlassHeaderLayout(
                         modifier = Modifier.fillMaxSize(),
-                        pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "safe_locker_page") },
+                        pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "safe_locker_page", modifier = Modifier.fillMaxSize()) },
                         header = { headerModifier, headerBackdrop ->
                         if (isSelectionMode) {
                             ExpressiveHeader(

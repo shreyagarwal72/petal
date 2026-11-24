@@ -1152,7 +1152,7 @@ internal fun PetalSheetGlassBackdrop(
         }
     } else {
         Box(modifier.captureGlassWallpaper(wallpaper)) {
-            com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
+            com.petal.browser.ui.components.PetalBloomBackground(pageSeed = "glass_containment", modifier = Modifier.fillMaxSize())
         }
     }
 }

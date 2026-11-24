@@ -36,7 +36,6 @@ import com.petal.browser.compose.settings.PetalSettingsSearchIndex
 import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupListRow
@@ -187,7 +186,7 @@ fun SettingsHubScreen(
         }
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "settings_hub") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "settings_hub", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

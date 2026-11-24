@@ -104,7 +104,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -624,7 +623,7 @@ fun PetalDownloadManagerScreen(
         Box(modifier = Modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "downloads_page") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "downloads_page", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

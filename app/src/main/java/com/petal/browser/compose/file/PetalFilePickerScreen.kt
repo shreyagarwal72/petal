@@ -94,7 +94,7 @@ import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalPageBackground
 import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupListRow
@@ -237,9 +237,9 @@ fun PetalFilePickerScreen(
                 // With storage access the background lives inside the glass header layout (so the header
                 // refracts it); only the permission prompt draws it here.
                 if (!hasPerms) {
-                    M3ExpressiveVariableBackground(
+                    PetalPageBackground(
                         modifier = Modifier.fillMaxSize(),
-                        pageSeed = "petal_file_picker"
+                        pageKey = "petal_file_picker"
                     )
                 }
                 Surface(
@@ -502,9 +502,9 @@ private fun FilePickerBrowserContent(
     com.petal.browser.ui.components.PetalGlassHeaderLayout(
         modifier = Modifier.fillMaxSize(),
         pageBackground = {
-            M3ExpressiveVariableBackground(
+            PetalPageBackground(
                 modifier = Modifier.fillMaxSize(),
-                pageSeed = "petal_file_picker"
+                pageKey = "petal_file_picker"
             )
         },
         header = { headerModifier, headerBackdrop ->

@@ -34,7 +34,6 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.containment.PetalGroup
@@ -66,7 +65,7 @@ fun MediaSettingsScreen(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "media_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "media_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

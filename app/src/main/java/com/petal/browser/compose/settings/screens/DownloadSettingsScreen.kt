@@ -32,7 +32,6 @@ import com.petal.browser.compose.settings.viewmodel.DownloadSettingsViewModel
 import com.petal.browser.download.PetalBatteryOptimization
 import com.petal.browser.download.PetalParallelFetchClient
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.unit.ExternalDownloadManagerHelper
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.graphicsLayer
@@ -136,7 +135,7 @@ fun DownloadSettingsScreenContent(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "download_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "download_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

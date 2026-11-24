@@ -27,7 +27,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.compose.settings.viewmodel.SearchHomeSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalSearchEngineSheetContent
 import com.petal.browser.ui.components.ScrollFadeRow
 import com.petal.browser.ui.components.allSearchEngines
@@ -132,7 +131,7 @@ fun SearchHomeSettingsScreenContent(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "search_home_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "search_home_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

@@ -64,7 +64,6 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.security.BiometricLockManager
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.layout.LiquidRippleEffect
@@ -149,9 +148,9 @@ fun PetalBiometricExpressiveSheet(
                 .fillMaxWidth()
                 .wrapContentHeight()
         ) {
-            M3ExpressiveVariableBackground(
+            com.petal.browser.ui.components.PetalPageBackground(
                 modifier = Modifier.matchParentSize(),
-                pageSeed = "biometric_auth"
+                pageKey = "biometric_auth"
             )
 
             Column(

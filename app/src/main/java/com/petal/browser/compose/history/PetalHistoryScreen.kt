@@ -64,7 +64,7 @@ import com.petal.browser.ui.components.PetalGroupRole
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.PetalExpressiveAlertDialog
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalPageBackground
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -459,7 +459,7 @@ fun PetalHistoryScreen(
         }
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "history_page") },
+            pageBackground = { PetalPageBackground("history_page") },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

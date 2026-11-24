@@ -29,7 +29,6 @@ import com.petal.browser.accessibility.PetalAccessibilityEngine
 import com.petal.browser.compose.settings.viewmodel.DisplaySettingsViewModel
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.ScrollFadeRow
 import androidx.compose.ui.res.stringResource
@@ -208,7 +207,7 @@ fun DisplaySettingsScreenContent(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "display_zoom_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "display_zoom_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

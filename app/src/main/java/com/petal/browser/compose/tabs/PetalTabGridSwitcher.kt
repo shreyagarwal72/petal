@@ -101,7 +101,6 @@ import com.petal.browser.ui.components.AnimatedCounterBadge
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.ExpressiveTabGroupPill
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalSnackbarHost
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -775,7 +774,7 @@ fun PetalTabGridSwitcher(
         ) {
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
-                pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "tabs_page") },
+                pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "tabs_page", modifier = Modifier.fillMaxSize()) },
                 header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

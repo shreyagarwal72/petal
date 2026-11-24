@@ -555,44 +555,29 @@ fun PetalHomeScreen(
     }
 
     val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
-    val effectiveWallpaperUri = when {
-        !activeWallpaperUri.isNullOrBlank() -> activeWallpaperUri
-        isGlassEnabled && glassBgMode == "IMAGE" && glassImageUri.isNotBlank() -> glassImageUri
-        else -> null
-    }
 
     CompositionLocalProvider(
         com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides glassWallpaper
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = if (isGlassEnabled || !effectiveWallpaperUri.isNullOrBlank()) Color.Transparent else MaterialTheme.colorScheme.background
+            color = if (isGlassEnabled || !activeWallpaperUri.isNullOrBlank()) Color.Transparent else MaterialTheme.colorScheme.background
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                // Page background (wallpaper / living M3 background). It is handed to the glass header
+                // Page background (wallpaper / themed surface). It is handed to the glass header
                 // layout so the header refracts the real page and the wallpaper stays full-screen
                 // behind the scrolling content.
                 val homePageBackground: @Composable () -> Unit = {
-                // ── Layer 0: OmniBrowser Wallpaper engine OR Living M3 background ───────────
+                // ── Layer 0: OmniBrowser Wallpaper engine (Home Wallpaper Only) ───────────
 
                 Box(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    if (!effectiveWallpaperUri.isNullOrBlank()) {
-                        val effDim = if (!activeWallpaperUri.isNullOrBlank()) {
-                            com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim
-                        } else {
-                            glassBgDim
-                        }
-                        val effBlur = if (!activeWallpaperUri.isNullOrBlank()) {
-                            com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperBlur
-                        } else {
-                            glassBgBlur
-                        }
+                    if (!activeWallpaperUri.isNullOrBlank()) {
                         com.petal.browser.wallpaper.PetalGlassAwareWallpaperBackground(
-                            wallpaperUri = effectiveWallpaperUri,
-                            dim = effDim,
-                            blur = effBlur,
+                            wallpaperUri = activeWallpaperUri,
+                            dim = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim,
+                            blur = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperBlur,
                             glassWallpaper = glassWallpaper,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -602,9 +587,10 @@ fun PetalHomeScreen(
                             glassWallpaper = glassWallpaper
                         )
                     } else {
-                        com.petal.browser.ui.components.M3ExpressiveVariableBackground(
-                            modifier = Modifier.fillMaxSize(),
-                            pageSeed = "home_page"
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(if (isAmoled) Color.Black else MaterialTheme.colorScheme.background)
                         )
                     }
                 }

@@ -47,7 +47,6 @@ import com.petal.browser.R
 import com.petal.browser.appicon.PetalAppIcon
 import com.petal.browser.appicon.PetalAppIcons
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.containment.PetalSettingsSection
 
@@ -75,7 +74,7 @@ fun AppIconSettingsScreen(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "app_icon_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "app_icon_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

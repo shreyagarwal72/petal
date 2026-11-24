@@ -312,9 +312,9 @@ fun PetalFileViewerScreen(
                                 else Modifier
                             )
                     ) {
-                        com.petal.browser.ui.components.M3ExpressiveVariableBackground(
+                        com.petal.browser.ui.components.PetalPageBackground(
                             modifier = Modifier.fillMaxSize(),
-                            pageSeed = "petal_file_viewer"
+                            pageKey = "petal_file_viewer"
                         )
                     }
                     Scaffold(

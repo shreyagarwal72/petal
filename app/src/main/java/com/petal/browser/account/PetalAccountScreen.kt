@@ -45,7 +45,6 @@ import com.petal.browser.account.sync.SyncDevice
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroupControlRow
@@ -201,7 +200,7 @@ fun PetalAccountScreen(
                     // off the layout falls back to the stacked Material 3 Expressive header.
                     com.petal.browser.ui.components.PetalGlassHeaderLayout(
                         modifier = Modifier.fillMaxSize(),
-                        pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "account_page") },
+                        pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "account_page", modifier = Modifier.fillMaxSize()) },
                         header = { headerModifier, headerBackdrop ->
                             ExpressiveHeader(
                                 modifier = headerModifier,

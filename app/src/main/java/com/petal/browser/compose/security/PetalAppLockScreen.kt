@@ -45,7 +45,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Shape
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.ExpressivePasswordShapes
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.ui.containment.PetalAlertDialog
 import com.petal.browser.ui.containment.PetalSnackbarHost
@@ -156,9 +155,9 @@ fun PetalAppLockScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                M3ExpressiveVariableBackground(
+                com.petal.browser.ui.components.PetalPageBackground(
                     modifier = Modifier.fillMaxSize(),
-                    pageSeed = "security_app_lock"
+                    pageKey = "security_app_lock"
                 )
 
                 Column(

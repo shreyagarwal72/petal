@@ -70,7 +70,7 @@ import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalPageBackground
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.components.PetalSwipeActionRow
 import com.petal.browser.ui.components.PetalRowSwipeAction
@@ -303,7 +303,7 @@ fun PetalBookmarksScreen(
             }
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
-                pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "bookmarks_page") },
+                pageBackground = { com.petal.browser.ui.components.PetalPageBackground("bookmarks_page") },
                 header = { headerModifier, headerBackdrop ->
                     ExpressiveHeader(
                         modifier = headerModifier,

@@ -49,7 +49,6 @@ import com.petal.browser.ui.glass.liveGlassWallpaper
 import com.petal.browser.ui.glass.recordGlassWallpaper
 import com.petal.browser.ui.glass.rememberPetalGlassWallpaper
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
-import com.petal.browser.ui.glass.PetalGlassPattern
 import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.petalGroupSurfaceColor

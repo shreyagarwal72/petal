@@ -41,7 +41,6 @@ import com.petal.browser.browser.PetalAdBlockMode
 import com.petal.browser.browser.PetalFilterSubscriptionManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.containment.*
 import com.petal.browser.ui.kit.Button
@@ -317,7 +316,7 @@ fun PetalAdBlockSettingsScreen(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "petal_shields_center") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "petal_shields_center", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,

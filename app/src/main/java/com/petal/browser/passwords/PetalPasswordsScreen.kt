@@ -62,7 +62,6 @@ import com.petal.browser.ui.components.ExpressiveButtonGroup
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.ExpressiveSegmentItem
 import com.petal.browser.ui.components.IconSwitch
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalButtonGroupItem
 import com.petal.browser.ui.components.PetalChoiceButtonGroup
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
@@ -312,7 +311,7 @@ fun PetalPasswordsScreen(
                             // off the layout simply stacks the Material 3 Expressive header above the list.
                             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                                 modifier = Modifier.fillMaxSize(),
-                                pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "passwords_settings") },
+                                pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "passwords_settings", modifier = Modifier.fillMaxSize()) },
                                 header = { headerModifier, headerBackdrop ->
                                     ExpressiveHeader(
                                         modifier = headerModifier,

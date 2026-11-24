@@ -840,7 +840,7 @@ internal fun PetalOverflowMenuShell(
                         contentScale = androidx.compose.ui.layout.ContentScale.FillBounds
                     )
                 } else {
-                    com.petal.browser.ui.glass.PetalGlassPattern(Modifier.fillMaxSize())
+                    com.petal.browser.ui.components.PetalBloomBackground(pageSeed = "overflow_menu", modifier = Modifier.fillMaxSize())
                 }
             }
             if (!windowBlurActive) {

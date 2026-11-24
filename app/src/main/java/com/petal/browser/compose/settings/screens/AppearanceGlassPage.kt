@@ -597,14 +597,66 @@ fun AppearanceGlassPage(
 
                         ExpressiveButtonGroup(
                             items = listOf(
-                                ExpressiveSegmentItem(id = "STRIDE", label = "Glass", icon = Icons.Rounded.BlurOn),
-                                ExpressiveSegmentItem(id = "MORPHING", label = "Morphs", icon = Icons.Rounded.BubbleChart),
+                                ExpressiveSegmentItem(id = "BLOOM_GLASS", label = "Bloom + glass", icon = Icons.Rounded.BubbleChart),
                                 ExpressiveSegmentItem(id = "IMAGE", label = "Wallpaper", icon = Icons.Rounded.Wallpaper)
                             ),
-                            selectedId = liquidGlassBgMode,
+                            selectedId = if (liquidGlassBgMode == "STRIDE" || liquidGlassBgMode == "MORPHING") "BLOOM_GLASS" else liquidGlassBgMode,
                             onItemSelected = onLiquidGlassBgModeChange,
                             modifier = Modifier.fillMaxWidth()
                         )
+
+                        // Live Preview of Bloom behind sample glass cards
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                        ) {
+                            Box(Modifier.fillMaxSize()) {
+                                com.petal.browser.ui.components.PetalBloomBackground(
+                                    pageSeed = "glass_preview",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.55f),
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                                        .fillMaxWidth(0.9f)
+                                        .height(64.dp)
+                                        .com.petal.browser.ui.containment.liquidGlassChrome(RoundedCornerShape(16.dp), enabled = true)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.AutoAwesome,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                        Column {
+                                            Text(
+                                                text = "Bloom + Glass Preview",
+                                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = "Tonal M3E shapes with live refraction",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
                         if (liquidGlassBgMode == "IMAGE") {
                             Column(
@@ -636,7 +688,7 @@ fun AppearanceGlassPage(
                                         FilledTonalButton(
                                             onClick = {
                                                 onLiquidGlassBgImageUriChange("")
-                                                onLiquidGlassBgModeChange("MORPHING")
+                                                onLiquidGlassBgModeChange("BLOOM_GLASS")
                                             },
                                             shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp, topEnd = 50.dp, bottomEnd = 50.dp),
                                             colors = ButtonDefaults.filledTonalButtonColors(

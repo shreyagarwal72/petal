@@ -145,7 +145,7 @@ fun PetalReaderScreen(
     ) {
         PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {
             Scaffold(
-                containerColor = containerBg,
+                containerColor = if (selectedTheme == ReaderTheme.SYSTEM) Color.Transparent else containerBg,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0)
             ) { innerPadding ->
                 Box(
@@ -155,7 +155,16 @@ fun PetalReaderScreen(
                 ) {
                     com.petal.browser.ui.components.PetalGlassHeaderLayout(
                         modifier = Modifier.fillMaxSize(),
-                        pageBackground = { Box(Modifier.fillMaxSize().background(containerBg)) },
+                        pageBackground = {
+                            if (selectedTheme == ReaderTheme.SYSTEM) {
+                                com.petal.browser.ui.components.PetalPageBackground(
+                                    pageKey = "reader_page",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Box(Modifier.fillMaxSize().background(containerBg))
+                            }
+                        },
                         header = { headerModifier, headerBackdrop ->
                         ExpressiveHeader(
                             modifier = headerModifier,

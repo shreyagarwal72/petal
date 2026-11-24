@@ -12,7 +12,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.wallpaper.PetalAnimatedWallpaperBackground
 import com.petal.browser.wallpaper.PetalWallpaperManager
@@ -42,33 +41,24 @@ object PetalGlassBackdropBridge {
             setContent {
                 PetalExpressiveTheme {
                     val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-                    // Same source of truth the home screen reads.
                     val activeUri = PetalWallpaperManager.wallpaperUri
-                    val glassBgMode = sp.getString("sp_liquid_glass_bg_mode", "STRIDE") ?: "STRIDE"
-                    val glassImageUri = sp.getString("sp_liquid_glass_bg_image_uri", "").orEmpty()
-                    val uri = when {
-                        !activeUri.isNullOrBlank() -> activeUri
-                        glassBgMode == "IMAGE" && glassImageUri.isNotBlank() -> glassImageUri
-                        else -> null
-                    }
+                    val isAmoled = remember { sp.getBoolean("sp_amoled", false) }
                     Box(Modifier.fillMaxSize()) {
-                        if (!uri.isNullOrBlank()) {
-                            val usingManager = !activeUri.isNullOrBlank()
+                        if (!activeUri.isNullOrBlank()) {
                             PetalAnimatedWallpaperBackground(
-                                wallpaperUri = uri,
-                                dim = if (usingManager) PetalWallpaperManager.wallpaperDim
-                                else sp.getFloat("sp_liquid_glass_bg_dim", 0.35f),
-                                blur = if (usingManager) PetalWallpaperManager.wallpaperBlur
-                                else sp.getFloat("sp_liquid_glass_bg_blur", 16f),
+                                wallpaperUri = activeUri,
+                                dim = PetalWallpaperManager.wallpaperDim,
+                                blur = PetalWallpaperManager.wallpaperBlur,
                                 modifier = Modifier.fillMaxSize(),
-                                // The bars only need a still to blur; a second video player
-                                // here doubled the decoder load and was recorded into glass.
                                 renderVideo = false
                             )
                         } else {
-                            M3ExpressiveVariableBackground(
-                                modifier = Modifier.fillMaxSize(),
-                                pageSeed = "home_page"
+                            androidx.compose.foundation.layout.Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .androidx.compose.foundation.background(
+                                        if (isAmoled) androidx.compose.ui.graphics.Color.Black else androidx.compose.material3.MaterialTheme.colorScheme.background
+                                    )
                             )
                         }
                     }

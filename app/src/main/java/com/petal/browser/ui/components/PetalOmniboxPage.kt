@@ -838,9 +838,9 @@ fun PetalOmniboxPage(
                         }
                 ) {
                     // Background drawn first and captures LocalPetalGlassWallpaper
-                    M3ExpressiveVariableBackground(
+                    PetalPageBackground(
                         modifier = Modifier.matchParentSize(),
-                        pageSeed = "omnibox_page"
+                        pageKey = "omnibox_page"
                     )
 
                     Column(

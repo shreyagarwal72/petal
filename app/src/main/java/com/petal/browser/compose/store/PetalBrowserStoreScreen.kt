@@ -61,7 +61,6 @@ import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.*
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import kotlinx.coroutines.launch
@@ -230,7 +229,7 @@ fun PetalBrowserStoreScreen(
                     }
                     com.petal.browser.ui.components.PetalGlassHeaderLayout(
                         modifier = Modifier.fillMaxSize(),
-                        pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "petal_browser_store") },
+                        pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "petal_browser_store", modifier = Modifier.fillMaxSize()) },
                         header = { headerModifier, headerBackdrop ->
                             ExpressiveHeader(
                                 modifier = headerModifier,

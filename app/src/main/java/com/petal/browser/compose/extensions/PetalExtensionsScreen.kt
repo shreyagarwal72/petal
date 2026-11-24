@@ -321,7 +321,7 @@ fun PetalExtensionsScreen(
                         }
                         com.petal.browser.ui.components.PetalGlassHeaderLayout(
                             modifier = Modifier.fillMaxSize(),
-                            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "extensions_page") },
+                            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "extensions_page", modifier = Modifier.fillMaxSize()) },
                             header = { headerModifier, headerBackdrop ->
                                 ExpressiveHeader(
                                     modifier = headerModifier,
