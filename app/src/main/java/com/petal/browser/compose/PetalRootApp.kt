@@ -371,16 +371,15 @@ fun PetalRootApp(
         // above the same live page, so they qualify too instead of falling back to a snapshot.
         (isOverlayShowing || (activity as? MainActivity)?.hasPresentedScreens == true) &&
             !isOmniboxOpen && !isTabSwitcherOpen && !isAiSheetOpen &&
-            !isSafeLockerOpen && pendingExtensionPopup == null
+            pendingExtensionPopup == null
     )
 
     // A GeckoView SurfaceView is composited by the system outside of Compose, so a RenderEffect cannot
     // blur it. Over a web page the overlay therefore needs a real snapshot of the page (taken before the
-    // overlay covers it) that it blurs itself. The home page is Compose, so it blurs live.
+    // overlay covers it), even when depth blur is off (SurfaceView cannot be dimmed/transformed reliably).
     val overlayHold = remember { OverlaySnapshotHold() }
     val wantsPageSnapshot = isOverlayShowing && !isHome && !isOmniboxOpen && !isTabSwitcherOpen &&
-        !isAiSheetOpen && !isSafeLockerOpen && pendingExtensionPopup == null &&
-        predictiveBlurEnabled && junctionPredictiveEnabled
+        !isAiSheetOpen && pendingExtensionPopup == null && junctionPredictiveEnabled
     val menuWasOpen = overlayHold.menuOpen
     overlayHold.menuOpen = isMenuOpen
     if (wantsPageSnapshot != overlayHold.active) {
@@ -420,10 +419,10 @@ fun PetalRootApp(
 
     DisposableEffect(Unit) {
         val host = object : com.petal.browser.predictive.PetalLiveUnderlay.Host {
-            // Live path only where it can really blur (or blur is off / no snapshot exists). Otherwise the
-            // screen falls back to its own blurred snapshot, which fixes "no blur over web pages".
+            // Live path only when the underlying page can truly transform/blur in Compose (`isHome` or TextureView),
+            // or when no snapshot exists. Over a SurfaceView-backed Gecko page with a snapshot, use the frozen snapshot.
             override fun hasLiveUnderlay() = liveEligible &&
-                (!blurOnState || liveBlurCapable() || overlayPageSnapshotState == null)
+                (isHomeState || liveBlurCapable() || overlayPageSnapshotState == null)
             override fun onGestureStart(swipeEdge: Int) {
                 liveBehind = com.petal.browser.predictive.PetalLiveUnderlay.behindValues().copyOf()
             }
@@ -1622,13 +1621,35 @@ fun PetalRootApp(
                 }
             }
 
+            val overlayExit = if (PetalPredictiveJunction.gestureDismissed) {
+                androidx.compose.animation.ExitTransition.None
+            } else {
+                androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
+                    androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 }
+            }
+            LaunchedEffect(
+                isBookmarksOpen,
+                isHistoryOpen,
+                isDownloadsOpen,
+                isSettingsOpen,
+                isExtensionsOpen,
+                isAccountSyncOpen,
+                isDeleteOpen,
+                isSafeLockerOpen,
+            ) {
+                if (isBookmarksOpen || isHistoryOpen || isDownloadsOpen || isSettingsOpen ||
+                    isExtensionsOpen || isAccountSyncOpen || isDeleteOpen || isSafeLockerOpen
+                ) {
+                    PetalPredictiveJunction.clearGestureDismissed()
+                }
+            }
+
             // Bookmarks Screen
             androidx.compose.animation.AnimatedVisibility(
                 visible = isBookmarksOpen,
                 enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
                         androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = overlayExit,
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalBookmarksScreen(
@@ -1648,8 +1669,7 @@ fun PetalRootApp(
                 visible = isHistoryOpen,
                 enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
                         androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = overlayExit,
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalHistoryScreen(
@@ -1676,8 +1696,7 @@ fun PetalRootApp(
                 visible = isDownloadsOpen,
                 enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
                         androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = overlayExit,
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalDownloadManagerScreen(
@@ -1691,8 +1710,7 @@ fun PetalRootApp(
                 visible = isSettingsOpen,
                 enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
                         androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = overlayExit,
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalSettingsScreen(
@@ -1716,8 +1734,7 @@ fun PetalRootApp(
                 visible = isExtensionsOpen,
                 enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
                         androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = overlayExit,
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalExtensionsScreen(
@@ -1731,8 +1748,7 @@ fun PetalRootApp(
                 visible = isAccountSyncOpen,
                 enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
                         androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = overlayExit,
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalAccountScreen(
@@ -1746,8 +1762,7 @@ fun PetalRootApp(
                 visible = isDeleteOpen,
                 enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
                         androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = overlayExit,
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalDeleteScreen(
@@ -1761,8 +1776,7 @@ fun PetalRootApp(
                 visible = isSafeLockerOpen,
                 enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
                         androidx.compose.animation.slideInVertically(animationSpec = PetalSpring.calm()) { it / 10 },
-                exit = androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
-                       androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 },
+                exit = overlayExit,
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 SafeLockerScreen(
