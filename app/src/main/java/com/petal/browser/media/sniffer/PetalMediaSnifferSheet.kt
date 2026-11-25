@@ -352,7 +352,9 @@ private fun PetalMediaSheet(
                                                     .substringAfterLast('/').substringBefore('?')
                                                     .ifBlank { "Media stream" },
                                                 style = PetalText.listItemMeta,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis,
                                             )
                                         }
 

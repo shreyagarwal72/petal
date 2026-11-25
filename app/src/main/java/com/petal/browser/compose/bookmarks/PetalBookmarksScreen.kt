@@ -512,7 +512,12 @@ fun PetalBookmarksScreen(
                                     }
                                 },
                                 content = {
-                                    Text(record.title?.ifBlank { record.url } ?: "Bookmark", style = PetalText.listItemTitle)
+                                    Text(
+                                        record.title?.ifBlank { record.url } ?: "Bookmark",
+                                        style = PetalText.listItemTitle,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
                                     Text(record.url ?: "", style = PetalText.listItemMeta,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     if (record.isReadingList) {

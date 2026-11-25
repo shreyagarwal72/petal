@@ -1197,8 +1197,10 @@ private fun PasswordDetailsSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = PetalAutofillService.cleanDisplayLabel(context, credential.domain),
-                        style = PetalText.sheetTitle,
+                        style = PetalText.sheetTitleCompact,
                         color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     if (credential.originUrl.isNotBlank()) {
                         Text(

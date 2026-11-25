@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
@@ -112,6 +113,26 @@ object PetalText {
         @ReadOnlyComposable
         get() = MaterialTheme.typography.headlineSmall.copy(
             fontWeight = FontWeight.Bold
+        )
+
+    /** Compact, normal-width heading for bottom sheet headers holding filenames, hosts, or URLs. */
+    val sheetTitleCompact: TextStyle
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.typography.titleMedium.copy(
+            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.sp
+        )
+
+    /** Compact URL text based on bodySmall with normal width and zero extra letter spacing. */
+    val urlText: TextStyle
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.typography.bodySmall.copy(
+            fontFamily = FontFamily.Monospace,
+            letterSpacing = 0.sp,
+            color = accent.bodyOr(MaterialTheme.colorScheme.onSurfaceVariant)
         )
 
     /** List item primary title (bookmarks, history, downloads, tabs, files, extensions). */

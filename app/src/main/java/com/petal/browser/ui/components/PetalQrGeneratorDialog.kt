@@ -187,9 +187,11 @@ fun PetalQrGeneratorDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = title.ifEmpty { url },
+                            text = if (title.isNotEmpty()) title else formatDisplayUrl(url),
                             style = PetalText.cardTitle,
                             color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(2.dp))

@@ -159,7 +159,12 @@ fun PetalLinkImportSheet(
                             onCheckedChange = { on -> if (on) selected.add(link.url) else selected.remove(link.url) }
                         )
                         Column(Modifier.weight(1f)) {
-                            Text(probe?.fileName ?: link.suggestedName, style = PetalText.listItemTitle)
+                            Text(
+                                text = com.petal.browser.ui.components.formatMiddleEllipsisFileName(probe?.fileName ?: link.suggestedName),
+                                style = PetalText.listItemTitle,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                             val size = probe?.sizeBytes?.takeIf { it > 0 }?.let { formatBytes(it) }
                             Text(
                                 listOfNotNull(link.url.substringAfter("://", link.url).substringBefore('/').take(40), size).joinToString(" · "),

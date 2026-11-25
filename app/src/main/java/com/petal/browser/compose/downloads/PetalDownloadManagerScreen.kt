@@ -1229,7 +1229,14 @@ private fun DownloadRowItem(
             title = { Text(stringResource(R.string.ui_delete_download), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.ui_remove_from_the_download_list, item.fileName))
+                    Text(
+                        text = stringResource(
+                            R.string.ui_remove_from_the_download_list,
+                            com.petal.browser.ui.components.formatMiddleEllipsisFileName(item.fileName),
+                        ),
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = deleteFile, onCheckedChange = { deleteFile = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() })
                         Text(stringResource(R.string.ui_also_delete_the_file_from))
@@ -1344,9 +1351,11 @@ private fun DownloadRowItem(
         content = {
             Column(verticalArrangement = Arrangement.Center) {
                     Text(
-                        text = item.fileName,
+                        text = com.petal.browser.ui.components.formatMiddleEllipsisFileName(item.fileName),
                         style = PetalText.listItemTitle,
                         color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
 
                     Spacer(modifier = Modifier.height(2.dp))

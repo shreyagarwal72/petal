@@ -1,6 +1,9 @@
 package com.petal.browser.compose.menu
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.components.formatDisplayUrl
+import com.petal.browser.ui.components.formatMiddleEllipsisFileName
+import com.petal.browser.ui.components.looksLikeFileName
 import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -609,6 +612,7 @@ fun PetalLinkContextMenuSheet(
                     kind = kind,
                     title = title,
                     subtitle = subtitle,
+                    isUrlSubtitle = kind != MenuKind.TEXT && kind != MenuKind.LOCATION,
                     imageUrl = if (kind == MenuKind.IMAGE || kind == MenuKind.IMAGE_LINK) (imageUrl ?: linkUrl) else null,
                     faviconUrl = if (kind == MenuKind.LINK || kind == MenuKind.IMAGE_LINK || kind == MenuKind.PAGE) faviconUrl else null,
                     modifier = Modifier
@@ -664,6 +668,7 @@ private fun PetalMenuHeader(
     kind: MenuKind,
     title: String,
     subtitle: String?,
+    isUrlSubtitle: Boolean,
     imageUrl: String?,
     faviconUrl: String?,
     modifier: Modifier = Modifier,
@@ -671,6 +676,14 @@ private fun PetalMenuHeader(
     var previewLoaded by remember(imageUrl, faviconUrl) { mutableStateOf(false) }
     val previewModel = imageUrl ?: faviconUrl
     val isImage = imageUrl != null
+    val displayTitle = remember(title) {
+        if (looksLikeFileName(title)) formatMiddleEllipsisFileName(title) else title
+    }
+    val displaySubtitle = remember(subtitle, isUrlSubtitle) {
+        if (subtitle.isNullOrBlank()) null
+        else if (isUrlSubtitle) formatDisplayUrl(subtitle)
+        else subtitle
+    }
 
     val headerGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val headerShape = MaterialTheme.shapes.extraLarge
@@ -683,7 +696,7 @@ private fun PetalMenuHeader(
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Box(
@@ -718,15 +731,19 @@ private fun PetalMenuHeader(
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = title,
-                    style = PetalText.sheetTitle,
+                    text = displayTitle,
+                    style = PetalText.sheetTitleCompact,
                     color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                if (!subtitle.isNullOrBlank()) {
+                if (!displaySubtitle.isNullOrBlank()) {
                     Text(
-                        text = subtitle,
-                        style = PetalText.rowSubtitle,
+                        text = displaySubtitle,
+                        style = if (isUrlSubtitle) PetalText.urlText else PetalText.rowSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }

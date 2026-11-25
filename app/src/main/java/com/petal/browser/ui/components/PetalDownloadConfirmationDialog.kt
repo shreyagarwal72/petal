@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -119,7 +120,7 @@ fun PetalDownloadConfirmationDialog(
             ) {
                 Row(
                     modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Surface(
@@ -138,8 +139,10 @@ fun PetalDownloadConfirmationDialog(
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = fileName,
-                            style = PetalText.listItemTitle
+                            text = formatMiddleEllipsisFileName(fileName),
+                            style = PetalText.listItemTitle,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                         if (fileSizeFormatted.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(2.dp))

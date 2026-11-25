@@ -150,14 +150,18 @@ fun PetalScanResultSheet(
                 is ScanPayload.Url -> {
                     Text(
                         text = payload.host,
-                        style = PetalText.sheetTitle,
+                        style = PetalText.sheetTitleCompact,
                         color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = payload.displayUrl,
-                        style = PetalText.cardBody,
+                        text = com.petal.browser.ui.components.formatDisplayUrl(payload.displayUrl),
+                        style = PetalText.urlText,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
                     )

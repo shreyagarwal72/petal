@@ -254,6 +254,8 @@ fun PetalMediaGrabberPopupDialog(
                                                         text = item.title ?: item.url.substringAfterLast('/').substringBefore('?').ifBlank { "Media stream" },
                                                         style = PetalText.listItemMeta,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        maxLines = 2,
+                                                        overflow = TextOverflow.Ellipsis,
                                                     )
                                                 }
                                                 Surface(
