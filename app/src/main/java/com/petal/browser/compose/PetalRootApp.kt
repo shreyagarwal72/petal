@@ -102,6 +102,7 @@ import com.petal.browser.ui.components.PetalOverflowMenuSheetBeta
 import com.petal.browser.ui.components.PREF_NEW_MAIN_MENU_BETA
 import com.petal.browser.ui.components.PREF_NEW_MAIN_MENU_BETA_PENDING
 import com.petal.browser.ui.components.shouldUsePetalBetaMenu
+import com.petal.browser.ui.components.PetalPrivacyShieldBottomSheet
 import com.petal.browser.ui.components.PetalPrivacyShieldSheet
 import com.petal.browser.ui.components.PetalSiteInfoBridge
 import com.petal.browser.tools.PetalDevConsoleSheet
@@ -1789,6 +1790,22 @@ fun PetalRootApp(
                     isPrivate = activeTab!!.content.private,
                     onNavigate = { index -> liveTabController?.gotoHistoryIndex(index) },
                     onDismiss = { PetalTabHistoryState.dismiss() }
+                )
+            }
+
+            // Privacy Shield HUD bottom sheet (hosted in root, opened via PetalPrivacyShieldSheet.show)
+            val shieldRequest by PetalPrivacyShieldSheet.request.collectAsStateWithLifecycle()
+            LaunchedEffect(activeTab?.id) { PetalPrivacyShieldSheet.dismiss() }
+            shieldRequest?.let { req ->
+                PetalPrivacyShieldBottomSheet(
+                    request = req,
+                    activeTab = activeTab,
+                    tabController = liveTabController,
+                    onToggleAdBlock = { enabled ->
+                        viewModel.toggleAdBlock(enabled)
+                        req.onToggleAdBlock(enabled)
+                    },
+                    onDismiss = { PetalPrivacyShieldSheet.dismiss() }
                 )
             }
 
