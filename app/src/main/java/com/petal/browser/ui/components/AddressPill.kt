@@ -129,6 +129,11 @@ fun AddressPill(
     val isHttps = urlParts?.isHttps == true
     val isHttp = urlParts?.isHttp == true
     val isPunycode = urlParts?.isPunycode == true
+    val resolvedFavicon by rememberSiteFavicon(
+        url = url,
+        tabIcon = favicon,
+        isPrivate = isIncognito
+    )
 
     val searchHint = stringResource(R.string.bar_search_or_type_url)
     val colors = MaterialTheme.colorScheme
@@ -267,7 +272,7 @@ fun AddressPill(
                         }
                 ) {
                 AnimatedContent(
-                    targetState = (favicon != null && !isBlankOrSearch && !isIncognito) to favicon,
+                    targetState = (resolvedFavicon != null && !isBlankOrSearch && !isIncognito) to resolvedFavicon,
                     transitionSpec = {
                         fadeIn(PetalSpring.calm()) togetherWith fadeOut(PetalSpring.calm())
                     },
@@ -479,9 +484,10 @@ fun AddressPill(
                             modifier = Modifier.size(44.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                if (favicon != null && !isIncognito) {
+                                val quickIcon = resolvedFavicon
+                                if (quickIcon != null && !isIncognito) {
                                     Image(
-                                        bitmap = favicon.asImageBitmap(),
+                                        bitmap = quickIcon.asImageBitmap(),
                                         contentDescription = null,
                                         modifier = Modifier.size(26.dp).clip(ExpressiveButtonShape)
                                     )

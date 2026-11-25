@@ -525,6 +525,7 @@ private fun PrivacyShieldContent(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             ShieldHeaderSiteIcon(
+                pageUrl = pageUrl,
                 tabIcon = activeTab?.content?.icon,
                 isPrivate = isPrivate,
                 isWebPage = isWebPage
@@ -1051,19 +1052,26 @@ private fun PrivacyShieldContent(
 
 @Composable
 private fun ShieldHeaderSiteIcon(
+    pageUrl: String,
     tabIcon: Bitmap?,
     isPrivate: Boolean,
     isWebPage: Boolean
 ) {
+    val resolvedFavicon by rememberSiteFavicon(
+        url = pageUrl,
+        tabIcon = tabIcon,
+        isPrivate = isPrivate
+    )
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         modifier = Modifier.size(40.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
-            if (tabIcon != null && isWebPage && !isPrivate) {
+            val bmp = resolvedFavicon
+            if (bmp != null && isWebPage && !isPrivate) {
                 Image(
-                    bitmap = tabIcon.asImageBitmap(),
+                    bitmap = bmp.asImageBitmap(),
                     contentDescription = stringResource(R.string.ui_site_favicon),
                     modifier = Modifier
                         .size(22.dp)
