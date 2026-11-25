@@ -130,6 +130,10 @@ object PetalIncognitoSessionManager {
 
             // Immediately purge any in-memory private tab thumbnails (Firefox parity)
             com.petal.browser.unit.TabThumbnailCache.clearPrivateCache()
+
+            // Clear session-scoped private adblock exceptions/stats and HTTPS-Only bypasses
+            com.petal.browser.browser.PetalAdBlockEngine.clearPrivateSessionData()
+            com.petal.browser.privacy.PetalHttpsOnlyWhitelist.clearPrivateSessionData()
         } catch (e: Exception) {
             e.printStackTrace()
         }

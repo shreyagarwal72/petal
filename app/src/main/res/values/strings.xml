@@ -2174,5 +2174,53 @@
     <string name="quick_settings_dialog_title">Add Quick Settings Tile</string>
     <string name="quick_settings_dialog_legacy_instructions">Swipe down twice from the top of your screen to open Quick Settings, tap the pencil (Edit) icon, and drag Petal tiles into your active tiles.</string>
     <string name="quick_settings_tile_added_success">Tile request sent to system</string>
+
+    <!-- Petal Privacy Shield Bottom Sheet -->
+    <string name="shield_status_secure">Secure</string>
+    <string name="shield_status_not_secure">Not secure</string>
+    <string name="shield_status_unknown">Unknown</string>
+    <string name="shield_blocked_on_page">Blocked on this page</string>
+    <string name="shield_total_stopped_format">%1$d total stopped</string>
+    <string name="shield_no_trackers_detected">No trackers detected</string>
+    <string name="shield_category_ads_format">Ads: %1$d</string>
+    <string name="shield_category_trackers_format">Trackers: %1$d</string>
+    <string name="shield_category_social_format">Social: %1$d</string>
+    <string name="shield_category_cookies_format">Cookies: %1$d</string>
+    <string name="shield_tile_this_site">This site</string>
+    <string name="shield_state_trusted">Trusted</string>
+    <string name="shield_state_protected">Protected</string>
+    <string name="shield_tile_shield">Shield</string>
+    <string name="shield_tile_third_party_cookies">Third-party cookies</string>
+    <string name="shield_tile_https_only">HTTPS-only</string>
+    <string name="shield_allow_http_domain">Allow HTTP for this domain</string>
+    <string name="shield_allow_http_bypassed">HTTPS-Only bypassed for %1$s</string>
+    <string name="shield_allow_http_blocked">HTTPS-Only blocks unencrypted HTTP</string>
+    <string name="shield_more_protections">More protections</string>
+    <string name="shield_more_protections_subtitle">Fingerprinting, WebRTC, DNT/GPC, element tools</string>
+    <string name="shield_fingerprint_short">Fingerprinting shield</string>
+    <string name="shield_fingerprint_desc">Randomize canvas, WebGL, and audio signals</string>
+    <string name="shield_webrtc_short">WebRTC leak shield</string>
+    <string name="shield_webrtc_desc">Prevent local and public IP leaks</string>
+    <string name="shield_dnt_gpc_short">DNT / GPC signal</string>
+    <string name="shield_dnt_gpc_desc">Send Do Not Track and Global Privacy Control</string>
+    <string name="shield_zap_element">Zap element</string>
+    <string name="shield_zap_element_desc">Tap any page element to hide it</string>
+    <string name="shield_block_element">Block page element</string>
+    <string name="shield_block_element_desc">Hide elements using a CSS selector</string>
+    <string name="shield_block_element_dialog_title">Block element on %1$s</string>
+    <string name="shield_block_element_dialog_message">Enter a CSS selector (e.g. .newsletter-modal or #paywall-banner) to hide it on this domain.</string>
+    <string name="shield_block_element_hint">e.g. .popup-overlay</string>
+    <string name="shield_block_action">Block</string>
+    <string name="shield_adguard_active">AdGuard AdBlocker active</string>
+    <string name="shield_adguard_install_title">Install AdGuard AdBlocker</string>
+    <string name="shield_adguard_install_subtitle">Add cosmetic filtering and anti-adblock defense</string>
+    <string name="shield_adguard_installing">Connecting AdGuard…</string>
+    <string name="shield_adguard_connected">AdGuard AdBlocker connected</string>
+    <string name="shield_adguard_install_failed">Install failed</string>
+    <string name="shield_site_permissions_title">Site permissions</string>
+    <string name="shield_site_permissions_none">No custom permissions set</string>
+    <string name="shield_site_permissions_summary_format">%1$d allowed · %2$d blocked</string>
+    <string name="shield_reload_to_apply">Reload to apply</string>
+    <string name="shield_current_website">Current website</string>
 </resources>
 

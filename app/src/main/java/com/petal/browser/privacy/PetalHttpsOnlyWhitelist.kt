@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
 object PetalHttpsOnlyWhitelist {
     private const val PREF_KEY = "sp_https_only_bypass_hosts"
     private val memoryBypass = Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
+    private val privateMemoryBypass = Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
 
     @JvmStatic
     fun isPrivateNetworkHost(host: String?): Boolean {
@@ -57,10 +58,12 @@ object PetalHttpsOnlyWhitelist {
     }
 
     @JvmStatic
-    fun isBypassed(context: Context, host: String?): Boolean {
+    @JvmOverloads
+    fun isBypassed(context: Context, host: String?, isPrivate: Boolean = false): Boolean {
         if (host.isNullOrBlank()) return false
         val clean = host.lowercase(Locale.ROOT).removePrefix("www.")
         if (isPrivateNetworkHost(clean)) return true
+        if (isPrivate) return privateMemoryBypass.contains(clean)
         if (memoryBypass.contains(clean)) return true
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val set = sp.getStringSet(PREF_KEY, null)
@@ -68,9 +71,14 @@ object PetalHttpsOnlyWhitelist {
     }
 
     @JvmStatic
-    fun addBypass(context: Context, host: String?) {
+    @JvmOverloads
+    fun addBypass(context: Context, host: String?, isPrivate: Boolean = false) {
         if (host.isNullOrBlank()) return
         val clean = host.lowercase(Locale.ROOT).removePrefix("www.")
+        if (isPrivate) {
+            privateMemoryBypass.add(clean)
+            return
+        }
         memoryBypass.add(clean)
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val currentSet = sp.getStringSet(PREF_KEY, emptySet())?.toMutableSet() ?: mutableSetOf()
@@ -79,14 +87,24 @@ object PetalHttpsOnlyWhitelist {
     }
 
     @JvmStatic
-    fun removeBypass(context: Context, host: String?) {
+    @JvmOverloads
+    fun removeBypass(context: Context, host: String?, isPrivate: Boolean = false) {
         if (host.isNullOrBlank()) return
         val clean = host.lowercase(Locale.ROOT).removePrefix("www.")
+        if (isPrivate) {
+            privateMemoryBypass.remove(clean)
+            return
+        }
         memoryBypass.remove(clean)
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val currentSet = sp.getStringSet(PREF_KEY, null)?.toMutableSet()
         if (currentSet != null && currentSet.remove(clean)) {
             sp.edit().putStringSet(PREF_KEY, currentSet).apply()
         }
+    }
+
+    @JvmStatic
+    fun clearPrivateSessionData() {
+        privateMemoryBypass.clear()
     }
 }

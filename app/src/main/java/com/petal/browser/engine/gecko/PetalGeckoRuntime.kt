@@ -156,6 +156,7 @@ object PetalGeckoRuntime {
                     .cookieBehavior(defaultCookieBehavior)
                     .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
                     .enhancedTrackingProtectionLevel(etpLevel)
+                    .contentBlockingDatabase(true)
                     .build()
             )
             .javaScriptEnabled(

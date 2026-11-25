@@ -115,6 +115,9 @@ object PetalEngineStore {
     private var searchUseCases: mozilla.components.feature.search.SearchUseCases? = null
 
     @Volatile
+    private var trackingProtectionUseCases: mozilla.components.feature.session.TrackingProtectionUseCases? = null
+
+    @Volatile
     private var pinnedSiteStorage: mozilla.components.feature.top.sites.PinnedSiteStorage? = null
 
     @Volatile
@@ -152,6 +155,7 @@ object PetalEngineStore {
         val runtime = PetalGeckoRuntime.getOrCreate(appContext)
 
         val defaultSettings = DefaultSettings(
+            useContentBlockingDatabase = true,
             // Official Firefox history tracking: types visits (link/reload/redirect), skips error
             // pages and non-top-level loads, and records page titles, all into Places.
             historyTrackingDelegate = mozilla.components.feature.session.HistoryDelegate(
@@ -349,6 +353,20 @@ object PetalEngineStore {
         searchUseCases = useCases
         migrateSearchSettingsOnce(context.applicationContext, useCases)
         Log.i(TAG, "Initialized Mozilla SearchUseCases")
+        return useCases
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun getTrackingProtectionUseCases(context: Context): mozilla.components.feature.session.TrackingProtectionUseCases {
+        trackingProtectionUseCases?.let { return it }
+        val appContext = context.applicationContext
+        val useCases = mozilla.components.feature.session.TrackingProtectionUseCases(
+            store = getStore(appContext),
+            engine = getEngine(appContext)
+        )
+        trackingProtectionUseCases = useCases
+        Log.i(TAG, "Initialized Mozilla TrackingProtectionUseCases")
         return useCases
     }
 

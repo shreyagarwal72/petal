@@ -41,6 +41,50 @@ object PetalSitePermissionsBridge {
     // Key format: "$isPrivate#$origin#$permKey" to prevent private-tab grants from leaking into normal tabs.
     private val sessionGrants = ConcurrentHashMap<String, SitePermissions.Status>()
 
+    data class SitePermissionSummary(
+        val permission: Permission,
+        val status: SitePermissions.Status
+    )
+
+    suspend fun getSitePermissionsSummary(
+        context: Context,
+        url: String,
+        isPrivate: Boolean
+    ): List<SitePermissionSummary> {
+        if (url.isBlank() || (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true))) {
+            return emptyList()
+        }
+        val origin = extractOrigin(url)
+        val stored = if (isPrivate) null else {
+            try {
+                getStorage(context).findSitePermissionsBy(origin = origin, includeTemporary = false, private = false)
+            } catch (_: Throwable) {
+                null
+            }
+        }
+        val prefix = "$isPrivate#$origin#"
+        val checks = listOf(
+            "camera" to Permission.CAMERA,
+            "microphone" to Permission.MICROPHONE,
+            "location" to Permission.LOCATION,
+            "notification" to Permission.NOTIFICATION,
+            "persistent_storage" to Permission.LOCAL_STORAGE,
+            "storage_access" to Permission.STORAGE_ACCESS,
+            "local_device" to Permission.LOCAL_DEVICE_ACCESS,
+            "local_network" to Permission.LOCAL_NETWORK_ACCESS
+        )
+        val out = ArrayList<SitePermissionSummary>()
+        for ((key, perm) in checks) {
+            val status = sessionGrants["$prefix$key"]
+                ?: stored?.get(perm)
+                ?: SitePermissions.Status.NO_DECISION
+            if (status != SitePermissions.Status.NO_DECISION) {
+                out.add(SitePermissionSummary(perm, status))
+            }
+        }
+        return out
+    }
+
     fun clearSessionGrants(isPrivate: Boolean? = null, origin: String? = null) {
         if (isPrivate == null && origin == null) {
             sessionGrants.clear()

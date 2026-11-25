@@ -185,7 +185,7 @@ class PetalTabViewController private constructor(
             }
             "sp_ad_block", "sp_etp_strict", "profileStandard_adBlock" -> {
                 val host = try { android.net.Uri.parse(pageUrl.orEmpty()).host } catch (_: Throwable) { null }
-                val effectiveMode = com.petal.browser.browser.PetalAdBlockEngine.getEffectiveMode(appContext, host)
+                val effectiveMode = com.petal.browser.browser.PetalAdBlockEngine.getEffectiveMode(appContext, host, isIncognito())
                 applyTrackingProtectionMode(effectiveMode)
             }
             "sp_desktop_site" -> {
@@ -1007,7 +1007,19 @@ class PetalTabViewController private constructor(
                     try { engineContentBlockingDelegate?.onContentBlocked(session, event) } catch (_: Throwable) {}
                     val atCat = try { event.antiTrackingCategory } catch (_: Throwable) { 0 }
                     val cookieCat = try { event.cookieBehaviorCategory } catch (_: Throwable) { 0 }
-                    com.petal.browser.browser.PetalAdBlockEngine.recordBlockWithCategories(pageUrl, atCat, cookieCat)
+                    com.petal.browser.browser.PetalAdBlockEngine.recordBlockWithCategories(
+                        pageUrl,
+                        atCat,
+                        cookieCat,
+                        isPrivate = isIncognito()
+                    )
+                }
+
+                override fun onContentLoaded(
+                    session: org.mozilla.geckoview.GeckoSession,
+                    event: org.mozilla.geckoview.ContentBlocking.BlockEvent
+                ) {
+                    try { engineContentBlockingDelegate?.onContentLoaded(session, event) } catch (_: Throwable) {}
                 }
             }
 
@@ -1393,7 +1405,7 @@ class PetalTabViewController private constructor(
         } catch (_: Throwable) {}
         session.toggleDesktopMode(desktopEnabled, reload = false)
 
-        val effectiveMode = com.petal.browser.browser.PetalAdBlockEngine.getEffectiveMode(appContext, host)
+        val effectiveMode = com.petal.browser.browser.PetalAdBlockEngine.getEffectiveMode(appContext, host, isIncognito())
         applyTrackingProtectionMode(effectiveMode)
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(preferences)
         com.petal.browser.accessibility.PetalAccessibilityEngine.applyAccessibilitySettings(this)

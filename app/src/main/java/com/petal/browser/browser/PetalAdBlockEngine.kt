@@ -9,7 +9,8 @@
  * 3. Official uBO scriptlets (set-constant, abort-on-property-read, nano-sib).
  * 4. Cosmetic CSS rules and procedural selectors (:has(), :has-text()) via MutationObserver.
  * 5. Dedicated YouTube mobile scriptlet auto-skipping, muting, and accelerating video ads.
- * 6. Per-domain whitelist support & SharedPreferences/DataStore persistence.
+ * 6. Per-domain whitelist support & SharedPreferences/DataStore persistence,
+ *    with strict session-scoped isolation for private tabs.
  */
 
 package com.petal.browser.browser
@@ -17,14 +18,21 @@ package com.petal.browser.browser
 import android.content.Context
 import android.net.Uri
 import androidx.preference.PreferenceManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 object PetalAdBlockEngine {
 
     private val whitelistedDomains = ConcurrentHashMap.newKeySet<String>()
+    private val privateWhitelistedDomains = ConcurrentHashMap.newKeySet<String>()
     private val domainBlockedCount = ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger>()
+    private val privateDomainBlockedCount = ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger>()
     private val totalBlockedCount = java.util.concurrent.atomic.AtomicLong(0)
+    private val _trackerRevision = MutableStateFlow(0L)
+    val trackerRevision: StateFlow<Long> = _trackerRevision.asStateFlow()
     @Volatile private var isInitialized = false
 
     @JvmStatic
@@ -101,9 +109,10 @@ object PetalAdBlockEngine {
     }
 
     @JvmStatic
-    fun getEffectiveMode(context: Context, domain: String?): PetalAdBlockMode {
-        if (domain != null && isDomainWhitelisted(domain)) return PetalAdBlockMode.DISABLED
-        val override = getDomainOverride(context, domain)
+    @JvmOverloads
+    fun getEffectiveMode(context: Context, domain: String?, isPrivate: Boolean = false): PetalAdBlockMode {
+        if (domain != null && isDomainWhitelisted(domain, isPrivate)) return PetalAdBlockMode.DISABLED
+        val override = if (isPrivate) null else getDomainOverride(context, domain)
         return override ?: getAdBlockMode(context)
     }
 
@@ -119,16 +128,27 @@ object PetalAdBlockEngine {
     }
 
     @JvmStatic
-    fun isDomainWhitelisted(domain: String): Boolean {
+    @JvmOverloads
+    fun isDomainWhitelisted(domain: String, isPrivate: Boolean = false): Boolean {
         if (domain.isBlank()) return false
         val cleanDomain = domain.lowercase(Locale.US).removePrefix("www.")
-        return whitelistedDomains.any { cleanDomain.endsWith(it) }
+        return if (isPrivate) {
+            privateWhitelistedDomains.any { cleanDomain.endsWith(it) }
+        } else {
+            whitelistedDomains.any { cleanDomain.endsWith(it) }
+        }
     }
 
     @JvmStatic
-    fun addDomainToWhitelist(context: Context, domain: String) {
+    @JvmOverloads
+    fun addDomainToWhitelist(context: Context, domain: String, isPrivate: Boolean = false) {
         if (domain.isBlank()) return
         val cleanDomain = domain.lowercase(Locale.US).removePrefix("www.")
+        if (isPrivate) {
+            // Private tabs only hold session-scoped exceptions in memory; never persist to disk.
+            privateWhitelistedDomains.add(cleanDomain)
+            return
+        }
         whitelistedDomains.add(cleanDomain)
 
         val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
@@ -136,8 +156,13 @@ object PetalAdBlockEngine {
     }
 
     @JvmStatic
-    fun removeDomainFromWhitelist(context: Context, domain: String) {
+    @JvmOverloads
+    fun removeDomainFromWhitelist(context: Context, domain: String, isPrivate: Boolean = false) {
         val cleanDomain = domain.lowercase(Locale.US).removePrefix("www.")
+        if (isPrivate) {
+            privateWhitelistedDomains.remove(cleanDomain)
+            return
+        }
         whitelistedDomains.remove(cleanDomain)
 
         val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
@@ -145,9 +170,14 @@ object PetalAdBlockEngine {
     }
 
     @JvmStatic
+    fun clearPrivateSessionData() {
+        privateWhitelistedDomains.clear()
+        privateDomainBlockedCount.clear()
+        privateDomainCategoryCounts.clear()
+    }
+
+    @JvmStatic
     fun getWhitelistedDomains(): Set<String> = whitelistedDomains.toSet()
-
-
 
     data class BlockedCategoryCounts(
         val ads: Int = 0,
@@ -158,27 +188,40 @@ object PetalAdBlockEngine {
     )
 
     private val domainCategoryCounts = ConcurrentHashMap<String, BlockedCategoryCounts>()
+    private val privateDomainCategoryCounts = ConcurrentHashMap<String, BlockedCategoryCounts>()
 
-    fun recordBlock(pageUrl: String?) {
-        totalBlockedCount.incrementAndGet()
+    @JvmOverloads
+    fun recordBlock(pageUrl: String?, isPrivate: Boolean = false) {
+        if (!isPrivate) {
+            totalBlockedCount.incrementAndGet()
+        }
         if (!pageUrl.isNullOrBlank()) {
             val pageHost = try { Uri.parse(pageUrl).host ?: "" } catch (e: Exception) { "" }
             val cleanHost = pageHost.lowercase(Locale.US).removePrefix("www.")
             if (cleanHost.isNotEmpty()) {
-                domainBlockedCount.computeIfAbsent(cleanHost) { java.util.concurrent.atomic.AtomicInteger(0) }.incrementAndGet()
+                val targetMap = if (isPrivate) privateDomainBlockedCount else domainBlockedCount
+                targetMap.computeIfAbsent(cleanHost) { java.util.concurrent.atomic.AtomicInteger(0) }.incrementAndGet()
             }
         }
+        _trackerRevision.value = _trackerRevision.value + 1L
     }
 
     @JvmStatic
-    fun recordBlockWithCategories(pageUrl: String?, antiTrackingCategory: Int, cookieCategory: Int = 0) {
-        recordBlock(pageUrl)
+    @JvmOverloads
+    fun recordBlockWithCategories(
+        pageUrl: String?,
+        antiTrackingCategory: Int,
+        cookieCategory: Int = 0,
+        isPrivate: Boolean = false
+    ) {
+        recordBlock(pageUrl, isPrivate = isPrivate)
         if (pageUrl.isNullOrBlank()) return
         val pageHost = try { Uri.parse(pageUrl).host ?: "" } catch (e: Exception) { "" }
         val cleanHost = pageHost.lowercase(Locale.US).removePrefix("www.")
         if (cleanHost.isEmpty()) return
 
-        domainCategoryCounts.compute(cleanHost) { _, current ->
+        val targetMap = if (isPrivate) privateDomainCategoryCounts else domainCategoryCounts
+        targetMap.compute(cleanHost) { _, current ->
             val prev = current ?: BlockedCategoryCounts()
             var ads = prev.ads
             var analytics = prev.analytics
@@ -189,7 +232,7 @@ object PetalAdBlockEngine {
             // Check Mozilla ContentBlocking.AntiTracking flags
             if ((antiTrackingCategory and org.mozilla.geckoview.ContentBlocking.AntiTracking.AD) != 0) ads++
             if ((antiTrackingCategory and org.mozilla.geckoview.ContentBlocking.AntiTracking.ANALYTIC) != 0) analytics++
-            if ((antiTrackingCategory and org.mozilla.geckoview.ContentBlocking.AntiTracking.SOCIAL) != 0) social++
+            if ((antiTrackingCategory and (org.mozilla.geckoview.ContentBlocking.AntiTracking.SOCIAL or org.mozilla.geckoview.ContentBlocking.AntiTracking.STP)) != 0) social++
             if ((antiTrackingCategory and org.mozilla.geckoview.ContentBlocking.AntiTracking.CONTENT) != 0) content++
             if (cookieCategory != 0) cookies++
 
@@ -198,17 +241,21 @@ object PetalAdBlockEngine {
     }
 
     @JvmStatic
-    fun getCategoryCountsForDomain(domain: String?): BlockedCategoryCounts {
+    @JvmOverloads
+    fun getCategoryCountsForDomain(domain: String?, isPrivate: Boolean = false): BlockedCategoryCounts {
         if (domain.isNullOrBlank()) return BlockedCategoryCounts()
         val cleanHost = domain.lowercase(Locale.US).removePrefix("www.")
-        return domainCategoryCounts[cleanHost] ?: BlockedCategoryCounts()
+        val map = if (isPrivate) privateDomainCategoryCounts else domainCategoryCounts
+        return map[cleanHost] ?: BlockedCategoryCounts()
     }
 
     @JvmStatic
-    fun getBlockedCountForDomain(domain: String?): Int {
+    @JvmOverloads
+    fun getBlockedCountForDomain(domain: String?, isPrivate: Boolean = false): Int {
         if (domain.isNullOrBlank()) return 0
         val cleanHost = domain.lowercase(Locale.US).removePrefix("www.")
-        return domainBlockedCount[cleanHost]?.get() ?: 0
+        val map = if (isPrivate) privateDomainBlockedCount else domainBlockedCount
+        return map[cleanHost]?.get() ?: 0
     }
 
     @JvmStatic
