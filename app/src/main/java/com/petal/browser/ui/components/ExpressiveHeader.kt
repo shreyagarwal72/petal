@@ -117,6 +117,7 @@ fun ExpressiveHeader(
     isRootHeader: Boolean = false,
     targetTitle: String? = null,
     targetSubtitle: String? = null,
+    hasWallpaper: Boolean = false,
     /**
      * Extra row (search field, tab row...) drawn inside the same glass pane, under the title row.
      * Only shown while real glass is active; a screen renders the same content itself below the
@@ -180,6 +181,10 @@ fun ExpressiveHeader(
         else -> lerp(scheme.surfaceContainer, scheme.primaryContainer, if (isDarkSurface) 0.30f else 0.42f)
     }
 
+    val showBottom = useLastWaveGlass && bottomContent != null
+    val glassStyle = if (useLastWaveGlass) HeaderGlassStyle(isDarkSurface) else null
+    val headerContentColor = resolveHeaderContentColor(glassStyle, scheme.onSurface)
+
     Box(modifier.fillMaxWidth().zIndex(1f)) {
         if (localBackdrop != null) {
             Box(
@@ -195,8 +200,12 @@ fun ExpressiveHeader(
             shape = shape,
             // Real glass draws its own blurred backdrop, so the container must be see-through.
             color = headerColor,
+            contentColor = headerContentColor,
             tonalElevation = 0.dp,
-            shadowElevation = if (!enableLiquidGlass) 3.dp else 0.dp,
+            shadowElevation = resolveHeaderShadowElevation(
+                enableLiquidGlass = enableLiquidGlass,
+                hasWallpaper = hasWallpaper || sharedWallpaper,
+            ),
             modifier = Modifier.fillMaxWidth().then(
                 if (useLastWaveGlass && effectiveBackdrop != null) {
                     Modifier.petalHeaderGlass(
@@ -218,8 +227,6 @@ fun ExpressiveHeader(
         ) {
             val decorColor = MaterialTheme.colorScheme.primary
             val decorAccent = MaterialTheme.colorScheme.tertiary
-            val showBottom = useLastWaveGlass && bottomContent != null
-            val glassStyle = if (useLastWaveGlass) HeaderGlassStyle(isDarkSurface) else null
             androidx.compose.runtime.CompositionLocalProvider(LocalHeaderGlassStyle provides glassStyle) {
             Column(Modifier.fillMaxWidth()) {
             Column(
@@ -486,7 +493,7 @@ private fun HeaderTitleBlock(
         Text(
             text = title,
             style = titleStyle,
-            color = LocalHeaderGlassStyle.current?.content ?: Color.Unspecified,
+            color = LocalHeaderGlassStyle.current?.content ?: MaterialTheme.colorScheme.onSurface,
             maxLines = maxTitleLines,
             softWrap = maxTitleLines > 1,
             modifier = Modifier.fillMaxWidth()
@@ -648,6 +655,14 @@ internal fun petalHeaderGlassWash(isDark: Boolean): Brush {
 /** Height of the floating glass header over the current content, 0.dp when glass is off. */
 val LocalGlassHeaderInset = androidx.compose.runtime.compositionLocalOf { 0.dp }
 
+internal fun resolveHeaderContentColor(glassStyle: HeaderGlassStyle?, onSurface: Color): Color =
+    glassStyle?.content ?: onSurface
+
+internal fun resolveHeaderShadowElevation(enableLiquidGlass: Boolean, hasWallpaper: Boolean): Dp =
+    if (!enableLiquidGlass && !hasWallpaper) 3.dp else 0.dp
+
+internal fun shouldDrawInlinePageBackground(backdrop: PetalBackdrop?): Boolean = backdrop != null
+
 @Composable
 fun PetalGlassHeaderLayout(
     modifier: Modifier = Modifier,
@@ -707,7 +722,7 @@ fun PetalGlassHeaderLayout(
                     .fillMaxSize()
                     .then(if (backdrop != null) Modifier.petalBackdropSource(backdrop) else Modifier)
             ) {
-                pageBackground?.invoke()
+                if (shouldDrawInlinePageBackground(backdrop)) pageBackground?.invoke()
                 androidx.compose.runtime.CompositionLocalProvider(LocalGlassHeaderInset provides inset) { content(inset) }
             }
         }.first().measure(androidx.compose.ui.unit.Constraints(w, w, contentHeight, contentHeight))

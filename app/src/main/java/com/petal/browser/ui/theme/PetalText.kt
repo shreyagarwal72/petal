@@ -62,7 +62,8 @@ object PetalText {
         @Composable
         @ReadOnlyComposable
         get() = MaterialTheme.typography.headlineSmall.copy(
-            fontWeight = FontWeight.ExtraBold
+            fontWeight = FontWeight.ExtraBold,
+            color = accent.headingOr(MaterialTheme.colorScheme.onSurface)
         )
 
     /** Supporting subtitle in page headers / hero subheaders. */

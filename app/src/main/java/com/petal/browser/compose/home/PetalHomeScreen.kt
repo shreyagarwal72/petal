@@ -611,6 +611,7 @@ fun PetalHomeScreen(
                         backdrop = headerBackdrop,
                         title = "Petal",
                         subtitle = "Personal Window to the Web",
+                        hasWallpaper = !activeWallpaperUri.isNullOrBlank(),
                         actions = {
                                 // Wallpaper Customizer Action Button (expressive cookie)
                                 com.petal.browser.ui.components.HeaderActionIcon(
