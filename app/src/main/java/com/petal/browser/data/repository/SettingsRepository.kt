@@ -240,6 +240,8 @@ interface SettingsRepository {
     suspend fun setCanvasLetterboxing(enabled: Boolean)
     suspend fun setDrmEnabled(enabled: Boolean)
     suspend fun setLoginAutofillEnabled(enabled: Boolean)
+    suspend fun setCrossSiteTracking(strict: Boolean)
+    suspend fun resetPrivacyToRecommended()
 
     suspend fun setTouchHaptics(enabled: Boolean)
     suspend fun setImmersiveFullScreen(enabled: Boolean)

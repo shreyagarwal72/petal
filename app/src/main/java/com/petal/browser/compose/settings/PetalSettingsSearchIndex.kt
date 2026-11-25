@@ -180,39 +180,18 @@ object PetalSettingsSearchIndex {
 
         // ==================== PRIVACY & SECURITY ====================
         SettingsSearchItem(
+            id = "privacy_profile",
+            title = "Privacy Profile",
+            subtitle = "Choose between Standard, Hardened (Recommended), and Strict hardening baselines",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("privacy profile", "standard", "hardened", "strict", "arkenfox", "baseline")
+        ),
+        SettingsSearchItem(
             id = "privacy_adblock",
-            title = "AdBlock & Tracker Protection",
-            subtitle = "Block invasive advertisements, tracking scripts, and malicious popups",
+            title = "Ad & Tracker Shield",
+            subtitle = "Block invasive advertisements and trackers, manage filter lists and site exceptions",
             category = SettingsCategory.PRIVACY,
-            keywords = listOf("adblock", "ads", "block ads", "trackers", "ad blocker", "filters", "advertisement", "ublock")
-        ),
-        SettingsSearchItem(
-            id = "privacy_etp",
-            title = "Enhanced Tracking Protection (ETP)",
-            subtitle = "Standard and Strict tracking protection, Total Cookie Protection and state partitioning",
-            category = SettingsCategory.PRIVACY,
-            keywords = listOf("etp", "tracking protection", "strict", "total cookie protection", "tcp", "isolate cookies", "partitioning")
-        ),
-        SettingsSearchItem(
-            id = "privacy_incognito",
-            title = "Private Browsing & Biometric Lock",
-            subtitle = "Biometric lock for incognito tabs and clear browsing data on app exit",
-            category = SettingsCategory.PRIVACY,
-            keywords = listOf("incognito", "private", "biometric", "fingerprint lock", "clear on exit", "quit")
-        ),
-        SettingsSearchItem(
-            id = "privacy_passwords",
-            title = "Password Manager & Autofill Vault",
-            subtitle = "Encrypted credentials, saved logins, passkeys, and breach alerts",
-            category = SettingsCategory.PRIVACY,
-            keywords = listOf("passwords", "autofill", "passkeys", "credentials", "vault", "logins")
-        ),
-        SettingsSearchItem(
-            id = "privacy_private_dns",
-            title = "Secure Private DNS (DoH)",
-            subtitle = "DNS-over-HTTPS via Cloudflare, AdGuard, Google, Quad9, Mullvad, or custom DNS",
-            category = SettingsCategory.PRIVACY,
-            keywords = listOf("dns", "private dns", "doh", "dns over https", "cloudflare", "adguard", "quad9", "mullvad", "secure dns")
+            keywords = listOf("adblock", "ads", "block ads", "trackers", "ad blocker", "filters", "whitelist", "site exceptions", "ublock")
         ),
         SettingsSearchItem(
             id = "privacy_https_only",
@@ -222,53 +201,102 @@ object PetalSettingsSearchIndex {
             keywords = listOf("https", "https-only", "ssl", "tls", "secure connection", "insecure", "encryption")
         ),
         SettingsSearchItem(
+            id = "privacy_popups",
+            title = "Block Pop-ups & Cookie Banners",
+            subtitle = "Block unwanted pop-up windows and automatically reject GDPR cookie consent banners",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("popups", "block popups", "cookie banners", "gdpr", "consent", "new windows")
+        ),
+        SettingsSearchItem(
+            id = "privacy_incognito",
+            title = "Clear Data, App Lock & Biometric Tab Lock",
+            subtitle = "Clear browsing data, clear data on exit, App Lock, and biometric lock for private tabs",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("incognito", "private", "biometric", "fingerprint lock", "app lock", "passcode", "clear on exit", "clear browsing data", "quit")
+        ),
+        SettingsSearchItem(
+            id = "privacy_passwords",
+            title = "Password Manager & Autofill Vault",
+            subtitle = "Encrypted credentials, passkeys, and breach alerts",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("passwords", "passkeys", "credentials", "vault", "webauthn")
+        ),
+        SettingsSearchItem(
+            id = "privacy_etp",
+            title = "Cross-site Tracking (Standard / Strict)",
+            subtitle = "Advanced: Total Cookie Protection, Unlinkable Session Partitioning, third-party cookies, and bounce tracking",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("etp", "cross-site tracking", "tracking protection", "strict", "standard", "total cookie protection", "tcp", "isolate cookies", "session partitioning", "unlinkable")
+        ),
+        SettingsSearchItem(
             id = "privacy_cookies",
             title = "Block Third-Party Cookies",
-            subtitle = "Prevent cross-site tracking cookies from monitoring your browsing across the web",
+            subtitle = "Advanced: Prevent cross-site tracking cookies from monitoring your browsing",
             category = SettingsCategory.PRIVACY,
             keywords = listOf("cookies", "third-party cookies", "tracking cookies", "cross-site", "cookie blocking")
         ),
         SettingsSearchItem(
+            id = "privacy_bounce_tracking",
+            title = "Bounce Tracking Protection",
+            subtitle = "Advanced: Purge redirect tracker state when traversing bounce redirect intermediaries",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("bounce tracking", "bounce", "redirect trackers", "advanced privacy")
+        ),
+        SettingsSearchItem(
             id = "privacy_fingerprinting",
-            title = "Fingerprint Protection",
-            subtitle = "Protect against canvas, audio, and hardware browser fingerprinting techniques",
+            title = "Resist Fingerprinting & Canvas Letterboxing",
+            subtitle = "Advanced: Gecko RFP defense and viewport Canvas Letterboxing (may break some sites)",
             category = SettingsCategory.PRIVACY,
-            keywords = listOf("fingerprint", "fingerprinting", "canvas", "hardware", "anonymity", "privacy shield")
-        ),
-        SettingsSearchItem(
-            id = "privacy_webrtc",
-            title = "WebRTC Leak Protection",
-            subtitle = "Prevent local and public IP address leaks via WebRTC peer connections",
-            category = SettingsCategory.PRIVACY,
-            keywords = listOf("webrtc", "ip leak", "vpn leak", "webrtc leak", "real ip")
-        ),
-        SettingsSearchItem(
-            id = "privacy_dnt_gpc",
-            title = "Do Not Track & Global Privacy Control (GPC)",
-            subtitle = "Send DNT and GPC headers requesting websites not to sell or share your personal data",
-            category = SettingsCategory.PRIVACY,
-            keywords = listOf("dnt", "gpc", "do not track", "global privacy control", "opt out", "data selling")
+            keywords = listOf("fingerprint", "fingerprinting", "rfp", "canvas", "letterboxing", "canvas letterboxing", "hardware", "anonymity")
         ),
         SettingsSearchItem(
             id = "privacy_trim_referrers",
-            title = "Trim Referrers",
-            subtitle = "Strip URL query paths and parameters from HTTP referrers when navigating between sites",
+            title = "Strict Referrer Trimming",
+            subtitle = "Advanced: Strip cross-origin URL paths and query parameters from HTTP referer headers",
             category = SettingsCategory.PRIVACY,
             keywords = listOf("referrer", "trim referrers", "strip referrers", "http headers", "url leak")
         ),
         SettingsSearchItem(
-            id = "privacy_webauthn",
-            title = "WebAuthn & Passkeys",
-            subtitle = "Sign in securely to websites using device biometric credentials and passkeys",
+            id = "privacy_dnt_gpc",
+            title = "Privacy Signals (GPC + DNT)",
+            subtitle = "Advanced: Send Do Not Track and Global Privacy Control headers with requests",
             category = SettingsCategory.PRIVACY,
-            keywords = listOf("webauthn", "passkey", "passkeys", "biometrics", "fingerprint login", "credentials")
+            keywords = listOf("dnt", "gpc", "do not track", "global privacy control", "opt out", "data selling")
         ),
         SettingsSearchItem(
-            id = "privacy_popups",
-            title = "Block Pop-ups & Redirects",
-            subtitle = "Block unwanted pop-up windows and abusive new tab redirects",
+            id = "privacy_webrtc",
+            title = "WebRTC Leak Protection",
+            subtitle = "Advanced: Prevent local and public IP address leaks via WebRTC peer connections",
             category = SettingsCategory.PRIVACY,
-            keywords = listOf("popups", "block popups", "redirects", "new windows", "spam")
+            keywords = listOf("webrtc", "ip leak", "vpn leak", "webrtc leak", "real ip")
+        ),
+        SettingsSearchItem(
+            id = "privacy_drm",
+            title = "DRM Content Playback",
+            subtitle = "Advanced: Allow playing DRM-protected digital media (Widevine)",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("drm", "widevine", "protected media", "streaming")
+        ),
+        SettingsSearchItem(
+            id = "privacy_autofill",
+            title = "Autofill Logins & Passwords",
+            subtitle = "Advanced: Automatically suggest and fill saved credentials on web forms",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("autofill", "autofill logins", "saved logins", "forms", "passwords")
+        ),
+        SettingsSearchItem(
+            id = "privacy_private_dns",
+            title = "Secure Private DNS (DoH)",
+            subtitle = "Advanced: DNS-over-HTTPS via Cloudflare, AdGuard, Google, Quad9, Mullvad, NextDNS, or custom DNS",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("dns", "private dns", "doh", "dns over https", "cloudflare", "adguard", "quad9", "mullvad", "nextdns", "secure dns")
+        ),
+        SettingsSearchItem(
+            id = "privacy_reset",
+            title = "Reset Privacy to Recommended",
+            subtitle = "Restore default Hardened profile, tracking, fingerprinting, connection, and content protections",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("reset privacy", "recommended defaults", "restore privacy", "default privacy")
         ),
 
         // ==================== SEARCH & HOMEPAGE ====================
@@ -311,10 +339,10 @@ object PetalSettingsSearchIndex {
         // ==================== DISPLAY & ACCESSIBILITY ====================
         SettingsSearchItem(
             id = "display_haptics",
-            title = "Touch & Feedback Haptics",
-            subtitle = "Rich tactile vibrational feedback for tabs, buttons, gestures, and long-presses",
+            title = "Haptics",
+            subtitle = "Tactile feedback for button presses, gestures, and scrolling",
             category = SettingsCategory.DISPLAY_ZOOM,
-            keywords = listOf("haptics", "vibration", "touch feedback", "tactile", "buzz", "click haptics")
+            keywords = listOf("haptics", "touch haptics", "scroll haptics", "vibration", "touch feedback", "tactile", "buzz", "click haptics")
         ),
         SettingsSearchItem(
             id = "display_predictive_back",
@@ -352,18 +380,53 @@ object PetalSettingsSearchIndex {
             keywords = listOf("zoom", "page zoom", "force zoom", "pinch to zoom", "zoom level", "viewport")
         ),
         SettingsSearchItem(
+            id = "display_touchpad_swipe",
+            title = "Touchpad Two-Finger Navigation",
+            subtitle = "Experimental & Advanced: Swipe horizontally with two fingers to go back or forward",
+            category = SettingsCategory.DISPLAY_ZOOM,
+            keywords = listOf("touchpad", "swipe navigation", "two finger", "trackpad", "experimental")
+        ),
+        SettingsSearchItem(
             id = "display_reader_mode",
             title = "Automatic Reader Mode Detection",
-            subtitle = "Detect article pages automatically and show reader view chip for clutter-free reading",
+            subtitle = "Experimental & Advanced: Detect article pages automatically for clutter-free reading",
             category = SettingsCategory.DISPLAY_ZOOM,
             keywords = listOf("reader mode", "reading view", "articles", "distraction free", "readability")
         ),
         SettingsSearchItem(
+            id = "display_double_back",
+            title = "Double Back to Exit",
+            subtitle = "Experimental & Advanced: Require pressing back twice quickly to exit Petal",
+            category = SettingsCategory.DISPLAY_ZOOM,
+            keywords = listOf("double back", "back to exit", "confirm exit", "experimental")
+        ),
+        SettingsSearchItem(
             id = "display_caret_browsing",
             title = "Caret Browsing",
-            subtitle = "Navigate web pages and select text with a movable cursor caret like a text editor",
+            subtitle = "Experimental & Advanced: Navigate web pages and select text with a movable cursor caret",
             category = SettingsCategory.DISPLAY_ZOOM,
             keywords = listOf("caret", "caret browsing", "keyboard cursor", "text cursor", "select text")
+        ),
+        SettingsSearchItem(
+            id = "display_apple_duo",
+            title = "Apple Duo (BETA)",
+            subtitle = "Experimental & Advanced: 3D frosted glass fold effect and gyroscope perspective tuning",
+            category = SettingsCategory.DISPLAY_ZOOM,
+            keywords = listOf("apple duo", "3d", "fold", "gyroscope", "frosted fold", "beta", "experimental")
+        ),
+        SettingsSearchItem(
+            id = "experimental_open_redirects",
+            title = "Open Redirects in Background",
+            subtitle = "Experimental & Advanced: Open external redirect chains without stealing active tab focus",
+            category = SettingsCategory.DISPLAY_ZOOM,
+            keywords = listOf("redirects", "open redirects in background", "background redirects", "experimental")
+        ),
+        SettingsSearchItem(
+            id = "experimental_new_main_menu",
+            title = "New Main Menu (Beta)",
+            subtitle = "Experimental & Advanced: Try the redesigned main overflow menu",
+            category = SettingsCategory.DISPLAY_ZOOM,
+            keywords = listOf("new main menu", "beta menu", "overflow menu", "redesign", "experimental")
         ),
         // ==================== ADDRESS BAR ====================
         SettingsSearchItem(

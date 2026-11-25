@@ -196,4 +196,12 @@ class PrivacySettingsViewModel @Inject constructor(
     fun setLoginAutofillEnabled(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setLoginAutofillEnabled(enabled)
     }
+
+    fun setCrossSiteTracking(strict: Boolean) = viewModelScope.launch {
+        settingsRepository.setCrossSiteTracking(strict)
+    }
+
+    fun resetPrivacyToRecommended() = viewModelScope.launch {
+        settingsRepository.resetPrivacyToRecommended()
+    }
 }

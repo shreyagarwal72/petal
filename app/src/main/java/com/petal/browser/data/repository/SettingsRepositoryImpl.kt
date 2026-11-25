@@ -958,6 +958,50 @@ class SettingsRepositoryImpl @Inject constructor(
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
+    override suspend fun setCrossSiteTracking(strict: Boolean) {
+        sp.edit()
+            .putBoolean("sp_etp_strict", strict)
+            .putBoolean("sp_total_cookie_protection", true)
+            .putBoolean("sp_block_third_party_cookies", strict)
+            .putBoolean("sp_session_partitioning", true)
+            .putBoolean("sp_bounce_tracking", strict)
+            .apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
+    override suspend fun resetPrivacyToRecommended() {
+        sp.edit()
+            .putString("sp_privacy_profile", "HARDENED")
+            .putBoolean("sp_ad_block", true)
+            .putBoolean("sp_block_third_party_cookies", false)
+            .putBoolean("sp_total_cookie_protection", true)
+            .putBoolean("sp_cookie_banner_auto_reject", true)
+            .putBoolean("sp_etp_strict", false)
+            .putBoolean("sp_biometric_incognito_tab_lock", false)
+            .putBoolean("sp_session_partitioning", true)
+            .putBoolean("sp_fingerprint_protection", false)
+            .putBoolean("sp_webrtc_protection", true)
+            .putBoolean("sp_dnt_gpc", true)
+            .putBoolean("sp_trim_referrers", true)
+            .putBoolean("sp_webauthn_enabled", true)
+            .putBoolean("sp_https_only", false)
+            .putBoolean("sp_javascript", true)
+            .putBoolean("sp_block_popups", true)
+            .putBoolean("sp_webgl_enabled", true)
+            .putBoolean("sp_webgl_disabled", false)
+            .putBoolean("sp_bounce_tracking", false)
+            .putBoolean("sp_canvas_letterboxing", false)
+            .putBoolean("sp_drm", true)
+            .putBoolean("sp_login_autofill_enabled", true)
+            .putString("sp_private_dns_mode", "OFF")
+            .putString("sp_custom_doh_url", "")
+            .putString("sp_nextdns_profile_id", "")
+            .putBoolean("sp_clear_quit", false)
+            .putBoolean("sp_clear_on_exit", false)
+            .apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+    }
+
     override suspend fun setImmersiveFullScreen(enabled: Boolean) {
         sp.edit().putBoolean("sp_immersive_fullscreen", enabled).apply()
     }

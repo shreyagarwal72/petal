@@ -144,4 +144,68 @@ class Stage5PrivacySettingsTest {
         assertTrue(searchItems.any { it.id == "misc_offline_game" && it.category == com.petal.browser.compose.settings.SettingsCategory.MISCELLANEOUS })
         assertTrue(searchItems.any { it.id == "misc_quick_settings" && it.category == com.petal.browser.compose.settings.SettingsCategory.MISCELLANEOUS })
     }
+
+    @Test
+    fun testPrivacyAndDisplayReorganizationStructure() {
+        val privacyScreen = resolveAppFile("src/main/java/com/petal/browser/compose/settings/screens/PrivacySettingsScreen.kt")
+        val displayScreen = resolveAppFile("src/main/java/com/petal/browser/compose/settings/screens/DisplaySettingsScreen.kt")
+        val miscScreen = resolveAppFile("src/main/java/com/petal/browser/compose/settings/screens/MiscSettingsScreen.kt")
+        assertTrue(privacyScreen.exists())
+        assertTrue(displayScreen.exists())
+        assertTrue(miscScreen.exists())
+
+        val privacySrc = privacyScreen.readText()
+        assertTrue("Privacy screen should expose Privacy Profile selector", privacySrc.contains("title = \"Privacy Profile\""))
+        assertTrue("Privacy screen should have collapsed Advanced section", privacySrc.contains("title = \"Advanced\"") && privacySrc.contains("collapsible = true"))
+        assertTrue("Privacy screen should group cookies/partitioning/bounce under Cross-site tracking", privacySrc.contains("\"Cross-site tracking\""))
+        assertTrue("Canvas Letterboxing should carry may break some sites note", privacySrc.contains("may break some sites"))
+        assertTrue("Privacy screen should provide Reset privacy to recommended", privacySrc.contains("Reset privacy to recommended"))
+
+        val sessionPartitioningLine = privacySrc.lines()
+            .dropWhile { !it.contains("Unlinkable Session Partitioning") }
+            .take(4)
+            .joinToString("\n")
+        assertFalse(
+            "Session Partitioning subtitle must no longer mention bounce tracking",
+            sessionPartitioningLine.contains("bounce tracking", ignoreCase = true)
+        )
+
+        val displaySrc = displayScreen.readText()
+        assertTrue("Display screen should have unified Haptics switch", displaySrc.contains("title = \"Haptics\""))
+        assertTrue("Display screen should have Experimental & Advanced section", displaySrc.contains("title = \"Experimental & Advanced\""))
+        assertTrue("Experimental & Advanced should include Open redirects in background", displaySrc.contains("Open redirects in background"))
+        assertTrue("Experimental & Advanced should include menu_beta_setting_title", displaySrc.contains("menu_beta_setting_title"))
+        assertFalse("MiscSettingsScreen must no longer host Beta main menu", miscScreen.readText().contains("menu_beta_setting_title"))
+
+        val items = com.petal.browser.compose.settings.PetalSettingsSearchIndex.allItems
+        val expectedMovedDisplayIds = listOf(
+            "display_haptics",
+            "display_touchpad_swipe",
+            "display_reader_mode",
+            "display_double_back",
+            "display_caret_browsing",
+            "display_apple_duo",
+            "experimental_open_redirects",
+            "experimental_new_main_menu"
+        )
+        for (id in expectedMovedDisplayIds) {
+            assertTrue(
+                "Expected $id under DISPLAY_ZOOM in search index",
+                items.any { it.id == id && it.category == com.petal.browser.compose.settings.SettingsCategory.DISPLAY_ZOOM }
+            )
+        }
+        val expectedPrivacyIds = listOf(
+            "privacy_profile",
+            "privacy_bounce_tracking",
+            "privacy_drm",
+            "privacy_autofill",
+            "privacy_reset"
+        )
+        for (id in expectedPrivacyIds) {
+            assertTrue(
+                "Expected $id under PRIVACY in search index",
+                items.any { it.id == id && it.category == com.petal.browser.compose.settings.SettingsCategory.PRIVACY }
+            )
+        }
+    }
 }

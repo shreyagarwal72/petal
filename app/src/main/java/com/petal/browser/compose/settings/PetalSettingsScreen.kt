@@ -62,7 +62,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", com.petal.browser.R.drawable.layers_filled),
     APP_LOCK("App Lock", "Fingerprint or passcode protection for Petal", com.petal.browser.R.drawable.lock_filled),
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", com.petal.browser.R.drawable.home_filled),
-    DISPLAY_ZOOM("Accessibility", "Touch haptics, text font scaling and page zoom preview", com.petal.browser.R.drawable.mobile_vibrate_filled),
+    DISPLAY_ZOOM("Accessibility", "Haptics, text font scaling, page zoom & experimental", com.petal.browser.R.drawable.mobile_vibrate_filled),
     ADDRESS_BAR("Address Bar", "Position, size, gestures and toolbar actions", com.petal.browser.R.drawable.ic_search),
     MEDIA("Media", "Video player, media sniffer & picture-in-picture", com.petal.browser.R.drawable.video_filled),
     DOWNLOADS("Downloads", "Download engine, external downloaders & storage management", com.petal.browser.R.drawable.icon_download),
@@ -440,7 +440,10 @@ private fun RenderCategoryContent(
             )
         }
         SettingsCategory.DISPLAY_ZOOM -> {
-            DisplaySettingsScreen(onNavigateBack = onNavigateBack)
+            DisplaySettingsScreen(
+                onNavigateBack = onNavigateBack,
+                targetHighlightItemId = targetHighlightItemId
+            )
         }
         SettingsCategory.ADDRESS_BAR -> {
             AddressBarSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)

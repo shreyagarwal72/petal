@@ -109,6 +109,25 @@ class DisplaySettingsViewModel @Inject constructor(
     val doubleBackExit: StateFlow<Boolean> = settingsRepository.doubleBackExit
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val openRedirectsInBackground: StateFlow<Boolean> = settingsRepository.openRedirectsInBackground
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val newMainMenuBeta: StateFlow<Boolean> = settingsRepository.newMainMenuBeta
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setHaptics(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setTouchHaptics(enabled)
+        settingsRepository.setScrollHaptics(enabled)
+    }
+
+    fun setOpenRedirectsInBackground(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setOpenRedirectsInBackground(enabled)
+    }
+
+    fun setNewMainMenuBeta(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setNewMainMenuBeta(enabled)
+    }
+
     // Apple Duo (BETA)
     val appleDuoEnabled: StateFlow<Boolean> = settingsRepository.appleDuoEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)

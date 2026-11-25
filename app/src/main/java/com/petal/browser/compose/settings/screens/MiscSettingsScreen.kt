@@ -39,21 +39,17 @@ fun MiscSettingsScreen(
     targetHighlightItemId: String? = null,
     viewModel: MiscSettingsViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
     val autoOpenApps by viewModel.autoOpenApps.collectAsStateWithLifecycle()
     val customTabsEnabled by viewModel.customTabsEnabled.collectAsStateWithLifecycle()
     val customTabsEtp by viewModel.customTabsEtp.collectAsStateWithLifecycle()
-    val newMainMenuBeta by viewModel.newMainMenuBeta.collectAsStateWithLifecycle()
 
     MiscSettingsScreenContent(
         autoOpenApps = autoOpenApps,
         customTabsEnabled = customTabsEnabled,
         customTabsEtp = customTabsEtp,
-        newMainMenuBeta = newMainMenuBeta,
         onAutoOpenAppsChange = viewModel::setAutoOpenApps,
         onCustomTabsEnabledChange = viewModel::setCustomTabsEnabled,
         onCustomTabsEtpChange = viewModel::setCustomTabsEtp,
-        onNewMainMenuBetaChange = viewModel::setNewMainMenuBeta,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -65,11 +61,9 @@ fun MiscSettingsScreenContent(
     autoOpenApps: Boolean,
     customTabsEnabled: Boolean,
     customTabsEtp: Boolean,
-    newMainMenuBeta: Boolean,
     onAutoOpenAppsChange: (Boolean) -> Unit,
     onCustomTabsEnabledChange: (Boolean) -> Unit,
     onCustomTabsEtpChange: (Boolean) -> Unit,
-    onNewMainMenuBetaChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
@@ -131,37 +125,6 @@ fun MiscSettingsScreenContent(
                         icon = Icons.Rounded.Launch,
                         checked = autoOpenApps,
                         onCheckedChange = onAutoOpenAppsChange
-                    )
-                }
-
-                // Experimental redesigned main menu (Stable stays the default)
-                PetalSettingsSection(
-                    title = stringResource(R.string.menu_beta_section_title),
-                    icon = Icons.Rounded.Science,
-                    cardId = "misc_new_main_menu",
-                    targetHighlightId = targetHighlightItemId
-                ) {
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
-                        title = stringResource(R.string.menu_beta_setting_title),
-                        subtitle = stringResource(R.string.menu_beta_setting_subtitle),
-                        icon = Icons.Rounded.Science,
-                        checked = newMainMenuBeta,
-                        onCheckedChange = onNewMainMenuBetaChange,
-                        titleSuffix = {
-                            Surface(
-                                shape = RoundedCornerShape(50),
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.menu_beta_badge),
-                                    style = PetalText.badge,
-                                    maxLines = 1,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
                     )
                 }
 

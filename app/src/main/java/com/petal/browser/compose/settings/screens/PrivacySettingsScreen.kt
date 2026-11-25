@@ -65,6 +65,7 @@ fun PrivacySettingsScreen(
     onNavigateToAppLock: () -> Unit = {},
     viewModel: PrivacySettingsViewModel = hiltViewModel()
 ) {
+    val privacyProfile by viewModel.privacyProfile.collectAsStateWithLifecycle()
     val adBlockEnabled by viewModel.adBlockEnabled.collectAsStateWithLifecycle()
     val blockThirdPartyCookies by viewModel.blockThirdPartyCookies.collectAsStateWithLifecycle()
     val totalCookieProtection by viewModel.totalCookieProtection.collectAsStateWithLifecycle()
@@ -79,7 +80,6 @@ fun PrivacySettingsScreen(
     val httpsOnly by viewModel.httpsOnly.collectAsStateWithLifecycle()
     val javaScriptEnabled by viewModel.javaScriptEnabled.collectAsStateWithLifecycle()
     val blockPopups by viewModel.blockPopups.collectAsStateWithLifecycle()
-    val openRedirectsInBackground by viewModel.openRedirectsInBackground.collectAsStateWithLifecycle()
     val privateDnsMode by viewModel.privateDnsMode.collectAsStateWithLifecycle()
     val customDohUrl by viewModel.customDohUrl.collectAsStateWithLifecycle()
     val nextDnsProfileId by viewModel.nextDnsProfileId.collectAsStateWithLifecycle()
@@ -89,6 +89,7 @@ fun PrivacySettingsScreen(
     val loginAutofillEnabled by viewModel.loginAutofillEnabled.collectAsStateWithLifecycle()
 
     PrivacySettingsScreenContent(
+        privacyProfile = privacyProfile,
         adBlockEnabled = adBlockEnabled,
         blockThirdPartyCookies = blockThirdPartyCookies,
         totalCookieProtection = totalCookieProtection,
@@ -103,7 +104,6 @@ fun PrivacySettingsScreen(
         httpsOnly = httpsOnly,
         javaScriptEnabled = javaScriptEnabled,
         blockPopups = blockPopups,
-        openRedirectsInBackground = openRedirectsInBackground,
         privateDnsMode = privateDnsMode,
         customDohUrl = customDohUrl,
         nextDnsProfileId = nextDnsProfileId,
@@ -111,9 +111,11 @@ fun PrivacySettingsScreen(
         canvasLetterboxing = canvasLetterboxing,
         drmEnabled = drmEnabled,
         loginAutofillEnabled = loginAutofillEnabled,
+        onPrivacyProfileChange = viewModel::setPrivacyProfile,
         onAdBlockEnabledChange = viewModel::setAdBlockEnabled,
         onBlockThirdPartyCookiesChange = viewModel::setBlockThirdPartyCookies,
         onTotalCookieProtectionChange = viewModel::setTotalCookieProtection,
+        onCrossSiteTrackingChange = viewModel::setCrossSiteTracking,
         onCookieBannerAutoRejectChange = viewModel::setCookieBannerAutoReject,
         onEtpStrictChange = viewModel::setEtpStrict,
         onBiometricTabLockChange = viewModel::setBiometricTabLock,
@@ -125,7 +127,6 @@ fun PrivacySettingsScreen(
         onHttpsOnlyChange = viewModel::setHttpsOnly,
         onJavaScriptEnabledChange = viewModel::setJavaScriptEnabled,
         onBlockPopupsChange = viewModel::setBlockPopups,
-        onOpenRedirectsInBackgroundChange = viewModel::setOpenRedirectsInBackground,
         onPrivateDnsModeChange = viewModel::setPrivateDnsMode,
         onCustomDohUrlChange = viewModel::setCustomDohUrl,
         onNextDnsProfileIdChange = viewModel::setNextDnsProfileId,
@@ -133,6 +134,7 @@ fun PrivacySettingsScreen(
         onCanvasLetterboxingChange = viewModel::setCanvasLetterboxing,
         onDrmEnabledChange = viewModel::setDrmEnabled,
         onLoginAutofillEnabledChange = viewModel::setLoginAutofillEnabled,
+        onResetPrivacyToRecommended = viewModel::resetPrivacyToRecommended,
         onNavigateBack = onNavigateBack,
         onNavigateToAppLock = onNavigateToAppLock,
         targetHighlightItemId = targetHighlightItemId,
@@ -143,11 +145,12 @@ fun PrivacySettingsScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PrivacySettingsScreenContent(
+    privacyProfile: String = "HARDENED",
     adBlockEnabled: Boolean,
     blockThirdPartyCookies: Boolean,
     totalCookieProtection: Boolean = true,
     cookieBannerAutoReject: Boolean = true,
-    etpStrict: Boolean = true,
+    etpStrict: Boolean = false,
     biometricTabLock: Boolean = false,
     sessionPartitioning: Boolean = true,
     fingerprintProtection: Boolean,
@@ -157,7 +160,6 @@ fun PrivacySettingsScreenContent(
     httpsOnly: Boolean,
     javaScriptEnabled: Boolean,
     blockPopups: Boolean,
-    openRedirectsInBackground: Boolean,
     privateDnsMode: String,
     customDohUrl: String,
     nextDnsProfileId: String = "",
@@ -165,9 +167,11 @@ fun PrivacySettingsScreenContent(
     canvasLetterboxing: Boolean = false,
     drmEnabled: Boolean = true,
     loginAutofillEnabled: Boolean = true,
+    onPrivacyProfileChange: (String) -> Unit = {},
     onAdBlockEnabledChange: (Boolean) -> Unit,
     onBlockThirdPartyCookiesChange: (Boolean) -> Unit,
     onTotalCookieProtectionChange: (Boolean) -> Unit = {},
+    onCrossSiteTrackingChange: (Boolean) -> Unit = {},
     onCookieBannerAutoRejectChange: (Boolean) -> Unit = {},
     onEtpStrictChange: (Boolean) -> Unit = {},
     onBiometricTabLockChange: (Boolean) -> Unit = {},
@@ -179,7 +183,6 @@ fun PrivacySettingsScreenContent(
     onHttpsOnlyChange: (Boolean) -> Unit,
     onJavaScriptEnabledChange: (Boolean) -> Unit,
     onBlockPopupsChange: (Boolean) -> Unit,
-    onOpenRedirectsInBackgroundChange: (Boolean) -> Unit,
     onPrivateDnsModeChange: (String) -> Unit,
     onCustomDohUrlChange: (String) -> Unit,
     onNextDnsProfileIdChange: (String) -> Unit = {},
@@ -187,6 +190,7 @@ fun PrivacySettingsScreenContent(
     onCanvasLetterboxingChange: (Boolean) -> Unit = {},
     onDrmEnabledChange: (Boolean) -> Unit = {},
     onLoginAutofillEnabledChange: (Boolean) -> Unit = {},
+    onResetPrivacyToRecommended: () -> Unit = {},
     onNavigateBack: () -> Unit,
     onNavigateToAppLock: () -> Unit = {},
     targetHighlightItemId: String? = null,
@@ -202,11 +206,66 @@ fun PrivacySettingsScreenContent(
     var showAdBlockSettings by remember { mutableStateOf(false) }
     var showWhitelistDialog by remember { mutableStateOf(false) }
     var showDeleteScreenDialog by remember { mutableStateOf(false) }
+    var showResetPrivacyDialog by remember { mutableStateOf(false) }
     var whitelistDomainInput by remember { mutableStateOf("") }
     var whitelistedDomainsState by remember { mutableStateOf(PetalAdBlockEngine.getWhitelistedDomains()) }
 
+    val advancedHighlightIds = remember {
+        listOf(
+            "privacy_advanced",
+            "privacy_etp",
+            "privacy_cross_site",
+            "privacy_cookies",
+            "privacy_session_partitioning",
+            "privacy_bounce_tracking",
+            "privacy_fingerprinting",
+            "privacy_letterboxing",
+            "privacy_webrtc",
+            "privacy_dnt_gpc",
+            "privacy_trim_referrers",
+            "privacy_drm",
+            "privacy_autofill",
+            "privacy_private_dns",
+            "privacy_javascript",
+        )
+    }
+    var advancedExpanded by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(targetHighlightItemId) {
+        val target = targetHighlightItemId?.trim()?.lowercase().orEmpty()
+        if (target.isNotEmpty() && advancedHighlightIds.any { id ->
+                id == target || target.contains(id) || id.contains(target)
+            }
+        ) {
+            advancedExpanded = true
+        }
+    }
+
     var clearOnExit by remember {
         mutableStateOf(sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))
+    }
+
+    if (showResetPrivacyDialog) {
+        PetalAlertDialog(
+            onDismissRequest = { showResetPrivacyDialog = false },
+            title = "Reset privacy to recommended",
+            confirmText = "Reset",
+            onConfirm = {
+                showResetPrivacyDialog = false
+                onResetPrivacyToRecommended()
+                clearOnExit = false
+                PetalAdBlockEngine.setAdBlockEnabled(context, true)
+            },
+            dismissText = stringResource(R.string.ui_cancel),
+            onDismiss = { showResetPrivacyDialog = false },
+            icon = Icons.Rounded.RestartAlt,
+            content = {
+                Text(
+                    "Restore default Hardened profile, tracking protection, fingerprinting, connection, and content privacy settings?",
+                    style = PetalText.dialogBody,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        )
     }
 
     val totalBlockedCount = remember(adBlockEnabled) {
@@ -354,24 +413,99 @@ fun PrivacySettingsScreenContent(
                         .padding(start = 16.dp, end = 16.dp, top = topInset + 12.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // App Lock lives under Privacy & Security.
-                    PetalSettingsSection(title = "App Lock", icon = Icons.Rounded.Lock) {
-                        com.petal.browser.ui.containment.PetalGroupNavigationRow(
-                            title = "App Lock",
-                            subtitle = "Fingerprint or passcode protection for Petal",
-                            position = com.petal.browser.ui.containment.petalGroupPositionFor(0, 1),
-                            onClick = onNavigateToAppLock,
-                            leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) }
-                        )
-                    }
-                    // ── 1. Ad & Tracker Blocking (Master Switch + Hero Counter + Filters + Whitelist) ──
+                    // ── 1. Privacy Profile (Standard / Hardened / Strict) ──
                     PetalSettingsSection(
-                        title = "Ad & Tracker Blocking",
+                        title = "Privacy Profile",
+                        icon = Icons.Rounded.Security,
+                        cardId = "privacy_profile",
+                        targetHighlightId = targetHighlightItemId
+                    ) {
+                        val profileOptions = listOf(
+                            Triple(
+                                "STANDARD",
+                                "Standard",
+                                "Balanced privacy protections with maximum website compatibility"
+                            ),
+                            Triple(
+                                "HARDENED",
+                                "Hardened (Recommended)",
+                                "Arkenfox baseline with WebRTC leak defense and referrer trimming"
+                            ),
+                            Triple(
+                                "STRICT",
+                                "Strict",
+                                "Tor-style resist fingerprinting, strict origin rules, and hardware API blocks"
+                            )
+                        )
+                        PetalGroup(rowCount = profileOptions.size) { index, position ->
+                            val (key, title, subtitle) = profileOptions[index]
+                            val isSelected = privacyProfile.equals(key, ignoreCase = true)
+                            PetalGroupListRow(
+                                position = position,
+                                selected = isSelected,
+                                onClick = { onPrivacyProfileChange(key) },
+                                leading = {
+                                    PetalGroupIconBadge(
+                                        icon = when (key) {
+                                            "STRICT" -> Icons.Rounded.PrivacyTip
+                                            "HARDENED" -> Icons.Rounded.Security
+                                            else -> Icons.Rounded.Shield
+                                        },
+                                        variant = if (isSelected) PetalBadgeVariant.PRIMARY else PetalBadgeVariant.SURFACE_TONAL
+                                    )
+                                },
+                                content = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = title,
+                                            style = PetalText.rowTitle,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        if (isSelected && !key.equals("STANDARD", ignoreCase = true)) {
+                                            Surface(
+                                                shape = RoundedCornerShape(50),
+                                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                            ) {
+                                                Text(
+                                                    text = "Restart Petal to apply",
+                                                    style = PetalText.badge,
+                                                    maxLines = 1,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Text(
+                                        text = subtitle,
+                                        style = PetalText.rowSubtitle,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailing = {
+                                    if (isSelected) {
+                                        Icon(
+                                            Icons.Rounded.CheckCircle,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+                    // ── 2. Ad & Tracker Shield (Stats + Master Switch + Filter Lists + Site Exceptions) ──
+                    PetalSettingsSection(
+                        title = "Ad & Tracker Shield",
                         icon = Icons.Rounded.Shield,
                         cardId = "privacy_adblock",
                         targetHighlightId = targetHighlightItemId
                     ) {
-                        // Live Blocked Stats Hero Banner
                         PetalHeroCard {
                             Row(
                                 modifier = Modifier
@@ -432,29 +566,148 @@ fun PrivacySettingsScreenContent(
                         )
                     }
 
-                    // ── 2. Tracking Protection (Standard / Strict + TCP + Session Partitioning) ──
+                    // ── 3. Browsing Protection (HTTPS-Only, Block Pop-ups, Auto-Reject Cookie Banners) ──
                     PetalSettingsSection(
-                        title = "Tracking Protection",
-                        icon = Icons.Rounded.Security,
-                        cardId = "privacy_etp",
+                        title = "Browsing Protection",
+                        icon = Icons.Rounded.Https,
+                        cardId = "privacy_https_only",
+                        highlightIds = listOf("privacy_popups", "privacy_cookie_banners"),
                         targetHighlightId = targetHighlightItemId
                     ) {
-                        val trackingModes = listOf(
-                            Pair(false, Pair("Standard", "Balanced protection: blocks trackers in private windows, isolates third-party cookies")),
-                            Pair(true, Pair("Strict (Recommended)", "Maximum protection: blocks known trackers in all windows, fingerprinters, and cryptominers"))
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[0],
+                            position = PetalGroupPosition.TOP,
+                            title = "HTTPS-Only Mode",
+                            subtitle = "Automatically upgrade connections to HTTPS and warn on insecure HTTP",
+                            icon = Icons.Rounded.Https,
+                            checked = httpsOnly,
+                            onCheckedChange = onHttpsOnlyChange
                         )
 
-                        PetalGroup(rowCount = trackingModes.size) { index, position ->
-                            val (isStrict, info) = trackingModes[index]
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[1],
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "Block Pop-up Windows",
+                            subtitle = "Prevents unwanted new windows and intrusive pop-ups",
+                            icon = Icons.Rounded.OpenInNew,
+                            checked = blockPopups,
+                            onCheckedChange = onBlockPopupsChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[2],
+                            position = PetalGroupPosition.BOTTOM,
+                            title = "Auto-Reject Cookie Banners (GDPR)",
+                            subtitle = "Automatically declines cookie consent popups and modals",
+                            icon = Icons.Rounded.VerifiedUser,
+                            checked = cookieBannerAutoReject,
+                            onCheckedChange = onCookieBannerAutoRejectChange
+                        )
+                    }
+
+                    // ── 4. Data, Lock & Passwords (Clear Data, Exit Purge, App Lock, Biometric Tab Lock, Password Manager) ──
+                    PetalSettingsSection(
+                        title = "Data, Lock & Passwords",
+                        icon = Icons.Rounded.Lock,
+                        cardId = "privacy_incognito",
+                        highlightIds = listOf("privacy_clear_data", "privacy_app_lock", "privacy_passwords"),
+                        targetHighlightId = targetHighlightItemId
+                    ) {
+                        com.petal.browser.ui.containment.PetalGroupRow(
+                            position = PetalGroupPosition.TOP,
+                            title = "Clear Browsing Data",
+                            subtitle = "Permanently remove history, cache, cookies, and local database storage",
+                            icon = Icons.Rounded.DeleteOutline,
+                            onClick = { showDeleteScreenDialog = true }
+                        )
+
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[0],
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "Clear Data on Exit",
+                            subtitle = "Automatically purge cache, cookies, and browsing sessions when closing Petal",
+                            icon = Icons.Rounded.DeleteSweep,
+                            checked = clearOnExit,
+                            onCheckedChange = { newValue ->
+                                clearOnExit = newValue
+                                sp.edit()
+                                    .putBoolean("sp_clear_quit", newValue)
+                                    .putBoolean("sp_clear_on_exit", newValue)
+                                    .apply()
+                            }
+                        )
+
+                        PetalGroupNavigationRow(
+                            variant = privacyRowVariants[1],
+                            title = "App Lock",
+                            subtitle = "Fingerprint or passcode protection for Petal",
+                            position = PetalGroupPosition.MIDDLE,
+                            onClick = onNavigateToAppLock,
+                            leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) }
+                        )
+
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[2],
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "Biometric Tab Lock",
+                            subtitle = "Require biometric authentication (fingerprint/face) to view incognito tabs",
+                            icon = Icons.Rounded.Fingerprint,
+                            checked = biometricTabLock,
+                            onCheckedChange = onBiometricTabLockChange
+                        )
+
+                        PetalGroupNavigationRow(
+                            variant = privacyRowVariants[0],
+                            title = "Password Manager & Autofill Vault",
+                            subtitle = "Encrypted local credentials, passkeys, and breach alert monitoring",
+                            position = PetalGroupPosition.BOTTOM,
+                            onClick = { showPasswordsScreen = true },
+                            leadingIcon = { Icon(Icons.Rounded.VpnKey, contentDescription = null) }
+                        )
+                    }
+
+                    // ── 5. Advanced (Collapsed by default; auto-expands on search target match) ──
+                    PetalSettingsSection(
+                        title = "Advanced",
+                        icon = Icons.Rounded.Tune,
+                        cardId = "privacy_advanced",
+                        highlightIds = advancedHighlightIds,
+                        targetHighlightId = targetHighlightItemId,
+                        collapsible = true,
+                        expanded = advancedExpanded,
+                        onToggleExpand = { advancedExpanded = !advancedExpanded }
+                    ) {
+                        // Cross-site tracking Standard / Strict grouped control + underlying sp_ switches
+                        PetalSectionLabel("Cross-site tracking")
+                        val isCrossSiteStrict =
+                            etpStrict && blockThirdPartyCookies && bounceTracking && totalCookieProtection && sessionPartitioning
+                        val crossSiteModes = listOf(
+                            Pair(
+                                false,
+                                Pair(
+                                    "Standard",
+                                    "Total Cookie Protection and session partitioning with high site compatibility"
+                                )
+                            ),
+                            Pair(
+                                true,
+                                Pair(
+                                    "Strict",
+                                    "Enables strict tracking protection, third-party cookie blocking, and bounce tracking purge"
+                                )
+                            )
+                        )
+                        PetalGroup(rowCount = crossSiteModes.size) { index, position ->
+                            val (strictMode, info) = crossSiteModes[index]
                             val (title, subtitle) = info
-                            val isSelected = etpStrict == isStrict
+                            val isSelected = isCrossSiteStrict == strictMode
                             PetalGroupListRow(
                                 position = position,
                                 selected = isSelected,
-                                onClick = { onEtpStrictChange(isStrict) },
+                                onClick = { onCrossSiteTrackingChange(strictMode) },
                                 leading = {
                                     PetalGroupIconBadge(
-                                        icon = if (isStrict) Icons.Rounded.Security else Icons.Rounded.Shield,
+                                        icon = if (strictMode) Icons.Rounded.Security else Icons.Rounded.Shield,
                                         variant = if (isSelected) PetalBadgeVariant.PRIMARY else PetalBadgeVariant.SURFACE_TONAL
                                     )
                                 },
@@ -485,22 +738,19 @@ fun PrivacySettingsScreenContent(
 
                         PetalSettingsToggleRow(
                             variant = privacyRowVariants[0],
-                            position = PetalGroupPosition.MIDDLE,
+                            position = PetalGroupPosition.TOP,
                             title = "Total Cookie Protection",
                             subtitle = "Dynamic first-party cookie jar isolation and state partitioning",
                             icon = Icons.Rounded.Cookie,
                             checked = totalCookieProtection,
-                            onCheckedChange = { newValue ->
-                                onTotalCookieProtectionChange(newValue)
-                                onBlockThirdPartyCookiesChange(newValue)
-                            }
+                            onCheckedChange = onTotalCookieProtectionChange
                         )
 
                         PetalSettingsToggleRow(
                             variant = privacyRowVariants[1],
                             position = PetalGroupPosition.MIDDLE,
                             title = "Unlinkable Session Partitioning",
-                            subtitle = "Isolates client network state per tab session to defeat bounce tracking",
+                            subtitle = "Isolates client network state per tab session to prevent cross-site linkability",
                             icon = Icons.Rounded.Splitscreen,
                             checked = sessionPartitioning,
                             onCheckedChange = onSessionPartitioningChange
@@ -508,6 +758,16 @@ fun PrivacySettingsScreenContent(
 
                         PetalSettingsToggleRow(
                             variant = privacyRowVariants[2],
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "Block Third-Party Cookies",
+                            subtitle = "Prevent cross-site tracking cookies across sites",
+                            icon = Icons.Rounded.Block,
+                            checked = blockThirdPartyCookies,
+                            onCheckedChange = onBlockThirdPartyCookiesChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[0],
                             position = PetalGroupPosition.BOTTOM,
                             title = "Bounce Tracking Protection",
                             subtitle = "Purges redirect tracker state when traversing bounce redirect intermediaries",
@@ -515,15 +775,10 @@ fun PrivacySettingsScreenContent(
                             checked = bounceTracking,
                             onCheckedChange = onBounceTrackingChange
                         )
-                    }
 
-                    // ── 3. Fingerprinting Protection (Gecko RFP / FPP Primary Defense) ──
-                    PetalSettingsSection(
-                        title = "Fingerprinting Protection",
-                        icon = Icons.Rounded.Fingerprint,
-                        cardId = "privacy_fingerprinting",
-                        targetHighlightId = targetHighlightItemId
-                    ) {
+                        Spacer(Modifier.height(4.dp))
+
+                        // Resist Fingerprinting with Canvas Letterboxing nested underneath
                         PetalSettingsToggleRow(
                             variant = privacyRowVariants[0],
                             position = PetalGroupPosition.TOP,
@@ -537,32 +792,81 @@ fun PrivacySettingsScreenContent(
                         PetalSettingsToggleRow(
                             variant = privacyRowVariants[1],
                             position = PetalGroupPosition.BOTTOM,
+                            modifier = Modifier.padding(start = 16.dp),
                             title = "Canvas Letterboxing",
-                            subtitle = "Appends margins to canvas viewport to prevent display dimension fingerprinting",
+                            subtitle = "Nested under Resist Fingerprinting: adds viewport margins to mask display size (may break some sites)",
                             icon = Icons.Rounded.AspectRatio,
                             checked = canvasLetterboxing,
                             onCheckedChange = onCanvasLetterboxingChange
                         )
-                    }
 
-                    // ── 4. Connection & DNS (HTTPS-Only, DoH, WebRTC, GPC/DNT, Referrer) ──
-                    PetalSettingsSection(
-                        title = "Connection & DNS",
-                        icon = Icons.Rounded.Lock,
-                        cardId = "privacy_connection",
-                        targetHighlightId = targetHighlightItemId
-                    ) {
+                        Spacer(Modifier.height(4.dp))
+
+                        // Referrers, Signals, WebRTC, DRM, Autofill, JavaScript
                         PetalSettingsToggleRow(
                             variant = privacyRowVariants[2],
                             position = PetalGroupPosition.TOP,
-                            title = "HTTPS-Only Mode",
-                            subtitle = "Automatically upgrade connections to HTTPS and warn on insecure HTTP",
-                            icon = Icons.Rounded.Https,
-                            checked = httpsOnly,
-                            onCheckedChange = onHttpsOnlyChange
+                            title = "Strict Referrer Trimming",
+                            subtitle = "Strips cross-origin URL paths and query parameters from HTTP Referer headers",
+                            icon = Icons.Rounded.LinkOff,
+                            checked = trimReferrers,
+                            onCheckedChange = onTrimReferrersChange
                         )
 
-                        // One row per provider; providers with several options expand on tap to pick one.
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[0],
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "Privacy Signals (GPC + DNT)",
+                            subtitle = "Broadcasts Global Privacy Control and Do Not Track signals with every HTTP request",
+                            icon = Icons.Rounded.Security,
+                            checked = dntGpc,
+                            onCheckedChange = onDntGpcChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[1],
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "WebRTC IP Leak Protection",
+                            subtitle = "Prevents leaking local private IP address via WebRTC peer connections",
+                            icon = Icons.Rounded.WifiProtectedSetup,
+                            checked = webrtcProtection,
+                            onCheckedChange = onWebrtcProtectionChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[2],
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "DRM Content Playback",
+                            subtitle = "Allow playing DRM-protected digital media (Widevine)",
+                            icon = Icons.Rounded.PlayCircle,
+                            checked = drmEnabled,
+                            onCheckedChange = onDrmEnabledChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[0],
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "Autofill Logins & Passwords",
+                            subtitle = "Automatically suggest and fill saved credentials on web forms",
+                            icon = Icons.Rounded.Password,
+                            checked = loginAutofillEnabled,
+                            onCheckedChange = onLoginAutofillEnabledChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[1],
+                            position = PetalGroupPosition.BOTTOM,
+                            title = "JavaScript",
+                            subtitle = "Enable JavaScript execution for web pages",
+                            icon = Icons.Rounded.Code,
+                            checked = javaScriptEnabled,
+                            onCheckedChange = onJavaScriptEnabledChange
+                        )
+
+                        Spacer(Modifier.height(4.dp))
+
+                        // Secure Private DNS (DoH) inside Advanced
+                        PetalSectionLabel("Secure Private DNS (DoH)")
                         val dnsEntries = remember {
                             buildList<DnsEntry> {
                                 add(DnsEntry.Single("OFF", "System Default (Off)", "Use default network DNS", false))
@@ -778,152 +1082,21 @@ fun PrivacySettingsScreenContent(
                                 }
                             }
                         }
-
-                        PetalSettingsToggleRow(
-                            variant = privacyRowVariants[0],
-                            position = PetalGroupPosition.MIDDLE,
-                            title = "WebRTC IP Leak Protection",
-                            subtitle = "Prevents leaking local private IP address via WebRTC peer connections",
-                            icon = Icons.Rounded.WifiProtectedSetup,
-                            checked = webrtcProtection,
-                            onCheckedChange = onWebrtcProtectionChange
-                        )
-
-                        PetalSettingsToggleRow(
-                            variant = privacyRowVariants[1],
-                            position = PetalGroupPosition.MIDDLE,
-                            title = "Privacy Signals (GPC + DNT)",
-                            subtitle = "Broadcasts Global Privacy Control and Do Not Track signals with every HTTP request",
-                            icon = Icons.Rounded.Security,
-                            checked = dntGpc,
-                            onCheckedChange = onDntGpcChange
-                        )
-
-                        PetalSettingsToggleRow(
-                            variant = privacyRowVariants[2],
-                            position = PetalGroupPosition.BOTTOM,
-                            title = "Strict Referrer Trimming",
-                            subtitle = "Strips cross-origin URL paths and query parameters from HTTP Referer headers (default on)",
-                            icon = Icons.Rounded.LinkOff,
-                            checked = trimReferrers,
-                            onCheckedChange = onTrimReferrersChange
-                        )
                     }
 
-                    // ── 5. Site Permissions & Content (Popups, Cookie Banners, JavaScript) ──
+                    // ── 6. Reset Privacy to Recommended Action ──
                     PetalSettingsSection(
-                        title = "Site Permissions & Content",
-                        icon = Icons.Rounded.Code,
-                        cardId = "privacy_content",
+                        title = "Reset",
+                        icon = Icons.Rounded.RestartAlt,
+                        cardId = "privacy_reset",
                         targetHighlightId = targetHighlightItemId
                     ) {
-                        PetalSettingsToggleRow(
-                            variant = privacyRowVariants[0],
-                            position = PetalGroupPosition.TOP,
-                            title = "Block Pop-up Windows",
-                            subtitle = "Prevents unwanted new windows and intrusive redirects",
-                            icon = Icons.Rounded.OpenInNew,
-                            checked = blockPopups,
-                            onCheckedChange = onBlockPopupsChange
-                        )
-
-                        PetalSettingsToggleRow(
-                            variant = privacyRowVariants[1],
-                            position = PetalGroupPosition.MIDDLE,
-                            title = "Auto-Reject Cookie Banners (GDPR)",
-                            subtitle = "Automatically declines cookie consent popups and modals",
-                            icon = Icons.Rounded.VerifiedUser,
-                            checked = cookieBannerAutoReject,
-                            onCheckedChange = onCookieBannerAutoRejectChange
-                        )
-
-                        PetalSettingsToggleRow(
-                            variant = privacyRowVariants[2],
-                            position = PetalGroupPosition.MIDDLE,
-                            title = "JavaScript",
-                            subtitle = "Enable JavaScript execution for web pages",
-                            icon = Icons.Rounded.Code,
-                            checked = javaScriptEnabled,
-                            onCheckedChange = onJavaScriptEnabledChange
-                        )
-
-                        PetalSettingsToggleRow(
-                            variant = privacyRowVariants[0],
-                            position = PetalGroupPosition.BOTTOM,
-                            title = "DRM Content Playback",
-                            subtitle = "Allow playing DRM-protected digital media (Widevine)",
-                            icon = Icons.Rounded.PlayCircle,
-                            checked = drmEnabled,
-                            onCheckedChange = onDrmEnabledChange
-                        )
-                    }
-
-                    // ── 6. Private Browsing (Biometric Lock, Clear Browsing Data, Clear on Exit) ──
-                    PetalSettingsSection(
-                        title = "Private Browsing",
-                        icon = Icons.Rounded.VisibilityOff,
-                        cardId = "privacy_incognito",
-                        targetHighlightId = targetHighlightItemId
-                    ) {
-                        PetalSettingsToggleRow(
-                            variant = privacyRowVariants[1],
-                            position = PetalGroupPosition.TOP,
-                            title = "Biometric Tab Lock",
-                            subtitle = "Require biometric authentication (fingerprint/face) to view incognito tabs",
-                            icon = Icons.Rounded.Fingerprint,
-                            checked = biometricTabLock,
-                            onCheckedChange = onBiometricTabLockChange
-                        )
-
                         com.petal.browser.ui.containment.PetalGroupRow(
-                            position = PetalGroupPosition.MIDDLE,
-                            title = "Clear Browsing Data",
-                            subtitle = "Permanently remove history, cache, cookies, and local database storage",
-                            icon = Icons.Rounded.DeleteOutline,
-                            onClick = { showDeleteScreenDialog = true }
-                        )
-
-                        PetalSettingsToggleRow(
-                            variant = privacyRowVariants[2],
-                            position = PetalGroupPosition.BOTTOM,
-                            title = "Clear Data on Exit",
-                            subtitle = "Automatically purge cache, cookies, and browsing sessions when closing Petal",
-                            icon = Icons.Rounded.DeleteSweep,
-                            checked = clearOnExit,
-                            onCheckedChange = { newValue ->
-                                clearOnExit = newValue
-                                sp.edit()
-                                    .putBoolean("sp_clear_quit", newValue)
-                                    .putBoolean("sp_clear_on_exit", newValue)
-                                    .apply()
-                            }
-                        )
-                    }
-
-                    // ── 7. Passwords & Passkeys (Unified Manager & Vault) ──
-                    PetalSettingsSection(
-                        title = "Passwords & Passkeys",
-                        icon = Icons.Rounded.VpnKey,
-                        cardId = "privacy_passwords",
-                        targetHighlightId = targetHighlightItemId
-                    ) {
-                        PetalGroupNavigationRow(
-                            variant = privacyRowVariants[0],
-                            title = "Password Manager & Autofill Vault",
-                            subtitle = "Encrypted local credentials, passkeys, and breach alert monitoring",
-                            position = PetalGroupPosition.TOP,
-                            onClick = { showPasswordsScreen = true },
-                            leadingIcon = { Icon(Icons.Rounded.VpnKey, contentDescription = null) }
-                        )
-
-                        PetalSettingsToggleRow(
-                            variant = privacyRowVariants[1],
-                            position = PetalGroupPosition.BOTTOM,
-                            title = "Autofill Logins & Passwords",
-                            subtitle = "Automatically suggest and fill saved credentials on web forms",
-                            icon = Icons.Rounded.Password,
-                            checked = loginAutofillEnabled,
-                            onCheckedChange = onLoginAutofillEnabledChange
+                            position = PetalGroupPosition.SINGLE,
+                            icon = Icons.Rounded.RestartAlt,
+                            title = "Reset privacy to recommended",
+                            subtitle = "Restore default Hardened profile, tracking, fingerprinting, connection, and content protections",
+                            onClick = { showResetPrivacyDialog = true }
                         )
                     }
                 }
