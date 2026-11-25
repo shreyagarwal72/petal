@@ -138,9 +138,12 @@ fun ComposeEngineViewport(
         }
     }
 
-    // Pull is only available while a real web page is shown.
+    // Pull is only available while a real web page is shown (matching SwipeRefreshFeature).
     SideEffect {
-        swipeLayout.isEnabled = tab != null && !PetalBrowserUtils.isHomePage(tab.content.url)
+        swipeLayout.isEnabled = tab != null &&
+            !PetalBrowserUtils.isHomePage(tab.content.url) &&
+            !tab.content.fullScreen &&
+            !tab.content.isPdf
     }
 
     DisposableEffect(tab?.id, swipeLayout) {
@@ -205,7 +208,9 @@ fun ComposeEngineViewport(
             findGeckoView(ev.asView())?.let { gv ->
                 gv.background = null
                 gv.isNestedScrollingEnabled = true
-                gv.overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+                // OVER_SCROLL_ALWAYS lets Gecko report vertical overscroll (canOverscrollTop() == true)
+                // on short non-scrollable pages too, matching official Firefox pull-to-refresh.
+                gv.overScrollMode = View.OVER_SCROLL_ALWAYS
                 try {
                     GeckoGlassBackend.applyBackend(gv, context)
                 } catch (_: Throwable) {}
@@ -442,7 +447,10 @@ fun ComposeEngineViewport(
             pullProgressProvider = { refreshBarState.pullProgress },
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = topPadding + 8.dp)
+                .padding(top = topPadding)
+                .graphicsLayer {
+                    translationY = -dynamicTopPx * BarCollapseState.collapsedFraction.coerceIn(0f, 1f)
+                }
         )
     }
 }

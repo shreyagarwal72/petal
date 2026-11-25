@@ -149,14 +149,11 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
     private fun applyNativeSpinnerShown(show: Boolean) {
         nativeSpinnerShown = show
         legacySpinner?.apply {
-            if (show) {
-                alpha = 1f
-                // CircleImageView's own shadow elevation (SHADOW_ELEVATION = 4dp).
-                elevation = 4f * resources.displayMetrics.density
-            } else {
-                alpha = 0f
-                elevation = 0f
-            }
+            // Keep alpha = 1f so ViewGroup.dispatchDraw never short-circuits drawChild (and thus
+            // legacy View Animation stepping on mCircleView); visual suppression in custom modes
+            // is handled by zero elevation here plus an empty clipRect in drawChild().
+            alpha = 1f
+            elevation = if (show) 4f * resources.displayMetrics.density else 0f
             importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
             invalidate()
         }
@@ -231,10 +228,16 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
         view === legacySpinner || view.javaClass.name.contains("CircleImageView")
 
     override fun drawChild(canvas: android.graphics.Canvas, child: View, drawingTime: Long): Boolean {
-        // Except in FIREFOX mode the default circle is never rasterized, whatever
-        // SwipeRefreshLayout does to its visibility/alpha/scale while pulling, refreshing or resetting.
+        // Except in FIREFOX mode the default circle is never shown on screen, whatever
+        // SwipeRefreshLayout does to its visibility/alpha/scale. We STILL call super.drawChild
+        // inside an empty clip so SwipeRefreshLayout's mCircleView animations advance and
+        // mRefreshListener.onAnimationEnd() -> SwipeRefreshFeature.onRefresh() fires reliably.
         if (!nativeSpinnerShown && isLegacySpinner(child)) {
-            return false
+            val save = canvas.save()
+            canvas.clipRect(0, 0, 0, 0)
+            val drawn = super.drawChild(canvas, child, drawingTime)
+            canvas.restoreToCount(save)
+            return drawn
         }
         return super.drawChild(canvas, child, drawingTime)
     }
