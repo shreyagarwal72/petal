@@ -544,6 +544,13 @@ object PetalSettingsSearchIndex {
             subtitle = "Install and manage Firefox WebExtensions, uBlock Origin, Dark Reader, and custom scripts",
             category = SettingsCategory.EXTENSIONS,
             keywords = listOf("extension", "extensions", "addon", "addons", "ublock", "dark reader", "bitwarden", "xpi", "webextension")
+        ),
+        SettingsSearchItem(
+            id = "misc_download_petal_now",
+            title = "Petal Now & Live Capsules",
+            subtitle = "Display mode, M3 Expressive motion speed/bounce, wavy progress bar, and activity categories",
+            category = SettingsCategory.DOWNLOADS,
+            keywords = listOf("petal now", "nowbar", "now bar", "island", "live activity", "capsule", "wavy progress", "ad blocker pill")
         )
     )
 
@@ -569,7 +576,8 @@ object PetalSettingsSearchIndex {
         "reader", "caret", "language", "backup", "restore", "export", "import", "bookmarks",
         "history", "updater", "updates", "developer", "about", "model", "provider", "groq",
         "gemini", "claude", "ollama", "deepseek", "openai", "token", "key", "gestures",
-        "swipe", "lock", "passcode", "blur", "scaling", "audio", "video", "pip", "cache", "icon", "launcher", "splash", "intro"
+        "swipe", "lock", "passcode", "blur", "scaling", "audio", "video", "pip", "cache", "icon", "launcher", "splash", "intro",
+        "petal now", "nowbar", "island", "capsule", "wavy"
     )
 
     /**

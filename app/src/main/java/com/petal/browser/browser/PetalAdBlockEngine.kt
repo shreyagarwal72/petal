@@ -17,6 +17,9 @@ package com.petal.browser.browser
 import android.content.Context
 import android.net.Uri
 import androidx.preference.PreferenceManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
@@ -25,7 +28,14 @@ object PetalAdBlockEngine {
     private val whitelistedDomains = ConcurrentHashMap.newKeySet<String>()
     private val domainBlockedCount = ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger>()
     private val totalBlockedCount = java.util.concurrent.atomic.AtomicLong(0)
+    private val _stateVersion = MutableStateFlow(0L)
+    @get:JvmStatic
+    val stateVersion: StateFlow<Long> = _stateVersion.asStateFlow()
     @Volatile private var isInitialized = false
+
+    private fun notifyStateChanged() {
+        _stateVersion.value = _stateVersion.value + 1L
+    }
 
     @JvmStatic
     fun ensureInitialized(context: Context) {
@@ -77,6 +87,7 @@ object PetalAdBlockEngine {
         try {
             com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
         } catch (_: Throwable) {}
+        notifyStateChanged()
     }
 
     @JvmStatic
@@ -98,6 +109,7 @@ object PetalAdBlockEngine {
         } else {
             sp.edit().putString("sp_adblock_domain_mode_$cleanDomain", mode.id).apply()
         }
+        notifyStateChanged()
     }
 
     @JvmStatic
@@ -133,6 +145,7 @@ object PetalAdBlockEngine {
 
         val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
         sp.edit().putStringSet("sp_adblock_whitelisted_domains", whitelistedDomains.toSet()).apply()
+        notifyStateChanged()
     }
 
     @JvmStatic
@@ -142,6 +155,7 @@ object PetalAdBlockEngine {
 
         val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
         sp.edit().putStringSet("sp_adblock_whitelisted_domains", whitelistedDomains.toSet()).apply()
+        notifyStateChanged()
     }
 
     @JvmStatic
@@ -168,6 +182,7 @@ object PetalAdBlockEngine {
                 domainBlockedCount.computeIfAbsent(cleanHost) { java.util.concurrent.atomic.AtomicInteger(0) }.incrementAndGet()
             }
         }
+        notifyStateChanged()
     }
 
     @JvmStatic

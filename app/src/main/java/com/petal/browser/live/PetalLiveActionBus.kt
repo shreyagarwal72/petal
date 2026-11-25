@@ -328,6 +328,16 @@ object PetalLiveActionBus {
     }
 
     @JvmStatic
+    fun swapSlots() {
+        synchronized(lock) {
+            val cur = _state.value
+            val p = cur.primary ?: return
+            val s = cur.secondary ?: return
+            _state.value = LiveActionBusState(primary = s, secondary = p)
+        }
+    }
+
+    @JvmStatic
     fun clearAll() {
         synchronized(lock) {
             pending.clear()

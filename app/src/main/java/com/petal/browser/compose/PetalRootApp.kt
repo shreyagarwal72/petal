@@ -1883,6 +1883,24 @@ fun PetalRootApp(
                     }
                 )
             }
+
+            // ── Petal Now Live Activity Capsule ─────────────────────────────
+            com.petal.browser.now.PetalNowHost(
+                viewModel = viewModel,
+                activeUrl = activeUrl,
+                isHome = isHome,
+                isAdBlockEnabled = isAdBlockEnabled,
+                isBottomAddressBar = isBottomAddressBar,
+                isFullscreen = (activity as? MainActivity)?.isCustomFullscreenState == true,
+                suppressForOverlay = isOverlayShowing ||
+                    com.petal.browser.setup.PetalSetupGate.visible ||
+                    isFindInPageOpen ||
+                    isDevConsoleOpen ||
+                    pendingExtensionPopup != null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(6f),
+            )
     }
 }
 

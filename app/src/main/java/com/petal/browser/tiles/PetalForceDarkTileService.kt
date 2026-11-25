@@ -5,7 +5,6 @@ import android.service.quicksettings.Tile
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.engine.gecko.PetalGeckoRuntime
-import com.petal.browser.live.PetalLiveActionBus
 
 /**
  * Quick Settings Toggle Tile for Web Page Force Dark Mode.
@@ -35,13 +34,6 @@ class PetalForceDarkTileService : PetalTileBase() {
         try {
             PetalGeckoRuntime.syncPreferences(sp)
         } catch (_: Throwable) {}
-        PetalLiveActionBus.postSettingChanged(
-            key = "sp_force_dark_mode",
-            label = getString(R.string.quick_tile_force_dark_label),
-            oldValue = if (current) "On" else "Off",
-            newValue = if (next) "On" else "Off",
-            undo = null
-        )
         refreshTileState()
     }
 }

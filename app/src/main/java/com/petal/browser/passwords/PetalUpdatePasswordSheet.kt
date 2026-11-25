@@ -25,12 +25,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -40,8 +41,9 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
-import com.petal.browser.unit.CutoutMetrics
 import com.petal.browser.live.PetalLiveActionBus
+import com.petal.browser.now.PetalNowAnchor
+import com.petal.browser.ui.components.rememberReduceMotion
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.glass.*
 import kotlinx.coroutines.delay
@@ -133,14 +135,18 @@ private fun UpdatePasswordSheetContent(
 
     var isMorphing by remember { mutableStateOf(false) }
     var isClosing by remember { mutableStateOf(false) }
+    var sheetRestingBounds by remember { mutableStateOf<Rect?>(null) }
 
-    val view = LocalView.current
     val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
-    val screenHeightDp = configuration.screenHeightDp.dp
-    val cutoutOffsetXDp = remember(view) {
-        CutoutMetrics.cutoutHorizontalOffsetDp(view)
+    val reduceMotion = rememberReduceMotion()
+    val morphDelta = remember(isMorphing, sheetRestingBounds, reduceMotion) {
+        if (isMorphing && !reduceMotion && PetalNowAnchor.isVisible) {
+            PetalNowAnchor.computeMorphDelta(sheetRestingBounds)
+        } else {
+            null
+        }
     }
+    val hasAnchorTarget = morphDelta != null
 
     // Scrim fade animation
     val scrimAlpha by animateFloatAsState(
@@ -149,35 +155,42 @@ private fun UpdatePasswordSheetContent(
         label = "scrimAlpha"
     )
 
-    // Morph animations towards Petal NowBar coordinates
+    // Morph animations towards the live Petal Now anchor (falls back to clean fade/scale dismiss)
     val scale by animateFloatAsState(
-        targetValue = if (isMorphing) 0.16f else if (isClosing) 0.92f else 1f,
+        targetValue = when {
+            isMorphing && hasAnchorTarget -> 0.18f
+            isMorphing || isClosing -> if (reduceMotion) 1f else 0.92f
+            else -> 1f
+        },
         animationSpec = PetalSpring.calm(),
         label = "scale"
     )
 
-    val targetTranslationY = with(density) { (-screenHeightDp + 52.dp).toPx() }
+    val fallbackDismissY = with(density) { (if (isMorphing) 48.dp else 320.dp).toPx() }
     val translationY by animateFloatAsState(
-        targetValue = if (isMorphing) targetTranslationY else if (isClosing) with(density) { 320.dp.toPx() } else 0f,
+        targetValue = when {
+            isMorphing && morphDelta != null -> morphDelta.y
+            isMorphing || isClosing -> if (reduceMotion) 0f else fallbackDismissY
+            else -> 0f
+        },
         animationSpec = PetalSpring.calm(),
         label = "transY"
     )
 
-    val targetTranslationX = with(density) { cutoutOffsetXDp.dp.toPx() }
     val translationX by animateFloatAsState(
-        targetValue = if (isMorphing) targetTranslationX else 0f,
+        targetValue = if (isMorphing && morphDelta != null) morphDelta.x else 0f,
         animationSpec = PetalSpring.calm(),
         label = "transX"
     )
 
     val alpha by animateFloatAsState(
-        targetValue = if (isMorphing) 0f else if (isClosing) 0f else 1f,
+        targetValue = if (isMorphing || isClosing) 0f else 1f,
         animationSpec = PetalSpring.calm(),
         label = "alpha"
     )
 
     val cornerRadius by animateDpAsState(
-        targetValue = if (isMorphing) 50.dp else 32.dp,
+        targetValue = if (isMorphing && hasAnchorTarget) 44.dp else 32.dp,
         animationSpec = PetalSpring.calm(),
         label = "corner"
     )
@@ -227,6 +240,15 @@ private fun UpdatePasswordSheetContent(
         )
 
         // Morphing Sheet Container
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coords ->
+                    if (!isMorphing && !isClosing) {
+                        sheetRestingBounds = coords.boundsInWindow()
+                    }
+                }
+        ) {
         PetalGlassContainer(
             modifier = Modifier
                 .fillMaxWidth()
@@ -422,6 +444,7 @@ private fun UpdatePasswordSheetContent(
                     }
                 }
             }
+        }
         }
     }
 }

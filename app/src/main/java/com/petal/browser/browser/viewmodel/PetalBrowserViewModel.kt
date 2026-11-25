@@ -208,6 +208,21 @@ class PetalBrowserViewModel @Inject constructor(
         val target = enabled ?: !_isAdBlockEnabled.value
         com.petal.browser.browser.PetalAdBlockEngine.setAdBlockEnabled(context, target)
         _isAdBlockEnabled.value = target
+        val url = activeUrl.value
+        val host = if (url.isNotBlank() && !url.startsWith("about:")) {
+            try {
+                android.net.Uri.parse(url).host?.lowercase(java.util.Locale.US)?.removePrefix("www.")?.takeIf { it.isNotBlank() }
+            } catch (_: Throwable) {
+                null
+            }
+        } else null
+        com.petal.browser.live.PetalLiveActionBus.postAdBlockState(
+            enabled = target,
+            blockedOnPage = com.petal.browser.browser.PetalAdBlockEngine.getBlockedCountForDomain(host),
+            domain = host,
+            onToggle = { next -> toggleAdBlock(next) },
+            openSettings = { openSettings(SettingsCategory.PRIVACY) },
+        )
     }
 
     private val _isDesktopMode = MutableStateFlow(
