@@ -100,17 +100,12 @@ object PetalAboutDeveloperBridge {
                 }
 
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                 val isAmoled = sp.getBoolean("sp_amoled", false)
                 val isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
                 val useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-                val fontWidthVal = sp.getFloat("sp_font_width", 92f)
-                val fontWeightVal = sp.getInt("sp_font_weight", 750)
-                val fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
 
-                val appFont = try { AppFont.valueOf(fontName) } catch (_: Exception) { AppFont.PETAL }
                 val colorStyle = try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
 
                 composeView = ComposeView(activity).apply {
@@ -121,17 +116,15 @@ object PetalAboutDeveloperBridge {
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                     setContent {
                         val snapshotBitmap = remember { PetalContentSnapshot.current?.asImageBitmap() }
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
 
                         PetalExpressiveTheme(
                             dynamicColor = useDynamic,
                             useAmoled = isAmoled,
                             expressiveColors = isExpressiveColors,
-                            appFont = appFont,
+                            fontState = fontState,
                             colorStyle = colorStyle,
-                            paletteId = paletteId,
-                            fontWidth = fontWidthVal,
-                            fontWeight = fontWeightVal,
-                            fontRoundness = fontRoundnessVal
+                            paletteId = paletteId
                         ) {
                             PetalAboutDeveloperScreen(
                                 backgroundSnapshot = snapshotBitmap,

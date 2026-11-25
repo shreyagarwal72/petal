@@ -464,13 +464,11 @@ object PetalDownloadDialogBridge {
                 lateinit var engineDialog: androidx.appcompat.app.AlertDialog
 
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                 val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                val appFont = com.petal.browser.ui.theme.AppFont.fromName(fontName)
                 val colorStyle = try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                 val initialEngineKey = com.petal.browser.torrent.PetalTorrentEngineManager.getSelectedEngineMode(activity).key
 
@@ -482,11 +480,12 @@ object PetalDownloadDialogBridge {
                     setContent {
                         val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
                             ?: activity.findViewById(android.R.id.content)
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
                         CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
                             PetalExpressiveTheme(
                                 dynamicColor = dynamicColor,
                                 useAmoled = isAmoled,
-                                appFont = appFont,
+                                fontState = fontState,
                                 colorStyle = colorStyle,
                                 paletteId = paletteId
                             ) {
@@ -560,13 +559,11 @@ object PetalDownloadDialogBridge {
                     lateinit var dialog: androidx.appcompat.app.AlertDialog
 
                     val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                    val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                     val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                     val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                     val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                    val appFont = com.petal.browser.ui.theme.AppFont.fromName(fontName)
                     val colorStyle = try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
 
                     // Magnet links can't go through the plain-URL external path (it would rewrite
@@ -597,11 +594,12 @@ object PetalDownloadDialogBridge {
                         setContent {
                             val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
                                 ?: activity.findViewById(android.R.id.content)
+                            val fontState = com.petal.browser.ui.theme.rememberFontState()
                             CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
                                 PetalExpressiveTheme(
                                     dynamicColor = dynamicColor,
                                     useAmoled = isAmoled,
-                                    appFont = appFont,
+                                    fontState = fontState,
                                     colorStyle = colorStyle,
                                     paletteId = paletteId
                                 ) {
@@ -676,13 +674,11 @@ object PetalDownloadDialogBridge {
                 lateinit var dialog: androidx.appcompat.app.AlertDialog
 
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                 val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                val appFont = com.petal.browser.ui.theme.AppFont.fromName(fontName)
                 val colorStyle = try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
 
                 val composeView = ComposeView(activity).apply {
@@ -691,10 +687,11 @@ object PetalDownloadDialogBridge {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                     setContent {
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
                         PetalExpressiveTheme(
                             dynamicColor = dynamicColor,
                             useAmoled = isAmoled,
-                            appFont = appFont,
+                            fontState = fontState,
                             colorStyle = colorStyle,
                             paletteId = paletteId
                         ) {

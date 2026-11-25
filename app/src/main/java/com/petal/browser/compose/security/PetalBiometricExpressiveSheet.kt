@@ -351,13 +351,9 @@ object PetalBiometricOverlayBridge {
                 val isAmoled = remember { sp.getBoolean("sp_amoled", false) }
                 val isExpressiveColors = remember { sp.getBoolean("sp_expressive_colors", false) }
                 val useDynamic = remember { sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported) }
-                val fontName = remember { sp.getString("sp_app_font", "PETAL") ?: "PETAL" }
                 val styleName = remember { sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT" }
-                val fontWidthVal = remember { sp.getFloat("sp_font_width", 92f) }
-                val fontWeightVal = remember { sp.getInt("sp_font_weight", 750) }
-                val fontRoundnessVal = remember { sp.getFloat("sp_font_roundness", 100f) }
 
-                val appFont = remember(fontName) { com.petal.browser.ui.theme.AppFont.fromName(fontName) }
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (_: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                 }
@@ -367,11 +363,8 @@ object PetalBiometricOverlayBridge {
                     useAmoled = isAmoled,
                     dynamicColor = useDynamic,
                     expressiveColors = isExpressiveColors,
-                    appFont = appFont,
-                    colorStyle = colorStyle,
-                    fontWidth = fontWidthVal,
-                    fontWeight = fontWeightVal,
-                    fontRoundness = fontRoundnessVal
+                    fontState = fontState,
+                    colorStyle = colorStyle
                 ) {
                     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
                     val hostSource = appCompat.findViewById<android.view.View>(com.petal.browser.R.id.main)

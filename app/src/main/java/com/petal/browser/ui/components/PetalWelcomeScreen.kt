@@ -95,11 +95,7 @@ object PetalWelcomeBridge {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
                     val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                    var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
-                    var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
-                    var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
-                    var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
-                    var presetName by remember { mutableStateOf(sp.getString("sp_gs_flex_preset", "PETAL") ?: "PETAL") }
+                    val fontState = com.petal.browser.ui.theme.rememberFontState()
                     var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                     var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId) }
                     var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
@@ -108,11 +104,6 @@ object PetalWelcomeBridge {
                     DisposableEffect(sp) {
                         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                             when (key) {
-                                "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
-                                "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
-                                "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
-                                "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
-                                "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "PETAL") ?: "PETAL"
                                 "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                                 "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                                 "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
@@ -123,15 +114,6 @@ object PetalWelcomeBridge {
                         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
                     }
 
-                    val appFont = remember(fontName) {
-                        com.petal.browser.ui.theme.AppFont.fromName(fontName)
-                    }
-                    val resolvedPreset = remember(presetName) {
-                        com.petal.browser.ui.theme.GSFlexPreset.fromName(presetName)
-                    }
-                    val gsFlexSettings = remember(presetName) {
-                        com.petal.browser.ui.theme.loadGSFlexSettings(sp)
-                    }
                     val colorStyle = remember(styleName) {
                         try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (_: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                     }
@@ -139,11 +121,7 @@ object PetalWelcomeBridge {
                     PetalExpressiveTheme(
                         dynamicColor = dynamicColor,
                         useAmoled = isAmoled,
-                        appFont = appFont,
-                        fontWidth = fontWidthVal,
-                        fontWeight = fontWeightVal,
-                        fontRoundness = fontRoundnessVal,
-                        gsFlexSettings = gsFlexSettings,
+                        fontState = fontState,
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
@@ -1261,7 +1239,36 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
 // ==========================================
 @Composable
 private fun DefaultFontStepPage(sp: SharedPreferences) {
-    var fontSelection by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
+    val context = LocalContext.current
+    val fontState = com.petal.browser.ui.theme.rememberFontState()
+    var showFontPicker by remember { mutableStateOf(false) }
+
+    val systemFontPicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        uri?.let {
+            if (com.petal.browser.ui.theme.PetalFontHelper.saveCustomFontUri(context, it) != null) {
+                com.petal.browser.ui.theme.PetalFontPrefs.setAppFont(sp, com.petal.browser.ui.theme.AppFont.CUSTOM)
+            }
+        }
+    }
+
+    if (showFontPicker) {
+        com.petal.browser.compose.file.PetalFilePickerScreen(
+            mimeTypes = arrayOf("font/ttf", "font/otf", "application/x-font-ttf", "application/x-font-otf", "*/*"),
+            onDismissRequest = { showFontPicker = false },
+            onFileSelected = { file ->
+                showFontPicker = false
+                if (com.petal.browser.ui.theme.PetalFontHelper.saveCustomFontUri(context, android.net.Uri.fromFile(file)) != null) {
+                    com.petal.browser.ui.theme.PetalFontPrefs.setAppFont(sp, com.petal.browser.ui.theme.AppFont.CUSTOM)
+                }
+            },
+            onBrowseSystemFallback = {
+                showFontPicker = false
+                systemFontPicker.launch("*/*")
+            }
+        )
+    }
 
     Spacer(Modifier.height(12.dp))
 
@@ -1301,12 +1308,10 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            val isFlexSelected = fontSelection == "PETAL" || fontSelection == "GS_FLEX"
+            val isFlexSelected = fontState.appFont == com.petal.browser.ui.theme.AppFont.PETAL
             Surface(
                 onClick = {
-                    fontSelection = "PETAL"
-                    sp.edit().putString("sp_app_font", "PETAL").apply()
-                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                    com.petal.browser.ui.theme.PetalFontPrefs.setAppFont(sp, com.petal.browser.ui.theme.AppFont.PETAL)
                 },
                 color = if (isFlexSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 shape = RoundedCornerShape(16.dp),
@@ -1323,12 +1328,10 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                 }
             }
 
-            val isNunitoSelected = fontSelection == "NUNITO"
+            val isNunitoSelected = fontState.appFont == com.petal.browser.ui.theme.AppFont.NUNITO
             Surface(
                 onClick = {
-                    fontSelection = "NUNITO"
-                    sp.edit().putString("sp_app_font", "NUNITO").apply()
-                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                    com.petal.browser.ui.theme.PetalFontPrefs.setAppFont(sp, com.petal.browser.ui.theme.AppFont.NUNITO)
                 },
                 color = if (isNunitoSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 shape = RoundedCornerShape(16.dp),
@@ -1339,18 +1342,16 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Nunito", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text("Zenith soft geometric rounded variable font", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Soft geometric rounded variable font", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (isNunitoSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
             }
 
-            val isSystemSelected = fontSelection == "SYSTEM"
+            val isSystemSelected = fontState.appFont == com.petal.browser.ui.theme.AppFont.SYSTEM
             Surface(
                 onClick = {
-                    fontSelection = "SYSTEM"
-                    sp.edit().putString("sp_app_font", "SYSTEM").apply()
-                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                    com.petal.browser.ui.theme.PetalFontPrefs.setAppFont(sp, com.petal.browser.ui.theme.AppFont.SYSTEM)
                 },
                 color = if (isSystemSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 shape = RoundedCornerShape(16.dp),
@@ -1367,12 +1368,15 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                 }
             }
 
-            val isCustomSelected = fontSelection == "CUSTOM"
+            val isCustomSelected = fontState.appFont == com.petal.browser.ui.theme.AppFont.CUSTOM
+            val hasCustomFile = com.petal.browser.ui.theme.PetalFontHelper.resolveReadableCustomFontFile(fontState.customFont) != null
             Surface(
                 onClick = {
-                    fontSelection = "CUSTOM"
-                    sp.edit().putString("sp_app_font", "CUSTOM").apply()
-                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                    if (hasCustomFile) {
+                        com.petal.browser.ui.theme.PetalFontPrefs.setAppFont(sp, com.petal.browser.ui.theme.AppFont.CUSTOM)
+                    } else {
+                        showFontPicker = true
+                    }
                 },
                 color = if (isCustomSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 shape = RoundedCornerShape(16.dp),
@@ -1383,9 +1387,19 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(stringResource(R.string.ui_custom_font_file), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text(stringResource(R.string.ui_import_custom_ttf_otf_variable), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            text = if (hasCustomFile) fontState.customFont.name else stringResource(R.string.ui_import_custom_ttf_otf_variable),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                    if (isCustomSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    if (isCustomSelected) {
+                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    FilledTonalButton(onClick = { showFontPicker = true }) {
+                        Text(stringResource(R.string.ui_browse))
+                    }
                 }
             }
         }

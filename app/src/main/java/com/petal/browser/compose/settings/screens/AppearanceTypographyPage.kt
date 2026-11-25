@@ -1,81 +1,101 @@
 package com.petal.browser.compose.settings.screens
 
-import com.petal.browser.ui.components.PetalSpring
-
-import com.petal.browser.ui.theme.ExpressiveButtonShape
-import com.petal.browser.ui.icons.imagetoolbox.AutoAwesome
-import com.petal.browser.ui.icons.imagetoolbox.HyperOS
-import com.petal.browser.ui.icons.imagetoolbox.ImageToolboxIcons
-import com.petal.browser.ui.icons.imagetoolbox.ToggleOn
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.drop
-import com.petal.browser.ui.containment.PetalSettingsSection
-import com.petal.browser.ui.containment.liquidGlassChrome
-import com.petal.browser.ui.theme.layout.UiExperience
-import com.petal.browser.ui.theme.layout.PetalLayoutState
-import com.petal.browser.ui.theme.layout.PetalLayoutSettings
-import com.petal.browser.ui.theme.layout.PetalSwitchType
-import com.petal.browser.ui.theme.layout.PetalSliderType
-import com.petal.browser.ui.theme.layout.PetalShapeType
-import com.petal.browser.ui.theme.layout.PetalContainmentShapeChoice
-import com.petal.browser.ui.theme.layout.PetalBadgeShape
-import com.petal.browser.ui.theme.layout.rememberPetalLayoutSettings
-
-import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
-import android.os.Build
-import androidx.preference.PreferenceManager
-import androidx.appcompat.app.AppCompatDelegate
-import com.petal.browser.unit.PetalAndroidUtils
-import com.petal.browser.unit.PetalLanguages
-import androidx.compose.animation.*
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.toArgb
-import com.petal.browser.ui.theme.trackRevealOrigin
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkOut
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import com.petal.browser.ui.kit.Card
-import com.petal.browser.ui.kit.TextField
-import com.petal.browser.ui.kit.IconButton
-import com.petal.browser.ui.kit.TextButton
-import com.petal.browser.ui.kit.FilledTonalButton
-import com.petal.browser.ui.kit.Button
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.ChromeReaderMode
+import androidx.compose.material.icons.rounded.ColorLens
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.ContentPaste
+import androidx.compose.material.icons.rounded.FolderOpen
+import androidx.compose.material.icons.rounded.FontDownload
+import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.Science
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.petal.browser.compose.settings.viewmodel.AppearanceSettingsViewModel
-import com.petal.browser.ui.components.*
-import com.petal.browser.ui.theme.*
-import com.petal.browser.unit.PetalHighRefreshRateManager
-import com.petal.browser.widget.PetalSearchWidgetProvider
-import androidx.compose.ui.res.stringResource
+import androidx.preference.PreferenceManager
 import com.petal.browser.R
-import androidx.compose.runtime.saveable.rememberSaveable
-import com.petal.browser.ui.theme.ThemeReveal
+import com.petal.browser.compose.file.PetalFilePickerScreen
+import com.petal.browser.compose.settings.viewmodel.AppearanceSettingsViewModel
+import com.petal.browser.predictive.PetalSubPageHost
+import com.petal.browser.ui.components.PetalButtonGroupItem
+import com.petal.browser.ui.components.PetalChoiceButtonGroup
+import com.petal.browser.ui.components.PetalSlider
+import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalGroupNavigationRow
+import com.petal.browser.ui.containment.PetalGroupPosition
+import com.petal.browser.ui.containment.PetalSettingsSection
+import com.petal.browser.ui.containment.PetalSettingsToggleRow
+import com.petal.browser.ui.containment.petalGroupShape
+import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.kit.Button
+import com.petal.browser.ui.kit.FilledTonalButton
+import com.petal.browser.ui.kit.TextButton
+import com.petal.browser.ui.theme.AppFont
+import com.petal.browser.ui.theme.FontAccentMode
+import com.petal.browser.ui.theme.FontAxes
+import com.petal.browser.ui.theme.FontState
+import com.petal.browser.ui.theme.FontTier
+import com.petal.browser.ui.theme.GSFlexPreset
+import com.petal.browser.ui.theme.PetalFontAccentColors
+import com.petal.browser.ui.theme.PetalFontHelper
+import com.petal.browser.ui.theme.PetalFontPrefs
+import com.petal.browser.ui.theme.VariableFontFactory
+import com.petal.browser.ui.theme.withFontAccent
+import com.petal.browser.view.PetalToast
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
+import org.json.JSONObject
+import java.util.Locale
+import kotlin.math.roundToInt
 
 @Composable
 fun AppearanceTypographyPage(
@@ -85,462 +105,818 @@ fun AppearanceTypographyPage(
     viewModel: AppearanceSettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val appFont by viewModel.appFont.collectAsStateWithLifecycle()
-    val gsFlexSettings by viewModel.gsFlexSettings.collectAsStateWithLifecycle()
-    val customFontName by viewModel.customFontName.collectAsStateWithLifecycle()
-    val onAppFontChange: (AppFont) -> Unit = viewModel::setAppFont
-    val onGsFlexPresetChange: (GSFlexPreset) -> Unit = viewModel::setGsFlexPreset
-    val onGsFlexSettingsChange: (com.petal.browser.ui.theme.GSFlexSettings) -> Unit = viewModel::setGsFlexSettings
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val fontState by viewModel.fontState.collectAsStateWithLifecycle()
 
     var showFontPicker by remember { mutableStateOf(false) }
-    // System picker kept as fallback for the Petal picker's "Browse system" button
-    val systemFontPicker = androidx.activity.compose.rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
-    ) { uri: android.net.Uri? ->
+    var showFontTest by rememberSaveable { mutableStateOf(false) }
+    var showImportJsonDialog by remember { mutableStateOf(false) }
+    var importJsonText by remember { mutableStateOf("") }
+
+    // Drag-local preview overrides so moving any slider previews immediately in the card
+    // while single-key debounced writes keep the rest of the UI responsive.
+    var livePreviewOverride by remember(fontState) { mutableStateOf<FontState?>(null) }
+    val effectivePreviewState = livePreviewOverride ?: fontState
+
+    val systemFontPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
         uri?.let {
-            PetalFontHelper.saveCustomFontUri(context, it)
-            onAppFontChange(AppFont.CUSTOM)
+            if (PetalFontHelper.saveCustomFontUri(context, it) != null) {
+                viewModel.setAppFont(AppFont.CUSTOM)
+            }
         }
     }
 
-    AppearanceSubPageScaffold(
-        title = "Typography",
-        subtitle = "Fonts, Petal Signature axes & custom font",
-        pageSeed = "appearance_typography",
-        onBack = onBack,
-        modifier = modifier,
-        overlay = {
-            if (showFontPicker) {
-                com.petal.browser.compose.file.PetalFilePickerScreen(
-                    mimeTypes = arrayOf("font/ttf", "font/otf", "application/x-font-ttf", "application/x-font-otf", "*/*"),
-                    onDismissRequest = { showFontPicker = false },
-                    onFileSelected = { file ->
-                        showFontPicker = false
-                        PetalFontHelper.saveCustomFontUri(context, android.net.Uri.fromFile(file))
-                        onAppFontChange(AppFont.CUSTOM)
-                    },
-                    onBrowseSystemFallback = {
-                        showFontPicker = false
-                        systemFontPicker.launch("*/*")
+    Box(modifier = modifier.fillMaxSize()) {
+        PetalSubPageHost(
+            visible = showFontTest,
+            onBack = { showFontTest = false },
+            subPage = {
+                FontTestScreen(
+                    onBack = { showFontTest = false },
+                    initialFontState = fontState,
+                    onApplyToApp = { chosen ->
+                        viewModel.setGsFlexSettings(chosen.gsFlexSettings)
+                        viewModel.setAppFont(AppFont.PETAL)
+                        PetalToast.show(context, "Applied font settings")
                     }
                 )
-            }
-        }
-    ) {
-        PetalSettingsSection(
-            title = stringResource(R.string.ui_typography_fonts),
-            icon = Icons.Rounded.FontDownload,
-            cardId = "appearance_font",
-            targetHighlightId = targetHighlightItemId
-        ) {
-            Text(
-                stringResource(R.string.ui_choose_typography_style_or_load),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            // Font Family Chips
-            Text(
-                stringResource(R.string.ui_select_font_family),
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            com.petal.browser.ui.components.PetalChoiceButtonGroup(
-                options = AppFont.values().map { font ->
-                    com.petal.browser.ui.components.PetalButtonGroupItem(
-                        value = font,
-                        label = font.label
-                    )
-                },
-                selected = appFont,
-                minHeight = 44.dp,
-                scrollableIfCrowded = true,
-                onSelect = { font ->
-                    if (font == AppFont.CUSTOM) {
-                        showFontPicker = true
-                    }
-                    onAppFontChange(font)
-                }
-            )
-
-            // Petal Signature Typography Customization (Zenith GS Flex Engine)
-            AnimatedVisibility(visible = appFont == AppFont.PETAL, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // Live Preview Card
-                    val previewTypography = remember(gsFlexSettings) {
-                        com.petal.browser.ui.theme.createGsFlexTypography(gsFlexSettings)
-                    }
-                    var lastNonCustomPreset by remember(gsFlexSettings.preset) {
-                        mutableStateOf(if (gsFlexSettings.preset == GSFlexPreset.CUSTOM) GSFlexPreset.PETAL_SIGNATURE else gsFlexSettings.preset)
-                    }
-                    var selectedLevelTab by remember { mutableIntStateOf(0) }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                            .padding(20.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = "Petal Signature",
-                                style = previewTypography.displayLarge.copy(
-                                    fontSize = 38.sp,
-                                    lineHeight = 42.sp,
-                                    letterSpacing = (-1.5).sp
+            },
+            parent = {
+                AppearanceSubPageScaffold(
+                    title = "Typography",
+                    subtitle = "Fonts, variable axes & font accents",
+                    pageSeed = "appearance_typography",
+                    onBack = onBack,
+                    overlay = {
+                        if (showFontPicker) {
+                            PetalFilePickerScreen(
+                                mimeTypes = arrayOf(
+                                    "font/ttf",
+                                    "font/otf",
+                                    "application/x-font-ttf",
+                                    "application/x-font-otf",
+                                    "*/*"
                                 ),
-                                color = MaterialTheme.colorScheme.primary,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = "Headline Treatment",
-                                style = previewTypography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = "Standard body text for optimized reading experience in Petal browser.",
-                                style = previewTypography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp)
+                                onDismissRequest = { showFontPicker = false },
+                                onFileSelected = { file ->
+                                    showFontPicker = false
+                                    if (PetalFontHelper.saveCustomFontUri(context, Uri.fromFile(file)) != null) {
+                                        viewModel.setAppFont(AppFont.CUSTOM)
+                                    }
+                                },
+                                onBrowseSystemFallback = {
+                                    showFontPicker = false
+                                    systemFontPicker.launch("*/*")
+                                }
                             )
                         }
                     }
+                ) {
+                    // ── Shared Live Typography Preview Card (All 4 Fonts + Accent) ──
+                    val colorScheme = MaterialTheme.colorScheme
+                    val previewAccent = remember(effectivePreviewState.accentMode, colorScheme) {
+                        PetalFontAccentColors.resolve(effectivePreviewState.accentMode, colorScheme)
+                    }
+                    val previewTypography = remember(effectivePreviewState, previewAccent) {
+                        VariableFontFactory.createTypography(effectivePreviewState).withFontAccent(previewAccent)
+                    }
 
-                    // Design System Presets
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = colorScheme.surfaceContainerHigh,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        MaterialTheme(typography = previewTypography) {
+                            Column(
+                                modifier = Modifier.padding(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(50),
+                                        color = colorScheme.primaryContainer
+                                    ) {
+                                        Text(
+                                            text = buildString {
+                                                append(effectivePreviewState.appFont.label)
+                                                if (effectivePreviewState.appFont == AppFont.PETAL) {
+                                                    append(" · ")
+                                                    append(effectivePreviewState.gsFlexSettings.preset.label)
+                                                }
+                                            },
+                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                            color = colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                    Text(
+                                        text = "LIVE PREVIEW",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = previewAccent.labelOr(colorScheme.onSurfaceVariant)
+                                    )
+                                }
+
+                                Text(
+                                    text = "The quick brown fox jumps over the lazy dog",
+                                    style = MaterialTheme.typography.displaySmall,
+                                    color = previewAccent.headingOr(colorScheme.onSurface)
+                                )
+                                Text(
+                                    text = "Expressive browser headings & sharp contrast",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    color = previewAccent.headingOr(colorScheme.onSurface)
+                                )
+                                Text(
+                                    text = "Clean, readable body typography across pages, dialogs, settings, and widgets. Numbers 0123456789.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = previewAccent.bodyOr(colorScheme.onSurfaceVariant)
+                                )
+                            }
+                        }
+                    }
+
+                    // ── Font Family Selector ───────────────────────────────────────
+                    PetalSettingsSection(
+                        title = stringResource(R.string.ui_typography_fonts),
+                        icon = Icons.Rounded.FontDownload,
+                        cardId = "appearance_font",
+                        targetHighlightId = targetHighlightItemId
+                    ) {
                         Text(
-                            text = "Design System Presets",
+                            stringResource(R.string.ui_choose_typography_style_or_load),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Text(
+                            stringResource(R.string.ui_select_font_family),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        val presetOptions = listOf(
-                            com.petal.browser.ui.components.PetalButtonGroupItem(
-                                value = GSFlexPreset.PETAL_SIGNATURE,
-                                label = "Petal Signature"
-                            ),
-                            com.petal.browser.ui.components.PetalButtonGroupItem(
-                                value = GSFlexPreset.NEO,
-                                label = "Neo"
-                            ),
-                            com.petal.browser.ui.components.PetalButtonGroupItem(
-                                value = GSFlexPreset.COMPACT,
-                                label = "Impact"
-                            ),
-                            com.petal.browser.ui.components.PetalButtonGroupItem(
-                                value = GSFlexPreset.AIRY,
-                                label = "Airy"
-                            )
-                        )
-                        com.petal.browser.ui.components.PetalChoiceButtonGroup(
-                            options = presetOptions,
-                            selected = if (gsFlexSettings.preset == GSFlexPreset.CUSTOM) lastNonCustomPreset else gsFlexSettings.preset,
+                        PetalChoiceButtonGroup(
+                            options = AppFont.entries.map { font ->
+                                PetalButtonGroupItem(value = font, label = font.label)
+                            },
+                            selected = fontState.appFont,
                             minHeight = 44.dp,
                             scrollableIfCrowded = true,
-                            onSelect = { newPreset ->
-                                lastNonCustomPreset = newPreset
-                                onGsFlexPresetChange(newPreset)
-                                if (gsFlexSettings.preset != GSFlexPreset.CUSTOM) {
-                                    onGsFlexSettingsChange(gsFlexSettings.copy(preset = newPreset))
+                            onSelect = { font ->
+                                livePreviewOverride = null
+                                if (font == AppFont.CUSTOM &&
+                                    PetalFontHelper.resolveReadableCustomFontFile(fontState.customFont) == null
+                                ) {
+                                    showFontPicker = true
+                                } else {
+                                    viewModel.setAppFont(font)
                                 }
                             }
                         )
-                    }
 
-                    // Custom Variable Toggle
-                    com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                        title = "Use Custom Variable",
-                        subtitle = "Override preset with your own fine-tuned axes",
-                        icon = Icons.Rounded.Tune,
-                        checked = gsFlexSettings.preset == GSFlexPreset.CUSTOM,
-                        position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
-                        onCheckedChange = { checked ->
-                            val newPreset = if (checked) GSFlexPreset.CUSTOM else lastNonCustomPreset
-                            onGsFlexPresetChange(newPreset)
-                            // Entering Custom starts from the preset that was active, not stale saved axes.
-                            val seed = if (checked) com.petal.browser.ui.theme.getPresetFontAxes(lastNonCustomPreset) else null
-                            onGsFlexSettingsChange(
-                                if (seed != null) gsFlexSettings.copy(
-                                    preset = newPreset, display = seed.first, headline = seed.second, body = seed.third
-                                ) else gsFlexSettings.copy(preset = newPreset)
-                            )
-                        }
-                    )
-
-                    // Custom Variable Fine-Tuning Section
-                    AnimatedVisibility(visible = gsFlexSettings.preset == GSFlexPreset.CUSTOM, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
-                        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                            Button(
-                                onClick = {
-                                    val presetAxes = com.petal.browser.ui.theme.getPresetFontAxes(lastNonCustomPreset)
-                                    onGsFlexSettingsChange(
-                                        gsFlexSettings.copy(
+                        // ── 1. Google Sans Flex / Petal Signature ──────────────────
+                        AnimatedVisibility(
+                            visible = fontState.appFont == AppFont.PETAL,
+                            enter = fadeIn(PetalSpring.calm()) + expandIn(PetalSpring.calm()),
+                            exit = fadeOut(PetalSpring.calm()) + shrinkOut(PetalSpring.calm())
+                        ) {
+                            PetalSignatureCustomizer(
+                                fontState = fontState,
+                                targetHighlightItemId = targetHighlightItemId,
+                                onPreviewChange = { livePreviewOverride = it },
+                                onSelectPreset = { preset ->
+                                    livePreviewOverride = null
+                                    viewModel.setGsFlexPreset(preset)
+                                },
+                                onResetToPreset = { preset ->
+                                    livePreviewOverride = null
+                                    viewModel.resetGsFlexToPreset(preset)
+                                },
+                                onToggleCustomMode = { checked, fallbackPreset ->
+                                    livePreviewOverride = null
+                                    if (checked) {
+                                        val seed = VariableFontFactory.getPresetFontAxes(fallbackPreset)
+                                        viewModel.setGsFlexSettings(
+                                            fontState.gsFlexSettings.copy(
+                                                preset = GSFlexPreset.CUSTOM,
+                                                display = seed.first,
+                                                headline = seed.second,
+                                                body = seed.third
+                                            )
+                                        )
+                                    } else {
+                                        viewModel.setGsFlexPreset(fallbackPreset)
+                                    }
+                                },
+                                onCopyPreset = { preset ->
+                                    livePreviewOverride = null
+                                    val seed = VariableFontFactory.getPresetFontAxes(preset)
+                                    viewModel.setGsFlexSettings(
+                                        fontState.gsFlexSettings.copy(
                                             preset = GSFlexPreset.CUSTOM,
-                                            display = presetAxes.first,
-                                            headline = presetAxes.second,
-                                            body = presetAxes.third
+                                            display = seed.first,
+                                            headline = seed.second,
+                                            body = seed.third
                                         )
                                     )
                                 },
-                                modifier = Modifier.fillMaxWidth(),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                            ) {
-                                Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Copy from Current Preset", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold))
-                            }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(top = 4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Tune,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(
-                                    text = "Fine-tune Axes per Level",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-
-                            val levelTabs = listOf("Display", "Headline", "Body")
-                            com.petal.browser.ui.components.PetalChoiceButtonGroup(
-                                labels = levelTabs,
-                                selectedIndex = selectedLevelTab,
-                                onSelectIndex = { selectedLevelTab = it },
-                                minHeight = 44.dp,
-                                scrollableIfCrowded = false
-                            )
-
-                            val currentAxes = when (selectedLevelTab) {
-                                0 -> gsFlexSettings.display
-                                1 -> gsFlexSettings.headline
-                                else -> gsFlexSettings.body
-                            }
-
-                            fun updateAxes(newAxes: com.petal.browser.ui.theme.FontAxes) {
-                                val updated = when (selectedLevelTab) {
-                                    0 -> gsFlexSettings.copy(preset = GSFlexPreset.CUSTOM, display = newAxes)
-                                    1 -> gsFlexSettings.copy(preset = GSFlexPreset.CUSTOM, headline = newAxes)
-                                    else -> gsFlexSettings.copy(preset = GSFlexPreset.CUSTOM, body = newAxes)
+                                onCommitTierAxis = { tier, axis, value ->
+                                    livePreviewOverride = null
+                                    viewModel.setGsFlexAxis(tier, axis, value)
+                                },
+                                onCommitAllAxis = { axis, value ->
+                                    livePreviewOverride = null
+                                    viewModel.setAllGsFlexAxes(axis, value)
                                 }
-                                onGsFlexSettingsChange(updated)
-                            }
-
-                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                GSFlexVariableSlider(
-                                    label = "Weight",
-                                    value = currentAxes.weight,
-                                    range = 100f..1000f,
-                                    formatter = { v -> String.format(java.util.Locale.US, "%.0f", v) },
-                                    onValueChange = { newWeight -> updateAxes(currentAxes.copy(weight = newWeight)) }
-                                )
-                                GSFlexVariableSlider(
-                                    label = "Width",
-                                    value = currentAxes.width,
-                                    range = 25f..150f,
-                                    formatter = { v -> String.format(java.util.Locale.US, "%.0f", v) },
-                                    onValueChange = { newWidth -> updateAxes(currentAxes.copy(width = newWidth)) }
-                                )
-                                GSFlexVariableSlider(
-                                    label = "Optical Size",
-                                    value = currentAxes.opsz,
-                                    range = 6f..72f,
-                                    formatter = { v -> String.format(java.util.Locale.US, "%.0f pt", v) },
-                                    onValueChange = { newOpsz -> updateAxes(currentAxes.copy(opsz = newOpsz)) }
-                                )
-                                GSFlexVariableSlider(
-                                    label = "Grade",
-                                    value = currentAxes.grade,
-                                    range = -200f..200f,
-                                    formatter = { v -> String.format(java.util.Locale.US, "%+.0f", v) },
-                                    onValueChange = { newGrade -> updateAxes(currentAxes.copy(grade = newGrade)) }
-                                )
-                                GSFlexVariableSlider(
-                                    label = "Slant",
-                                    value = currentAxes.slant,
-                                    range = -10f..0f,
-                                    formatter = { v -> String.format(java.util.Locale.US, "%.0f°", v) },
-                                    onValueChange = { newSlant -> updateAxes(currentAxes.copy(slant = newSlant)) }
-                                )
-                                GSFlexVariableSlider(
-                                    label = "Roundness",
-                                    value = currentAxes.roundness,
-                                    range = 0f..100f,
-                                    formatter = { v -> String.format(java.util.Locale.US, "%.0f%%", v) },
-                                    onValueChange = { newRoundness -> updateAxes(currentAxes.copy(roundness = newRoundness)) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Nunito Typography Preview (Zenith Rounded Variable)
-            AnimatedVisibility(visible = appFont == AppFont.NUNITO, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                        .padding(20.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "Nunito",
-                            style = com.petal.browser.ui.theme.NunitoTypography.displayLarge.copy(
-                                fontSize = 38.sp,
-                                lineHeight = 42.sp,
-                                letterSpacing = (-1.0).sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Zenith Soft Geometric Rounded",
-                            style = com.petal.browser.ui.theme.NunitoTypography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Warm, balanced, rounded typography inspired by the Zenith design language.",
-                            style = com.petal.browser.ui.theme.NunitoTypography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
-                    }
-                }
-            }
-
-            // System Typography Preview (Device Platform Default)
-            AnimatedVisibility(visible = appFont == AppFont.SYSTEM, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                        .padding(20.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "System Default",
-                            style = com.petal.browser.ui.theme.SystemTypography.displayLarge.copy(
-                                fontSize = 38.sp,
-                                lineHeight = 42.sp,
-                                letterSpacing = (-0.5).sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Platform Native Typescale",
-                            style = com.petal.browser.ui.theme.SystemTypography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Uses your device's system font and follows OS accessibility typography settings.",
-                            style = com.petal.browser.ui.theme.SystemTypography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
-                    }
-                }
-            }
-
-            // Custom Font File Picker UI (Containment Surface & Icon Badge)
-            AnimatedVisibility(visible = appFont == AppFont.CUSTOM, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
-                Surface(
-                    shape = com.petal.browser.ui.containment.petalGroupShape(com.petal.browser.ui.containment.PetalGroupPosition.SINGLE),
-                    color = com.petal.browser.ui.containment.petalGroupSurfaceColor(),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        com.petal.browser.ui.containment.PetalGroupIconBadge(
-                            icon = Icons.Rounded.FontDownload,
-                            container = MaterialTheme.colorScheme.primaryContainer,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Spacer(Modifier.width(14.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.ui_custom_font_file),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = customFontName,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Button(
-                            onClick = { showFontPicker = true },
-                            shape = RoundedCornerShape(12.dp)
+
+                        // ── 2. Nunito ──────────────────────────────────────────────
+                        AnimatedVisibility(
+                            visible = fontState.appFont == AppFont.NUNITO,
+                            enter = fadeIn(PetalSpring.calm()) + expandIn(PetalSpring.calm()),
+                            exit = fadeOut(PetalSpring.calm()) + shrinkOut(PetalSpring.calm())
                         ) {
-                            Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.ui_browse))
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Surface(
+                                    shape = petalGroupShape(PetalGroupPosition.SINGLE),
+                                    color = petalGroupSurfaceColor(),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        PetalGroupIconBadge(
+                                            icon = Icons.Rounded.AutoAwesome,
+                                            container = MaterialTheme.colorScheme.secondaryContainer,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                        Spacer(Modifier.width(14.dp))
+                                        Column {
+                                            Text(
+                                                "Nunito Active",
+                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                "Soft geometric rounded variable typeface (wght 100–1000).",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+
+                                GSFlexVariableSlider(
+                                    label = "Base Weight",
+                                    value = (livePreviewOverride?.nunitoWeight ?: fontState.nunitoWeight).toFloat(),
+                                    range = FontAxes.NUNITO_WEIGHT_RANGE,
+                                    formatter = { "${it.roundToInt()}" },
+                                    onDrag = { w ->
+                                        livePreviewOverride = fontState.copy(nunitoWeight = w.roundToInt())
+                                    },
+                                    onCommit = { w ->
+                                        livePreviewOverride = null
+                                        viewModel.setNunitoWeight(w.roundToInt())
+                                    }
+                                )
+                            }
+                        }
+
+                        // ── 3. System Default ──────────────────────────────────────
+                        AnimatedVisibility(
+                            visible = fontState.appFont == AppFont.SYSTEM,
+                            enter = fadeIn(PetalSpring.calm()) + expandIn(PetalSpring.calm()),
+                            exit = fadeOut(PetalSpring.calm()) + shrinkOut(PetalSpring.calm())
+                        ) {
+                            Surface(
+                                shape = petalGroupShape(PetalGroupPosition.SINGLE),
+                                color = petalGroupSurfaceColor(),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    PetalGroupIconBadge(
+                                        icon = Icons.Rounded.FontDownload,
+                                        container = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(Modifier.width(14.dp))
+                                    Column {
+                                        Text(
+                                            "System Default",
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            "Follows Android OS typography and accessibility scaling.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // ── 4. Custom TTF / OTF Font ───────────────────────────────
+                        AnimatedVisibility(
+                            visible = fontState.appFont == AppFont.CUSTOM,
+                            enter = fadeIn(PetalSpring.calm()) + expandIn(PetalSpring.calm()),
+                            exit = fadeOut(PetalSpring.calm()) + shrinkOut(PetalSpring.calm())
+                        ) {
+                            CustomFontCustomizer(
+                                fontState = fontState,
+                                onBrowseClick = { showFontPicker = true },
+                                onPreviewChange = { livePreviewOverride = it },
+                                onCommitTierAxis = { tier, axis, value ->
+                                    livePreviewOverride = null
+                                    viewModel.setCustomFontAxis(tier, axis, value)
+                                },
+                                onCommitAllAxis = { axis, value ->
+                                    livePreviewOverride = null
+                                    viewModel.setAllCustomFontAxes(axis, value)
+                                },
+                                onResetCustomAxes = {
+                                    livePreviewOverride = null
+                                    viewModel.setCustomFontSettings(
+                                        com.petal.browser.ui.theme.CustomFontSettings()
+                                    )
+                                }
+                            )
                         }
                     }
+
+                    // ── Font Accent Section (Phase 4) ──────────────────────────────
+                    PetalSettingsSection(
+                        title = "Font Accent",
+                        icon = Icons.Rounded.ColorLens,
+                        cardId = "appearance_font_accent",
+                        targetHighlightId = targetHighlightItemId
+                    ) {
+                        Text(
+                            "Apply your active theme accent color to typography. Contrast against surfaces is checked automatically (min 4.5:1).",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        PetalChoiceButtonGroup(
+                            options = FontAccentMode.entries.map { mode ->
+                                PetalButtonGroupItem(value = mode, label = mode.label)
+                            },
+                            selected = fontState.accentMode,
+                            minHeight = 42.dp,
+                            scrollableIfCrowded = true,
+                            onSelect = { mode ->
+                                livePreviewOverride = null
+                                viewModel.setFontAccentMode(mode)
+                            }
+                        )
+                    }
+
+                    // ── Reader & Tools Section (Phase 5 & 6) ───────────────────────
+                    PetalSettingsSection(
+                        title = "Tools & Compatibility",
+                        icon = Icons.Rounded.Science,
+                        cardId = "appearance_font_test",
+                        targetHighlightId = targetHighlightItemId
+                    ) {
+                        PetalSettingsToggleRow(
+                            title = "Use app font in Reader Mode",
+                            subtitle = "Reader's System font option follows your selected Petal font",
+                            icon = Icons.Rounded.ChromeReaderMode,
+                            checked = fontState.readerFollowsAppFont,
+                            position = PetalGroupPosition.TOP,
+                            onCheckedChange = viewModel::setReaderFollowsAppFont
+                        )
+
+                        PetalGroupNavigationRow(
+                            title = "Font Test Lab",
+                            subtitle = "Edit custom sample text, inspect typescale & test presets",
+                            position = PetalGroupPosition.MIDDLE,
+                            onClick = { showFontTest = true },
+                            leadingIcon = { Icon(Icons.Rounded.Science, contentDescription = null) }
+                        )
+
+                        Surface(
+                            shape = petalGroupShape(PetalGroupPosition.BOTTOM),
+                            color = petalGroupSurfaceColor(),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    FilledTonalButton(
+                                        onClick = {
+                                            val json = PetalFontPrefs.exportJson(sp).toString(2)
+                                            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                                            cm?.setPrimaryClip(ClipData.newPlainText("Petal Font Config", json))
+                                            PetalToast.show(context, "Copied font configuration JSON")
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("Export JSON")
+                                    }
+
+                                    FilledTonalButton(
+                                        onClick = {
+                                            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                                            val clip = cm?.primaryClip?.getItemAt(0)?.text?.toString().orEmpty()
+                                            importJsonText = clip
+                                            showImportJsonDialog = true
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Rounded.ContentPaste, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("Import JSON")
+                                    }
+                                }
+
+                                FilledTonalButton(
+                                    onClick = {
+                                        livePreviewOverride = null
+                                        viewModel.resetAllFontSettings()
+                                        PetalToast.show(context, "All font settings reset to defaults")
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Reset All Font Settings")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    if (showImportJsonDialog) {
+        AlertDialog(
+            onDismissRequest = { showImportJsonDialog = false },
+            title = { Text("Import Font Settings") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Paste previously exported Petal font configuration JSON.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = importJsonText,
+                        onValueChange = { importJsonText = it },
+                        label = { Text("Font JSON") },
+                        minLines = 4,
+                        maxLines = 8,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val ok = try {
+                            PetalFontPrefs.importJson(sp, JSONObject(importJsonText))
+                        } catch (_: Throwable) {
+                            false
+                        }
+                        if (ok) {
+                            showImportJsonDialog = false
+                            PetalToast.show(context, "Imported font configuration")
+                        } else {
+                            PetalToast.show(context, "Invalid font configuration JSON")
+                        }
+                    }
+                ) {
+                    Text("Import")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showImportJsonDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun PetalSignatureCustomizer(
+    fontState: FontState,
+    targetHighlightItemId: String?,
+    onPreviewChange: (FontState) -> Unit,
+    onSelectPreset: (GSFlexPreset) -> Unit,
+    onResetToPreset: (GSFlexPreset) -> Unit,
+    onToggleCustomMode: (Boolean, GSFlexPreset) -> Unit,
+    onCopyPreset: (GSFlexPreset) -> Unit,
+    onCommitTierAxis: (FontTier, FontAxes.Axis, Float) -> Unit,
+    onCommitAllAxis: (FontAxes.Axis, Float) -> Unit
+) {
+    val gs = fontState.gsFlexSettings
+    var lastNonCustomPreset by remember(gs.preset) {
+        mutableStateOf(if (gs.preset == GSFlexPreset.CUSTOM) GSFlexPreset.PETAL_SIGNATURE else gs.preset)
+    }
+    var selectedTier by rememberSaveable { mutableStateOf(FontTier.DISPLAY) }
+    var globalOverride by rememberSaveable { mutableStateOf(false) }
+
+    val presetItems = remember {
+        listOf(
+            GSFlexPreset.PETAL_SIGNATURE,
+            GSFlexPreset.NEO,
+            GSFlexPreset.COMPACT,
+            GSFlexPreset.AIRY
+        ).map { PetalButtonGroupItem(value = it, label = it.label) }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Presets",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                TextButton(onClick = { onResetToPreset(lastNonCustomPreset) }) {
+                    Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Reset to preset")
+                }
+            }
+
+            PetalChoiceButtonGroup(
+                options = presetItems,
+                selected = if (gs.preset == GSFlexPreset.CUSTOM) lastNonCustomPreset else gs.preset,
+                minHeight = 42.dp,
+                scrollableIfCrowded = true,
+                onSelect = { newPreset ->
+                    lastNonCustomPreset = newPreset
+                    onSelectPreset(newPreset)
+                }
+            )
+        }
+
+        PetalSettingsToggleRow(
+            title = "Use Custom Variable",
+            subtitle = "Customize variable axes for Display, Headline & Body",
+            icon = Icons.Rounded.Tune,
+            checked = gs.preset == GSFlexPreset.CUSTOM,
+            position = PetalGroupPosition.SINGLE,
+            onCheckedChange = { checked -> onToggleCustomMode(checked, lastNonCustomPreset) }
+        )
+
+        AnimatedVisibility(
+            visible = gs.preset == GSFlexPreset.CUSTOM,
+            enter = fadeIn(PetalSpring.calm()) + expandIn(PetalSpring.calm()),
+            exit = fadeOut(PetalSpring.calm()) + shrinkOut(PetalSpring.calm())
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                FilledTonalButton(
+                    onClick = { onCopyPreset(lastNonCustomPreset) },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Copy from ${lastNonCustomPreset.label}",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                }
+
+                PetalSettingsToggleRow(
+                    title = "Global Axis Override",
+                    subtitle = "Apply each slider change to Display, Headline & Body together",
+                    icon = Icons.Rounded.Tune,
+                    checked = globalOverride,
+                    position = PetalGroupPosition.SINGLE,
+                    onCheckedChange = { globalOverride = it }
+                )
+
+                if (!globalOverride) {
+                    PetalChoiceButtonGroup(
+                        options = FontTier.entries.map { PetalButtonGroupItem(it, it.label) },
+                        selected = selectedTier,
+                        onSelect = { selectedTier = it },
+                        minHeight = 42.dp,
+                        scrollableIfCrowded = false
+                    )
+                }
+
+                val currentAxes = gs.axesFor(if (globalOverride) FontTier.DISPLAY else selectedTier)
+                FontAxes.Axis.entries.forEach { axis ->
+                    GSFlexVariableSlider(
+                        label = axis.label,
+                        value = axis.get(currentAxes),
+                        range = axis.range,
+                        formatter = axis::format,
+                        onDrag = { v ->
+                            val updatedGs = if (globalOverride) {
+                                gs.copy(
+                                    preset = GSFlexPreset.CUSTOM,
+                                    display = axis.withValue(gs.display, v),
+                                    headline = axis.withValue(gs.headline, v),
+                                    body = axis.withValue(gs.body, v)
+                                )
+                            } else {
+                                gs.copy(preset = GSFlexPreset.CUSTOM)
+                                    .withTierAxes(selectedTier, axis.withValue(currentAxes, v))
+                            }
+                            onPreviewChange(fontState.copy(gsFlexSettings = updatedGs))
+                        },
+                        onCommit = { v ->
+                            if (globalOverride) {
+                                onCommitAllAxis(axis, v)
+                            } else {
+                                onCommitTierAxis(selectedTier, axis, v)
+                            }
+                        }
+                    )
                 }
             }
         }
     }
 }
 
-@OptIn(kotlinx.coroutines.FlowPreview::class)
 @Composable
-private fun GSFlexVariableSlider(
+private fun CustomFontCustomizer(
+    fontState: FontState,
+    onBrowseClick: () -> Unit,
+    onPreviewChange: (FontState) -> Unit,
+    onCommitTierAxis: (FontTier, FontAxes.Axis, Float) -> Unit,
+    onCommitAllAxis: (FontAxes.Axis, Float) -> Unit,
+    onResetCustomAxes: () -> Unit
+) {
+    val custom = fontState.customFont
+    val resolvedFile = PetalFontHelper.resolveReadableCustomFontFile(custom)
+    var selectedTier by rememberSaveable { mutableStateOf(FontTier.DISPLAY) }
+    var globalOverride by rememberSaveable { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(
+            shape = petalGroupShape(PetalGroupPosition.SINGLE),
+            color = petalGroupSurfaceColor(),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                PetalGroupIconBadge(
+                    icon = Icons.Rounded.FontDownload,
+                    container = MaterialTheme.colorScheme.primaryContainer,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.ui_custom_font_file),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = if (resolvedFile != null) custom.name else "No valid font loaded",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (resolvedFile != null) {
+                        Text(
+                            text = if (custom.isVariable) {
+                                "Variable OpenType font · 3-tier axis controls unlocked"
+                            } else {
+                                "Static font · weights 100–1000 active"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                Button(
+                    onClick = onBrowseClick,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.ui_browse))
+                }
+            }
+        }
+
+        if (resolvedFile != null && custom.isVariable) {
+            HorizontalDivider()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Custom Variable Axes",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                )
+                TextButton(onClick = onResetCustomAxes) {
+                    Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Reset axes")
+                }
+            }
+
+            PetalSettingsToggleRow(
+                title = "Global Axis Override",
+                subtitle = "Edit Display, Headline & Body simultaneously",
+                icon = Icons.Rounded.Tune,
+                checked = globalOverride,
+                position = PetalGroupPosition.SINGLE,
+                onCheckedChange = { globalOverride = it }
+            )
+
+            if (!globalOverride) {
+                PetalChoiceButtonGroup(
+                    options = FontTier.entries.map { PetalButtonGroupItem(it, it.label) },
+                    selected = selectedTier,
+                    onSelect = { selectedTier = it },
+                    minHeight = 42.dp,
+                    scrollableIfCrowded = false
+                )
+            }
+
+            val currentAxes = custom.settings.axesFor(if (globalOverride) FontTier.DISPLAY else selectedTier)
+            FontAxes.Axis.entries.forEach { axis ->
+                GSFlexVariableSlider(
+                    label = axis.label,
+                    value = axis.get(currentAxes),
+                    range = axis.range,
+                    formatter = axis::format,
+                    onDrag = { v ->
+                        val updatedSettings = if (globalOverride) {
+                            custom.settings.copy(
+                                display = axis.withValue(custom.settings.display, v),
+                                headline = axis.withValue(custom.settings.headline, v),
+                                body = axis.withValue(custom.settings.body, v)
+                            )
+                        } else {
+                            custom.settings.withTierAxes(selectedTier, axis.withValue(currentAxes, v))
+                        }
+                        onPreviewChange(fontState.copy(customFont = custom.copy(settings = updatedSettings)))
+                    },
+                    onCommit = { v ->
+                        if (globalOverride) {
+                            onCommitAllAxis(axis, v)
+                        } else {
+                            onCommitTierAxis(selectedTier, axis, v)
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(FlowPreview::class)
+@Composable
+internal fun GSFlexVariableSlider(
     label: String,
     value: Float,
     range: ClosedFloatingPointRange<Float>,
-    formatter: (Float) -> String = { v -> String.format(java.util.Locale.US, "%.0f", v) },
-    onValueChange: (Float) -> Unit
+    formatter: (Float) -> String = { v -> String.format(Locale.US, "%.0f", v) },
+    onDrag: ((Float) -> Unit)? = null,
+    onCommit: (Float) -> Unit
 ) {
-    // The slider owns its value while dragging. Previously every frame wrote all 19 font prefs,
-    // rebuilt the app typography and waited for the prefs flow to hand the value back, so the
-    // thumb lagged, jumped back and fought the finger. Now it stays put and commits (debounced)
-    // plus once when the finger lifts.
-    var local by androidx.compose.runtime.remember { androidx.compose.runtime.mutableFloatStateOf(value) }
-    var dragging by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-    val latest by androidx.compose.runtime.rememberUpdatedState(onValueChange)
-    androidx.compose.runtime.LaunchedEffect(value) { if (!dragging) local = value }
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        androidx.compose.runtime.snapshotFlow { local }
-            .drop(1)
-            .debounce(120)
-            .collect { if (dragging) latest(it) }
+    // Slider owns local state while dragging so the thumb never lags or jumps back.
+    var local by remember { mutableFloatStateOf(value) }
+    var dragging by remember { mutableStateOf(false) }
+    val latestCommit by androidx.compose.runtime.rememberUpdatedState(onCommit)
+    val latestDrag by androidx.compose.runtime.rememberUpdatedState(onDrag)
+
+    LaunchedEffect(value) {
+        if (!dragging) local = value
     }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { local }
+            .drop(1)
+            .debounce(110)
+            .collect {
+                if (dragging) latestCommit(it)
+            }
+    }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -566,10 +942,17 @@ private fun GSFlexVariableSlider(
                 softWrap = false
             )
         }
-        com.petal.browser.ui.components.PetalSlider(
+        PetalSlider(
             value = local,
-            onValueChange = { dragging = true; local = it },
-            onValueChangeFinished = { dragging = false; latest(local) },
+            onValueChange = { next ->
+                dragging = true
+                local = next
+                latestDrag?.invoke(next)
+            },
+            onValueChangeFinished = {
+                dragging = false
+                latestCommit(local)
+            },
             valueRange = range,
             modifier = Modifier.fillMaxWidth()
         )

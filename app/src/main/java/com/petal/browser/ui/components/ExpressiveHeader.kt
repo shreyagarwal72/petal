@@ -491,7 +491,8 @@ private fun HeaderTitleBlock(
                 // Glass title: crisper and tighter, lets the blurred page carry the personality.
                 letterSpacing = if (glass) (-0.4).sp else MaterialTheme.typography.titleLarge.letterSpacing
             ),
-            color = LocalHeaderGlassStyle.current?.content ?: MaterialTheme.colorScheme.onSurface,
+            color = LocalHeaderGlassStyle.current?.content
+                ?: com.petal.browser.ui.theme.petalAccentHeadingColor(MaterialTheme.colorScheme.onSurface),
             fontWeight = if (glass) FontWeight.Bold else FontWeight.ExtraBold,
             maxLines = 1,
             softWrap = false,
@@ -513,7 +514,8 @@ private fun HeaderTitleBlock(
                     fontSize = subtitleFontSize,
                     lineHeight = (subtitleFontSize.value + 4).sp
                 ),
-                color = LocalHeaderGlassStyle.current?.contentMuted ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                color = LocalHeaderGlassStyle.current?.contentMuted
+                    ?: com.petal.browser.ui.theme.petalAccentBodyColor(MaterialTheme.colorScheme.onSurfaceVariant),
                 maxLines = maxSubtitleLines,
                 softWrap = maxSubtitleLines > 1,
                 overflow = TextOverflow.Ellipsis,

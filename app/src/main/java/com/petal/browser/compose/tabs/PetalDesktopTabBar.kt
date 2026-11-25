@@ -135,7 +135,6 @@ object PetalDesktopTabBarBridge {
             setContent {
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
                 var themeCfg by remember { mutableStateOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") }
-                var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
                 var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                 var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
@@ -146,7 +145,6 @@ object PetalDesktopTabBarBridge {
                     val l = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                         when (key) {
                             "sp_theme_config" -> themeCfg = sp.getString(key, "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
-                            "sp_app_font" -> fontName = sp.getString(key, "PETAL") ?: "PETAL"
                             "sp_color_style" -> styleName = sp.getString(key, "TONAL_SPOT") ?: "TONAL_SPOT"
                             "sp_palette_id" -> paletteId = sp.getString(key, defaultPaletteId) ?: defaultPaletteId
                             "useDynamicColor" -> dynamicColor = sp.getBoolean(key, isDynamicColorSupported)
@@ -170,7 +168,7 @@ object PetalDesktopTabBarBridge {
                     darkTheme = darkTheme,
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
-                    appFont = remember(fontName) { AppFont.fromName(fontName) },
+                    fontState = com.petal.browser.ui.theme.rememberFontState(),
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {

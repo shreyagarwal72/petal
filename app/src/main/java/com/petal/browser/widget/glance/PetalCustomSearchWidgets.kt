@@ -199,12 +199,31 @@ private fun PetalWidgetCard(
 private fun Hint(cfg: PetalWidgetConfig, color: Int, modifier: GlanceModifier) {
     val context = LocalContext.current
     val text = cfg.hint.trim().ifEmpty { context.getString(cfg.hintRes()) }
-    Text(
+    val bmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
+        context = context,
         text = text,
-        maxLines = 1,
-        modifier = modifier,
-        style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = provider(color))
+        textSizeSp = 15f,
+        colorInt = color,
+        weight = 500,
+        maxWidthDp = 220
     )
+    if (bmp != null) {
+        val density = context.resources.displayMetrics.density.coerceAtLeast(1f)
+        Box(modifier = modifier, contentAlignment = Alignment.CenterStart) {
+            Image(
+                provider = ImageProvider(bmp),
+                contentDescription = text,
+                modifier = GlanceModifier.size((bmp.width / density).dp, (bmp.height / density).dp)
+            )
+        }
+    } else {
+        Text(
+            text = text,
+            maxLines = 1,
+            modifier = modifier,
+            style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = provider(color))
+        )
+    }
 }
 
 /** The cookie "P" badge. The whole [PetalLayoutPlan.badgeSize] box is the touch target. */
@@ -294,11 +313,29 @@ private fun CookieTile(
         }
         if (plan.showTileLabels) {
             Spacer(modifier = GlanceModifier.height(2.dp))
-            Text(
+            val labelBmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
+                context = context,
                 text = label,
-                maxLines = 1,
-                style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, color = provider(labelColor))
+                textSizeSp = 11f,
+                colorInt = labelColor,
+                weight = 500,
+                align = android.graphics.Paint.Align.CENTER,
+                maxWidthDp = 72
             )
+            if (labelBmp != null) {
+                val density = context.resources.displayMetrics.density.coerceAtLeast(1f)
+                Image(
+                    provider = ImageProvider(labelBmp),
+                    contentDescription = label,
+                    modifier = GlanceModifier.size((labelBmp.width / density).dp, (labelBmp.height / density).dp)
+                )
+            } else {
+                Text(
+                    text = label,
+                    maxLines = 1,
+                    style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, color = provider(labelColor))
+                )
+            }
         }
     }
 }

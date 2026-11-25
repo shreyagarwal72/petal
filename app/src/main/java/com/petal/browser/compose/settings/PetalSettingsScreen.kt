@@ -127,36 +127,16 @@ object PetalSettingsBridge {
                 val context = LocalContext.current
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-                var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
-                var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
-                var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
-                var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
-                var presetName by remember { mutableStateOf(sp.getString("sp_gs_flex_preset", "PETAL_SIGNATURE") ?: "PETAL_SIGNATURE") }
-                var gsFlexSettingsState by remember { mutableStateOf(loadGSFlexSettings(sp)) }
                 var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                 var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
                 var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
                 var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
                 var themeConfigName by remember { mutableStateOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") }
-                var customFontSettingsState by remember { mutableStateOf(getCustomFontSettings(sp)) }
-                var customFontPathState by remember { mutableStateOf(sp.getString("sp_custom_font_path", null)) }
 
                 DisposableEffect(sp) {
                     val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                        if (key != null && key.startsWith("sp_custom_")) {
-                            customFontSettingsState = getCustomFontSettings(sp)
-                            customFontPathState = sp.getString("sp_custom_font_path", null)
-                        }
-                        if (key != null && (key.startsWith("sp_gs_") || key == "sp_gs_flex_preset")) {
-                            gsFlexSettingsState = loadGSFlexSettings(sp)
-                        }
                         when (key) {
-                            "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
-                            "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
-                            "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
-                            "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
-                            "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "PETAL_SIGNATURE") ?: "PETAL_SIGNATURE"
                             "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                             "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                             "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
@@ -169,10 +149,7 @@ object PetalSettingsBridge {
                     onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
                 }
 
-                val appFont = remember(fontName) {
-                    try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.PETAL }
-                }
-                val gsFlexSettings = gsFlexSettingsState
+                val fontState = rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
                 }
@@ -192,13 +169,7 @@ object PetalSettingsBridge {
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
                     expressiveColors = isExpressiveColors,
-                    appFont = appFont,
-                    customFontPath = customFontPathState,
-                    customFontSettings = customFontSettingsState,
-                    fontWidth = fontWidthVal,
-                    fontWeight = fontWeightVal,
-                    fontRoundness = fontRoundnessVal,
-                    gsFlexSettings = gsFlexSettings,
+                    fontState = fontState,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {

@@ -147,30 +147,23 @@ object PetalPrivacyShieldSheet {
                     setContent {
                         val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
                         val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
                         var themeConfigStr by remember { mutableStateOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") }
-                        var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
                         var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                         var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId) }
                         var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)) }
                         var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
                         var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
-                        var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
-                        var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
-                        var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
 
                         androidx.compose.runtime.DisposableEffect(sp) {
                             val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                                 when (key) {
                                     "sp_theme_config" -> themeConfigStr = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
-                                    "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                                     "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                                     "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                                     "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                                     "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
                                     "sp_expressive_colors" -> isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
-                                    "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
-                                    "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
-                                    "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
                                 }
                             }
                             sp.registerOnSharedPreferenceChangeListener(listener)
@@ -184,9 +177,6 @@ object PetalPrivacyShieldSheet {
                                 com.petal.browser.ui.theme.ThemeConfig.LIGHT -> false
                                 com.petal.browser.ui.theme.ThemeConfig.DARK -> true
                             }
-                        }
-                        val appFont = remember(fontName) {
-                            AppFont.fromName(fontName)
                         }
                         val colorStyle = remember(styleName) {
                             try {
@@ -203,10 +193,7 @@ object PetalPrivacyShieldSheet {
                                 dynamicColor = dynamicColor,
                                 useAmoled = isAmoled,
                                 expressiveColors = isExpressiveColors,
-                                appFont = appFont,
-                                fontWidth = fontWidthVal,
-                                fontWeight = fontWeightVal,
-                                fontRoundness = fontRoundnessVal,
+                                fontState = fontState,
                                 colorStyle = colorStyle,
                                 paletteId = paletteId
                             ) {

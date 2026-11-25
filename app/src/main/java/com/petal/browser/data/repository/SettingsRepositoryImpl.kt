@@ -7,7 +7,13 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.predictive.PetalPredictiveJunction
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
+import com.petal.browser.ui.theme.CustomFontSettings
+import com.petal.browser.ui.theme.FontAccentMode
+import com.petal.browser.ui.theme.FontAxes
+import com.petal.browser.ui.theme.FontState
+import com.petal.browser.ui.theme.FontTier
 import com.petal.browser.ui.theme.GSFlexPreset
+import com.petal.browser.ui.theme.PetalFontPrefs
 import com.petal.browser.ui.theme.ThemeConfig
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
@@ -28,7 +34,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     init {
         sp.registerOnSharedPreferenceChangeListener { _, key ->
-            if (key != null && (key.startsWith("sp_liquid_glass") || key == "useDynamicColor" || key == "sp_palette_id" || key == "sp_color_style" || key == "sp_amoled" || key == "sp_theme_config")) {
+            if (key != null && (key.startsWith("sp_liquid_glass") || key == "useDynamicColor" || key == "sp_palette_id" || key == "sp_color_style" || key == "sp_amoled" || key == "sp_theme_config" || PetalFontPrefs.isFontKey(key))) {
                 com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
             }
         }
@@ -55,35 +61,38 @@ class SettingsRepositoryImpl @Inject constructor(
     }.onStart { emit(getter()) }.distinctUntilChanged()
 
     // ── Appearance & Theming ──────────────────────────────────────────────────
-    override val appFont: Flow<AppFont> = preferenceFlow("sp_app_font") {
-        AppFont.fromName(sp.getString("sp_app_font", "PETAL"))
+    override val fontState: Flow<FontState> = preferenceFlow(PetalFontPrefs.ALL_FONT_KEYS) {
+        PetalFontPrefs.load(sp, application)
     }
 
-    override val fontWidth: Flow<Float> = preferenceFlow("sp_font_width") {
-        sp.getFloat("sp_font_width", 92f)
+    override val appFont: Flow<AppFont> = preferenceFlow(PetalFontPrefs.KEY_APP_FONT) {
+        AppFont.fromName(sp.getString(PetalFontPrefs.KEY_APP_FONT, AppFont.PETAL.name))
     }
 
-    override val fontWeight: Flow<Float> = preferenceFlow("sp_font_weight") {
-        sp.getInt("sp_font_weight", 750).toFloat()
-    }
-
-    override val fontRoundness: Flow<Float> = preferenceFlow("sp_font_roundness") {
-        sp.getFloat("sp_font_roundness", 100f)
-    }
-
-    override val gsFlexPreset: Flow<GSFlexPreset> = preferenceFlow("sp_gs_flex_preset") {
-        GSFlexPreset.fromName(sp.getString("sp_gs_flex_preset", GSFlexPreset.PETAL_SIGNATURE.name))
+    override val gsFlexPreset: Flow<GSFlexPreset> = preferenceFlow(PetalFontPrefs.KEY_GS_PRESET) {
+        GSFlexPreset.fromName(sp.getString(PetalFontPrefs.KEY_GS_PRESET, GSFlexPreset.PETAL_SIGNATURE.name))
     }
 
     override val gsFlexSettings: Flow<com.petal.browser.ui.theme.GSFlexSettings> = preferenceFlow(
-        setOf(
-            "sp_gs_flex_preset",
-            "sp_gs_d_weight", "sp_gs_d_width", "sp_gs_d_opsz", "sp_gs_d_grade", "sp_gs_d_slant", "sp_gs_d_roundness",
-            "sp_gs_h_weight", "sp_gs_h_width", "sp_gs_h_opsz", "sp_gs_h_grade", "sp_gs_h_slant", "sp_gs_h_roundness",
-            "sp_gs_b_weight", "sp_gs_b_width", "sp_gs_b_opsz", "sp_gs_b_grade", "sp_gs_b_slant", "sp_gs_b_roundness"
-        )
+        PetalFontPrefs.ALL_FONT_KEYS
     ) {
-        com.petal.browser.ui.theme.loadGSFlexSettings(sp)
+        PetalFontPrefs.loadGSFlexSettings(sp)
+    }
+
+    override val nunitoWeight: Flow<Int> = preferenceFlow(PetalFontPrefs.KEY_NUNITO_WEIGHT) {
+        PetalFontPrefs.load(sp, application).nunitoWeight
+    }
+
+    override val customFontSettings: Flow<CustomFontSettings> = preferenceFlow(PetalFontPrefs.ALL_FONT_KEYS) {
+        PetalFontPrefs.loadCustomFontSettings(sp)
+    }
+
+    override val fontAccentMode: Flow<FontAccentMode> = preferenceFlow(PetalFontPrefs.KEY_FONT_ACCENT) {
+        FontAccentMode.fromName(sp.getString(PetalFontPrefs.KEY_FONT_ACCENT, FontAccentMode.OFF.name))
+    }
+
+    override val readerFollowsAppFont: Flow<Boolean> = preferenceFlow(PetalFontPrefs.KEY_READER_FOLLOWS_APP_FONT) {
+        sp.getBoolean(PetalFontPrefs.KEY_READER_FOLLOWS_APP_FONT, false)
     }
 
     override val colorStyle: Flow<ColorStyle> = preferenceFlow("sp_color_style") {
@@ -616,30 +625,55 @@ class SettingsRepositoryImpl @Inject constructor(
 
     // ── Setters ───────────────────────────────────────────────────────────────
     override suspend fun setAppFont(font: AppFont) {
-        sp.edit().putString("sp_app_font", font.name).apply()
-        com.petal.browser.ui.theme.PetalThemePrefs.bump()
-    }
-
-    override suspend fun setFontWidth(width: Float) {
-        sp.edit().putFloat("sp_font_width", width).apply()
-    }
-
-    override suspend fun setFontWeight(weight: Float) {
-        sp.edit().putInt("sp_font_weight", weight.toInt()).apply()
-    }
-
-    override suspend fun setFontRoundness(roundness: Float) {
-        sp.edit().putFloat("sp_font_roundness", roundness).apply()
+        PetalFontPrefs.setAppFont(sp, font)
     }
 
     override suspend fun setGsFlexPreset(preset: GSFlexPreset) {
-        sp.edit().putString("sp_gs_flex_preset", preset.name).apply()
-        com.petal.browser.ui.theme.PetalThemePrefs.bump()
+        PetalFontPrefs.setGsFlexPreset(sp, preset)
     }
 
     override suspend fun setGsFlexSettings(settings: com.petal.browser.ui.theme.GSFlexSettings) {
-        com.petal.browser.ui.theme.saveGSFlexSettings(sp, settings)
-        com.petal.browser.ui.theme.PetalThemePrefs.bump()
+        PetalFontPrefs.setGsFlexSettings(sp, settings)
+    }
+
+    override suspend fun setGsFlexAxis(tier: FontTier, axis: FontAxes.Axis, value: Float) {
+        PetalFontPrefs.setGsFlexAxis(sp, tier, axis, value)
+    }
+
+    override suspend fun setAllGsFlexAxes(axis: FontAxes.Axis, value: Float) {
+        PetalFontPrefs.setAllGsFlexAxes(sp, axis, value)
+    }
+
+    override suspend fun resetGsFlexToPreset(preset: GSFlexPreset) {
+        PetalFontPrefs.resetGsFlexToPreset(sp, preset)
+    }
+
+    override suspend fun setNunitoWeight(weight: Int) {
+        PetalFontPrefs.setNunitoWeight(sp, weight)
+    }
+
+    override suspend fun setCustomFontAxis(tier: FontTier, axis: FontAxes.Axis, value: Float) {
+        PetalFontPrefs.setCustomFontAxis(sp, tier, axis, value)
+    }
+
+    override suspend fun setAllCustomFontAxes(axis: FontAxes.Axis, value: Float) {
+        PetalFontPrefs.setAllCustomFontAxes(sp, axis, value)
+    }
+
+    override suspend fun setCustomFontSettings(settings: CustomFontSettings) {
+        PetalFontPrefs.setCustomFontSettings(sp, settings)
+    }
+
+    override suspend fun setFontAccentMode(mode: FontAccentMode) {
+        PetalFontPrefs.setFontAccentMode(sp, mode)
+    }
+
+    override suspend fun setReaderFollowsAppFont(enabled: Boolean) {
+        PetalFontPrefs.setReaderFollowsAppFont(sp, enabled)
+    }
+
+    override suspend fun resetAllFontSettings() {
+        PetalFontPrefs.resetAll(sp)
     }
 
     override suspend fun setColorStyle(style: ColorStyle) {

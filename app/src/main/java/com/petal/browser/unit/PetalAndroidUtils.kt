@@ -848,7 +848,7 @@ object PetalAndroidUtils {
             }
             val actionColor = if (primaryInverse.data != 0) primaryInverse.data else Color.parseColor("#FFB1C8")
             actionView.setTextColor(actionColor)
-            actionView.typeface = Typeface.create(PetalFontHelper.getAppTypeface(context), Typeface.BOLD)
+            actionView.typeface = PetalFontHelper.getAppTypeface(context, weight = 700)
             actionView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
         }
 

@@ -86,6 +86,7 @@ fun PetalReaderScreen(
 ) {
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+    val appFontState = com.petal.browser.ui.theme.rememberFontState()
 
     var selectedTheme by remember {
         val themeName = sp.getString("sp_reader_theme", "SYSTEM") ?: "SYSTEM"
@@ -213,12 +214,21 @@ fun PetalReaderScreen(
                                 .fillMaxWidth()
                                 .padding(horizontal = 24.dp, vertical = 12.dp)
                         ) {
+                            val readerFontFamily = if (selectedFont == ReaderFont.SYSTEM && appFontState.readerFollowsAppFont) {
+                                remember(appFontState) {
+                                    com.petal.browser.ui.theme.VariableFontFactory
+                                        .createTypography(appFontState).bodyLarge.fontFamily ?: FontFamily.Default
+                                }
+                            } else {
+                                selectedFont.family
+                            }
+
                             // Article Title
                             Text(
                                 text = article.title,
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontFamily = selectedFont.family,
+                                    fontFamily = readerFontFamily,
                                     fontSize = (fontSizeSp + 8).sp,
                                     lineHeight = ((fontSizeSp + 8) * 1.3f).sp
                                 ),
@@ -285,7 +295,7 @@ fun PetalReaderScreen(
                                 Text(
                                     text = paragraph,
                                     style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontFamily = selectedFont.family,
+                                        fontFamily = readerFontFamily,
                                         fontSize = fontSizeSp.sp,
                                         lineHeight = (fontSizeSp * lineHeightMult).sp
                                     ),
@@ -409,6 +419,25 @@ fun PetalReaderScreen(
                                                 ),
                                                 border = null,
                                                 modifier = Modifier.weight(1f)
+                                            )
+                                        }
+                                    }
+                                    if (selectedFont == ReaderFont.SYSTEM) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "Follow Petal app font",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Switch(
+                                                checked = appFontState.readerFollowsAppFont,
+                                                onCheckedChange = {
+                                                    com.petal.browser.ui.theme.PetalFontPrefs.setReaderFollowsAppFont(sp, it)
+                                                }
                                             )
                                         }
                                     }

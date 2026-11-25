@@ -128,8 +128,7 @@ object PetalBackupManager {
         if (key.startsWith("sp_home_wallpaper_dim") || key.startsWith("sp_home_wallpaper_blur") ||
             key.startsWith("sp_custom_display_") || key.startsWith("sp_custom_headline_") ||
             key.startsWith("sp_custom_body_") || key.startsWith("sp_reader_font_size") ||
-            key.startsWith("sp_reader_line_height") || key == "sp_font_width" ||
-            key == "sp_font_roundness" || key == "sp_font_size_scale" ||
+            key.startsWith("sp_reader_line_height") || key == "sp_font_size_scale" ||
             key == "sp_zoom_level_scale" || key.startsWith("sp_gs_d_") ||
             key.startsWith("sp_gs_h_") || key.startsWith("sp_gs_b_") ||
             key == "sp_blur_strength"
@@ -148,7 +147,7 @@ object PetalBackupManager {
         if (key == null) return false
         return "sp_fontSize" == key || "sp_search_engine" == key ||
                 "sp_searchEngine" == key || "sp_userAgent" == key ||
-                "profile" == key || "sp_app_font" == key ||
+                "profile" == key || "sp_app_font" == key || "sp_font_accent" == key ||
                 "sp_color_style" == key || "sp_palette_id" == key ||
                 "sp_gs_flex_preset" == key || "sp_reader_theme" == key ||
                 "sp_reader_font" == key || "sp_theme_config" == key ||
@@ -168,6 +167,7 @@ object PetalBackupManager {
                 "sp_nextdns_profile_id" == key ||
                 "sp_torrent_engine" == key || "sp_download_manager_mode" == key ||
                 "sp_custom_font_name" == key || "sp_custom_font_path" == key ||
+                "sp_custom_font_last_valid_path" == key ||
                 "sp_home_wallpaper_uri" == key || "sp_custom_homepage_url" == key ||
                 "sp_home_type" == key || "sp_tab_display_mode" == key ||
                 "sp_inactive_tab_display_mode" == key || "sp_etp_mode" == key ||
@@ -729,7 +729,7 @@ object PetalBackupManager {
 
     private const val MAX_FILE_BYTES = 6L * 1024 * 1024
     private const val MAX_TOTAL_FILE_BYTES = 16L * 1024 * 1024
-    private val BACKUP_FILE_DIRS = arrayOf("wallpapers", "user_scripts")
+    private val BACKUP_FILE_DIRS = arrayOf("wallpapers", "user_scripts", "fonts")
     private val BACKUP_FILE_NAMES = arrayOf("custom_font.ttf", "petal_user_avatar.png")
 
     private fun isSafeRelativePath(rel: String): Boolean {
@@ -942,7 +942,9 @@ object PetalBackupManager {
             backupJson.optJSONObject("files")?.let { filesRestored = restoreBackupFiles(context, it) }
             try {
                 backupJson.optJSONObject("settings")?.let {
-                    restorePreferencesFromJsonObject(PreferenceManager.getDefaultSharedPreferences(context), it)
+                    val defaultSp = PreferenceManager.getDefaultSharedPreferences(context)
+                    restorePreferencesFromJsonObject(defaultSp, it)
+                    com.petal.browser.ui.theme.PetalFontPrefs.migrateLegacyIfNeeded(defaultSp)
                     prefsFiles++
                 }
                 backupJson.optJSONObject("custom_preferences")?.let { custom ->
@@ -1271,5 +1273,21 @@ object PetalBackupManager {
     @JvmStatic
     fun restoreData(context: Activity, i: Int) {
         restoreFromJson(context, true, true, true, true)
+    }
+
+    @JvmStatic
+    fun exportFontConfigJson(context: Context): String {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        return com.petal.browser.ui.theme.PetalFontPrefs.exportJson(sp).toString(2)
+    }
+
+    @JvmStatic
+    fun importFontConfigJson(context: Context, rawJson: String): Boolean {
+        return try {
+            val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            com.petal.browser.ui.theme.PetalFontPrefs.importJson(sp, JSONObject(rawJson))
+        } catch (_: Throwable) {
+            false
+        }
     }
 }

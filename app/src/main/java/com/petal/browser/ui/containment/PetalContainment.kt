@@ -719,8 +719,8 @@ fun PetalGroupNavigationRow(
             else PetalGroupIconBadge(Icons.Rounded.Settings, variant = variant)
         },
         content = {
-            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(title, style = MaterialTheme.typography.bodyLarge, color = com.petal.browser.ui.theme.petalAccentBodyColor(MaterialTheme.colorScheme.onSurface), fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = com.petal.browser.ui.theme.petalAccentBodyColor(MaterialTheme.colorScheme.onSurfaceVariant), maxLines = 2, overflow = TextOverflow.Ellipsis)
         },
         trailing = trailingIcon ?: { Icon(Icons.Rounded.ChevronRight, null, tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)) },
     )
@@ -769,8 +769,8 @@ fun PetalGroupToggleRow(
             leadingIcon()
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                Text(title, style = MaterialTheme.typography.bodyLarge, color = com.petal.browser.ui.theme.petalAccentBodyColor(MaterialTheme.colorScheme.onSurface), fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = com.petal.browser.ui.theme.petalAccentBodyColor(MaterialTheme.colorScheme.onSurfaceVariant), maxLines = 1, overflow = TextOverflow.Ellipsis) }
             }
             com.petal.browser.ui.components.IconSwitch(
                 checked = checked,

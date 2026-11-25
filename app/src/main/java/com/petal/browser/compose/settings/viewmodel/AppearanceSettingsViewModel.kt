@@ -5,6 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.petal.browser.data.repository.SettingsRepository
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
+import com.petal.browser.ui.theme.CustomFontSettings
+import com.petal.browser.ui.theme.FontAccentMode
+import com.petal.browser.ui.theme.FontAxes
+import com.petal.browser.ui.theme.FontState
+import com.petal.browser.ui.theme.FontTier
 import com.petal.browser.ui.theme.GSFlexPreset
 import com.petal.browser.ui.theme.ThemeConfig
 import com.petal.browser.ui.theme.defaultPaletteId
@@ -21,23 +26,29 @@ class AppearanceSettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
+    val fontState: StateFlow<FontState> = settingsRepository.fontState
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FontState())
+
     val appFont: StateFlow<AppFont> = settingsRepository.appFont
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppFont.PETAL)
-
-    val fontWidth: StateFlow<Float> = settingsRepository.fontWidth
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 92f)
-
-    val fontWeight: StateFlow<Float> = settingsRepository.fontWeight
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 750f)
-
-    val fontRoundness: StateFlow<Float> = settingsRepository.fontRoundness
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 100f)
 
     val gsFlexPreset: StateFlow<GSFlexPreset> = settingsRepository.gsFlexPreset
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GSFlexPreset.PETAL_SIGNATURE)
 
     val gsFlexSettings: StateFlow<com.petal.browser.ui.theme.GSFlexSettings> = settingsRepository.gsFlexSettings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.petal.browser.ui.theme.GSFlexSettings())
+
+    val nunitoWeight: StateFlow<Int> = settingsRepository.nunitoWeight
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FontAxes.DEFAULT_NUNITO_WEIGHT)
+
+    val customFontSettings: StateFlow<CustomFontSettings> = settingsRepository.customFontSettings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CustomFontSettings())
+
+    val fontAccentMode: StateFlow<FontAccentMode> = settingsRepository.fontAccentMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FontAccentMode.OFF)
+
+    val readerFollowsAppFont: StateFlow<Boolean> = settingsRepository.readerFollowsAppFont
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val colorStyle: StateFlow<ColorStyle> = settingsRepository.colorStyle
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ColorStyle.TONAL_SPOT)
@@ -142,24 +153,52 @@ class AppearanceSettingsViewModel @Inject constructor(
         settingsRepository.setAppFont(font)
     }
 
-    fun setFontWidth(width: Float) = viewModelScope.launch {
-        settingsRepository.setFontWidth(width)
-    }
-
-    fun setFontWeight(weight: Float) = viewModelScope.launch {
-        settingsRepository.setFontWeight(weight)
-    }
-
-    fun setFontRoundness(roundness: Float) = viewModelScope.launch {
-        settingsRepository.setFontRoundness(roundness)
-    }
-
     fun setGsFlexPreset(preset: GSFlexPreset) = viewModelScope.launch {
         settingsRepository.setGsFlexPreset(preset)
     }
 
     fun setGsFlexSettings(settings: com.petal.browser.ui.theme.GSFlexSettings) = viewModelScope.launch {
         settingsRepository.setGsFlexSettings(settings)
+    }
+
+    fun setGsFlexAxis(tier: FontTier, axis: FontAxes.Axis, value: Float) = viewModelScope.launch {
+        settingsRepository.setGsFlexAxis(tier, axis, value)
+    }
+
+    fun setAllGsFlexAxes(axis: FontAxes.Axis, value: Float) = viewModelScope.launch {
+        settingsRepository.setAllGsFlexAxes(axis, value)
+    }
+
+    fun resetGsFlexToPreset(preset: GSFlexPreset) = viewModelScope.launch {
+        settingsRepository.resetGsFlexToPreset(preset)
+    }
+
+    fun setNunitoWeight(weight: Int) = viewModelScope.launch {
+        settingsRepository.setNunitoWeight(weight)
+    }
+
+    fun setCustomFontAxis(tier: FontTier, axis: FontAxes.Axis, value: Float) = viewModelScope.launch {
+        settingsRepository.setCustomFontAxis(tier, axis, value)
+    }
+
+    fun setAllCustomFontAxes(axis: FontAxes.Axis, value: Float) = viewModelScope.launch {
+        settingsRepository.setAllCustomFontAxes(axis, value)
+    }
+
+    fun setCustomFontSettings(settings: CustomFontSettings) = viewModelScope.launch {
+        settingsRepository.setCustomFontSettings(settings)
+    }
+
+    fun setFontAccentMode(mode: FontAccentMode) = viewModelScope.launch {
+        settingsRepository.setFontAccentMode(mode)
+    }
+
+    fun setReaderFollowsAppFont(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setReaderFollowsAppFont(enabled)
+    }
+
+    fun resetAllFontSettings() = viewModelScope.launch {
+        settingsRepository.resetAllFontSettings()
     }
 
     fun setColorStyle(style: ColorStyle) = viewModelScope.launch {

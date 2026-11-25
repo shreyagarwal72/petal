@@ -137,7 +137,7 @@ fun PetalFeaturedCarousel(
             ),
             PetalFeaturedItem(
                 title = "Custom Fonts & Typography",
-                description = "Load custom TTF/OTF fonts or Product Sans",
+                description = "Google Sans Flex presets, Nunito, or custom TTF/OTF",
                 icon = Icons.Rounded.FontDownload,
                 onClick = { onCategoryClick(SettingsCategory.APPEARANCE, "appearance_font") }
             ),

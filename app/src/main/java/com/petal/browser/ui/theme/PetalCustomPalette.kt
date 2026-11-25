@@ -193,8 +193,10 @@ object PetalThemePrefs {
         "sp_color_style", "sp_palette_id", "sp_palette_manually_selected",
         PetalCustomPalette.KEY_SEED, PetalCustomPalette.KEY_SECONDARY, PetalCustomPalette.KEY_TERTIARY,
         PetalPaletteMix.KEY_ENABLED, PetalPaletteMix.KEY_SECONDARY, PetalPaletteMix.KEY_TERTIARY,
-        "sp_app_font", "sp_font_width", "sp_font_weight", "sp_font_roundness", "sp_custom_font_path",
-        "sp_gs_flex_preset",
+        PetalFontPrefs.KEY_APP_FONT, PetalFontPrefs.KEY_GS_PRESET, PetalFontPrefs.KEY_NUNITO_WEIGHT,
+        PetalFontPrefs.KEY_CUSTOM_FONT_PATH, PetalFontPrefs.KEY_CUSTOM_FONT_LAST_VALID_PATH,
+        PetalFontPrefs.KEY_CUSTOM_FONT_NAME, PetalFontPrefs.KEY_CUSTOM_FONT_IS_VARIABLE,
+        PetalFontPrefs.KEY_FONT_ACCENT, PetalFontPrefs.KEY_READER_FOLLOWS_APP_FONT,
         "sp_blur_effect_enabled", "sp_expressive_shapes_35_enabled", "sp_corner_radius",
         "sp_high_refresh_rate", "sp_touch_haptics"
     )
@@ -204,7 +206,7 @@ object PetalThemePrefs {
         installed = true
         PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
             .registerOnSharedPreferenceChangeListener { _, key ->
-                if (key == null || key in keys || key.startsWith("sp_gs_") || key.startsWith("sp_custom_") || key.startsWith("sp_font_")) {
+                if (key == null || key in keys || PetalFontPrefs.isFontKey(key)) {
                     revision++
                 }
             }

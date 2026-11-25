@@ -332,7 +332,7 @@ fun PetalSnackbar(
                     fontWeight = FontWeight.Medium,
                     lineHeight = 18.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurface,
+                color = com.petal.browser.ui.theme.petalAccentBodyColor(MaterialTheme.colorScheme.onSurface),
                 maxLines = 2
             )
 

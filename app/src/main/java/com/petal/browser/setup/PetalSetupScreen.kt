@@ -107,7 +107,7 @@ fun PetalSetupFlow(activity: ComponentActivity, onFinished: () -> Unit) {
         )
     }
     var theme by remember { mutableStateOf(initialTheme) }
-    val appFont = remember { AppFont.fromName(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
+    val fontState = com.petal.browser.ui.theme.rememberFontState()
     val colorStyle = remember {
         runCatching { ColorStyle.valueOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "") }.getOrDefault(ColorStyle.TONAL_SPOT)
     }
@@ -134,10 +134,7 @@ fun PetalSetupFlow(activity: ComponentActivity, onFinished: () -> Unit) {
         darkTheme = dark,
         dynamicColor = theme.dynamicColor,
         useAmoled = theme.amoled,
-        appFont = appFont,
-        fontWidth = sp.getFloat("sp_font_width", 92f),
-        fontWeight = sp.getInt("sp_font_weight", 750),
-        fontRoundness = sp.getFloat("sp_font_roundness", 100f),
+        fontState = fontState,
         colorStyle = colorStyle,
         paletteId = theme.paletteId
     ) {

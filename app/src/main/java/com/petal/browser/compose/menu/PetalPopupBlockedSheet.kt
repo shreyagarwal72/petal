@@ -284,13 +284,12 @@ object PetalPopupBlockedBridge {
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                     setContent {
                         val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                        val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                         val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                         val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                         val isAmoled = sp.getBoolean("sp_amoled", false)
                         val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
-                        val appFont = remember(fontName) { AppFont.fromName(fontName) }
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
                         val colorStyle = remember(styleName) {
                             try { ColorStyle.valueOf(styleName) } catch (_: Throwable) { ColorStyle.TONAL_SPOT }
                         }
@@ -298,7 +297,7 @@ object PetalPopupBlockedBridge {
                         PetalExpressiveTheme(
                             dynamicColor = dynamicColor,
                             useAmoled = isAmoled,
-                            appFont = appFont,
+                            fontState = fontState,
                             colorStyle = colorStyle,
                             paletteId = paletteId,
                         ) {

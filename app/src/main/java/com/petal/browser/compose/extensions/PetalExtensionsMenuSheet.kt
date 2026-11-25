@@ -145,7 +145,6 @@ object PetalExtensionsMenuSheet {
                         val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
                         val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
                         val themeConfigStr = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
-                        val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                         val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                         val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                         val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
@@ -158,7 +157,7 @@ object PetalExtensionsMenuSheet {
                                 else -> isSystemDark
                             }
                         }
-                        val appFont = remember(fontName) { AppFont.fromName(fontName) }
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
                         val colorStyle = remember(styleName) {
                             try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                         }
@@ -169,7 +168,7 @@ object PetalExtensionsMenuSheet {
                                 darkTheme = darkTheme,
                                 dynamicColor = dynamicColor,
                                 useAmoled = isAmoled,
-                                appFont = appFont,
+                                fontState = fontState,
                                 colorStyle = colorStyle,
                                 paletteId = paletteId
                             ) {
