@@ -234,7 +234,7 @@ fun PetalPrivacyShieldBottomSheet(
     val scope = rememberCoroutineScope()
 
     val pageUrl = activeTab?.content?.url?.takeIf { it.isNotBlank() } ?: request.pageUrl
-    val isPrivate = activeTab?.content?.private == true || tabController?.isIncognito() == true
+    val isPrivate = activeTab?.content?.private == true || tabController?.isIncognito == true
 
     val dismissWithAnimation: () -> Unit = {
         scope.launch {
@@ -620,21 +620,23 @@ private fun PrivacyShieldContent(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
-                        verticalAlignment = Alignment.Baseline,
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
                             text = animatedPageBlocked.toString(),
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.alignByBaseline()
                         )
                         Text(
                             text = stringResource(R.string.shield_blocked_on_page),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.alignByBaseline()
                         )
                     }
 
