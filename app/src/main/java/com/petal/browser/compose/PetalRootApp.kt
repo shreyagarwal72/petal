@@ -1090,7 +1090,9 @@ fun PetalRootApp(
         ) {
             val navHomeClick = remember(viewModel, isIncognito) { { viewModel.goHome(isIncognito = isIncognito) } }
             val navAiClick = remember(viewModel) { { viewModel.openAiSheet() } }
-            val navNewTabClick = remember(viewModel, isIncognito) { { viewModel.openNewTab(selectTab = true, private = isIncognito) } }
+            val navNewTabClick = remember(viewModel, isIncognito) {
+                { viewModel.openNewTab(selectTab = true, private = isIncognito); Unit }
+            }
             val navTabsClick = remember(viewModel) { { viewModel.toggleTabSwitcher() } }
             val navMenuClick = remember(viewModel) { { viewModel.toggleMenu() } }
             val navSearchClick = remember(viewModel) { { viewModel.openOmnibox() } }

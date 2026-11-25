@@ -2141,7 +2141,7 @@ class PetalTabViewController private constructor(
         if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
             runCapture()
         } else {
-            previewMainHandler.post(runCapture)
+            previewMainHandler.post { runCapture() }
         }
     }
 

@@ -263,7 +263,7 @@ object PetalWebsiteLoadingSkeletonBridge {
                 val isAmoled = sp.getBoolean("sp_amoled", false)
                 val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
-                val fontState = rememberFontState()
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                 }

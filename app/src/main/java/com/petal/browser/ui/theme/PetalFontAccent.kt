@@ -54,7 +54,7 @@ data class PetalFontAccentColors(
         fun accessibleInk(
             accent: Color,
             onSurfaceFallback: Color,
-            vararg surfaces: Color
+            surfaces: List<Color>
         ): Color {
             if (accent == Color.Unspecified) return onSurfaceFallback
             val passes = surfaces.all { bg ->
@@ -68,10 +68,12 @@ data class PetalFontAccentColors(
             val safeAccent = accessibleInk(
                 accent = colorScheme.primary,
                 onSurfaceFallback = colorScheme.onSurface,
-                colorScheme.surface,
-                colorScheme.background,
-                colorScheme.surfaceContainerLow,
-                colorScheme.surfaceContainerHigh
+                surfaces = listOf(
+                    colorScheme.surface,
+                    colorScheme.background,
+                    colorScheme.surfaceContainerLow,
+                    colorScheme.surfaceContainerHigh
+                )
             )
             return PetalFontAccentColors(
                 mode = mode,

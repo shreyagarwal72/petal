@@ -226,7 +226,7 @@ object PetalUploadChooser {
                 val dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
                 val isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
 
-                val fontState = rememberFontState()
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                 }

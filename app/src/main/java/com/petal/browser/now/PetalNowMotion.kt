@@ -10,6 +10,7 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import com.petal.browser.ui.components.PetalSpring
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -92,6 +93,13 @@ internal class PetalNowMotion(
     fun float(baseMs: Int = BASE_MS): FiniteAnimationSpec<Float> = when {
         reduceMotion -> snap()
         expressive -> spatialSpring(visibilityThreshold = 0.001f)
+        else -> tween(durationMillis = scaledMs(baseMs), easing = PetalSpring.EmphasizedEasing)
+    }
+
+    /** Spatial slide spec for IntOffset container entry/exit animations. */
+    fun intOffset(baseMs: Int = BASE_MS): FiniteAnimationSpec<IntOffset> = when {
+        reduceMotion -> snap()
+        expressive -> spatialSpring(visibilityThreshold = IntOffset.VisibilityThreshold)
         else -> tween(durationMillis = scaledMs(baseMs), easing = PetalSpring.EmphasizedEasing)
     }
 

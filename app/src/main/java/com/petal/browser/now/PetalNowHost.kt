@@ -270,10 +270,10 @@ fun PetalNowHost(
             visible = shouldShow,
             enter = fadeIn(motion.fade(190)) +
                 scaleIn(initialScale = if (reduceMotion) 1f else 0.88f, animationSpec = motion.float(210)) +
-                slideInVertically(animationSpec = motion.float(210)) { -it / 3 },
+                slideInVertically(animationSpec = motion.intOffset(210)) { -it / 3 },
             exit = fadeOut(motion.fade(140)) +
                 scaleOut(targetScale = if (reduceMotion) 1f else 0.88f, animationSpec = motion.fade(140)) +
-                slideOutVertically(animationSpec = motion.fade(140)) { -it / 3 },
+                slideOutVertically(animationSpec = motion.intOffset(140)) { -it / 3 },
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()

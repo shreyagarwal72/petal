@@ -656,7 +656,7 @@ private fun captureGeckoViewPixels(gv: GeckoView?, callback: (Bitmap?) -> Unit) 
     if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
         doCapture()
     } else {
-        android.os.Handler(android.os.Looper.getMainLooper()).post(doCapture)
+        android.os.Handler(android.os.Looper.getMainLooper()).post { doCapture() }
     }
 }
 
