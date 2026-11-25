@@ -955,7 +955,7 @@
     <string name="ui_custom_doh_endpoint_url">Custom DoH Endpoint URL</string>
     <string name="ui_configure_android_system_private_dns">Configure Android System Private DNS</string>
     <string name="ui_miscellaneous">Miscellaneous</string>
-    <string name="ui_custom_tabs_external_apps_and">Custom tabs, external apps and camera tools</string>
+    <string name="ui_custom_tabs_external_apps_and">Custom tabs, external apps, offline game and quick tiles</string>
     <string name="ui_choose_again_next_time">Choose again next time</string>
     <string name="ui_custom_tabs_external_links">Custom Tabs &amp; External Links</string>
     <string name="ui_petal_custom_tabs">Petal Custom Tabs</string>

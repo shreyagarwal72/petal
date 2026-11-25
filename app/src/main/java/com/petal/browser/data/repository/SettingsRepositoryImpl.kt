@@ -205,10 +205,6 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_overflow_menu_blur_bg", true)
     }
 
-    override val liquidGlassWidgets: Flow<Boolean> = preferenceFlow("sp_liquid_glass_widgets") {
-        sp.getBoolean("sp_liquid_glass_widgets", true)
-    }
-
     override val liquidGlassBgMode: Flow<String> = preferenceFlow("sp_liquid_glass_bg_mode") {
         val mode = sp.getString("sp_liquid_glass_bg_mode", "BLOOM_GLASS") ?: "BLOOM_GLASS"
         if (mode == "STRIDE" || mode == "MORPHING") "BLOOM_GLASS" else mode
@@ -763,11 +759,6 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setLiquidGlassOverflowBlurBg(enabled: Boolean) {
         sp.edit().putBoolean("sp_overflow_menu_blur_bg", enabled).apply()
-    }
-
-    override suspend fun setLiquidGlassWidgets(enabled: Boolean) {
-        sp.edit().putBoolean("sp_liquid_glass_widgets", enabled).apply()
-        com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
     }
 
     override suspend fun setLiquidGlassBgMode(mode: String) {

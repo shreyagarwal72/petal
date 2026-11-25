@@ -95,7 +95,6 @@ fun AppearanceGlassPage(
     val liquidGlassContainments by viewModel.liquidGlassContainments.collectAsStateWithLifecycle()
     val liquidGlassBottomNav by viewModel.liquidGlassBottomNav.collectAsStateWithLifecycle()
     val liquidGlassAddressBar by viewModel.liquidGlassAddressBar.collectAsStateWithLifecycle()
-    val liquidGlassWidgets by viewModel.liquidGlassWidgets.collectAsStateWithLifecycle()
     val liquidGlassBgMode by viewModel.liquidGlassBgMode.collectAsStateWithLifecycle()
     val liquidGlassBgImageUri by viewModel.liquidGlassBgImageUri.collectAsStateWithLifecycle()
     val liquidGlassBgDim by viewModel.liquidGlassBgDim.collectAsStateWithLifecycle()
@@ -108,7 +107,6 @@ fun AppearanceGlassPage(
     val onLiquidGlassContainmentsChange: (Boolean) -> Unit = viewModel::setLiquidGlassContainments
     val onLiquidGlassBottomNavChange: (Boolean) -> Unit = viewModel::setLiquidGlassBottomNav
     val onLiquidGlassAddressBarChange: (Boolean) -> Unit = viewModel::setLiquidGlassAddressBar
-    val onLiquidGlassWidgetsChange: (Boolean) -> Unit = viewModel::setLiquidGlassWidgets
     val onLiquidGlassBgModeChange: (String) -> Unit = viewModel::setLiquidGlassBgMode
     val onLiquidGlassBgImageUriChange: (String) -> Unit = viewModel::setLiquidGlassBgImageUri
     val onLiquidGlassBgDimChange: (Float) -> Unit = viewModel::setLiquidGlassBgDim
@@ -558,19 +556,11 @@ fun AppearanceGlassPage(
                                     subtitle = "Docked bottom bar fades from sharp page to frosted glass (Android 13+)",
                                     icon = Icons.Rounded.BlurOn,
                                     checked = progressiveBlur,
-                                    position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                                    position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
                                     onCheckedChange = {
                                         progressiveBlur = it
                                         sp.edit().putBoolean("sp_liquid_glass_progressive_blur", it).apply()
                                     }
-                                )
-                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                    title = "Home Screen Widgets",
-                                    subtitle = "Hardware-blurred liquid glass and specular sheen on search widgets",
-                                    icon = Icons.Rounded.Widgets,
-                                    checked = liquidGlassWidgets,
-                                    position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
-                                    onCheckedChange = onLiquidGlassWidgetsChange
                                 )
                                 androidx.compose.material3.FilledTonalButton(
                                     onClick = {

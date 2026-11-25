@@ -62,4 +62,86 @@ class Stage5PrivacySettingsTest {
         assertNotNull(keySessionPartitioning)
         assertNotNull(keyClearOnExit)
     }
+
+    private fun resolveAppFile(relPath: String): File {
+        return File(relPath).takeIf { it.exists() }
+            ?: File("app/$relPath")
+    }
+
+    @Test
+    fun testAllSyncPreferencesSettersTrackedInSyncFingerprint() {
+        val repoFile = resolveAppFile("src/main/java/com/petal/browser/data/repository/SettingsRepositoryImpl.kt")
+        assertTrue("SettingsRepositoryImpl.kt must exist", repoFile.exists())
+
+        val repoLines = repoFile.readLines()
+        val setterKeys = linkedSetOf<String>()
+        val putKeyRegex = Regex("""\.put(?:Boolean|Int|Float|String|Long)\(\s*"([^"]+)"""")
+
+        var i = 0
+        while (i < repoLines.size) {
+            if (repoLines[i].trimStart().startsWith("override suspend fun set")) {
+                val block = StringBuilder()
+                var braceDepth = 0
+                var seenOpen = false
+                while (i < repoLines.size) {
+                    val line = repoLines[i]
+                    block.appendLine(line)
+                    for (ch in line) {
+                        if (ch == '{') {
+                            braceDepth++
+                            seenOpen = true
+                        } else if (ch == '}') {
+                            braceDepth--
+                        }
+                    }
+                    i++
+                    if (seenOpen && braceDepth <= 0) break
+                }
+                val body = block.toString()
+                if (body.contains("syncPreferences(")) {
+                    putKeyRegex.findAll(body).forEach { match ->
+                        setterKeys += match.groupValues[1]
+                    }
+                }
+            } else {
+                i++
+            }
+        }
+
+        assertTrue("Expected SettingsRepositoryImpl setters calling syncPreferences", setterKeys.isNotEmpty())
+        val fingerprintKeys = com.petal.browser.engine.gecko.PetalGeckoRuntime.SYNC_FINGERPRINT_KEYS.toSet()
+
+        val requiredToggleKeys = listOf(
+            "sp_force_enable_zoom",
+            "sp_zoom_level_scale",
+            "sp_webrtc_protection",
+            "sp_canvas_letterboxing",
+            "sp_bounce_tracking",
+            "sp_drm"
+        )
+        for (req in requiredToggleKeys) {
+            assertTrue("Expected $req in SYNC_FINGERPRINT_KEYS", req in fingerprintKeys)
+        }
+
+        val missing = setterKeys.filterNot { it in fingerprintKeys }
+        assertTrue(
+            "Keys written by syncPreferences setters must appear in syncFingerprint: missing=$missing",
+            missing.isEmpty()
+        )
+    }
+
+    @Test
+    fun testCategorySubtitlesAndSearchIndexConsistency() {
+        assertEquals(
+            "Video player, media sniffer & picture-in-picture",
+            com.petal.browser.compose.settings.SettingsCategory.MEDIA.subtitle
+        )
+        assertEquals(
+            "Custom tabs, external apps, offline game and quick tiles",
+            com.petal.browser.compose.settings.SettingsCategory.MISCELLANEOUS.subtitle
+        )
+        val searchItems = com.petal.browser.compose.settings.PetalSettingsSearchIndex.allItems
+        assertTrue(searchItems.any { it.id == "misc_offline_game" && it.category == com.petal.browser.compose.settings.SettingsCategory.MISCELLANEOUS })
+        assertTrue(searchItems.any { it.id == "misc_quick_settings" && it.category == com.petal.browser.compose.settings.SettingsCategory.MISCELLANEOUS })
+    }
 }

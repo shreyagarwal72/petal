@@ -209,6 +209,8 @@ object PetalPrivacyHardening {
         val webauthn = sp.getBoolean("sp_webauthn_enabled", true)
         val dntGpc = sp.getBoolean("sp_dnt_gpc", true)
         val fpProtect = sp.getBoolean("sp_fingerprint_protection", false)
+        val canvasLetterboxing = isLetterboxingEnabled(sp)
+        val bounceTracking = sp.getBoolean("sp_bounce_tracking", false)
         sb.appendLine("""
             // User privacy toggles
             user_pref("network.http.referer.XOriginTrimmingPolicy", ${if (trimRef) 2 else 0});
@@ -217,6 +219,11 @@ object PetalPrivacyHardening {
             user_pref("privacy.globalprivacycontrol.enabled", $dntGpc);
             user_pref("privacy.globalprivacycontrol.functionality.enabled", $dntGpc);
             user_pref("privacy.fingerprintingProtection", $fpProtect);
+            user_pref("media.peerconnection.ice.default_address_only", $webrtcProtect);
+            user_pref("media.peerconnection.ice.proxy_only_if_behind_proxy", $webrtcProtect);
+            user_pref("media.peerconnection.ice.no_host", ${webrtcProtect && profile == PrivacyProfile.STRICT});
+            user_pref("privacy.resistFingerprinting.letterboxing", $canvasLetterboxing);
+            user_pref("privacy.bounceTrackingProtection.mode", ${if (bounceTracking) 1 else 0});
         """.trimIndent())
 
         // 10. Native Gecko ContentClassifierService Spike (GeckoView 159 on Android)

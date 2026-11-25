@@ -391,13 +391,6 @@ object PetalSettingsSearchIndex {
 
         // ==================== MISCELLANEOUS ====================
         SettingsSearchItem(
-            id = "scanner_settings",
-            title = "QR & Barcode Scanner",
-            subtitle = "Configure auto-open, haptic feedback, audio beep, and link safety inspection",
-            category = SettingsCategory.MISCELLANEOUS,
-            keywords = listOf("qr scanner", "barcode", "scanner", "camera scan", "link safety", "haptics")
-        ),
-        SettingsSearchItem(
             id = "misc_custom_tabs",
             title = "Petal Custom Tabs",
             subtitle = "Open links from external apps in a fast, lightweight Custom Tab overlay with tracking protection",
@@ -410,6 +403,20 @@ object PetalSettingsSearchIndex {
             subtitle = "Automatically launch native installed apps for supported URLs (YouTube, Maps, Twitter, Reddit)",
             category = SettingsCategory.MISCELLANEOUS,
             keywords = listOf("external apps", "open in apps", "native apps", "youtube app", "deep links", "intent")
+        ),
+        SettingsSearchItem(
+            id = "misc_offline_game",
+            title = "Petal Hop Offline Game",
+            subtitle = "Play the offline runner game whenever pages cannot load without internet connectivity",
+            category = SettingsCategory.MISCELLANEOUS,
+            keywords = listOf("offline game", "petal hop", "mini game", "offline", "no internet")
+        ),
+        SettingsSearchItem(
+            id = "misc_quick_settings",
+            title = "Quick Settings Tiles",
+            subtitle = "Add Quick Settings tiles to Android's status bar shade for instant browser tools",
+            category = SettingsCategory.MISCELLANEOUS,
+            keywords = listOf("quick tiles", "quick settings", "tiles", "status bar", "shade")
         ),
         SettingsSearchItem(
             id = "misc_check_updates_launch",

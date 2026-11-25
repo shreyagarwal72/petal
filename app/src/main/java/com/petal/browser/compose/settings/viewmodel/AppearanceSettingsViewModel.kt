@@ -136,9 +136,6 @@ class AppearanceSettingsViewModel @Inject constructor(
     val liquidGlassOverflowBlurBg: StateFlow<Boolean> = settingsRepository.liquidGlassOverflowBlurBg
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val liquidGlassWidgets: StateFlow<Boolean> = settingsRepository.liquidGlassWidgets
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
     val liquidGlassBgMode: StateFlow<String> = settingsRepository.liquidGlassBgMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "STRIDE")
 
@@ -349,10 +346,6 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setLiquidGlassOverflowBlurBg(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setLiquidGlassOverflowBlurBg(enabled)
-    }
-
-    fun setLiquidGlassWidgets(enabled: Boolean) = viewModelScope.launch {
-        settingsRepository.setLiquidGlassWidgets(enabled)
     }
 
     fun setLiquidGlassBgMode(mode: String) = viewModelScope.launch {

@@ -26,6 +26,26 @@ object PetalGeckoRuntime {
     const val PREF_GECKO_SCROLL_TUNING = "sp_gecko_scroll_tuning"
     const val PREF_GECKO_RENDERING_TUNING = "sp_gecko_rendering_tuning"
 
+    internal val SYNC_FINGERPRINT_KEYS = listOf(
+        "sp_javascript", "profileStandard_javascript", "sp_font_size_scale",
+        "sp_force_enable_zoom", "sp_zoom_level_scale",
+        "sp_ad_block", "profileStandard_adBlock", "sp_etp_strict",
+        "sp_block_third_party_cookies", "profileStandard_cookiesThirdParty",
+        "sp_total_cookie_protection", "sp_cookies_isolate", "sp_session_partitioning",
+        "sp_login_autofill_enabled", "sp_private_dns_mode", "sp_custom_doh_url",
+        "sp_private_dns_custom_url", "sp_nextdns_profile_id", "sp_privacy_profile", "sp_security_slider",
+        "sp_https_only", "profileStandard_httpsOnly", "sp_theme_config", "sp_force_dark_mode",
+        "sp_trim_referrers", "sp_webauthn_enabled",
+        "sp_fingerprint_protection", "profileStandard_fingerPrintProtection",
+        "sp_webrtc_protection", "profileStandard_webrtcProtection",
+        "sp_dnt_gpc", "profileStandard_dnt",
+        "sp_cookie_banner_auto_reject", "petal_builtin_consent_manager",
+        "sp_block_popups", "profileStandard_javascriptPopUp", "sp_open_redirects_in_background",
+        "sp_webgl_enabled", "sp_webgl_disabled",
+        "sp_canvas_letterboxing", "sp_bounce_tracking", "sp_drm",
+        PREF_GECKO_SCROLL_TUNING, PREF_GECKO_RENDERING_TUNING
+    )
+
     @Volatile
     private var runtime: GeckoRuntime? = null
 
@@ -317,18 +337,8 @@ object PetalGeckoRuntime {
     private var lastSyncFingerprint: String? = null
 
     private fun syncFingerprint(sp: SharedPreferences): String {
-        val keys = listOf(
-            "sp_javascript", "profileStandard_javascript", "sp_font_size_scale", "sp_ad_block",
-            "profileStandard_adBlock", "sp_etp_strict", "sp_block_third_party_cookies",
-            "sp_total_cookie_protection", "sp_cookies_isolate", "sp_session_partitioning",
-            "sp_login_autofill_enabled", "sp_private_dns_mode", "sp_custom_doh_url",
-            "sp_private_dns_custom_url", "sp_nextdns_profile_id", "sp_privacy_profile", "sp_security_slider",
-            "sp_https_only", "profileStandard_httpsOnly", "sp_theme_config", "sp_force_dark_mode",
-            "sp_trim_referrers", "sp_webauthn_enabled", "sp_fingerprint_protection", "sp_dnt_gpc",
-            "sp_cookie_banner_auto_reject", PREF_GECKO_SCROLL_TUNING, PREF_GECKO_RENDERING_TUNING
-        )
         val sb = StringBuilder()
-        for (k in keys) sb.append(k).append('=').append(sp.all[k]).append(';')
+        for (k in SYNC_FINGERPRINT_KEYS) sb.append(k).append('=').append(sp.all[k]).append(';')
         sb.append("profile=").append(com.petal.browser.privacy.PetalPrivacyHardening.getPrivacyProfile(sp))
         sb.append(";sec=").append(com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp))
         sb.append(";doh=").append(com.petal.browser.unit.PetalPrivateDnsHelper.getDnsEndpointUrl(sp))
@@ -512,6 +522,21 @@ object PetalGeckoRuntime {
 
         val fp = sp.getBoolean("sp_fingerprint_protection", false)
         setGeckoPref("privacy.fingerprintingProtection", fp)
+
+        val profile = com.petal.browser.privacy.PetalPrivacyHardening.getPrivacyProfile(sp)
+        val webrtcProtect = com.petal.browser.privacy.PetalPrivacyHardening.isWebRtcLeakProtectionEnabled(sp)
+        setGeckoPref("media.peerconnection.ice.default_address_only", webrtcProtect)
+        setGeckoPref("media.peerconnection.ice.proxy_only_if_behind_proxy", webrtcProtect)
+        setGeckoPref(
+            "media.peerconnection.ice.no_host",
+            webrtcProtect && profile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT
+        )
+
+        val canvasLetterboxing = com.petal.browser.privacy.PetalPrivacyHardening.isLetterboxingEnabled(sp)
+        setGeckoPref("privacy.resistFingerprinting.letterboxing", canvasLetterboxing)
+
+        val bounceTracking = sp.getBoolean("sp_bounce_tracking", false)
+        setGeckoPref("privacy.bounceTrackingProtection.mode", if (bounceTracking) 1 else 0)
 
         val banner = sp.getBoolean("sp_cookie_banner_auto_reject", sp.getBoolean("petal_builtin_consent_manager", true))
         setGeckoPref("cookiebanners.service.mode", if (banner) 2 else 0)
