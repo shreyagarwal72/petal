@@ -401,7 +401,6 @@ fun PetalRootApp(
     val overlayPageSnapshotState by androidx.compose.runtime.rememberUpdatedState(overlayPageSnapshot)
     val isHomeState by androidx.compose.runtime.rememberUpdatedState(isHome)
     val webViewState by androidx.compose.runtime.rememberUpdatedState(activeWebEngineView)
-    val blurOnState by androidx.compose.runtime.rememberUpdatedState(predictiveBlurEnabled)
 
     /** True when the page behind can take a live RenderEffect blur (Compose home or a TextureView-backed Gecko). */
     fun liveBlurCapable(): Boolean {
