@@ -1979,6 +1979,13 @@ fun PetalRootApp(
                     }
                 )
             }
+
+        if (com.petal.browser.feedback.PetalFeedbackManager.isPromptSheetOpen.value) {
+            com.petal.browser.feedback.PetalFeedbackSheet(
+                onDismiss = { com.petal.browser.feedback.PetalFeedbackManager.dismissPromptSheet() },
+                isAutoPrompt = com.petal.browser.feedback.PetalFeedbackManager.isAutoPromptSession.value
+            )
+        }
     }
 }
 

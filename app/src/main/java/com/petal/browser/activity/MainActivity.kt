@@ -200,6 +200,9 @@ class MainActivity : FragmentActivity(), BrowserController {
             }
         }
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) {
+            com.petal.browser.feedback.PetalFeedbackManager.recordLaunch(sp)
+        }
         com.petal.browser.browser.PetalTabMetadataStore.preload(this)
         // Keep the next cold-start splash in sync with the selected app icon (Android 13+; no-op elsewhere).
         com.petal.browser.appicon.PetalAppIcons.syncSplashTheme(this)
@@ -261,6 +264,21 @@ class MainActivity : FragmentActivity(), BrowserController {
             handleIncomingIntent(intent)
             com.petal.browser.unit.PetalUpdateUtils.checkForUpdates(this, isLaunchCheck = true)
         }, 250L)
+
+        // Check Play Store + GitHub stars engagement cadence only after splash, ripple, welcome,
+        // and external link checks settle.
+        window.decorView.postDelayed({
+            if (isFinishing || isDestroyed) return@postDelayed
+            val splashActiveNow = com.petal.browser.compose.splash.PetalSplashState.splashActive.value
+            val welcomeShown = sp.getBoolean("sp_welcome_shown", false)
+            val appLockEnabled = sp.getBoolean("sp_app_lock_enabled", false)
+            val isExternalViewIntent = intent?.action == Intent.ACTION_VIEW
+            if (!splashActiveNow && welcomeShown && !appLockEnabled && !isExternalViewIntent &&
+                com.petal.browser.feedback.PetalFeedbackManager.shouldAutoPrompt(sp)
+            ) {
+                com.petal.browser.feedback.PetalFeedbackManager.openPromptSheet(autoPrompt = true)
+            }
+        }, 2600L)
     }
 
     override fun onStop() {

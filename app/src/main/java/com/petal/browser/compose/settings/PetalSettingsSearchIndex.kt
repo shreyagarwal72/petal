@@ -564,6 +564,27 @@ object PetalSettingsSearchIndex {
             category = SettingsCategory.ABOUT,
             keywords = listOf("developer", "github", "source code", "open source", "repository", "issues")
         ),
+        SettingsSearchItem(
+            id = "about_rate_play_store",
+            title = "Rate on Google Play Store",
+            subtitle = "Rate Petal Browser with stars on Google Play",
+            category = SettingsCategory.ABOUT,
+            keywords = listOf("rate", "play store", "review", "stars", "rating", "google play")
+        ),
+        SettingsSearchItem(
+            id = "about_star_github",
+            title = "Star on GitHub",
+            subtitle = "Support Petal Browser by starring shreyagarwal72/petal on GitHub",
+            category = SettingsCategory.ABOUT,
+            keywords = listOf("star", "github star", "stargazers", "shreyagarwal72", "favorite")
+        ),
+        SettingsSearchItem(
+            id = "about_send_feedback",
+            title = "Send Feedback & Bug Report",
+            subtitle = "Share star feedback or send device diagnostics directly to the developer",
+            category = SettingsCategory.ABOUT,
+            keywords = listOf("feedback", "bug report", "contact", "email", "diagnostics")
+        ),
 
         // ==================== MEDIA & SYNC ====================
         SettingsSearchItem(

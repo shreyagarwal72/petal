@@ -41,7 +41,8 @@ import com.petal.browser.ui.theme.toShape
 @Composable
 fun PetalFuelTheCodeSheet(
     onDismiss: () -> Unit,
-    onMessage: (String) -> Unit = {}
+    onMessage: (String) -> Unit = {},
+    onOpenFeedbackStars: (() -> Unit)? = null
 ) {
     val ctx = LocalContext.current
     val cs = MaterialTheme.colorScheme
@@ -184,6 +185,28 @@ fun PetalFuelTheCodeSheet(
                         text = "Support on Telegram",
                         style = PetalText.button
                     )
+                }
+            }
+
+            // Secondary Action: Rate on Play Store & Star on GitHub
+            OutlinedButton(
+                onClick = {
+                    if (onOpenFeedbackStars != null) {
+                        onOpenFeedbackStars()
+                    } else {
+                        onDismiss()
+                        com.petal.browser.feedback.PetalFeedbackManager.openPromptSheet(autoPrompt = false)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(26.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(Icons.Rounded.Favorite, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Text("Rate on Play Store & Star on GitHub")
                 }
             }
 

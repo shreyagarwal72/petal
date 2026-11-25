@@ -170,8 +170,20 @@ fun PetalAboutDeveloperScreen(
     val haptics = remember { PetalHapticEngine.getInstance(context) }
 
     var showFuelSheet by remember { mutableStateOf(false) }
+    var showFeedbackSheet by remember { mutableStateOf(false) }
     var showBuildInfoDialog by remember { mutableStateOf(false) }
     var showNoticesDialog by remember { mutableStateOf(false) }
+
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    var githubStarsCount by remember {
+        mutableStateOf(com.petal.browser.feedback.PetalFeedbackManager.cachedGitHubStars(sp))
+    }
+    LaunchedEffect(Unit) {
+        val fetched = com.petal.browser.feedback.PetalFeedbackManager.fetchGitHubStarsIfNeeded(sp)
+        if (fetched != null) {
+            githubStarsCount = fetched
+        }
+    }
 
     val pInfo = remember {
         try {
@@ -258,51 +270,18 @@ fun PetalAboutDeveloperScreen(
     }
 
     fun rateApp() {
-        try {
-            val marketIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${context.packageName}")).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(marketIntent)
-        } catch (_: Exception) {
-            openUrl("https://github.com/shreyagarwal72/petal/releases")
-        }
+        showFeedbackSheet = true
     }
 
     fun sendFeedback() {
-        val subject = "Petal Browser Feedback [v$verName]"
-        val body = """
-            Hi Vanshu,
-
-            [Please describe your feedback or issue here]
-
-            ────────────────────────────────────────
-            Diagnostic Info:
-            App Version: $verName ($verCode)
-            Build Type: ${com.petal.browser.BuildConfig.BUILD_TYPE}
-            Web Engine: Mozilla GeckoView 161.0 Beta
-            Android OS: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})
-            Device: ${Build.MANUFACTURER} ${Build.MODEL}
-            ────────────────────────────────────────
-        """.trimIndent()
-        val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-            data = Uri.parse("mailto:hereyourchampion@gmail.com")
-            putExtra(Intent.EXTRA_SUBJECT, subject)
-            putExtra(Intent.EXTRA_TEXT, body)
-        }
-        try {
-            context.startActivity(Intent.createChooser(emailIntent, context.getString(R.string.about_feedback_bug_report)))
-        } catch (_: ActivityNotFoundException) {
-            val issueUrl = "https://github.com/shreyagarwal72/petal/issues/new?title=" +
-                Uri.encode("Feedback: v$verName") +
-                "&body=" + Uri.encode(body)
-            openUrl(issueUrl)
-        }
+        com.petal.browser.feedback.PetalFeedbackManager.sendFeedbackReport(context)
     }
 
-    val hasSubOverlay = showFuelSheet || showBuildInfoDialog || showNoticesDialog
+    val hasSubOverlay = showFuelSheet || showFeedbackSheet || showBuildInfoDialog || showNoticesDialog
     if (hasSubOverlay) {
         BackHandler(enabled = true) {
             showFuelSheet = false
+            showFeedbackSheet = false
             showBuildInfoDialog = false
             showNoticesDialog = false
         }
@@ -473,7 +452,8 @@ fun PetalAboutDeveloperScreen(
                             ) {
                                 ProjectSourceGroup(
                                     onOpenUrl = { openUrl(it) },
-                                    onFeedbackClick = { sendFeedback() }
+                                    onFeedbackClick = { sendFeedback() },
+                                    githubStarsCount = githubStarsCount
                                 )
                             }
                         }
@@ -570,6 +550,20 @@ fun PetalAboutDeveloperScreen(
     if (showFuelSheet) {
         com.petal.browser.account.progress.PetalFuelTheCodeSheet(
             onDismiss = { showFuelSheet = false },
+            onMessage = { msg ->
+                coroutineScope.launch { snackbarHostState.showSnackbar(msg) }
+            },
+            onOpenFeedbackStars = {
+                showFuelSheet = false
+                showFeedbackSheet = true
+            }
+        )
+    }
+
+    if (showFeedbackSheet) {
+        com.petal.browser.feedback.PetalFeedbackSheet(
+            onDismiss = { showFeedbackSheet = false },
+            isAutoPrompt = false,
             onMessage = { msg ->
                 coroutineScope.launch { snackbarHostState.showSnackbar(msg) }
             }
@@ -1005,7 +999,8 @@ fun AppInfoGroup(
 @Composable
 fun ProjectSourceGroup(
     onOpenUrl: (String) -> Unit,
-    onFeedbackClick: () -> Unit = {}
+    onFeedbackClick: () -> Unit = {},
+    githubStarsCount: Int? = null
 ) {
     PetalGroup(rowCount = 5, modifier = Modifier.fillMaxWidth()) { index, position ->
         when (index) {
@@ -1026,7 +1021,11 @@ fun ProjectSourceGroup(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "shreyagarwal72/petal • Branch main",
+                            text = if (githubStarsCount != null) {
+                                "shreyagarwal72/petal • ★ ${java.text.NumberFormat.getInstance().format(githubStarsCount)} stars"
+                            } else {
+                                "shreyagarwal72/petal • Branch main"
+                            },
                             style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1510,7 +1509,7 @@ fun CommunityEcosystemGroup(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = stringResource(R.string.about_rate_app_desc),
+                            text = "Rate on Google Play or star us on GitHub",
                             style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
