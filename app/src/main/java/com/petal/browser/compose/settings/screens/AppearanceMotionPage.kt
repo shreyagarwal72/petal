@@ -83,6 +83,7 @@ fun AppearanceMotionPage(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     targetHighlightItemId: String? = null,
+    onNavigateToAppIcon: () -> Unit = {},
     viewModel: AppearanceSettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -90,14 +91,12 @@ fun AppearanceMotionPage(
     val bgShapeChangeMode by viewModel.bgShapeChangeMode.collectAsStateWithLifecycle()
     val bgShapeRotationMin by viewModel.bgShapeRotationMin.collectAsStateWithLifecycle()
     val highRefreshRate by viewModel.highRefreshRate.collectAsStateWithLifecycle()
-    val launchRippleEnabled by viewModel.launchRippleEnabled.collectAsStateWithLifecycle()
     val motionBlurEnabled by viewModel.motionBlurEnabled.collectAsStateWithLifecycle()
     val motionBlurScale by viewModel.motionBlurScale.collectAsStateWithLifecycle()
     val onExpressiveBgShapesChange: (Boolean) -> Unit = viewModel::setExpressiveBgShapes
     val onBgShapeChangeModeChange: (String) -> Unit = viewModel::setBgShapeChangeMode
     val onBgShapeRotationMinChange: (Int) -> Unit = viewModel::setBgShapeRotationMin
     val onHighRefreshRateChange: (Boolean) -> Unit = viewModel::setHighRefreshRate
-    val onLaunchRippleEnabledChange: (Boolean) -> Unit = viewModel::setLaunchRippleEnabled
     val onMotionBlurEnabledChange: (Boolean) -> Unit = viewModel::setMotionBlurEnabled
     val onMotionBlurScaleChange: (Float) -> Unit = viewModel::setMotionBlurScale
 
@@ -110,7 +109,7 @@ fun AppearanceMotionPage(
 
     AppearanceSubPageScaffold(
         title = "Motion & Performance",
-        subtitle = "Refresh rate, launch animation, motion blur & ambient shapes",
+        subtitle = "Refresh rate, motion blur & ambient shapes",
         pageSeed = "appearance_motion",
         onBack = onBack,
         modifier = modifier,
@@ -163,11 +162,6 @@ fun AppearanceMotionPage(
             targetHighlightId = targetHighlightItemId,
             onInfoClick = { showMotionBlurExplainer = true }
         ) {
-            var appLaunchAnim by remember {
-                mutableStateOf(PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_app_launch_animation", true))
-            }
-            var showSplashPreview by remember { mutableStateOf(false) }
-
             com.petal.browser.ui.containment.PetalSettingsToggleRow(
                 title = stringResource(R.string.ui_high_refresh_rate_120hz),
                 subtitle = stringResource(R.string.ui_force_120hz_144hz_peak_display, maxDetectedRefreshRate.toInt()),
@@ -187,73 +181,20 @@ fun AppearanceMotionPage(
             )
 
             com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                title = "Quantum Web Launch Animation",
-                subtitle = "Procedural particle stream of web icons during app startup",
-                icon = Icons.Rounded.AutoAwesome,
-                checked = appLaunchAnim,
-                onCheckedChange = { checked ->
-                    appLaunchAnim = checked
-                    PreferenceManager.getDefaultSharedPreferences(context).edit()
-                        .putBoolean("sp_app_launch_animation", checked)
-                        .apply()
-                }
-            )
-
-            if (appLaunchAnim) {
-                Spacer(Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    FilledTonalButton(
-                        onClick = { showSplashPreview = true },
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-                    ) {
-                        Icon(
-                            Icons.Rounded.PlayArrow,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text("Preview Animation")
-                    }
-                }
-            }
-
-            if (showSplashPreview) {
-                androidx.compose.ui.window.Dialog(
-                    onDismissRequest = { showSplashPreview = false },
-                    properties = androidx.compose.ui.window.DialogProperties(
-                        usePlatformDefaultWidth = false,
-                        decorFitsSystemWindows = false
-                    )
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        com.petal.browser.compose.splash.PetalSplashScreen(
-                            onSplashComplete = { showSplashPreview = false },
-                            durationMs = 2200L
-                        )
-                    }
-                }
-            }
-
-            com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                title = stringResource(R.string.ui_app_launch_ripple_effect),
-                subtitle = stringResource(R.string.ui_display_fluid_liquid_displacement_ripp),
-                icon = Icons.Rounded.WaterDrop,
-                checked = launchRippleEnabled,
-                position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
-                onCheckedChange = onLaunchRippleEnabledChange
-            )
-
-            com.petal.browser.ui.containment.PetalSettingsToggleRow(
                 title = stringResource(R.string.ui_motion_blur),
                 subtitle = stringResource(R.string.ui_motion_blur_subtitle),
                 iconRes = com.petal.browser.R.drawable.rounded_settings_motion_mode_24,
                 checked = motionBlurEnabled,
-                position = if (motionBlurEnabled) com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE else com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                 onCheckedChange = onMotionBlurEnabledChange
+            )
+
+            com.petal.browser.ui.containment.PetalGroupNavigationRow(
+                title = "App Icon & Intro",
+                subtitle = "Launch style & launch ripple moved to App Icon & Intro",
+                position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
+                onClick = onNavigateToAppIcon,
+                leadingIcon = { Icon(Icons.Rounded.AutoAwesome, contentDescription = null) }
             )
 
             AnimatedVisibility(

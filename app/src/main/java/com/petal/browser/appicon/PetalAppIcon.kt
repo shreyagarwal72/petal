@@ -89,11 +89,85 @@ object PetalAppIcons {
 
     private const val PREF_SPLASH_SYNCED = "sp_app_icon_splash_synced"
     private const val PREF_SPLASH_VERSION = "sp_app_icon_splash_version"
+    const val PREF_PENDING_APP_ICON = "sp_pending_app_icon"
     /** Bump to force every install to re-apply the splash theme once after an update. */
     private const val SPLASH_VERSION = 2
 
     private fun component(context: Context, icon: PetalAppIcon) =
         ComponentName(context.packageName, icon.aliasName)
+
+    @JvmStatic
+    fun pending(sp: android.content.SharedPreferences): PetalAppIcon? {
+        val pendingId = sp.getString(PREF_PENDING_APP_ICON, null)?.takeIf { it.isNotBlank() } ?: return null
+        return PetalAppIcon.fromId(pendingId)
+    }
+
+    @JvmStatic
+    fun pending(context: Context): PetalAppIcon? =
+        pending(PreferenceManager.getDefaultSharedPreferences(context))
+
+    @JvmStatic
+    fun queueIconChange(
+        sp: android.content.SharedPreferences,
+        activeIcon: PetalAppIcon,
+        selectedIcon: PetalAppIcon
+    ): Boolean {
+        return if (selectedIcon == activeIcon) {
+            sp.edit().remove(PREF_PENDING_APP_ICON).apply()
+            false
+        } else {
+            sp.edit().putString(PREF_PENDING_APP_ICON, selectedIcon.id).apply()
+            true
+        }
+    }
+
+    @JvmStatic
+    fun queueIconChange(context: Context, selectedIcon: PetalAppIcon): Boolean {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        return queueIconChange(sp, current(context), selectedIcon)
+    }
+
+    /**
+     * Pure/injectable pending-icon applier used on lifecycle stop/backgrounding and in unit tests.
+     * Clears [PREF_PENDING_APP_ICON] once the alias matches or [applyAlias] succeeds.
+     */
+    @JvmStatic
+    fun applyPending(
+        sp: android.content.SharedPreferences,
+        activeIcon: PetalAppIcon,
+        applyAlias: (PetalAppIcon) -> Boolean,
+        onApplied: ((PetalAppIcon) -> Unit)? = null
+    ): PetalAppIcon? {
+        val target = pending(sp) ?: return null
+        if (target == activeIcon) {
+            sp.edit().remove(PREF_PENDING_APP_ICON).apply()
+            onApplied?.invoke(target)
+            return null
+        }
+        if (!applyAlias(target)) return null
+        sp.edit().remove(PREF_PENDING_APP_ICON).apply()
+        onApplied?.invoke(target)
+        return target
+    }
+
+    /**
+     * Applies any queued [PREF_PENDING_APP_ICON] alias swap with DONT_KILL_APP and updates the
+     * system splash theme for the new icon. Safe to call repeatedly from ProcessLifecycleOwner ON_STOP
+     * and MainActivity.onStop.
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun applyPendingIfNeeded(context: Context, activity: Activity? = findActivity(context)): PetalAppIcon? {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        return applyPending(
+            sp = sp,
+            activeIcon = current(context),
+            applyAlias = { icon -> apply(context, icon) },
+            onApplied = { icon ->
+                activity?.let { syncSplashTheme(it, icon, force = true) }
+            }
+        )
+    }
 
     /**
      * The icon that is currently enabled. PackageManager is the source of truth (not a preference), so

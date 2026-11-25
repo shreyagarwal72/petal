@@ -37,16 +37,23 @@ object PetalSettingsSearchIndex {
         SettingsSearchItem(
             id = "app_icon_choose",
             title = "App Icon",
-            subtitle = "Choose the Petal launcher icon: Bloom, Classic, Tab bloom, Petal P, Lens or Shield",
+            subtitle = "Choose the Petal launcher icon (applied when closing Petal)",
             category = SettingsCategory.APP_ICON,
-            keywords = listOf("icon", "app icon", "launcher", "logo", "alias", "bloom", "swirl", "classic", "shield", "lens", "home screen", "themed icon", "material you")
+            keywords = listOf("icon", "app icon", "launcher", "logo", "alias", "bloom", "swirl", "classic", "shield", "lens", "globe", "pointer", "window", "home screen", "themed icon", "material you")
         ),
         SettingsSearchItem(
             id = "app_icon_intro",
-            title = "Launch Animation Preview",
-            subtitle = "Preview the intro animation of the selected app icon",
+            title = "Launch Style (App Intro & Quantum)",
+            subtitle = "Choose App Intro or Quantum Web Animation and preview startup splashes",
             category = SettingsCategory.APP_ICON,
-            keywords = listOf("intro", "splash", "launch", "animation", "startup", "icon")
+            keywords = listOf("intro", "splash", "launch", "launch style", "quantum", "quantum web animation", "animation", "startup", "launch animation", "icon")
+        ),
+        SettingsSearchItem(
+            id = "app_icon_ripple",
+            title = "Launch Ripple Effect",
+            subtitle = "Fluid liquid displacement ripple on startup and when switching app icons",
+            category = SettingsCategory.APP_ICON,
+            keywords = listOf("ripple", "launch ripple", "liquid ripple", "displacement", "startup effect")
         ),
         // ==================== API & INTEGRATIONS ====================
         SettingsSearchItem(

@@ -89,7 +89,7 @@ enum class AppearanceSubPage(val title: String, val subtitle: String, val icon: 
     TYPOGRAPHY("Typography", "Fonts, Petal Signature axes & custom font", Icons.Rounded.FontDownload),
     GLASS_BLUR("Glass & Blur", "Liquid Glass surfaces and background blur", Icons.Rounded.BlurOn),
     LAYOUT_SHAPES("Layout & Shapes", "Tab bar, controls, shapes & text selection", Icons.Rounded.Category),
-    MOTION_PERFORMANCE("Motion & Performance", "Refresh rate, launch animation, blur & ambient shapes", Icons.Rounded.Speed),
+    MOTION_PERFORMANCE("Motion & Performance", "Refresh rate, motion blur & ambient shapes", Icons.Rounded.Speed),
     WIDGETS("Home Screen Widgets", "Customize each Petal widget", Icons.Rounded.Widgets),
     LANGUAGE("App Language", "Display language and website language", Icons.Rounded.Translate);
 
@@ -110,7 +110,7 @@ enum class AppearanceSubPage(val title: String, val subtitle: String, val icon: 
             return when {
                 isAdvancedColorsId(k) -> THEME_COLORS
                 k.contains("motion") || k.contains("refresh") || k.contains("morph") ||
-                    k.contains("expressive_shapes") || k.contains("launch") || k.contains("ripple") -> MOTION_PERFORMANCE
+                    k.contains("expressive_shapes") -> MOTION_PERFORMANCE
                 k.contains("glass") || k.contains("blur") -> GLASS_BLUR
                 k.contains("layout") || k.contains("containment") || k.contains("button_shape") ||
                     k.contains("selection_toolbar") || k.contains("tab_bar") -> LAYOUT_SHAPES
@@ -201,7 +201,8 @@ fun AppearanceSettingsScreen(
                         )
                         AppearanceSubPage.MOTION_PERFORMANCE -> AppearanceMotionPage(
                             onBack = { subPage = null },
-                            targetHighlightItemId = targetHighlightItemId
+                            targetHighlightItemId = targetHighlightItemId,
+                            onNavigateToAppIcon = onNavigateToAppIcon
                         )
                         AppearanceSubPage.WIDGETS -> AppearanceWidgetsPage(
                             onBack = { subPage = null },

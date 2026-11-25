@@ -153,6 +153,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getString("sp_custom_font_name", "No font file selected") ?: "No font file selected"
     }
 
+    override val launchStyle: Flow<String> = preferenceFlow(com.petal.browser.compose.splash.PetalSplashState.PREF_LAUNCH_STYLE) {
+        com.petal.browser.compose.splash.PetalSplashState.resolveLaunchStyle(sp)
+    }
+
     override val launchRippleEnabled: Flow<Boolean> = preferenceFlow("sp_launch_ripple_enabled") {
         sp.getBoolean("sp_launch_ripple_enabled", true)
     }
@@ -702,6 +706,11 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setCustomFontName(name: String) {
         sp.edit().putString("sp_custom_font_name", name).apply()
+    }
+
+    override suspend fun setLaunchStyle(style: String) {
+        val normalized = com.petal.browser.compose.splash.PetalSplashState.normalizeLaunchStyle(style)
+        sp.edit().putString(com.petal.browser.compose.splash.PetalSplashState.PREF_LAUNCH_STYLE, normalized).apply()
     }
 
     override suspend fun setLaunchRippleEnabled(enabled: Boolean) {

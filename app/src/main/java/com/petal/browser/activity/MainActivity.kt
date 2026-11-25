@@ -148,27 +148,55 @@ class MainActivity : FragmentActivity(), BrowserController {
         fun shouldSkipLaunchSplash(intent: Intent?): Boolean = false
     }
 
+    private var splashExitHandled = false
+
+    private fun triggerLaunchRippleOnce() {
+        if (isFinishing || isDestroyed) return
+        if (!com.petal.browser.compose.splash.PetalSplashState.hasTriggeredLaunchRippleThisSession) {
+            com.petal.browser.compose.splash.PetalSplashState.hasTriggeredLaunchRippleThisSession = true
+            com.petal.browser.ui.layout.LiquidRippleEffect.trigger(window.decorView)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        val playQuantumSplash = com.petal.browser.compose.splash.PetalSplashState.shouldPlayLaunchSplash(sp)
         val splashScreen = installSplashScreen()
         splashScreen.setOnExitAnimationListener { provider ->
+            splashExitHandled = true
             try {
                 provider.view.isClickable = false
                 provider.view.isFocusable = false
-                // Let the animated icon finish its run (the system may report "ready" earlier), then
-                // fade the splash out instead of cutting it off mid-animation.
-                val remaining = (provider.iconAnimationStartMillis + provider.iconAnimationDurationMillis -
-                    System.currentTimeMillis()).coerceIn(0L, 1000L)
-                provider.view.postDelayed({
-                    try {
-                        provider.view.animate().alpha(0f).setDuration(180L)
-                            .withEndAction { runCatching { provider.remove() } }
-                            .start()
-                    } catch (_: Throwable) {
-                        runCatching { provider.remove() }
-                    }
-                }, remaining)
+                if (playQuantumSplash) {
+                    // Dissolve the system splash right away into PetalSplashOverlay beneath it.
+                    provider.view.animate().alpha(0f).setDuration(180L)
+                        .withEndAction { runCatching { provider.remove() } }
+                        .start()
+                } else {
+                    // Intro style: let the animated icon finish its run, then fade out normally.
+                    val remaining = (provider.iconAnimationStartMillis + provider.iconAnimationDurationMillis -
+                        System.currentTimeMillis()).coerceIn(0L, 1000L)
+                    provider.view.postDelayed({
+                        try {
+                            provider.view.animate().alpha(0f).setDuration(180L)
+                                .withEndAction {
+                                    runCatching { provider.remove() }
+                                    com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
+                                    triggerLaunchRippleOnce()
+                                }
+                                .start()
+                        } catch (_: Throwable) {
+                            runCatching { provider.remove() }
+                            com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
+                            triggerLaunchRippleOnce()
+                        }
+                    }, remaining)
+                }
             } catch (_: Throwable) {
                 runCatching { provider.remove() }
+                if (!playQuantumSplash) {
+                    com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
+                    triggerLaunchRippleOnce()
+                }
             }
         }
         super.onCreate(savedInstanceState)
@@ -180,9 +208,6 @@ class MainActivity : FragmentActivity(), BrowserController {
         enableEdgeToEdge()
         applyImmersiveFullscreen()
         sp.registerOnSharedPreferenceChangeListener(prefChangeListener)
-
-        com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
-        com.petal.browser.compose.splash.PetalSplashState.splashActive.value = false
 
         // Restore tabs from the saved session. This must NOT be gated on savedInstanceState == null:
         // after Android kills the process the activity is recreated WITH a saved state but with an
@@ -210,6 +235,21 @@ class MainActivity : FragmentActivity(), BrowserController {
             }
         }
 
+        if (com.petal.browser.compose.splash.PetalSplashState.shouldPlayLaunchSplash(sp)) {
+            com.petal.browser.compose.splash.PetalSplashOverlay.show(this) {
+                triggerLaunchRippleOnce()
+            }
+        } else if (!com.petal.browser.compose.splash.PetalSplashState.hasTriggeredLaunchRippleThisSession) {
+            androidx.core.view.OneShotPreDrawListener.add(window.decorView) {
+                window.decorView.postDelayed({
+                    if (!splashExitHandled) {
+                        com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
+                        triggerLaunchRippleOnce()
+                    }
+                }, 450L)
+            }
+        }
+
         // Allow the first browser frame to render before attaching optional engine features.
         // These initializers can trigger Gecko extension scans and service/store setup.
         window.decorView.postDelayed({
@@ -225,6 +265,7 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     override fun onStop() {
         super.onStop()
+        com.petal.browser.appicon.PetalAppIcons.applyPendingIfNeeded(applicationContext, activity = this)
         window.decorView.removeCallbacks(suspendSweep)
         try { com.petal.browser.engine.gecko.PetalTabSuspender.sweepIdleTabs(applicationContext) } catch (_: Throwable) {}
         try {

@@ -120,14 +120,14 @@ class LiquidRippleEffect(view: View) {
     companion object {
         @JvmStatic
         @JvmOverloads
-        fun trigger(view: View?, cx: Float? = null, cy: Float? = null, durationSec: Float = 1.4f) {
+        fun trigger(view: View?, cx: Float? = null, cy: Float? = null, durationSec: Float = 1.4f, force: Boolean = false) {
             if (view == null) return
             // "App Launch Ripple Effect" setting (sp_launch_ripple_enabled) — read live on each trigger.
             val rippleEnabled = try {
                 androidx.preference.PreferenceManager.getDefaultSharedPreferences(view.context)
                     .getBoolean("sp_launch_ripple_enabled", true)
             } catch (_: Throwable) { true }
-            if (!rippleEnabled) return
+            if (!force && !rippleEnabled) return
             val targetView = view.rootView ?: view
             val originX = cx ?: (targetView.width.toFloat().takeIf { it > 0 } ?: targetView.resources.displayMetrics.widthPixels.toFloat()) / 2f
             val originY = cy ?: (targetView.height.toFloat().takeIf { it > 0 } ?: targetView.resources.displayMetrics.heightPixels.toFloat()) / 2f

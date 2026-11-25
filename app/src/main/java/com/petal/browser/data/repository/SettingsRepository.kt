@@ -38,6 +38,7 @@ interface SettingsRepository {
     val bgShapeRotationMin: Flow<Int>
     val highRefreshRate: Flow<Boolean>
     val customFontName: Flow<String>
+    val launchStyle: Flow<String>
     val launchRippleEnabled: Flow<Boolean>
     val motionBlurEnabled: Flow<Boolean>
     val motionBlurScale: Flow<Float>
@@ -186,6 +187,7 @@ interface SettingsRepository {
     suspend fun setBgShapeRotationMin(minutes: Int)
     suspend fun setHighRefreshRate(enabled: Boolean)
     suspend fun setCustomFontName(name: String)
+    suspend fun setLaunchStyle(style: String)
     suspend fun setLaunchRippleEnabled(enabled: Boolean)
     suspend fun setMotionBlurEnabled(enabled: Boolean)
     suspend fun setMotionBlurScale(scale: Float)

@@ -36,6 +36,7 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
 
     private var lastNightModeBits: Int = 0
     private var startedActivityCount: Int = 0
+    private var lastActivityRef: java.lang.ref.WeakReference<Activity>? = null
 
     private val wallpaperChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -187,6 +188,7 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
             override fun onActivityStarted(activity: Activity) {
                 startedActivityCount++
+                lastActivityRef = java.lang.ref.WeakReference(activity)
             }
             override fun onActivityResumed(activity: Activity) {
                 com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(activity)
@@ -217,6 +219,29 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
                 }
             }
         })
+
+        // One-time migration from sp_app_launch_animation -> sp_launch_style ("quantum" / "intro").
+        try {
+            com.petal.browser.compose.splash.PetalSplashState.migrateLaunchStyleIfNeeded(
+                PreferenceManager.getDefaultSharedPreferences(this)
+            )
+        } catch (_: Throwable) {}
+
+        // Apply any queued app icon alias switch cleanly once the whole app moves to background.
+        try {
+            androidx.lifecycle.ProcessLifecycleOwner.get().lifecycle.addObserver(
+                object : androidx.lifecycle.DefaultLifecycleObserver {
+                    override fun onStop(owner: androidx.lifecycle.LifecycleOwner) {
+                        com.petal.browser.appicon.PetalAppIcons.applyPendingIfNeeded(
+                            context = this@PetalApplication,
+                            activity = lastActivityRef?.get()
+                        )
+                    }
+                }
+            )
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to register ProcessLifecycleOwner pending icon observer", t)
+        }
 
         lastNightModeBits = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
 

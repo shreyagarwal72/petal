@@ -8,7 +8,6 @@ import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.LayerDrawable
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -23,7 +22,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Spa
+import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,8 +37,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,34 +51,50 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.R
 import com.petal.browser.appicon.PetalAppIcon
 import com.petal.browser.appicon.PetalAppIcons
+import com.petal.browser.compose.settings.viewmodel.AppearanceSettingsViewModel
+import com.petal.browser.compose.splash.PetalSplashScreen
+import com.petal.browser.compose.splash.PetalSplashState
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.containment.PetalBadgeVariant
+import com.petal.browser.ui.containment.PetalGroup
+import com.petal.browser.ui.containment.PetalGroupIconBadge
+import com.petal.browser.ui.containment.PetalGroupListRow
+import com.petal.browser.ui.containment.PetalGroupPosition
 import com.petal.browser.ui.containment.PetalSettingsSection
+import com.petal.browser.ui.containment.PetalSettingsToggleRow
+import com.petal.browser.ui.layout.LiquidRippleEffect
 
 private const val ICONS_PER_ROW = 3
 
 /**
  * Settings > App Icon & Intro.
  *
- * Lets the user switch the launcher icon (activity-aliases, see [PetalAppIcons]) and preview the launch
- * animation that belongs to it. Previews are the real resources, so they follow Material You exactly like
- * the launcher does.
+ * Queues launcher icon switches cleanly in `sp_pending_app_icon` to apply when Petal closes or
+ * backgrounds, configures startup launch style (`intro` / `quantum`), and manages launch ripple.
  */
 @Composable
 fun AppIconSettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    targetHighlightItemId: String? = null
+    targetHighlightItemId: String? = null,
+    viewModel: AppearanceSettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    var selected by remember { mutableStateOf(PetalAppIcons.current(context)) }
+    val hostView = LocalView.current
+    val activeIcon = remember(context) { PetalAppIcons.current(context) }
+    var selected by remember(context) { mutableStateOf(PetalAppIcons.pending(context) ?: activeIcon) }
+    val launchStyle by viewModel.launchStyle.collectAsStateWithLifecycle()
+    val launchRippleEnabled by viewModel.launchRippleEnabled.collectAsStateWithLifecycle()
     var showIntro by remember { mutableStateOf(false) }
-    val changedMsg = stringResource(R.string.app_icon_changed)
-    val failedMsg = stringResource(R.string.app_icon_failed)
+    var showQuantumPreview by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
@@ -119,16 +142,11 @@ fun AppIconSettingsScreen(
                                 IconChoice(
                                     icon = icon,
                                     selected = icon == selected,
-                                    onClick = {
+                                    onClick = { center ->
                                         if (icon != selected) {
-                                            if (PetalAppIcons.apply(context, icon)) {
-                                                selected = icon
-                                                PetalAppIcons.findActivity(context)
-                                                    ?.let { PetalAppIcons.syncSplashTheme(it, icon, force = true) }
-                                                Toast.makeText(context, changedMsg, Toast.LENGTH_SHORT).show()
-                                            } else {
-                                                Toast.makeText(context, failedMsg, Toast.LENGTH_SHORT).show()
-                                            }
+                                            PetalAppIcons.queueIconChange(context, icon)
+                                            selected = icon
+                                            LiquidRippleEffect.trigger(hostView, center?.x, center?.y)
                                         }
                                     }
                                 )
@@ -140,32 +158,130 @@ fun AppIconSettingsScreen(
                         text = stringResource(selected.descriptionRes),
                         style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                    )
+                    val selectedName = stringResource(selected.labelRes)
+                    Text(
+                        text = if (selected != activeIcon) {
+                            "The new $selectedName icon appears after you close Petal."
+                        } else {
+                            "The new icon appears after you close Petal."
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (selected != activeIcon) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                     )
                 }
 
                 PetalSettingsSection(
-                    title = stringResource(R.string.app_icon_intro_title),
+                    title = "Launch style",
                     icon = Icons.Rounded.AutoAwesome,
                     cardId = "app_icon_intro",
+                    highlightIds = listOf("app_icon_launch_style", "app_icon_quantum", "app_icon_ripple"),
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    Text(
-                        text = stringResource(R.string.app_icon_intro_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                    val styleOptions = listOf(
+                        Triple(
+                            PetalSplashState.STYLE_INTRO,
+                            "App Intro",
+                            "Animated icon splash matched to your chosen Petal icon"
+                        ),
+                        Triple(
+                            PetalSplashState.STYLE_QUANTUM,
+                            "Quantum Web Animation",
+                            "Procedural stream of web icons fading in from the system splash"
+                        )
                     )
-                    FilledTonalButton(
-                        onClick = { showIntro = true },
-                        modifier = Modifier.padding(horizontal = 4.dp)
-                    ) { Text(stringResource(R.string.app_icon_intro_preview)) }
+                    PetalGroup(rowCount = styleOptions.size) { index, position ->
+                        val (styleKey, title, subtitle) = styleOptions[index]
+                        val isSelected = launchStyle == styleKey
+                        PetalGroupListRow(
+                            position = position,
+                            selected = isSelected,
+                            onClick = { viewModel.setLaunchStyle(styleKey) },
+                            leading = {
+                                PetalGroupIconBadge(
+                                    icon = if (styleKey == PetalSplashState.STYLE_INTRO) Icons.Rounded.Spa else Icons.Rounded.AutoAwesome,
+                                    variant = if (isSelected) PetalBadgeVariant.PRIMARY else PetalBadgeVariant.SURFACE_TONAL
+                                )
+                            },
+                            content = {
+                                Text(
+                                    text = title,
+                                    style = PetalText.rowTitle,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = subtitle,
+                                    style = PetalText.rowSubtitle,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                FilledTonalButton(
+                                    onClick = {
+                                        if (styleKey == PetalSplashState.STYLE_INTRO) {
+                                            showIntro = true
+                                        } else {
+                                            showQuantumPreview = true
+                                        }
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.PlayArrow,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Preview")
+                                }
+                            },
+                            trailing = {
+                                Icon(
+                                    imageVector = if (isSelected) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                                    contentDescription = null,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        )
+                    }
+
                     Text(
                         text = stringResource(R.string.app_icon_note),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                     )
+
+                    PetalSettingsToggleRow(
+                        title = stringResource(R.string.ui_app_launch_ripple_effect),
+                        subtitle = stringResource(R.string.ui_display_fluid_liquid_displacement_ripp),
+                        icon = Icons.Rounded.WaterDrop,
+                        checked = launchRippleEnabled,
+                        position = PetalGroupPosition.SINGLE,
+                        onCheckedChange = viewModel::setLaunchRippleEnabled
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        FilledTonalButton(
+                            onClick = { LiquidRippleEffect.trigger(hostView, force = true) },
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.PlayArrow,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text("Preview Ripple")
+                        }
+                    }
                 }
             }
         }
@@ -174,24 +290,50 @@ fun AppIconSettingsScreen(
     if (showIntro) {
         IntroPreviewDialog(icon = selected, onDismiss = { showIntro = false })
     }
+
+    if (showQuantumPreview) {
+        Dialog(
+            onDismissRequest = { showQuantumPreview = false },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false
+            )
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                PetalSplashScreen(
+                    onSplashComplete = { showQuantumPreview = false },
+                    durationMs = 2200L,
+                    markSessionShown = false
+                )
+            }
+        }
+    }
 }
 
 private val IconCellWidth = 100.dp
 
 @Composable
-private fun IconChoice(icon: PetalAppIcon, selected: Boolean, onClick: () -> Unit) {
+private fun IconChoice(icon: PetalAppIcon, selected: Boolean, onClick: (Offset?) -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val scale by animateFloatAsState(
         targetValue = if (selected) 1f else 0.92f,
         animationSpec = PetalSpring.calm(),
         label = "app_icon_choice_scale"
     )
+    var cardCenter by remember { mutableStateOf<Offset?>(null) }
     val shape = RoundedCornerShape(24.dp)
     Column(
         modifier = Modifier
             .width(IconCellWidth)
+            .onGloballyPositioned { coords ->
+                val pos = coords.positionInWindow()
+                cardCenter = Offset(
+                    pos.x + coords.size.width / 2f,
+                    pos.y + coords.size.height / 2f
+                )
+            }
             .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
+            .clickable { onClick(cardCenter) }
             .padding(vertical = 8.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

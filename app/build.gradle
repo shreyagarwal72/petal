@@ -206,6 +206,7 @@ dependencies {
     implementation 'androidx.profileinstaller:profileinstaller:1.4.1'
     implementation 'androidx.activity:activity-ktx:1.13.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.11.0'
+    implementation 'androidx.lifecycle:lifecycle-process:2.11.0'
     implementation 'androidx.savedstate:savedstate-ktx:1.5.0'
     implementation 'androidx.exifinterface:exifinterface:1.4.0'
 

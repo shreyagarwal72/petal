@@ -97,6 +97,9 @@ class AppearanceSettingsViewModel @Inject constructor(
     val customFontName: StateFlow<String> = settingsRepository.customFontName
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "No font file selected")
 
+    val launchStyle: StateFlow<String> = settingsRepository.launchStyle
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.petal.browser.compose.splash.PetalSplashState.STYLE_QUANTUM)
+
     val launchRippleEnabled: StateFlow<Boolean> = settingsRepository.launchRippleEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -294,6 +297,10 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setCustomFontName(name: String) = viewModelScope.launch {
         settingsRepository.setCustomFontName(name)
+    }
+
+    fun setLaunchStyle(style: String) = viewModelScope.launch {
+        settingsRepository.setLaunchStyle(style)
     }
 
     fun setLaunchRippleEnabled(enabled: Boolean) = viewModelScope.launch {

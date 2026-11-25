@@ -14,6 +14,7 @@ import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.compose.ui.text.font.FontFamily
 import androidx.core.content.res.ResourcesCompat
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
@@ -212,6 +213,15 @@ object PetalFontHelper {
         val state = PetalFontPrefs.load(sp, context)
         return getTypefaceForState(context, state, weight, italic)
     }
+
+    /**
+     * Converts [getAppTypeface] into a Compose [FontFamily] so custom/preset app fonts apply
+     * uniformly on standalone Compose splash and intro surfaces.
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun getAppFontFamily(context: Context, weight: Int? = null, italic: Boolean = false): FontFamily =
+        FontFamily(getAppTypeface(context, weight = weight, italic = italic))
 
     fun getTypefaceForState(
         context: Context,

@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +48,11 @@ import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 object PetalSplashState {
+    const val PREF_LAUNCH_STYLE = "sp_launch_style"
+    const val PREF_LEGACY_APP_LAUNCH_ANIMATION = "sp_app_launch_animation"
+    const val STYLE_INTRO = "intro"
+    const val STYLE_QUANTUM = "quantum"
+
     /**
      * In-memory process flag ensuring the splash animation plays only once
      * per cold-start / app process life cycle.
@@ -55,20 +61,52 @@ object PetalSplashState {
     var hasShownThisSession: Boolean = false
 
     /**
+     * In-memory process flag ensuring the launch ripple effect triggers at most once
+     * per cold-start / app process life cycle.
+     */
+    @Volatile
+    var hasTriggeredLaunchRippleThisSession: Boolean = false
+
+    /**
      * True while the launch splash is on screen. The bottom nav bar watches this and stays
      * hidden until the splash is done.
      */
     @JvmField
     val splashActive = androidx.compose.runtime.mutableStateOf(false)
 
+    @JvmStatic
+    fun normalizeLaunchStyle(value: String?): String =
+        if (value.equals(STYLE_INTRO, ignoreCase = true)) STYLE_INTRO else STYLE_QUANTUM
+
     /**
-     * True when the Compose launch splash will play after the system launch splash. Same condition
-     * PetalHomeScreen uses to show it; MainActivity reads it to choose how the system splash exits
-     * (dissolve into this screen vs. open up into the home screen).
+     * One-time migration from legacy boolean [PREF_LEGACY_APP_LAUNCH_ANIMATION] to [PREF_LAUNCH_STYLE]:
+     * true -> [STYLE_QUANTUM], false -> [STYLE_INTRO]. Defaults to [STYLE_QUANTUM] on fresh installs.
+     */
+    @JvmStatic
+    fun migrateLaunchStyleIfNeeded(sp: android.content.SharedPreferences): String {
+        if (sp.contains(PREF_LAUNCH_STYLE)) {
+            return normalizeLaunchStyle(sp.getString(PREF_LAUNCH_STYLE, STYLE_QUANTUM))
+        }
+        val migrated = if (sp.getBoolean(PREF_LEGACY_APP_LAUNCH_ANIMATION, true)) {
+            STYLE_QUANTUM
+        } else {
+            STYLE_INTRO
+        }
+        sp.edit().putString(PREF_LAUNCH_STYLE, migrated).apply()
+        return migrated
+    }
+
+    @JvmStatic
+    fun resolveLaunchStyle(sp: android.content.SharedPreferences): String =
+        migrateLaunchStyleIfNeeded(sp)
+
+    /**
+     * True only when the selected launch style is Quantum and the splash has not yet shown
+     * in this process session.
      */
     @JvmStatic
     fun shouldPlayLaunchSplash(sp: android.content.SharedPreferences): Boolean =
-        sp.getBoolean("sp_app_launch_animation", true) && !hasShownThisSession
+        resolveLaunchStyle(sp) == STYLE_QUANTUM && !hasShownThisSession
 }
 
 private data class PetalWebGlyph(
@@ -102,11 +140,14 @@ private val webGlyphIcons = listOf(
 fun PetalSplashScreen(
     onSplashComplete: () -> Unit,
     modifier: Modifier = Modifier,
-    durationMs: Long = 900L
+    durationMs: Long = 900L,
+    markSessionShown: Boolean = true
 ) {
     LaunchedEffect(Unit) {
         delay(durationMs)
-        PetalSplashState.hasShownThisSession = true
+        if (markSessionShown) {
+            PetalSplashState.hasShownThisSession = true
+        }
         onSplashComplete()
     }
 
@@ -236,6 +277,13 @@ private fun PetalSplashContent(
 
     val textColor = if (isDark) Color.White else colorScheme.onBackground
     val subtitleColor = if (isDark) Color.White.copy(alpha = 0.72f) else colorScheme.onSurfaceVariant
+    val context = LocalContext.current
+    val titleFontFamily = remember(context) {
+        com.petal.browser.ui.theme.PetalFontHelper.getAppFontFamily(context, weight = 700)
+    }
+    val subtitleFontFamily = remember(context) {
+        com.petal.browser.ui.theme.PetalFontHelper.getAppFontFamily(context, weight = 400)
+    }
 
     BoxWithConstraints(
         modifier = modifier
@@ -289,7 +337,9 @@ private fun PetalSplashContent(
                 fontSize = 44.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
+                fontFamily = titleFontFamily,
                 style = TextStyle(
+                    fontFamily = titleFontFamily,
                     shadow = Shadow(
                         color = accentColor.copy(alpha = if (isDark) 0.85f * pulseGlow else 0.40f * pulseGlow),
                         offset = Offset(0f, 4f),
@@ -303,7 +353,11 @@ private fun PetalSplashContent(
             // Subtitle Tagline
             Text(
                 text = "Personal Window to the Web",
-                style = PetalText.pageSubtitle.copy(letterSpacing = 0.5.sp),
+                fontFamily = subtitleFontFamily,
+                style = PetalText.pageSubtitle.copy(
+                    fontFamily = subtitleFontFamily,
+                    letterSpacing = 0.5.sp
+                ),
                 color = subtitleColor,
             )
         }
