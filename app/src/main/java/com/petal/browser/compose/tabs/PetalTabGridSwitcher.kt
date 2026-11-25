@@ -79,6 +79,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
@@ -2551,7 +2552,7 @@ private fun PetalTabCard(
                         val offsetX = (size.width - layerW * cropScale) / 2f
                         clipRect {
                             scale(scaleX = cropScale, scaleY = cropScale, pivot = Offset.Zero) {
-                                androidx.compose.ui.graphics.drawscope.translate(left = offsetX / cropScale, top = 0f) {
+                                translate(left = offsetX / cropScale, top = 0f) {
                                     drawLayer(homeLiveLayer)
                                 }
                             }
