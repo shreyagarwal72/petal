@@ -49,6 +49,7 @@ import com.petal.browser.predictive.PetalPredictiveJunction
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
+import com.petal.browser.predictive.PetalSubPageHost
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.theme.*
@@ -320,12 +321,8 @@ fun PetalSettingsScreen(
         }
     }
 
-    // A nested category pops back to its parent with the crossfade; the predictive surface (which
-    // slides the whole page away) is only active for a top-level category or the hub.
-    if (parentCategory != null) {
-        androidx.activity.compose.BackHandler(enabled = !hasSearchOverlay) { popToParent() }
-    }
-
+    // Nested categories delegate back handling to Layer 2's PetalSubPageHost; the outer surface
+    // stays disabled while a nested sub-page is open so the inner surface wins cleanly.
     PetalPredictiveBackSurface(
         enabled = !hasSearchOverlay && parentCategory == null,
         // Popping a category keeps Settings on screen, so only park the pose when leaving Settings,
@@ -393,18 +390,37 @@ fun PetalSettingsScreen(
                                 alpha = baseAlpha
                             }
                     ) {
-                        PetalSettingsAnimatedContent(targetKey = shown) { category ->
-                            RenderCategoryContent(
-                                category = category,
-                                targetHighlightItemId = currentHighlightId,
-                                onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
-                                onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
-                                onNavigateToUpdater = { openCategory(SettingsCategory.UPDATER, null) },
-                                onNavigateToAppIcon = { openCategory(SettingsCategory.APP_ICON, null) },
-                                onNavigateToAppLock = { openCategory(SettingsCategory.APP_LOCK, null) },
-                                onNavigateBack = { closeCategory() }
-                            )
-                        }
+                        val baseCategory = parentCategory ?: shown
+                        PetalSubPageHost(
+                            visible = parentCategory != null,
+                            onBack = { popToParent() },
+                            parent = {
+                                RenderCategoryContent(
+                                    category = baseCategory,
+                                    targetHighlightItemId = if (parentCategory == null) currentHighlightId else null,
+                                    onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
+                                    onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
+                                    onNavigateToUpdater = { openCategory(SettingsCategory.UPDATER, null) },
+                                    onNavigateToAppIcon = { openCategory(SettingsCategory.APP_ICON, null) },
+                                    onNavigateToAppLock = { openCategory(SettingsCategory.APP_LOCK, null) },
+                                    onNavigateBack = { closeCategory() }
+                                )
+                            },
+                            subPage = {
+                                if (parentCategory != null) {
+                                    RenderCategoryContent(
+                                        category = shown,
+                                        targetHighlightItemId = currentHighlightId,
+                                        onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
+                                        onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
+                                        onNavigateToUpdater = { openCategory(SettingsCategory.UPDATER, null) },
+                                        onNavigateToAppIcon = { openCategory(SettingsCategory.APP_ICON, null) },
+                                        onNavigateToAppLock = { openCategory(SettingsCategory.APP_LOCK, null) },
+                                        onNavigateBack = { closeCategory() }
+                                    )
+                                }
+                            }
+                        )
                     }
                 }
             }
@@ -505,29 +521,5 @@ private fun RenderCategoryContent(
             )
         }
     }
-    }
-}
-
-
-/**
- * Crossfades between categories (e.g. Search -> Address Bar). The content lambda receives the
- * category it is rendering: previously it ignored the animated state and always drew the NEW
- * category, so the outgoing page visibly jumped to the incoming one before fading.
- */
-@Composable
-private fun PetalSettingsAnimatedContent(
-    targetKey: SettingsCategory,
-    content: @Composable (SettingsCategory) -> Unit
-) {
-    AnimatedContent(
-        targetState = targetKey,
-        modifier = Modifier.fillMaxSize(),
-        transitionSpec = {
-            (fadeIn(animationSpec = PetalSpring.calm()) togetherWith
-                fadeOut(animationSpec = PetalSpring.calm()))
-        },
-        label = "petalSettingsContentTransition"
-    ) { category ->
-        content(category)
     }
 }
