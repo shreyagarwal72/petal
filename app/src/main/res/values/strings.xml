@@ -2048,6 +2048,12 @@
     <string name="ui_petal_ai_attach_tab">Attach open tab</string>
     <string name="ui_petal_ai_attach_tab_count">Attached tabs (%1$d/3)</string>
     <string name="ui_petal_ai_attach_image">Attach image</string>
+    <string name="ui_petal_ai_attach_page_screenshot">Attach page screenshot</string>
+    <string name="ui_petal_ai_screenshot_blocked_private">Page screenshots are disabled in private tabs</string>
+    <string name="ui_petal_ai_screenshot_blocked_password">Page screenshots are blocked on password pages</string>
+    <string name="ui_petal_ai_screenshot_blocked_url">Page screenshot is unavailable for this page</string>
+    <string name="ui_petal_ai_custom_model_vision_title">This model supports images</string>
+    <string name="ui_petal_ai_custom_model_vision_desc">Override auto-detection for this Custom AI model</string>
     <string name="ui_petal_ai_attach_screenshot">Page screenshot</string>
     <string name="ui_petal_ai_no_vision_support">The selected model does not support image inputs. Please choose a vision-capable model (like Google Gemini) in AI Settings.</string>
     <string name="ui_petal_ai_video_transcript">Video transcript</string>
@@ -2127,6 +2133,8 @@
     <string name="bar_find_in_page">Find in page</string>
     <string name="bar_history">History</string>
     <string name="bar_ai">AI</string>
+    <string name="ui_show_nav_labels">Show bottom nav labels</string>
+    <string name="ui_show_nav_labels_desc">Display text labels next to or under navigation bar icons</string>
 
     <!-- Quick Settings Tiles -->
     <string name="quick_tile_scanner_label">QR &amp; Barcode</string>

@@ -317,6 +317,15 @@ fun PetalRootApp(
     var overlayTouchY by remember { mutableFloatStateOf(0f) }
     // Reduce-motion (or predictive back off) means plain instant back: no pose, no settle, no hold.
     val reduceMotionNow = com.petal.browser.ui.components.rememberReduceMotion()
+    var sawInitialCollapseState by remember { mutableStateOf(false) }
+    val currentCollapsed = BarCollapseState.isCollapsed
+    LaunchedEffect(currentCollapsed) {
+        if (!sawInitialCollapseState) {
+            sawInitialCollapseState = true
+        } else if (!reduceMotionNow && !isHome) {
+            haptic.play(PetalHapticEngine.Pattern.TICK, 0.45f, throttleMs = 150L)
+        }
+    }
     val poseEnabledState = androidx.compose.runtime.rememberUpdatedState(!reduceMotionNow)
     val overlayPose = remember {
         OverlayPoseSource(
@@ -803,7 +812,9 @@ fun PetalRootApp(
                         estimatedBottomNav = navEstimate.roundToPx(),
                         navVisible = navVisibleHere,
                         topOverlayPx = (statusBarTopInset + desktopBarHeight).roundToPx(),
-                        navBarInset = navBarBottomInset.roundToPx()
+                        navBarInset = navBarBottomInset.roundToPx(),
+                        isFloatingNav = effectiveFloating,
+                        isFloatingBottomAddress = floatingTabBar
                     )
                 }
                 val effectiveTopPadding = with(density) { pagePad.top.toDp() }
@@ -1079,6 +1090,16 @@ fun PetalRootApp(
                 .align(Alignment.BottomCenter)
                 .zIndex(5f)
         ) {
+            val navHomeClick = remember(viewModel, isIncognito) { { viewModel.goHome(isIncognito = isIncognito) } }
+            val navAiClick = remember(viewModel) { { viewModel.openAiSheet() } }
+            val navNewTabClick = remember(viewModel, isIncognito) { { viewModel.openNewTab(selectTab = true, private = isIncognito) } }
+            val navTabsClick = remember(viewModel) { { viewModel.toggleTabSwitcher() } }
+            val navMenuClick = remember(viewModel) { { viewModel.toggleMenu() } }
+            val navSearchClick = remember(viewModel) { { viewModel.openOmnibox() } }
+            val navHistoryClick = remember(viewModel) { { viewModel.openHistory() } }
+            val navBookmarksClick = remember(viewModel) { { viewModel.openBookmarks() } }
+            val navSwipeLeftClick = remember(viewModel) { { viewModel.switchToPreviousTab() } }
+            val navSwipeRightClick = remember(viewModel) { { viewModel.switchToNextTab() } }
             PetalBottomNavBar(
                 selectedTab = selectedTab,
                 tabCount = tabCount,
@@ -1086,37 +1107,18 @@ fun PetalRootApp(
                 isFloatingStyle = floatingTabBar,
                 isBottomAddressBar = isBottomAddressBar,
                 glassSource = if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content)),
-                onHomeClick = {
-                    viewModel.goHome(isIncognito = isIncognito)
-                },
-                onAiClick = {
-                    viewModel.openAiSheet()
-                },
-                onNewTabClick = {
-                    viewModel.openNewTab(selectTab = true, private = isIncognito)
-                },
-                onTabsClick = {
-                    viewModel.toggleTabSwitcher()
-                },
-                onMenuClick = {
-                    viewModel.toggleMenu()
-                },
-                onSearchClick = {
-                    viewModel.openOmnibox()
-                },
-                onHistoryClick = {
-                    viewModel.openHistory()
-                },
-                onBookmarksClick = {
-                    viewModel.openBookmarks()
-                },
-                onSwipeTabLeft = {
-                    viewModel.switchToPreviousTab()
-                },
-                onSwipeTabRight = {
-                    viewModel.switchToNextTab()
-                },
+                onHomeClick = navHomeClick,
+                onAiClick = navAiClick,
+                onNewTabClick = navNewTabClick,
+                onTabsClick = navTabsClick,
+                onMenuClick = navMenuClick,
+                onSearchClick = navSearchClick,
+                onHistoryClick = navHistoryClick,
+                onBookmarksClick = navBookmarksClick,
+                onSwipeTabLeft = navSwipeLeftClick,
+                onSwipeTabRight = navSwipeRightClick,
                 showSearch = true,
+                isOmniboxOpen = isOmniboxOpen,
                 modifier = Modifier
                     .fillMaxWidth()
                     .onSizeChanged { com.petal.browser.ui.components.BarMetrics.reportBottomNav(it.height) }

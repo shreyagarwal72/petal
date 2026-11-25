@@ -318,6 +318,10 @@ fun ComposeEngineViewport(
     DisposableEffect(tab?.id) {
         val id = tab?.id
         if (id != null) {
+            PetalViewportThumbnailer.capturePagePixels = { callback ->
+                val gv = findGeckoView(engineView.asView())
+                captureGeckoViewPixels(gv, callback)
+            }
             PetalViewportThumbnailer.capture = {
                 val current = PetalEngineStore.getStore(context).state.tabs.firstOrNull { it.id == id }
                 if (current != null) {
@@ -343,6 +347,7 @@ fun ComposeEngineViewport(
         }
         onDispose {
             if (PetalViewportThumbnailer.capture != null && id != null) PetalViewportThumbnailer.capture = null
+            if (PetalViewportThumbnailer.capturePagePixels != null && id != null) PetalViewportThumbnailer.capturePagePixels = null
         }
     }
 
@@ -612,6 +617,47 @@ object PetalViewportThumbnailer {
     @Volatile
     @JvmField
     var capture: (() -> Unit)? = null
+
+    @Volatile
+    var capturePagePixels: (((Bitmap?) -> Unit) -> Unit)? = null
+
+    @Volatile
+    private var lastCaptureUptimeMs = 0L
+
+    internal fun canCapturePixelsNow(): Boolean {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastCaptureUptimeMs < 1200L) return false
+        lastCaptureUptimeMs = now
+        return true
+    }
+}
+
+private fun captureGeckoViewPixels(gv: GeckoView?, callback: (Bitmap?) -> Unit) {
+    val doCapture = {
+        if (gv == null || !gv.isAttachedToWindow || gv.width <= 0 || gv.height <= 0) {
+            callback(null)
+        } else if (!PetalViewportThumbnailer.canCapturePixelsNow()) {
+            callback(null)
+        } else {
+            PageEdgeColors.markCaptured()
+            try {
+                gv.capturePixels().then({ bitmap: Bitmap? ->
+                    callback(bitmap)
+                    GeckoResult.fromValue<Void?>(null)
+                }, {
+                    callback(null)
+                    GeckoResult.fromValue<Void?>(null)
+                })
+            } catch (_: Throwable) {
+                callback(null)
+            }
+        }
+    }
+    if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+        doCapture()
+    } else {
+        android.os.Handler(android.os.Looper.getMainLooper()).post(doCapture)
+    }
 }
 
 private fun captureGeckoThumbnail(context: android.content.Context, gv: GeckoView, tabId: String, isIncognito: Boolean) {
@@ -668,6 +714,10 @@ object PageEdgeColors {
     fun requestResample() { ticks.value = ticks.value + 1 }
 
     @Volatile private var lastSampleUptimeMs = 0L
+
+    internal fun markCaptured() {
+        lastSampleUptimeMs = android.os.SystemClock.uptimeMillis()
+    }
 
     internal fun sample(gv: GeckoView) {
         if (gv.width <= 0 || gv.height <= 0) return

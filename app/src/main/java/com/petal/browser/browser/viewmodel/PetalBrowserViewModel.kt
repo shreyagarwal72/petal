@@ -925,27 +925,20 @@ class PetalBrowserViewModel @Inject constructor(
         pageUrl: String = ""
     ) {
         val provider = PetalAiResearchEngine.getSelectedProvider(context)
-        val model = if (thinkHarder) {
+        val hasImage = imagePart != null || aiConversationManager.getMessages(tabId).any { it.imagePart != null }
+        val resolvedModel = PetalAiResearchEngine.resolveModelForRequest(
+            context = context,
+            provider = provider,
+            thinkHarder = thinkHarder,
+            requireVision = hasImage
+        )
+        val model = resolvedModel ?: if (thinkHarder) {
             PetalAiResearchEngine.getStrongerModel(provider)
         } else {
             PetalAiResearchEngine.getSelectedModel(context, provider)
         }
 
-        val backend: com.petal.browser.compose.ai.AiBackend = if (com.petal.browser.compose.ai.PetalAiProviderFallback.isFallbackEnabled(context)) {
-            object : com.petal.browser.compose.ai.AiBackend {
-                override fun stream(messages: List<com.petal.browser.compose.ai.AiChatMessage>, model: String): kotlinx.coroutines.flow.Flow<String> {
-                    return com.petal.browser.compose.ai.PetalAiProviderFallback.streamWithFallback(
-                        context,
-                        messages,
-                        provider,
-                        model,
-                        thinkHarder
-                    ).map { it.first }
-                }
-            }
-        } else {
-            AiBackendFactory.getBackend(context, provider)
-        }
+        val backend = buildAiBackend(provider, hasImage, resolvedModel, thinkHarder)
 
         aiConversationManager.sendMessage(
             tabId = tabId,
@@ -978,26 +971,19 @@ class PetalBrowserViewModel @Inject constructor(
         thinkHarder: Boolean = false
     ) {
         val provider = PetalAiResearchEngine.getSelectedProvider(context)
-        val model = if (thinkHarder) {
+        val hasImage = aiConversationManager.getMessages(tabId).any { it.imagePart != null }
+        val resolvedModel = PetalAiResearchEngine.resolveModelForRequest(
+            context = context,
+            provider = provider,
+            thinkHarder = thinkHarder,
+            requireVision = hasImage
+        )
+        val model = resolvedModel ?: if (thinkHarder) {
             PetalAiResearchEngine.getStrongerModel(provider)
         } else {
             PetalAiResearchEngine.getSelectedModel(context, provider)
         }
-        val backend: com.petal.browser.compose.ai.AiBackend = if (com.petal.browser.compose.ai.PetalAiProviderFallback.isFallbackEnabled(context)) {
-            object : com.petal.browser.compose.ai.AiBackend {
-                override fun stream(messages: List<com.petal.browser.compose.ai.AiChatMessage>, model: String): kotlinx.coroutines.flow.Flow<String> {
-                    return com.petal.browser.compose.ai.PetalAiProviderFallback.streamWithFallback(
-                        context,
-                        messages,
-                        provider,
-                        model,
-                        thinkHarder
-                    ).map { it.first }
-                }
-            }
-        } else {
-            AiBackendFactory.getBackend(context, provider)
-        }
+        val backend = buildAiBackend(provider, hasImage, resolvedModel, thinkHarder)
         aiConversationManager.regenerateLastMessage(
             tabId = tabId,
             backend = backend,
@@ -1015,6 +1001,37 @@ class PetalBrowserViewModel @Inject constructor(
                 )
             }
         )
+    }
+
+    private fun buildAiBackend(
+        provider: com.petal.browser.compose.ai.AiProvider,
+        hasImage: Boolean,
+        resolvedModel: String?,
+        thinkHarder: Boolean
+    ): com.petal.browser.compose.ai.AiBackend {
+        return if (com.petal.browser.compose.ai.PetalAiProviderFallback.isFallbackEnabled(context)) {
+            object : com.petal.browser.compose.ai.AiBackend {
+                override fun stream(messages: List<com.petal.browser.compose.ai.AiChatMessage>, model: String): kotlinx.coroutines.flow.Flow<String> {
+                    return com.petal.browser.compose.ai.PetalAiProviderFallback.streamWithFallback(
+                        context,
+                        messages,
+                        provider,
+                        model,
+                        thinkHarder
+                    ).map { it.first }
+                }
+            }
+        } else if (hasImage && resolvedModel == null) {
+            object : com.petal.browser.compose.ai.AiBackend {
+                override fun stream(messages: List<com.petal.browser.compose.ai.AiChatMessage>, model: String): kotlinx.coroutines.flow.Flow<String> {
+                    return kotlinx.coroutines.flow.flow {
+                        throw com.petal.browser.compose.ai.AiBackendException.VisionUnsupportedException()
+                    }
+                }
+            }
+        } else {
+            AiBackendFactory.getBackend(context, provider)
+        }
     }
 
     fun clearAiConversation(tabId: String) {

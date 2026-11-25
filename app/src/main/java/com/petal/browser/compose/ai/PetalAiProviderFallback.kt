@@ -29,17 +29,39 @@ object PetalAiProviderFallback {
 
     /**
      * Returns an ordered list of candidate providers starting with [primary].
+     * Enforces API key configuration, cloud consent for non-local providers, and optional vision support.
      */
-    fun getCandidateProviders(context: Context, primary: AiProvider): List<AiProvider> {
+    fun getCandidateProviders(
+        context: Context,
+        primary: AiProvider,
+        requireVision: Boolean = false,
+        thinkHarder: Boolean = false
+    ): List<AiProvider> {
         val all = listOf(AiProvider.GEMINI, AiProvider.GROQ, AiProvider.CUSTOM, AiProvider.LOCAL_ON_DEVICE)
         val ordered = listOf(primary) + (all - primary)
 
         return ordered.filter { provider ->
-            when (provider) {
-                AiProvider.LOCAL_ON_DEVICE -> com.petal.browser.compose.ai.ondevice.PetalOnDeviceConfig.isSupported()
-                AiProvider.CUSTOM -> PetalAiResearchEngine.isLocalEndpoint(context) || PetalAiResearchEngine.getApiKey(context, provider).isNotBlank()
-                else -> PetalAiResearchEngine.getApiKey(context, provider).isNotBlank()
+            val configuredAndConsented = when (provider) {
+                AiProvider.LOCAL_ON_DEVICE ->
+                    com.petal.browser.compose.ai.ondevice.PetalOnDeviceConfig.isSupported()
+                AiProvider.CUSTOM -> {
+                    val isLocal = PetalAiResearchEngine.isCustomEndpointLocal(context)
+                    val hasAuth = isLocal || PetalAiResearchEngine.getApiKey(context, provider).isNotBlank()
+                    val hasConsent = isLocal || PetalAiResearchEngine.isCloudConsentAccepted(context)
+                    hasAuth && hasConsent
+                }
+                AiProvider.GEMINI, AiProvider.GROQ ->
+                    PetalAiResearchEngine.getApiKey(context, provider).isNotBlank() &&
+                        PetalAiResearchEngine.isCloudConsentAccepted(context)
             }
+            if (!configuredAndConsented) return@filter false
+            if (!requireVision) return@filter true
+            PetalAiResearchEngine.resolveModelForRequest(
+                context = context,
+                provider = provider,
+                thinkHarder = thinkHarder,
+                requireVision = true
+            ) != null
         }
     }
 
@@ -60,21 +82,47 @@ object PetalAiProviderFallback {
         initialModel: String,
         thinkHarder: Boolean = false
     ): Flow<Pair<String, AiProvider>> = flow {
+        val hasImage = messages.any { msg -> msg.parts.any { it is AiMessagePart.Image } }
+
         if (!isFallbackEnabled(context)) {
+            val model = PetalAiResearchEngine.resolveModelForRequest(
+                context = context,
+                provider = initialProvider,
+                thinkHarder = thinkHarder,
+                requireVision = hasImage,
+                preferredModel = initialModel
+            ) ?: throw AiBackendException.VisionUnsupportedException()
             val backend = AiBackendFactory.getBackend(context, initialProvider)
-            val model = if (thinkHarder) PetalAiResearchEngine.getStrongerModel(initialProvider) else initialModel
             backend.stream(messages, model).collect { chunk ->
                 emit(Pair(chunk, initialProvider))
             }
             return@flow
         }
 
-        val candidates = getCandidateProviders(context, initialProvider)
+        val candidates = getCandidateProviders(
+            context = context,
+            primary = initialProvider,
+            requireVision = hasImage,
+            thinkHarder = thinkHarder
+        )
+        if (candidates.isEmpty()) {
+            if (hasImage) {
+                throw AiBackendException.VisionUnsupportedException()
+            }
+            throw AiBackendException.EmptyReplyException("No configured AI provider is available.")
+        }
+
         var lastException: Throwable? = null
 
         for (provider in candidates) {
+            val model = PetalAiResearchEngine.resolveModelForRequest(
+                context = context,
+                provider = provider,
+                thinkHarder = thinkHarder,
+                requireVision = hasImage,
+                preferredModel = if (provider == initialProvider) initialModel else null
+            ) ?: continue
             val backend = AiBackendFactory.getBackend(context, provider)
-            val model = if (thinkHarder) PetalAiResearchEngine.getStrongerModel(provider) else PetalAiResearchEngine.getSelectedModel(context, provider)
 
             var succeeded = false
             var attempt = 0

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -106,6 +107,8 @@ internal fun PetalStrideNavBar(
     compact: Boolean = false,
     includeSearch: Boolean = false,
     includeAi: Boolean = true,
+    enabled: Boolean = true,
+    showLabels: Boolean = true,
     onSearchClick: () -> Unit = {}
 ) {
     val NavOrder = when {
@@ -123,8 +126,11 @@ internal fun PetalStrideNavBar(
     val fixedWidth = if (includeSearch) NAV_FIXED_WIDTH_COMPACT5 else if (compact) NAV_FIXED_WIDTH_COMPACT else NAV_FIXED_WIDTH
     val context = androidx.compose.ui.platform.LocalContext.current
     com.petal.browser.ui.glass.LocalPetalGlassRevision.current
-    val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-    val themeGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
+    val glassSupported = remember(context) {
+        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
+            !com.petal.browser.motion.MotionGate.isLowEndDevice(context)
+    }
+    val themeGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav") && glassSupported
     val glassOn = themeGlass
     val glassBar = rememberGlassBar(if (glassOn) glassSource else null)
 
@@ -141,34 +147,37 @@ internal fun PetalStrideNavBar(
     // Read through updated state so the long-lived pointerInput never calls a stale lambda.
     val currentSwipeLeft by androidx.compose.runtime.rememberUpdatedState(onSwipeTabLeft)
     val currentSwipeRight by androidx.compose.runtime.rememberUpdatedState(onSwipeTabRight)
+    val currentEnabled by androidx.compose.runtime.rememberUpdatedState(enabled)
 
-    val isLiquidGlassActive = glassBar != null || themeGlass
+    val isLiquidGlassActive = glassSupported && (glassBar != null || themeGlass)
     // Kyant's interaction effects: the bar swells under the finger, a light follows it, and
     // the selection slab deepens its lens and stretches with its motion.
     val glassPress = com.petal.browser.ui.glass.rememberGlassPress()
     BoxWithConstraints(
         modifier = modifier
             .graphicsLayer { translationX = dragOffsetPx }
-            .then(if (!isLiquidGlassActive) Modifier.shadow(12.dp, pill, clip = false) else Modifier)
+            .then(if (!isLiquidGlassActive) Modifier.shadow(1.dp, pill, clip = false) else Modifier)
             .then(if (isLiquidGlassActive) Modifier.glassPressScale(glassPress, 16f) else Modifier)
             .liquidGlass(pill, scheme.surfaceContainerHigh, glassBar, pressFx = false)
             .then(if (isLiquidGlassActive) Modifier.glassPressOverlay(glassPress, pill) else Modifier)
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
-                    onDragStart = { isDragging = true },
+                    onDragStart = { if (currentEnabled) isDragging = true },
                     onDragEnd = {
+                        if (currentEnabled && isDragging) {
+                            // 90dp like AddressPill, so the threshold is the same distance on every density.
+                            val threshold = 90.dp.toPx()
+                            if (dragAccumulator > threshold) currentSwipeLeft()
+                            else if (dragAccumulator < -threshold) currentSwipeRight()
+                        }
                         isDragging = false
-                        // 90dp like AddressPill, so the threshold is the same distance on every density.
-                        val threshold = 90.dp.toPx()
-                        if (dragAccumulator > threshold) currentSwipeLeft()
-                        else if (dragAccumulator < -threshold) currentSwipeRight()
                         dragAccumulator = 0f
                     },
                     onDragCancel = {
                         isDragging = false
                         dragAccumulator = 0f
                     },
-                    onHorizontalDrag = { _, dragAmount -> dragAccumulator += dragAmount }
+                    onHorizontalDrag = { _, dragAmount -> if (currentEnabled) dragAccumulator += dragAmount }
                 )
             }
     ) {
@@ -236,6 +245,7 @@ internal fun PetalStrideNavBar(
                         .onGloballyPositioned { itemBounds[tab] = it.boundsInRoot() }
                         .bouncyClickable(
                             scaleDown = 0.88f,
+                            enabled = enabled,
                             role = androidx.compose.ui.semantics.Role.Tab,
                             onLongClick = onLongClick,
                             onClick = onClick
@@ -251,6 +261,7 @@ internal fun PetalStrideNavBar(
                     Row(
                         modifier = Modifier
                             .widthIn(min = 48.dp) // 48dp touch target; the visual stays the same
+                            .heightIn(min = 48.dp)
                             .padding(horizontal = itemPadH, vertical = 12.dp)
                             // Magnified under the glass slab, by as much of the slab as is
                             // over this item — so it grows as the slab arrives.
@@ -268,30 +279,32 @@ internal fun PetalStrideNavBar(
                         ) {
                             NavIcon(tab, selected, tint, tabCount, badgeScale)
                         }
-                        // Opens by its item's weight: measured at full width, laid out at
-                        // that fraction of it, and clipped. Read in layout and draw only,
-                        // so the animation never recomposes.
-                        BasicText(
-                            label,
-                            style = labelStyle,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                            autoSize = TextAutoSize.StepBased(
-                                minFontSize = 9.sp, maxFontSize = 13.sp, stepSize = 0.5.sp
-                            ),
-                            modifier = Modifier
-                                .graphicsLayer {
-                                    alpha = weight()
-                                    clip = true
-                                }
-                                .layout { measurable, _ ->
-                                    val text = measurable.measure(Constraints(maxWidth = labelMax))
-                                    val gap = 6.dp.roundToPx()
-                                    val width = ((text.width + gap) * weight()).roundToInt()
-                                    layout(width, text.height) { text.placeRelative(gap, 0) }
-                                }
-                        )
+                        if (showLabels) {
+                            // Opens by its item's weight: measured at full width, laid out at
+                            // that fraction of it, and clipped. Read in layout and draw only,
+                            // so the animation never recomposes.
+                            BasicText(
+                                label,
+                                style = labelStyle,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 9.sp, maxFontSize = 13.sp, stepSize = 0.5.sp
+                                ),
+                                modifier = Modifier
+                                    .graphicsLayer {
+                                        alpha = weight()
+                                        clip = true
+                                    }
+                                    .layout { measurable, _ ->
+                                        val text = measurable.measure(Constraints(maxWidth = labelMax))
+                                        val gap = 6.dp.roundToPx()
+                                        val width = ((text.width + gap) * weight()).roundToInt()
+                                        layout(width, text.height) { text.placeRelative(gap, 0) }
+                                    }
+                            )
+                        }
                     }
                 }
             }

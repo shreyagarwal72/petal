@@ -28,7 +28,8 @@ object BarMetrics {
      * Reports are ignored while the bars are minimized or sliding: a collapsed bar is not composed
      * (so it would report a size of 0) and must never shrink the page padding.
      */
-    private fun settled(): Boolean = BarCollapseState.collapsedFraction <= 0f
+    private fun settled(): Boolean =
+        BarCollapseState.collapsedFraction <= 0f && !BarCollapseState.viewportCollapsed
 
     fun reportTop(px: Int) { if (px > 0 && settled()) topBarPx = px }
     fun reportBottomAddress(px: Int) { if (px > 0 && settled()) bottomAddressPx = px }
@@ -51,8 +52,11 @@ object BarMetrics {
      * @param topOverlayPx status bar / cutout + desktop tab strip, used when the address bar is at the bottom.
      * @param navVisible   whether the bottom nav is shown.
      * @param navBarInset  gesture / 3-button navigation bar inset, reserved when nothing else covers it.
+     * @param isFloatingNav true when the bottom nav floats, so the page runs edge-to-edge underneath it.
+     * @param isFloatingBottomAddress true when the bottom address bar floats, so the page runs edge-to-edge underneath it.
      */
     @JvmStatic
+    @JvmOverloads
     fun pagePadding(
         isBottomAddressBar: Boolean,
         measuredTop: Int,
@@ -63,15 +67,19 @@ object BarMetrics {
         estimatedBottomNav: Int,
         navVisible: Boolean,
         topOverlayPx: Int,
-        navBarInset: Int
+        navBarInset: Int,
+        isFloatingNav: Boolean = false,
+        isFloatingBottomAddress: Boolean = false
     ): PagePadding {
         val nav = if (!navVisible) 0 else if (measuredBottomNav > 0) measuredBottomNav else estimatedBottomNav
         return if (isBottomAddressBar) {
             val address = if (measuredBottomAddress > 0) measuredBottomAddress else estimatedBottomAddress
-            PagePadding(top = topOverlayPx, bottom = address + nav)
+            val bottom = if (isFloatingBottomAddress) 0 else address + nav
+            PagePadding(top = topOverlayPx, bottom = bottom)
         } else {
             val top = if (measuredTop > 0) measuredTop else estimatedTop
-            PagePadding(top = top, bottom = if (navVisible) nav else navBarInset)
+            val bottom = if (isFloatingNav) 0 else if (navVisible) nav else navBarInset
+            PagePadding(top = top, bottom = bottom)
         }
     }
 }

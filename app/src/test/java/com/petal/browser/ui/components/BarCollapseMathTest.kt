@@ -18,4 +18,21 @@ class BarCollapseMathTest {
         val closed = BarCollapseMath.compute(BarCollapseStyle.PILL, 1f, true)
         assertFalse(closed.barVisible); assertTrue(closed.showPill); assertEquals(0f, closed.slideFraction, 0f)
     }
+
+    @Test fun pill_disjointHandoff_andSyncedNav() {
+        val atHandoff = BarCollapseMath.compute(BarCollapseStyle.PILL, BarCollapseMath.PILL_HANDOFF, false)
+        assertFalse(atHandoff.barVisible)
+        assertFalse(atHandoff.showPill)
+        assertFalse(atHandoff.navVisible)
+
+        val midBar = BarCollapseMath.compute(BarCollapseStyle.PILL, 0.21f, true)
+        assertTrue(midBar.barVisible)
+        assertFalse(midBar.showPill)
+        assertEquals(midBar.fullBarAlpha, midBar.navAlpha, 0.0001f)
+        assertEquals(midBar.fullBarAlpha, midBar.sideButtonAlpha, 0.0001f)
+
+        val midPill = BarCollapseMath.compute(BarCollapseStyle.PILL, 0.70f, true)
+        assertFalse(midPill.barVisible)
+        assertTrue(midPill.showPill)
+    }
 }

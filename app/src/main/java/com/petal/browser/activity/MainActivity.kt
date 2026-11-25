@@ -702,6 +702,23 @@ class MainActivity : FragmentActivity(), BrowserController {
         }
     }
 
+    /** Captures the visible GeckoView pixels of the active web page on the UI thread. */
+    fun captureActivePagePixels(callback: (android.graphics.Bitmap?) -> Unit) {
+        runOnUiThread {
+            val viewportCapture = com.petal.browser.compose.engine.PetalViewportThumbnailer.capturePagePixels
+            if (viewportCapture != null) {
+                viewportCapture(callback)
+                return@runOnUiThread
+            }
+            val controller = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
+            if (controller != null) {
+                controller.captureFullPageBitmap(callback)
+                return@runOnUiThread
+            }
+            callback(null)
+        }
+    }
+
     val presentedScreens = java.util.Stack<View>()
     val hasPresentedScreens: Boolean get() = presentedScreens.isNotEmpty()
 

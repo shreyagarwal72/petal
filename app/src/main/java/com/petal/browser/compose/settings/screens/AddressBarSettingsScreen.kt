@@ -446,8 +446,9 @@ fun AddressBarSettingsScreen(
                     val barsSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
                     var hideBarsOnScroll by remember { mutableStateOf(barsSp.getBoolean(BarPrefs.KEY_HIDE_BARS_ON_SCROLL, true)) }
                     var extensionChips by remember { mutableStateOf(barsSp.getBoolean("sp_address_bar_extension_chips", true)) }
+                    var showNavLabels by remember { mutableStateOf(barsSp.getBoolean(BarSettings.KEY_SHOW_NAV_LABELS, true)) }
 
-                    PetalGroup(rowCount = 4) { index, groupPos ->
+                    PetalGroup(rowCount = 5) { index, groupPos ->
                         when (index) {
                             0 -> PetalSettingsToggleRow(
                                 title = stringResource(R.string.ui_address_bar_horizontal_swipe_to),
@@ -486,6 +487,17 @@ fun AddressBarSettingsScreen(
                                 onCheckedChange = { on ->
                                     extensionChips = on
                                     barsSp.edit().putBoolean("sp_address_bar_extension_chips", on).apply()
+                                }
+                            )
+                            4 -> PetalSettingsToggleRow(
+                                title = stringResource(R.string.ui_show_nav_labels),
+                                subtitle = stringResource(R.string.ui_show_nav_labels_desc),
+                                icon = Icons.Rounded.Label,
+                                checked = showNavLabels,
+                                position = groupPos,
+                                onCheckedChange = { on ->
+                                    showNavLabels = on
+                                    barsSp.edit().putBoolean(BarSettings.KEY_SHOW_NAV_LABELS, on).apply()
                                 }
                             )
                         }

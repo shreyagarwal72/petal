@@ -1900,5 +1900,13 @@
     <string name="bar_downloads">Downloads</string>
     <string name="bar_find_in_page">Find in page</string>
     <string name="bar_history">History</string>
+    <string name="ui_petal_ai_attach_page_screenshot">Page screenshot lagayein</string>
+    <string name="ui_petal_ai_screenshot_blocked_private">Private tabs mein page screenshot band hai</string>
+    <string name="ui_petal_ai_screenshot_blocked_password">Password pages par page screenshot blocked hai</string>
+    <string name="ui_petal_ai_screenshot_blocked_url">Is page par screenshot uplabdh nahi hai</string>
+    <string name="ui_petal_ai_custom_model_vision_title">Yeh model images support karta hai</string>
+    <string name="ui_petal_ai_custom_model_vision_desc">Is Custom AI model ke liye image support khud set karein</string>
     <string name="bar_ai">AI</string>
+    <string name="ui_show_nav_labels">Bottom nav labels dikhayein</string>
+    <string name="ui_show_nav_labels_desc">Navigation bar icons ke saath text labels dikhayein</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.petal.browser.ui.components
 
 import android.app.Activity
+import android.os.Build
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutout
@@ -10,31 +11,35 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
+import com.petal.browser.motion.MotionGate
 import com.petal.browser.ui.glass.LocalPetalGlassRevision
 import com.petal.browser.ui.glass.LocalPetalGlassSource
 import com.petal.browser.ui.glass.rememberGlassBar
 import com.petal.browser.ui.theme.IncognitoSurfaceContainer
 
 /**
- * Everything [PetalAddressBar] and [PetalMergedBar] used to compute twice: resolved position,
- * container shape, collapse visuals, liquid-glass setup and window insets.
+ * Everything [PetalAddressBar] and [PetalMergedBar] share: resolved position,
+ * container shape, collapse style, liquid-glass setup, and window insets.
+ *
+ * Frame-by-frame collapse values are NOT baked into [BarChrome] during composition so
+ * scroll animation frames do not recompose the bars; call [currentVisuals] inside
+ * `graphicsLayer` or `derivedStateOf`.
  */
+@Stable
 class BarChrome(
     val height: AddressBarHeight,
     val isBottom: Boolean,
     val isFloating: Boolean,
+    val isPreview: Boolean,
+    val collapseStyle: BarCollapseStyle,
     val isPillCollapse: Boolean,
-    val collapsedFraction: Float,
-    val visuals: BarCollapseMath.Visuals,
     val containerShape: RoundedCornerShape,
     val isLiquidGlass: Boolean,
     val glassBar: com.petal.browser.ui.glass.GlassBar?,
@@ -45,10 +50,15 @@ class BarChrome(
     val navBarBottomInset: Dp,
     val glassSource: android.view.View? = null
 ) {
-    val animatedContainerColor: Color
-        get() = if (isLiquidGlass) Color.Transparent else containerColor.copy(alpha = containerColor.alpha * visuals.outerBgAlpha)
-    val animatedElevation: Dp
-        get() = (if (isLiquidGlass) 0.dp else if (isBottom) 2.dp else 4.dp) * visuals.outerBgAlpha
+    fun currentVisuals(): BarCollapseMath.Visuals =
+        BarCollapseMath.compute(
+            collapseStyle,
+            if (isPreview) 0f else BarCollapseState.collapsedFraction,
+            isBottom
+        )
+
+    val staticElevation: Dp
+        get() = if (isLiquidGlass) 0.dp else if (isBottom) 1.dp else 2.dp
 }
 
 /** Container shape shared by both bars. */
@@ -83,18 +93,20 @@ fun rememberBarChrome(
     val isBottom = if (isPreview) isBottomParam else (isBottomParam || settings.position == AddressBarPosition.BOTTOM)
     val isFloating = floatingForShape(isBottom)
     val effectiveStyle = if (isPreview) BarCollapseStyle.HIDE else settings.collapseStyle
-    val fraction = if (isPreview) 0f else BarCollapseState.collapsedFraction
-    val visuals = BarCollapseMath.compute(effectiveStyle, fraction, isBottom)
 
     LocalPetalGlassRevision.current
-    val isLiquidGlass = !isPreview && glassPref(isBottom)
+    val glassSupported = remember(context) {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MotionGate.isLowEndDevice(context)
+    }
+    val wantsLiquidGlass = !isPreview && glassSupported && glassPref(isBottom)
     val samplesWallpaper = BarInsets.glassSamplesWallpaper(sp, isBottom, floatingForWallpaper(isBottom), false)
     val ambient = LocalPetalGlassSource.current
     val activity = context as? Activity
-    val glassSource = if (isPreview || samplesWallpaper) null
+    val glassSource = if (isPreview || !wantsLiquidGlass || samplesWallpaper) null
     else (ambient ?: activity?.findViewById<android.view.View>(com.petal.browser.R.id.main_content))
-    val glassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
-    val pillGlassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
+    val glassBar = rememberGlassBar(if (wantsLiquidGlass) glassSource else null)
+    val pillGlassBar = rememberGlassBar(if (wantsLiquidGlass) glassSource else null)
+    val isLiquidGlass = wantsLiquidGlass && (glassBar != null || glassSource == null)
 
     val surface = if (isIncognito) IncognitoSurfaceContainer else MaterialTheme.colorScheme.surfaceContainerHigh
     val containerColor = if (isLiquidGlass) Color.Transparent else surface
@@ -108,9 +120,9 @@ fun rememberBarChrome(
         height = height,
         isBottom = isBottom,
         isFloating = isFloating,
+        isPreview = isPreview,
+        collapseStyle = effectiveStyle,
         isPillCollapse = !isPreview && settings.collapseStyle == BarCollapseStyle.PILL,
-        collapsedFraction = fraction,
-        visuals = visuals,
         containerShape = barContainerShape(height, isBottom, isFloating),
         isLiquidGlass = isLiquidGlass,
         glassBar = glassBar,

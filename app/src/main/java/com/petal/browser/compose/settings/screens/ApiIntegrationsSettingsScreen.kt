@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.NetworkCheck
@@ -47,6 +48,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -244,6 +246,7 @@ fun ApiIntegrationsSettingsScreenContent(
     var isTestingKey by remember { mutableStateOf(false) }
     var autoPageContext by remember { mutableStateOf(PetalAiResearchEngine.isAutoPageContextEnabled(context)) }
     var generateSuggestions by remember { mutableStateOf(PetalAiResearchEngine.isGeneratePageSuggestionsEnabled(context)) }
+    var customVisionRevision by remember { mutableIntStateOf(0) }
     var todayTokens by remember { mutableLongStateOf(PetalAiUsageTracker.getTodayTokens(context)) }
     var monthTokens by remember { mutableLongStateOf(PetalAiUsageTracker.getMonthTokens(context)) }
 
@@ -668,6 +671,26 @@ fun ApiIntegrationsSettingsScreenContent(
                                         }
                                     }
                                 }
+                            }
+                        }
+
+                        if (isCustom) {
+                            val customVisionChecked = remember(selectedModel, customVisionRevision) {
+                                PetalAiResearchEngine.isVisionSupported(context, AiProvider.CUSTOM, selectedModel)
+                            }
+                            add { pos ->
+                                PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_petal_ai_custom_model_vision_title),
+                                    subtitle = stringResource(R.string.ui_petal_ai_custom_model_vision_desc),
+                                    icon = Icons.Rounded.Image,
+                                    checked = customVisionChecked,
+                                    enabled = selectedModel.isNotBlank(),
+                                    position = pos,
+                                    onCheckedChange = { enabled ->
+                                        PetalAiResearchEngine.setCustomModelVisionOverride(context, selectedModel, enabled)
+                                        customVisionRevision++
+                                    }
+                                )
                             }
                         }
                     }

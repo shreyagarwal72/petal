@@ -236,67 +236,23 @@ fun AddressPill(
                     }
                 }
             )
-            .padding(horizontal = if (isBottom || inMergedBar) 8.dp else 6.dp, vertical = 6.dp),
+            .padding(horizontal = 6.dp, vertical = 6.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Favicon button: tap opens the privacy shield. It no longer carries the security
-                // state; that has its own always-visible indicator right after it.
-                val faviconDesc = stringResource(R.string.bar_privacy_shield)
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(48.dp) // 48dp touch target; the icon stays 22dp
-                        .clip(ExpressiveButtonShape)
-                        .clickable(
-                            indication = ripple(bounded = true),
-                            interactionSource = remember { MutableInteractionSource() },
-                            onClickLabel = faviconDesc
-                        ) {
-                            val act = context as? ComponentActivity
-                            if (!isBlankOrSearch && act != null) {
-                                PetalPrivacyShieldSheet.show(act, url) {}
-                            } else {
-                                markOrigin()
-                                currentAddressClick()
-                            }
-                        }
-                ) {
-                AnimatedContent(
-                    targetState = (favicon != null && !isBlankOrSearch && !isIncognito) to favicon,
-                    transitionSpec = {
-                        fadeIn(PetalSpring.calm()) togetherWith fadeOut(PetalSpring.calm())
-                    },
-                    label = "FaviconCrossfade"
-                ) { (hasFavicon, fav) ->
-                    if (hasFavicon && fav != null) {
-                        Image(
-                            bitmap = fav.asImageBitmap(),
-                            contentDescription = stringResource(R.string.bar_site_icon),
-                            modifier = Modifier.size(22.dp).clip(ExpressiveButtonShape)
-                        )
-                    } else {
-                        Icon(
-                            imageVector = if (isIncognito) Icons.Rounded.VisibilityOff else Icons.Rounded.Language,
-                            contentDescription = faviconDesc,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(19.dp)
-                        )
-                    }
-                }
-                }
+            val translateController = rememberTranslateChipController()
+            val extensionActions = rememberExtensionChipActions(url)
+            val isProperSite = remember(url) { PetalAiResearchEngine.isProperWebSite(url) }
+            val isBookmarked by rememberIsBookmarked(url)
+            val bookmarkScope = rememberCoroutineScope()
+            var showPillOverflowMenu by remember { mutableStateOf(false) }
 
-                // Always-visible security indicator: lock for HTTPS, "Not secure" for HTTP.
-                if (isHttps || isHttp) {
-                    Spacer(modifier = Modifier.width(2.dp))
-                    SecurityIndicator(isHttps = isHttps, isPunycode = isPunycode)
-                }
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val isTightPill = maxWidth < 260.dp
+                val faviconSlotWidth = if (isTightPill) 40.dp else 48.dp
+                val chipSlotWidth = if (maxWidth < 300.dp) 40.dp else 44.dp
+                val moreSlotWidth = 40.dp
 
-                // Camera / microphone in use. Reads observable state, so it appears and disappears live.
                 val hasActiveSensors = try {
                     val host = Uri.parse(url).host ?: url
                     PetalActiveMediaSensors.hasAnyActive("https://$host") || PetalActiveMediaSensors.hasAnyActive(url)
@@ -304,128 +260,343 @@ fun AddressPill(
                     false
                 }
 
-                if (hasActiveSensors) {
-                    Spacer(modifier = Modifier.width(3.dp))
-                    val sensorDesc = stringResource(R.string.bar_sensor_active)
-                    Box(
-                        modifier = Modifier
-                            .size(7.dp)
-                            .clip(ExpressiveButtonShape)
-                            .background(MaterialTheme.colorScheme.tertiary)
-                            .semantics { contentDescription = sensorDesc }
-                    )
+                val securityWidth = when {
+                    isHttp -> if (isPunycode) 88.dp else 72.dp
+                    isHttps -> if (isPunycode) 34.dp else 18.dp
+                    else -> 0.dp
                 }
+                val sensorWidth = if (hasActiveSensors) 10.dp else 0.dp
+                val leftFixedWidth = faviconSlotWidth + securityWidth + sensorWidth + 8.dp
+                val minUrlWidth = minOf(120.dp, (maxWidth - leftFixedWidth).coerceAtLeast(48.dp))
+                val chipBudget = (maxWidth - leftFixedWidth - minUrlWidth).coerceAtLeast(0.dp)
 
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Text(
-                    text = formattedUrl,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f)
-                )
-
-                // Optional contextual action button
-                val isProperSite = remember(url) { PetalAiResearchEngine.isProperWebSite(url) }
                 val showRightAction = !isBlankOrSearch && when (addressBarAction.uppercase()) {
                     "AI" -> isProperSite
                     "BOOKMARK" -> true
                     else -> false
                 }
 
-                if (showRightAction) {
-                    val isBookmarked by rememberIsBookmarked(url)
-                    val bookmarkScope = rememberCoroutineScope()
-                    val petalAiLabel = stringResource(R.string.bar_petal_ai)
-                    IconButton(
-                        onClick = {
-                            if (addressBarAction.equals("AI", true)) {
-                                onAiResearchClick()
-                            } else {
-                                bookmarkScope.launch {
-                                    val was = isBookmarked
-                                    val now = BookmarkChanges.toggle(context, url, title, was)
-                                    if (now != null) {
-                                        PetalToast.show(
-                                            context,
-                                            context.getString(if (now) R.string.ui_saved_to_bookmarks else R.string.ui_bookmark_removed)
+                val aiLabel = stringResource(R.string.bar_petal_ai)
+                val bookmarkLabel = if (isBookmarked) stringResource(R.string.ui_remove_from_bookmarks) else stringResource(R.string.ui_bookmark_this_page)
+                val readerLabel = stringResource(R.string.bar_reader_view)
+                val mediaLabel = stringResource(R.string.bar_media_found, totalMediaCount)
+
+                // Priority order (highest first; lowest priority dropped first into More chip):
+                // 1. Contextual AI/Bookmark  2. Reader  3. Media  4. Translate  5. Extension chips
+                val pillItems = buildList<PillChipEntry> {
+                    if (showRightAction) {
+                        val isAi = addressBarAction.equals("AI", true)
+                        add(
+                            PillChipEntry(
+                                id = "right_action",
+                                label = if (isAi) aiLabel else bookmarkLabel,
+                                icon = if (isAi) Icons.Rounded.AutoAwesome else if (isBookmarked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
+                                onClick = {
+                                    if (isAi) {
+                                        onAiResearchClick()
+                                    } else {
+                                        bookmarkScope.launch {
+                                            val was = isBookmarked
+                                            val now = BookmarkChanges.toggle(context, url, title, was)
+                                            if (now != null) {
+                                                PetalToast.show(
+                                                    context,
+                                                    context.getString(if (now) R.string.ui_saved_to_bookmarks else R.string.ui_bookmark_removed)
+                                                )
+                                            }
+                                        }
+                                    }
+                                },
+                                renderVisual = { slotW ->
+                                    IconButton(
+                                        onClick = {
+                                            if (isAi) {
+                                                onAiResearchClick()
+                                            } else {
+                                                bookmarkScope.launch {
+                                                    val was = isBookmarked
+                                                    val now = BookmarkChanges.toggle(context, url, title, was)
+                                                    if (now != null) {
+                                                        PetalToast.show(
+                                                            context,
+                                                            context.getString(if (now) R.string.ui_saved_to_bookmarks else R.string.ui_bookmark_removed)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.width(slotW).heightIn(min = 48.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isAi) Icons.Rounded.AutoAwesome else if (isBookmarked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
+                                            contentDescription = if (isAi) aiLabel else bookmarkLabel,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
                                         )
                                     }
                                 }
-                            }
-                        },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (addressBarAction.equals("AI", true)) Icons.Rounded.AutoAwesome else if (isBookmarked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
-                            contentDescription = if (addressBarAction.equals("AI", true)) petalAiLabel else if (isBookmarked) stringResource(R.string.ui_remove_from_bookmarks) else stringResource(R.string.ui_bookmark_this_page),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            )
                         )
                     }
-                }
-
-                // On-device translation chip (only when the page is translatable) and
-                // the active tab's extension action chips (max two + overflow).
-                PetalTranslateChip()
-                PetalExtensionActionChips(pageUrl = url)
-
-                // Dynamic Reader Mode Button
-                if (isReaderEligible) {
-                    IconButton(
-                        onClick = onReaderClick,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.MenuBook,
-                            contentDescription = stringResource(R.string.bar_reader_view),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                    if (isReaderEligible) {
+                        add(
+                            PillChipEntry(
+                                id = "reader",
+                                label = readerLabel,
+                                icon = Icons.Rounded.MenuBook,
+                                onClick = onReaderClick,
+                                renderVisual = { slotW ->
+                                    IconButton(
+                                        onClick = onReaderClick,
+                                        modifier = Modifier.width(slotW).heightIn(min = 48.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.MenuBook,
+                                            contentDescription = readerLabel,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            )
                         )
                     }
-                }
-
-                // Media sniffer badge
-                if (showMediaButton) {
-                    AnimatedVisibility(
-                        visible = true,
-                        enter = fadeIn(animationSpec = PetalSpring.calm()) + scaleIn(initialScale = 0.8f),
-                        exit = fadeOut(animationSpec = PetalSpring.calm()) + scaleOut(targetScale = 0.8f)
-                    ) {
+                    if (showMediaButton) {
                         val hasVideo = capturedMedia.any { it.kind == com.petal.browser.media.sniffer.capture.MediaKind.VIDEO } || hasPlayableMedia
                         val hasAudio = capturedMedia.any { it.kind == com.petal.browser.media.sniffer.capture.MediaKind.AUDIO }
-                        val icon = when {
+                        val mediaIcon = when {
                             hasVideo -> Icons.Rounded.VideoLibrary
                             hasAudio -> Icons.Rounded.Audiotrack
                             else -> Icons.Rounded.TravelExplore
                         }
-                        Surface(
-                            shape = ExpressiveButtonShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
-                            modifier = Modifier
-                                .padding(end = 4.dp)
-                                .minimumInteractiveComponentSize() // 48dp touch target, same visual
-                                .clickable {
-                                    onMediaClick()
+                        add(
+                            PillChipEntry(
+                                id = "media",
+                                label = mediaLabel,
+                                icon = mediaIcon,
+                                onClick = onMediaClick,
+                                renderVisual = { _ ->
+                                    Surface(
+                                        shape = ExpressiveButtonShape,
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                                        modifier = Modifier
+                                            .padding(end = 4.dp)
+                                            .minimumInteractiveComponentSize()
+                                            .clickable { onMediaClick() }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.5.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = mediaIcon,
+                                                contentDescription = mediaLabel,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            if (totalMediaCount > 0) {
+                                                Spacer(Modifier.width(3.5.dp))
+                                                Text(
+                                                    text = if (totalMediaCount > 99) "99+" else totalMediaCount.toString(),
+                                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.5.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            )
+                        )
+                    }
+                    if (translateController.isTranslatable) {
+                        add(
+                            PillChipEntry(
+                                id = "translate",
+                                label = "Translate page",
+                                icon = Icons.Rounded.Translate,
+                                onClick = translateController.openSheet,
+                                renderVisual = { slotW ->
+                                    TranslateChipButton(
+                                        isTranslated = translateController.isTranslated,
+                                        onClick = translateController.openSheet,
+                                        slotWidth = slotW
+                                    )
+                                }
+                            )
+                        )
+                    }
+                    extensionActions.forEach { ext ->
+                        add(
+                            PillChipEntry(
+                                id = "ext_${ext.id}",
+                                label = ext.label,
+                                icon = Icons.Rounded.Extension,
+                                onClick = ext.onClick,
+                                renderVisual = { slotW ->
+                                    ExtensionChipItem(action = ext, slotWidth = slotW)
+                                }
+                            )
+                        )
+                    }
+                }
+
+                // Cap visible pill chips at 1 primary chip + 1 More chip (or More only if tight).
+                val primaryChip: PillChipEntry?
+                val overflowChips: List<PillChipEntry>
+                when {
+                    pillItems.isEmpty() -> {
+                        primaryChip = null
+                        overflowChips = emptyList()
+                    }
+                    pillItems.size == 1 -> {
+                        val needed = if (pillItems[0].id == "media") 56.dp else chipSlotWidth
+                        if (chipBudget >= needed) {
+                            primaryChip = pillItems[0]
+                            overflowChips = emptyList()
+                        } else if (chipBudget >= moreSlotWidth) {
+                            primaryChip = null
+                            overflowChips = pillItems
+                        } else {
+                            primaryChip = null
+                            overflowChips = emptyList()
+                        }
+                    }
+                    else -> {
+                        val neededWithPrimary = (if (pillItems[0].id == "media") 56.dp else chipSlotWidth) + moreSlotWidth
+                        if (chipBudget >= neededWithPrimary) {
+                            primaryChip = pillItems[0]
+                            overflowChips = pillItems.drop(1)
+                        } else if (chipBudget >= moreSlotWidth) {
+                            primaryChip = null
+                            overflowChips = pillItems
+                        } else {
+                            primaryChip = null
+                            overflowChips = emptyList()
+                        }
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Favicon button: tap opens the privacy shield.
+                    val faviconDesc = stringResource(R.string.bar_privacy_shield)
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .width(faviconSlotWidth)
+                            .heightIn(min = 48.dp)
+                            .clip(ExpressiveButtonShape)
+                            .clickable(
+                                indication = ripple(bounded = true),
+                                interactionSource = remember { MutableInteractionSource() },
+                                onClickLabel = faviconDesc
                             ) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = stringResource(R.string.bar_media_found, totalMediaCount),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
+                                val act = context as? ComponentActivity
+                                if (!isBlankOrSearch && act != null) {
+                                    PetalPrivacyShieldSheet.show(act, url) {}
+                                } else {
+                                    markOrigin()
+                                    currentAddressClick()
+                                }
+                            }
+                    ) {
+                        AnimatedContent(
+                            targetState = (favicon != null && !isBlankOrSearch && !isIncognito) to favicon,
+                            transitionSpec = {
+                                fadeIn(PetalSpring.calm()) togetherWith fadeOut(PetalSpring.calm())
+                            },
+                            label = "FaviconCrossfade"
+                        ) { (hasFavicon, fav) ->
+                            if (hasFavicon && fav != null) {
+                                Image(
+                                    bitmap = fav.asImageBitmap(),
+                                    contentDescription = stringResource(R.string.bar_site_icon),
+                                    modifier = Modifier.size(22.dp).clip(ExpressiveButtonShape)
                                 )
-                                if (totalMediaCount > 0) {
-                                    Spacer(Modifier.width(3.5.dp))
-                                    Text(
-                                        text = if (totalMediaCount > 99) "99+" else totalMediaCount.toString(),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary
+                            } else {
+                                Icon(
+                                    imageVector = if (isIncognito) Icons.Rounded.VisibilityOff else Icons.Rounded.Language,
+                                    contentDescription = faviconDesc,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Always-visible security indicator: lock for HTTPS, "Not secure" for HTTP.
+                    if (isHttps || isHttp) {
+                        Spacer(modifier = Modifier.width(2.dp))
+                        SecurityIndicator(isHttps = isHttps, isPunycode = isPunycode)
+                    }
+
+                    if (hasActiveSensors) {
+                        Spacer(modifier = Modifier.width(3.dp))
+                        val sensorDesc = stringResource(R.string.bar_sensor_active)
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .clip(ExpressiveButtonShape)
+                                .background(MaterialTheme.colorScheme.tertiary)
+                                .semantics { contentDescription = sensorDesc }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = formattedUrl,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .weight(1f)
+                            .widthIn(min = minUrlWidth)
+                    )
+
+                    primaryChip?.renderVisual?.invoke(chipSlotWidth)
+
+                    if (overflowChips.isNotEmpty()) {
+                        Box {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .width(moreSlotWidth)
+                                    .heightIn(min = 48.dp)
+                                    .clip(CircleShape)
+                                    .clickable { showPillOverflowMenu = true }
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    modifier = Modifier.size(30.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.MoreHoriz,
+                                            contentDescription = "More page actions",
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+                            DropdownMenu(
+                                expanded = showPillOverflowMenu,
+                                onDismissRequest = { showPillOverflowMenu = false }
+                            ) {
+                                overflowChips.forEach { entry ->
+                                    DropdownMenuItem(
+                                        text = { Text(entry.label) },
+                                        leadingIcon = {
+                                            Icon(entry.icon, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            showPillOverflowMenu = false
+                                            entry.onClick()
+                                        }
                                     )
                                 }
                             }
@@ -697,6 +868,14 @@ fun AddressPill(
         }
     }
 }
+
+private class PillChipEntry(
+    val id: String,
+    val label: String,
+    val icon: ImageVector,
+    val onClick: () -> Unit,
+    val renderVisual: @Composable (androidx.compose.ui.unit.Dp) -> Unit
+)
 
 /** Small lock (HTTPS) or "Not secure" label (HTTP). Punycode lookalike hosts add a warning glyph. */
 @Composable

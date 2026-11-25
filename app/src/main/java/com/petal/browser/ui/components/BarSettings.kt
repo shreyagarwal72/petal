@@ -82,6 +82,7 @@ object BarSettings {
     const val KEY_ACTION = "sp_address_bar_action"
     const val KEY_AI_LEGACY = "sp_ai_search_address_bar"
     const val KEY_MEDIA_BUTTON = "sp_media_button_address_bar"
+    const val KEY_SHOW_NAV_LABELS = "sp_show_nav_labels"
 
     var height by mutableStateOf(AddressBarHeight.DEFAULT); private set
     var position by mutableStateOf(AddressBarPosition.TOP); private set
@@ -89,6 +90,7 @@ object BarSettings {
     var style by mutableStateOf(AddressBarStyle.CLASSIC); private set
     var mergeLayout by mutableStateOf(MergeLayout.SINGLE); private set
     var floatingNav by mutableStateOf(true); private set
+    var showNavLabels by mutableStateOf(true); private set
     var swipeTabs by mutableStateOf(true); private set
     var quickActions by mutableStateOf(true); private set
     var mediaButton by mutableStateOf(true); private set
@@ -114,8 +116,9 @@ object BarSettings {
     private fun readAll(p: SharedPreferences) {
         listOf(
             KEY_HEIGHT, BarPrefs.KEY_ADDRESS_BAR_POSITION, BarPrefs.KEY_BAR_COLLAPSE_STYLE,
-            BarPrefs.KEY_ADDRESS_BAR_STYLE, BarPrefs.KEY_MERGE_LAYOUT, KEY_FLOATING, KEY_SWIPE_TABS,
-            KEY_QUICK_ACTIONS, KEY_MEDIA_BUTTON, KEY_ACTION, BarPrefs.KEY_MERGE_LEADING
+            BarPrefs.KEY_ADDRESS_BAR_STYLE, BarPrefs.KEY_MERGE_LAYOUT, KEY_FLOATING,
+            KEY_SHOW_NAV_LABELS, KEY_SWIPE_TABS, KEY_QUICK_ACTIONS, KEY_MEDIA_BUTTON,
+            KEY_ACTION, BarPrefs.KEY_MERGE_LEADING, BarPrefs.KEY_MERGE_TRAILING
         ).forEach { read(p, it) }
     }
 
@@ -129,6 +132,7 @@ object BarSettings {
             BarPrefs.KEY_ADDRESS_BAR_STYLE -> style = AddressBarStyle.fromPref(p.getString(key, null))
             BarPrefs.KEY_MERGE_LAYOUT -> mergeLayout = MergeLayout.fromPref(p.getString(key, null))
             KEY_FLOATING -> floatingNav = p.getBoolean(key, true)
+            KEY_SHOW_NAV_LABELS -> showNavLabels = p.getBoolean(key, true)
             KEY_SWIPE_TABS -> swipeTabs = p.getBoolean(key, true)
             KEY_QUICK_ACTIONS -> quickActions = p.getBoolean(key, true)
             KEY_MEDIA_BUTTON -> mediaButton = p.getBoolean(key, true)
@@ -137,7 +141,6 @@ object BarSettings {
             BarPrefs.KEY_MERGE_LEADING, BarPrefs.KEY_MERGE_TRAILING ->
                 mergeActions = BarPrefs.getSanitizedMergeActions(p)
         }
-        if (key == BarPrefs.KEY_MERGE_LEADING) mergeActions = BarPrefs.getSanitizedMergeActions(p)
     }
 }
 

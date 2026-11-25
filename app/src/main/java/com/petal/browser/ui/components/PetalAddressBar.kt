@@ -81,49 +81,36 @@ fun PetalAddressBar(
     val resolvedIsBottom = chrome.isBottom
     val isFloatingBar = chrome.isFloating
     val addressBarHeight = chrome.height
-    val isPillCollapse = chrome.isPillCollapse
-    val collapsedFraction = chrome.collapsedFraction
-    val visuals = chrome.visuals
     val containerShape = chrome.containerShape
     val isLiquidGlass = chrome.isLiquidGlass
     val glassBar = chrome.glassBar
-    val pillGlassBar = chrome.pillGlassBar
-    val glassSource = chrome.glassSource
     val baseGlassColor = chrome.baseGlassColor
-    val containerColor = chrome.containerColor
     val statusBarTopInset = chrome.statusBarTopInset
     val navBarBottomInset = chrome.navBarBottomInset
-    var barHeightPx by remember { mutableIntStateOf(0) }
-    val sideButtonAlpha = visuals.sideButtonAlpha
-    val sideButtonScale = visuals.sideButtonScale
-    val leftButtonOffset = visuals.leftButtonOffsetDp.dp
-    val rightButtonOffset = visuals.rightButtonOffsetDp.dp
-    val fullBarAlpha = visuals.fullBarAlpha
-    val pillAlpha = visuals.pillAlpha
-    val pillScale = visuals.pillScale
-    val pillTranslationY = visuals.pillTranslationDp.dp
-    val outerBgAlpha = visuals.outerBgAlpha
-    val animatedContainerColor = chrome.animatedContainerColor
-    val animatedElevation = chrome.animatedElevation
+    var fullBarHeightPx by remember { mutableIntStateOf(0) }
+    val barVisible by remember(chrome) {
+        derivedStateOf { chrome.currentVisuals().barVisible }
+    }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .onSizeChanged { barHeightPx = it.height }
             .graphicsLayer {
-                // HIDE (Full Slide): the whole bar slides off its own edge as the fraction grows.
-                translationY = (if (resolvedIsBottom) 1f else -1f) * barHeightPx * visuals.slideFraction
+                // HIDE (Full Slide): the whole bar slides off its own edge using the settled full bar height.
+                val v = chrome.currentVisuals()
+                translationY = (if (resolvedIsBottom) 1f else -1f) * fullBarHeightPx * v.slideFraction
             },
         contentAlignment = Alignment.Center
     ) {
-        if (visuals.barVisible) {
+        if (barVisible) {
             Surface(
                 shape = containerShape,
-                color = animatedContainerColor,
-                tonalElevation = animatedElevation,
-                shadowElevation = animatedElevation,
+                color = chrome.containerColor,
+                tonalElevation = chrome.staticElevation,
+                shadowElevation = chrome.staticElevation,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onSizeChanged { if (it.height > 0) fullBarHeightPx = it.height }
                     .then(
                         if (resolvedIsBottom) {
                             if (isFloatingBar) {
@@ -142,15 +129,16 @@ fun PetalAddressBar(
                         }
                     )
                     .then(
-                        if (isLiquidGlass && outerBgAlpha > 0.05f) {
+                        if (isLiquidGlass) {
                             Modifier.liquidGlass(containerShape, baseGlassColor, glassBar)
                         } else Modifier
                     )
                     .graphicsLayer {
-                        alpha = fullBarAlpha
-                        scaleX = visuals.fullBarScaleX
-                        scaleY = visuals.fullBarScaleY
-                        translationY = visuals.fullBarTranslationDp.dp.toPx()
+                        val v = chrome.currentVisuals()
+                        alpha = v.fullBarAlpha
+                        scaleX = v.fullBarScaleX
+                        scaleY = v.fullBarScaleY
+                        translationY = v.fullBarTranslationDp.dp.toPx()
                     }
             ) {
                 Box(
@@ -161,111 +149,112 @@ fun PetalAddressBar(
                             bottom = if (resolvedIsBottom && !hasBottomNav && !isPreview) navBarBottomInset + 4.dp else 2.dp
                         )
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(addressBarHeight.barDp.dp)
-                            .padding(horizontal = if (resolvedIsBottom) 6.dp else 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Far left: Back. Long-press opens this tab's back/forward history popup.
-                        val backDesc = stringResource(R.string.bar_back)
-                        BarIconButton(
-                            icon = Icons.Rounded.ArrowBack,
-                            contentDescription = backDesc,
-                            enabled = canGoBack,
-                            onClick = onBackClick,
-                            onLongClick = {
-                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
-                                com.petal.browser.browser.PetalTabHistoryState.requestOpen()
-                            },
-                            modifier = Modifier.graphicsLayer {
-                                alpha = sideButtonAlpha
-                                scaleX = sideButtonScale
-                                scaleY = sideButtonScale
-                                translationX = leftButtonOffset.toPx()
-                            }
-                        )
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        val isTightBar = maxWidth < 360.dp
+                        val btnWidth = if (isTightBar) 40.dp else 48.dp
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(addressBarHeight.barDp.dp)
+                                .padding(horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Far left: Back. Long-press opens this tab's back/forward history popup.
+                            val backDesc = stringResource(R.string.bar_back)
+                            BarIconButton(
+                                icon = Icons.Rounded.ArrowBack,
+                                contentDescription = backDesc,
+                                enabled = canGoBack,
+                                visualWidth = btnWidth,
+                                onClick = onBackClick,
+                                onLongClick = {
+                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
+                                    com.petal.browser.browser.PetalTabHistoryState.requestOpen()
+                                },
+                                modifier = Modifier.graphicsLayer {
+                                    val v = chrome.currentVisuals()
+                                    alpha = v.sideButtonAlpha
+                                    scaleX = v.sideButtonScale
+                                    scaleY = v.sideButtonScale
+                                    translationX = v.leftButtonOffsetDp.dp.toPx()
+                                }
+                            )
 
-                        Spacer(modifier = Modifier.width(if (resolvedIsBottom) 4.dp else 2.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
 
-                        // Center: AddressPill
-                        AddressPill(
-                            url = url,
-                            title = title,
-                            favicon = favicon,
-                            progress = progress,
-                            isIncognito = isIncognito,
-                            isLoading = isLoading,
-                            onAddressClick = onAddressClick,
-                            onAiResearchClick = onAiResearchClick,
-                            onMediaClick = onMediaClick,
-                            onSwipeNextTab = onSwipeNextTab,
-                            onSwipePrevTab = onSwipePrevTab,
-                            onSwipeUp = onSwipeUp,
-                            onPasteAndGo = onPasteAndGo,
-                            onHardRefresh = onHardRefresh,
-                            isReaderEligible = isReaderEligible,
-                            onReaderClick = onReaderClick,
-                            isBottom = resolvedIsBottom,
-                            inMergedBar = false,
-                            isLiquidGlass = isLiquidGlass,
-                            modifier = Modifier.weight(1f)
-                        )
+                            // Center: AddressPill
+                            AddressPill(
+                                url = url,
+                                title = title,
+                                favicon = favicon,
+                                progress = progress,
+                                isIncognito = isIncognito,
+                                isLoading = isLoading,
+                                onAddressClick = onAddressClick,
+                                onAiResearchClick = onAiResearchClick,
+                                onMediaClick = onMediaClick,
+                                onSwipeNextTab = onSwipeNextTab,
+                                onSwipePrevTab = onSwipePrevTab,
+                                onSwipeUp = onSwipeUp,
+                                onPasteAndGo = onPasteAndGo,
+                                onHardRefresh = onHardRefresh,
+                                isReaderEligible = isReaderEligible,
+                                onReaderClick = onReaderClick,
+                                isBottom = resolvedIsBottom,
+                                inMergedBar = false,
+                                isLiquidGlass = isLiquidGlass,
+                                modifier = Modifier.weight(1f)
+                            )
 
-                        Spacer(modifier = Modifier.width(2.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
 
-                        // Reload, which swaps to Stop while the page loads.
-                        val reloadDesc = stringResource(if (isLoading) R.string.bar_stop_loading else R.string.bar_reload)
-                        BarIconButton(
-                            icon = if (isLoading) Icons.Rounded.Close else Icons.Rounded.Refresh,
-                            contentDescription = reloadDesc,
-                            onClick = if (isLoading) onStopClick else onReloadClick,
-                            onLongClick = if (isLoading) null else onHardRefresh,
-                            modifier = Modifier.graphicsLayer {
-                                alpha = sideButtonAlpha
-                                scaleX = sideButtonScale
-                                scaleY = sideButtonScale
-                                translationX = rightButtonOffset.toPx()
-                            }
-                        )
+                            // Reload, which swaps to Stop while the page loads.
+                            val reloadDesc = stringResource(if (isLoading) R.string.bar_stop_loading else R.string.bar_reload)
+                            BarIconButton(
+                                icon = if (isLoading) Icons.Rounded.Close else Icons.Rounded.Refresh,
+                                contentDescription = reloadDesc,
+                                visualWidth = btnWidth,
+                                onClick = if (isLoading) onStopClick else onReloadClick,
+                                onLongClick = if (isLoading) null else onHardRefresh,
+                                modifier = Modifier.graphicsLayer {
+                                    val v = chrome.currentVisuals()
+                                    alpha = v.sideButtonAlpha
+                                    scaleX = v.sideButtonScale
+                                    scaleY = v.sideButtonScale
+                                    translationX = v.rightButtonOffsetDp.dp.toPx()
+                                }
+                            )
 
-                        // Far right: Share
-                        BarIconButton(
-                            icon = Icons.Rounded.Share,
-                            contentDescription = stringResource(R.string.bar_share),
-                            onClick = onShareClick,
-                            modifier = Modifier.graphicsLayer {
-                                alpha = sideButtonAlpha
-                                scaleX = sideButtonScale
-                                scaleY = sideButtonScale
-                                translationX = rightButtonOffset.toPx()
-                            }
-                        )
+                            // Far right: Share
+                            BarIconButton(
+                                icon = Icons.Rounded.Share,
+                                contentDescription = stringResource(R.string.bar_share),
+                                visualWidth = btnWidth,
+                                onClick = onShareClick,
+                                modifier = Modifier.graphicsLayer {
+                                    val v = chrome.currentVisuals()
+                                    alpha = v.sideButtonAlpha
+                                    scaleX = v.sideButtonScale
+                                    scaleY = v.sideButtonScale
+                                    translationX = v.rightButtonOffsetDp.dp.toPx()
+                                }
+                            )
+                        }
                     }
                 }
             }
         }
 
-        if (!isPreview && isPillCollapse && visuals.showPill) {
-            PetalMinimizedPill(
-                domain = BarCollapseState.currentDomain,
-                isHttps = BarCollapseState.isHttps,
-                isIncognito = isIncognito,
-                isBottom = resolvedIsBottom,
-                glassSource = if (isLiquidGlass) glassSource else null,
-                isLiquidGlass = isLiquidGlass,
-                glassBar = pillGlassBar,
-                onExpand = {
-                    BarCollapseState.requestExpand()
-                },
-                modifier = Modifier.graphicsLayer {
-                    alpha = pillAlpha
-                    scaleX = pillScale
-                    scaleY = pillScale
-                    translationY = pillTranslationY.toPx()
-                }
-            )
-        }
+        BarMinimizedPillHost(
+            chrome = chrome,
+            isIncognito = isIncognito,
+            progress = progress,
+            isLoading = isLoading,
+            onExpand = { BarCollapseState.requestExpand() },
+            onPillClick = {
+                BarCollapseState.requestExpand()
+                onAddressClick()
+            }
+        )
     }
 }

@@ -43,27 +43,36 @@ internal fun PetalSearchGlassButton(
     glassSource: View?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    size: Dp = 64.dp
+    size: Dp = 64.dp,
+    enabled: Boolean = true
 ) {
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     LocalPetalGlassRevision.current
-    val prefs = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val themeGlass = isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
+    val glassSupported = remember(context) {
+        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
+            !com.petal.browser.motion.MotionGate.isLowEndDevice(context)
+    }
+    val themeGlass = isLiquidGlassEnabled("sp_liquid_glass_bottom_nav") && glassSupported
     // Same rule as PetalStrideNavBar, so the pill and the button never disagree.
     val glassOn = themeGlass
     val glassBar = rememberGlassBar(if (glassOn) glassSource else null)
-    val glassActive = glassBar != null || themeGlass
+    val glassActive = glassSupported && (glassBar != null || themeGlass)
 
     val searchLabel = androidx.compose.ui.res.stringResource(R.string.bar_search)
 
     Box(
         modifier = modifier
             .size(size)
-            .then(if (!glassActive) Modifier.shadow(12.dp, CircleShape, clip = false) else Modifier)
-            .liquidGlass(CircleShape, scheme.surfaceContainerHigh, glassBar)
+            .then(if (!glassActive) Modifier.shadow(1.dp, CircleShape, clip = false) else Modifier)
             .clip(CircleShape)
-            .bouncyClickable(scaleDown = 0.86f, role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+            .liquidGlass(CircleShape, scheme.surfaceContainerHigh, glassBar)
+            .bouncyClickable(
+                scaleDown = 0.86f,
+                enabled = enabled,
+                role = androidx.compose.ui.semantics.Role.Button,
+                onClick = onClick
+            )
             .semantics { contentDescription = searchLabel },
         contentAlignment = Alignment.Center
     ) {

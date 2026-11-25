@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
 import com.petal.browser.haptics.PetalHapticEngine
@@ -48,6 +50,29 @@ import com.petal.browser.ui.glass.rememberGlassBar
  * - Chrome Android-style scroll morphing into [PetalMinimizedPill]
  * - Live Liquid Glass refraction & Material 3 Expressive elevation
  */
+@Stable
+private class MergedBarCallbacks(
+    val onBackClick: () -> Unit,
+    val onForwardClick: () -> Unit,
+    val onReloadClick: () -> Unit,
+    val onStopClick: () -> Unit,
+    val onShareClick: () -> Unit,
+    val onHomeClick: () -> Unit,
+    val onNewTabClick: () -> Unit,
+    val onTabsClick: () -> Unit,
+    val onMenuClick: () -> Unit,
+    val onSearchClick: () -> Unit,
+    val onDownloadsClick: () -> Unit,
+    val onFindInPageClick: () -> Unit,
+    val onBookmarkClick: () -> Unit,
+    val onHistoryClick: () -> Unit,
+    val onBookmarksManagerClick: () -> Unit,
+    val onAiResearchClick: () -> Unit,
+    val onReaderClick: () -> Unit,
+    val onHardRefresh: () -> Unit,
+    val onCustomizeClick: () -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalMergedBar(
@@ -108,53 +133,82 @@ fun PetalMergedBar(
         floatingForWallpaper = { bottom -> bottom && settings.floatingNav },
         glassPref = { bottom -> addressBarGlassEnabled || (bottom && bottomNavGlassEnabled) }
     )
+    val currentBack by rememberUpdatedState(onBackClick)
+    val currentForward by rememberUpdatedState(onForwardClick)
+    val currentReload by rememberUpdatedState(onReloadClick)
+    val currentStop by rememberUpdatedState(onStopClick)
+    val currentShare by rememberUpdatedState(onShareClick)
+    val currentHome by rememberUpdatedState(onHomeClick)
+    val currentNewTab by rememberUpdatedState(onNewTabClick)
+    val currentTabs by rememberUpdatedState(onTabsClick)
+    val currentMenu by rememberUpdatedState(onMenuClick)
+    val currentSearch by rememberUpdatedState(onSearchClick)
+    val currentDownloads by rememberUpdatedState(onDownloadsClick)
+    val currentFindInPage by rememberUpdatedState(onFindInPageClick)
+    val currentBookmark by rememberUpdatedState(onBookmarkClick)
+    val currentHistory by rememberUpdatedState(onHistoryClick)
+    val currentBookmarksManager by rememberUpdatedState(onBookmarksManagerClick)
+    val currentAiResearch by rememberUpdatedState(onAiResearchClick)
+    val currentReader by rememberUpdatedState(onReaderClick)
+    val currentHardRefresh by rememberUpdatedState(onHardRefresh)
+    val currentCustomize by rememberUpdatedState(onCustomizeClick)
+    val callbacks = remember {
+        MergedBarCallbacks(
+            onBackClick = { currentBack() },
+            onForwardClick = { currentForward() },
+            onReloadClick = { currentReload() },
+            onStopClick = { currentStop() },
+            onShareClick = { currentShare() },
+            onHomeClick = { currentHome() },
+            onNewTabClick = { currentNewTab() },
+            onTabsClick = { currentTabs() },
+            onMenuClick = { currentMenu() },
+            onSearchClick = { currentSearch() },
+            onDownloadsClick = { currentDownloads() },
+            onFindInPageClick = { currentFindInPage() },
+            onBookmarkClick = { currentBookmark() },
+            onHistoryClick = { currentHistory() },
+            onBookmarksManagerClick = { currentBookmarksManager() },
+            onAiResearchClick = { currentAiResearch() },
+            onReaderClick = { currentReader() },
+            onHardRefresh = { currentHardRefresh() },
+            onCustomizeClick = { currentCustomize() }
+        )
+    }
+
     val resolvedIsBottom = chrome.isBottom
     val isFloatingBar = chrome.isFloating
     val addressBarHeight = chrome.height
-    val isPillCollapse = chrome.isPillCollapse
-    val collapsedFraction = chrome.collapsedFraction
-    val visuals = chrome.visuals
     val containerShape = chrome.containerShape
     val isLiquidGlass = chrome.isLiquidGlass
     val glassBar = chrome.glassBar
-    val pillGlassBar = chrome.pillGlassBar
-    val glassSource = chrome.glassSource
     val baseGlassColor = chrome.baseGlassColor
-    val containerColor = chrome.containerColor
     val statusBarTopInset = chrome.statusBarTopInset
     val navBarBottomInset = chrome.navBarBottomInset
-    var barHeightPx by remember { mutableIntStateOf(0) }
-    val collapseProgress = if (isPillCollapse) collapsedFraction.coerceIn(0f, 1f) else 0f
-    val sideButtonAlpha = visuals.sideButtonAlpha
-    val sideButtonScale = visuals.sideButtonScale
-    val leftButtonOffset = visuals.leftButtonOffsetDp.dp
-    val rightButtonOffset = visuals.rightButtonOffsetDp.dp
-    val fullBarAlpha = visuals.fullBarAlpha
-    val pillAlpha = visuals.pillAlpha
-    val pillScale = visuals.pillScale
-    val pillTranslationY = visuals.pillTranslationDp.dp
-    val outerBgAlpha = visuals.outerBgAlpha
-    val animatedContainerColor = chrome.animatedContainerColor
-    val animatedElevation = chrome.animatedElevation
+    var fullBarHeightPx by remember { mutableIntStateOf(0) }
+    val barVisible by remember(chrome) {
+        derivedStateOf { chrome.currentVisuals().barVisible }
+    }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .onSizeChanged { barHeightPx = it.height }
             .graphicsLayer {
-                // HIDE (Full Slide): the whole bar slides off its own edge as the fraction grows.
-                translationY = (if (resolvedIsBottom) 1f else -1f) * barHeightPx * visuals.slideFraction
+                // HIDE (Full Slide): slides off using the settled full bar height.
+                val v = chrome.currentVisuals()
+                translationY = (if (resolvedIsBottom) 1f else -1f) * fullBarHeightPx * v.slideFraction
             },
         contentAlignment = Alignment.Center
     ) {
-        if (visuals.barVisible) {
+        if (barVisible) {
             Surface(
                 shape = containerShape,
-                color = animatedContainerColor,
-                tonalElevation = animatedElevation,
-                shadowElevation = animatedElevation,
+                color = chrome.containerColor,
+                tonalElevation = chrome.staticElevation,
+                shadowElevation = chrome.staticElevation,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onSizeChanged { if (it.height > 0) fullBarHeightPx = it.height }
                     .then(
                         if (resolvedIsBottom) {
                             if (isFloatingBar) {
@@ -178,20 +232,21 @@ fun PetalMergedBar(
                         }
                     )
                     .then(
-                        if (isLiquidGlass && outerBgAlpha > 0.05f) Modifier.liquidGlass(containerShape, baseGlassColor, glassBar)
+                        if (isLiquidGlass) Modifier.liquidGlass(containerShape, baseGlassColor, glassBar)
                         else Modifier
                     )
                     .graphicsLayer {
-                        alpha = fullBarAlpha
-                        scaleX = visuals.fullBarScaleX
-                        scaleY = visuals.fullBarScaleY
-                        translationY = visuals.fullBarTranslationDp.dp.toPx()
+                        val v = chrome.currentVisuals()
+                        alpha = v.fullBarAlpha
+                        scaleX = v.fullBarScaleX
+                        scaleY = v.fullBarScaleY
+                        translationY = v.fullBarTranslationDp.dp.toPx()
                     }
                     .combinedClickable(
                         onClick = {},
                         onLongClick = {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
-                            onCustomizeClick()
+                            callbacks.onCustomizeClick()
                         }
                     )
             ) {
@@ -208,7 +263,7 @@ fun PetalMergedBar(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                            .padding(horizontal = 4.dp, vertical = 6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         AddressPill(
@@ -234,7 +289,7 @@ fun PetalMergedBar(
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        // Material 3 Expressive Progress Bar (relocated to blue arrow position: directly between AddressPill and Action Buttons)
+                        // Material 3 Expressive Progress Bar (between AddressPill and Action Buttons)
                         if (isLoading && progress > 0f) {
                             Material3ExpressiveProgressIndicator(
                                 progress = progress,
@@ -245,170 +300,167 @@ fun PetalMergedBar(
                             )
                         }
 
-                        val allActions = (leadingActions + trailingActions).distinct().take(BarPrefs.MAX_MERGE_ACTIONS_TOTAL)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
-                                .then(
-                                    if (isLiquidGlass) {
-                                        Modifier
-                                            .clip(RoundedCornerShape(22.dp))
-                                            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.12f))
-                                    } else Modifier
-                                )
-                                .graphicsLayer {
-                                    alpha = sideButtonAlpha
-                                    scaleX = sideButtonScale
-                                    scaleY = sideButtonScale
-                                    translationY = (if (resolvedIsBottom) 12.dp else (-12).dp).toPx() * collapseProgress
-                                },
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            allActions.forEach { action ->
-                                BarActionButton(
-                                    action = action,
-                                    isLoading = isLoading,
-                                    canGoBack = canGoBack,
-                                    canGoForward = canGoForward,
-                                    tabCount = tabCount,
-                                    isLiquidGlass = isLiquidGlass,
-                                    onBackClick = onBackClick,
-                                    onForwardClick = onForwardClick,
-                                    onReloadClick = onReloadClick,
-                                    onStopClick = onStopClick,
-                                    onShareClick = onShareClick,
-                                    onHomeClick = onHomeClick,
-                                    onNewTabClick = onNewTabClick,
-                                    onTabsClick = onTabsClick,
-                                    onMenuClick = onMenuClick,
-                                    onSearchClick = onSearchClick,
-                                    onDownloadsClick = onDownloadsClick,
-                                    onFindInPageClick = onFindInPageClick,
-                                    onBookmarkClick = onBookmarkClick,
-                                    onHistoryClick = onHistoryClick,
-                                    onBookmarksManagerClick = onBookmarksManagerClick,
-                                    onAiResearchClick = onAiResearchClick,
-                                    onReaderClick = onReaderClick,
-                                    onHardRefresh = onHardRefresh,
-                                    onCustomizeClick = onCustomizeClick
-                                )
+                        val allActions = remember(leadingActions, trailingActions) {
+                            (leadingActions + trailingActions).distinct().take(BarPrefs.MAX_MERGE_ACTIONS_TOTAL)
+                        }
+                        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                            val stackedBtnWidth = if (48.dp * allActions.size > maxWidth) 40.dp else 48.dp
+                            val maxFit = (maxWidth / stackedBtnWidth).toInt().coerceAtLeast(1)
+                            val (shownStacked, droppedStacked) = remember(allActions, maxFit) {
+                                budgetMergedStackedActions(allActions, maxFit)
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                                    .then(
+                                        if (isLiquidGlass) {
+                                            Modifier
+                                                .clip(RoundedCornerShape(22.dp))
+                                                .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.12f))
+                                        } else Modifier
+                                    )
+                                    .graphicsLayer {
+                                        val v = chrome.currentVisuals()
+                                        val collapseProg = if (chrome.isPillCollapse) {
+                                            BarCollapseState.collapsedFraction.coerceIn(0f, 1f)
+                                        } else 0f
+                                        alpha = v.sideButtonAlpha
+                                        scaleX = v.sideButtonScale
+                                        scaleY = v.sideButtonScale
+                                        translationY = (if (resolvedIsBottom) 12.dp else (-12).dp).toPx() * collapseProg
+                                    },
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                shownStacked.forEach { action ->
+                                    BarActionButton(
+                                        action = action,
+                                        isLoading = isLoading,
+                                        canGoBack = canGoBack,
+                                        canGoForward = canGoForward,
+                                        tabCount = tabCount,
+                                        isLiquidGlass = isLiquidGlass,
+                                        visualWidth = stackedBtnWidth,
+                                        callbacks = callbacks
+                                    )
+                                }
+                                if (droppedStacked.isNotEmpty()) {
+                                    MergedOverflowButton(
+                                        droppedActions = droppedStacked,
+                                        isLoading = isLoading,
+                                        canGoBack = canGoBack,
+                                        canGoForward = canGoForward,
+                                        visualWidth = stackedBtnWidth,
+                                        callbacks = callbacks
+                                    )
+                                }
                             }
                         }
                     }
                 } else {
                     // SINGLE Row Layout: [leading buttons] [AddressPill] [trailing buttons]
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(addressBarHeight.barDp.dp)
-                            .padding(horizontal = if (resolvedIsBottom) 4.dp else 2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Leading Buttons
-                        Row(
-                            modifier = Modifier.graphicsLayer {
-                                alpha = sideButtonAlpha
-                                scaleX = sideButtonScale
-                                scaleY = sideButtonScale
-                                translationX = leftButtonOffset.toPx()
-                            },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            leadingActions.forEach { action ->
-                                BarActionButton(
-                                    action = action,
-                                    isLoading = isLoading,
-                                    canGoBack = canGoBack,
-                                    canGoForward = canGoForward,
-                                    tabCount = tabCount,
-                                    isLiquidGlass = isLiquidGlass,
-                                    onBackClick = onBackClick,
-                                    onForwardClick = onForwardClick,
-                                    onReloadClick = onReloadClick,
-                                    onStopClick = onStopClick,
-                                    onShareClick = onShareClick,
-                                    onHomeClick = onHomeClick,
-                                    onNewTabClick = onNewTabClick,
-                                    onTabsClick = onTabsClick,
-                                    onMenuClick = onMenuClick,
-                                    onSearchClick = onSearchClick,
-                                    onDownloadsClick = onDownloadsClick,
-                                    onFindInPageClick = onFindInPageClick,
-                                    onBookmarkClick = onBookmarkClick,
-                                    onHistoryClick = onHistoryClick,
-                                    onBookmarksManagerClick = onBookmarksManagerClick,
-                                    onAiResearchClick = onAiResearchClick,
-                                    onReaderClick = onReaderClick,
-                                    onHardRefresh = onHardRefresh,
-                                    onCustomizeClick = onCustomizeClick
-                                )
-                            }
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        val minPillWidth = minOf(176.dp, (maxWidth * 0.48f).coerceAtLeast(120.dp))
+                        val availableForButtons = (maxWidth - 8.dp - minPillWidth).coerceAtLeast(40.dp)
+                        val totalWanted = leadingActions.size + trailingActions.size
+                        val btnWidth = if (48.dp * totalWanted > availableForButtons) 40.dp else 48.dp
+                        val maxButtons = (availableForButtons / btnWidth).toInt().coerceAtLeast(1)
+                        val budget = remember(leadingActions, trailingActions, maxButtons) {
+                            budgetMergedSingleActions(leadingActions, trailingActions, maxButtons)
                         }
 
-                        // Center URL Pill
-                        AddressPill(
-                            url = url,
-                            title = title,
-                            favicon = favicon,
-                            progress = progress,
-                            isIncognito = isIncognito,
-                            isLoading = isLoading,
-                            onAddressClick = onAddressClick,
-                            onAiResearchClick = onAiResearchClick,
-                            onMediaClick = onMediaClick,
-                            onSwipeNextTab = onSwipeNextTab,
-                            onSwipePrevTab = onSwipePrevTab,
-                            onSwipeUp = onSwipeUp,
-                            onPasteAndGo = onPasteAndGo,
-                            onHardRefresh = onHardRefresh,
-                            isReaderEligible = isReaderEligible,
-                            onReaderClick = onReaderClick,
-                            isBottom = resolvedIsBottom,
-                            inMergedBar = true,
-                            isLiquidGlass = isLiquidGlass,
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        // Trailing Buttons
                         Row(
-                            modifier = Modifier.graphicsLayer {
-                                alpha = sideButtonAlpha
-                                scaleX = sideButtonScale
-                                scaleY = sideButtonScale
-                                translationX = rightButtonOffset.toPx()
-                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(addressBarHeight.barDp.dp)
+                                .padding(horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            trailingActions.forEach { action ->
-                                BarActionButton(
-                                    action = action,
-                                    isLoading = isLoading,
-                                    canGoBack = canGoBack,
-                                    canGoForward = canGoForward,
-                                    tabCount = tabCount,
-                                    isLiquidGlass = isLiquidGlass,
-                                    onBackClick = onBackClick,
-                                    onForwardClick = onForwardClick,
-                                    onReloadClick = onReloadClick,
-                                    onStopClick = onStopClick,
-                                    onShareClick = onShareClick,
-                                    onHomeClick = onHomeClick,
-                                    onNewTabClick = onNewTabClick,
-                                    onTabsClick = onTabsClick,
-                                    onMenuClick = onMenuClick,
-                                    onSearchClick = onSearchClick,
-                                    onDownloadsClick = onDownloadsClick,
-                                    onFindInPageClick = onFindInPageClick,
-                                    onBookmarkClick = onBookmarkClick,
-                                    onHistoryClick = onHistoryClick,
-                                    onBookmarksManagerClick = onBookmarksManagerClick,
-                                    onAiResearchClick = onAiResearchClick,
-                                    onReaderClick = onReaderClick,
-                                    onHardRefresh = onHardRefresh,
-                                    onCustomizeClick = onCustomizeClick
-                                )
+                            // Leading Buttons
+                            Row(
+                                modifier = Modifier.graphicsLayer {
+                                    val v = chrome.currentVisuals()
+                                    alpha = v.sideButtonAlpha
+                                    scaleX = v.sideButtonScale
+                                    scaleY = v.sideButtonScale
+                                    translationX = v.leftButtonOffsetDp.dp.toPx()
+                                },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                budget.leading.forEach { action ->
+                                    BarActionButton(
+                                        action = action,
+                                        isLoading = isLoading,
+                                        canGoBack = canGoBack,
+                                        canGoForward = canGoForward,
+                                        tabCount = tabCount,
+                                        isLiquidGlass = isLiquidGlass,
+                                        visualWidth = btnWidth,
+                                        callbacks = callbacks
+                                    )
+                                }
+                            }
+
+                            // Center URL Pill
+                            AddressPill(
+                                url = url,
+                                title = title,
+                                favicon = favicon,
+                                progress = progress,
+                                isIncognito = isIncognito,
+                                isLoading = isLoading,
+                                onAddressClick = onAddressClick,
+                                onAiResearchClick = onAiResearchClick,
+                                onMediaClick = onMediaClick,
+                                onSwipeNextTab = onSwipeNextTab,
+                                onSwipePrevTab = onSwipePrevTab,
+                                onSwipeUp = onSwipeUp,
+                                onPasteAndGo = onPasteAndGo,
+                                onHardRefresh = onHardRefresh,
+                                isReaderEligible = isReaderEligible,
+                                onReaderClick = onReaderClick,
+                                isBottom = resolvedIsBottom,
+                                inMergedBar = true,
+                                isLiquidGlass = isLiquidGlass,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .widthIn(min = minPillWidth)
+                            )
+
+                            // Trailing Buttons + optional More overflow
+                            Row(
+                                modifier = Modifier.graphicsLayer {
+                                    val v = chrome.currentVisuals()
+                                    alpha = v.sideButtonAlpha
+                                    scaleX = v.sideButtonScale
+                                    scaleY = v.sideButtonScale
+                                    translationX = v.rightButtonOffsetDp.dp.toPx()
+                                },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (budget.dropped.isNotEmpty()) {
+                                    MergedOverflowButton(
+                                        droppedActions = budget.dropped,
+                                        isLoading = isLoading,
+                                        canGoBack = canGoBack,
+                                        canGoForward = canGoForward,
+                                        visualWidth = btnWidth,
+                                        callbacks = callbacks
+                                    )
+                                }
+                                budget.trailing.forEach { action ->
+                                    BarActionButton(
+                                        action = action,
+                                        isLoading = isLoading,
+                                        canGoBack = canGoBack,
+                                        canGoForward = canGoForward,
+                                        tabCount = tabCount,
+                                        isLiquidGlass = isLiquidGlass,
+                                        visualWidth = btnWidth,
+                                        callbacks = callbacks
+                                    )
+                                }
                             }
                         }
                     }
@@ -417,26 +469,146 @@ fun PetalMergedBar(
         }
     }
 
-    if (!isPreview && isPillCollapse && visuals.showPill) {
-            PetalMinimizedPill(
-                domain = BarCollapseState.currentDomain,
-                isHttps = BarCollapseState.isHttps,
-                isIncognito = isIncognito,
-                isBottom = resolvedIsBottom,
-                glassSource = if (isLiquidGlass) glassSource else null,
-                isLiquidGlass = isLiquidGlass,
-                glassBar = pillGlassBar,
-                onExpand = {
-                    BarCollapseState.requestExpand()
-                },
-                modifier = Modifier.graphicsLayer {
-                    alpha = pillAlpha
-                    scaleX = pillScale
-                    scaleY = pillScale
-                    translationY = pillTranslationY.toPx()
-                }
-            )
+        BarMinimizedPillHost(
+            chrome = chrome,
+            isIncognito = isIncognito,
+            progress = progress,
+            isLoading = isLoading,
+            onExpand = { BarCollapseState.requestExpand() },
+            onPillClick = {
+                BarCollapseState.requestExpand()
+                onAddressClick()
+            }
+        )
+    }
+}
+
+private data class MergedSingleBudget(
+    val leading: List<BarAction>,
+    val trailing: List<BarAction>,
+    val dropped: List<BarAction>
+)
+
+private fun budgetMergedSingleActions(
+    leading: List<BarAction>,
+    trailing: List<BarAction>,
+    maxSlots: Int
+): MergedSingleBudget {
+    if (leading.size + trailing.size <= maxSlots) {
+        return MergedSingleBudget(leading, trailing, emptyList())
+    }
+    val leadMut = leading.toMutableList()
+    val trailMut = trailing.toMutableList()
+    val dropped = mutableListOf<BarAction>()
+    // Reserve 1 slot for the More button once anything is dropped.
+    val actionLimit = (maxSlots - 1).coerceAtLeast(1)
+    while (leadMut.size + trailMut.size > actionLimit) {
+        // Priority: drop extra trailing actions beyond the first (preserving MENU), then leading from the end.
+        val nonMenuTrailIdx = trailMut.indexOfLast { it != BarAction.MENU }
+        val nonMenuTrailCount = trailMut.count { it != BarAction.MENU }
+        if (nonMenuTrailCount > 1 || (leadMut.isEmpty() && nonMenuTrailIdx >= 0)) {
+            dropped.add(trailMut.removeAt(nonMenuTrailIdx))
+        } else {
+            val nonMenuLeadIdx = leadMut.indexOfLast { it != BarAction.MENU }
+            if (nonMenuLeadIdx >= 0) {
+                dropped.add(leadMut.removeAt(nonMenuLeadIdx))
+            } else if (nonMenuTrailIdx >= 0) {
+                dropped.add(trailMut.removeAt(nonMenuTrailIdx))
+            } else {
+                break
+            }
         }
+    }
+    return MergedSingleBudget(leadMut, trailMut, dropped)
+}
+
+private fun budgetMergedStackedActions(
+    allActions: List<BarAction>,
+    maxSlots: Int
+): Pair<List<BarAction>, List<BarAction>> {
+    if (allActions.size <= maxSlots) return allActions to emptyList()
+    val kept = allActions.toMutableList()
+    val dropped = mutableListOf<BarAction>()
+    val actionLimit = (maxSlots - 1).coerceAtLeast(1)
+    while (kept.size > actionLimit) {
+        val dropIdx = kept.indexOfLast { it != BarAction.MENU }
+        if (dropIdx >= 0) {
+            dropped.add(kept.removeAt(dropIdx))
+        } else {
+            break
+        }
+    }
+    return kept to dropped
+}
+
+@Composable
+private fun MergedOverflowButton(
+    droppedActions: List<BarAction>,
+    isLoading: Boolean,
+    canGoBack: Boolean,
+    canGoForward: Boolean,
+    visualWidth: Dp,
+    callbacks: MergedBarCallbacks
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        BarIconButton(
+            icon = Icons.Rounded.MoreHoriz,
+            contentDescription = "More toolbar actions",
+            visualWidth = visualWidth,
+            onClick = { expanded = true }
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            droppedActions.forEach { action ->
+                val enabled = when (action) {
+                    BarAction.BACK -> canGoBack
+                    BarAction.FORWARD -> canGoForward
+                    else -> true
+                }
+                val icon = if (action == BarAction.RELOAD && isLoading) Icons.Rounded.Close else action.icon
+                val label = if (action == BarAction.RELOAD && isLoading) {
+                    stringResource(R.string.bar_stop_loading)
+                } else {
+                    action.localizedLabel()
+                }
+                DropdownMenuItem(
+                    text = { Text(label) },
+                    leadingIcon = { Icon(icon, contentDescription = null) },
+                    enabled = enabled,
+                    onClick = {
+                        expanded = false
+                        dispatchBarAction(action, isLoading, callbacks)
+                    }
+                )
+            }
+        }
+    }
+}
+
+private fun dispatchBarAction(
+    action: BarAction,
+    isLoading: Boolean,
+    callbacks: MergedBarCallbacks
+) {
+    when (action) {
+        BarAction.TABS -> callbacks.onTabsClick()
+        BarAction.NEW_TAB -> callbacks.onNewTabClick()
+        BarAction.HOME -> callbacks.onHomeClick()
+        BarAction.SEARCH -> callbacks.onSearchClick()
+        BarAction.BACK -> callbacks.onBackClick()
+        BarAction.FORWARD -> callbacks.onForwardClick()
+        BarAction.RELOAD -> if (isLoading) callbacks.onStopClick() else callbacks.onReloadClick()
+        BarAction.SHARE -> callbacks.onShareClick()
+        BarAction.BOOKMARK -> callbacks.onBookmarkClick()
+        BarAction.AI_RESEARCH, BarAction.AI -> callbacks.onAiResearchClick()
+        BarAction.READER -> callbacks.onReaderClick()
+        BarAction.DOWNLOADS -> callbacks.onDownloadsClick()
+        BarAction.FIND_IN_PAGE -> callbacks.onFindInPageClick()
+        BarAction.HISTORY -> callbacks.onHistoryClick()
+        BarAction.MENU -> callbacks.onMenuClick()
     }
 }
 
@@ -451,27 +623,9 @@ private fun BarActionButton(
     canGoForward: Boolean,
     tabCount: Int,
     isLiquidGlass: Boolean = false,
-    onBackClick: () -> Unit,
-    onForwardClick: () -> Unit,
-    onReloadClick: () -> Unit,
-    onStopClick: () -> Unit,
-    onShareClick: () -> Unit,
-    onHomeClick: () -> Unit,
-    onNewTabClick: () -> Unit,
-    onTabsClick: () -> Unit,
-    onMenuClick: () -> Unit,
-    onSearchClick: () -> Unit,
-    onDownloadsClick: () -> Unit,
-    onFindInPageClick: () -> Unit,
-    onBookmarkClick: () -> Unit,
-    onAiResearchClick: () -> Unit,
-    onReaderClick: () -> Unit,
-    onHistoryClick: () -> Unit = {},
-    onBookmarksManagerClick: () -> Unit = onBookmarkClick,
-    onHardRefresh: () -> Unit = onReloadClick,
-    onCustomizeClick: () -> Unit = {}
+    visualWidth: Dp = 48.dp,
+    callbacks: MergedBarCallbacks
 ) {
-    val context = LocalContext.current
     val isEnabled = when (action) {
         BarAction.BACK -> canGoBack
         BarAction.FORWARD -> canGoForward
@@ -488,23 +642,7 @@ private fun BarActionButton(
     val buttonBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
     val clickHandler: () -> Unit = {
         if (action == BarAction.SEARCH) PetalOmniboxOrigin.mark(buttonBounds[0], -1f)
-        when (action) {
-            BarAction.TABS -> onTabsClick()
-            BarAction.NEW_TAB -> onNewTabClick()
-            BarAction.HOME -> onHomeClick()
-            BarAction.SEARCH -> onSearchClick()
-            BarAction.BACK -> onBackClick()
-            BarAction.FORWARD -> onForwardClick()
-            BarAction.RELOAD -> if (isLoading) onStopClick() else onReloadClick()
-            BarAction.SHARE -> onShareClick()
-            BarAction.BOOKMARK -> onBookmarkClick()
-            BarAction.AI_RESEARCH, BarAction.AI -> onAiResearchClick()
-            BarAction.READER -> onReaderClick()
-            BarAction.DOWNLOADS -> onDownloadsClick()
-            BarAction.FIND_IN_PAGE -> onFindInPageClick()
-            BarAction.HISTORY -> onHistoryClick()
-            BarAction.MENU -> onMenuClick()
-        }
+        dispatchBarAction(action, isLoading, callbacks)
     }
 
     val longClickHandler: (() -> Unit)? = if (action.supportsLongPress) {
@@ -514,13 +652,13 @@ private fun BarActionButton(
                 BarAction.BACK -> if (canGoBack) {
                     com.petal.browser.browser.PetalTabHistoryState.requestOpen()
                 } else {
-                    onHistoryClick()
+                    callbacks.onHistoryClick()
                 }
-                BarAction.BOOKMARK -> onBookmarksManagerClick()
-                BarAction.RELOAD -> if (!isLoading) onHardRefresh()
-                BarAction.TABS -> onNewTabClick()
-                BarAction.NEW_TAB -> onNewTabClick()
-                BarAction.MENU -> onCustomizeClick()
+                BarAction.BOOKMARK -> callbacks.onBookmarksManagerClick()
+                BarAction.RELOAD -> if (!isLoading) callbacks.onHardRefresh()
+                BarAction.TABS -> callbacks.onNewTabClick()
+                BarAction.NEW_TAB -> callbacks.onNewTabClick()
+                BarAction.MENU -> callbacks.onCustomizeClick()
                 else -> {}
             }
         }
@@ -544,7 +682,8 @@ private fun BarActionButton(
         shape = ExpressiveButtonShape,
         color = if (isLiquidGlass && isPressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else Color.Transparent,
         modifier = Modifier
-            .size(48.dp)
+            .width(visualWidth)
+            .heightIn(min = 48.dp)
             .onGloballyPositioned { buttonBounds[0] = it.boundsInWindow() }
             .graphicsLayer {
                 scaleX = pressScale
