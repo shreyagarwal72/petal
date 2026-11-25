@@ -216,14 +216,17 @@ fun PetalBottomNavBar(
         with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
     } else 0.dp
 
-    val collapsedFraction = BarCollapseState.collapsedFraction
-    val collapseAlpha = (1f - collapsedFraction * 1.6f).coerceIn(0f, 1f)
-    val collapseScale = 0.92f + 0.08f * collapseAlpha
-    val collapseOffsetY = 16.dp * (1f - collapseAlpha)
+    val navVisible by remember {
+        derivedStateOf {
+            (1f - BarCollapseState.collapsedFraction * 1.6f) > 0.01f
+        }
+    }
 
     // Fully faded out means minimized: stop composing so the invisible bar cannot swallow taps
     // meant for the page underneath it.
-    if (collapseAlpha <= 0.01f) return
+    if (!navVisible) return
+
+    val activeGlassSource = if (BarCollapseState.isPageScrolling) null else resolvedGlassSource
 
     if (effectiveFloating) {
         // Stride's floating glass nav bar (see PetalStrideNavBar): the tab pill sits in the
@@ -231,6 +234,9 @@ fun PetalBottomNavBar(
         Row(
             modifier = modifier
                 .graphicsLayer {
+                    val collapseAlpha = (1f - BarCollapseState.collapsedFraction * 1.6f).coerceIn(0f, 1f)
+                    val collapseScale = 0.92f + 0.08f * collapseAlpha
+                    val collapseOffsetY = 16.dp * (1f - collapseAlpha)
                     translationY = collapseOffsetY.toPx()
                     scaleX = collapseScale
                     scaleY = collapseScale
@@ -278,7 +284,7 @@ fun PetalBottomNavBar(
                         selectedTab = selectedTab,
                         tabCount = tabCount,
                         badgeScale = badgeScale.value,
-                        glassSource = resolvedGlassSource,
+                        glassSource = activeGlassSource,
                         onHomeClick = onHomeClick,
                         onAiClick = onAiClick,
                         onNewTabClick = onNewTabClick,
@@ -309,7 +315,7 @@ fun PetalBottomNavBar(
             }
             if (separateSearch) {
                 PetalSearchGlassButton(
-                    glassSource = resolvedGlassSource,
+                    glassSource = activeGlassSource,
                     onClick = launchSearch,
                     modifier = Modifier.onGloballyPositioned { searchButtonBounds[0] = it.boundsInWindow() }.graphicsLayer {
                         val p = searchLaunch.value
@@ -327,6 +333,9 @@ fun PetalBottomNavBar(
             modifier = modifier
                 .onGloballyPositioned { navBarBounds[0] = it.boundsInWindow() }
                 .graphicsLayer {
+                    val collapseAlpha = (1f - BarCollapseState.collapsedFraction * 1.6f).coerceIn(0f, 1f)
+                    val collapseScale = 0.92f + 0.08f * collapseAlpha
+                    val collapseOffsetY = 16.dp * (1f - collapseAlpha)
                     translationY = searchLaunch.value * 22.dp.toPx() + collapseOffsetY.toPx()
                     scaleX = collapseScale
                     scaleY = collapseScale
@@ -342,7 +351,7 @@ fun PetalBottomNavBar(
             val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
             com.petal.browser.ui.glass.LocalPetalGlassRevision.current
             val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
-            val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isLiquidGlass) resolvedGlassSource else null)
+            val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isLiquidGlass) activeGlassSource else null)
             val baseContainer = if (isIncognito) com.petal.browser.ui.theme.IncognitoSurfaceContainer else MaterialTheme.colorScheme.surfaceContainerHigh
 
             Surface(

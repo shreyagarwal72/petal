@@ -10,10 +10,7 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
@@ -25,16 +22,19 @@ import com.petal.browser.ui.glass.rememberGlassBar
 import com.petal.browser.ui.theme.IncognitoSurfaceContainer
 
 /**
- * Everything [PetalAddressBar] and [PetalMergedBar] used to compute twice: resolved position,
- * container shape, collapse visuals, liquid-glass setup and window insets.
+ * Everything [PetalAddressBar] and [PetalMergedBar] share: resolved position, container shape,
+ * collapse style, liquid-glass setup, and window insets.
+ *
+ * Does NOT read [BarCollapseState.collapsedFraction] during composition; bars read it only
+ * inside `graphicsLayer { ... }` and `derivedStateOf` thresholds so scroll animations cause zero
+ * per-frame recompositions.
  */
 class BarChrome(
     val height: AddressBarHeight,
     val isBottom: Boolean,
     val isFloating: Boolean,
     val isPillCollapse: Boolean,
-    val collapsedFraction: Float,
-    val visuals: BarCollapseMath.Visuals,
+    val collapseStyle: BarCollapseStyle,
     val containerShape: RoundedCornerShape,
     val isLiquidGlass: Boolean,
     val glassBar: com.petal.browser.ui.glass.GlassBar?,
@@ -45,10 +45,8 @@ class BarChrome(
     val navBarBottomInset: Dp,
     val glassSource: android.view.View? = null
 ) {
-    val animatedContainerColor: Color
-        get() = if (isLiquidGlass) Color.Transparent else containerColor.copy(alpha = containerColor.alpha * visuals.outerBgAlpha)
-    val animatedElevation: Dp
-        get() = (if (isLiquidGlass) 0.dp else if (isBottom) 2.dp else 4.dp) * visuals.outerBgAlpha
+    val staticElevation: Dp
+        get() = if (isLiquidGlass) 0.dp else if (isBottom) 2.dp else 4.dp
 }
 
 /** Container shape shared by both bars. */
@@ -83,8 +81,6 @@ fun rememberBarChrome(
     val isBottom = if (isPreview) isBottomParam else (isBottomParam || settings.position == AddressBarPosition.BOTTOM)
     val isFloating = floatingForShape(isBottom)
     val effectiveStyle = if (isPreview) BarCollapseStyle.HIDE else settings.collapseStyle
-    val fraction = if (isPreview) 0f else BarCollapseState.collapsedFraction
-    val visuals = BarCollapseMath.compute(effectiveStyle, fraction, isBottom)
 
     LocalPetalGlassRevision.current
     val isLiquidGlass = !isPreview && glassPref(isBottom)
@@ -93,13 +89,15 @@ fun rememberBarChrome(
     val activity = context as? Activity
     val glassSource = if (isPreview || samplesWallpaper) null
     else (ambient ?: activity?.findViewById<android.view.View>(com.petal.browser.R.id.main_content))
-    val glassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
-    val pillGlassBar = rememberGlassBar(if (isLiquidGlass) glassSource else null)
+    // Pause live GlassBackdrop re-recording while the page is actively scrolling so scroll frames
+    // avoid extra RenderNode source.draw() passes; static frosted glass styling remains intact.
+    val activeGlassSource = if (isLiquidGlass && !BarCollapseState.isPageScrolling) glassSource else null
+    val glassBar = rememberGlassBar(activeGlassSource)
+    val pillGlassBar = rememberGlassBar(activeGlassSource)
 
     val surface = if (isIncognito) IncognitoSurfaceContainer else MaterialTheme.colorScheme.surfaceContainerHigh
     val containerColor = if (isLiquidGlass) Color.Transparent else surface
 
-    // status bar UNION display cutout (see Phase 2: no immersive special case, cutouts stay cleared).
     val statusTop = if (isPreview || suppressStatusBarTopInset) 0.dp
     else WindowInsets.statusBars.union(WindowInsets.displayCutout).asPaddingValues().calculateTopPadding()
     val navBottom = if (isPreview) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -109,8 +107,7 @@ fun rememberBarChrome(
         isBottom = isBottom,
         isFloating = isFloating,
         isPillCollapse = !isPreview && settings.collapseStyle == BarCollapseStyle.PILL,
-        collapsedFraction = fraction,
-        visuals = visuals,
+        collapseStyle = effectiveStyle,
         containerShape = barContainerShape(height, isBottom, isFloating),
         isLiquidGlass = isLiquidGlass,
         glassBar = glassBar,
@@ -119,6 +116,6 @@ fun rememberBarChrome(
         containerColor = containerColor,
         statusBarTopInset = statusTop,
         navBarBottomInset = navBottom,
-        glassSource = glassSource
+        glassSource = activeGlassSource
     )
 }

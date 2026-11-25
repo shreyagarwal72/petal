@@ -238,136 +238,8 @@ class PetalTabViewController private constructor(
     var currentScrollX: Int = 0
         private set
 
-    private var lastLayoutChangeTime: Long = 0L
-    private var lastBarStateChangeTime: Long = 0L
-    private val pendingScrollUpdate = java.util.concurrent.atomic.AtomicBoolean(false)
-    private var lastProcessedScrollY: Int = 0
-    private var accumulatedScrollY: Int = 0
-    private var consecutiveDirectionSteps: Int = 0
-    private var lastDirection: Int = 0
-    private val settleHandler = android.os.Handler(android.os.Looper.getMainLooper())
-    private val settleRunnable = Runnable {
-        val act = resolveActivity(context) as? com.petal.browser.activity.MainActivity ?: return@Runnable
-        val currentFrac = com.petal.browser.ui.components.BarCollapseState.collapsedFraction
-        val target = if (currentFrac >= 0.5f) 1f else 0f
-        act.settlePillFraction(target)
-    }
-
-    private val scrollDispatcher = Runnable {
-        pendingScrollUpdate.set(false)
-        android.os.Trace.beginSection("PetalTab:handleScrollChanged")
-        try {
-            // The Compose viewport decides bar collapse (BarScrollDecider). A second decision maker
-            // here made the bars flip against it.
-            if (com.petal.browser.ui.components.BarCollapseState.composeViewportOwnsScroll) {
-                lastProcessedScrollY = currentScrollY
-                accumulatedScrollY = 0
-                consecutiveDirectionSteps = 0
-                return@Runnable
-            }
-            val act = resolveActivity(context) as? com.petal.browser.activity.MainActivity ?: return@Runnable
-            val now = android.os.SystemClock.uptimeMillis()
-
-            // 1. Ignore scroll changes caused by viewport or layout resizes
-            if (now - lastLayoutChangeTime < 350L) {
-                lastProcessedScrollY = currentScrollY
-                accumulatedScrollY = 0
-                consecutiveDirectionSteps = 0
-                return@Runnable
-            }
-
-            // 2. Ignore deltas while bars animate
-            if (act.isBarAnimationRunning()) {
-                lastProcessedScrollY = currentScrollY
-                accumulatedScrollY = 0
-                consecutiveDirectionSteps = 0
-                return@Runnable
-            }
-
-            val isPill = com.petal.browser.ui.components.BarPrefs.isPillCollapse(androidx.preference.PreferenceManager.getDefaultSharedPreferences(context))
-
-            // 3. Cooldown after each state change (only for non-pill hide mode)
-            if (!isPill && now - lastBarStateChangeTime < 350L) {
-                lastProcessedScrollY = currentScrollY
-                accumulatedScrollY = 0
-                consecutiveDirectionSteps = 0
-                return@Runnable
-            }
-
-            val density = context.resources.displayMetrics.density
-            val topThreshold = (2f * density).toInt()
-            val hideThreshold = (56f * density).toInt()
-            val showThreshold = (24f * density).toInt()
-
-            val y = currentScrollY
-            val deltaY = y - lastProcessedScrollY
-            lastProcessedScrollY = y
-
-            // At the top of the page: bars are always shown
-            if (y <= topThreshold) {
-                settleHandler.removeCallbacks(settleRunnable)
-                if (isPill) {
-                    act.settlePillFraction(0f)
-                } else if (act.isAddressBarCollapsed()) {
-                    accumulatedScrollY = 0
-                    consecutiveDirectionSteps = 0
-                    lastBarStateChangeTime = now
-                    act.animateAddressBarCollapse(false)
-                }
-                return@Runnable
-            }
-
-            if (deltaY == 0) return@Runnable
-
-            val currentDirection = if (deltaY > 0) 1 else -1
-
-            if (isPill) {
-                settleHandler.removeCallbacks(settleRunnable)
-                if (currentDirection != lastDirection) {
-                    lastDirection = currentDirection
-                    // Settle with spring when reversing
-                    val target = if (currentDirection > 0) 1f else 0f
-                    act.settlePillFraction(target)
-                } else {
-                    // Driven directly by scroll offset (no timer)
-                    act.onScrollOffsetDelta(deltaY.toFloat())
-                    // Settle with spring when scrolling stops
-                    settleHandler.postDelayed(settleRunnable, 75L)
-                }
-                return@Runnable
-            }
-
-            if (currentDirection != lastDirection) {
-                accumulatedScrollY = 0
-                consecutiveDirectionSteps = 0
-                lastDirection = currentDirection
-            }
-
-            accumulatedScrollY += deltaY
-            consecutiveDirectionSteps++
-
-            // During fast flings or scroll, require sustained direction (at least 2 consecutive frames in same direction)
-            if (consecutiveDirectionSteps >= 2) {
-                if (accumulatedScrollY > hideThreshold) {
-                    if (!act.isAddressBarCollapsed()) {
-                        accumulatedScrollY = 0
-                        consecutiveDirectionSteps = 0
-                        lastBarStateChangeTime = now
-                        act.animateAddressBarCollapse(true)
-                    }
-                } else if (accumulatedScrollY < -showThreshold) {
-                    if (act.isAddressBarCollapsed()) {
-                        accumulatedScrollY = 0
-                        consecutiveDirectionSteps = 0
-                        lastBarStateChangeTime = now
-                        act.animateAddressBarCollapse(false)
-                    }
-                }
-            }
-        } finally {
-            android.os.Trace.endSection()
-        }
-    }
+    // Legacy scroll-collapse dispatcher removed: BarScrollDecider in ComposeEngineViewport
+    // is the sole collapse decision-maker.
     private var refreshFeature: SwipeRefreshFeature? = null
     private var fullScreenFeature: FullScreenFeature? = null
     private var attachedLifecycle: Lifecycle? = null
@@ -414,9 +286,6 @@ class PetalTabViewController private constructor(
                 previewRetryCount = 0
                 currentScrollX = 0
                 currentScrollY = 0
-                lastProcessedScrollY = 0
-                accumulatedScrollY = 0
-                consecutiveDirectionSteps = 0
             }
             pageUrl = url
             applyPageSettings(url)
@@ -617,11 +486,6 @@ class PetalTabViewController private constructor(
         try { engineView.asView().background = null } catch (_: Throwable) {}
         isNestedScrollingEnabled = true
         isPageLoading = { loading }
-        addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
-            if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) {
-                lastLayoutChangeTime = android.os.SystemClock.uptimeMillis()
-            }
-        }
         // Pull-to-refresh is Mozilla's own: this view is a vertical-only SwipeRefreshLayout
         // (PetalVerticalSwipeRefreshLayout, a port of Fenix's VerticalSwipeRefreshLayout) driven by
         // android-components' SwipeRefreshFeature (see bindTab), the same stack Fenix uses.
@@ -734,7 +598,7 @@ class PetalTabViewController private constructor(
             pendingNavSince = android.os.SystemClock.uptimeMillis()
         }
         navUrls.clear(); navIndex = -1; navFallbackEligible = false
-        currentScrollX = 0; currentScrollY = 0; lastProcessedScrollY = 0; accumulatedScrollY = 0; consecutiveDirectionSteps = 0
+        currentScrollX = 0; currentScrollY = 0
         isSecure = pageUrl.startsWith("https://", ignoreCase = true)
         // Keep view hierarchy backgrounds transparent so SurfaceView's transparent region
         // punches through to GeckoView's hardware compositor surface. Setting an opaque background
@@ -976,10 +840,6 @@ class PetalTabViewController private constructor(
                     currentScrollX = scrollX
                     currentScrollY = scrollY
                     lastScrollTime = android.os.SystemClock.uptimeMillis()
-
-                    if (pendingScrollUpdate.compareAndSet(false, true)) {
-                        post(scrollDispatcher)
-                    }
                 }
             }
 

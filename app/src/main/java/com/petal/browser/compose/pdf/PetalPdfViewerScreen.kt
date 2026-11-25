@@ -856,6 +856,11 @@ private fun PetalPdfViewerScreenImpl(
                         Modifier.fillMaxSize()
                     }
 
+                    val pageTopPadding by animateDpAsState(
+                        targetValue = statusBarInset + if (isEditMode || isTextEditMode) 124.dp else 72.dp,
+                        animationSpec = PetalSpring.calm(),
+                        label = "pdfPageTopPad"
+                    )
                     Box(
                         modifier = gestureModifier.then(
                             if (glassOn) Modifier
@@ -876,7 +881,7 @@ private fun PetalPdfViewerScreenImpl(
                                         translationY = offsetYAnim.value
                                     },
                                 contentPadding = PaddingValues(
-                                    top = statusBarInset + 72.dp,
+                                    top = pageTopPadding,
                                     bottom = navBarInset + 104.dp,
                                     start = if (isCropMarginsEnabled) 0.dp else 12.dp,
                                     end = if (isCropMarginsEnabled) 0.dp else 12.dp
@@ -922,7 +927,7 @@ private fun PetalPdfViewerScreenImpl(
                                         translationY = offsetYAnim.value
                                     },
                                 contentPadding = PaddingValues(
-                                    top = statusBarInset + 72.dp,
+                                    top = pageTopPadding,
                                     bottom = navBarInset + 104.dp,
                                     start = if (isCropMarginsEnabled) 0.dp else 12.dp,
                                     end = if (isCropMarginsEnabled) 0.dp else 12.dp
@@ -1696,7 +1701,12 @@ private fun PdfTextEditTopBar(
                     Text(
                         text = stringResource(R.string.ui_edit_document_text),
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp)
                     )
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1953,6 +1963,8 @@ private fun PdfFindBar(
                         text = if (resultCount > 0) "$currentIndex of $resultCount" else "0 found",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
 
@@ -2034,7 +2046,7 @@ private fun PdfEditTopBar(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     PetalLiquidIconButton(
                         onClick = onCancel,
@@ -2044,86 +2056,101 @@ private fun PdfEditTopBar(
                         Icon(Icons.Rounded.Close, contentDescription = null)
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        com.petal.browser.ui.components.PetalChoiceButtonGroup(
-                            options = listOf(
-                                com.petal.browser.ui.components.PetalButtonGroupItem(AnnotationTool.PEN, stringResource(R.string.ui_pen), icon = Icons.Rounded.Draw),
-                                com.petal.browser.ui.components.PetalButtonGroupItem(AnnotationTool.HIGHLIGHTER, stringResource(R.string.ui_highlighter), icon = Icons.Rounded.Highlight),
-                                com.petal.browser.ui.components.PetalButtonGroupItem(AnnotationTool.TEXT, stringResource(R.string.ui_text), icon = Icons.Rounded.TextFields),
-                            ),
-                            selected = selectedTool,
-                            onSelect = onToolChange,
-                            collapseUnselected = true,
-                            modifier = Modifier.width(220.dp)
-                        )
-
-                        com.petal.browser.ui.components.PetalOverflowActionRow(
-                            actions = listOf(
-                                com.petal.browser.ui.components.PetalOverflowAction(
-                                    id = "undo",
-                                    label = stringResource(R.string.ui_undo),
-                                    icon = Icons.AutoMirrored.Rounded.Undo,
-                                    enabled = canUndo,
-                                    onClick = onUndo
-                                ),
-                                com.petal.browser.ui.components.PetalOverflowAction(
-                                    id = "clear",
-                                    label = stringResource(R.string.ui_clear),
-                                    icon = Icons.Rounded.DeleteSweep,
-                                    onClick = onClearAnnotations
-                                ),
-                            ),
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                    }
+                    com.petal.browser.ui.components.PetalChoiceButtonGroup(
+                        options = listOf(
+                            com.petal.browser.ui.components.PetalButtonGroupItem(AnnotationTool.PEN, stringResource(R.string.ui_pen), icon = Icons.Rounded.Draw),
+                            com.petal.browser.ui.components.PetalButtonGroupItem(AnnotationTool.HIGHLIGHTER, stringResource(R.string.ui_highlighter), icon = Icons.Rounded.Highlight),
+                            com.petal.browser.ui.components.PetalButtonGroupItem(AnnotationTool.TEXT, stringResource(R.string.ui_text), icon = Icons.Rounded.TextFields),
+                        ),
+                        selected = selectedTool,
+                        onSelect = onToolChange,
+                        collapseUnselected = true,
+                        modifier = Modifier.weight(1f)
+                    )
 
                     PetalLiquidButton(
                         onClick = onSave,
                         enabled = !isSaving,
                         shape = RoundedCornerShape(16.dp),
                         variant = PetalButtonVariant.Filled,
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                     ) {
                         if (isSaving) {
                             PetalContainedLoadingIndicator(size = 18.dp)
                         } else {
-                            Text(stringResource(R.string.ui_save), fontWeight = FontWeight.Bold)
+                            Text(
+                                text = stringResource(R.string.ui_save),
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
                         }
                     }
                 }
 
-                // Color Palette Row
+                // Color Palette & Edit Actions Row
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 6.dp, start = 12.dp, end = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        .padding(top = 6.dp, start = 6.dp, end = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = stringResource(R.string.ui_color),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    colors.forEach { color ->
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(ExpressiveButtonShape)
-                                .background(color)
-                                .clickable { onColorChange(color) }
-                        ) {
-                            if (selectedColor == color) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    tint = if (color == Color.White || color == Color.Yellow) Color.Black else Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.ui_color),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                        colors.forEach { color ->
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .clip(ExpressiveButtonShape)
+                                    .background(color)
+                                    .clickable { onColorChange(color) }
+                            ) {
+                                if (selectedColor == color) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        tint = if (color == Color.White || color == Color(0xFFFDD835)) Color.Black else Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
                             }
                         }
                     }
+
+                    Spacer(Modifier.width(6.dp))
+
+                    com.petal.browser.ui.components.PetalOverflowActionRow(
+                        actions = listOf(
+                            com.petal.browser.ui.components.PetalOverflowAction(
+                                id = "undo",
+                                label = stringResource(R.string.ui_undo),
+                                icon = Icons.AutoMirrored.Rounded.Undo,
+                                enabled = canUndo,
+                                onClick = onUndo
+                            ),
+                            com.petal.browser.ui.components.PetalOverflowAction(
+                                id = "clear",
+                                label = stringResource(R.string.ui_clear),
+                                icon = Icons.Rounded.DeleteSweep,
+                                onClick = onClearAnnotations
+                            ),
+                        ),
+                        maxVisible = 2
+                    )
                 }
             }
         }

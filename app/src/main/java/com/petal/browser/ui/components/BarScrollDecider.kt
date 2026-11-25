@@ -15,12 +15,16 @@ import kotlin.math.abs
  *    after it happened needs twice the travel.
  *  - Slop: a reversal smaller than [REVERSAL_SLOP_DP] is treated as jitter and does not reset the run,
  *    so tiny slow-scroll deltas can neither flip the bars nor keep cancelling a real run.
- *  - Resize immunity: while [BarCollapseState.isViewportSettling] is true every offset is only used to
- *    rebase, so the scroll shift Gecko reports after the viewport resize is never read as input.
+ *  - Resize immunity: while [isSettling] is true every offset is only used to rebase, so the scroll
+ *    shift Gecko reports after an actual viewport resize is never read as input.
  *  - Finger gating: an offset change with no finger down and no recent touch is a layout shift, not a
  *    scroll, and is ignored.
  */
-class BarScrollDecider(private val nowMs: () -> Long = { SystemClock.uptimeMillis() }) {
+class BarScrollDecider(
+    private val isSettling: () -> Boolean = { BarCollapseState.isViewportSettling() },
+    private val onSettlingScroll: () -> Unit = { BarCollapseState.onGeckoScrollWhileSettling() },
+    private val nowMs: () -> Long = { SystemClock.uptimeMillis() }
+) {
 
     companion object {
         const val HIDE_AFTER_DP = 40f
@@ -29,8 +33,8 @@ class BarScrollDecider(private val nowMs: () -> Long = { SystemClock.uptimeMilli
         const val TOP_ZONE_DP = 4f
         /** After a flip, undoing it needs this many times the normal travel... */
         const val REVERSE_DWELL_FACTOR = 2f
-        /** ...for this long. Only a stability guard against stragglers, not the resize filter. */
-        const val REVERSE_DWELL_MS = 700L
+        /** ...for this long. Short stability guard against single-frame bounce without blocking quick reversals. */
+        const val REVERSE_DWELL_MS = 250L
         /** Offset changes this long after the finger lifted still count as the user's fling. */
         const val FLING_WINDOW_MS = 1500L
     }
@@ -53,6 +57,8 @@ class BarScrollDecider(private val nowMs: () -> Long = { SystemClock.uptimeMilli
         touching = down
         if (!down) lastTouchEndMs = nowMs()
     }
+
+    fun isTouching(): Boolean = touching
 
     /** Tab switch, navigation or a new page: the next offset only rebases. */
     fun reset() {
@@ -82,9 +88,9 @@ class BarScrollDecider(private val nowMs: () -> Long = { SystemClock.uptimeMilli
         val delta = scrollY - lastY
         lastY = scrollY
 
-        // Gecko is still absorbing a viewport resize: the offset is not the user's. Rebase on it.
-        if (BarCollapseState.isViewportSettling()) {
-            BarCollapseState.onGeckoScrollWhileSettling()
+        // Gecko is absorbing a real viewport resize: the offset is not the user's. Rebase on it.
+        if (isSettling()) {
+            onSettlingScroll()
             restart(scrollY)
             return 0
         }
